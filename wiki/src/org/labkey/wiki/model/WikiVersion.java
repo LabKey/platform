@@ -23,7 +23,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
@@ -123,7 +123,7 @@ public class WikiVersion
     // TODO: WikiVersion should know its wiki & container
     public String getHtml(Container c, Wiki wiki)
     {
-        return WikiService.WIKI_PREFIX + getHtmlForConvert(c, wiki) + WikiService.WIKI_SUFFIX;
+        return WikiRenderingService.WIKI_PREFIX + getHtmlForConvert(c, wiki) + WikiRenderingService.WIKI_SUFFIX;
     }
 
     public String getHtmlForConvert(Container c, Wiki wiki)
@@ -211,7 +211,7 @@ public class WikiVersion
         if (_rendererType == null)
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return WikiManager.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        return WikiRenderingService.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 
     // Cache the rendered wiki content by default; set to false to avoid caching

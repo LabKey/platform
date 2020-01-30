@@ -16,11 +16,6 @@
             if (n != null)
                 n.appendTo(out);
     }
-    // Allow passing CharSequence directly as body content, or require wrapping?
-    public HtmlString txt(String s)
-    {
-        return HtmlString.of(s);
-    }
 %>
 <% dom(out,
 
@@ -30,6 +25,11 @@
 
         TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
                 link("begin", getContainer().getStartURL(getUser()))))),
+
+        HR(),
+
+        TABLE(TR(TD(cl("link").at(style,"border:solid 1px red"),
+                link("new window", getContainer().getStartURL(getUser())).target("blank")))),
 
         HR(),
 
@@ -64,13 +64,15 @@
 
         HR(),
 
-        X.FORM(at(method,"POST"),
-                "This is a POST form ", X.FA("plus-square")),
+        LK.FORM(at(method,"POST"),
+                "This is a POST form ", LK.FA("plus-square")),
 
         HR(),
 
-        X.FORM(at(method,"GET"),
-                "This is a GET form ", X.FA("minus-square")),
+        LK.FORM(at(method,"GET"),
+                "This is a GET form ", LK.FA("minus-square")),
 
-        HR()
+        HR(),
+
+        LK.CHECKBOX(at(name,"test"))
 );%>

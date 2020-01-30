@@ -341,6 +341,8 @@ public class ListController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete List");
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
@@ -668,7 +670,7 @@ public class ListController extends SpringActionController
                 view.addView(new HtmlView(PageFlowUtil.textLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1"))));
             }
 
-            if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled())
+            if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled() && DiscussionService.get() != null)
             {
                 String entityId = item.getEntityId();
 

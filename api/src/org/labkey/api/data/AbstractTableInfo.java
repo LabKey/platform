@@ -101,7 +101,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /**
      * Default lookup select list max size.
-     * @see TableInfo#getSelectList(String, List, Integer)
+     * @see TableInfo#getSelectList(String, List, Integer, String)
      */
     private static final int MAX_SELECT_LIST = 10_000;
 
@@ -153,6 +153,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
 
     @NotNull
+    @Override
     public List<ColumnInfo> getPkColumns()
     {
         List<ColumnInfo> ret = new ArrayList<>();
@@ -253,16 +254,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return false;
     }
 
+    @Override
     public DbSchema getSchema()
     {
         return _schema;
     }
 
+    @Override
     public SqlDialect getSqlDialect()
     {
         return getSchema().getSqlDialect();
     }
 
+    @Override
     public List<String> getPkColumnNames()
     {
         List<String> ret = new ArrayList<>();
@@ -273,11 +277,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return Collections.unmodifiableList(ret);
     }
 
+    @Override
     public ColumnInfo getVersionColumn()
     {
         return null;
     }
 
+    @Override
     public String getVersionColumnName()
     {
         return null;
@@ -290,6 +296,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @NotNull
+    @Override
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSelectName())
@@ -308,22 +315,28 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     abstract protected SQLFragment getFromSQL();
 
     @Override
-    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows)
+    public @NotNull NamedObjectList getSelectList(@Nullable String columnName, List<FilterType> filters, Integer maxRows, @Nullable String titleColumn)
     {
+        ColumnInfo titleColumnInfo = null;
+        if (titleColumn != null)
+        {
+            titleColumnInfo = getColumn(titleColumn);
+        }
+
         if (columnName == null)
         {
             List<ColumnInfo> pkColumns = getPkColumns();
             if (pkColumns.size() != 1)
                 return new NamedObjectList();
             else
-                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows);
+                return getSelectList(pkColumns.get(0), Collections.emptyList(), maxRows, titleColumnInfo);
         }
 
         ColumnInfo column = getColumn(columnName);
-        return getSelectList(column, filters, maxRows);
+        return getSelectList(column, filters, maxRows, titleColumnInfo);
     }
 
-    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows)
+    private @NotNull NamedObjectList getSelectList(ColumnInfo firstColumn, List<FilterType> filters, Integer maxRows, ColumnInfo titleColumnInfo)
     {
         final NamedObjectList ret = new NamedObjectList();
         if (firstColumn == null)
@@ -334,7 +347,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
         List<ColumnInfo> cols;
         final int titleIndex;
-        if (firstColumn == titleColumn)
+        if (titleColumnInfo != null && !(firstColumn.equals(titleColumnInfo)))
+        {
+            cols = Arrays.asList(firstColumn, titleColumnInfo);
+            titleIndex = 2;
+        }
+        else if (firstColumn == titleColumn)
         {
             cols = Arrays.asList(firstColumn);
             titleIndex = 1;
@@ -385,6 +403,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return ret;
     }
 
+    @Override
     public List<ColumnInfo> getUserEditableColumns()
     {
         List<ColumnInfo> ret = new ArrayList<>();
@@ -398,12 +417,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return Collections.unmodifiableList(ret);
     }
 
+    @Override
     public List<ColumnInfo> getColumns(String colNames)
     {
         String[] colNameArray = colNames.split(",");
         return getColumns(colNameArray);
     }
 
+    @Override
     public List<ColumnInfo> getColumns(String... colNameArray)
     {
         List<ColumnInfo> ret = new ArrayList<>(colNameArray.length);
@@ -481,6 +502,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return ret;
     }
 
+    @Override
     public ColumnInfo getColumn(@NotNull String name)
     {
         return getColumn(name, true);
@@ -550,6 +572,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @NotNull
+    @Override
     public List<ColumnInfo> getColumns()
     {
         return Collections.unmodifiableList(new ArrayList<>(_columnMap.values()));
@@ -565,28 +588,32 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                 .collect(Collectors.toList());
     }
 
-
+    @Override
     public Set<String> getColumnNameSet()
     {
         // Make the set case-insensitive
         return Collections.unmodifiableSet(new CaseInsensitiveTreeSet(_columnMap.keySet()));
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public String getTitle()
     {
         return _title == null ? _name : _title;
     }
 
+    @Override
     public String getTitleField()
     {
         return _title;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -673,6 +700,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _methodMap.put(name, method);
     }
 
+    @Override
     public MethodInfo getMethod(String name)
     {
         if (_methodMap == null)
@@ -692,6 +720,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _title = title;
     }
 
+    @Override
     public ActionURL getGridURL(Container container)
     {
         if (_gridURL == LINK_DISABLER)
@@ -705,6 +734,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public ActionURL getInsertURL(Container container)
     {
         if (_insertURL == LINK_DISABLER)
@@ -732,6 +762,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public ActionURL getDeleteURL(Container container)
     {
         if (_deleteURL == LINK_DISABLER)
@@ -745,6 +776,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_updateURL == LINK_DISABLER)
@@ -772,6 +804,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
@@ -799,6 +832,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         SecurityLogger.log("AbstractTableInfo.hasPermission " + getName(), user, null, false);
@@ -846,6 +880,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _updateURL = updateURL;
     }
 
+    @Override
     public ButtonBarConfig getButtonBarConfig()
     {
         return _buttonBarConfig;
@@ -857,6 +892,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _buttonBarConfig = buttonBarConfig;
     }
 
+    @Override
     public AggregateRowConfig getAggregateRowConfig()
     {
         return _aggregateRowConfig;
@@ -868,6 +904,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _aggregateRowConfig = config;
     }
 
+    @Override
     public void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> list)
     {
         checkLocked();
@@ -875,6 +912,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /** @return unmodifiable list of the columns that should be shown by default for this table */
+    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         if (_defaultVisibleColumns instanceof List)
@@ -913,7 +951,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     public boolean safeAddColumn(BaseColumnInfo column)
     {
         checkLocked();
-        if (getColumn(column.getName()) != null)
+        if (getColumn(column.getName(), false) != null)
             return false;
         addColumn(column);
         return true;
@@ -1367,6 +1405,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * Returns true by default. Override if your derived class is not accessible through Query
      * @return Whether this table is public (i.e., accessible via Query)
      */
+    @Override
     public boolean isPublic()
     {
         //by default, all subclasses are public (i.e., accessible through Query)
@@ -1374,12 +1413,14 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return getPublicName() != null && getPublicSchemaName() != null;
     }
 
+    @Override
     public String getPublicName()
     {
         return getName();
     }
 
     /** @return a SchemaKey encoded name for this schema. */
+    @Override
     public String getPublicSchemaName()
     {
         // Prefer the UserSchema's name.  Assume the DbSchema name doesn't need encoding
@@ -1387,22 +1428,26 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return schema != null ? schema.getSchemaName() : getSchema().getName();
     }
 
+    @Override
     public boolean needsContainerClauseAdded()
     {
         return true;
     }
 
     @Nullable
+    @Override
     public ContainerFilter getContainerFilter()
     {
         return null;
     }
 
+    @Override
     public boolean isMetadataOverrideable()
     {
         return true;
     }
 
+    @Override
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors)
     {
         checkLocked();
@@ -1413,6 +1458,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         }
     }
 
+    @Override
     public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors)
     {
         checkLocked();
@@ -1436,6 +1482,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return null;
     }
 
+    @Override
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
     {
         ForeignKey fk = parent.getFk();
@@ -1444,18 +1491,21 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return fk.createLookupColumn(parent, name);
     }
 
+    @Override
     public int getCacheSize()
     {
         return _cacheSize;
     }
 
     @Nullable
+    @Override
     public Domain getDomain()
     {
         return null;
     }
 
     @Nullable
+    @Override
     public DomainKind getDomainKind()
     {
         Domain domain = getDomain();
@@ -1465,6 +1515,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Nullable
+    @Override
     public QueryUpdateService getUpdateService()
     {
         // UNDONE: consider allowing all query tables to be updated via update service
@@ -1497,6 +1548,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      * @return FieldKey of the Container column.
      */
     @Nullable
+    @Override
     public FieldKey getContainerFieldKey()
     {
         ColumnInfo col = getColumn("container");
@@ -1517,11 +1569,13 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _triggerFactories.put(factory.getClass(), factory);
     }
 
+    @Override
     public boolean hasTriggers(Container c)
     {
         return !getTriggers(c).isEmpty();
     }
 
+    @Override
     public boolean canStreamTriggers(Container c)
     {
         for (Trigger script : getTriggers(c))

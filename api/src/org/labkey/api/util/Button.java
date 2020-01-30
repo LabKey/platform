@@ -27,7 +27,7 @@ import java.util.Map;
 
 import static org.labkey.api.util.DOM.Attribute;
 import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.X.*;
+import static org.labkey.api.util.DOM.LK.*;
 import static org.labkey.api.util.DOM.Attribute.*;
 
 
@@ -53,7 +53,6 @@ public class Button extends DisplayElement implements HasHtmlString
     private final String onClick;
     private final String id;
     private final Map<String, String> attributes;
-    private final String unsafeAttributes;
     private final String tooltip;
     private final String typeCls;
     private final boolean disableOnClick;
@@ -61,6 +60,11 @@ public class Button extends DisplayElement implements HasHtmlString
     private final boolean enabled;
     private final boolean submit;
     private final boolean usePost;
+    private final String rel;
+    private final String name;
+    private final String style;
+    private final String confirmMessage;
+    private final String target;
 
     private Button(ButtonBuilder builder)
     {
@@ -79,11 +83,14 @@ public class Button extends DisplayElement implements HasHtmlString
         this.tooltip = builder.tooltip;
         this.typeCls = builder.typeCls;
         this.usePost = builder.usePost;
+        this.rel = builder.rel;
+        this.name = builder.name;
+        this.style = builder.style;
+        this.confirmMessage = builder.confirmMessage;
+        this.target = builder.target;
 
         if (this.usePost && null != this.onClick)
             throw new IllegalStateException("Can't specify both usePost and onClick");
-        // TODO kill this usage
-        this.unsafeAttributes = builder.unsafeAttributes;
     }
 
     public String getCssClass()
@@ -96,6 +103,11 @@ public class Button extends DisplayElement implements HasHtmlString
         return text;
     }
 
+    public String getTarget()
+    {
+        return target;
+    }
+
     public boolean isDropdown()
     {
         return dropdown;
@@ -103,8 +115,17 @@ public class Button extends DisplayElement implements HasHtmlString
 
     public String getHref()
     {
-
         return usePost ? "javascript:void(0);" : href;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public String getRel()
+    {
+        return rel;
     }
 
     public String getOnClick()
@@ -115,6 +136,11 @@ public class Button extends DisplayElement implements HasHtmlString
     public String getIconCls()
     {
         return iconCls;
+    }
+
+    public String getStyle()
+    {
+        return style;
     }
 
     public String getId()
@@ -145,7 +171,7 @@ public class Button extends DisplayElement implements HasHtmlString
     private String generateOnClick(String id)
     {
         // prepare onclick method and overrides
-        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href) : StringUtils.defaultString(getOnClick());
+        final String onClick = usePost ? PageFlowUtil.postOnClickJavaScript(href, confirmMessage) : StringUtils.defaultString(getOnClick());
 
         // we're modifying the javascript, so need to use whatever quoting the caller used
         char quote = PageFlowUtil.getUsedQuoteSymbol(onClick);
@@ -209,7 +235,7 @@ public class Button extends DisplayElement implements HasHtmlString
 
         var attrs = at(attributes)
             .id(getId())
-            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId))
+            .at(Attribute.href, getHref(), title, tip, onclick, generateOnClick(submitId), Attribute.rel, getRel(), Attribute.name, getName(), Attribute.style, getStyle(), Attribute.target, getTarget())
             .data("tt", (StringUtils.isBlank(tip) ? null : "tooltip"))
             .data("placement", "top")
             .cl(CLS, typeCls, getCssClass())
@@ -218,11 +244,9 @@ public class Button extends DisplayElement implements HasHtmlString
             .cl(isDropdown(), "labkey-down-arrow")
             .cl(iconOnly, "icon-only");
 
-        if (unsafeAttributes != null)
-            attrs.callback(appendable -> { try {appendable.append(unsafeAttributes); } catch (IOException x) {throw new RuntimeException(x);}});
-
         return createHtmlFragment(
-            isSubmit() ? INPUT(at(type,"submit",tabindex,"-1",style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
+            isSubmit() ?
+            INPUT(at(type,"submit",tabindex,"-1",Attribute.style,"position:absolute;left:-9999px;width:1px;height:1px;",Attribute.id,submitId)) : null,
             A(attrs, iconOnly ? FA(getIconCls()) : SPAN(html))
         );
     }
@@ -235,8 +259,6 @@ public class Button extends DisplayElement implements HasHtmlString
         private boolean enabled = true;
         private boolean submit;
         private HtmlString html;
-        // TODO remove usages of attributes(String)
-        private String unsafeAttributes;
 
         public ButtonBuilder(@NotNull String text)
         {
@@ -259,13 +281,6 @@ public class Button extends DisplayElement implements HasHtmlString
         public ButtonBuilder dropdown(boolean dropdown)
         {
             this.dropdown = dropdown;
-            return this;
-        }
-
-        @Deprecated // use Map<String, String> version instead
-        public ButtonBuilder attributes(String attributes)
-        {
-            this.unsafeAttributes = attributes;
             return this;
         }
 

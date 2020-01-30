@@ -102,7 +102,7 @@ public class QueryManager
     /**
      * @param customQuery whether to look for custom queries or modified metadata on built-in tables
      */
-    public List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
+    public List<QueryDef> getQueryDefs(Container container, @Nullable String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         return QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
     }
@@ -348,6 +348,7 @@ public class QueryManager
     // changes in any way (insert/update/delete).
     public void updateExternalSchemas(Container c)
     {
+        QueryService.get().updateLastModified();
         if (null != c)
         {
             ExternalSchemaDefCache.uncache(c);
@@ -477,12 +478,14 @@ public class QueryManager
 
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
+        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryCreated(user, container, scope, schema, queries);
     }
 
     public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryChangeListener.QueryPropertyChange> changes)
     {
+        QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryChanged(user, container, scope, schema, property, changes);
@@ -521,6 +524,7 @@ public class QueryManager
 
     public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
+        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryDeleted(user, container, scope, schema, queries);
     }
@@ -545,18 +549,21 @@ public class QueryManager
 
     public void fireViewCreated(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewCreated(view);
     }
 
     public void fireViewChanged(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewChanged(view);
     }
 
     public void fireViewDeleted(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewDeleted(view);
     }

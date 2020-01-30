@@ -121,7 +121,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;
-        _savedName = query._name;
+        _savedName = query._debugName;
 
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
@@ -320,6 +320,9 @@ groupByLoop:
                             }
                         }
                     }
+                    // wrap this 'global' relation to capture the FROM alias (setAlias() is called below)
+                    relation = new QueryWithWrapper(queryTableWith);
+                    relation.setAlias(alias);       // legal alias is created below with makeRelationName()
                 }
             }
 
@@ -1601,7 +1604,7 @@ groupByLoop:
         }
         if (_orderBy != null)
         {
-            if (_limit == null & !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
+            if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
                 reportWarning("The underlying database does not supported nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
             }
@@ -1627,6 +1630,8 @@ groupByLoop:
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
+                if (null == _limit)
+                    getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
         if (_limit != null)
@@ -2409,5 +2414,21 @@ groupByLoop:
     {
         QuerySelect clone = this.clone();
         return clone;
+    }
+
+    // A CTE can be used more than once in FROM, but we can't have two FROM entries point to same QueryRelation, because
+    // unlike TableInfo we expect the QueryRelation to know it's own Alias (mistake?)
+    private static class QueryWithWrapper extends QueryRelationWrapper<QueryWith.QueryTableWith>
+    {
+        QueryWithWrapper(QueryWith.QueryTableWith wrapped)
+        {
+            super(wrapped);
+        }
+
+        @Override
+        public SQLFragment getFromSql()
+        {
+            return _wrapped.getFromSql(getAlias());
+        }
     }
 }

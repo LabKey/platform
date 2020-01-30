@@ -40,7 +40,6 @@ import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
@@ -74,6 +73,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         super(context);
     }
 
+    @Override
     public void deleteList(GWTList list)
     {
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -93,6 +93,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
     }
 
+    @Override
     public GWTList createList(GWTList list) throws ListImportException
     {
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
@@ -164,6 +165,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
+    @Override
     public List<String> getListNames()
     {
         List<String> ret = new ArrayList<>();
@@ -178,6 +180,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     }
 
 
+    @Override
     public GWTList getList(int listId)
     {
         if (listId == 0)
@@ -472,8 +475,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         }
 
         domain.setAllowAttachmentProperties(true);
-        domain.setDefaultValueOptions(new DefaultValueType[]
-                { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
+        setDefaultValues(domain, domain.getDomainURI());
         return domain;
     }
 

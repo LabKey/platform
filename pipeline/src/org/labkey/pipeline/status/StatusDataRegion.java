@@ -64,6 +64,7 @@ public class StatusDataRegion extends DataRegion
         out.write("</a>&nbsp;&nbsp;</td>\n");
     }
 
+    @Override
     protected void renderTable(RenderContext ctx, Writer out) throws SQLException, IOException
     {
         if (_apiAction == null)

@@ -441,7 +441,7 @@
 %>
 <% if (result != null) { %>
 <div class="<%=text(hasNavResults ? "col-md-9" : "col-md-12")%>">
-    <div class="panel panel-portal">
+    <div class="panel panel-portal labkey-search-results">
         <div class="panel-body">
             <%
                 long hits = result.totalHits;
@@ -463,7 +463,7 @@
                     <a href="<%=h(href)%>"><%=h(hit.title)%></a>
                 </h4>
                 <div class="labkey-search-content">
-                    <div>
+                    <div style="margin-bottom:8px;margin-top:4px;">
                     <%
                         NavTree nav = getDocumentContext(documentContainer, hit);
                         if (null != nav)
@@ -551,7 +551,7 @@
 </div>
 <% if (hasNavResults) { %>
 <div class="col-md-3">
-    <div class="panel panel-portal">
+    <div class="panel panel-portal labkey-folders-search-results">
         <div class="panel-body">
             <div class="labkey-search-results-counts">
                 <span>Folders</span>

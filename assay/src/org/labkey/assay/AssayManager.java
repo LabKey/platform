@@ -19,7 +19,16 @@ package org.labkey.assay;
 import gwt.client.org.labkey.assay.AssayApplication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayFlagHandler;
+import org.labkey.api.assay.AssayHeaderLinkProvider;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayResultsHeaderProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ActionButton;
@@ -56,18 +65,9 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayColumnInfoRenderer;
-import org.labkey.api.assay.AssayHeaderLinkProvider;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayResultsHeaderProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
-import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -250,15 +250,22 @@ public class AssayManager implements AssayService
     {
         // ExpRunLsidHandler has no state, so safe to use a singleton.
         private final LsidHandler _fileBasedAssayLsidHandler = new ExpRunLsidHandler();
+        // AssayResultLsidHandler has no state, so safe to use a singleton.
+        private final LsidHandler _fileBasedAssayResultLsidHandler = new LsidManager.OntologyObjectLsidHandler();
 
         @Nullable
         @Override
         public LsidHandler findHandler(String authority, String namespacePrefix)
         {
-            if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority) && getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
-                return _fileBasedAssayLsidHandler;
-            else
-                return null;
+            if (AppProps.getInstance().getDefaultLsidAuthority().equals(authority))
+            {
+                if (getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
+                    return _fileBasedAssayLsidHandler;
+                else if (getModuleAssayCollections().getResultLsidPrefixes().contains(namespacePrefix))
+                    return _fileBasedAssayResultLsidHandler;
+            }
+
+            return null;
         }
     }
 
@@ -414,12 +421,6 @@ public class AssayManager implements AssayService
         vbox.addView(new JspView("/org/labkey/assay/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;
-    }
-
-    @Override
-    public ModelAndView createAssayDesignerView(Map<String, String> properties)
-    {
-        return new AssayGWTView(new AssayApplication.AssayDesigner(), properties);
     }
 
     @Override
@@ -598,17 +599,40 @@ public class AssayManager implements AssayService
         List<ExpProtocol> protocols = getAssayProtocols(c);
 
         for (ExpProtocol protocol : protocols)
+            indexAssay(task, c, protocol);
+    }
+
+    public void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol)
+    {
+        AssayProvider provider = getProvider(protocol);
+
+        if (null == provider)
+            return;
+
+        String name = protocol.getName();
+        String instrument = protocol.getInstrument();
+        String description = protocol.getDescription();
+        String comment = protocol.getComment();
+        User createdBy = protocol.getCreatedBy();
+        Date created = protocol.getCreated();
+        User modifiedBy = protocol.getModifiedBy();
+        Date modified = protocol.getModified();
+
+        ActionURL assayBeginURL = PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, AssayController.AssayBeginAction.class);
+        assayBeginURL.setExtraPath(c.getId());
+        String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
+        String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment);
+        Map<String, Object> m = new HashMap<>();
+        m.put(SearchService.PROPERTY.title.toString(), name);
+        m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
+        m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
+
+        String docId = protocol.getDocumentId();
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
+
+        if (!runs.isEmpty())
         {
-            AssayProvider provider = getProvider(protocol);
-
-            if (null == provider)
-                continue;
-
-            List<? extends ExpRun> runs = ExperimentService.get().getExpRuns(c, protocol, null);
-
-            if (runs.isEmpty())
-                continue;
-
             StringBuilder runKeywords = new StringBuilder();
 
             for (ExpRun run : runs)
@@ -623,29 +647,21 @@ public class AssayManager implements AssayService
                 }
             }
 
-            String name = protocol.getName();
-            String instrument = protocol.getInstrument();
-            String description = protocol.getDescription();
-            String comment = protocol.getComment();
-            User createdBy = protocol.getCreatedBy();
-            Date created = protocol.getCreated();
-            User modifiedBy = protocol.getModifiedBy();
-            Date modified = protocol.getModified();
-
-            ActionURL assayRunsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, protocol);
-
-            String keywords = StringUtilsLabKey.joinNonBlank(" ", name, instrument, provider.getName());
-            String body = StringUtilsLabKey.joinNonBlank(" ", provider.getName(), description, comment) + runKeywords.toString();
-            Map<String, Object> m = new HashMap<>();
-            m.put(SearchService.PROPERTY.title.toString(), name);
-            m.put(SearchService.PROPERTY.keywordsMed.toString(), keywords);
-            m.put(SearchService.PROPERTY.categories.toString(), ASSAY_CATEGORY.getName());
-
-            String docId = "assay:" + c.getId() + ":" + protocol.getRowId();
-            assayRunsURL.setExtraPath(c.getId());
-            WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayRunsURL, createdBy, created, modifiedBy, modified, m);
-            task.addResource(r, SearchService.PRIORITY.item);
+            body += runKeywords.toString();
         }
+        WebdavResource r = new SimpleDocumentResource(new Path(docId), docId, c.getId(), "text/plain", body, assayBeginURL, createdBy, created, modifiedBy, modified, m);
+        task.addResource(r, SearchService.PRIORITY.item);
+    }
+
+    @Override
+    public void unindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols)
+    {
+        SearchService ss = SearchService.get();
+        if (null == ss)
+            return;
+
+        for (ExpProtocol protocol : expProtocols)
+            ss.deleteResource(protocol.getDocumentId());
     }
 
     @Override

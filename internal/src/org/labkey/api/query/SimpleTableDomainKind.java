@@ -188,12 +188,30 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean allowAttachmentProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
+
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
             return null;
 
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), true);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override

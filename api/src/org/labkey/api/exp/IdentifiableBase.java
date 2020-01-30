@@ -15,7 +15,10 @@
  */
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
+
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * Utility base class for implementations of {@link Identifiable}
@@ -28,6 +31,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     private String _name;
     // some entities copy the exp.object.objectid value
     private Integer objectId;
+    protected Container container;
 
     public IdentifiableBase()
     {
@@ -37,6 +41,14 @@ public class IdentifiableBase implements Identifiable, Serializable
     {
         this();
         _lsid = lsid;
+    }
+
+    public IdentifiableBase(OntologyObject oo)
+    {
+        this();
+        _lsid = oo.getObjectURI();
+        objectId = oo.getObjectId();
+        container = oo.getContainer();
     }
 
     public String getLSID()
@@ -72,5 +84,37 @@ public class IdentifiableBase implements Identifiable, Serializable
         if (this.objectId != null && !this.objectId.equals(objectId))
             throw new IllegalStateException("can't change objectId");
         this.objectId = objectId;
+    }
+
+    public Container getContainer()
+    {
+        return container;
+    }
+
+    // for Table layer
+    public void setContainer(Container container)
+    {
+        this.container = container;
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        IdentifiableBase that = (IdentifiableBase) o;
+        return _lsid.equals(that._lsid);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(_lsid);
+    }
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName() + ": " + getLSID();
     }
 }

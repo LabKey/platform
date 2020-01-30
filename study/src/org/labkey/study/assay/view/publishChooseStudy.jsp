@@ -177,7 +177,7 @@
     %>
 
     <labkey:button text="Next" onclick="handleNext();" submit="false"/>
-    <labkey:button text="Cancel" href="<%=text(bean.getReturnURL())%>"/>
+    <labkey:button text="Cancel" href="<%=bean.getReturnURL()%>"/>
 
     <%
         for (Pair<String, String> parameter : parameters)

@@ -205,6 +205,7 @@ LABKEY.Query = new function()
          * @param {Boolean} [config.includeDetailsColumn] Include the Details link column in the set of columns (defaults to false).
          *       If included, the column will have the name "~~Details~~". The underlying table/query must support details links
          *       or the column will be omitted in the response.
+         * @param {Boolean} [config.includeMetadata] Include metadata for the selected columns.  Defaults to true.
          * @param {Object} [config.parameters] Map of name (string)/value pairs for the values of parameters if the SQL
          *        references underlying queries that are parameterized. For example, the following passes two parameters to the query: {'Gender': 'M', 'CD4': '400'}.
          *        The parameters are written to the request URL as follows: query.param.Gender=M&query.param.CD4=400.  For details on parameterized SQL queries, see
@@ -273,6 +274,9 @@ LABKEY.Query = new function()
 
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
+
+            if (config.includeMetadata !== undefined)
+                dataObject.includeMetadata = config.includeMetadata;
 
             var qsParams = {};
             if (config.sort)
@@ -380,6 +384,7 @@ LABKEY.Query = new function()
         * @param {Boolean} [config.includeUpdateColumn] Include the Update (or edit) link column in the set of columns (defaults to false).
         *       If included, the column will have the name "~~Update~~". The underlying table/query must support update links
         *       or the column will be omitted in the response.
+         * @param {Boolean} [config.includeMetadata] Include metadata for the selected columns.  Defaults to true.
         * @param {String} [config.selectionKey] Unique string used by selection APIs as a key when storing or retrieving the selected items for a grid.
         *         Not used unless <code>config.showRows</code> is 'selected' or 'unselected'.
         * @param {Boolean} [config.ignoreFilter] If true, the command will ignore any filter that may be part of the chosen view.
@@ -512,6 +517,9 @@ LABKEY.Query = new function()
 
             if (config.includeUpdateColumn)
                 dataObject.includeUpdateColumn = config.includeUpdateColumn;
+
+            if (config.includeMetadata !== undefined)
+                dataObject.includeMetadata = config.includeMetadata;
 
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
@@ -893,10 +901,39 @@ LABKEY.Query = new function()
         deleteRows : function(config)
         {
             if (arguments.length > 1)
-            {
                 config = configFromArgs(arguments);
-            }
             config.action = "deleteRows.api";
+            return sendJsonQueryRequest(config);
+        },
+
+        /**
+         * Delete all rows in a table.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {String} config.schemaName Name of a schema defined within the current container. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {String} config.queryName Name of a query table associated with the chosen schema. See also: <a class="link"
+         href="https://www.labkey.org/Documentation/wiki-page.view?name=findNames">
+         How To Find schemaName, queryName &amp; viewName</a>.
+         * @param {Function} config.success Function called when the "truncateTable" function executes successfully.
+         Will be called with arguments:
+         the parsed response data, the XMLHttpRequest object and (optionally) the "options" object.
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>errorInfo:</b> An object with a property called "exception," which contains the error message.</li>
+         * </ul>
+         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
+         *       generating a timeout error (defaults to 30000).
+         * @param {Object} [config.scope] A scope for the callback functions. Defaults to "this"
+         * @returns {Mixed} In client-side scripts, this method will return a transaction id
+         * for the async request that can be used to cancel the request
+         * (see <a href="http://dev.sencha.com/deploy/dev/docs/?class=Ext.data.Connection&member=abort" target="_blank">Ext.data.Connection.abort</a>).
+         * In server-side scripts, this method will return the JSON response object (first parameter of the success or failure callbacks.)
+         */
+        truncateTable : function(config)
+        {
+            config.action = "truncateTable.api";
             return sendJsonQueryRequest(config);
         },
 

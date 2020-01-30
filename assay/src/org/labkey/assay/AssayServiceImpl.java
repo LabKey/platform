@@ -22,6 +22,7 @@ import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
@@ -44,6 +45,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
@@ -52,6 +54,8 @@ import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
@@ -132,23 +136,25 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         {
             Domain domain = domainInfo.getKey();
             GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain);
-            if (provider.allowDefaultValues(domain))
+
+            // If assay is new default value options and default may not have been available in getDomainDescriptor, so try again with provider.
+            if (provider.allowDefaultValues(domain) && (gwtDomain.getDefaultValueOptions() == null || gwtDomain.getDefaultValueOptions().length == 0))
                 gwtDomain.setDefaultValueOptions(provider.getDefaultValueOptions(domain), provider.getDefaultValueDefault(domain));
-            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
+
             if (copy)
-            {
                 gwtDomain.setDomainId(0);
-            }
+
             gwtDomain.setAllowFileLinkProperties(provider.isFileLinkPropertyAllowed(template.getKey(), domain));
             ActionURL setDefaultValuesAction = new ActionURL(SetDefaultValuesAssayAction.class, getContainer());
             setDefaultValuesAction.addParameter("providerName", provider.getName());
             gwtDomain.setDefaultValuesURL(setDefaultValuesAction.getLocalURIString());
-            gwtDomains.add(gwtDomain);
             gwtDomain.setProvisioned(domain.isProvisioned());
-            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
+            gwtDomains.add(gwtDomain);
 
+            List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
+            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
 
             for (DomainProperty prop : properties)
             {
@@ -270,10 +276,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (autoCopyTarget != null)
             {
                 result.setAutoCopyTargetContainer(convertToGWTContainer(autoCopyTarget));
+                result.setAutoCopyTargetContainerId(autoCopyTarget.getId());
             }
         }
 
         result.setAllowTransformationScript((provider.createDataExchangeHandler() != null) && canUpdateTransformationScript());
+        result.setAllowBackgroundUpload(provider.supportsBackgroundUpload());
+        result.setAllowEditableResults(provider.supportsEditableResults());
+
+        // allow spaces in path for non-linux OS
+        result.setAllowSpacesInPath(!System.getProperty("os.name").toLowerCase().contains("linux"));
+
+        // if the provider supports QC and if there is a valid QC service registered
+        result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())
@@ -285,16 +300,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private GWTContainer convertToGWTContainer(Container c)
     {
-        GWTContainer parent;
-        if (c.isRoot())
-        {
-            parent = null;
-        }
-        else
-        {
-            parent = convertToGWTContainer(c.getParent());
-        }
-        return new GWTContainer(c.getId(), c.getRowId(), parent, c.getName());
+        return new GWTContainer(c.getId(), c.getRowId(), c.getPath(), c.getName());
     }
 
     private GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop, boolean copy)
@@ -350,7 +356,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     }
 
     @Override
-    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException
+    public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException, ValidationException
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
@@ -378,10 +384,22 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                         {
                             domain.setDomainURI(LsidUtils.resolveLsidFromTemplate(domain.getDomainURI(), context));
                             domain.setName(assay.getName() + " " + domain.getName());
-                            DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), getContainer());
-                            dd = dd.edit().setDescription(domain.getDescription()).build();
-                            OntologyManager.updateDomainDescriptor(dd);
-                            domainURIs.add(domain.getDomainURI());
+                            GWTDomain<GWTPropertyDescriptor> gwtDomain = DomainUtil.getDomainDescriptor(getUser(), domain.getDomainURI(), getContainer());
+                            if (gwtDomain == null)
+                            {
+                                Domain newDomain = DomainUtil.createDomain(PropertyService.get().getDomainKind(domain.getDomainURI()).getKindName(), domain, null, getContainer(), getUser(), domain.getName(), null);
+                                domainURIs.add(newDomain.getTypeURI());
+                            }
+                            else
+                            {
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, org.labkey.api.assay.AssayService.get().getProvider(assay.getProviderName()));
+                                if (domainErrors.hasErrors())
+                                {
+                                    throw domainErrors;
+                                }
+                                domainURIs.add(domain.getDomainURI());
+                            }
+
                         }
                         setPropertyDomainURIs(protocol, domainURIs);
                     }
@@ -470,16 +488,14 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setQCEnabled(protocol, assay.isQcEnabled());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-                    String autoCopyTargetContainerId = null;
-                    if (assay.getAutoCopyTargetContainer() != null)
+                    // get the autoCopyTargetContainer from either the id on the assay object entityId
+                    String autoCopyTargetContainerId = assay.getAutoCopyTargetContainer() != null ? assay.getAutoCopyTargetContainer().getEntityId() : assay.getAutoCopyTargetContainerId();
+                    // verify that the autoCopyTargetContainerId is valid
+                    if (autoCopyTargetContainerId != null && ContainerManager.getForId(autoCopyTargetContainerId) == null)
                     {
-                        Container container = ContainerManager.getForId(assay.getAutoCopyTargetContainer().getEntityId());
-                        if (container == null)
-                        {
-                            throw new AssayException("No such auto-copy target container: " + assay.getAutoCopyTargetContainer().getPath());
-                        }
-                        autoCopyTargetContainerId = container.getId();
+                        throw new AssayException("No such auto-copy target container id: " + autoCopyTargetContainerId);
                     }
+
                     if (autoCopyTargetContainerId != null)
                     {
                         props.put(AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, new ObjectProperty(protocol.getLSID(), protocol.getContainer(), AssayPublishService.AUTO_COPY_TARGET_PROPERTY_URI, autoCopyTargetContainerId));
@@ -495,18 +511,15 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        List<String> domainErrors = updateDomainDescriptor(domain, protocol, provider);
-                        for (String error : domainErrors)
-                        {
-                            errors.append(error).append("\n");
-                        }
+                        ValidationException domainErrors = updateDomainDescriptor(domain, protocol, provider);
 
                         // Need to bail out inside of the loop because some errors may have left the DB connection in
                         // an unusable state.
-                        if (errors.length() > 0)
-                            throw new AssayException(errors.toString());
+                        if (domainErrors.hasErrors())
+                            throw domainErrors;
                     }
 
+                    QueryService.get().updateLastModified();
                     transaction.commit();
                     AssayManager.get().clearProtocolCache();
                     return getAssayDefinition(assay.getProtocolId(), false);
@@ -514,11 +527,11 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                 catch (UnexpectedException e)
                 {
                     Throwable cause = e.getCause();
-                    throw new AssayException(cause.getMessage());
+                    throw new ValidationException(cause.getMessage());
                 }
                 catch (ExperimentException e)
                 {
-                    throw new AssayException(e.getMessage());
+                    throw new ValidationException(e.getMessage());
                 }
             }
             else
@@ -526,7 +539,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
+    private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
     {
         GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
@@ -537,7 +550,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             }
         }
         provider.changeDomain(getUser(), protocol, previous, domain);
-        return updateDomainDescriptor(previous, domain);
+        return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
     }
 
     @Override

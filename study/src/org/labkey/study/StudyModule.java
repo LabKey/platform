@@ -91,7 +91,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.ExperimentListenerImpl;
@@ -218,7 +218,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @Override
     public double getVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     @Override
@@ -345,9 +345,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
-        WikiService wikiService = WikiService.get();
-        if(null != wikiService)
-            wikiService.registerMacroProvider("study", new StudyMacroProvider());
+        WikiRenderingService wikiService = WikiRenderingService.get();
+        wikiService.registerMacroProvider("study", new StudyMacroProvider());
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         AuditLogService.get().registerAuditType(new AssayAuditProvider());
@@ -714,19 +713,19 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SpecimenImporter.TestCase.class);
-        set.add(StudyManager.DatasetImportTestCase.class);
-        set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
-        set.add(StudyImpl.ProtocolDocumentTestCase.class);
-        set.add(DatasetDefinition.TestCleanupOrphanedDatasetDomains.class);
-        set.add(StudyManager.VisitCreationTestCase.class);
-        set.add(TreatmentManager.TreatmentDataTestCase.class);
-        set.add(StudyManager.AssayScheduleTestCase.class);
-        set.add(VisitImpl.TestCase.class);
-        set.add(StudyModule.TestCase.class);
-
-        return set;
+        return Set.of(
+            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+            ParticipantGroupManager.ParticipantGroupTestCase.class,
+            SpecimenImporter.TestCase.class,
+            StudyImpl.ProtocolDocumentTestCase.class,
+            StudyManager.AssayScheduleTestCase.class,
+            StudyManager.DatasetImportTestCase.class,
+            StudyManager.StudySnapshotTestCase.class,
+            StudyManager.VisitCreationTestCase.class,
+            StudyModule.TestCase.class,
+            TreatmentManager.TreatmentDataTestCase.class,
+            VisitImpl.TestCase.class
+        );
     }
 
     @Override

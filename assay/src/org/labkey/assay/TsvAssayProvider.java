@@ -112,12 +112,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public TsvAssayProvider()
     {
-        this("GeneralAssayProtocol", "GeneralAssayRun", ModuleLoader.getInstance().getModule(assayModuleClass));
+        this("GeneralAssayProtocol", "GeneralAssayRun", "General" + RESULT_LSID_PREFIX_PART, ModuleLoader.getInstance().getModule(assayModuleClass));
     }
 
-    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, Module declaringModule)
+    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
         setMaxFileInputs(100);  // no specific requirement for this, can be changed easily
     }
 
@@ -168,8 +168,8 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + ExpProtocol.ASSAY_DOMAIN_DATA + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION, "Data Fields");
-        dataDomain.setDescription("The user is prompted to enter data values for row of data associated with a run, typically done as uploading a file.  This is part of the second step of the upload process.");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA), "Data Fields");
+        dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
 

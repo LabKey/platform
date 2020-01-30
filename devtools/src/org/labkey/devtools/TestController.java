@@ -32,10 +32,14 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
+import org.labkey.api.util.DOM;
+import static org.labkey.api.util.DOM.Attribute.*;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
@@ -49,9 +53,19 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.IFRAME;
+import static org.labkey.api.util.DOM.INPUT;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
@@ -781,14 +795,14 @@ public class TestController extends SpringActionController
                         .submit(form.isButtonsubmit())
                         .onClick(form.getOnclick());
 
-                String attr = "";
+                Map<String, String> map = new LinkedHashMap<>();
                 // test that the attribute looks like an attribute (e.g. no special chars)
-                if (form.getAttrkey1() != null && form.getAttrkey1().equals(PageFlowUtil.filter(form.getAttrkey1())))
-                    attr += form.getAttrkey1() + "='" + filter(form.getAttrvalue1()) + "'";
+                if (form.getAttrkey1() != null && form.getAttrkey1().equals(filter(form.getAttrkey1())))
+                    map.put(form.getAttrkey1(), filter(form.getAttrvalue1()));
                 if (form.getAttrkey2() != null && form.getAttrkey2().equals(filter(form.getAttrkey2())))
-                    attr += form.getAttrkey2() + "='" + filter(form.getAttrvalue2()) + "'";
-                if (!"".equals(attr))
-                    button.attributes(attr);
+                    map.put(form.getAttrkey2(), filter(form.getAttrvalue2()));
+                if (!map.isEmpty())
+                    button.attributes(map);
 
                 form.setBuiltButton(button);
             }
@@ -951,6 +965,45 @@ public class TestController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return navTrail(root, "DOM Test");
+        }
+    }
+
+
+    public static class URLForm
+    {
+        public URLHelper url = AppProps.getInstance().getHomePageActionURL();
+
+        public URLHelper getUrl()
+        {
+            return url;
+        }
+
+        public void setUrl(URLHelper url)
+        {
+            this.url = url;
+        }
+    }
+
+    // useful for stress testing and deadlock testing
+    @RequiresNoPermission
+    public class IFrameAction extends SimpleViewAction<URLForm>
+    {
+        @Override
+        public ModelAndView getView(URLForm form, BindException errors) throws Exception
+        {
+            var td = TD(at(style,"height:500px;width:500px;"),IFRAME(at(style,"height:100%;width:100%;",src,form.url)));
+            return new HtmlView(
+                DIV(
+                    DOM.LK.FORM(INPUT(at(type,"submit")),INPUT(at(type,"text",name,"url",value,form.url,style,"width:890px;"))),
+                    BR(),
+                    TABLE(at(DOM.Attribute.style,"width:1000px;height:1000px;"),
+                        TR(td,td),TR(td,td))));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 }

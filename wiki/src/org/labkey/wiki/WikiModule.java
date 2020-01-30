@@ -25,10 +25,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
-import org.labkey.api.module.FolderType;
-import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
@@ -43,13 +40,10 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.export.WikiImporterFactory;
 import org.labkey.wiki.export.WikiWriterFactory;
-import org.labkey.wiki.model.CollaborationFolderType;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiType;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.query.WikiSchema;
-import org.labkey.wiki.renderer.MarkdownServiceImpl;
-import org.labkey.wiki.renderer.RadeoxRenderer;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,7 +53,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
@@ -107,8 +100,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     public void doStartup(ModuleContext moduleContext)
     {
         ContainerManager.addContainerListener(new WikiContainerListener());
-        FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
-        WebdavService.get().addProvider(new WikiWebdavProvider());
+//        WebdavService.get().addProvider(new WikiWebdavProvider());
 
         // Ideally, this would be in afterUpdate(), but announcements runs the wiki sql scripts and is dependent on
         // wiki module, so no dice.
@@ -127,17 +119,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         WikiSchema.register(this);
         WikiController.registerAdminConsoleLinks();
-
-        try
-        {
-            MarkdownService.setInstance(new MarkdownServiceImpl());
-        }
-        catch (Exception e)
-        {
-            _log.error(e);
-        }
     }
 
+    // TODO should this move to CoreModule.populateLookAndFeelWithStartupProps()?
     private void populateHomeProjectWebpartsWithStartupProps()
     {
         String propName = "homeProjectInitWebparts";
@@ -161,17 +145,12 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
     private void bootstrap(ModuleContext moduleContext)
     {
-        Container supportContainer = ContainerManager.createDefaultSupportContainer();
+        Container supportContainer = ContainerManager.getDefaultSupportContainer();
         Container homeContainer = ContainerManager.getHomeContainer();
         Container sharedContainer = ContainerManager.getSharedContainer();
         String defaultPageName = "default";
 
-        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
-        homeContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-        supportContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-        sharedContainer.setFolderType(collaborationType, moduleContext.getUpgradeUser());
-
-        if(moduleContext.isNewInstall())
+        if (moduleContext.isNewInstall())
         {
             loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
             loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
@@ -186,18 +165,20 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         addWebPart(WEB_PART_NAME, sharedContainer, HttpView.BODY, 0, wikiProps);
 
         // if any modules have registered webparts to show on the home page, use those
-        // otherwise default to the initial set below
+        // otherwise, just add the default wiki webpart
         if (!Portal.getHomeProjectInitWebparts().isEmpty())
         {
+            // Clear existing webpart(s) first -- Core module added the Projects webpart
+            Portal.saveParts(homeContainer, Collections.emptyList());
             for (WebPartFactory webPartFactory : Portal.getHomeProjectInitWebparts())
                 addWebPart(webPartFactory.getName(), homeContainer, HttpView.BODY);
         }
         else
         {
+            // Note: Core module already added the Projects webpart. Now add a wiki webpart with the default content.
             wikiProps.put("webPartContainer", homeContainer.getId());
             wikiProps.put("name", defaultPageName);
             addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, 0, wikiProps);
-            addWebPart("Projects", homeContainer, HttpView.BODY, 1);
         }
     }
 
@@ -249,9 +230,9 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                WikiManager.TestCase.class,
-                RadeoxRenderer.RadeoxRenderTest.class));
+        return Set.of(
+            WikiManager.TestCase.class
+        );
     }
 
 

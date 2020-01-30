@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
@@ -211,64 +210,64 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 QueryView view = createQueryView(context, qsDef, errors);
 
-                if (view != null && !errors.hasErrors() && view.getTable() != null)
+                if (view != null && !errors.hasErrors())
                 {
                     StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, context.getUser(), false);
-                    TableInfo table = view.getTable();
-                    if (table instanceof ContainerFilterable && table.supportsContainerFilter())
-                        ((ContainerFilterable)table).setContainerFilter(studySchema.getDefaultContainerFilter());
-
-                    // TODO call updateSnapshot() instead of duplicating code
-                    Results results = getResults(context, view, qsDef, def);
-
-                    // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
-                    StringBuilder sb = new StringBuilder();
-
-                    Map<FieldKey,ColumnInfo> fieldMap;
-
-                    try (TSVGridWriter tsvWriter = new TSVGridWriter(results))
+                    view.setContainerFilter(studySchema.getDefaultContainerFilter());
+                    if (null != view.getTable())
                     {
-                        tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
-                        tsvWriter.write(sb);
+                        // TODO call updateSnapshot() instead of duplicating code
+                        Results results = getResults(context, view, qsDef, def);
 
-                        fieldMap = tsvWriter.getFieldMap();
-                    }
+                        // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
+                        StringBuilder sb = new StringBuilder();
 
-                    try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
-                    {
-                        DataIteratorContext dataIteratorContext = new DataIteratorContext();
-                        dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
-                        if (study.isDataspaceStudy())
+                        Map<FieldKey, ColumnInfo> fieldMap;
+
+                        try (TSVGridWriter tsvWriter = new TSVGridWriter(results))
                         {
-                            if (!fieldMap.containsKey(new FieldKey(null, "container")))
-                            {
-                                errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
-                                return;
-                            }
-                            Map<Enum,Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
-                            dataIteratorContext.setConfigParameters(config);
+                            tsvWriter.setApplyFormats(false);
+                            tsvWriter.setColumnHeaderType(ColumnHeaderType.DisplayFieldKey); // CONSIDER: Use FieldKey instead
+                            tsvWriter.write(sb);
+
+                            fieldMap = tsvWriter.getFieldMap();
                         }
-                        StudyManager.getInstance().importDatasetData(context.getUser(), def,
-                                new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
-                                dataIteratorContext,
-                                study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
-                                null, null);
 
-                        for (ValidationException e : dataIteratorContext.getErrors().getRowErrors())
-                            errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-
-                        if (!errors.hasErrors())
+                        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                         {
-                            // if the source of the snapshot (query definition) is in a different
-                            // container, make sure the participants and visits for the study for the
-                            // snapshot are updated
-                            if (!queryDef.getContainer().equals(qsDef.getContainer()))
+                            DataIteratorContext dataIteratorContext = new DataIteratorContext();
+                            dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+                            if (study.isDataspaceStudy())
                             {
-                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
-                                        Collections.singletonList(def));
+                                if (!fieldMap.containsKey(new FieldKey(null, "container")))
+                                {
+                                    errors.reject(SpringActionController.ERROR_MSG, "Dataspace snapshot query must have a column called 'container'");
+                                    return;
+                                }
+                                Map<Enum, Object> config = Collections.singletonMap(QueryUpdateService.ConfigParameters.TargetMultipleContainers, Boolean.TRUE);
+                                dataIteratorContext.setConfigParameters(config);
                             }
-                            transaction.commit();
+                            StudyManager.getInstance().importDatasetData(context.getUser(), def,
+                                    new TabLoader(sb, true), new CaseInsensitiveHashMap<>(),
+                                    dataIteratorContext,
+                                    study.isDataspaceStudy() ? DatasetDefinition.CheckForDuplicates.never : DatasetDefinition.CheckForDuplicates.sourceOnly,
+                                    null, null);
+
+                            for (ValidationException e : dataIteratorContext.getErrors().getRowErrors())
+                                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+
+                            if (!errors.hasErrors())
+                            {
+                                // if the source of the snapshot (query definition) is in a different
+                                // container, make sure the participants and visits for the study for the
+                                // snapshot are updated
+                                if (!queryDef.getContainer().equals(qsDef.getContainer()))
+                                {
+                                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
+                                            Collections.singletonList(def));
+                                }
+                                transaction.commit();
+                            }
                         }
                     }
                 }
@@ -295,7 +294,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         StudySnapshot snapshot = null;
 
         if (optionsId != null)
-            snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
+            snapshot = StudyManager.getInstance().getStudySnapshot(optionsId);
 
         PHI snapshotPhiLevel = (snapshot != null) ? snapshot.getSnapshotSettings().getPhiLevel() : PHI.NotPHI;
         Collection<ColumnInfo> columns = DatasetDataWriter.getColumnsToExport(tinfo, def, false, snapshotPhiLevel);
@@ -438,15 +437,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
+                        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, form.getViewContext().getUser(), false);
+                        view.setContainerFilter(studySchema.getDefaultContainerFilter());
                         if (view.getTable() == null)
                         {
                             errors.reject(SpringActionController.ERROR_MSG, "Unable to create a TableInfo for the source query, it may no longer exist.");
                             return null;
                         }
-                        StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, form.getViewContext().getUser(), false);
-                        TableInfo table = view.getTable();
-                        if (table instanceof ContainerFilterable && table.supportsContainerFilter())
-                            ((ContainerFilterable)table).setContainerFilter(studySchema.getDefaultContainerFilter());
 
                         Results results = getResults(form.getViewContext(), view, def, dsDef);
 
@@ -468,7 +465,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             int numRowsDeleted;
                             List<String> newRows;
 
-                            numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
+                            numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, null);
 
                             DataIteratorContext dataIteratorContext = new DataIteratorContext();
                             dataIteratorContext.setInsertOption(QueryUpdateService.InsertOption.IMPORT);

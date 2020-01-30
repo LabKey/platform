@@ -36,9 +36,15 @@ public class VisitTable extends BaseStudyTable
     public VisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoVisit(), null);
-
-        cf = schema.getDefaultContainerFilter();
         Study study = schema.getStudy();
+
+        // TODO This logic does not handle the case where this table is the target of a union table
+        // (e.g. SpecimenForeignKey) and one or more of the target studies are Dataspace studies.
+        // We would probably need to do so some sort of union table here to handle that complicated case correctly,
+        // and also return the container of the target study not the storage location of the visit (e.g. project)
+
+        if (null == cf)
+            cf = schema.getDefaultContainerFilter();
         if (null != study)
         {
             if (cf instanceof DataspaceContainerFilter)
@@ -55,9 +61,8 @@ public class VisitTable extends BaseStudyTable
                 if (visitStudy != null && visitStudy.getShareVisitDefinitions())
                     cf = new ContainerFilter.Project(schema.getUser());
             }
-
-            _setContainerFilter(cf);
         }
+        _setContainerFilter(cf);
 
         addColumn(new AliasedColumn(this, "RowId", _rootTable.getColumn("RowId")));
         addColumn(new AliasedColumn(this, "TypeCode", _rootTable.getColumn("TypeCode")));

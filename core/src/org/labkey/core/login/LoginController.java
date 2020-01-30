@@ -18,9 +18,11 @@ package org.labkey.core.login;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -29,10 +31,6 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.attachments.AttachmentCache;
-import org.labkey.api.attachments.AttachmentFile;
-import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -44,16 +42,34 @@ import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.security.*;
+import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationManager.AuthenticationStatus;
 import org.labkey.api.security.AuthenticationManager.LinkFactory;
 import org.labkey.api.security.AuthenticationManager.LoginReturnProperties;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
+import org.labkey.api.security.AuthenticationProvider;
+import org.labkey.api.security.CSRF;
+import org.labkey.api.security.Group;
+import org.labkey.api.security.IgnoresTermsOfUse;
+import org.labkey.api.security.LoginUrls;
+import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.RequiresLogin;
+import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.SecurityManager.UserManagementException;
+import org.labkey.api.security.SecurityMessage;
+import org.labkey.api.security.TokenAuthenticationManager;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
+import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
@@ -84,11 +100,11 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
+import org.labkey.core.CoreUpgradeCode;
 import org.labkey.core.admin.AdminController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -98,14 +114,11 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.labkey.api.security.AuthenticationManager.AuthenticationStatus.Success;
@@ -151,31 +164,37 @@ public class LoginController extends SpringActionController
             return root;
         }
 
+        @Override
         public ActionURL getConfigureURL()
         {
             return new ActionURL(ConfigureAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getConfigureDbLoginURL()
         {
             return LoginController.getConfigureDbLoginURL(false);
         }
 
+        @Override
         public ActionURL getEnableConfigParameterURL(String paramName)
         {
             return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", true);
         }
 
+        @Override
         public ActionURL getDisableConfigParameterURL(String paramName)
         {
             return new ActionURL(SetAuthenticationParameterAction.class, ContainerManager.getRoot()).addParameter("parameter", paramName).addParameter("enabled", false);
         }
 
+        @Override
         public ActionURL getInitialUserURL()
         {
             return new ActionURL(InitialUserAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters)
         {
             //FIX: 6021, use project container for this URL so it remains short but maintains the project look & feel settings 
@@ -189,6 +208,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message)
         {
             ActionURL url = new ActionURL(ChangePasswordAction.class, LookAndFeelProperties.getSettingsContainer(c));
@@ -202,11 +222,13 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getLoginURL()
         {
             return getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
         }
 
+        @Override
         public ActionURL getLoginURL(URLHelper returnURL)
         {
             // Use root as placeholder; extra path of returnURL determines the real login URL path
@@ -222,7 +244,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
-
+        @Override
         public ActionURL getLoginURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(LoginAction.class, c);
@@ -233,11 +255,13 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getLogoutURL(Container c)
         {
             return new ActionURL(LogoutAction.class, c);
         }
 
+        @Override
         public ActionURL getLogoutURL(Container c, URLHelper returnURL)
         {
             ActionURL url = getLogoutURL(c);
@@ -245,6 +269,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(StopImpersonatingAction.class, c);
@@ -255,6 +280,7 @@ public class LoginController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL)
         {
             ActionURL url = new ActionURL(AgreeToTermsAction.class, c);
@@ -283,16 +309,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public ActionURL getPickLogosURL(AuthenticationProvider provider)
-        {
-            return new ActionURL(PickAuthLogoAction.class, ContainerManager.getRoot()).addParameter("provider", provider.getName());
-        }
-
-        @Override
-        public ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL, boolean skipProfile)
+        public ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile)
         {
             ActionURL url = new ActionURL(SsoRedirectAction.class, ContainerManager.getRoot());
-            url.addParameter("provider", provider.getName());
+            url.addParameter("configuration", configuration.getRowId());
             if (skipProfile)
             {
                 url.addParameter("skipProfile", 1);
@@ -307,6 +327,13 @@ public class LoginController extends SpringActionController
                     url.replaceParameter("urlhash", "#" + fragment);
             }
             return url;
+        }
+
+        @Override
+        public ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors)
+        {
+            SSOAuthenticationConfiguration configuration = null != rowId ? AuthenticationManager.getSSOConfiguration(rowId) : null;
+            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(configuration, reshow, formatInTable), errors);
         }
     }
 
@@ -333,7 +360,7 @@ public class LoginController extends SpringActionController
 
         if (null == form.getEmail() || null == form.getPassword())
         {
-            errors.reject(ERROR_MSG, "Please sign in using your email address and password");
+            errors.reject(ERROR_MSG, "Please sign in using your email address and password.");
         }
         else
         {
@@ -397,12 +424,16 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
+            ModelAndView redirectView = redirectIfLoggedIn(form);
+            if (redirectView != null) return redirectView;
+
             if (!AuthenticationManager.isRegistrationEnabled())
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             PageConfig config = getPageConfig();
             config.setTitle("Register");
             config.setTemplate(PageConfig.Template.Dialog);
             config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
 
             JspView jsp = new JspView("/org/labkey/core/login/register.jsp");
 
@@ -425,13 +456,12 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {
-
         @Override
         public void validateForm(RegisterForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getEmail()) || StringUtils.isEmpty(form.getEmailConfirmation()))
             {
-                errors.reject(ERROR_REQUIRED, "You must verify your email address");
+                errors.reject(ERROR_REQUIRED, "You must verify your email address.");
             }
             else
             {
@@ -439,10 +469,10 @@ public class LoginController extends SpringActionController
                 {
                     ValidEmail email = new ValidEmail(form.getEmail());
                     if (!form.getEmail().equals(form.getEmailConfirmation()))
-                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match.  Please verify your email addresses below.");
+                        errors.reject(ERROR_MSG, "The email addresses you have entered do not match. Please verify your email addresses below.");
                     else if (UserManager.userExists(email))
                     {
-                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account.  If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>.  Otherwise, please contact your administrator.");
+                        errors.reject(ERROR_MSG, "The email address you have entered is already associated with an account. If you have forgotten your password, you can <a href=\"login-resetPassword.view?\">reset your password</a>. Otherwise, please contact your administrator.");
                     }
                 }
                 catch (InvalidEmailException e)
@@ -455,14 +485,14 @@ public class LoginController extends SpringActionController
             if (expectedKatpcha == null)
             {
                 logger.error("Captcha not initialized for self-registration attempt");
-                errors.reject(ERROR_MSG,"Captcha not initialized, please retry");
+                errors.reject(ERROR_MSG,"Captcha not initialized, please retry.");
             }
             else
             {
                 if (!expectedKatpcha.equalsIgnoreCase(StringUtils.trimToNull(form.getKaptchaText())))
                 {
                     logger.warn("Captcha text did not match for self-registration attempt for " + form.getEmail());
-                    errors.reject(ERROR_MSG,"Verification text does not match, please retry");
+                    errors.reject(ERROR_MSG,"Verification text does not match, please retry.");
                 }
             }
         }
@@ -475,7 +505,7 @@ public class LoginController extends SpringActionController
             if (!AuthenticationManager.isRegistrationEnabled())
             {
                 _log.warn("Attempt to register user using email " + form.getEmail() + " with registration not enabled");
-                throw new NotFoundException("Registration is not enabled");
+                throw new NotFoundException("Registration is not enabled.");
             }
 
             ValidEmail email = new ValidEmail(form.getEmail());
@@ -487,7 +517,7 @@ public class LoginController extends SpringActionController
             }
             catch (ConfigurationException e)
             {
-                errors.reject(ERROR_MSG, "There was a problem sending the registration email.  Please contact your administrator.");
+                errors.reject(ERROR_MSG, "There was a problem sending the registration email. Please contact your administrator.");
                 _log.error("Error adding self registered user", e);
             }
             response.put("success", !errors.hasErrors());
@@ -560,6 +590,26 @@ public class LoginController extends SpringActionController
         }
     }
 
+    /**
+     * If user is already logged in, then redirect immediately. This handles users clicking on stale login links
+     * (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
+     * @return a view that will redirect the user if they're already logged in, or null if they're not logged in already
+     */
+    @Nullable
+    private ModelAndView redirectIfLoggedIn(AbstractLoginForm form)
+    {
+        if (!getUser().isGuest())
+        {
+            URLHelper returnURL = form.getReturnURLHelper();
+
+            // Create LoginReturnProperties if we have a returnURL or skipProfile param
+            LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
+                    ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
+
+            return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
+        }
+        return null;
+    }
 
     @RequiresNoPermission
     @ActionNames("login, showLogin")
@@ -569,18 +619,8 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(LoginForm form, BindException errors)
         {
-            // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
-            // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
-            if (!getUser().isGuest())
-            {
-                URLHelper returnURL = form.getReturnURLHelper();
-
-                // Create LoginReturnProperties if we have a returnURL or skipProfile param
-                LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
-                        ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
-
-                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
-            }
+            ModelAndView redirectView = redirectIfLoggedIn(form);
+            if (redirectView != null) return redirectView;
 
             HttpServletRequest request = getViewContext().getRequest();
 
@@ -703,6 +743,61 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class GetPasswordRulesInfoAction extends ReadOnlyApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("full", DbLoginManager.getPasswordRule().getFullRuleHTML());
+            response.put("summary", DbLoginManager.getPasswordRule().getSummaryRuleHTML());
+            return response;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class ChangePasswordApiAction extends MutatingApiAction<SetPasswordForm>
+    {
+        protected ValidEmail _email = null;
+
+        @Override
+        public void validateForm(SetPasswordForm form, Errors errors)
+        {
+            ValidEmail email = form.getValidEmail(getViewContext(), errors);
+            if (!errors.hasErrors())
+            {
+                validateChangePassword(email, errors);
+                _email = email;
+            }
+        }
+
+        @Override
+        public Object execute(SetPasswordForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            HttpServletRequest request = getViewContext().getRequest();
+            String oldPassword = request.getParameter("oldPassword");
+
+            if (isOldPasswordMatch(oldPassword, form, errors))
+            {
+                AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), "Changed password.", false, errors);
+                if (result != null)
+                    response.put("returnUrl", result.getRedirectURL());
+            }
+
+            response.put("success", !errors.hasErrors());
+            if (errors.hasErrors())
+                response.put("message", errors.getMessage());
+            return response;
+        }
+    }
 
     @SuppressWarnings("unused")
     @RequiresNoPermission
@@ -757,7 +852,7 @@ public class LoginController extends SpringActionController
     {
         if (null == rawEmail)
         {
-            return Pair.of(false, "You must enter an email address");
+            return Pair.of(false, "You must enter an email address.");
         }
 
         ValidEmail email;
@@ -838,7 +933,7 @@ public class LoginController extends SpringActionController
     }
 
     // Generic message that we display to users for most success and failure situations, to avoid revealing whether an account exists or not, #33907
-    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server then you will receive an email message with password reset instructions.";
+    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server, you will receive an email message with password reset instructions.";
 
     private Pair<Boolean, String> resetPasswordResponse(User user, @Nullable String failureEmailMessage, @Nullable String failureLogMessage)
     {
@@ -1006,25 +1101,22 @@ public class LoginController extends SpringActionController
         }
         else if (isAdminOnlyMode())
         {
-            String content = "The site is currently undergoing maintenance.";
-            WikiService wikiService = WikiService.get();
-            if (null != wikiService)
-            {
-                content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
-            }
+            WikiRenderingService wikiService = WikiRenderingService.get();
+            String content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }
-        else if (request.getParameter("_skipAutoRedirect") == null && AuthenticationManager.hasSSOAuthenticationProvider())
+        else if (request.getParameter("_skipAutoRedirect") == null)
         {
             // see if any of the SSO auth providers are set to autoRedirect from the login action
-            SSOAuthenticationProvider ssoAuthenticationProvider = AuthenticationManager.getSSOAuthProviderAutoRedirect();
-            if (ssoAuthenticationProvider != null)
-                return HttpView.redirect(ssoAuthenticationProvider.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
+            SSOAuthenticationConfiguration ssoAuthenticationConfiguration = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+            if (ssoAuthenticationConfiguration != null)
+                return HttpView.redirect(ssoAuthenticationConfiguration.getLinkFactory().getURL(form.getReturnURLHelper(), form.getSkipProfile()));
         }
 
         page.setTemplate(PageConfig.Template.Dialog);
         page.setIncludeLoginLink(false);
+        page.setIncludeSearch(false);
         page.setTitle("Sign In");
 
         WebPartView view = getLoginView(errors);
@@ -1129,6 +1221,7 @@ public class LoginController extends SpringActionController
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle("Terms Of Use");
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             return view;
         }
@@ -1379,6 +1472,7 @@ public class LoginController extends SpringActionController
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
+
     }
 
 
@@ -1399,6 +1493,7 @@ public class LoginController extends SpringActionController
     public static class SsoRedirectForm extends AbstractLoginForm
     {
         private String _provider;
+        private int _configuration;
 
         public String getProvider()
         {
@@ -1409,6 +1504,17 @@ public class LoginController extends SpringActionController
         public void setProvider(String provider)
         {
             _provider = provider;
+        }
+
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
         }
     }
 
@@ -1424,12 +1530,6 @@ public class LoginController extends SpringActionController
             if (!getUser().isGuest())
                 return HttpView.redirect(form.getReturnActionURL(AppProps.getInstance().getHomePageActionURL()));
 
-            // Check for valid, active, SSO provider
-            SSOAuthenticationProvider provider = AuthenticationManager.getActiveSSOProvider(form.getProvider());
-
-            if (null == provider)
-                throw new NotFoundException("Authentication provider is not valid");
-
             // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
             if (null != returnURL || form.getSkipProfile())
@@ -1439,7 +1539,16 @@ public class LoginController extends SpringActionController
             }
 
             String csrf = CSRFUtil.getExpectedToken(getViewContext());
-            URLHelper url = provider.getURL(csrf);
+
+            final URLHelper url;
+            int rowId = form.getConfiguration();
+
+            SSOAuthenticationConfiguration configuration = AuthenticationManager.getActiveSSOConfiguration(rowId);
+
+            if (null == configuration)
+                throw new NotFoundException("Authentication configuration is not valid");
+
+            url = configuration.getUrl(csrf, getViewContext());
 
             return HttpView.redirect(url.getURIString());
         }
@@ -1461,6 +1570,7 @@ public class LoginController extends SpringActionController
         protected boolean _unrecoverableError = false;
         protected URLHelper _successUrl = null;
 
+        @Override
         public void validateCommand(SetPasswordForm form, Errors errors)
         {
             ValidEmail email = form.getValidEmail(getViewContext(), errors);
@@ -1490,6 +1600,7 @@ public class LoginController extends SpringActionController
             return null != _email ? _email.getEmailAddress() : form.getEmail();
         }
 
+        @Override
         public ModelAndView getView(SetPasswordForm form, boolean reshow, BindException errors) throws Exception
         {
             verifyBeforeView(form, reshow, errors);
@@ -1497,13 +1608,18 @@ public class LoginController extends SpringActionController
             NamedObjectList nonPasswordInputs = getNonPasswordInputs(form);
             NamedObjectList passwordInputs = getPasswordInputs(form);
             String buttonText = getButtonText();
-            SetPasswordBean bean = new SetPasswordBean(form, getEmailForForm(form), _unrecoverableError, getMessage(form), nonPasswordInputs, passwordInputs, getClass(), isCancellable(form), buttonText);
+            SetPasswordBean bean = new SetPasswordBean(
+                    form, getEmailForForm(form), _unrecoverableError, getMessage(form),
+                    nonPasswordInputs, passwordInputs, getClass(), isCancellable(form),
+                    buttonText, getTitle()
+            );
             HttpView view = new JspView<>("/org/labkey/core/login/setPassword.jsp", bean, errors);
 
             PageConfig page = getPageConfig();
             page.setTemplate(PageConfig.Template.Dialog);
             page.setTitle(getTitle());
             page.setIncludeLoginLink(false);
+            page.setIncludeSearch(false);
 
             // If we have a returnURL or skipProfile param then create and stash LoginReturnProperties
             URLHelper returnURL = form.getReturnURLHelper();
@@ -1523,6 +1639,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(SetPasswordForm form, BindException errors) throws Exception
         {
             AuthenticationResult result = attemptSetPassword(_email, form.getReturnURLHelper(), getAuditMessage(), clearVerification(), errors);
@@ -1534,11 +1651,13 @@ public class LoginController extends SpringActionController
             return true;
         }
 
+        @Override
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
             return _successUrl;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
@@ -1570,7 +1689,7 @@ public class LoginController extends SpringActionController
         protected abstract boolean isCancellable(SetPasswordForm form);
     }
 
-    public AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
+    private AuthenticationResult attemptSetPassword(ValidEmail email, URLHelper returnUrlHelper, String auditMessage, boolean clearVerification, BindException errors) throws InvalidEmailException
     {
         HttpServletRequest request = getViewContext().getRequest();
         String password = request.getParameter("password");
@@ -1644,7 +1763,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return "Your email address has been verified! Create an account password below.";
+            return "Your email address (" + form.getEmail() + ") has been verified! Create an account password below.";
         }
 
         @Override
@@ -1675,6 +1794,7 @@ public class LoginController extends SpringActionController
             return "Verified and chose a password.";
         }
 
+        @Override
         public URLHelper getSuccessURL(SetPasswordForm form)
         {
             return null;
@@ -1768,7 +1888,7 @@ public class LoginController extends SpringActionController
         protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
         {
             NamedObjectList list = new NamedObjectList();
-            list.put(new SimpleNamedObject("Email Address", "email", form.getEmail()));
+            list.put(new SimpleNamedObject("Email", "email", form.getEmail()));
 
             return list;
         }
@@ -1778,7 +1898,7 @@ public class LoginController extends SpringActionController
         {
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Password", PASSWORD1_TEXT_FIELD_NAME));
-            list.put(new SimpleNamedObject("Retype Password", PASSWORD2_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -1901,28 +2021,22 @@ public class LoginController extends SpringActionController
         @Override
         protected void verify(SetPasswordForm form, ValidEmail email, Errors errors)
         {
-            if (!SecurityManager.loginExists(email))
-            {
-                errors.reject("setPassword", "This email address is not associated with an account.");
-                _unrecoverableError = true;
-            }
-            else
-            {
-                _email = email;
-            }
+            _unrecoverableError = validateChangePassword(email, errors);
 
-            // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
-            if (AuthenticationManager.getSSOAuthProviderAutoRedirect() != null)
-            {
-                errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
-                _unrecoverableError = true;
-            }
+            if (!_unrecoverableError)
+                _email = email;
+        }
+
+        @Override
+        protected String getTitle()
+        {
+            return "Change Password";
         }
 
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return null != form.getMessage() ? form.getMessage() : "Choose a new password.";
+            return null != form.getMessage() ? form.getMessage() : null;
         }
 
         @Override
@@ -1938,7 +2052,7 @@ public class LoginController extends SpringActionController
             NamedObjectList list = new NamedObjectList();
             list.put(new SimpleNamedObject("Old Password", "oldPassword"));
             list.put(new SimpleNamedObject("New Password", PASSWORD1_TEXT_FIELD_NAME));
-            list.put(new SimpleNamedObject("Retype New Password", PASSWORD2_TEXT_FIELD_NAME));
+            list.put(new SimpleNamedObject("Confirm New Password", PASSWORD2_TEXT_FIELD_NAME));
 
             return list;
         }
@@ -1955,20 +2069,42 @@ public class LoginController extends SpringActionController
             // Verify the old password on post
             HttpServletRequest request = getViewContext().getRequest();
             String oldPassword = request.getParameter("oldPassword");
-
-            String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
-
-            if (!SecurityManager.matchPassword(oldPassword, hash))
-            {
-                errors.reject("password", "Incorrect old password.");
+            if (isOldPasswordMatch(oldPassword, form, errors))
+                return super.handlePost(form, errors);
+            else
                 return false;
-            }
-
-            return super.handlePost(form, errors);
         }
-
     }
 
+    private boolean isOldPasswordMatch(String oldPassword, SetPasswordForm form, BindException errors) throws InvalidEmailException
+    {
+        String hash = SecurityManager.getPasswordHash(new ValidEmail(form.getEmail()));
+        if (!SecurityManager.matchPassword(oldPassword, hash))
+        {
+            errors.reject("password", "Incorrect old password.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean validateChangePassword(ValidEmail email, Errors errors)
+    {
+        if (!SecurityManager.loginExists(email))
+        {
+            errors.reject("setPassword", "This email address is not associated with an account.");
+            return true;
+        }
+
+        // Issue 33321: this action does make sense if the server is set to auto redirect from the login page
+        if (AuthenticationManager.getAutoRedirectSSOAuthConfiguration() != null)
+        {
+            errors.reject("setPassword", "This action is invalid for a server set to use SSO auto redirect.");
+            return true;
+        }
+
+        return false;
+    }
 
     public static class SetPasswordBean
     {
@@ -1981,8 +2117,13 @@ public class LoginController extends SpringActionController
         public final Class action;
         public final boolean cancellable;
         public final String buttonText;
+        public final String title;
 
-        private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError, String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs, Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable, String buttonText)
+        // TODO switch to builder pattern
+        private SetPasswordBean(SetPasswordForm form, @Nullable String emailForForm, boolean unrecoverableError,
+                                String message, NamedObjectList nonPasswordInputs, NamedObjectList passwordInputs,
+                                Class<? extends AbstractSetPasswordAction> clazz, boolean cancellable,
+                                String buttonText, String title)
         {
             this.form = form;
             this.email = emailForForm;
@@ -1993,6 +2134,7 @@ public class LoginController extends SpringActionController
             this.action = clazz;
             this.cancellable = cancellable;
             this.buttonText = buttonText;
+            this.title = title;
         }
     }
 
@@ -2075,6 +2217,9 @@ public class LoginController extends SpringActionController
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            getPageConfig().setTitle("Reset Password");
+            getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setIncludeSearch(false);
             getPageConfig().setHelpTopic(new HelpTopic("passwordReset"));
             getPageConfig().setNoIndex();
 
@@ -2243,11 +2388,13 @@ public class LoginController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class ConfigureAction extends SimpleViewAction<ReturnUrlForm>
     {
+        @Override
         public ModelAndView getView(ReturnUrlForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/core/login/configuration.jsp", form);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
@@ -2303,6 +2450,7 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @Deprecated
     @RequiresPermission(AdminOperationsPermission.class)
     public class SetProviderEnabledAction extends FormHandlerAction<ProviderForm>
     {
@@ -2326,8 +2474,10 @@ public class LoginController extends SpringActionController
         {
             return getUrls().getConfigureURL();
         }
+
     }
 
+    @Deprecated
     public static class ProviderForm
     {
         private String _provider;
@@ -2356,6 +2506,43 @@ public class LoginController extends SpringActionController
         }
     }
 
+    public static class DeleteConfigurationForm
+    {
+        private int _configuration;
+
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class DeleteConfigurationAction extends FormHandlerAction<DeleteConfigurationForm>
+    {
+        @Override
+        public void validateCommand(DeleteConfigurationForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(DeleteConfigurationForm form, BindException errors) throws Exception
+        {
+            AuthenticationManager.deleteConfiguration(form.getConfiguration());
+            return true;
+        }
+
+        @Override
+        public ActionURL getSuccessURL(DeleteConfigurationForm form)
+        {
+            return getUrls().getConfigureURL();
+        }
+
+    }
 
     public static ActionURL getConfigureDbLoginURL(boolean reshow)
     {
@@ -2462,154 +2649,80 @@ public class LoginController extends SpringActionController
     }
 
 
-    @AdminConsoleAction(AdminOperationsPermission.class)
-    public class PickAuthLogoAction extends FormViewAction<AuthLogoForm>
-    {
-        private SSOAuthenticationProvider _provider;
-
-        public void validateCommand(AuthLogoForm form, Errors errors)
-        {
-        }
-
-        public ModelAndView getView(AuthLogoForm form, boolean reshow, BindException errors)
-        {
-            _provider = AuthenticationManager.getSSOProvider(form.getProvider());
-
-            if (null == _provider)
-                throw new NotFoundException("Authentication provider is not valid");
-
-            return new JspView<>("/org/labkey/core/login/pickAuthLogo.jsp", new AuthLogoBean(_provider, reshow), errors);
-        }
-
-        public boolean handlePost(AuthLogoForm form, BindException errors)
-        {
-            Map<String, MultipartFile> fileMap = getFileMap();
-
-            boolean changedLogos = deleteLogos(form);
-
-            try
-            {
-                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.HEADER_LOGO_PREFIX);
-                changedLogos |= handleLogo(form.getProvider(), fileMap, AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
-            }
-            catch (Exception e)
-            {
-                errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                return false;
-            }
-
-            // If user changed one or both logos then...
-            if (changedLogos)
-            {
-                // Clear the image cache so the web server sends the new logo
-                AttachmentCache.clearAuthLogoCache();
-                // Bump the look & feel revision to force browsers to retrieve new logo
-                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-            }
-
-            return false;  // Always reshow the page so user can view updates.  After post, second button will change to "Done".
-        }
-
-        // Returns true if a new logo is saved
-        private boolean handleLogo(String providerName, Map<String, MultipartFile> fileMap, String prefix) throws IOException, ServletException
-        {
-            MultipartFile file = fileMap.get(prefix + "file");
-
-            if (null == file || file.isEmpty())
-                return false;
-
-            if (!file.getContentType().startsWith("image/"))
-                throw new ServletException(file.getOriginalFilename() + " does not appear to be an image file");
-
-            AttachmentFile aFile = new SpringAttachmentFile(file, prefix + providerName);
-            AttachmentService.get().addAttachments(AuthenticationLogoAttachmentParent.get(), Collections.singletonList(aFile), getUser());
-
-            return true;
-        }
-
-        // Returns true if a logo is deleted
-        public boolean deleteLogos(AuthLogoForm form)
-        {
-            String[] deletedLogos = form.getDeletedLogos();
-
-            if (null == deletedLogos)
-                return false;
-
-            for (String logoName : deletedLogos)
-                AttachmentService.get().deleteAttachment(AuthenticationLogoAttachmentParent.get(), logoName, getUser());
-
-            return true;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            getUrls().appendAuthenticationNavTrail(root).addChild("Pick logos for " + _provider.getName());
-            return root;
-        }
-
-        public ActionURL getSuccessURL(AuthLogoForm form)
-        {
-            return null;  // Should never get here
-        }
-    }
-
-
     public static class AuthLogoBean
     {
-        public final SSOAuthenticationProvider provider;
+        public final @Nullable SSOAuthenticationConfiguration configuration;
         public final String headerLogo;
         public final String loginPageLogo;
         public final boolean reshow;
+        public final boolean formatInTable;
 
-        private AuthLogoBean(SSOAuthenticationProvider provider, boolean reshow)
+        private AuthLogoBean(@Nullable SSOAuthenticationConfiguration configuration, boolean reshow, boolean formatInTable)
         {
-            this.provider = provider;
+            this.configuration = configuration;
             this.reshow = reshow;
-            headerLogo = getAuthLogoHtml(AuthenticationManager.HEADER_LOGO_PREFIX);
-            loginPageLogo = getAuthLogoHtml(AuthenticationManager.LOGIN_PAGE_LOGO_PREFIX);
+            this.formatInTable = formatInTable;
+            headerLogo = getAuthLogoHtml(AuthLogoType.HEADER);
+            loginPageLogo = getAuthLogoHtml(AuthLogoType.LOGIN_PAGE);
         }
 
-        public String getAuthLogoHtml(String prefix)
+        public String getAuthLogoHtml(AuthLogoType logoType)
         {
-            LinkFactory factory = provider.getLinkFactory();
-            String logo = factory.getImg(prefix);
-
-            if (null == logo)
+            if (null != configuration)
             {
-                return "<td colspan=\"2\"><input name=\"" + prefix + "file\" type=\"file\" size=\"60\"></td>";
+                LinkFactory factory = configuration.getLinkFactory();
+                String logo = factory.getImg(logoType);
+
+                if (null != logo)
+                {
+                    StringBuilder html = new StringBuilder();
+
+                    String id1 = logoType.getFileName() + "d1";
+                    String id2 = logoType.getFileName() + "d2";
+
+                    html.append("<div id=\"").append(id1).append("\">");
+                    html.append(logo);
+                    html.append("</div>\n<div id=\"").append(id2).append("\">");
+                    html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + logoType.getFileName() + "');").toString()); // RE_CHECK
+                    html.append("</div>\n");
+
+                    return html.toString();
+                }
             }
-            else
-            {
-                StringBuilder html = new StringBuilder();
 
-                String id1 = prefix + "td1";
-                String id2 = prefix + "td2";
-
-                html.append("<td id=\"").append(id1).append("\">");
-                html.append(logo);
-                html.append("</td><td id=\"").append(id2).append("\" width=\"100%\">");
-                html.append(PageFlowUtil.link("delete").onClick("deleteLogo('" + prefix + "');").toString()); // RE_CHECK
-                html.append("</td>\n");
-
-                return html.toString();
-            }
+            return "<input name=\"" + logoType.getFileName() + "\" type=\"file\" size=\"60\">";
         }
     }
 
-
-    public static class AuthLogoForm extends ProviderForm
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class MigrateAuthenticationConfigurationsAction extends ConfirmAction
     {
-        private String[] _deletedLogos;
-
-        public String[] getDeletedLogos()
+        @Override
+        public ModelAndView getConfirmView(Object o, BindException errors)
         {
-            return _deletedLogos;
+            if (getPageConfig().getTitle() == null)
+                setTitle("Migrate Authentication Configurations");
+
+            return new HtmlView(HtmlString.of("Are you sure you want to re-run the authentication configuration migration? This may cause duplicate configurations (which can be deleted)."));
         }
 
-        @SuppressWarnings("unused")
-        public void setDeletedLogos(String[] deletedLogos)
+        @Override
+        public void validateCommand(Object o, Errors errors)
         {
-            _deletedLogos = deletedLogos;
+        }
+
+        @Override
+        public boolean handlePost(Object o, BindException errors) throws Exception
+        {
+            new CoreUpgradeCode().migrateAuthenticationConfigurations(getUser());
+
+            return true;
+        }
+
+        @Override
+        public @NotNull URLHelper getSuccessURL(Object o)
+        {
+            return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureURL();
         }
     }
 
@@ -2626,14 +2739,14 @@ public class LoginController extends SpringActionController
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
                 controller.new SetAuthenticationParameterAction(),
-                controller.new SetProviderEnabledAction()
+                controller.new SetProviderEnabledAction(),
+                controller.new MigrateAuthenticationConfigurationsAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
                 controller.new ConfigureAction(),
-                controller.new ConfigureDbLoginAction(),
-                controller.new PickAuthLogoAction()
+                controller.new ConfigureDbLoginAction()
             );
         }
     }

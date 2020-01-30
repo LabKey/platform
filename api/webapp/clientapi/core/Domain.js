@@ -269,17 +269,20 @@ LABKEY.Domain.create({
 });
          </pre>
          */
-
         listDomains : function(config)
         {
+            var params = {
+                includeFields: config.includeFields,
+                includeProjectAndShared: config.includeProjectAndShared
+            };
+
+            if (config.domainKinds)
+                params.domainKinds = config.domainKinds;
+
             listDomains(
                     config.success,
                     config.failure,
-                    {
-                        includeFields: config.includeFields,
-                        includeProjectAndShared: config.includeProjectAndShared,
-                        domainKinds: config.domainKinds
-                    },
+                    params,
                     config.containerPath);
         },
 
@@ -296,6 +299,8 @@ LABKEY.Domain.create({
          *        SchemaName and queryName will be ignored if this value is not undefined or null.
          * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
          *       If not supplied, the current container path will be used.
+         * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
+         *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
          */
         save : function(config)
         {
@@ -307,7 +312,8 @@ LABKEY.Domain.create({
                     domainDesign: arguments[2],
                     schemaName: arguments[3],
                     queryName: arguments[4],
-                    containerPath: arguments[5]
+                    containerPath: arguments[5],
+                    includeWarnings: arguments[6]
                 };
             }
 
@@ -315,7 +321,7 @@ LABKEY.Domain.create({
                 config.success,
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
-                    domainId: config.domainId},
+                    domainId: config.domainId, includeWarnings: config.includeWarnings},
                 config.containerPath);
         },
 
@@ -338,6 +344,31 @@ LABKEY.Domain.create({
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName},
                 config.containerPath);
+        },
+
+        /**
+         * Get property descriptor information.
+         * @param {Object} config An object which contains the following configuration properties.
+         * @param {Function} [config.success] Success callback is a function that is called with an array of property information in the same format as 'fields' within {@link LABKEY.Domain.DomainDesign}.
+         * @param {Function} [config.failure] Failure callback.
+         * @param {Array} config.propertyIds Array of integer propertyIds.
+         * @param {Array} config.propertyURIs Array of string propertyURIs.
+         * @param {String} config.containerPath Container path of the property definitions.
+         */
+        getProperties : function (config)
+        {
+            var parameters = {};
+            if (config.propertyIds)
+                parameters.propertyIds = config.propertyIds;
+
+            if (config.propertyURIs)
+                parameters.propertyURIs = config.propertyURIs;
+
+            LABKEY.Ajax.request({
+                url: LABKEY.ActionURL.buildURL("property", "getProperties.api", config.containerPath, parameters),
+                success: LABKEY.Utils.getCallbackWrapper(config.success),
+                failure: LABKEY.Utils.getCallbackWrapper(config.failure, this, true)
+            });
         }
     };
 
@@ -401,5 +432,15 @@ LABKEY.Domain.create({
     *      </ul>
     * @type Object
 */
+
+/**
+ * @name indices
+ * @description An array of objects that each designate an index upon the domain.  Each object has the following properties:
+ *      <ul>
+ *          <li><b>columnNames:</b> An array of strings, where each string is the name of a domain field that will be an index. (array)</li>
+ *          <li><b>unique:</b> Indicates whether the domain field is allowed to contain any duplicate values. (boolean)</li>
+ *      </ul>
+ * @type Object
+ */
 
 /**#@-*/

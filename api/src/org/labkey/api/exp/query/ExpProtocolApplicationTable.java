@@ -21,6 +21,8 @@ import org.labkey.api.exp.api.ExpSampleSet;
 
 public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplicationTable.Column>
 {
+    String PROTOCOL_APPLICATION_PATTERN_PREFIX = "urn:lsid:%:ProtocolApplication.%:";
+
     enum Column
     {
         RowId,

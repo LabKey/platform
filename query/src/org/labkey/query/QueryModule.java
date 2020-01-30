@@ -149,7 +149,7 @@ public class QueryModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     @Override
@@ -217,6 +217,9 @@ public class QueryModule extends DefaultModule
 
         AdminConsole.addExperimentalFeatureFlag(QueryView.EXPERIMENTAL_GENERIC_DETAILS_URL, "Generic [details] link in grids/queries",
                 "This feature will turn on generating a generic [details] URL link in most grids.", false);
+        AdminConsole.addExperimentalFeatureFlag(QueryServiceImpl.EXPERIMENTAL_LAST_MODIFIED, "Include Last-Modified header on query metadata requests",
+                "For schema, query, and view metadata requests include a Last-Modified header such that the browser can cache the response. " +
+                "The metadata is invalidated when performing actions such as creating a new List or modifying the columns on a custom view", false);
     }
 
 
@@ -284,6 +287,7 @@ public class QueryModule extends DefaultModule
         // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
 
         CacheManager.addListener(new ServerManager.CacheListener());
+        CacheManager.addListener(new QueryServiceImpl.CacheListener());
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) -> {
             if (container.hasPermission(user, ReadPermission.class))

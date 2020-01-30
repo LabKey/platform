@@ -647,7 +647,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
 
         if (attachments.size() > 0)
         {
-            sb.append("<table>");
+            sb.append("<table class=\"issues-attachments\">");
             sb.append("<tr><td>&nbsp;</td></tr>");
 
             for (Attachment a : attachments)

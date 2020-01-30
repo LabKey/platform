@@ -25,13 +25,13 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -59,6 +59,8 @@ public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
 
+    public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+    public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
 
     public enum NestedSchemas
     {
@@ -365,13 +367,13 @@ public class ExpSchema extends AbstractExpSchema
     }
 
 
-    public ForeignKey getProtocolApplicationForeignKey()
+    public ForeignKey getProtocolApplicationForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.ProtocolApplications.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.ProtocolApplications);
+                return getTable(TableType.ProtocolApplications, cf);
             }
         };
     }
@@ -382,37 +384,27 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString(), cf);
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return protocolTable;
+                return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
             }
         };
     }
 
-    public ForeignKey getMaterialProtocolInputForeignKey()
+    public ForeignKey getMaterialProtocolInputForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.MaterialProtocolInputs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.MaterialProtocolInputs, cf);
             }
         };
     }
 
-    public ForeignKey getDataProtocolInputForeignKey()
+    public ForeignKey getDataProtocolInputForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.DataProtocolInputs.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.DataProtocolInputs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.DataProtocolInputs, cf);
             }
@@ -423,9 +415,13 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey("RowId", "RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return PipelineService.get().getJobsTable(getUser(), getContainer());
+                QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
+                if (null == pipeline)
+                    return null;
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -435,34 +431,53 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    @Deprecated
     public ForeignKey getRunIdForeignKey()
+    {
+        return getRunIdForeignKey(null);
+    }
+
+    public ForeignKey getRunIdForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.Runs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.Runs, cf);
             }
         };
     }
 
-    /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
+    @Deprecated
     public ForeignKey getRunGroupIdForeignKey(final boolean includeBatches)
+    {
+        return getRunGroupIdForeignKey(null, includeBatches);
+    }
+
+    /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
+    public ForeignKey getRunGroupIdForeignKey(ContainerFilter cf, final boolean includeBatches)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.RunGroups.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return getLookupTableInfo(null);
+                ContainerFilter cf = getLookupContainerFilter();
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey(ExpSchema.this.getContainer());
+                // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
             }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
             {
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
-                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
+                return Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+            }
+
+            private TableInfo createLookupTableInfo()
+            {
+                // CONSIDER: I wonder if this shouldn't be using UnionContainerFilter(cf, CurrentPlusProjectAndShared)
+                ExpExperimentTable result = (ExpExperimentTable) getTable(TableType.RunGroups.name(), getLookupContainerFilter(), true, true);
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);
@@ -473,13 +488,25 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    @Deprecated
     public ForeignKey getDataIdForeignKey()
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
         {
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.Data);
+                return getTable(TableType.Data, null);
+            }
+        };
+    }
+
+    public ForeignKey getDataIdForeignKey(ContainerFilter cf)
+    {
+        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
+        {
+            public TableInfo getLookupTableInfo()
+            {
+                return getTable(TableType.Data, cf);
             }
         };
     }
@@ -488,7 +515,7 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
     {
         if (targetSampleSet == null)
         {
@@ -496,12 +523,9 @@ public class ExpSchema extends AbstractExpSchema
             {
                 public TableInfo getLookupTableInfo()
                 {
-                    // UNDONE ContainerFilter
-//                    ContainerFilterable t = (ContainerFilterable)table;
-//                    // Merge the special container filter set above with whatever else might have been requested in the parent table's
-//                    t.setContainerFilter(new UnionContainerFilter(t.getContainerFilter(), parent.getParentTable().getContainerFilter()));
-
                     ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser()));
+                    if (null != cfParent)
+                        cf = new UnionContainerFilter(cf, cfParent);
                     ExpTable result = getTable(TableType.Materials, cf);
                     return result;
                 }

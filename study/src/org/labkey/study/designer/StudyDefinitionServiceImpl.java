@@ -27,10 +27,10 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -48,8 +48,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.xml.StudyDesignDocument;
 
-import javax.servlet.ServletException;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 
@@ -181,7 +179,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             if (dsId == -1)
             {
                 DatasetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
-                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false);
+                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
                 if (datasetDefinition != null)
                 {
                     datasetDefinition.provisionTable();

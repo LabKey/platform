@@ -20,12 +20,15 @@ import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
-/*
-* User: adam
-* Date: Jan 21, 2011
-* Time: 10:38:59 PM
-*/
+/**
+ * User: adam
+ * Date: Jan 21, 2011
+ */
 public interface SamplesUrls extends UrlProvider
 {
     ActionURL getSamplesURL(Container c);
+
+    ActionURL getManageRequestStatusURL(Container c, int requestId);
+
+    ActionURL getRequestDetailsURL(Container c, int requestId);
 }

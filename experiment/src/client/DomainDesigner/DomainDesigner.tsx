@@ -16,10 +16,12 @@
 
 import {List} from "immutable";
 import * as React from 'react'
-import {Button} from "react-bootstrap";
+import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
+
+import "@labkey/components/dist/components.css"
+import "./domainDesigner.scss";
 
 interface IAppState {
     dirty: boolean
@@ -31,6 +33,9 @@ interface IAppState {
     schemaName: string
     showConfirm: boolean
     submitting: boolean
+    includeWarnings: boolean
+    showWarnings: boolean
+    badDomain : DomainDesign
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
@@ -40,12 +45,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
-        let messages = List<IBannerMessage>().asMutable();
+        let messages = List<IBannerMessage>();
         if ((!schemaName || !queryName) && !domainId) {
             let msg =  'Missing required parameter: domainId or schemaName and queryName.';
             let msgType = 'danger';
             let bannerMsg ={message : msg, messageType : msgType};
-            messages.push(bannerMsg);
+            messages = messages.push(bannerMsg);
         }
 
         this.state = {
@@ -54,9 +59,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             domainId,
             returnUrl,
             submitting: false,
-            messages: messages.asImmutable(),
+            messages,
             showConfirm: false,
-            dirty: false
+            dirty: false,
+            includeWarnings: true
         };
     }
 
@@ -90,7 +96,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     submitHandler = (navigate : boolean) => {
-        const { domain, submitting } = this.state;
+        const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
             return;
@@ -100,7 +106,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: true
         });
 
-        saveDomain(domain)
+        saveDomain(domain, undefined, undefined, undefined,  includeWarnings)
             .then((savedDomain) => {
 
                 this.setState(() => ({
@@ -110,38 +116,52 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }));
 
                 this.showMessage("Save Successful", 'success', 0);
-                window.scrollTo(0, 0);
 
                 if (navigate) {
                     this.navigate();
                 }
             })
             .catch((badDomain) => {
-
-                let bannerMsgs = getBannerMessages(badDomain);
-
-                window.scrollTo(0, 0);
-
-                this.setState(() => ({
-                    domain: badDomain,
-                    submitting: false,
-                    messages: bannerMsgs
-                }));
-            })
+                // if there are only warnings then show ConfirmModel
+                if (badDomain.domainException.severity === "Warning") {
+                    this.setState(() => ({
+                        showWarnings : true,
+                        badDomain: badDomain
+                    }))
+                }
+                else {
+                    this.setState(() => ({
+                        domain: badDomain,
+                        submitting: false
+                    }));
+                }
+            });
     };
 
     submitAndNavigate = () => {
         this.submitHandler(true);
-    }
+    };
+
+    confirmWarningAndNavigate = () => {
+        this.setState(() => ({
+            includeWarnings : false,
+            showWarnings : false,
+            submitting : false
+        }), () => {this.submitHandler(true)});
+    };
+
+    onSubmitWarningsCancel = () => {
+        this.setState(() => ({
+            showWarnings : false,
+            submitting : false
+        }))
+    };
 
     onChangeHandler = (newDomain, dirty) => {
 
-        let bannerMsgs = getBannerMessages(newDomain);
-
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
-            messages: bannerMsgs
+            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
     };
 
@@ -172,13 +192,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            // TODO if we don't have a returnUrl, should we just do a goBack()?
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin');
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
         });
-    };
-
-    hideConfirm = () => {
-        this.setState(() => ({showConfirm: false}));
     };
 
     renderNavigateConfirm() {
@@ -195,27 +210,54 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 
-    renderButtons() {
-        const { submitting, dirty } = this.state;
+    renderWarningConfirm() {
+        const { badDomain } = this.state;
+        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+
+        let errors = badDomain.domainException.errors;
+        let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
+        let warnings = errors.map((error) => {
+            return <div> {error.message} </div>
+        });
+        let suggestion = <p> {"See the following documentation page for further details: "}<br/>
+            <a href={rollupURI}> {"Specimen properties and rollup rules"}</a>
+                        </p>;
 
         return (
-            <WizardNavButtons
-                cancel={this.onCancelBtnHandler}
-                containerClassName=""
-                includeNext={false}>
-                <Button
-                    type='submit'
-                    bsClass='btn btn-success'
-                    onClick={() => this.submitHandler(true)}
-                    disabled={submitting || !dirty}>
-                    Save
-                </Button>
-            </WizardNavButtons>
+            <ConfirmModal
+                title='Save without resolving issues?'
+                msg={<>{question}{warnings}{suggestion}</>}
+                confirmVariant='success'
+                onConfirm={this.confirmWarningAndNavigate}
+                onCancel={this.onSubmitWarningsCancel}
+                cancelButtonText='No, edit and resolve issues'
+                confirmButtonText='Yes, save changes'
+            />
+        )
+    }
+
+    renderButtons() {
+        const { submitting } = this.state;
+
+        return (
+                <div className={'domain-form-panel domain-designer-buttons'}>
+                    <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
+                    <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+                </div>
+        )
+    }
+
+    renderInstructionsPanel() {
+        return (
+            <Panel>
+                <Panel.Heading>Instructions</Panel.Heading>
+                <Panel.Body>{this.state.domain.instructions}</Panel.Body>
+            </Panel>
         )
     }
 
     render() {
-        const { domain, messages, showConfirm } = this.state;
+        const { domain, messages, showConfirm, showWarnings } = this.state;
         const isLoading = domain === undefined && messages === undefined;
 
         if (isLoading) {
@@ -225,14 +267,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
-                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
-                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
-                }
+                { showWarnings && this.renderWarningConfirm() }
+                { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
+                        headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
+                        useTheme={true}
                     />
+                }
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
                 }
                 { domain && this.renderButtons() }
             </>

@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.Constants;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -55,7 +56,6 @@ import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.module.ModuleUpgrader.Execution;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -140,7 +140,6 @@ public class ModuleLoader implements Filter
     private static final Object UPGRADE_LOCK = new Object();
     private static final Object STARTUP_LOCK = new Object();
 
-    public static final double EARLIEST_UPGRADE_VERSION = 16.3;
     public static final String MODULE_NAME_REGEX = "\\w+";
     public static final String PRODUCTION_BUILD_TYPE = "Production";
     public static final String LABKEY_DATA_SOURCE = "labkeyDataSource";
@@ -543,11 +542,6 @@ public class ModuleLoader implements Filter
         // All modules are initialized (controllers are registered), so initialize the controller-related maps
         ViewServlet.initialize();
         ModuleLoader.getInstance().initControllerToModule();
-
-        // Doesn't really belong here, but needs to happen after all modules' init() but before first request. CONSIDER: Split
-        // AuthenticationManager into a couple singletons, AuthenticationProviderRegistry and AuthenticationManager. Modules
-        // could then register their providers with the registry and first reference to the manager would trigger initialize().
-        AuthenticationManager.initialize();
     }
 
     // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
@@ -1113,8 +1107,8 @@ public class ModuleLoader implements Filter
         }
         else
         {
-            if (coreContext.getInstalledVersion() < EARLIEST_UPGRADE_VERSION)
-                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + EARLIEST_UPGRADE_VERSION + " or greater.");
+            if (coreContext.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
+                throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + Constants.getEarliestUpgradeVersion() + " or greater.");
 
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
         }
@@ -1998,22 +1992,29 @@ public class ModuleLoader implements Filter
 
     /**
      * Returns the config properties for the specified scope. If no scope is
-     * specified then all properties are returned.
+     * specified then all properties are returned. If the server is bootstrapping then
+     * properties with both the bootstrap and startup modifiers are returned otherwise only
+     * startup properties are returned.
      */
     @NotNull
     public Collection<ConfigProperty> getConfigProperties(@Nullable String scope)
     {
+        Collection<ConfigProperty> props = Collections.emptyList();
         if (!_configPropertyMap.isEmpty())
         {
             if (scope != null)
             {
                 if (_configPropertyMap.containsKey(scope))
-                    return _configPropertyMap.get(scope);
+                    props = _configPropertyMap.get(scope);
             }
             else
-                return _configPropertyMap.values();
+                props = _configPropertyMap.values();
         }
-        return Collections.emptyList();
+
+        // filter out bootstrap scoped properties in the non-bootstrap startup case
+        return props.stream()
+                .filter(prop -> prop.getModifier() != ConfigProperty.modifier.bootstrap || ModuleLoader.getInstance().isNewInstall())
+                .collect(Collectors.toList());
     }
 
 

@@ -23,6 +23,7 @@ import java.util.List;
 */
 public class PathInLine extends PathToCommandArgs
 {
+    @Override
     public List<String> toArgs(String[] paths)
     {
         List<String> args = new ArrayList<>();

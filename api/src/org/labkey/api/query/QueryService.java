@@ -16,8 +16,10 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.collections4.SetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -61,6 +63,8 @@ import java.util.Set;
 
 public interface QueryService
 {
+    static final String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
 
@@ -112,6 +116,12 @@ public interface QueryService
     DetailsURL urlDefault(Container container, QueryAction action, TableInfo table);
 
     // TODO: These probably need to change to support data source qualified schema names
+
+    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
+    long metadataLastModified();
+
+    /** Invalidate the value used for the "Last-Modified" time stamp. */
+    void updateLastModified();
 
     /** Get schema for SchemaKey encoded path. */
     UserSchema getUserSchema(User user, Container container, String schemaPath);
@@ -431,6 +441,7 @@ public interface QueryService
     String warmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
     String cubeDataChangedAndRewarmCube(User user, Set<Container> containers, String schemaName, String configId, String cubeName);
 
+
     void saveNamedSet(String setName, List<String> setList);
     void deleteNamedSet(String setName);
     List<String> getNamedSet(String setName);
@@ -448,4 +459,89 @@ public interface QueryService
     void registerPassthroughMethod(String name, String declaringSchemaName, JdbcType returnType, int minArguments, int maxArguments, SqlDialect dialect);
 
     void registerMethod(String name, MethodInfo method, JdbcType returnType, int minArgs, int maxArgs);
+
+    /* methods for dependency checking
+     *  TODO : refactor QueryManager.validate() to use this method
+     */
+
+    enum DependencyType
+    {
+        Report, Table, Query
+    }
+
+    class DependencyObject
+    {
+        public final DependencyType type;
+        public final Container container;
+        public final SchemaKey schemaKey;
+        public final String name;
+        private final String key;
+        public final ActionURL url; // not part of equals/hash
+
+        public DependencyObject(@NotNull DependencyType type, @NotNull Container c, @NotNull SchemaKey key, @NotNull String name, @Nullable ActionURL url)
+        {
+            this.type = type;
+            this.container = c;
+            this.schemaKey = key;
+            this.name = name;
+            this.url = url;
+            this.key = new Path(container.getId(), type.name(), schemaKey.encode(), name).toString().toLowerCase();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            DependencyObject that = (DependencyObject) o;
+            return key.equals(that.key);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return key.hashCode();
+        }
+
+        @Override
+        public String toString()
+        {
+            return type.name() + " " + container.getName() + " " + schemaKey.toString() + "." + name;
+        }
+
+
+        public String getKey()
+        {
+            return key;
+        }
+
+        public JSONObject toJSON()
+        {
+            JSONObject ret = new JSONObject();
+            ret.put("type", type.name());
+            ret.put("containerId", container.getId());
+            ret.put("containerPath", container.getPath());
+            ret.put("schemaDisplayName", schemaKey.toDisplayString());
+            ret.put("schemaName", schemaKey);   // consistent with GetQuerySchemaTreeAction and GetQueryDetailsAction
+            ret.put("name", name);
+            ret.put("url", null==url ? null : url.toLocalString(false));
+            return ret;
+        }
+    }
+
+    /**
+     * Service that can trace dependencies for queries, tables and reports
+     */
+    interface QueryAnalysisService
+    {
+        /* returns map of query dependencies within on folder (as determined by startSchema). */
+        void analyzeFolder(DefaultSchema startSchema, SetValuedMap<DependencyObject, DependencyObject> dependencyGraph);
+    }
+
+    void registerQueryAnalysisProvider(QueryAnalysisService provider);
+
+    @Nullable
+    QueryAnalysisService getQueryAnalysisService();
+
+    TableInfo analyzeQuery(QuerySchema schema, String queryName, SetValuedMap<DependencyObject,DependencyObject> dependencyGraph, @NotNull List<QueryException> errors, @NotNull List<QueryParseException> warnings);
 }

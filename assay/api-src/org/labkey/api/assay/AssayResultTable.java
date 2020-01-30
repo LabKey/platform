@@ -31,8 +31,10 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.TableInsertDataIterator;
@@ -68,6 +70,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -151,7 +154,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
                     ExpSampleSet ss = DefaultAssayRunCreator.getLookupSampleSet(domainProperty, getContainer(), getUserSchema().getUser());
                     if (ss != null || DefaultAssayRunCreator.isLookupToMaterials(domainProperty))
                     {
-                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty));
+                        col.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getMaterialIdForeignKey(ss, domainProperty, cf));
                     }
                 }
                 addColumn(col);
@@ -193,7 +196,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
         BaseColumnInfo dataColumn = getMutableColumn("DataId");
         dataColumn.setLabel("Data");
-        dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey());
+        dataColumn.setFk(new ExpSchema(_userSchema.getUser(), _userSchema.getContainer()).getDataIdForeignKey(getContainerFilter()));
         dataColumn.setUserEditable(false);
         dataColumn.setShownInUpdateView(false);
         dataColumn.setShownInUpdateView(false);
@@ -266,7 +269,36 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
             ContainerForeignKey.initColumn(folderCol, _userSchema);
         }
 
+        var lsidCol = createRowExpressionLsidColumn(this);
+        addColumn(lsidCol);
+
         setDefaultVisibleColumns(visibleColumns);
+    }
+
+    public static BaseColumnInfo createRowExpressionLsidColumn(FilteredTable<? extends AssayProtocolSchema> table)
+    {
+        AssayProtocolSchema schema = table.getUserSchema();
+        SqlDialect dialect = schema.getDbSchema().getSqlDialect();
+
+        SQLFragment sql;
+        String resultRowLsidExpression = schema.getProvider().getResultRowLSIDExpression();
+        if (resultRowLsidExpression != null)
+        {
+            sql = new SQLFragment(dialect.concatenate(
+                    "'" + resultRowLsidExpression +
+                            ".Protocol-" + schema.getProtocol().getRowId() + ":'",
+                    "CAST(" + ExprColumn.STR_TABLE_ALIAS + ".rowId AS VARCHAR)"));
+        }
+        else
+        {
+            sql = new SQLFragment("CAST(NULL AS VARCHAR)");
+        }
+
+        var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setCalculated(true);
+        lsidCol.setUserEditable(false);
+        lsidCol.setReadOnly(true);
+        return lsidCol;
     }
 
     private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)
@@ -335,9 +367,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         // There isn't a container column directly on this table so do a special filter
         if (getContainer() != null)
         {
-            FieldKey containerColumn = FieldKey.fromParts("Run", "Folder");
+            FieldKey containerColumn = FieldKey.fromParts("Container");
             clearConditions(containerColumn);
-            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)"), getContainer()), containerColumn);
+            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), getContainer()), containerColumn);
         }
     }
 
@@ -346,15 +378,28 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public SQLFragment getFromSQL(String alias)
     {
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT innerResults.*, innerData.RunId AS " );
-        result.append(RUN_ID_ALIAS);
+        result.append("(SELECT innerResults.*, innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container" );
         result.append(" FROM\n");
-        result.append(super.getFromSQL("innerResults"));
+        result.append(getFromTable().getFromSQL("innerResults"));
         result.append("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");
-        result.append(" ON (innerData.RowId = innerResults.DataId)) ");
-        result.append(alias);
+        result.append(" ON (innerData.RowId = innerResults.DataId) ");
+        var filter = getFilter();
+        var where = filter.getSQLFragment(_rootTable.getSqlDialect());
+        if (!where.isEmpty())
+        {
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+            SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+            result.append("\n").append(filterFrag);
+        }
+        result.append(") ").append(alias);
         return result;
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
@@ -39,6 +40,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -56,7 +58,6 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
@@ -244,6 +245,7 @@ public class DomainUtil
         d.setMandatoryFieldNames(new CaseInsensitiveHashSet(mandatoryProperties));
         d.setExcludeFromExportFieldNames(new CaseInsensitiveHashSet(domainKind.getAdditionalProtectedPropertyNames(domain)));
         d.setProvisioned(domain.isProvisioned());
+        d.setDefaultValueOptions(domainKind.getDefaultValueOptions(domain), domainKind.getDefaultDefaultType(domain));
 
         d.setSchemaName(domainKind.getMetaDataSchemaName());
         d.setQueryName(domainKind.getMetaDataTableName());
@@ -266,13 +268,24 @@ public class DomainUtil
         gwtDomain.setDescription(dd.getDescription());
         gwtDomain.setContainer(dd.getContainer().getId());
         gwtDomain.setProvisioned(dd.isProvisioned());
-        gwtDomain.setAllowAttachmentProperties(dd.getDomainKind().allowAttachmentProperties());
-        gwtDomain.setAllowFileLinkProperties(dd.getDomainKind().allowFileLinkProperties());
-        gwtDomain.setAllowFlagProperties(dd.getDomainKind().allowFlagProperties());
+        DomainKind kind = dd.getDomainKind();
+        if (kind != null)
+        {
+            gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
+            gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
+            gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+            gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+            gwtDomain.setInstructions(kind.getDomainEditorInstructions());
+        }
         return gwtDomain;
     }
 
     public static GWTPropertyDescriptor getPropertyDescriptor(DomainProperty prop)
+    {
+        return getPropertyDescriptor(prop.getPropertyDescriptor());
+    }
+
+    public static GWTPropertyDescriptor getPropertyDescriptor(PropertyDescriptor prop)
     {
         GWTPropertyDescriptor gwtProp = new GWTPropertyDescriptor();
 
@@ -284,7 +297,7 @@ public class DomainUtil
         gwtProp.setName(prop.getName());
         gwtProp.setPropertyURI(prop.getPropertyURI());
         gwtProp.setContainer(prop.getContainer().getId());
-        gwtProp.setRangeURI(prop.getType().getTypeURI());
+        gwtProp.setRangeURI(prop.getPropertyType() != null ? prop.getPropertyType().getTypeUri() : prop.getRangeURI());
         gwtProp.setRequired(prop.isRequired());
         gwtProp.setHidden(prop.isHidden());
         gwtProp.setShownInInsertView(prop.isShownInInsertView());
@@ -295,12 +308,12 @@ public class DomainUtil
         gwtProp.setRecommendedVariable(prop.isRecommendedVariable());
         gwtProp.setDefaultScale(prop.getDefaultScale().name());
         gwtProp.setMvEnabled(prop.isMvEnabled());
-        gwtProp.setFacetingBehaviorType(prop.getFacetingBehavior().name());
+        gwtProp.setFacetingBehaviorType(prop.getFacetingBehaviorType().name());
         gwtProp.setPHI(prop.getPHI().name());
         gwtProp.setExcludeFromShifting(prop.isExcludeFromShifting());
         gwtProp.setDefaultValueType(prop.getDefaultValueTypeEnum());
-        gwtProp.setImportAliases(prop.getPropertyDescriptor().getImportAliases());
-        StringExpression url = prop.getPropertyDescriptor().getURL();
+        gwtProp.setImportAliases(prop.getImportAliases());
+        StringExpression url = prop.getURL();
         gwtProp.setURL(url == null ? null : url.toString());
         gwtProp.setScale(prop.getScale());
         gwtProp.setRedactedText(prop.getRedactedText());
@@ -797,9 +810,19 @@ public class DomainUtil
         List<ConditionalFormat> formats = new ArrayList<>();
         for (GWTConditionalFormat format : from.getConditionalFormats())
         {
-            formats.add(new ConditionalFormat(format));
+            ConditionalFormat fmt = new ConditionalFormat(format);
+            String msg = fmt.validateFormat(to.getPropertyDescriptor());
+            if (msg != null)
+            {
+                if (errors == null)
+                    throw new RuntimeException(msg);
+                errors.addError(new PropertyValidationError(msg, from.getName(), from.getPropertyId()));
+                return;
+            }
+            formats.add(fmt);
         }
         to.setConditionalFormats(formats);
+
         // If the incoming DomainProperty specifies its dimension/measure state, respect that value.  Otherwise we need
         // to infer the correct value. This is necessary for code paths like the dataset creation wizard which does not
         // (and should not, for simplicity reasons) provide the user with the option to specify dimension/measure status
@@ -838,7 +861,7 @@ public class DomainUtil
         if (from.isExcludeFromShifting())
             to.setExcludeFromShifting(from.isExcludeFromShifting());
 
-        if(from.getScale() != null)
+        if (from.getScale() != null)
             to.setScale(from.getScale());
     }
 
@@ -899,6 +922,16 @@ public class DomainUtil
         }
     }
 
+    private static String getDomainErrorMessage(@Nullable GWTDomain domain, String message)
+    {
+        if (domain != null && domain.getName() != null)
+        {
+            return domain.getName() + " -- " + message;
+        }
+
+        return message;
+    }
+
     /**
      * Validate domain property descriptors for things like duplicate names, missing names, and check against required fields.
      * @param domain The updated domain to validate
@@ -906,7 +939,8 @@ public class DomainUtil
      */
     public static ValidationException validateProperties(@Nullable Domain domain, @NotNull GWTDomain updates, @Nullable DomainKind domainKind, @Nullable GWTDomain orig)
     {
-        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain)) : null); //Note: won't be able to validate reserved names for createDomain api since this method is called before the domain gets created.
+        Set<String> reservedNames = (null != domain && null != domainKind ? new CaseInsensitiveHashSet(domainKind.getReservedPropertyNames(domain))
+                : new CaseInsensitiveHashSet(updates.getReservedFieldNames()));
         Map<String, Integer> namePropertyIdMap = new CaseInsensitiveHashMap<>();
         ValidationException exception = new ValidationException();
         Map<Integer, String> propertyIdNameMap = getOriginalFieldPropertyIdNameMap(orig);//key: orig property id, value : orig field name
@@ -919,24 +953,24 @@ public class DomainUtil
 
             if (null == name || name.length() == 0)
             {
-                exception.addError(new SimpleValidationError("Please provide a name for each field."));
+                exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;
             }
 
-            if (null != reservedNames && reservedNames.contains(name))
+            if (reservedNames.contains(name))
             {
                 //check if a new field is a reserved field or an existing field is updated to a reserved field
                 String origFieldName = (null != propertyIdNameMap ? propertyIdNameMap.get(field.getPropertyId()) : null);
                 if (field.getPropertyId() <= 0 || !name.equalsIgnoreCase(origFieldName))
                 {
-                    exception.addFieldError(name, "'" + name + "' is a reserved field name in '" + domain.getName() + "'.");
+                    exception.addFieldError(name, getDomainErrorMessage(updates,("'" + name + "' is a reserved field name in '" + updates.getName() + "'.")));
                 }
                 continue;
             }
 
             if (namePropertyIdMap.containsKey(name))
             {
-                String errorMsg = "The field name '" + name + "' is already taken. Please provide a unique name for each field.";
+                String errorMsg = getDomainErrorMessage(updates,"The field name '" + name + "' is already taken. Please provide a unique name for each field.");
                 PropertyValidationError propertyValidationError = new PropertyValidationError(errorMsg, name, field.getPropertyId());
                 exception.addError(propertyValidationError);
                 continue;

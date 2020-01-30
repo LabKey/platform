@@ -1178,15 +1178,12 @@ public class FileContentServiceImpl implements FileContentService
 
     public static void populateSiteRootFileWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // populate the site root file settings with values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: FileSiteRootSettings.fileRoot;bootstrap=/labkey/labkey/files
         // if more than one FileSiteRootSettings.siteRootFile specified in the startup properties file then the last one overrides the previous ones
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_ROOT_SETTINGS);
         startupProps.stream()
                 .filter( prop -> prop.getName().equals("siteRootFile"))
-                .filter( prop -> prop.getModifier() != bootstrap || isBootstrap )
                 .forEach(prop -> {
                     File fileRoot = new File(prop.getValue());
                     FileContentService.get().setSiteDefaultRoot(fileRoot, null);
@@ -1296,7 +1293,7 @@ public class FileContentServiceImpl implements FileContentService
                 filesRoot = rootPath;
 
             String absoluteFilePath = getAbsolutePathFromDataFileUrl(dataFileUrl, container);
-            if (absoluteFilePath.startsWith(rootPath))
+            if (StringUtils.startsWith(absoluteFilePath, rootPath))
             {
                 String offset = absoluteFilePath.replace(rootPath, "").replace("\\", "/");
                 int lastSlash = offset.lastIndexOf("/");

@@ -124,6 +124,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -147,6 +148,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
     private final AutoDetectParser _autoDetectParser;
+    // We track this to avoid clearing last indexed multiple times in certain cases (delete index, upgrade), see #39330
+    private final AtomicLong _countIndexedSinceClearLastIndexed = new AtomicLong(1);
 
     enum FIELD_NAME
     {
@@ -205,7 +208,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _autoDetectParser = new AutoDetectParser(config);
     }
 
-
+    /**
+     * Initializes the index, if possible. Recovers from some common failures, such as incompatible existing index formats.
+     */
     private void initializeIndex()
     {
         try
@@ -303,7 +308,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _log.error("Closing index", e);
         }
 
-        // Initialize new index and clear the last indexed
+        // Initialize new index and clear last indexed
         initializeIndex();
         clearLastIndexed();
     }
@@ -401,6 +406,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             FileUtil.deleteDir(indexDir);
 
         clearLastIndexed();
+    }
+
+    @Override
+    public void clearLastIndexed()
+    {
+        // Short circuit if nothing has been indexed since clearLastIndexed() was last called
+        if (_countIndexedSinceClearLastIndexed.get() > 0)
+        {
+            super.clearLastIndexed();
+            _countIndexedSinceClearLastIndexed.set(0);
+        }
     }
 
     // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
@@ -600,16 +616,16 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             assert StringUtils.isNotEmpty((String)props.get(PROPERTY.categories.toString()));
 
-            addTerms(doc, props, PROPERTY.categories, FIELD_NAME.searchCategories, null);
-            addTerms(doc, props, PROPERTY.identifiersLo, FIELD_NAME.identifiersLo, identifiersLo);
-            addTerms(doc, props, PROPERTY.identifiersMed, FIELD_NAME.identifiersMed, null);
-            addTerms(doc, props, PROPERTY.identifiersHi, FIELD_NAME.identifiersHi, null);
+            addTerms(doc, FIELD_NAME.searchCategories, Field.Store.YES, terms(PROPERTY.categories, props, null));
+            addTerms(doc, FIELD_NAME.identifiersLo, PROPERTY.identifiersLo, props, identifiersLo);
+            addTerms(doc, FIELD_NAME.identifiersMed, PROPERTY.identifiersMed, props, null);
+            addTerms(doc, FIELD_NAME.identifiersHi, Field.Store.YES, terms(PROPERTY.identifiersHi, props, null));
 
             doc.add(new TextField(FIELD_NAME.body.toString(), body, Field.Store.NO));
 
-            addTerms(doc, props, PROPERTY.keywordsLo, FIELD_NAME.keywordsLo, null);
-            addTerms(doc, props, PROPERTY.keywordsMed, FIELD_NAME.keywordsMed, keywordsMed.toString());
-            addTerms(doc, props, PROPERTY.keywordsHi, FIELD_NAME.keywordsHi, null);
+            addTerms(doc, FIELD_NAME.keywordsLo, PROPERTY.keywordsLo, props, null);
+            addTerms(doc, FIELD_NAME.keywordsMed, PROPERTY.keywordsMed, props, keywordsMed.toString());
+            addTerms(doc, FIELD_NAME.keywordsHi, PROPERTY.keywordsHi, props, null);
 
             // === Don't index, store ===
 
@@ -849,14 +865,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-
-    private void addTerms(Document doc, Map<String, ?> props, PROPERTY property, FIELD_NAME fieldName, @Nullable String computedTerms)
+    private String terms(PROPERTY property, Map<String, ?> props, @Nullable String computedTerms)
     {
+        if (null == computedTerms)
+            return (String)props.get(property.toString());
         String documentTerms = (String)props.get(property.toString());
-        String terms = (null == computedTerms ? "" : computedTerms + " ") + (null == documentTerms ? "" : documentTerms);
+        if (null == documentTerms)
+            return computedTerms;
+        return computedTerms + " " + documentTerms;
+    }
 
-        if (!terms.isEmpty())
-            doc.add(new TextField(fieldName.toString(), terms, Field.Store.NO));
+    private void addTerms(Document doc, FIELD_NAME fieldName, Field.Store store, String terms)
+    {
+        if (StringUtils.isNotBlank(terms))
+            doc.add(new TextField(fieldName.toString(), terms, store));
+    }
+
+    private void addTerms(Document doc, FIELD_NAME fieldName, PROPERTY property, Map<String, ?> props,  @Nullable String computedTerms)
+    {
+        addTerms(doc, fieldName, Field.Store.NO, terms(property, props, computedTerms));
     }
 
     private void addUserField(Document doc, FIELD_NAME fieldName, @Nullable Integer userId)
@@ -1137,6 +1164,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
     protected void deleteDocument(String id)
     {
         _indexManager.deleteDocument(id);
@@ -1166,7 +1194,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
     private long getDocCount(Query query) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
@@ -1182,19 +1209,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    protected boolean index(String id, WebdavResource r, Document doc)
+    private boolean index(String id, WebdavResource r, Document doc)
     {
         try
         {
             _indexManager.index(r.getDocumentId(), doc);
+            _countIndexedSinceClearLastIndexed.incrementAndGet();
             return true;
         }
         catch (IndexManagerClosedException x)
         {
             // Happens when an admin switches the index configuration, e.g., setting a new path to the index files.
             // We've swapped in the new IndexManager, but the indexing thread still holds an old (closed) IndexManager.
-            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
-            // anyway, so everything's getting reindexed anyway.
+            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories,
+            // so everything's getting reindexed anyway.
         }
         catch(Throwable e)
         {
@@ -1202,7 +1230,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return false;
-
     }
 
     @Override
@@ -1469,11 +1496,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             Document doc = searcher.doc(scoreDoc.doc);
 
             SearchHit hit = new SearchHit();
+            hit.category = doc.get(FIELD_NAME.searchCategories.toString());
             hit.container = doc.get(FIELD_NAME.container.toString());
             hit.docid = doc.get(FIELD_NAME.uniqueId.toString());
             hit.summary = doc.get(FIELD_NAME.summary.toString());
             hit.url = doc.get(FIELD_NAME.url.toString());
             hit.doc = scoreDoc.doc;
+            hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
+            hit.score = scoreDoc.score;
 
             // BUG patch see 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index

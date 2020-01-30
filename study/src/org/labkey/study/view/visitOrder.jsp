@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.labkey.api.study.StudyService"%>
 <%@ page import="org.labkey.api.study.Visit"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>

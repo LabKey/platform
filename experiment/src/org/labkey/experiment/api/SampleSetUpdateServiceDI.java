@@ -164,7 +164,12 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     @Override
     public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
     {
-        List<Map<String, Object>> results = super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext);
+        // insertRows with lineage is pretty good at deadlocking against it self, so use retry loop
+
+        DbScope scope = getSchema().getDbSchema().getScope();
+        List<Map<String, Object>> results = scope.executeWithRetry(transaction ->
+                super._insertRowsUsingDIB(user, container, rows, getDataIteratorContext(errors, InsertOption.INSERT, configParameters), extraScriptContext));
+
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
@@ -180,13 +185,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, true);
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(InsertOption.MERGE);
-        DataIterator derive = ddib.getDataIterator(context);
-        new Pump(derive, context).run();
-        if (context.getErrors().hasErrors())
-            throw context.getErrors();
+        ExpDataIterators.derive(user, container, di, true);
 
         if (ret.size() > 0)
         {
@@ -426,7 +425,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (insertUpdateChoice.equals("merge"))
             verb = "inserted or updated";
         else
-            verb = insertUpdateChoice + "ed";
+            verb = insertUpdateChoice + (insertUpdateChoice.endsWith("e") ? "d" : "ed");
 
         SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
                 getContainer().getId(), "Samples " + verb + " in: " + _sampleset.getName());

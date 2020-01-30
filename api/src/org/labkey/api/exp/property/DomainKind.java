@@ -24,9 +24,11 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.ValidationException;
@@ -110,7 +112,7 @@ abstract public class DomainKind implements Handler<String>
      * @param user User
      * @return A list of errors collected during the update.
      */
-    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
+    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings);
 
     /**
      * Delete a Domain and its associated data.
@@ -256,7 +258,27 @@ abstract public class DomainKind implements Handler<String>
         return false;
     }
 
-    public boolean allowFileLinkProperties() { return true; }
-    public boolean allowAttachmentProperties() { return true; }
+    public boolean allowFileLinkProperties() { return false; }
+    public boolean allowAttachmentProperties() { return false; }
     public boolean allowFlagProperties() { return true; }
+    public boolean showDefaultValueSettings() { return false; }
+
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return new DefaultValueType[] { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED };
+    }
+
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return DefaultValueType.FIXED_EDITABLE;
+    }
+    public String getObjectUriColumnName()
+    {
+        return null;
+    }
+
+    public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
+    {
+        return null;
+    }
 }

@@ -85,6 +85,7 @@ public class RolapCubeDef
 
 
     protected String name;
+    protected String olapSchemaName;
     protected JoinOrTable factTable;
     protected final ArrayList<DimensionDef> dimensions = new ArrayList<>();
     protected final ArrayList<MeasureDef> measures = new ArrayList<>();
@@ -94,12 +95,23 @@ public class RolapCubeDef
     private final AliasManager columnAliases = new AliasManager((SqlDialect) null);
 
 
+    public RolapCubeDef(String schema, String cubeName)
+    {
+        olapSchemaName = schema;
+        name = cubeName;
+    }
+
+
     public String getName()
     {
         return name;
     }
 
-    public String getSchemaName() { return factTable.schemaName; }
+    // <Schema> name from definition xml file
+    public String getOlapSchemaName() { return olapSchemaName; }
+
+    // default schema for SQL queries
+    public String getQuerySchemaName() { return factTable.schemaName; }
 
     public Map<String,String> getAnnotations()
     {

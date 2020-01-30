@@ -36,8 +36,10 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -165,7 +167,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             case SourceProtocolApplication:
             {
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("SourceApplicationId"));
-                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                columnInfo.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 columnInfo.setUserEditable(false);
                 columnInfo.setReadOnly(true);
                 columnInfo.setHidden(true);
@@ -190,7 +192,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                         .append(")");
 
                 var col = new ExprColumn(this, alias, sql, JdbcType.INTEGER);
-                col.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                col.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 col.setDescription("Contains a reference to the ExperimentRunOutput protocol application of the run that created this sample");
                 col.setUserEditable(false);
                 col.setReadOnly(true);
@@ -262,6 +264,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             case Outputs:
                 return createLineageColumn(this, alias, false);
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
 
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
@@ -412,24 +417,26 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addColumn(Column.Description);
 
         var typeColumnInfo = addColumn(Column.SampleSet);
-        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, null, ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
+        typeColumnInfo.setFk(new QueryForeignKey(_userSchema, getContainerFilter(), ExpSchema.SCHEMA_NAME, getContainer(), null, getUserSchema().getUser(), ExpSchema.TableType.SampleSets.name(), "lsid", null)
         {
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                if (ss == null)
-                    return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
-
                 // Be sure that we can resolve the sample set if it's defined in a separate container.
                 // Same as CurrentPlusProjectAndShared but includes SampleSet's container as well.
                 // Issue 37982: Sample Set: Link to precursor sample set does not resolve correctly if sample has parents in current sample set and a sample set in the parent container
                 Set<Container> containers = new HashSet<>();
-                containers.add(ss.getContainer());
+                if (null != ss)
+                    containers.add(ss.getContainer());
                 containers.add(getContainer());
                 if (getContainer().getProject() != null)
                     containers.add(getContainer().getProject());
                 containers.add(ContainerManager.getSharedContainer());
-                return new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+
+                if (null != _containerFilter && _containerFilter != ContainerFilter.CURRENT)
+                    cf = new UnionContainerFilter(_containerFilter, cf);
+                return cf;
             }
         });
 
@@ -439,7 +446,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         addContainerColumn(ExpMaterialTable.Column.Folder, null);
 
         var runCol = addColumn(ExpMaterialTable.Column.Run);
-        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey());
+        runCol.setFk(new ExpSchema(_userSchema.getUser(), getContainer()).getRunIdForeignKey(getContainerFilter()));
         runCol.setShownInInsertView(false);
         runCol.setShownInUpdateView(false);
 
@@ -477,11 +484,15 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
             setGridURL(new DetailsURL(gridUrl));
         }
 
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         var colInputs = addColumn(Column.Inputs);
         addMethod("Inputs", new LineageMethod(getContainer(), colInputs, true));
 
         var colOutputs = addColumn(Column.Outputs);
         addMethod("Outputs", new LineageMethod(getContainer(), colOutputs, false));
+
 
         ActionURL detailsUrl = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
         DetailsURL url = new DetailsURL(detailsUrl, Collections.singletonMap("rowId", "RowId"));
@@ -496,7 +507,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
     public Domain getDomain()
     {
-        return _ss == null ? null : _ss.getType();
+        return _ss == null ? null : _ss.getDomain();
     }
 
     public static String appendNameExpressionDescription(String currentDescription, String nameExpression)
@@ -552,7 +563,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
                 }
-                visibleColumns.add(propColumn.getFieldKey());
+
+                //fix for Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
+                if (!propColumn.isHidden())
+                {
+                    visibleColumns.add(propColumn.getFieldKey());
+                }
             }
             addColumn(propColumn);
         }
@@ -694,7 +710,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
+            DataIteratorBuilder persist = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
@@ -704,9 +720,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             if (null != expMaterial)
                                 expMaterial.index(null);
                         }
-                    });
+                    }));
 
-            return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
         {

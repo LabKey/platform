@@ -16,14 +16,17 @@
 
 package org.labkey.api.assay.plate;
 
-import org.labkey.api.exp.SamplePropertyHelper;
-import org.labkey.api.exp.property.DomainProperty;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.exp.SamplePropertyHelper;
+import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.property.DomainProperty;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -81,7 +84,8 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
         return sampleGroupNames;
     }
 
-    protected String getObject(int index, Map<DomainProperty, String> sampleProperties)
+    @Override
+    protected String getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials)
     {
         List<WellGroupTemplate> samples = getSampleWellGroups();
         if (index >= samples.size())

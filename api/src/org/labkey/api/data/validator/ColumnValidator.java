@@ -22,7 +22,7 @@ import org.labkey.api.exp.property.ValidatorContext;
  */
 public interface ColumnValidator
 {
-    public String validate(int rowNum, Object value);
+    String validate(int rowNum, Object value);
 
-    public String validate(int rowNum, Object value, ValidatorContext validatorContext);
+    String validate(int rowNum, Object value, ValidatorContext validatorContext);
 }

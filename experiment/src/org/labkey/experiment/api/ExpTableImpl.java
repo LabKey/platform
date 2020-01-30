@@ -18,14 +18,11 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -35,6 +32,7 @@ import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.exp.flag.FlagForeignKey;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
@@ -49,15 +47,12 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
@@ -65,6 +60,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     private final ExpObjectImpl _objectType;
     private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
+    private ExpSchema _expSchema = null;
 
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
@@ -113,7 +109,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated)
         {
             ColumnInfo lsidCol = getColumn("LSID", false);
             if (lsidCol != null)
@@ -126,13 +122,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 // Attempt to resolve the column name as a property URI if it looks like a URI
                 if (URIUtil.hasURICharacters(name))
                 {
+                    // mark vocab propURI col as Voc column
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
                         // use the property URI as the column's FieldKey name
+                        String label = pc.getLabel();
                         pc.setFieldKey(FieldKey.fromParts(name));
-                        pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
+                        pc.setLabel(label);
                         return pc;
                     }
                 }
@@ -193,63 +191,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
-    // TODO: Can we pre-fetch all properties referenced by the rows in the outer select and only include those properties?
-    // TODO: How to handle lookup values?
     protected ColumnInfo createPropertiesColumn(String name)
     {
         var col = new AliasedColumn(this, name, getLSIDColumn());
-        col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
-        {
-            @Override
-            public Object getValue(RenderContext ctx)
-            {
-                String lsid = (String)super.getValue(ctx);
-                if (lsid == null)
-                    return null;
-
-                Map<String, Object> props = OntologyManager.getProperties(ctx.getContainer(), lsid);
-                if (!props.isEmpty())
-                    return props;
-
-                return null;
-            }
-
-            @Override
-            public Object getExcelCompatibleValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            @Override
-            public String getTsvFormattedValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            // return json string
-            private String toJSONObjectString(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return null;
-
-                return new JSONObject(props).toString(2);
-            }
-
-            // return html formatted value
-            @Override
-            public @NotNull String getFormattedValue(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return "&nbsp;";
-
-                String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
-                html = html.replaceAll("\\n", "<br>\n");
-                return html;
-            }
-
-        });
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
         return col;
     }
 
@@ -323,14 +273,9 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         BaseColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
-            colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
-            colProperty.setHidden(true);
-            colProperty.setUserEditable(false);
-            colProperty.setIsUnselectable(true);
-            addColumn(colProperty);
+            colProperty = addDomainColumns(domain, legacyName);
         }
 
         List<FieldKey> visibleColumns = new ArrayList<>(getDefaultVisibleColumns());
@@ -351,6 +296,40 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return colProperty;
     }
 
+    /**
+     * Create a hidden column as a fake lookup to include all columns in the domain.
+     * @param domain The domain to add columns from
+     * @param lookupColName The column name
+     * @return
+     */
+    protected BaseColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
+    {
+        BaseColumnInfo colProperty = wrapColumn(lookupColName, getLSIDColumn());
+        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
+        colProperty.setHidden(true);
+        colProperty.setUserEditable(false);
+        colProperty.setIsUnselectable(true);
+        // As this column wraps the LSID (which is required for insert), we need
+        // to mark this as a calculated column so it won't be required during insert
+        colProperty.setCalculated(true);
+        addColumn(colProperty);
+
+        return colProperty;
+    }
+
+    protected void addVocabularyDomains()
+    {
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), Set.of(VocabularyDomainKind.KIND_NAME), true);
+        for (Domain domain : domains)
+        {
+            String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
+            BaseColumnInfo col = this.addDomainColumns(domain, columnName);
+            col.setLabel(domain.getName());
+            col.setDescription("Properties from " + domain.getLabel(getContainer()));
+        }
+    }
+
+
     @Override
     public Domain getDomain()
     {
@@ -366,17 +345,52 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     public ExpSchema getExpSchema()
     {
-        if (_userSchema instanceof ExpSchema)
+        if (_expSchema == null)
         {
-            return (ExpSchema)_userSchema;
+            if (_userSchema instanceof ExpSchema)
+                _expSchema = (ExpSchema)_userSchema;
+            else
+                _expSchema = (ExpSchema)_userSchema.getDefaultSchema().getSchema(ExpSchema.SCHEMA_NAME);
         }
-        return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+        return _expSchema;
     }
 
     @Override
     public String getPublicSchemaName()
     {
         return _publicSchemaName == null ? _userSchema.getSchemaName() : _publicSchemaName;
+    }
+
+    @Override
+    public void setFilterPatterns(String columnName, String... patterns)
+    {
+        checkLocked();
+        if (patterns != null)
+        {
+            SQLFragment condition = new SQLFragment();
+            condition.append("(");
+            String separator = "";
+            for (String pattern : patterns)
+            {
+                condition.append(separator);
+                condition.append(_rootTable.getColumn(columnName).getAlias());
+                // Only use LIKE if the pattern contains a wildcard, since the database can be more efficient
+                // for = instead of LIKE. In some cases we're passed the LSID for a specific protocol,
+                // and in other cases we're passed a pattern that matches against all protocols of a given type
+                if (pattern.contains("%"))
+                {
+                    condition.append(" LIKE ?");
+                }
+                else
+                {
+                    condition.append(" = ?");
+                }
+                condition.add(pattern);
+                separator = " OR ";
+            }
+            condition.append(")");
+            addCondition(condition);
+        }
     }
 
 }

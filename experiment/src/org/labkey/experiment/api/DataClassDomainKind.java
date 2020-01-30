@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
@@ -130,16 +131,16 @@ public class DataClassDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowFileLinkProperties()
+    public boolean allowAttachmentProperties()
     {
-        return false;
+        return true;
     }
 
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override
@@ -274,5 +275,18 @@ public class DataClassDomainKind extends AbstractDomainKind
     public boolean matchesTemplateXML(String templateName, DomainTemplateType template, List<GWTPropertyDescriptor> properties)
     {
         return template instanceof DataClassTemplateType;
+    }
+
+
+    @Override
+    public String getObjectUriColumnName()
+    {
+        return OBJECT_URI_COLUMN_NAME;
+    }
+
+    @Override
+    public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
+    {
+        return UpdateableTableInfo.ObjectUriType.schemaColumn;
     }
 }

@@ -16,9 +16,17 @@ import {
     fetchAllAssays,
     importGeneralAssayRun,
     naturalSort,
-    hasAllPermissions
-} from "@glass/base";
-import {AssayProtocolModel, AssayPropertiesPanel, createGeneralAssayDesign} from '@glass/domainproperties'
+    hasAllPermissions,
+    AssayProtocolModel,
+    AssayPropertiesPanel,
+    DomainDesign,
+    saveAssayDesign,
+    fetchProtocol,
+    setDomainFields
+} from '@labkey/components'
+
+import "@labkey/components/dist/components.css"
+import "./assayDataImport.scss";
 
 import {AssayRunForm} from "./AssayRunForm";
 
@@ -55,7 +63,7 @@ export class App extends React.Component<Props, State> {
         }
     }
 
-    componentWillMount() {
+    componentDidMount() {
         fetchAllAssays('General')
             .then((assays) => {
                 const sortedAssays = assays.sortBy(assay => assay.name, naturalSort).toList();
@@ -66,6 +74,16 @@ export class App extends React.Component<Props, State> {
                 this.setErrorMsg(error);
             });
 
+        // get the GPAT assay template protocol info for use with the "Create New Assay" option
+        fetchProtocol(undefined, 'General')
+            .then((protocolModel) => {
+                this.setState(() => ({protocolModel}));
+            })
+            .catch((error) => {
+                this.setErrorMsg(error.exception);
+            });
+
+        // get the user permissions to know if the user has DesignAssay perm
         Security.getUserPermissions({
             success: (response) => {
                 const user = this.state.user.set('permissionsList', fromJS(response.container.effectivePermissions)) as User;
@@ -74,7 +92,7 @@ export class App extends React.Component<Props, State> {
             failure: (error) => {
                 this.setErrorMsg(error);
             }
-        })
+        });
     }
 
     userCanCreateAssay(): boolean {
@@ -145,24 +163,35 @@ export class App extends React.Component<Props, State> {
             this.setSubmitting(true);
             this.importFileAsRun(selectedAssay.id);
         }
-        else if (this.isCreateNewAssay() && inferredFields) {
+        else if (this.isCreateNewAssay() && protocolModel && inferredFields) {
             this.setErrorMsg(undefined);
             this.setSubmitting(true);
-
-            const name = protocolModel ? protocolModel.name : undefined;
-            const descr = protocolModel ? protocolModel.description : undefined;
 
             if (!this.hasValidNewAssayName()) {
                 this.setErrorMsg('You must provide a name for the new assay design.');
                 return;
             }
 
-            createGeneralAssayDesign(name, descr, inferredFields)
+            // get each domain as a variable we can set the results fields from inferredFields and clear the batch domain default fields
+            const batchDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Batch'), List<QueryColumn>());
+            const runDomain = protocolModel.getDomainByNameSuffix('Run');
+            const resultsDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Data'), inferredFields);
+
+            let newProtocol = AssayProtocolModel.create({
+                ...protocolModel.toJS(),
+                providerName: 'General',
+                domains: List<DomainDesign>([batchDomain, runDomain, resultsDomain])
+            });
+
+            // the AssayProtocolModel.create call drops the name, so put it back
+            newProtocol = newProtocol.set('name', protocolModel.name) as AssayProtocolModel;
+
+            saveAssayDesign(newProtocol)
                 .then((newAssay) => {
                     this.importFileAsRun(newAssay.protocolId);
                 })
-                .catch((reason) => {
-                    this.setErrorMsg(reason);
+                .catch((errorModel) => {
+                    this.setErrorMsg(errorModel.exception);
                 });
         }
     };
@@ -242,9 +271,9 @@ export class App extends React.Component<Props, State> {
     };
 
     getCardsFromAssays(): List<any> {
-        const { assays } = this.state;
+        const { assays, protocolModel } = this.state;
         const selectedAssay = this.getSelectedAssay();
-        let cards = List<any>(); // TODO should we be exporting ICardProps from @glass and using here instead of any?
+        let cards = List<any>(); // TODO should we be exporting ICardProps from @labkey/components and using here instead of any?
 
         if (selectedAssay) {
             cards = cards.push({
@@ -270,7 +299,7 @@ export class App extends React.Component<Props, State> {
                 };
             }).toList();
 
-            if (this.userCanCreateAssay()) {
+            if (protocolModel && this.userCanCreateAssay()) {
                 cards = cards.push({
                     title: 'Create a New Assay',
                     caption: 'Click to select this option for creating a new assay design.',
@@ -336,17 +365,17 @@ export class App extends React.Component<Props, State> {
                     <Panel.Body>
                         <AssayPropertiesPanel
                             asPanel={false}
-                            showEditSettings={false}
                             model={protocolModel}
+                            appPropertiesOnly={true}
                             onChange={this.onAssayPropertiesChange}
                         >
-                            <div>
+                            <p>
                                 Define basic properties for this new design. These and other advanced settings can always be
                                 modified later on the assay runs list by choosing "Manage Assay Design".
-                            </div>
-                            <div className={'margin-top'}>
+                            </p>
+                            <p>
                                 By default, this assay design will include the column headers detected from your uploaded file.
-                            </div>
+                            </p>
                         </AssayPropertiesPanel>
                     </Panel.Body>
                 }
@@ -446,12 +475,12 @@ export class App extends React.Component<Props, State> {
         return (
             <>
                 {this.renderWarning()}
-                {this.renderError()}
                 {this.renderAvailableAssays()}
                 {this.renderRunDataUpload()}
                 {this.renderNewAssayProperties()}
                 {this.renderRunProperties()}
                 {this.renderButtons()}
+                {this.renderError()}
                 {this.renderProgress()}
             </>
         )

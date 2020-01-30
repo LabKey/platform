@@ -129,6 +129,18 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public boolean allowAttachmentProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
+
+    @Override
     public Priority getPriority(String domainURI)
     {
         Lsid lsid = new Lsid(domainURI);

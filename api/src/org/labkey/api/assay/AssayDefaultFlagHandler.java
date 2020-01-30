@@ -25,6 +25,8 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpQCFlagTable;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ExprColumn;
@@ -43,19 +45,24 @@ import java.util.stream.Collectors;
 public class AssayDefaultFlagHandler implements AssayFlagHandler
 {
     @Override
-    public BaseColumnInfo createFlagColumn(ExpProtocol protocol, TableInfo parent, String schemaName, boolean editable)
+    public BaseColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable)
     {
-        return new AssayQCFlagColumn(parent, schemaName, editable);
+        return new AssayQCFlagColumn(runTable, schemaName, editable);
     }
 
     @Override
-    public BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, TableInfo parent, String schemaName)
+    public BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable parent, String schemaName)
     {
         ExprColumn qcEnabled = new ExprColumn(parent, "QCFlagsEnabled", AssayQCFlagColumn.createSQLFragment(parent.getSqlDialect(), "Enabled"), JdbcType.VARCHAR);
         qcEnabled.setLabel("QC Flags Enabled State");
         qcEnabled.setHidden(true);
 
         return qcEnabled;
+    }
+
+    @Override
+    public void fixupQCFlagTable(ExpQCFlagTable table, AssayProvider provider, ExpProtocol assayProtocol)
+    {
     }
 
     @Override

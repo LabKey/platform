@@ -61,7 +61,7 @@ public class FileContentModule extends DefaultModule
     @Override
     public double getVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     @Override

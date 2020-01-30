@@ -16,10 +16,22 @@
 package org.labkey.api.settings;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.util.element.Option;
+import org.labkey.api.util.element.Option.OptionBuilder;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.WebPartView;
 
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by marty on 7/5/2017.
@@ -27,21 +39,18 @@ import java.util.Map;
 public interface TemplateProperties
 {
     String SHOW_ONLY_IN_PROJECT_ROOT_PROPERTY_NAME = "ShowOnlyInProjectRoot";
+    String NONE = "none";
 
     String getDisplayConfigs();
     String getDisplayPropertyName();
     String getModulePropertyName();
     String getFileName();
-    String getShowByDefault();
     String getPropertyDisplayType();
     Container getContainer();
+    String getDefaultModule();
+    TemplateProperties getRootProperties();
 
-    default Boolean isDisplay()
-    {
-        return isDisplay(true);
-    }
-
-    default Boolean isDisplay(boolean inherit)
+    private Boolean isDisplay(boolean inherit)
     {
         String displayProp = getProperty(getDisplayPropertyName(), inherit);
         return BooleanUtils.toBooleanObject(displayProp);
@@ -52,14 +61,42 @@ public interface TemplateProperties
         setProperty(getDisplayPropertyName(), isDisplay != null ? String.valueOf(isDisplay) : null);
     }
 
-    default String getModule()
+    private @Nullable Module getModule()
     {
-        return getModule(true);
+        return ModuleLoader.getInstance().getModule(getModuleName());
     }
 
-    default String getModule(boolean inherit)
+    default @Nullable HtmlView getView()
     {
-        return getProperty(getModulePropertyName(), inherit);
+        Module module = getModule();
+        HtmlView view = null;
+
+        if (null != module)
+        {
+            view = ModuleHtmlView.get(module, getFileName());
+
+            if (null != view)
+            {
+                view.setFrame(WebPartView.FrameType.NONE);
+            }
+        }
+
+        return view;
+    }
+
+    private @Nullable String getModuleName()
+    {
+        return getModuleName(true);
+    }
+
+    private @Nullable String getModuleName(boolean inherit)
+    {
+        Boolean isDisplay = isDisplay(inherit);
+
+        if (null == isDisplay)
+            return getDefaultModule();
+
+        return isDisplay ? getProperty(getModulePropertyName(), inherit) : null;
     }
 
     default void setModule(String module)
@@ -100,6 +137,7 @@ public interface TemplateProperties
             map.remove(propName);
         else
             map.put(propName, value);
+
         map.save();
     }
 
@@ -111,8 +149,7 @@ public interface TemplateProperties
     /**
      * Helper to pull property values from the appropriate scopes
      *
-     * @param inherit if true will inherit from the site root if the property is not defined in the
-     *                container
+     * @param inherit if true will inherit from the site root if the property is not defined in the container
      */
     private String getProperty(String propName, boolean inherit)
     {
@@ -133,5 +170,75 @@ public interface TemplateProperties
         }
         else
             throw new IllegalStateException("Container is null for this TemplateProperty");
+    }
+
+    private @NotNull String getNotDisplayedSetting()
+    {
+        return "No " + getPropertyDisplayType() + " Displayed";
+    }
+
+    private @NotNull String getInheritSetting()
+    {
+        TemplateProperties rootProperties = getRootProperties();
+        return "Inherit from site settings (" + rootProperties.getCurrentSetting() + ")";
+    }
+
+    private @NotNull String getCurrentSetting()
+    {
+        String currentSetting = null;
+
+        if (getContainer().isRoot())
+        {
+            String moduleName = getModuleName(false);
+            currentSetting = null == moduleName ? getNotDisplayedSetting() : moduleName;
+        }
+        else
+        {
+            Boolean isDisplayObj = isDisplay(false);
+
+            if (isDisplayObj == null)
+            {
+                currentSetting = getInheritSetting();
+            }
+            else
+            {
+                if (isDisplayObj)
+                    currentSetting = getModuleName(false);
+
+                if (null == currentSetting)
+                   currentSetting = getNotDisplayedSetting();
+            }
+        }
+
+        return currentSetting;
+    }
+
+    default List<Option> getOptions()
+    {
+        Map<String, String> modules = new LinkedHashMap<>();  // Keep the options in insertion order
+
+        // Add the inherit option with appropriate text
+        if (getContainer().isProject())
+            modules.put(null, getInheritSetting());
+
+        // Add the "No XXX Displayed" option
+        modules.put(NONE, getNotDisplayedSetting());
+
+        // Add all modules that contain the appropriate view, in alphabetical order
+        ModuleLoader.getInstance().getModules().stream()
+            .filter(m->ModuleHtmlView.exists(m, getFileName()))
+            .map(Module::getName)
+            .sorted(String.CASE_INSENSITIVE_ORDER)
+            .forEach(name->modules.put(name, name));
+
+        String currentSetting = getCurrentSetting();
+
+        return modules.entrySet().stream()
+            .map(e->new OptionBuilder()
+                .value(e.getKey())
+                .label(e.getValue())
+                .selected(e.getValue().equals(currentSetting))
+                .build())
+            .collect(Collectors.toList());
     }
 }

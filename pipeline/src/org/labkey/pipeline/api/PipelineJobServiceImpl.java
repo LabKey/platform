@@ -84,6 +84,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Matcher;
 import java.util.stream.Collectors;
 
 public class PipelineJobServiceImpl implements PipelineJobService
@@ -969,6 +970,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             String javaHome = System.getenv("JAVA_HOME");
             if (javaHome != null)
             {
+                javaHome = javaHome.replaceAll("[/\\\\]", Matcher.quoteReplacement(File.separator)); // Match normalized file separators from `getExecutablePath`
                 String installPath = "${JAVA_HOME}/bin";
                 String found = _impl.getExecutablePath("jar", installPath, null, null, null);
                 assertEquals("Failed to expand environment variable correctly.", javaHome + File.separator + "bin" + File.separator + "jar", found);
@@ -1055,7 +1057,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
 
                 if (null != pipelinetest)
                 {
-                    assertEquals("Task pipelines from pipelinetest module", 8, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
+                    assertEquals("Task pipelines from pipelinetest module", 10, TASK_PIPELINE_CACHE.getResourceMap(pipelinetest).size());
                     assertEquals("Task factories from pipelinetest module", 3, TASK_FACTORY_CACHE.getResourceMap(pipelinetest).size());
                 }
 

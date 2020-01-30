@@ -27,7 +27,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerTable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;

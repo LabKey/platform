@@ -67,6 +67,7 @@ public class NavTree implements Collapsible
     private URLHelper _imageURL;
     private String _menuFilterItemCls = null;
     private boolean _usePost = false;
+    private String _confirmMessage = null;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -443,11 +444,22 @@ public class NavTree implements Collapsible
 
     public String getScript()
     {
-        if (_usePost && null != _script)
-            throw new IllegalStateException("Can't specify both usePost and setScript");
+        final String script;
 
-        return _usePost ? PageFlowUtil.postOnClickJavaScript(_href) : _script;
-    }
+        if (_usePost)
+        {
+            if (null != _script)
+                throw new IllegalStateException("Can't specify both usePost and setScript");
+
+            script = PageFlowUtil.postOnClickJavaScript(_href, _confirmMessage);
+        }
+        else
+        {
+            script = _script;
+        }
+
+        return script;
+   }
 
     public void setScript(String script)
     {
@@ -520,6 +532,12 @@ public class NavTree implements Collapsible
     {
         _usePost = true;
         return this;
+    }
+
+    public NavTree usePost(String confirmMessage)
+    {
+        _confirmMessage = confirmMessage;
+        return usePost();
     }
 
     public boolean isPost()
@@ -646,10 +664,10 @@ public class NavTree implements Collapsible
         LinkBuilder lb = new LinkBuilder(_text).href(_href).onClick(_script);
 
         if (_usePost)
-            lb.usePost();
+            lb.usePost(_confirmMessage);
 
         if (isNoFollow())
-            lb.attributes(Map.of("rel", "nofollow"));
+            lb.nofollow();
 
         return lb;
     }

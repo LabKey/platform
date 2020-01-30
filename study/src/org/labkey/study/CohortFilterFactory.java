@@ -445,7 +445,15 @@ public class CohortFilterFactory
         String subject = study.getSubjectColumnName();
         String subjectVisit = StudyService.get().getSubjectVisitTableName(study.getContainer());
 
-        FieldKey fk = FieldKey.decode(s);
+        FieldKey fk;
+        try
+        {
+            fk = FieldKey.decode(s);
+        }
+        catch (IllegalArgumentException badFieldKey)
+        {
+            return null; // Don't choke on malformed URL parameter
+        }
         List<String> parts = fk.getParts();
         if (parts.size() > 0)
         {

@@ -38,7 +38,7 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
         super(null);
     }
 
-    static public class FolderSchema extends UserSchema
+    static public class FolderSchema extends UserSchema implements QuerySchema.ContainerSchema
     {
         QuerySchema _fallback;
 

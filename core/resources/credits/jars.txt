@@ -1,10 +1,4 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-commons-codec-1.10.jar|Commons Codec|1.10|{link:Apache|http://jakarta.apache.org/commons/codec/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Provides implementations of common encoders and decoders such as Base64, Hex, Phonetic and URLs
-commons-logging-1.2.jar|Commons Logging|1.2|{link:Apache|http://jakarta.apache.org/commons/logging/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Bridge API to different logging implementations
-httpclient-4.5.3.jar|Apache HTTP Client|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
-httpmime-4.5.3.jar|Apache HTTP Mime|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
-httpcore-4.4.6.jar|Apache HTTP Core|4.4.6|{link:Apache|http://hc.apache.org/httpcomponents-core-ga/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP core library, HttpClient dependency
-json-simple-1.1.jar|JSON.simple - A Simple Java toolkit for JSON|Version 1.1|{link:JSON.simple|https://code.google.com/p/json-simple/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|tgaluhn|JSON parser for remoteapi
-opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
+radeox-1.0-b2.jar|Radeox|1.0b3|{link:Radeox|http://www.radeox.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Wiki renderer
 {table}

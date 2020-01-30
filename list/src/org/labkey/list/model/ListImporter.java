@@ -47,6 +47,7 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
@@ -301,6 +302,7 @@ public class ListImporter
 
         Map<String, ListDefinition> lists = ListService.get().getLists(c);
         int failedLists = 0;
+        int successfulLists = 0;
         for (String listName : lists.keySet())
         {
             ListDefinition def = lists.get(listName);
@@ -318,14 +320,15 @@ public class ListImporter
             if (!processSingle(listsDir, def, fileName, listXml != null, c, user, errors, log))
             {
                 failedLists++;
+            } else {
+                successfulLists++;
             }
         }
 
-        int size = lists.size() - failedLists;
-        log.info(size + " list" + (1 == size ? "" : "s") + " imported" + (failedLists == 0 ? ", all successfully" : ""));
+        log.info(StringUtilsLabKey.pluralize(successfulLists, "list") + " imported successfully");
         if (failedLists > 0)
         {
-            log.warn(failedLists + " list" + (1 == failedLists ? "" : "s") + " failed to import");
+            log.warn(StringUtilsLabKey.pluralize(failedLists, "list") + " failed to import");
         }
         if (fileTypeMap.size() > 0)
         {
@@ -541,54 +544,63 @@ public class ListImporter
 
     private boolean resolveDomainChanges(Container c, User user, DataLoader loader, ListDefinition listDef, Logger log, List<String> errors) throws IOException
     {
-        Domain domain = listDef.getDomain();
-        boolean isDirty = false;
-        if (domain != null)
+        boolean allowUpdates = true;
+        if (_importContext.getProps().containsKey(ListImportContext.ALLOW_DOMAIN_UPDATES))
         {
-            log.info("resolving domain of list: " + listDef.getName());
-            Map<String, DomainProperty> currentColumns = listDef.getDomain().getProperties().stream().collect(Collectors.toMap(DomainProperty::getName, e -> e));
+            allowUpdates = Boolean.parseBoolean(_importContext.getProps().get(ListImportContext.ALLOW_DOMAIN_UPDATES));
+        }
 
-            // Do a pass over the loader's columns
-            for (ColumnDescriptor loaderCol : loader.getColumns())
+        if (allowUpdates)
+        {
+            Domain domain = listDef.getDomain();
+            boolean isDirty = false;
+            if (domain != null)
             {
-                if (!currentColumns.containsKey(loaderCol.name))
+                log.info("resolving domain of list: " + listDef.getName());
+                Map<String, DomainProperty> currentColumns = listDef.getDomain().getProperties().stream().collect(Collectors.toMap(DomainProperty::getName, e -> e));
+
+                // Do a pass over the loader's columns
+                for (ColumnDescriptor loaderCol : loader.getColumns())
                 {
-                    // add the new field to the domain
-                    JdbcType jdbcType = JdbcType.valueOf(loaderCol.clazz);
-                    PropertyType type = PropertyType.getFromJdbcType(jdbcType);
-                    PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
-                    domain.addPropertyOfPropertyDescriptor(pd);
-                    isDirty = true;
-                    log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
+                    if (!currentColumns.containsKey(loaderCol.name))
+                    {
+                        // add the new field to the domain
+                        JdbcType jdbcType = JdbcType.valueOf(loaderCol.clazz);
+                        PropertyType type = PropertyType.getFromJdbcType(jdbcType);
+                        PropertyDescriptor pd = new PropertyDescriptor(domain.getTypeURI() + "." + loaderCol.name, type, loaderCol.name, c);
+                        domain.addPropertyOfPropertyDescriptor(pd);
+                        isDirty = true;
+                        log.info("\tAdded column " + loaderCol.name + " of type \"" + type.getXarName() + "\" to " + listDef.getName());
+                    }
+                    currentColumns.remove(loaderCol.name);
                 }
-                currentColumns.remove(loaderCol.name);
-            }
 
-            // Remove properties in the original domain that aren't found in the incoming file
-            for (String columnName : currentColumns.keySet())
-            {
-                if (listDef.getKeyName().equals(columnName) && !listDef.getKeyType().getLabel().equals("Auto-Increment Integer"))
+                // Remove properties in the original domain that aren't found in the incoming file
+                for (String columnName : currentColumns.keySet())
                 {
-                    log.warn("Failed to import data for '" + listDef.getName() + "'. Primary Key '" + columnName + "' not present in file.");
+                    if (listDef.getKeyName().equals(columnName) && !listDef.getKeyType().getLabel().equals("Auto-Increment Integer"))
+                    {
+                        log.warn("Failed to import data for '" + listDef.getName() + "'. Primary Key '" + columnName + "' not present in file.");
+                        return false;
+                    }
+                    else if (!listDef.getKeyName().equals(columnName) && !currentColumns.get(columnName).isRequired())
+                    {
+                        currentColumns.get(columnName).delete();
+                        isDirty = true;
+                        log.info("\tDeleted column " + columnName);
+                    }
+                }
+
+                try
+                {
+                    if (isDirty)
+                        domain.save(user);
+                }
+                catch (Exception e)
+                {
+                    errors.add(e.getMessage());
                     return false;
                 }
-                else if (!listDef.getKeyName().equals(columnName) && !currentColumns.get(columnName).isRequired())
-                {
-                    currentColumns.get(columnName).delete();
-                    isDirty = true;
-                    log.info("\tDeleted column " + columnName);
-                }
-            }
-
-            try
-            {
-                if (isDirty)
-                    domain.save(user);
-            }
-            catch (Exception e)
-            {
-                errors.add(e.getMessage());
-                return false;
             }
         }
         return true;

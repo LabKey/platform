@@ -40,8 +40,6 @@ public interface PremiumService
 
     boolean isFileWatcherSupported();
 
-    ActionURL getConfCustomPageElements(Container c);
-
     default CommonsMultipartResolver getMultipartResolver(ViewBackgroundInfo info)
     {
         return new CommonsMultipartResolver();
@@ -92,12 +90,5 @@ public interface PremiumService
         {
             return false;
         }
-
-        @Override
-        public ActionURL getConfCustomPageElements(Container c)
-        {
-            return null;
-        }
     }
-
 }

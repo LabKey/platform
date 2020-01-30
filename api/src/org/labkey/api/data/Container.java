@@ -110,8 +110,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private transient WeakReference<Container> _parent;
 
-    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
-
     private ContainerType _containerType;
 
     // include in results from searches outside this container?
@@ -1014,9 +1012,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getActiveModules(init, true);
     }
 
-    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies)
+    public Set<Module> getActiveModules(boolean init, boolean includeDependencies)
     {
-        return getActiveModules(init, includeDepencendies, null);
+        return getActiveModules(init, includeDependencies, null);
     }
 
     /** @return all modules that are active in the container, ordered based on module dependencies as implemented in {@link ModuleLoader#orderModules(Collection)} */

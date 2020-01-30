@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
@@ -54,7 +55,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 11.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 12.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -90,48 +91,28 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
 
     private @NotNull SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
     {
-        int version = versionNumber.getVersionInt();
+        PostgreSqlVersion pv = PostgreSqlVersion.get(versionNumber.getVersionInt());
 
-        // Version 9.4 or greater is allowed (except for versions that don't exist: 9.7, 9.8, 9.9)
-        if (version >= 94 && (version <= 96 || version >= 100))
+        if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == pv)
+            throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+
+        SqlDialect dialect = pv.getDialect();
+
+        if (logWarnings)
         {
-            // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
-            // addAdminWarningMessages() method to add a message that gets displayed in the page header for admins.
-//            if (94 == version)
-//            {
-//                // PostgreSQL 9.3 is deprecated; support will be removed soon
-//                if (logWarnings)
-//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-//
-//                return new PostgreSql94Dialect();
-//            }
-
-            if (94 == version)
-                return new PostgreSql94Dialect();
-
-            if (95 == version)
-                return new PostgreSql95Dialect();
-
-            if (96 == version)
-                return new PostgreSql96Dialect();
-
-            // PostgreSQL version format changed from x.y.z to x.y starting with 10.0... so last digit is now minor version.
-            version = version / 10;
-
-            if (version == 10)
-                return new PostgreSql_10_Dialect();
-
-            if (version == 11)
-                return new PostgreSql_11_Dialect();
-
-            // 12.x+ gets a warning.
-            if (logWarnings)
+            if (pv.isDeprecated())
+            {
+                String deprecationMessage = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + "; please upgrade. " + RECOMMENDED;
+                _log.warn(deprecationMessage);
+                dialect.setDeprecationMessage(HtmlString.of(deprecationMessage));
+            }
+            else if (!pv.isTested())
+            {
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-
-            return new PostgreSql_12_Dialect();
+            }
         }
 
-        throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+        return dialect;
     }
 
 
@@ -182,10 +163,10 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             String goodSql =
                     "SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +                       // Normal
+                    "SELECT core.executeJavaInitializationCode('upgradeCode');\n" +                // executeJavaInitializationCode works as a synonym
                     "    SELECT     core.executeJavaUpgradeCode    ('upgradeCode')    ;     \n" +  // Lots of whitespace
                     "select CORE.EXECUTEJAVAUPGRADECODE('upgradeCode');\n" +                       // Case insensitive
                     "SELECT core.executeJavaUpgradeCode('upgradeCode');";                          // No line ending
-
 
             String badSql =
                     "/* SELECT core.executeJavaUpgradeCode('upgradeCode');\n" +       // Inside block comment
@@ -201,7 +182,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             SqlDialect dialect = new PostgreSql94Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
-            assertEquals(4, good.getCounter());
+            assertEquals(5, good.getCounter());
 
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);

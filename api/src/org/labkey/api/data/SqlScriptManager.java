@@ -43,9 +43,10 @@ import java.util.Set;
 
 
 /**
+ * Responsible for scanning which SQL upgrade scripts are present for a module, and which ones should be run
+ * to transition from its previously installed version to the current version.
  * User: adam
  * Date: Sep 20, 2007
- * Time: 3:14:35 PM
  */
 public abstract class SqlScriptManager
 {
@@ -134,6 +135,25 @@ public abstract class SqlScriptManager
             from = nextScripts.first;
             scripts.addAll(nextScripts.second);
         }
+
+        return scripts;
+    }
+
+
+    // Get the incremental scripts within a range from a given collection of scripts
+    public List<SqlScript> getIncrementalScripts(double from, double to)
+    {
+        List<SqlScript> scripts = new ArrayList<>();
+
+        for (SqlScript script : _provider.getScripts(_schema))
+        {
+            if (script.getFromVersion() >= from && script.getToVersion() <= to && (script.getFromVersion() != from || script.getToVersion() != to))
+            {
+                scripts.add(script);
+            }
+        }
+
+        scripts.sort(null);
 
         return scripts;
     }
@@ -316,6 +336,9 @@ public abstract class SqlScriptManager
     }
 
 
+    /**
+     * Responsible for the core schema's scripts, which are treated as a special case and run before any other upgrades
+     */
     private static class CoreSqlScriptManager extends SqlScriptManager
     {
         private CoreSqlScriptManager(SqlScriptProvider provider, DbSchema schema)
@@ -349,7 +372,9 @@ public abstract class SqlScriptManager
         }
     }
 
-
+    /**
+     * Responsible for schemas that are not part of the same JDBC data source as the main LabKey database.
+     */
     private static class ExternalDataSourceSqlScriptManager extends SqlScriptManager
     {
         private DbSchema getLabKeySchema()

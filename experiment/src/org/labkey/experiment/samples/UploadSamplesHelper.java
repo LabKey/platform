@@ -27,6 +27,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
@@ -84,9 +85,6 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
-    private static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
-    private static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
-    private static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
 
 
     private static boolean isNameHeader(String name)
@@ -325,7 +323,13 @@ public abstract class UploadSamplesHelper
                     if (sample != null)
                         parentMaterials.put(sample, sampleRole(sample));
                     else
-                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                    {
+                        String message = "Sample input '" + parentValue + "'";
+                        if (parts.length > 1)
+                            message += " in SampleSet '" + parts[1] + "'";
+                        message += " not found";
+                        throw new ValidationException(message);
+                    }
                 }
             }
             if (parts.length == 2)
@@ -420,51 +424,13 @@ public abstract class UploadSamplesHelper
     private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        Integer rowId;
-        try
-        {
-            if (sampleSetName == null)
-                rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-            else
-                rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-            if (sampleSetName == null)
-            {
-                sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
-            }
-            sb.append(" " + e.getMessage());
-            throw new ValidationException(sb.toString());
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
+        return ExperimentService.get().findExpMaterial(c, user, sampleSetName, sampleName, cache, materialCache);
     }
 
     private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
-        Integer rowId;
-
-        try
-        {
-            rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e.getMessage());
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+        return ExperimentService.get().findExpData(c, user, dataClassName, dataName, cache, dataCache);
     }
 
 
@@ -552,7 +518,7 @@ public abstract class UploadSamplesHelper
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator source = builder.getDataIterator(context);
+            DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
             // drop columns
             var drop = new CaseInsensitiveHashSet();
@@ -581,8 +547,7 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            CoerceDataIterator c = new CoerceDataIterator(source, context, sampleset.getTinfo());
-
+            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampleset.getTinfo(), false));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);

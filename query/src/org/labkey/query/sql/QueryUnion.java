@@ -238,7 +238,7 @@ public class QueryUnion extends QueryRelation
 
                         else if (!JdbcType.NULL.equals(type) && !JdbcType.OTHER.equals(type) && !JdbcType.OTHER.equals(columnTypes.get(i)) &&
                                 !type.equals(columnTypes.get(i)) && JdbcType.OTHER.equals(JdbcType.promote(type, columnTypes.get(i))))
-                            Query.parseError(_query.getParseErrors(), _query._name + ": Mismatched types in UNION (" +
+                            Query.parseError(_query.getParseErrors(), _query._debugName + ": Mismatched types in UNION (" +
                                     type.name() + ", " + columnTypes.get(i).name() + ") for column position " + i, _qunion);
                         i += 1;
                     }
@@ -282,20 +282,19 @@ public class QueryUnion extends QueryRelation
 
 		if (null != sort && sort.size() > 0)
 		{
-			if (sort.size() > 0)
-			{
-				unionSql.append("\nORDER BY ");
-				String comma = "";
-				for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
-				{
-					QExpr expr = resolveFields(entry.getKey());
-					unionSql.append(comma);
-					unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
-					if (!entry.getValue())
-						unionSql.append(" DESC");
-					comma = ", ";
-				}
-			}
+            unionSql.append("\nORDER BY ");
+            String comma = "";
+            for (Map.Entry<QExpr, Boolean> entry : _qorderBy.getSort())
+            {
+                QExpr expr = resolveFields(entry.getKey());
+                unionSql.append(comma);
+                unionSql.append(expr.getSqlFragment(_schema.getDbSchema().getSqlDialect(), _query));
+                if (!entry.getValue())
+                    unionSql.append(" DESC");
+                comma = ", ";
+            }
+            if (null == _limit)
+                dialect.appendSortOnSubqueryWithoutLimitQualifier(unionSql);
 		}
         if (null != _limit)
         {

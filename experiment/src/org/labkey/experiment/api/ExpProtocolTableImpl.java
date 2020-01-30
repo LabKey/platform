@@ -82,7 +82,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
             case ProtocolImplementation:
             {
                 PropertyDescriptor pd = ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor();
-                PropertyColumn col = new PropertyColumn(pd, this, "lsid", getContainer(), getUserSchema().getUser(), true);
+                PropertyColumn col = new PropertyColumn(pd, this, "lsid", getContainer(), getUserSchema().getUser(), false);
                 col.setName(alias);
                 col.setHidden(true);
                 return col;

@@ -49,7 +49,7 @@ public enum PasswordRule
         @Override
         public String getSummaryRuleHTML()
         {
-            return "six non-whitespace characters or more, cannot match email address";
+            return "Your password must be at least six characters and cannot contain spaces or match your email address.";
         }
         
         @Override
@@ -64,7 +64,7 @@ public enum PasswordRule
             if (!passwordPattern.matcher(password).matches())
             {
                 if (null != messages)
-                    messages.add("Your password must be six non-whitespace characters or more.");
+                    messages.add("Your password must be at least six characters and cannot contain spaces.");
 
                 return false;
             }
@@ -106,7 +106,7 @@ public enum PasswordRule
         @Override
         public String getSummaryRuleHTML()
         {
-            return "must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address";
+            return "Your password must be at least eight characters, include a mix of letters, digits, and symbols, and cannot include your email address.";
         }
         @Override
         boolean isValidForLogin(@NotNull String password, @NotNull User user, @Nullable Collection<String> messages)

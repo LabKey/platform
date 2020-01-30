@@ -47,6 +47,7 @@ public class SubstitutionInLine extends ValueToCommandArgs
         _converter.setSubstitution(substitution);
     }
 
+    @Override
     public List<String> toArgs(String value)
     {
         if (value != null)

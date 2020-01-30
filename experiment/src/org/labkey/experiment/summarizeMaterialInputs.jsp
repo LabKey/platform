@@ -15,19 +15,17 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.data.DisplayColumnGroup" %>
+<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
 <%@ page import="org.labkey.api.exp.api.ExpMaterial" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
 <%@ page import="org.labkey.experiment.DerivedSamplePropertyHelper" %>
-<%@ page import="org.labkey.api.exp.PropertyDescriptor" %>
-<%@ page import="org.labkey.api.data.TableViewForm" %>
-<%@ page import="org.labkey.api.data.DisplayColumnGroup" %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
+<%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib"%>
 <%
@@ -47,18 +45,20 @@
     }
 %>
 
-<table>
+<table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
-        <td valign="bottom" class="labkey-form-label"><strong>Sample Name</strong></td>
-        <td valign="bottom" class="labkey-form-label"><strong>Role</strong><%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
+        <td class="labkey-column-header">Sample Name</td>
+        <td class="labkey-column-header">Role<%= helpPopup("Role", "Roles allow you to label an input as being used in a particular way. It serves to disambiguate the purpose of each of the input materials. Each input should have a unique role.")%></td>
         <% if (!sameTypeInputs.isEmpty()) { %>
-            <td valign="bottom" class="labkey-form-label"><strong>Copy properties to...</strong></td>
+            <td class="labkey-column-header">Copy properties to...</td>
         <% } %>
     </tr>
 <%
+    int rowCount = 0;
     for (Map.Entry<ExpMaterial, String> entry : bean.getSourceMaterials().entrySet())
-    { %>
-        <tr>
+    {
+%>
+        <tr class="<%=h(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row")%>">
             <td><%= h(entry.getKey().getName())%></td>
             <td><%= h(entry.getValue()) %></td>
             <% if (sameTypeInputs.contains(entry.getKey())) { %>
@@ -88,6 +88,8 @@
                 </td>
             <% } %>
         </tr>
-    <%
-    } %>
+<%
+        rowCount++;
+    }
+%>
 </table>

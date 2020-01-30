@@ -34,7 +34,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.FolderExportPermission;
@@ -70,6 +69,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.ReadSomePermission;
 import org.labkey.api.security.permissions.SeeGroupDetailsPermission;
 import org.labkey.api.security.permissions.SeeUserDetailsPermission;
+import org.labkey.api.security.permissions.SiteAdminPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.ApplicationAdminRole;
@@ -501,6 +501,7 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL(PermissionsAction.class, getContainer());
         }
+
     }
 
     public static class PermissionsForm extends ReturnUrlForm
@@ -563,9 +564,6 @@ public class SecurityController extends SpringActionController
         private boolean sendEmail;
         private boolean confirmed;
         private String mailPrefix;
-        // flag to indicate whether this modification was made via the 'quick ui'
-        // if so, we'll redirect to a different page when we're done.
-        private boolean quickUI;  // TODO: Delete. Seems to be unused.
 
         public boolean isConfirmed()
         {
@@ -615,16 +613,6 @@ public class SecurityController extends SpringActionController
         public void setMailPrefix(String messagePrefix)
         {
             this.mailPrefix = messagePrefix;
-        }
-
-        public boolean isQuickUI()
-        {
-            return quickUI;
-        }
-
-        public void setQuickUI(boolean quickUI)
-        {
-            this.quickUI = quickUI;
         }
     }
 
@@ -711,8 +699,6 @@ public class SecurityController extends SpringActionController
             // 1 - Global admins group cannot be empty
             // 2 - warn if you are deleting yourself from global or project admins
             // 3 - if user confirms delete, post to action again, with list of users to delete and confirmation flag.
-
-            assert !form.isQuickUI() : "isQuickUI() is NYI";  // TODO: Remove... unless quick UI is actually used
 
             Container container = getContainer();
 
@@ -834,7 +820,7 @@ public class SecurityController extends SpringActionController
                             if (!user.isActive())
                                 errors.reject(ERROR_MSG, "You may not add the user '" + PageFlowUtil.filter(email)
                                         + "' to this group because that user account is currently deactivated." +
-                                        " To re-activate this account, contact your system administrator.");
+                                        " To reactivate this account, contact your system administrator.");
                             else
                                 addUsers.add(user);
                         }
@@ -849,10 +835,6 @@ public class SecurityController extends SpringActionController
             }
 
             _successURL = new ActionURL(GroupAction.class, getContainer()).addParameter("id", _group.getUserId());
-
-//  TODO: Delete this and renderContainerPermissions() -- unused
-//            if (form.isQuickUI())
-//                return renderContainerPermissions(_group, errors, messages, false);
 
             return !errors.hasErrors();
         }
@@ -1026,26 +1008,29 @@ public class SecurityController extends SpringActionController
                 filter.addCondition(FieldKey.fromParts("Active"), true);
             ctx.setBaseFilter(filter);
             rgn.prepareDisplayColumns(c);
-            ExcelWriter ew = new ExcelWriter(rgn.getResultSet(ctx), rgn.getDisplayColumns())
-            {
-                @Override
-                public void renderGrid(RenderContext ctx, Sheet sheet, List<ExcelColumn> visibleColumns) throws SQLException, MaxRowsExceededException
+            try (ExcelWriter ew = new ExcelWriter(rgn.getResults(ctx), rgn.getDisplayColumns())
                 {
-                    for (Pair<Integer, String> memberGroup : memberGroups)
+                    @Override
+                    public void renderGrid (RenderContext ctx, Sheet sheet, List < ExcelColumn > visibleColumns) throws
+                    SQLException, MaxRowsExceededException
                     {
-                        Map<String, Object> row = new CaseInsensitiveHashMap<>();
-                        row.put("displayName", memberGroup.getValue());
-                        row.put("userId", memberGroup.getKey());
-                        ctx.setRow(row);
-                        renderGridRow(sheet, ctx, visibleColumns);
+                        for (Pair<Integer, String> memberGroup : memberGroups)
+                        {
+                            Map<String, Object> row = new CaseInsensitiveHashMap<>();
+                            row.put("displayName", memberGroup.getValue());
+                            row.put("userId", memberGroup.getKey());
+                            ctx.setRow(row);
+                            renderGridRow(sheet, ctx, visibleColumns);
+                        }
+                        super.renderGrid(ctx, sheet, visibleColumns);
                     }
-                    super.renderGrid(ctx, sheet, visibleColumns);
-                }
-            };
-            ew.setAutoSize(true);
-            ew.setSheetName(group + " Members");
-            ew.setFooter(group + " Members");
-            ew.write(response);
+                })
+            {
+                ew.setAutoSize(true);
+                ew.setSheetName(group + " Members");
+                ew.setFooter(group + " Members");
+                ew.write(response);
+            }
         }
     }
 
@@ -1129,7 +1114,6 @@ public class SecurityController extends SpringActionController
                             group.getName(), oldRole.getName(), newRole.getName()), group.getUserId());
                     break;
             }
-
         }
 
         public boolean handlePost(Object o, BindException errors)
@@ -1221,6 +1205,7 @@ public class SecurityController extends SpringActionController
         {
             return new ActionURL("Security", getViewContext().getRequest().getParameter("view"), getContainer());
         }
+
     }
 
     public static class AddUsersForm extends ReturnUrlForm
@@ -1293,11 +1278,13 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class AddUsersAction extends FormViewAction<AddUsersForm>
     {
+        @Override
         public ModelAndView getView(AddUsersForm form, boolean reshow, BindException errors)
         {
             return new JspView<Object>("/org/labkey/core/security/addUsers.jsp", form, errors);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
@@ -1306,8 +1293,10 @@ public class SecurityController extends SpringActionController
             return root;
         }
 
+        @Override
         public void validateCommand(AddUsersForm form, Errors errors) {}
 
+        @Override
         public boolean handlePost(AddUsersForm form, BindException errors) throws Exception
         {
             String[] rawEmails = form.getNewUsers() == null ? null : form.getNewUsers().split("\n");
@@ -1367,7 +1356,10 @@ public class SecurityController extends SpringActionController
                 }
                 else if (userToClone != null)
                 {
-                    clonePermissions(userToClone, email);
+                    if (userToClone.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
+                        errors.addError(new FormattedError(userToClone.getEmail() + " cannot be cloned.  Only site administrators can clone users with site administration permissions."));
+                    else
+                        clonePermissions(userToClone, email);
                 }
                 if (user != null)
                     form.addMessage(String.format("%s<meta userId='%d' email='%s'/>", result, user.getUserId(), PageFlowUtil.filter(user.getEmail())));
@@ -1394,13 +1386,16 @@ public class SecurityController extends SpringActionController
 
                         if (group != null)
                         {
-                            try
+                            if (getUser().hasSiteAdminPermission() || (!group.isAdministrators() && !ContainerManager.getRoot().hasPermission(group, SiteAdminPermission.class)))
                             {
-                                SecurityManager.addMember(group, user);
-                            }
-                            catch (InvalidGroupMembershipException e)
-                            {
-                                // Best effort... fail quietly
+                                try
+                                {
+                                    SecurityManager.addMember(group, user);
+                                }
+                                catch (InvalidGroupMembershipException e)
+                                {
+                                    // Best effort... fail quietly
+                                }
                             }
                         }
                     }
@@ -1420,7 +1415,10 @@ public class SecurityController extends SpringActionController
                     if (!roles.isEmpty())
                     {
                         for (Role role : roles)
-                            policy.addRoleAssignment(user, role);
+                        {
+                            if (getUser().hasSiteAdminPermission() || !role.getPermissions().contains(SiteAdminPermission.class))
+                                policy.addRoleAssignment(user, role);
+                        }
 
                         SecurityPolicyManager.savePolicy(policy);
                     }
@@ -1428,6 +1426,7 @@ public class SecurityController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(AddUsersForm addUsersForm)
         {
             throw new UnsupportedOperationException();
@@ -1556,6 +1555,8 @@ public class SecurityController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(EmailForm emailForm, BindException errors)
         {
+            setTitle("Confirm Password Reset");
+
             String message;
             boolean loginExists = false;
 
@@ -1631,6 +1632,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Success");
             return new HtmlView(page);
         }
 
@@ -1653,6 +1655,7 @@ public class SecurityController extends SpringActionController
             );
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
+            setTitle("Password Reset Failed");
             return new HtmlView(page);
         }
 

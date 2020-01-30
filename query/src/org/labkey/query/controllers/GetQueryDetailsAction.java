@@ -82,6 +82,12 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 {
     private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
 
+    @Override
+    protected long getLastModified(Form form)
+    {
+        return QueryService.get().metadataLastModified();
+    }
+
     public ApiResponse execute(Form form, BindException errors)
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -361,7 +367,13 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 if (domain != null)
                 {
                     if (kind.canEditDefinition(user, domain))
-                        resp.put("editDefinitionUrl", kind.urlEditDefinition(domain, getViewContext()));
+                    {
+                        ActionURL editUrl = kind.urlEditDefinition(domain, getViewContext());
+                        ActionURL showDataUrl = domain.urlShowData(getViewContext());
+                        if (editUrl != null && showDataUrl != null)
+                            editUrl.addReturnURL(showDataUrl); // send user to executeQuery action after save
+                        resp.put("editDefinitionUrl", editUrl);
+                    }
                 }
                 else
                 {

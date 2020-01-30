@@ -207,13 +207,7 @@ public class DesignerController extends SpringActionController
     {
         public NavTree appendNavTrail(NavTree root)
         {
-            try
-            {
-            if (null != getCommand().getPanel())
-                root.addChild("Study Protocol Registration");
-            } catch(Exception e)
-            {}
-            return root;
+            return root.addChild("Study Protocol Registration");
         }
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
@@ -253,7 +247,7 @@ public class DesignerController extends SpringActionController
                     params.put("finishURL", form.getFinishURL());
 
                 HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
-                if (0 != form.getStudyId() && info != null)
+                if (0 != form.getStudyId() && info != null && DiscussionService.get() != null)
                 {
                     HttpView discussion = DiscussionService.get().getDiscussionArea(
                             getViewContext(),

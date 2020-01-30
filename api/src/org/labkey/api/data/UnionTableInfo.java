@@ -17,12 +17,12 @@ package org.labkey.api.data;
 
 import java.util.List;
 
-/*
-* User: Karl Lum
-* Date: Mar 4, 2009
-* Time: 4:55:11 PM
-*/
-public interface UnionTableInfo
+/**
+ * Extra support for tables that represents a union of multiple underlying tables or queries
+ * User: Karl Lum
+ * Date: Mar 4, 2009
+ */
+public interface UnionTableInfo extends TableInfo
 {
     List<ColumnInfo> getUnionColumns();
 }

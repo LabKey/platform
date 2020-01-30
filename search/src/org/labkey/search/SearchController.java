@@ -622,6 +622,9 @@ public class SearchController extends SpringActionController
                     o.put("container", hit.container);
                     o.put("url", form.isNormalizeUrls() ? hit.normalizeHref(contextPath) : hit.url);
                     o.put("summary", StringUtils.trimToEmpty(hit.summary));
+                    o.put("score", hit.score);
+                    o.put("identifiers", hit.identifiers);
+                    o.put("category", StringUtils.trimToEmpty(hit.category));
 
                     if (form.isExperimentalCustomJson())
                     {

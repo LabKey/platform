@@ -111,7 +111,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
+    private static final Set<Pair<Class<?>, String>> INSTANTIATED_MODULES = new HashSet<>();
     private static final String XML_FILENAME = "module.xml";
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
@@ -155,6 +155,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
+    private String _labkeyVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
@@ -218,7 +219,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class<?>, String> reg = new Pair<>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
@@ -798,10 +799,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public final void setVcsRevision(String svnRevision)
+    public final void setVcsRevision(String vcsRevision)
     {
         checkLocked();
-        _vcsRevision = svnRevision;
+        _vcsRevision = vcsRevision;
     }
 
     @Nullable
@@ -812,10 +813,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
-    public final void setVcsUrl(String svnUrl)
+    public final void setVcsUrl(String vcsUrl)
     {
         checkLocked();
-        _vcsUrl = svnUrl;
+        _vcsUrl = vcsUrl;
     }
 
     @Nullable
@@ -887,6 +888,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildUser = buildUser;
     }
 
+    @Override
     public final String getBuildTime()
     {
         return _buildTime;
@@ -989,6 +991,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
+
     @Override
     public boolean shouldManageVersion()
     {
@@ -999,6 +1002,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _manageVersion;
     }
 
+    public String getLabkeyVersion()
+    {
+        return _labkeyVersion;
+    }
+
+    @SuppressWarnings("unused")
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _labkeyVersion = labkeyVersion;
+    }
+
     @Override
     public final Map<String, String> getProperties()
     {
@@ -1006,6 +1020,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
         props.put("Module Class", getClass().getName());
         props.put("Version", getFormattedVersion());
+        if (StringUtils.isNotBlank(getLabkeyVersion()))
+            props.put("LabKey Version", getLabkeyVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
@@ -1383,7 +1399,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     _sourcePathMatched = true;
                     String moduleEnlistmentId = getEnlistmentId();
 
-                    if (null != moduleEnlistmentId)
+                    if (StringUtils.isNotBlank(moduleEnlistmentId))
                     {
                         String serverEnlistmentId = AppProps.getInstance().getEnlistmentId();
                         boolean useSource = (null != serverEnlistmentId && serverEnlistmentId.equals(moduleEnlistmentId));

@@ -44,6 +44,7 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -101,6 +102,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -154,6 +156,8 @@ import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -1986,7 +1990,7 @@ public class CoreController extends SpringActionController
                     ClientDependency cd = ClientDependency.fromPath(library);
 
                     // only allow libs
-                    if (ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
+                    if (cd != null && ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
                     {
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
@@ -2301,6 +2305,8 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    // Remove this annotation once @glass is corrected to call dismissWarnings.api and Biologics moves to 19.3
+    @ActionNames("dismissWarnings, dismissCoreWarnings") @RemoveIn20_1
     public class DismissWarningsAction extends MutatingApiAction
     {
         @Override
@@ -2524,12 +2530,77 @@ public class CoreController extends SpringActionController
             return _qcStateHandler;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
                 returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
             return returnUrl;
+        }
+    }
+
+    public static class TransformWikiForm
+    {
+        private String _body;
+        private String _fromFormat;
+        private String _toFormat;
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public String getFromFormat()
+        {
+            return _fromFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setFromFormat(String fromFormat)
+        {
+            _fromFormat = fromFormat;
+        }
+
+        public String getToFormat()
+        {
+            return _toFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setToFormat(String toFormat)
+        {
+            _toFormat = toFormat;
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from JavaScript: discuss.js, wikiEdit.js
+    @RequiresNoPermission
+    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
+    {
+        @Override
+        public ApiResponse execute(TransformWikiForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String newBody = form.getBody();
+
+            if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
+            {
+                WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
+                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody);
+            }
+
+            response.put("toFormat", form.getToFormat());
+            response.put("fromFormat", form.getFromFormat());
+            response.put("body", newBody);
+
+            return response;
         }
     }
 }

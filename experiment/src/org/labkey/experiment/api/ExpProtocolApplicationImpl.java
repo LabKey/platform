@@ -32,14 +32,18 @@ import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<ProtocolApplication> implements ExpProtocolApplication
 {
@@ -47,6 +51,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     private List<ExpDataImpl> _inputDatas;
     private List<ExpMaterialImpl> _outputMaterials;
     private List<ExpDataImpl> _outputDatas;
+    private Map<String, String> _lsidMap;
 
     // For serialization
     protected ExpProtocolApplicationImpl() {}
@@ -234,6 +239,12 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         _object.setRecordCount(recordCount);
     }
 
+    public void setComments(String comments)
+    {
+        ensureUnlocked();
+        _object.setComments(comments);
+    }
+
     public int getActionSequence()
     {
         return _object.getActionSequence();
@@ -308,6 +319,10 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
             SQLFragment dataSQL = new SQLFragment("UPDATE " + ExperimentServiceImpl.get().getTinfoData());
             dataSQL.append(commonSQL);
             new SqlExecutor(ExperimentServiceImpl.get().getSchema()).execute(dataSQL);
+
+            ProvenanceService pvs = ProvenanceService.get();
+            if (pvs != null)
+                pvs.deleteProvenance(getRowId());
 
             Table.delete(ExperimentServiceImpl.get().getTinfoProtocolApplication(), getRowId());
         }
@@ -435,5 +450,35 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
                 "Name: " + getName() +
                 ", Sequence: " + getActionSequence() +
                 ", LSID: " + getLSID() + (getRun() == null ? null : ( ", run: " + getRun().getLSID()));
+    }
+
+    @Override
+    public void addProvenanceInput(Set<String> lsids)
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (null != pvs && !lsids.isEmpty())
+        {
+            pvs.addProvenanceInputs(this.getContainer(), this, lsids);
+        }
+    }
+
+    @Override
+    public void addProvenanceMapping(Set<Pair<String, String>> lsidPairs)
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (null != pvs && !lsidPairs.isEmpty())
+        {
+            pvs.addProvenance(this.getContainer(), this, lsidPairs);
+        }
+    }
+
+    @Override
+    public Set<Pair<String, String>> getProvenanceMapping()
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return Collections.emptySet();
+
+        return pvs.getProvenanceObjectUris(getRowId());
     }
 }

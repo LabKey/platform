@@ -1167,7 +1167,7 @@ public class Portal
 
        return createHtml(
                 DIV(
-                        X.FORM(
+                        LK.FORM(
                                 at(method, "POST", action, PageFlowUtil.urlProvider(ProjectUrls.class).getAddWebPartURL(c))
                                         .cl("form-inline").cl(pullClass).cl(visibilityClass),
 

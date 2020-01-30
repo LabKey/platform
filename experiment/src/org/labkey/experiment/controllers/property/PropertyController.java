@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -36,7 +37,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
@@ -44,23 +44,28 @@ import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -75,20 +80,20 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.PrintWriters;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -112,9 +117,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static java.util.Collections.emptySet;
 
 public class PropertyController extends SpringActionController
 {
@@ -127,14 +136,27 @@ public class PropertyController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    static void configureObjectMapper(ObjectMapper om)
+    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
     {
+        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
+        if(null == filter)
+        {
+            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+        }
+        else
+        {
+            gwtDomainPropertiesFilter = filter;
+        }
+
+        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
+        om.setFilterProvider(gwtDomainFilterProvider);
         om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
         om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
         om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
-    @RequiresNoPermission
+    @RequiresNoPermission //Real permissions will be enforced by the DomainKind
     public class EditDomainAction extends SimpleViewAction<DomainForm>
     {
         private Domain _domain;
@@ -180,6 +202,24 @@ public class PropertyController extends SpringActionController
                 }
                 Lsid domainLSID = new Lsid(domainURI);
                 _domain = PropertyService.get().createDomain(getContainer(), domainURI, form.getQueryName() != null ? form.getQueryName() : domainLSID.getObjectId());
+
+                // save the domain so that we ensure it exists before we try to edit it
+                try (var ignored = SpringActionController.ignoreSqlUpdates())
+                {
+                    _domain.save(getUser());
+                }
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw UnexpectedException.wrap(e);
+                }
+
+                // re-fetch the domain so that we can redirect using the saved domainId
+                _domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                ActionURL redirectURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain);
+                URLHelper returnURL = getViewContext().getActionURL().getReturnURL();
+                if (returnURL != null)
+                    redirectURL.addReturnURL(returnURL);
+                throw new RedirectException(redirectURL);
             }
             else
             {
@@ -189,24 +229,7 @@ public class PropertyController extends SpringActionController
                 }
             }
 
-            Map<String, String> props = new HashMap<>();
-            ActionURL defaultReturnURL = _domain.getDomainKind().urlShowData(_domain, getViewContext());
-            ActionURL returnURL = form.getReturnActionURL(defaultReturnURL);
-            props.put("typeURI", _domain.getTypeURI());
-            if (returnURL != null)
-            {
-                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-            }
-            props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
-            props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
-            props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
-            props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
-            if (null != form.getSchemaName())
-                props.put("schemaName", form.getSchemaName());
-            if (null != form.getQueryName())
-                props.put("queryName", form.getQueryName());
-
-            return new GWTView("org.labkey.experiment.property.Designer", props);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -218,26 +241,24 @@ public class PropertyController extends SpringActionController
         }
     }
 
-
-    @RequiresPermission(ReadPermission.class)
-    public class PropertyServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new PropertyServiceImpl(getViewContext());
-        }
-    }
-
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class CreateDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
@@ -356,10 +377,10 @@ public class PropertyController extends SpringActionController
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -377,12 +398,20 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class) //Real permissions will be enforced later on by the DomainKind
     public class SaveDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         public Object execute(DomainApiForm form, BindException errors)
@@ -393,8 +422,19 @@ public class PropertyController extends SpringActionController
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
+            boolean includeWarnings = form.includeWarnings();
+            boolean hasErrors = false;
+
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser(), includeWarnings);
+
+            for (ValidationError ve : updateErrors.getErrors())
+            {
+                if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
+                    hasErrors = true;
+            }
+
+            if (hasErrors || includeWarnings)
+                updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
             Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -439,6 +479,7 @@ public class PropertyController extends SpringActionController
         private String schemaName;
         private String queryName;
         private Integer domainId;
+        private boolean includeWarnings;
 
         public Integer getDomainId()
         {
@@ -579,6 +620,16 @@ public class PropertyController extends SpringActionController
         {
             this.containerPath = containerPath;
         }
+
+        public boolean includeWarnings()
+        {
+            return includeWarnings;
+        }
+
+        public void setIncludeWarnings(boolean includeWarnings)
+        {
+            this.includeWarnings = includeWarnings;
+        }
     }
 
     /**
@@ -598,12 +649,20 @@ public class PropertyController extends SpringActionController
                 errors.reject(ERROR_REQUIRED, "Either a file is required to be posted or the id/path to a file that exists on the server must be supplied.");
         }
 
+        //Keeping both request and response object mappers to avoid serialization/deserialization issues
+        //as not sure if request object mapper is needed
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
+            configureObjectMapper(mapper, null);
             return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
         }
 
         @Override
@@ -613,7 +672,9 @@ public class PropertyController extends SpringActionController
             File file = form.getFile() != null ? (File) ConvertUtils.convert(form.getFile().toString(), File.class) : null;
             DataLoader loader = null;
 
-            if (file != null && file.exists())
+            PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(getContainer());
+            // Allow preview only for files under the pipeline root.
+            if (file != null && file.exists() && pipelineRoot != null && pipelineRoot.isUnderRoot(file) )
             {
                 loader = DataLoader.get().createLoader(file, null, true, null, null);
             }
@@ -930,7 +991,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                             Container container, User user)
+                                             Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -943,7 +1004,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        return kind.updateDomain(original, update, container, user);
+        return kind.updateDomain(original, update, container, user, includeWarnings);
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)
@@ -967,7 +1028,7 @@ public class PropertyController extends SpringActionController
     }
 
     @NotNull
-    private static GWTDomain getDomain(String schemaName, String queryName, Integer domainId, Container container, User user) throws NotFoundException
+    private static GWTDomain getDomain(String schemaName, String queryName, Integer domainId, @NotNull Container container, @NotNull User user) throws NotFoundException
     {
         if ((schemaName == null || queryName == null) && domainId == null)
         {
@@ -981,7 +1042,7 @@ public class PropertyController extends SpringActionController
             if (dom == null)
                 throw new NotFoundException("Could not find domain for " + domainId);
 
-            if (dom.getContainer() != container)
+            if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
 
             domain = DomainUtil.getDomainDescriptor(user, dom);
@@ -1010,62 +1071,10 @@ public class PropertyController extends SpringActionController
         public void setSchemaName(String schemaName) {this.schemaName = schemaName;}
     }
 
-    class PropertyServiceImpl extends DomainEditorServiceBase implements org.labkey.experiment.property.client.PropertyService
-    {
-        public PropertyServiceImpl(ViewContext context)
-        {
-            super(context);
-        }
-
-        public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update, boolean create)
-        {
-            try
-            {
-                if (create)
-                {
-                    String domainURI = update.getDomainURI();
-                    if (domainURI == null)
-                        throw new IllegalArgumentException("domainURI required to create domain");
-
-                    DomainKind kind = PropertyService.get().getDomainKind(domainURI);
-                    if (kind == null)
-                        throw new IllegalArgumentException("domain kind not found for domainURI");
-
-                    Domain d = PropertyService.get().createDomain(getContainer(), domainURI, update.getName());
-                    d.save(getUser());
-
-                    // this _create_ code path is a bit odd, why don't we create the domain before we start editing it?
-                    // refetch the domain to get the new timestamp can remove reselect if/when Table.insert reselects timestamp columns
-                    d = PropertyService.get().getDomain(getContainer(), domainURI);
-                    if (null != d)
-                        orig.set_Ts(JdbcUtil.rowVersionToString(d.get_Ts()));
-                }
-
-                return super.updateDomainDescriptor(orig, update);
-            }
-            catch (ChangePropertyDescriptorException e)
-            {
-                throw UnexpectedException.wrap(e);
-            }
-        }
-
-        @Override
-        public GWTDomain getDomainDescriptor(String typeURI)
-        {
-            GWTDomain domain = super.getDomainDescriptor(typeURI);
-            if (domain == null)
-                return null;
-            
-            domain.setDefaultValueOptions(new DefaultValueType[]
-                    { DefaultValueType.FIXED_EDITABLE, DefaultValueType.LAST_ENTERED }, DefaultValueType.FIXED_EDITABLE);
-            return domain;
-        }
-    }
-
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.convertValue(domain, Map.class);
@@ -1079,7 +1088,7 @@ public class PropertyController extends SpringActionController
     public static String convertDomainToJson(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om);
+        configureObjectMapper(om, null);
         try
         {
             return om.writeValueAsString(domain);
@@ -1156,50 +1165,56 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared;
 
         @Override
-        protected ObjectMapper createObjectMapper()
+        protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper);
-            mapper.addMixIn(GWTDomain.class, GWTListDomainActionMixin.class);
-            SimpleBeanPropertyFilter propertiesFilter;
-            FilterProvider filters;
-
-            if (!includeFields)
-            {
-                propertiesFilter = SimpleBeanPropertyFilter.serializeAllExcept("fields","indices");
-            }
-            else
-            {
-                propertiesFilter =  SimpleBeanPropertyFilter.serializeAll();
-            }
-            filters = new SimpleFilterProvider()
-                    .addFilter("listDomainsActionFilter", propertiesFilter);
-            mapper.setFilterProvider(filters);
+            configureObjectMapper(mapper, null);
             return mapper;
         }
 
         @Override
-        public Object execute(ContainerDomainForm containerDomainForm, BindException errors) throws Exception
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+
+            if (!includeFields)
+            {
+               configureObjectMapper(mapper, SimpleBeanPropertyFilter.serializeAllExcept("fields","indices"));
+            }
+            else
+            {
+                configureObjectMapper(mapper, null);
+            }
+            return mapper;
+        }
+
+        @Override
+        public Object execute(ContainerDomainForm containerDomainForm, BindException errors)
         {
             includeFields = containerDomainForm.isIncludeFields();
             includeProjectAndShared = containerDomainForm.isIncludeProjectAndShared();
 
-            return listDomains(getContainer(), getUser(), containerDomainForm, includeProjectAndShared);
+            Container c = containerDomainForm.getContainerPath() == null ? getContainer():
+                    ContainerService.get().getForPath(containerDomainForm.getContainerPath());
+
+            List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
+
+            return success(listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
-    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm containerDomainForm, boolean includeProjectAndShared)
+    private List<GWTDomain> listDomains(Container c, User user, ContainerDomainForm form, boolean includeProjectAndShared)
     {
-        List<GWTDomain> gwtDomains = new ArrayList<>();
-        if (containerDomainForm.getDomainKinds() != null)
+        Stream<? extends Domain> domains;
+        if (form.getDomainKinds() != null && !form.getDomainKinds().isEmpty())
         {
-            PropertyService.get().getDomains(c, user, containerDomainForm.getDomainKinds(), includeProjectAndShared).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+            domains = PropertyService.get().getDomainsStream(c, user, form.getDomainKinds(), includeProjectAndShared);
         }
         else
         {
-            PropertyService.get().getDomains(c).forEach(d -> gwtDomains.add(DomainUtil.getDomainDescriptor(getUser(), d)));
+            domains = PropertyService.get().getDomainsStream(c, user, emptySet(), includeProjectAndShared);
         }
-        return gwtDomains;
+        return domains.map(d -> DomainUtil.getDomainDescriptor(getUser(), d)).collect(Collectors.toList());
     }
 
 
@@ -1210,6 +1225,17 @@ public class PropertyController extends SpringActionController
         boolean includeProjectAndShared = false;
         String containerPath;
         Set<String> domainKinds;
+        String apiVersion;
+
+        public String getApiVersion()
+        {
+            return apiVersion;
+        }
+
+        public void setApiVersion(String apiVersion)
+        {
+            this.apiVersion = apiVersion;
+        }
 
         public boolean isIncludeFields()
         {
@@ -1251,6 +1277,71 @@ public class PropertyController extends SpringActionController
             this.includeProjectAndShared = includeProjectAndShared;
         }
     }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
+    {
+        @Override
+        public Object execute(GetPropertiesForm form, BindException errors) throws Exception
+        {
+            Stream<PropertyDescriptor> properties;
+            if (form.getPropertyIds() != null && !form.getPropertyIds().isEmpty())
+            {
+                properties = form.getPropertyIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(OntologyManager::getPropertyDescriptor)
+                        .filter(Objects::nonNull)
+                        .filter(pd -> getContainer().equals(pd.getContainer()));
+            }
+            else if (form.getPropertyURIs() != null && !form.getPropertyURIs().isEmpty())
+            {
+                properties = form.getPropertyURIs().stream()
+                        .filter(Objects::nonNull)
+                        .map(uri -> OntologyManager.getPropertyDescriptor(uri, getContainer()))
+                        .filter(Objects::nonNull);
+            }
+            else
+            {
+                throw new ApiUsageException("Expected propertyIds or propertyURIs");
+            }
+
+            List<GWTPropertyDescriptor> gwtProps = properties
+                    .map(DomainUtil::getPropertyDescriptor)
+                    .collect(Collectors.toList());
+
+            return success(gwtProps);
+        }
+    }
+
+    public static class GetPropertiesForm
+    {
+        private List<Integer> propertyIds;
+        private List<String> propertyURIs;
+
+        public List<Integer> getPropertyIds()
+        {
+            return propertyIds;
+        }
+
+        public void setPropertyIds(List<Integer> propertyIds)
+        {
+            this.propertyIds = propertyIds;
+        }
+
+        public List<String> getPropertyURIs()
+        {
+            return propertyURIs;
+        }
+
+        public void setPropertyURIs(List<String> propertyURIs)
+        {
+            this.propertyURIs = propertyURIs;
+        }
+
+    }
+
 
     public static class TestCase extends Assert
     {

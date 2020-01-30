@@ -347,7 +347,7 @@ public class PipelineController extends SpringActionController
 
                 if (pipeRoot != null && !errors.hasErrors())
                 {
-                    PermissionView permissionView = new PermissionView(SecurityPolicyManager.getPolicy(pipeRoot));
+                    PermissionView permissionView = new PermissionView(pipeRoot);
                     permissionView.setTitle("File Permissions");
                     permissionView.setFrame(WebPartView.FrameType.PORTAL);
                     result.addView(permissionView);
@@ -726,6 +726,7 @@ public class PipelineController extends SpringActionController
         {
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
+
     }
 
     public static class PermissionForm extends ReturnUrlForm
@@ -778,11 +779,11 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public class PermissionView extends JspView<SecurityPolicy>
+    public class PermissionView extends JspView<PipeRoot>
     {
-        PermissionView(SecurityPolicy policy)
+        PermissionView(PipeRoot pipeRoot)
         {
-            super("/org/labkey/pipeline/permission.jsp", policy);
+            super("/org/labkey/pipeline/permission.jsp", pipeRoot);
         }
     }
 

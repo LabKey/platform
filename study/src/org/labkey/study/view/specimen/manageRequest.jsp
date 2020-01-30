@@ -21,9 +21,10 @@
 <%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.settings.AppProps"%>
 <%@ page import="org.labkey.api.study.Location"%>
+<%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.view.HttpView"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
+<%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
@@ -202,106 +203,108 @@
 <h3>Your request has been successfully submitted.</h3>
 <%
     }
-%>
-    <table class="labkey-request-warnings">
+    %>
+<table class="labkey-request-warnings">
 <%
-    boolean multipleSites = bean.getProvidingLocations().length > 1;
-    if (bean.hasMissingSpecimens() || multipleSites)
-    {
-%>
-        <tr class="labkey-wp-header">
-            <th align="left">Request  Warnings</th>
-        </tr>
-<%
-        if (bean.hasMissingSpecimens())
+    if (!SpecimenService.get().getRequestCustomizer().hideRequestWarnings()) { %>
+    <%
+        boolean multipleSites = bean.getProvidingLocations().length > 1;
+        if (bean.hasMissingSpecimens() || multipleSites)
         {
-%>
-        <tr>
-            <td class="labkey-form-label">
-                <span class="labkey-error"><b>WARNING: Missing Specimens</b></span><br><br>
-                The following specimen(s) are part of this request, but have been deleted from the database:<br>
-                <%
-                    for (String specId : bean.getMissingSpecimens())
-                    {
-                        %><b><%= h(specId) %></b><br><%
-                    }
+    %>
+            <tr class="labkey-wp-header">
+                <th align="left">Request  Warnings</th>
+            </tr>
+    <%
+            if (bean.hasMissingSpecimens())
+            {
+    %>
+            <tr>
+                <td class="labkey-form-label">
+                    <span class="labkey-error"><b>WARNING: Missing Specimens</b></span><br><br>
+                    The following specimen(s) are part of this request, but have been deleted from the database:<br>
+                    <%
+                        for (String specId : bean.getMissingSpecimens())
+                        {
+                            %><b><%= h(specId) %></b><br><%
+                        }
 
-                    if (bean.isRequestManager())
-                    {
-                %>
-                <br>You may remove these specimens from this request if they are not expected to be re-added to the database.<br>
-                <%= button("Delete missing specimens")
-                        .onClick("return LABKEY.Utils.confirmAndPost('Delete missing specimens? This action cannot be undone.', '" + buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSpecimenRequest().getRowId()) + "')") %><%
-                    }
-                %>
-            </td>
-        </tr>
-<%
-        }
+                        if (bean.isRequestManager())
+                        {
+                    %>
+                    <br>You may remove these specimens from this request if they are not expected to be re-added to the database.<br>
+                    <%= button("Delete missing specimens")
+                            .onClick("return LABKEY.Utils.confirmAndPost('Delete missing specimens? This action cannot be undone.', '" + buildURL(SpecimenController.DeleteMissingRequestSpecimensAction.class, "id=" + bean.getSpecimenRequest().getRowId()) + "')") %><%
+                        }
+                    %>
+                </td>
+            </tr>
+    <%
+            }
 
-        if (multipleSites && !bean.isFinalState())
-        {
-%>
-        <tr>
-            <td class="labkey-form-label">
-                <span class="labkey-error"><b>WARNING: Vials are at multiple locations.</b></span><br>
-                Requests containing vials from multiple providing locations may require increased processing time.<br>
-                Multiple locations are expected if some vials have already shipped while others have not.
-                Current locations for this request are:<br>
-                <%
-                    for (Location location : bean.getProvidingLocations())
-                    {
-                        %><b><%= h(location.getLabel()) %></b><br><%
-                    }
-                %>
-            </td>
-        </tr>
-<%
+            if (multipleSites && !bean.isFinalState())
+            {
+    %>
+            <tr>
+                <td class="labkey-form-label">
+                    <span class="labkey-error"><b>WARNING: Vials are at multiple locations.</b></span><br>
+                    Requests containing vials from multiple providing locations may require increased processing time.<br>
+                    Multiple locations are expected if some vials have already shipped while others have not.
+                    Current locations for this request are:<br>
+                    <%
+                        for (Location location : bean.getProvidingLocations())
+                        {
+                            %><b><%= h(location.getLabel()) %></b><br><%
+                        }
+                    %>
+                </td>
+            </tr>
+    <%
+            }
         }
-    }
-    if (bean.isRequestManager() && (bean.isFinalState() || bean.isRequirementsComplete()))
-    {
-%>
-        <tr class="labkey-wp-header">
-            <th align="left">Request  Notes</th>
-        </tr>
-        <tr>
-            <td class="labkey-form-label">
-<%
-        if (bean.isFinalState())
+        if (bean.isRequestManager() && (bean.isFinalState() || bean.isRequirementsComplete()))
         {
-%>
-                This request is in a final state; no changes are allowed.<br>
-                To make changes, you must <a href="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class,"id=" + bean.getSpecimenRequest().getRowId()))%>">
-                change the request's status</a> to a non-final state.
-<%
-        }
-        else if (bean.isRequirementsComplete())
-        {
-%>
-                This request's requirements are complete. Next steps include:<br>
-                <ul>
-                    <li>Email specimen lists to their originating locations: <%= link("Originating Location Specimen Lists",
-                        new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
-                                .addParameter("id", bean.getSpecimenRequest().getRowId())
-                                .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString())) %>
-                    </li>
-                    <li>Email specimen lists to their providing locations: <%= link("Providing Location Specimen Lists",
-                        new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
-                                .addParameter("id", bean.getSpecimenRequest().getRowId())
-                                .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) %>
-                    </li>
-                    <li>Update request status to indicate completion: <%= link("Update Request",
-                        new ActionURL(SpecimenController.ManageRequestStatusAction.class, c)
-                                .addParameter("id", bean.getSpecimenRequest().getRowId())) %>
-                    </li>
-                </ul>
-<%
-        }
-%>
-            </td>
-        </tr>
-<%
+    %>
+            <tr class="labkey-wp-header">
+                <th align="left">Request  Notes</th>
+            </tr>
+            <tr>
+                <td class="labkey-form-label">
+    <%
+            if (bean.isFinalState())
+            {
+    %>
+                    This request is in a final state; no changes are allowed.<br>
+                    To make changes, you must <a href="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class,"id=" + bean.getSpecimenRequest().getRowId()))%>">
+                    change the request's status</a> to a non-final state.
+    <%
+            }
+            else if (bean.isRequirementsComplete())
+            {
+    %>
+                    This request's requirements are complete. Next steps include:<br>
+                    <ul>
+                        <li>Email specimen lists to their originating locations: <%= link("Originating Location Specimen Lists",
+                            new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                                    .addParameter("id", bean.getSpecimenRequest().getRowId())
+                                    .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.ORIGINATING.toString())) %>
+                        </li>
+                        <li>Email specimen lists to their providing locations: <%= link("Providing Location Specimen Lists",
+                            new ActionURL(SpecimenController.LabSpecimenListsAction.class, c)
+                                    .addParameter("id", bean.getSpecimenRequest().getRowId())
+                                    .addParameter("listType", SpecimenController.LabSpecimenListsBean.Type.PROVIDING.toString())) %>
+                        </li>
+                        <li>Update request status to indicate completion: <%= link("Update Request",
+                            new ActionURL(SpecimenController.ManageRequestStatusAction.class, c)
+                                    .addParameter("id", bean.getSpecimenRequest().getRowId())) %>
+                        </li>
+                    </ul>
+    <%
+            }
+    %>
+                </td>
+            </tr>
+<%  }
     }
     if (notYetSubmitted)
     {
@@ -310,7 +313,7 @@
             <th align="left">Unsubmitted Request</th>
         </tr>
         <tr>
-            <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted.</b></span>
+            <td class="labkey-form-label"><span class="labkey-error"><b>This request has not been submitted yet.</b></span>
 <%
         if (manager.hasEditRequestPermissions(user, bean.getSpecimenRequest()))
         {
@@ -318,7 +321,7 @@
             <div style="padding-bottom: 0.5em">
 <%
             List<Vial> vials = bean.getSpecimenRequest().getVials();
-            if (vials != null && vials.size() > 0)
+            if (!vials.isEmpty() || SpecimenService.get().getRequestCustomizer().allowEmptyRequests())
             {
 %>
                 Request processing will begin after the request has been submitted.<br><br>
@@ -364,13 +367,17 @@
 <%
         }
     }
+    else // is submitted
+    { %>
+        <%= SpecimenService.get().getRequestCustomizer().getSubmittedMessage(getContainer(), bean.getSpecimenRequest().getRowId()) %><%
+    }
 %>
         <tr class="labkey-wp-header">
             <th align="left">Request Information</th>
         </tr>
         <tr>
             <td>
-                <table class="table-condensed">
+                <table class="table-condensed specimen-request-information">
                     <tr>
                         <th valign="top" align="right">Requester</th>
                         <td><%= h(creatingUser != null ? creatingUser.getDisplayName(user) : "Unknown") %></td>

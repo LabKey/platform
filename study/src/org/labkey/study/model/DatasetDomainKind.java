@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -42,6 +43,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
@@ -178,12 +180,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return sql;
     }
 
-    @Override
-    public boolean allowAttachmentProperties()
-    {
-        return false;
-    }
-
     // Issue 16526:  nobody should call this overload of generateDomainURI for DatasetDomainKind.  Instead
     // use the overload below with a unique id (the dataset's entityId).  Assert is here to track down
     // any callers.
@@ -234,6 +230,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         return createURL;
     }
 
+    @Override
+    public boolean allowFileLinkProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
 
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
@@ -319,6 +326,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         String keyPropertyName = arguments.containsKey("keyPropertyName") ? (String)arguments.get("keyPropertyName") : null;
         boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
         boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
+        boolean isManagedField = arguments.containsKey("isManagedField") ? (Boolean)arguments.get("isManagedField") : false;
 
         if (name == null)
             throw new IllegalArgumentException("Dataset name must not be null");
@@ -329,6 +337,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
         if (categoryId != null && categoryName != null)
             throw new IllegalArgumentException("Category ID and category name cannot both be specified");
+
+        if (isManagedField && keyPropertyName == null)
+            throw new IllegalArgumentException("KeyPropertyName must be specified if isManagedField is true");
 
         // make sure the domain matches the timepoint type
         TimepointType timepointType = study.getTimepointType();
@@ -354,8 +365,29 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
+            KeyManagementType managementType = KeyManagementType.None;
+            if (isManagedField)
+            {
+                PropertyDescriptor pd = new PropertyDescriptor();
+
+                String rangeUri = "";
+                for (GWTPropertyDescriptor a : (List<GWTPropertyDescriptor>)domain.getFields())
+                {
+                    if (keyPropertyName.equalsIgnoreCase(a.getName()))
+                    {
+                        rangeUri = a.getRangeURI();
+                        break;
+                    }
+
+                }
+
+                pd.setRangeURI(rangeUri);
+                managementType = KeyManagementType.getManagementTypeFromProp(pd.getPropertyType());
+            }
+
+
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField);
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType);
 
             if (def.getDomain() != null)
             {

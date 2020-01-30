@@ -119,6 +119,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 try
                 {
                     w.getLockObject().wait(TimeUnit.MINUTES.toMillis(1));
+                    break;
                 }
                 catch (InterruptedException x)
                 {/* */}

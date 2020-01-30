@@ -111,13 +111,19 @@ configurations {
     // and the org.json module as well because they get in the way of our own JSON object implementations from server/api
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
     all*.exclude group: "org.json", module: "json"
+
+    creditable {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+
 }
 
-// this is required for compiling the API jar file.
+// declared separately to include the gwtsrc directory
 sourceSets {
   main {
     java {
-      srcDirs =["src", "gwtsrc"]
+      srcDirs = ["src", "gwtsrc", "$project.buildDir/xb"]
     }
     // TODO move resources files into resources directory to avoid this overlap
     resources {
@@ -128,39 +134,37 @@ sourceSets {
   }
 }
 
+
 dependencies {
-  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle))
-  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
-  BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: project.path, depProjectConfig: "xmlSchema")
+    // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
+    // and so the dependencies are included in the dependencies.txt file.
+    BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default")
+    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+    compile project.tasks.schemasCompile.outputs.files
+    // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
+    creditable "org.labkey:labkey-client-api:${project.labkeyVersion}"
 
-  compile project.files(project.tasks.schemasJar)
+    BuildUtils.addTomcatBuildDependencies(project, "implementation")
+    // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
+    // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
+    compile "javax.servlet:servlet-api:${servletApiVersion}"
+    compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
 
-  BuildUtils.addTomcatBuildDependencies(project, "implementation")
-  // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
-  // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-  compile "javax.servlet:servlet-api:${servletApiVersion}"
-  compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
-
-  external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
+    external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
       exclude group: "org.json", module:"json"
-  }
-  external ("org.apache.poi:poi-ooxml:${poiVersion}") {
+    }
+    external ("org.apache.poi:poi-ooxml:${poiVersion}") {
     // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
     // dependency here in favor of the explicit dependency with a different version.
     exclude group: "org.apache.xmlbeans", module: "xmlbeans"
-  }
-  external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
+    }
+    external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
-  // These are required for running unit tests through the server junit controller
-  external test
+    // These are required for running unit tests through the server junit controller
+    external test
 
-  jspCompile files(project.tasks.jar)
-  jspCompile apache, jackson, spring
-  webappCompile files(project.tasks.jar)
-  webappCompile "com.google.code.kaptcha:kaptcha:${kaptchaVersion}"
-  webappCompile "org.springframework:spring-context:${springVersion}"
-  webappCompile "com.sun.mail:jakarta.mail:${javaMailVersion}"
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"))
-  BuildUtils.addLabKeyDependency(project: project, config: "webappCompile", depProjectPath: BuildUtils.getInternalProjectPath(project.gradle))
+    jspImplementation files(project.tasks.jar)
+    jspImplementation apache, jackson, spring
 }
+

@@ -18,6 +18,8 @@ package org.labkey.api.exp.query;
 
 public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
 {
+    String PROTOCOL_PATTERN_PREFIX = "urn:lsid:%:Protocol.%:";
+
     enum Column
     {
         RowId,

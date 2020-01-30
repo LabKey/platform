@@ -16,7 +16,6 @@
 
 package org.labkey.study.importer;
 
-import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +37,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -57,8 +55,10 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
+    @Override
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
@@ -164,7 +164,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
             if (null != reader)
             {
-                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), ctx.getActivity()))
+                if (!StudyManager.getInstance().importDatasetSchemas(study, ctx.getUser(), reader, errors, ctx.isCreateSharedDatasets(), true, ctx.getActivity()))
                     return;
             }
 

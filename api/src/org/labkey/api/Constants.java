@@ -17,11 +17,11 @@ package org.labkey.api;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.module.ModuleLoader;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.function.Function;
 
 /**
  * This class provides a single place to update system-wide constants used for sizing caches and other purposes.
@@ -35,7 +35,7 @@ public class Constants
     static
     {
         Collection<Double> list = new LinkedList<>();
-        double version = ModuleLoader.EARLIEST_UPGRADE_VERSION;
+        double version = getEarliestUpgradeVersion();
 
         while (version <= getNextReleaseVersion())
         {
@@ -55,7 +55,17 @@ public class Constants
      */
     public static double getPreviousReleaseVersion()
     {
-        return 19.20;
+        return 20.000;
+    }
+
+    /**
+     * The earliest LabKey version that this server will upgrade. This constant should be updated every major release.
+     *
+     * @return The earliest upgrade version number
+     */
+    public static double getEarliestUpgradeVersion()
+    {
+        return 17.3;
     }
 
     /**
@@ -72,12 +82,22 @@ public class Constants
         return incrementVersion(getPreviousReleaseVersion());
     }
 
-    private static double incrementVersion(double previous)
+    public static double incrementVersion(double version)
     {
-        int round = (int) Math.round(previous * 10.0); // 163 or 171 or 182
+        return changeVersion(version, fractional -> (3 == fractional ? 8 : 1));
+    }
+
+    public static double decrementVersion(double version)
+    {
+        return changeVersion(version, fractional -> -(1 == fractional ? 8 : 1));
+    }
+
+    private static double changeVersion(double version, Function<Integer, Integer> function)
+    {
+        int round = (int) Math.round(version * 10.0); // 163 or 171 or 182
         int fractional = round % 10;  // [1, 2, 3]
 
-        return (round + (3 == fractional ? 8 : 1)) / 10.0;
+        return (round + function.apply(fractional)) / 10.0;
     }
 
     public static Collection<Double> getValidVersions()
@@ -109,10 +129,12 @@ public class Constants
         {
             double version = 16.20;
 
-            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20})
+            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20, 19.30, 20.10, 20.20, 20.30, 21.10})
             {
+                double previous = version;
                 version = incrementVersion(version);
                 assertEquals(expected, version, 0);
+                assertEquals(previous, decrementVersion(version), 0);
             }
         }
     }

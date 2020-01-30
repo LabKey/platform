@@ -17,6 +17,7 @@
 package org.labkey.bigiron.mssql;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +34,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.TableResolver;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.Warnings;
 
@@ -117,12 +117,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
-    private final TableResolver _tableResolver;
-
-    BaseMicrosoftSqlServerDialect(TableResolver tableResolver)
-    {
-        _tableResolver = tableResolver;
-    }
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -919,7 +913,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJavaUpgradeCode\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*,?\\s*(\\d)?;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJava(?:Upgrade|Initialization)Code\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*,?\\s*(\\d)?;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
     // Split Microsoft SQL scripts on GO statements
@@ -1074,10 +1068,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
      */
     private List<String> getResizeColumnStatement(TableChange change)
     {
-        List<String> statements = new ArrayList<>();
-
         change.updateResizeIndices();
-        statements.addAll(getDropIndexStatements(change));
+        List<String> statements = new ArrayList<>(getDropIndexStatements(change));
 
         //Generate the alter table portion of statement
         String alterTableSegment = String.format("ALTER TABLE %s", makeTableIdentifier(change));
@@ -1484,6 +1476,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return change.getSchemaName() + "." + change.getTableName();
     }
 
+    @Override
     public String nameIndex(String tableName, String[] indexedColumns)
     {
         return nameIndex(tableName, indexedColumns, false);
@@ -1651,10 +1644,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
+        super.addAdminWarningMessages(warnings);
         ClrAssemblyManager.addAdminWarningMessages(warnings);
-
-        if ("2008R2".equals(getProductVersion()))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 
     @Override
@@ -1765,9 +1756,12 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     }
 
     @Override
-    protected String getDatabaseMaintenanceSql()
+    protected @Nullable String getDatabaseMaintenanceSql()
     {
-        return "EXEC sp_updatestats;";
+        // RDS doesn't allow executing sp_updatestats, so just skip it for now, part of #35805.
+        // In the future, we may want to integrate with something like SQL Maintenance Solution tool,
+        // https://ola.hallengren.com/sql-server-index-and-statistics-maintenance.html
+        return DbScope.getLabKeyScope().isRds() ? null : "EXEC sp_updatestats;";
     }
 
 
@@ -1791,6 +1785,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         }
     }
 
+    @Override
     public boolean hasTriggers(DbSchema schema, String schemaName, String tableName)
     {
         SQLFragment sql = listTriggers(schemaName, tableName);
@@ -1863,6 +1858,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return true;
     }
 
+    @Override
     public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
         CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<>());
@@ -1895,6 +1891,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return parameters;
     }
 
+    @Override
     public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
     {
         StringBuilder sb = new StringBuilder();
@@ -1964,7 +1961,7 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     protected TableResolver getTableResolver()
     {
-        return _tableResolver;
+        return MicrosoftSqlServerDialectFactory.getTableResolver();
     }
 
     @Override
@@ -2317,5 +2314,41 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     public boolean isLabKeyWithSupported()
     {
         return true;
+    }
+
+    @Override
+    public boolean isRds(DbScope scope)
+    {
+        // See https://stackoverflow.com/questions/35915024/amazon-rds-sql-server-how-to-detect-if-it-is-rds
+
+        boolean rds = false;
+
+        LOG.debug("Attempting to detect if " + scope.getDatabaseName() + " is an RDS SQL Server database");
+        LOG.debug("Checking for a database named \"rdsadmin\"");
+        Integer id = new SqlSelector(scope, "SELECT DB_ID('rdsadmin')").getObject(Integer.class);
+
+        if (null == id)
+        {
+            LOG.debug("\"rdsadmin\" database is not present - this database is not RDS");
+        }
+        else
+        {
+            LOG.debug("\"rdsadmin\" database is present - this database may be RDS");
+            LOG.debug("Now attempting to access model.sys.database_files, which should be disallowed on RDS");
+
+            try
+            {
+                // Suppress exception logging -- we expect this to fail in the RDS case
+                new SqlSelector(scope, "SELECT COUNT(*) FROM model.sys.database_files").setLogLevel(Level.OFF).getObject(Integer.class);
+                LOG.debug("Successfully accessed model.sys.database_files - this database is not RDS");
+            }
+            catch (Exception e)
+            {
+                LOG.debug("Failed to access model.sys.database_files (\"" + e.toString() + "\") - determined that this database is RDS");
+                rds = true;
+            }
+        }
+
+        return rds;
     }
 }

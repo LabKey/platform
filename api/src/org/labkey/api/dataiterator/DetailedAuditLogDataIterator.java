@@ -106,4 +106,12 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             return new DetailedAuditLogDataIterator(in, context, queryTable, auditAction, user, container);
         };
     }
+
+    @Override
+    public void debugLogInfo(StringBuilder sb)
+    {
+        super.debugLogInfo(sb);
+        if (null != _data)
+            _data.debugLogInfo(sb);
+    }
 }

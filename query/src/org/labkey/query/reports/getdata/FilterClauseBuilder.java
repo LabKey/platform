@@ -17,6 +17,7 @@ package org.labkey.query.reports.getdata;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
@@ -91,11 +92,11 @@ public class FilterClauseBuilder
     {
         if (_type == null)
         {
-            throw new IllegalStateException("No type specified for filter");
+            throw new ApiUsageException("No type specified for filter");
         }
         if (_fieldKey == null)
         {
-            throw new IllegalStateException("No fieldKey specified for filter");
+            throw new ApiUsageException("No fieldKey specified for filter");
         }
         filter.addCondition(_fieldKey, _value, _type);
     }

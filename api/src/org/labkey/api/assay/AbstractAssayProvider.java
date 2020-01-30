@@ -41,6 +41,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -84,6 +85,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -125,6 +127,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
+import static org.labkey.api.util.PageFlowUtil.encode;
+
 /**
  * User: jeckels
  * Date: Sep 14, 2007
@@ -162,8 +166,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
     public static final String QC_ENABLED_PROPERTY_SUFFIX = "QCEnabled";
 
+    // The result row LSID namespace prefix <code>_resultRowLSIDPrefix</code> should end with this constant.
+    public static final String RESULT_LSID_PREFIX_PART = "AssayResultRow";
+
     protected final String _protocolLSIDPrefix;
     protected final String _runLSIDPrefix;
+    protected final String _resultRowLSIDPrefix;
     protected final Set<Module> _requiredModules = new HashSet<>();
 
     private final Module _declaringModule;
@@ -173,10 +181,19 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, @Nullable AssayDataType dataType, Module declaringModule)
     {
-        _dataType = dataType;
+        this(protocolLSIDPrefix, runLSIDPrefix, null, dataType, declaringModule);
+    }
+
+    public AbstractAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, @Nullable AssayDataType dataType, Module declaringModule)
+    {
         _protocolLSIDPrefix = protocolLSIDPrefix;
         _runLSIDPrefix = runLSIDPrefix;
+        _resultRowLSIDPrefix = resultRowLSIDPrefix;
+        if (resultRowLSIDPrefix != null && !resultRowLSIDPrefix.endsWith(RESULT_LSID_PREFIX_PART))
+            throw new IllegalArgumentException("Assay result row LSID prefix should end with '" + RESULT_LSID_PREFIX_PART + "': " + resultRowLSIDPrefix);
+
         _declaringModule = declaringModule;
+        _dataType = dataType;
     }
 
     public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
@@ -223,7 +240,8 @@ public abstract class AbstractAssayProvider implements AssayProvider
                     Map<String, Object> dataMap = new HashMap<>();
 
                     String runLSID = (String)runLSIDColumn.getValue(rs);
-                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId());
+                    int resultRowId = (int)rowIdColumn.getValue(rs);
+                    String sourceLSID = getSourceLSID(runLSID, publishKey.getDataId(), resultRowId);
 
                     if (sourceContainer == null)
                     {
@@ -304,7 +322,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         }
     }
 
-    protected String getSourceLSID(String runLSID, int dataId)
+    protected String getSourceLSID(String runLSID, int dataId, int resultRowId)
     {
         return runLSID;
     }
@@ -312,6 +330,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public void registerLsidHandler()
     {
         LsidManager.get().registerHandler(_runLSIDPrefix, new LsidManager.ExpRunLsidHandler());
+        String resultRowLSIDPrefix = getResultRowLSIDPrefix();
+        if (resultRowLSIDPrefix != null)
+        {
+            LsidManager.get().registerHandler(resultRowLSIDPrefix, new LsidManager.AssayResultLsidHandler(this));
+        }
     }
 
     public Priority getPriority(ExpProtocol protocol)
@@ -504,7 +527,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createRunDomain(Container c, User user)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_RUN), "Run Fields");
-        domain.setDescription("The user is prompted to enter run level properties for each file they import.  This is the second step of the import process.");
+        domain.setDescription("Define the run fields for this assay design. The user is prompted for these fields once per run and they will be applied to all rows in the run.");
         return new Pair<>(domain, Collections.emptyMap());
     }
 
@@ -516,9 +539,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     protected Pair<Domain, Map<DomainProperty, Object>> createBatchDomain(Container c, User user, boolean includeStandardProperties)
     {
         Domain domain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_BATCH), "Batch Fields");
-        domain.setDescription("The user is prompted for batch properties once for each set of runs they import. The batch " +
-                "is a convenience to let users set properties that seldom change in one place and import many runs " +
-                "using them. This is the first step of the import process.");
+        domain.setDescription("Define the batch fields for this assay design. The user is prompted for these fields once for each set of runs they import to this assay.");
 
         if (includeStandardProperties)
         {
@@ -848,6 +869,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             if (name.startsWith(defaultPrefix))
                 name = name.substring(defaultPrefix.length());
             Domain domainCopy = PropertyService.get().createDomain(targetContainer, getPresubstitutionLsid(domainLsid.getNamespacePrefix()), name);
+            domainCopy.setDescription(domain.getDescription());
             for (DomainProperty propSrc : domain.getProperties())
             {
                 DomainProperty propCopy = domainCopy.addProperty();
@@ -1404,6 +1426,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 String editLink = editURL.toString();
                 if (!protocolContainer.equals(contextContainer))
                 {
+                    // TODO issue with the returnURL on this editLink if it has its own params
                     editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
                 }
                 manageMenu.addChild("Edit assay design", editLink);
@@ -1470,6 +1493,25 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public String getRunLSIDPrefix()
     {
         return _runLSIDPrefix;
+    }
+
+    public @Nullable String getResultRowLSIDPrefix()
+    {
+        return _resultRowLSIDPrefix;
+    }
+
+    @Override
+    public @Nullable String getResultRowLSIDExpression()
+    {
+        if (getResultRowLSIDPrefix() == null)
+            return null;
+        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + getResultRowLSIDPrefix();
+    }
+
+    @Override
+    public @Nullable ActionURL getResultRowURL(Container container, Lsid lsid)
+    {
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, lsid);
     }
 
     @Override

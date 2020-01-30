@@ -15,14 +15,6 @@
  */
 package org.labkey.api.exp;
 
-/**
- * Created by matthew on 6/13/2016.
- *
- * See DomainTemplateGroup and DomainTemplate (in Internal module)
- *
- * This class is used for persisting information about the usage of a template
- */
-
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,7 +25,13 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 
-/* class used for persisting info about a template */
+/**
+ * Created by matthew on 6/13/2016.
+ *
+ * See DomainTemplateGroup and DomainTemplate (in Internal module)
+ *
+ * This class is used for persisting information about the usage of a template
+ */
 public class TemplateInfo
 {
     final String moduleName;
@@ -97,12 +95,11 @@ public class TemplateInfo
             Double createdModuleVersion = null;
             if (null != map.get("createdModuleVersion"))
                 createdModuleVersion = (Double) JdbcType.DOUBLE.convert(map.get("createdModuleVersion"));
-            TemplateInfo t1 = new TemplateInfo(
+            return new TemplateInfo(
                     _toString(map.get("moduleName")),
                     _toString(map.get("templateGroupName")),
                     _toString(map.get("tableName")),
                     createdModuleVersion);
-            return t1;
         }
         catch (IOException x)
         {

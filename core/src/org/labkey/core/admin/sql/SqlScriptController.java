@@ -17,7 +17,6 @@
 package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -25,7 +24,6 @@ import org.json.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -56,6 +54,8 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -66,7 +66,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -187,17 +186,17 @@ public class SqlScriptController extends SpringActionController
 
     public static class ScriptsForm
     {
-        private boolean _managedOnly = false;
+        private boolean _consolidateOnly = false;
 
-        public boolean isManagedOnly()
+        public boolean isConsolidateOnly()
         {
-            return _managedOnly;
+            return _consolidateOnly;
         }
 
         @SuppressWarnings("unused")
-        public void setManagedOnly(boolean managedOnly)
+        public void setConsolidateOnly(boolean consolidateOnly)
         {
-            _managedOnly = managedOnly;
+            _consolidateOnly = consolidateOnly;
         }
     }
 
@@ -214,14 +213,14 @@ public class SqlScriptController extends SpringActionController
             {
                 html.append("<tr><td colspan=4>");
 
-                if (form.isManagedOnly())
-                    html.append(PageFlowUtil.textLink("show all modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
+                if (form.isConsolidateOnly())
+                    html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
-                    html.append(PageFlowUtil.textLink("ignore unmanaged modules", new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
+                    html.append(PageFlowUtil.link("show only \"consolidate scripts\" modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("consolidateOnly", true)));
 
-                html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.textLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
+                html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
                 html.append("</td></tr>");
                 html.append("<tr><td>&nbsp;</td></tr>");
@@ -233,10 +232,10 @@ public class SqlScriptController extends SpringActionController
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
-            if (form.isManagedOnly())
+            if (form.isConsolidateOnly())
             {
                 modules = modules.stream()
-                    .filter(Module::shouldManageVersion)
+                    .filter(Module::shouldConsolidateScripts)
                     .collect(Collectors.toList());
             }
 
@@ -471,15 +470,19 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class ConsolidateScriptsAction extends SimpleViewAction<ConsolidateForm>
+    private static abstract class AbstractScriptRangeAction<K extends ScriptRangeForm> extends SimpleViewAction<K>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors)
+        protected String getCommandClassMethodName()
+        {
+            return "getScriptHtml";
+        }
+
+        @Override
+        public final ModelAndView getView(K form, BindException errors)
         {
             double _fromVersion = form.getFromVersion();
             double _toVersion = form.getToVersion();
-            boolean _includeSingleScripts = form.getIncludeSingleScripts();
 
             StringBuilder formHtml = new StringBuilder();
 
@@ -491,16 +494,41 @@ public class SqlScriptController extends SpringActionController
             formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
             formHtml.append(ModuleContext.formatVersion(_toVersion));
             formHtml.append("\"/></td></tr>\n");
-            formHtml.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
-            formHtml.append(_includeSingleScripts ? " checked" : "");
-            formHtml.append("/>Include single scripts</td></tr>\n");
+
+            appendExtraRows(formHtml, form);
+
             formHtml.append("    <tr><td colspan=2>");
             formHtml.append(PageFlowUtil.button("Update").submit(true));
             formHtml.append("</td></tr>\n");
             formHtml.append("  </table>\n");
             formHtml.append("</form><br>\n");
 
-            List<ScriptConsolidator> consolidators = getConsolidators(_fromVersion, _toVersion, _includeSingleScripts);
+            StringBuilder html = getScriptHtml(form);
+            html.insert(0, formHtml);
+
+            return new HtmlView(html.toString());
+        }
+
+        protected abstract void appendExtraRows(StringBuilder html, K form);
+        public abstract StringBuilder getScriptHtml(K form);
+    }
+
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class ConsolidateScriptsAction extends AbstractScriptRangeAction<ConsolidateForm>
+    {
+        @Override
+        protected void appendExtraRows(StringBuilder html, ConsolidateForm form)
+        {
+            html.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
+            html.append(form.getIncludeSingleScripts() ? " checked" : "");
+            html.append("/>Include single scripts</td></tr>\n");
+        }
+
+        @Override
+        public StringBuilder getScriptHtml(ConsolidateForm form)
+        {
+            List<ScriptConsolidator> consolidators = getConsolidators(form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
             StringBuilder html = new StringBuilder();
 
             for (ScriptConsolidator consolidator : consolidators)
@@ -515,18 +543,14 @@ public class SqlScriptController extends SpringActionController
 
                 html.append("<br>\n");
 
-                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), _fromVersion, _toVersion, _includeSingleScripts);
+                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
                 html.append(PageFlowUtil.button((1 == consolidator.getScripts().size() ? "copy" : "consolidate") + " to " + filename).href(consolidateURL)).append("<br><br>\n");
             }
 
             if (0 == html.length())
                 html.append("No schemas require consolidation in this range");
-            else
-                html.append(PageFlowUtil.link("Create batch file from current settings").href(getConsolidateBatchActionURL(form)).attributes(Collections.singletonMap("target", "batchFile")).toString());
 
-            html.insert(0, formHtml);
-
-            return new HtmlView(html.toString());
+            return html;
         }
 
         @Override
@@ -545,58 +569,6 @@ public class SqlScriptController extends SpringActionController
                 root.addChild("Consolidate Scripts", consolidatedScriptsURL);
 
             return root;
-        }
-    }
-
-
-    private ActionURL getConsolidateBatchActionURL(ConsolidateForm form)
-    {
-        ActionURL url = new ActionURL(ConsolidateBatchAction.class, getContainer());
-        url.addParameter("fromVersion", Double.toString(form.getFromVersion()));
-        url.addParameter("toVersion", Double.toString(form.getToVersion()));
-        url.addParameter("includeSingleScripts", Boolean.toString(form.getIncludeSingleScripts()));
-
-        return url;
-    }
-
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class ConsolidateBatchAction extends ExportAction<ConsolidateForm>
-    {
-        @Override
-        public void export(ConsolidateForm form, HttpServletResponse response, BindException errors) throws Exception
-        {
-            double fromVersion = form.getFromVersion();
-            double toVersion = form.getToVersion();
-            boolean includeSingleScripts = form.getIncludeSingleScripts();
-
-            List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.append(":: This command line script primes each script directory for upcoming script consolidations. Using svn copy\n");
-            sb.append(":: ensures that the SVN history and creation date of the first script is preserved in the consolidated script.\n");
-            sb.append(":: The file is then deleted, because the consolidate action will recreate it and provide the actual content.\n\n");
-
-            for (ScriptConsolidator consolidator : consolidators)
-            {
-                SqlScript firstScript = consolidator.getScripts().get(0);
-                File scriptDir = ((FileSqlScriptProvider)firstScript.getProvider()).getScriptDirectory(firstScript.getSchema().getSqlDialect());
-                File moduleDir = scriptDir.getParentFile().getParentFile().getParentFile().getParentFile();
-
-                if (!new File(moduleDir, ".git").exists() && !new File(moduleDir.getParent(), ".git").exists())
-                {
-                    String firstFilename = firstScript.getDescription();
-
-                    String consolidatedFilename = consolidator.getFilename();
-
-                    sb.append("cd ").append(scriptDir).append("\n");
-                    sb.append("svn copy ").append(firstFilename).append(" ").append(consolidatedFilename).append("\n");
-                    sb.append(SystemUtils.IS_OS_MAC ? "rm " : "del ").append(consolidatedFilename).append("\n\n");
-                }
-            }
-
-            sendPlainText(sb.toString());
         }
     }
 
@@ -705,16 +677,20 @@ public class SqlScriptController extends SpringActionController
         {
             _provider.saveScript(_schema, getFilename(), getConsolidatedScript());
         }
+
+        public File getScriptDirectory()
+        {
+            return _provider.getScriptDirectory(_schema.getSqlDialect());
+        }
     }
 
 
-    public static class ConsolidateForm
+    private abstract static class ScriptRangeForm
     {
         private String _module;
         private String _schema;
-        private double _fromVersion = Constants.getPreviousReleaseVersion();
-        private double _toVersion = Constants.getNextReleaseVersion();
-        private boolean _includeSingleScripts = false;
+        protected double _fromVersion;
+        protected double _toVersion;
 
         public String getModule()
         {
@@ -758,6 +734,18 @@ public class SqlScriptController extends SpringActionController
         public void setToVersion(double toVersion)
         {
             _toVersion = toVersion;
+        }
+    }
+
+
+    public static class ConsolidateForm extends ScriptRangeForm
+    {
+        private boolean _includeSingleScripts = false;
+
+        public ConsolidateForm()
+        {
+            _fromVersion = 0.0;
+            _toVersion = Constants.getEarliestUpgradeVersion();
         }
 
         public boolean getIncludeSingleScripts()
@@ -834,6 +822,14 @@ public class SqlScriptController extends SpringActionController
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
 
+            // Consider deleting the old scripts when consolidating bootstrap scripts, #38810
+            if (0.0 == form.getFromVersion())
+            {
+                // ...but only if there are no incremental scripts involved
+                if (consolidator.getScripts().stream().noneMatch(SqlScript::isIncremental))
+                    deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
+            }
+
             return true;
         }
 
@@ -865,6 +861,17 @@ public class SqlScriptController extends SpringActionController
     }
 
 
+    private void deleteScripts(File dir, List<SqlScript> scripts)
+    {
+        Vcs vcs = VcsService.get().getVcs(dir);
+
+        if (null != vcs)
+        {
+            scripts.forEach(sqlScript -> vcs.deleteFile(sqlScript.getDescription()));
+        }
+    }
+
+
     private static @NotNull String getErrorHtml(@NotNull Collection<String> errors)
     {
         if (errors.isEmpty())
@@ -890,7 +897,7 @@ public class SqlScriptController extends SpringActionController
     public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors)
+        public ModelAndView getView(ConsolidateForm form, BindException errors) throws IOException
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -899,6 +906,9 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
+                if (!module.shouldConsolidateScripts())
+                    continue;
+
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
                 Collection<DbSchema> schemas = provider.getSchemas();
                 Set<String> allFiles = new HashSet<>();
@@ -954,16 +964,24 @@ public class SqlScriptController extends SpringActionController
 
                     if (null != drop)
                         allFiles.remove(drop.getDescription());
+
+                    // Remove all the filenames listed in ignored_scripts.txt
+                    allFiles.removeAll(provider.getIgnoredScripts(schema.getSqlDialect()));
                 }
 
-                if (!allFiles.isEmpty())
-                    unclaimedFiles.addAll(allFiles);
+                // Remove standard files that can exist in any script directory
+                allFiles.remove("ignored_scripts.txt");
+                allFiles.remove("README.txt");
+                allFiles.remove("required_scripts.txt");
+
+                // Anything that's left is "unclaimed" and will get a warning below
+                unclaimedFiles.addAll(allFiles);
             }
 
             StringBuilder html = new StringBuilder();
             html.append("  <table>\n");
             html.append("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
-                    " \"from\" version and a later \"to\" version. These scripts can be \"obsoleted\" safely.</td></tr>\n");
+                    " \"from\" version and a later \"to\" version. These scripts can be deleted safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
 
@@ -980,42 +998,6 @@ public class SqlScriptController extends SpringActionController
             }
 
             html.append("  </table>\n");
-
-            html.append("  <br><br><table>\n");
-            html.append("    <tr><td>The standard LabKey script runner will never execute the files below; either their names don't match the required format or" +
-                    " the specified schema isn't claimed by their module.</td></tr>\n");
-            html.append("    <tr><td>&nbsp;</td></tr>\n");
-            html.append("  </table>\n");
-
-            html.append("  <table>\n");
-            html.append("    <tr><th align=\"left\">File</th></tr>\n");
-
-            for (String filename : unclaimedFiles)
-            {
-                html.append("    <tr><td>");
-                html.append(filename);
-                html.append("</td></tr>\n");
-            }
-
-            html.append("  </table>\n");
-
-            unclaimedFiles.remove("labkey-0.00-13.30.sql");
-
-            if (CoreSchema.getInstance().getSqlDialect().isSqlServer())
-            {
-                // TODO: Since some of these come from other modules, create a registration mechanism.
-                unclaimedFiles.remove("group_concat_install.sql");
-                unclaimedFiles.remove("group_concat_install_1.00.23696.sql");
-                unclaimedFiles.remove("group_concat_uninstall.sql");
-                unclaimedFiles.remove("Naturalize_install_1.0.1.sql");      // From the LDK module
-                unclaimedFiles.remove("Naturalize_uninstall.sql");      // From the LDK module
-                unclaimedFiles.remove("PremiumStats_install_1.0.1.sql");
-                unclaimedFiles.remove("PremiumStats_uninstall.sql");
-            }
-
-            // specifically allow db scripts to have README and required_scripts.txt files
-            unclaimedFiles.remove("README.txt");
-            unclaimedFiles.remove("required_scripts.txt");
 
             if (!unclaimedFiles.isEmpty())
             {
@@ -1343,7 +1325,6 @@ public class SqlScriptController extends SpringActionController
                 controller.new GetModuleStatusAction(),
                 controller.new ScriptsWithErrorsAction(),
                 controller.new ConsolidateScriptsAction(),
-                controller.new ConsolidateBatchAction(),
                 controller.new ConsolidateSchemaAction(),
                 controller.new OrphanedScriptsAction(),
                 controller.new ScriptAction(),

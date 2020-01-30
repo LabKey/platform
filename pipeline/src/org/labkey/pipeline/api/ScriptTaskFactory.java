@@ -207,7 +207,7 @@ public class ScriptTaskFactory extends SimpleTaskFactory
     }
 
     @Override
-    public List<String> toArgs(CommandTask task)
+    public List<String> toArgs(CommandTask task, Map<String, String> replacements)
     {
         throw new IllegalStateException();
     }

@@ -47,7 +47,7 @@
                 autoLoad: true,
                 proxy: ({
                     type: 'ajax',
-                    url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
+                    url: LABKEY.ActionURL.buildURL('admin', 'getEmailOptions'),
                     extraParams: {
                         type: '<%=h(bean.getType())%>',
                         isDefault: true
@@ -136,7 +136,7 @@
                         root: 'options',
                         idProperty: 'id'
                     },
-                    url: LABKEY.ActionURL.buildURL('announcements', 'getEmailOptions'),
+                    url: LABKEY.ActionURL.buildURL('admin', 'getEmailOptions'),
                     extraParams: {type: '<%=h(bean.getType())%>'}
                 })
             }),
@@ -173,7 +173,7 @@
             Ext4.MessageBox.confirm('Update selected users', confirmMsg, function (btn) {
                 if (btn === 'yes') {
                     Ext4.Ajax.request({
-                        url: LABKEY.ActionURL.buildURL('announcements', 'setBulkEmailOptions'),
+                        url: LABKEY.ActionURL.buildURL('admin', 'setBulkEmailOptions'),
                         method: 'POST',
                         timeout: 30000,
                         params: {

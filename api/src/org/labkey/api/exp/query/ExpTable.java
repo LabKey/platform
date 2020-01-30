@@ -57,17 +57,22 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
     void setUpdateURL(DetailsURL updateURL);
     void setImportURL(DetailsURL importURL);
 
-    /** Add the standard set of columns to the table */
+    /**
+     * Add the standard set of columns to the table
+     */
     void populate();
 
-    /** By default, only delete is allowed. Allows specific usages to enable other actions like update */
+    /**
+     * By default, only delete is allowed. Allows specific usages to enable other actions like update
+     */
     void addAllowablePermission(Class<? extends Permission> permission);
 
     /**
      * Add columns directly to the table itself, and optionally also as a single column that is a FK to the full set of properties
-     * @param domain the domain from which to add all of the properties
+     *
+     * @param domain     the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
-     * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null 
+     * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null
      */
     BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
@@ -91,7 +96,12 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
         if (null == col)
             return null;
         // all columns extend BaseColumnInfo for now
-        ((BaseColumnInfo)col).checkLocked();
+        ((BaseColumnInfo) col).checkLocked();
         return (BaseColumnInfo) col;
+    }
+
+    default void setFilterPatterns(String columnName, String... patterns)
+    {
+        // by default we do nothing
     }
 }

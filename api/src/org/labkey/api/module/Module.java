@@ -17,6 +17,7 @@
 package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -49,6 +50,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Modules are the basic unit of deployment for code and resources within LabKey Server. Modules are deployable
@@ -228,6 +230,18 @@ public interface Module extends Comparable<Module>
     Set<Class> getIntegrationTests();
 
     /**
+     * Modules can provide JUnit tests that must be run inside the server
+     * VM. These tests will be executed as part of the DRT. These are not true unit tests, and may rely on external
+     * resources such as a database connection or services provided by other modules.
+     * @return the integration tests that this module provides
+     */
+    @JsonIgnore
+    default @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    {
+        return getIntegrationTests().stream().map(c -> (Factory<Class>)() -> c).collect(Collectors.toList());
+    }
+
+    /**
      * Modules can provide JUnit tests that can be run independent of the server VM. Satisfies the requirements for a
      * traditional unit test.
      * @return the unit tests that this module provides
@@ -278,6 +292,12 @@ public interface Module extends Comparable<Module>
     String getVcsBranch();
     String getVcsTag();
     String getBuildNumber();
+
+    default String getBuildTime()
+    {
+        return null;
+    }
+
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore

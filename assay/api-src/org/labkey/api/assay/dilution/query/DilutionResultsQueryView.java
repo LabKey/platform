@@ -144,9 +144,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
                     if (!_extraDetailsUrlParams.isEmpty())
                         url.addParameters(_extraDetailsUrlParams);
 
-                    Map<String, String> title = new HashMap<>();
-                    title.put("title", "View run details");
-                    out.write(PageFlowUtil.link("run details").href(url).attributes(title).toString());
+                    out.write(PageFlowUtil.link("run details").href(url).title("View run details").toString());
                 }
             }
 

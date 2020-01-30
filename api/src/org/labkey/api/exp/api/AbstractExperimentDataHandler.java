@@ -32,21 +32,26 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
+ * Base class for implementors of ExperimentDataHandler. Assumes that the referenced file should be copied as-is, instead
+ * of potentially needing to be regenerated for operations like export based on the current contents of the database.
  * User: jeckels
  * Date: Dec 2, 2005
  */
 public abstract class AbstractExperimentDataHandler implements ExperimentDataHandler
 {
+    @Override
     public String getFileName(ExpData data, String defaultName)
     {
         return defaultName;
     }
 
+    @Override
     public void exportFile(ExpData data, File dataFile, User user, OutputStream out) throws ExperimentException
     {
         exportFile(data, dataFile.toPath(), user, out);
     }
 
+    @Override
     public void exportFile(ExpData data, Path dataFile, User user, OutputStream out) throws ExperimentException
     {
         if (dataFile != null)
@@ -62,15 +67,18 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
         }
     }
 
-    public void beforeDeleteData(List<ExpData> data) throws ExperimentException
+    @Override
+    public void beforeDeleteData(List<ExpData> data, User user) throws ExperimentException
     {
     }
 
+    @Override
     public boolean hasContentToExport(ExpData data, File file)
     {
         return hasContentToExport(data, file.toPath());
     }
 
+    @Override
     public boolean hasContentToExport(ExpData data, Path path)
     {
         if (!FileUtil.hasCloudScheme(path))
@@ -81,6 +89,7 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
         return Files.exists(path) && !Files.isDirectory(path);
     }
 
+    @Override
     public void beforeMove(ExpData oldData, Container container, User user) throws ExperimentException
     {
         

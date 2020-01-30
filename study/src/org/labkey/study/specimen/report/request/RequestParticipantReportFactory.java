@@ -15,6 +15,7 @@
  */
 package org.labkey.study.specimen.report.request;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HtmlString;
@@ -51,17 +52,20 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         _participantId = participantId;
     }
 
+    @Override
     public boolean allowsCohortFilter()
     {
         return false;
     }
 
+    @Override
     public boolean allowsAvailabilityFilter()
     {
         return false;
     }
 
-    public boolean allowsParticipantAggregegates()
+    @Override
+    public boolean allowsParticipantAggregates()
     {
         return false;
     }
@@ -72,6 +76,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         return false;
     }
 
+    @Override
     public List<Pair<String, HtmlString>> getAdditionalFormInputHtml()
     {
         List<Pair<String, HtmlString>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
@@ -79,6 +84,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         return inputs;
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         String[] participantIds;
@@ -136,6 +142,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         return reports;
     }
 
+    @Override
     public String getLabel()
     {
         return "Requested by " + StudyService.get().getSubjectNounSingular(getContainer());
@@ -147,6 +154,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
         return "RequestedByParticipant";
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.RequestParticipantReportAction.class;

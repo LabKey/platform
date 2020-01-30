@@ -76,6 +76,7 @@ public class FolderTypeManager
         private static final String noneStr = FolderType.NONE.getName();
         private static final String collabStr = "Collaboration"; //Cheating
 
+        @Override
         public int compare(String s, String s1)
         {
             if (s.equals(s1))

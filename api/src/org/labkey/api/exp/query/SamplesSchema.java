@@ -49,6 +49,7 @@ import java.util.Set;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
+    public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = Logger.getLogger(SamplesSchema.class);
 
@@ -167,18 +168,33 @@ public class SamplesSchema extends AbstractExpSchema
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
-            public TableInfo getLookupTableInfo()
+            @Override
+            public @Nullable TableInfo getLookupTableInfo()
+            {
+                ContainerFilter cf = getLookupContainerFilter();
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey(getContainer());
+                return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
+            }
+
+            private TableInfo createLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
                 ret.populate(ss, true);
-                ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
+                ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
                 {
                     // Hack to support lookup via RowId or Name
                     _columnName = "Name";
                 }
+                ret.setLocked(true);
                 return ret;
+            }
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser()));
             }
 
             @Override
@@ -197,6 +213,6 @@ public class SamplesSchema extends AbstractExpSchema
         if (ss == null)
             throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
-        return ss.getType().getTypeURI();
+        return ss.getDomain().getTypeURI();
     }
 }

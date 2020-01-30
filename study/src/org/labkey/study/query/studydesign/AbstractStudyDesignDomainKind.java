@@ -144,18 +144,6 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowFileLinkProperties()
-    {
-        return false;
-    }
-
-    @Override
-    public boolean allowAttachmentProperties()
-    {
-        return false;
-    }
-
-    @Override
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
         return getDomainURI(schemaName, tableName, getNamespacePrefix(), getDomainContainer(c), u);
@@ -187,7 +175,8 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain, allowAttachmentProperties(), allowFileLinkProperties(), false);
+        // since the study design domains are scoped to the project, we use the domain.getContainer() instead of containerUser.getContainer()
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(domain.getContainer(), domain);
     }
 
     @Override

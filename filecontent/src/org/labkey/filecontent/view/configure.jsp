@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.files.FileContentService"%>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -52,7 +51,7 @@
     if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
     {
         Path rootPath = service.getFileRootPath(getContainer());
-        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer()).addParameter("tabId", "files");
+        ActionURL configureHelper = urlProvider(AdminUrls.class).getProjectSettingsURL(getContainer());
         if (null == rootPath)
         { %>
             There is no file root for this folder.

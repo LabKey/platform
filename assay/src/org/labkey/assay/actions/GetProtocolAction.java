@@ -36,10 +36,27 @@ import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
 @RequiresPermission(ReadPermission.class)
-public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
+public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.DesignerForm>
 {
+    public static class DesignerForm extends GWTProtocol
+    {
+        private boolean _copy;
+
+        public boolean isCopy()
+        {
+            return _copy;
+        }
+
+        public void setCopy(boolean copy)
+        {
+            _copy = copy;
+        }
+    }
+
+    //Keeping both request and response object mappers to avoid serialization/deserialization issues
+    //as not sure if request object mapper is needed
     @Override
-    protected ObjectMapper createObjectMapper()
+    protected ObjectMapper createRequestObjectMapper()
     {
         ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
         configureObjectMapper(mapper);
@@ -47,37 +64,43 @@ public class GetProtocolAction extends ReadOnlyApiAction<GWTProtocol>
     }
 
     @Override
-    public Object execute(GWTProtocol protocol, BindException errors) throws Exception
+    protected ObjectMapper createResponseObjectMapper()
     {
-        if (protocol.getProtocolId() != null)
+        return this.createRequestObjectMapper();
+    }
+
+    @Override
+    public Object execute(DesignerForm form, BindException errors) throws Exception
+    {
+        if (form.getProtocolId() != null)
         {
             // get existing protocol
-            ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(protocol.getProtocolId());
+            ExpProtocol expProtocol = ExperimentService.get().getExpProtocol(form.getProtocolId());
             if (expProtocol == null)
             {
-                throw new NotFoundException("Could not locate Experiment Protocol for id: " + protocol.getProtocolId().toString());
+                throw new NotFoundException("Could not locate Experiment Protocol for id: " + form.getProtocolId().toString());
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
                 AssayService svc = new AssayServiceImpl(getViewContext());
-                GWTProtocol ret = svc.getAssayDefinition(protocol.getProtocolId(), false);
+                GWTProtocol ret = svc.getAssayDefinition(form.getProtocolId(), form.isCopy());
                 if (ret == null)
                 {
-                    throw new NotFoundException("Could not locate Assay Definition for id: " + protocol.getProtocolId().toString());
+                    throw new NotFoundException("Could not locate Assay Definition for id: " + form.getProtocolId().toString());
                 }
-                return success("Assay protocol " + protocol.getName() + "'", ret);
+                return success("Assay protocol '" + ret.getName() + "'", ret);
             }
             else
             {
                 throw new UnauthorizedException();
             }
         }
-        else if (protocol.getProviderName() != null)
+        else if (form.getProviderName() != null)
         {
             // get the assay template
             AssayService svc = new AssayServiceImpl(getViewContext());
-            GWTProtocol ret = svc.getAssayTemplate(protocol.getProviderName());
-            return success("Generated assay template for provider '" + protocol.getProviderName() + "'", ret);
+            GWTProtocol ret = svc.getAssayTemplate(form.getProviderName());
+            return success("Generated assay template for provider '" + form.getProviderName() + "'", ret);
         }
         else
         {

@@ -19,7 +19,9 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.assay.AssayDomainKind;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
@@ -27,6 +29,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.SampleSetDomainKind;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -120,5 +123,17 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     public void appendNavTrail(NavTree root, Container c, User user)
     {
         _assayDelegate.appendNavTrail(root, c, user);
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        return _assayDelegate.createDomain(domain, arguments, container, user, templateInfo);
     }
 }

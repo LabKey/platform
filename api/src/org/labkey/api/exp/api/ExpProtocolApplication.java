@@ -18,10 +18,14 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * An individual step inside of an {@link ExpRun}, which can consume or produce {@link ExpData} or {@link ExpMaterial}
@@ -66,6 +70,10 @@ public interface ExpProtocolApplication extends ExpObject
     @NotNull ExpMaterialRunInput addMaterialInput(User user, ExpMaterial material, @Nullable String inputRole, @Nullable ExpMaterialProtocolInput protocolInput);
     void removeMaterialInput(User user, ExpMaterial material);
 
+    void addProvenanceInput(Set<String> lsids);
+    void addProvenanceMapping(Set<Pair<String, String>> lsidPairs);
+    Set<Pair<String, String>> getProvenanceMapping();
+
     ExpRun getRun();
     int getActionSequence();
     ExpProtocol.ApplicationType getApplicationType();
@@ -94,7 +102,10 @@ public interface ExpProtocolApplication extends ExpObject
 
     void setRecordCount(Integer recordCount);
 
+    void setComments(String comments);
+
     /** Override to signal that we never throw BatchValidationExceptions */
     @Override
     void save(User user);
+
 }

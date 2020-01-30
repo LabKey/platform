@@ -56,6 +56,12 @@ public class FileEmailConfig extends AbstractConfigTypeProvider
     }
 
     @Override
+    public String getSettingsColumnName()
+    {
+        return "FileSettings";
+    }
+
+    @Override
     protected int getDefaultEmailOption(Container c)
     {
         String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());

@@ -999,7 +999,7 @@ public class ReportsController extends SpringActionController
                 return new HtmlView("<span class=\"labkey-error\">" + e.getMessage() + ". Unable to create report.</span>");
             }
 
-            if (!isPrint() && !(ret instanceof HttpRedirectView))
+            if (!isPrint() && !(ret instanceof HttpRedirectView) && DiscussionService.get() != null)
             {
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
@@ -1142,10 +1142,13 @@ public class ReportsController extends SpringActionController
                 VBox box = new VBox(new JspView<>("/org/labkey/query/reports/view/reportDetails.jsp", form));
 
                 DiscussionService service = DiscussionService.get();
-                String title = "Discuss report - " + report.getDescriptor().getReportName();
-                DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
-                if (discussion != null)
-                    box.addView(discussion);
+                if (service != null)
+                {
+                    String title = "Discuss report - " + report.getDescriptor().getReportName();
+                    DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
+                    if (discussion != null)
+                        box.addView(discussion);
+                }
 
                 return box;
             }
@@ -2538,7 +2541,7 @@ public class ReportsController extends SpringActionController
 
                     VBox view = new VBox(new JspView<>("/org/labkey/api/reports/report/view/renderQueryReport.jsp", report));
 
-                    if (!isPrint())
+                    if (!isPrint() && DiscussionService.get() != null)
                     {
                         DiscussionService service = DiscussionService.get();
                         String title = "Discuss report - " + _reportName;
@@ -2556,7 +2559,7 @@ public class ReportsController extends SpringActionController
         {
             if (_reportName != null)
                 return root.addChild(_reportName);
-            return null;
+            return root.addChild("Query Report");
         }
     }
 

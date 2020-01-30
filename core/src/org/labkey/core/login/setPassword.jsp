@@ -17,91 +17,113 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.collections.NamedObject" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    @Override
+    public void addClientDependencies(ClientDependencies dependencies)
+    {
+        dependencies.add("login.css");
+    }
+%>
 <%
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
 %>
-<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>" layout="horizontal">
-<%
-    if (errors.length() > 0)
-    {
-        %><%=text(errors)%><%
+<style>
+    .labkey-button {
+        width: 100px;
     }
+</style>
+<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>" layout="horizontal" className="auth-form">
+    <% if (bean.title != null) { %>
+        <div class="auth-header"><%=h(bean.title)%></div>
+    <% } %>
 
-    if (!bean.unrecoverableError)
-    {
-        if (null != bean.email) { %>
-            <div class="lk-body-title"><h3><%=h(bean.email)%></h3></div>
-        <% } %>
+    <% if (errors.length() > 0) { %>
+        <%=text(errors)%>
+    <% } %>
+
+    <div class="auth-form-body">
+    <% if (!bean.unrecoverableError) { %>
         <p><%=h(bean.message)%></p>
-    <%
 
-        for (NamedObject input : bean.nonPasswordInputs)
-        {
-        %>
-                <labkey:input
-                    type="text"
-                    id="<%=input.getObject().toString()%>"
-                    name="<%=input.getObject().toString()%>"
-                    label="<%=input.getName()%>"
-                    value="<%=input.getDefaultValue()%>"
-                />
-        <%
-        }
+        <% for (NamedObject input : bean.nonPasswordInputs) { %>
+            <label for="<%=h(input.getObject().toString())%>">
+                <%=h(input.getName())%>
+            </label>
+            <input
+                type="text"
+                id="<%=h(input.getObject().toString())%>"
+                name="<%=h(input.getObject().toString())%>"
+                value="<%=h(input.getDefaultValue())%>"
+                class="input-block"
+            />
+        <% } %>
 
-        for (NamedObject input : bean.passwordInputs)
-        {
+        <% for (NamedObject input : bean.passwordInputs) {
             String contextContent = LoginController.PASSWORD1_TEXT_FIELD_NAME.equals(input.getObject())
                     ? DbLoginManager.getPasswordRule().getSummaryRuleHTML() : "";
         %>
-                <labkey:input
-                    type="password"
-                    id="<%=input.getObject().toString()%>"
-                    name="<%=input.getObject().toString()%>"
-                    label="<%=input.getName()%>"
-                    contextContent="<%=contextContent%>"
-                />
-        <%
-        }
-        %>
+            <p>
+                <%=h(contextContent)%>
+            </p>
+            <label for="<%=h(input.getObject().toString())%>">
+                <%=h(input.getName())%>
+            </label>
+            <input
+                type="password"
+                id="<%=h(input.getObject().toString())%>"
+                name="<%=h(input.getObject().toString())%>"
+                class="input-block"
+                autocomplete="off"
+            />
+        <% } %>
+
         <div>
-        <%
-        if (null != bean.email)
-        { %>
+        <% if (null != bean.email) { %>
             <labkey:input type="hidden" name="email" value="<%=h(bean.email)%>"/>
         <% }
 
-        if (null != bean.form.getVerification())
-        { %>
+        if (null != bean.form.getVerification()) { %>
             <labkey:input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"/>
         <% }
 
-        if (null != bean.form.getMessage())
-        { %>
+        if (null != bean.form.getMessage()) { %>
             <labkey:input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"/>
         <% }
 
-        if (bean.form.getSkipProfile())
-        { %>
+        if (bean.form.getSkipProfile()) { %>
             <labkey:input type="hidden" name="skipProfile" value="1"/>
         <% }
 
-        if (null != bean.form.getReturnURLHelper())
-        { %>
+        if (null != bean.form.getReturnURLHelper()) { %>
             <%=generateReturnUrlFormField(bean.form)%>
         <% } %>
         </div>
-        <div style="padding-top: 1em;">
-            <%= button(bean.buttonText).submit(true).attributes(Map.of("name", "set")) %>
-            <%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
+
+        <div class="auth-item">
+            <%= button(bean.buttonText).submit(true).name("set") %>
+            <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
         </div>
+    <% }
+       else
+       {
+           Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
+           URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.StartAction.class, c);
+    %>
+            <div class="auth-item">
+                <%= unsafe(button("Home").href(homeURL).toString()) %>
+            </div>
     <% } %>
+    </div>
 </labkey:form>

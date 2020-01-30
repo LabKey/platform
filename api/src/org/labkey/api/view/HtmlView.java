@@ -16,35 +16,60 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.DOM;
+import org.labkey.api.util.HtmlString;
 
-import javax.servlet.ServletException;
-import java.io.IOException;
 import java.io.PrintWriter;
 
 /** Renders a fixed set of HTML at the content of the view */
 public class HtmlView extends WebPartView
 {
     private String _contentType = null;
-    private Object[] _printfParams;
-    private String _html = null;
+    private HtmlString _html;
+    private DOM.Renderable _renderable;
 
-    public HtmlView(String html)
+    public HtmlView(DOM.Renderable renderable)
     {
         super(FrameType.DIV);
-        setHtml(html);
+        _renderable = renderable;
     }
 
+    public HtmlView(String title, DOM.Renderable renderable)
+    {
+        this(renderable);
+        setTitle(title);
+    }
+
+    public HtmlView()
+    {
+        super(FrameType.DIV);
+    }
+
+    public HtmlView(HtmlString html)
+    {
+        super(FrameType.DIV);
+        _html = html;
+    }
+
+    /** Use the HtmlString or Renderable constructor instead */
+    @Deprecated
+    public HtmlView(String html)
+    {
+        this(HtmlString.unsafe(html));
+    }
+
+    /** Use the HtmlString or or Renderable constructor instead */
+    @Deprecated
     public HtmlView(String title, String html)
+    {
+        this(title, HtmlString.unsafe(html));
+    }
+
+    public HtmlView(String title, HtmlString html)
     {
         this(html);
         setTitle(title);
         setFrame(FrameType.PORTAL);
-    }
-
-    public HtmlView(String title, String html, Object... params)
-    {
-        this(title, html);
-        _printfParams = params;
     }
 
     @Override
@@ -55,19 +80,14 @@ public class HtmlView extends WebPartView
             setFrame(FrameType.PORTAL);
     }
 
-    public void setHtml(String html)
+    public void setHtml(HtmlString html)
     {
         _html = html;
     }
 
-    public String getHtml()
+    public HtmlString getHtml()
     {
         return _html;
-    }
-
-    public void setPrintfParameters(Object... params)
-    {
-        _printfParams = params;
     }
 
     /**
@@ -86,9 +106,9 @@ public class HtmlView extends WebPartView
         if (null != _contentType)
             getViewContext().getResponse().setContentType(_contentType);
 
-        if (null != _printfParams)
-            out.printf(_html, _printfParams);
-        else
+        if (_html != null)
             out.print(_html);
+        else if (_renderable != null)
+            _renderable.appendTo(out);
     }
 }
