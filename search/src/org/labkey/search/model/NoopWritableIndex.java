@@ -23,7 +23,6 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.store.Directory;
 import org.labkey.api.search.SearchMisconfiguredException;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,12 +42,6 @@ public class NoopWritableIndex implements WritableIndexManager
     {
         _log = log;
         _statusMessage = statusMessage;
-    }
-
-    @Override
-    public void clear()
-    {
-        log("clear the search index");
     }
 
     @Override

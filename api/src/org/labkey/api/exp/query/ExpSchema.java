@@ -421,7 +421,7 @@ public class ExpSchema extends AbstractExpSchema
                 QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
                 if (null == pipeline)
                     return null;
-                return pipeline.getTable("Jobs", getDefaultContainerFilter());
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
             public StringExpression getURL(ColumnInfo parent)
