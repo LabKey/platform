@@ -179,7 +179,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return ExperimentServiceImpl.get().getExpSchema();
     }
 
-
+    @Override
     public void indexSampleSet(ExpSampleSet sampleSet)
     {
         SearchService ss = SearchService.get();
@@ -241,7 +241,7 @@ public class SampleSetServiceImpl implements SampleSetService
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
+        sql.append("SELECT mi.Role, MAX(m.CpasType) AS MaxSampleSetLSID, MIN (m.CpasType) AS MinSampleSetLSID FROM ");
         sql.append(getTinfoMaterial(), "m");
         sql.append(", ");
         sql.append(getTinfoMaterialInput(), "mi");
@@ -267,26 +267,19 @@ public class SampleSetServiceImpl implements SampleSetService
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Map<String, Object>[] queryResults = new SqlSelector(getExpSchema(), sql).getMapArray();
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
-        for (Map<String, Object> queryResult : queryResults)
+        for (Map<String, Object> queryResult : new SqlSelector(getExpSchema(), sql).getMapCollection())
         {
             ExpSampleSet sampleSet = null;
-            Number sampleSetCount = (Number) queryResult.get("SampleSetCount");
-            if (sampleSetCount.intValue() == 1)
+            String maxSampleSetLSID = (String) queryResult.get("MaxSampleSetLSID");
+            String minSampleSetLSID = (String) queryResult.get("MinSampleSetLSID");
+
+            // Check if we have a sample set that was being referenced
+            if (maxSampleSetLSID != null && maxSampleSetLSID.equalsIgnoreCase(minSampleSetLSID))
             {
-                String sampleSetLSID = (String) queryResult.get("SampleSetLSID");
-                if (!lsidToSampleSet.containsKey(sampleSetLSID))
-                {
-                    sampleSet = getSampleSet(sampleSetLSID);
-                    lsidToSampleSet.put(sampleSetLSID, sampleSet);
-                }
-                else
-                {
-                    sampleSet = lsidToSampleSet.get(sampleSetLSID);
-                }
+                // If the min and the max are the same, it means all rows share the same value so we know that there's
+                // a single sample set being targeted
+                sampleSet = getSampleSet(container, maxSampleSetLSID);
             }
             result.put((String) queryResult.get("Role"), sampleSet);
         }
@@ -416,11 +409,13 @@ public class SampleSetServiceImpl implements SampleSetService
         return new TableSelector(getTinfoMaterialSource(), filter, null).getObject(MaterialSource.class);
     }
 
+    @Override
     public String getDefaultSampleSetLsid()
     {
         return new Lsid.LsidBuilder("SampleSource", "Default").toString();
     }
 
+    @Override
     public String getDefaultSampleSetMaterialLsidPrefix()
     {
         return new Lsid.LsidBuilder("Sample", ExperimentServiceImpl.DEFAULT_MATERIAL_SOURCE_NAME).toString() + "#";
@@ -550,9 +545,9 @@ public class SampleSetServiceImpl implements SampleSetService
         SearchService ss = SearchService.get();
         if (null != ss)
         {
-            try (Timing t = MiniProfiler.step("search docs"))
+            try (Timing ignored = MiniProfiler.step("search docs"))
             {
-                    ss.deleteResource(source.getDocumentId());
+                ss.deleteResource(source.getDocumentId());
             }
         }
 
@@ -685,7 +680,7 @@ public class SampleSetServiceImpl implements SampleSetService
         source.setLSID(lsid.toString());
         source.setName(name);
         source.setDescription(description);
-        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", String.valueOf(c.getRowId()) + "." + PageFlowUtil.encode(name), "").toString());
+        source.setMaterialLSIDPrefix(new Lsid.LsidBuilder("Sample", c.getRowId() + "." + PageFlowUtil.encode(name), "").toString());
         if (nameExpression != null)
             source.setNameExpression(nameExpression);
         source.setContainer(c);
@@ -745,8 +740,7 @@ public class SampleSetServiceImpl implements SampleSetService
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(importAliases);
-            return json;
+            return mapper.writeValueAsString(importAliases);
         }
         catch (JsonProcessingException e)
         {

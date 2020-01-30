@@ -32,7 +32,6 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -385,9 +384,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString(), cf);
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return protocolTable;
+                return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
             }
         };
     }
@@ -418,9 +415,13 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey("RowId", "RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return PipelineService.get().getJobsTable(getUser(), getContainer());
+                QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
+                if (null == pipeline)
+                    return null;
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -458,11 +459,25 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.RunGroups.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
+                ContainerFilter cf = getLookupContainerFilter();
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey(ExpSchema.this.getContainer());
+                // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
+            }
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                return Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+            }
+
+            private TableInfo createLookupTableInfo()
+            {
                 // CONSIDER: I wonder if this shouldn't be using UnionContainerFilter(cf, CurrentPlusProjectAndShared)
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
-                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
+                ExpExperimentTable result = (ExpExperimentTable) getTable(TableType.RunGroups.name(), getLookupContainerFilter(), true, true);
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);

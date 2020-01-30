@@ -79,7 +79,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @Override
     public double getVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override

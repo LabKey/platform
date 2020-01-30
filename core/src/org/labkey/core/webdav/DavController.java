@@ -507,7 +507,7 @@ public class DavController extends SpringActionController
                         o.put("exception", message);
                         // if this is a multi-part post, it's probably really a background ext form, respond in an ext compatible way
                         if (!"XMLHttpRequest".equals(getRequest().getHeader("X-Requested-With")) &&
-                                "post".equals(getViewContext().getActionURL().getAction()) &&
+                                isPost() &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
                             super.setHeader("Content-Type", "text/html");
@@ -1886,15 +1886,7 @@ public class DavController extends SpringActionController
 
                 resourceWriter.sendData();
             }
-            catch (ConfigurationException x)
-            {
-                throw x;
-            }
-            catch (IOException x)
-            {
-                throw x;
-            }
-            catch (DavException x)
+            catch (ConfigurationException | IOException | DavException | CloudStoreService.ServiceException x)
             {
                 throw x;
             }
@@ -1906,13 +1898,15 @@ public class DavController extends SpringActionController
             {
                 if (resourceWriter != null)
                 {
-                    try {
-                        resourceWriter.endResponse();
-                        resourceWriter.sendData();
-                    }
-                    catch (Exception e) { }
+                    resourceWriter.endResponse();
                 }
             }
+
+            try
+            {
+                resourceWriter.sendData();
+            }
+            catch (Exception ignored) { }
 
             close(writer, "response writer");
             return WebdavStatus.SC_MULTI_STATUS;
@@ -3306,6 +3300,10 @@ public class DavController extends SpringActionController
     {
         Date lastModified = null;
         String lastModifiedHeader = getRequest().getHeader("X-LABKEY-Last-Modified");
+        if (lastModifiedHeader == null)
+        {
+            lastModifiedHeader = getRequest().getParameter("X-LABKEY-Last-Modified");
+        }
         if (lastModifiedHeader != null)
         {
             try

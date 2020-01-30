@@ -78,24 +78,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
-import org.labkey.experiment.api.DataClassDomainKind;
-import org.labkey.experiment.api.ExpDataClassDataTestCase;
-import org.labkey.experiment.api.ExpDataClassType;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
-import org.labkey.experiment.api.ExpSampleSetTestCase;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentStressTest;
-import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.LineagePerfTest;
-import org.labkey.experiment.api.LineageTest;
-import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetServiceImpl;
-import org.labkey.experiment.api.UniqueValueCounterTestCase;
-import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -123,6 +106,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
@@ -146,7 +130,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public double getVersion()
     {
-        return 19.32;
+        return 20.000;
     }
 
     @Nullable
@@ -412,7 +396,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 {
                     Map<String, Object> assayMetrics = new HashMap<>();
                     SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append(" WHERE lsid LIKE ?");
-                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
+                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
                     for (AssayProvider assayProvider : AssayService.get().getAssayProviders())
                     {
                         Map<String, Object> protocolMetrics = new HashMap<>();
@@ -426,7 +410,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         SQLFragment protocolSQL = new SQLFragment(baseProtocolSQL);
                         protocolSQL.add(assayProvider.getProtocolPattern());
                         protocolSQL.add(ExpProtocol.ApplicationType.ExperimentRun.toString());
-                        protocolMetrics.put("protocolCount", new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getObject(Long.class));
+                        List<Protocol> protocols = new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getArrayList(Protocol.class);
+                        protocolMetrics.put("protocolCount", protocols.size());
+
+                        List<? extends ExpProtocol> wrappedProtocols = protocols.stream().map(ExpProtocolImpl::new).collect(Collectors.toList());
+
+                        protocolMetrics.put("resultRowCount", assayProvider.getResultRowCount(wrappedProtocols));
 
                         // Primary implementation class
                         protocolMetrics.put("implementingClass", assayProvider.getClass());
@@ -437,6 +426,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 }
 
                 results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
+                results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
 
                 return results;
             });

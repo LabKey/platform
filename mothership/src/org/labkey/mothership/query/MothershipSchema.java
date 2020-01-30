@@ -297,25 +297,7 @@ public class MothershipSchema extends UserSchema
         currentVersion.append(STR_TABLE_ALIAS);
         currentVersion.append(".ServerInstallationId)");
         ExprColumn currentVersionColumn = new ExprColumn(result, "MostRecentSession", currentVersion, JdbcType.INTEGER);
-        currentVersionColumn.setFk(new LookupForeignKey("ServerSessionID")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createServerSessionTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return SERVER_SESSIONS_TABLE_NAME;
-            }
-        });
+        currentVersionColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSIONS_TABLE_NAME).build());
         result.addColumn(currentVersionColumn);
 
         List<FieldKey> defaultCols = new ArrayList<>();
@@ -342,18 +324,6 @@ public class MothershipSchema extends UserSchema
         result.wrapAllColumns(true);
         result.getMutableColumn("StackTrace").setDisplayColumnFactory(StackTraceDisplayColumn::new);
 
-        ForeignKey softwareReleaseFK = new QueryForeignKey(QueryForeignKey.from(this, null).table(MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME));
-
-        ExprColumn maxRevisionColumn = new ExprColumn(result, "MaxRevision", getSoftwareReleaseSQL("DESC"), JdbcType.VARCHAR);
-        maxRevisionColumn.setDescription("Most recent release with a report");
-        maxRevisionColumn.setFk(softwareReleaseFK);
-        result.addColumn(maxRevisionColumn);
-
-        ExprColumn minRevisionColumn = new ExprColumn(result, "MinRevision", getSoftwareReleaseSQL("ASC"), JdbcType.INTEGER);
-        minRevisionColumn.setFk(softwareReleaseFK);
-        minRevisionColumn.setDescription("Oldest release with a report");
-        result.addColumn(minRevisionColumn);
-
         String path = MothershipManager.get().getIssuesContainer(getContainer());
         ActionURL issueURL = PageFlowUtil.urlProvider(IssuesUrls.class).getDetailsURL(ContainerManager.getForPath(path));
         issueURL.addParameter("issueId", "${BugNumber}");
@@ -374,7 +344,6 @@ public class MothershipSchema extends UserSchema
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));
         defaultCols.add(FieldKey.fromParts("Instances"));
-        defaultCols.add(FieldKey.fromParts("MaxRevision"));
         defaultCols.add(FieldKey.fromParts("LastReport"));
         defaultCols.add(FieldKey.fromParts("BugNumber"));
         defaultCols.add(FieldKey.fromParts("AssignedTo"));
@@ -383,25 +352,6 @@ public class MothershipSchema extends UserSchema
         defaultCols.add(FieldKey.fromParts("Modified"));
         result.setDefaultVisibleColumns(defaultCols);
 
-        return result;
-    }
-
-    private SQLFragment getSoftwareReleaseSQL(String sort)
-    {
-        // We want the SoftwareReleaseId from the row that has the most recent build time
-
-        // Do a sort by BuildTime, and then revision since old reports that predate BuildTimes can still maybe give the right value
-        SQLFragment subselect = new SQLFragment("SELECT ss.SoftwareReleaseId FROM " +
-                MothershipManager.get().getTableInfoExceptionReport() + " er, " +
-                MothershipManager.get().getTableInfoSoftwareRelease() + " sr, " +
-                MothershipManager.get().getTableInfoServerSession() + " ss " +
-                " WHERE er.ExceptionStackTraceId = " + STR_TABLE_ALIAS + ".ExceptionStackTraceId" +
-                " AND ss.ServerSessionId = er.ServerSessionId AND ss.SoftwareReleaseId = sr.SoftwareReleaseId ORDER BY BuildTime " + sort + ", VCSRevision " + sort);
-
-        // Then apply a limit so that we only get one row back
-        SQLFragment result = new SQLFragment("(");
-        result.append(getDbSchema().getSqlDialect().limitRows(subselect, 1));
-        result.append(")");
         return result;
     }
 
@@ -446,25 +396,7 @@ public class MothershipSchema extends UserSchema
         var stackTraceIdColumn = result.getMutableColumn("ExceptionStackTraceId");
         stackTraceIdColumn.setLabel("Exception");
         stackTraceIdColumn.setURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), "exceptionStackTraceId", FieldKey.fromParts("ExceptionStackTraceId")));
-        stackTraceIdColumn.setFk(new LookupForeignKey("ExceptionStackTraceId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createExceptionStackTraceTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return EXCEPTION_STACK_TRACE_TABLE_NAME;
-            }
-        });
+        stackTraceIdColumn.setFk(new QueryForeignKey.Builder(this, null).schema(this).table(EXCEPTION_STACK_TRACE_TABLE_NAME).build());
 
         result.getMutableColumn("PageflowName").setLabel("Controller");
         result.getMutableColumn("PageflowAction").setLabel("Action");
@@ -473,26 +405,7 @@ public class MothershipSchema extends UserSchema
         result.getMutableColumn("ServerSessionId").setLabel("Session");
         result.getMutableColumn("ServerSessionId").setFormat("'#'0");
         result.getMutableColumn("ServerSessionId").setExcelFormatString("0");
-        LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return createServerSessionTable(cf);
-            }
-
-            @Override
-            public String getLookupSchemaName()
-            {
-                return SCHEMA_NAME;
-            }
-
-            @Override
-            public String getLookupTableName()
-            {
-                return SERVER_SESSIONS_TABLE_NAME;
-            }
-        };
-        fk.setPrefixColumnCaption(false);
+        ForeignKey fk = new QueryForeignKey.Builder(this, null).schema(this).table(SERVER_SESSIONS_TABLE_NAME).build();
         result.getMutableColumn("ServerSessionId").setFk(fk);
 
         List<FieldKey> defaultCols = new ArrayList<>();

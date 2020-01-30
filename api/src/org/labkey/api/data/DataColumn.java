@@ -42,6 +42,7 @@ import org.labkey.api.util.element.Option;
 import org.labkey.api.util.element.Select;
 import org.labkey.api.util.element.TextArea;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -126,17 +127,41 @@ public class DataColumn extends DisplayColumn
         _editable = !_boundColumn.isReadOnly() && _boundColumn.isUserEditable();
         _textAlign = _displayColumn.getTextAlign();
 
-        // get the applicable ColumnAnalyticsProviders
-        AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
-        if (analyticsProviderRegistry != null)
-        {
-            for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn, true))
-            {
-                addAnalyticsProvider(columnAnalyticsProvider);
-                columnAnalyticsProvider.addClientDependencies(_clientDependencies);
-            }
-        }
     }
+
+
+    boolean analyticsProviderInitialized = false;
+
+    @Override
+    public @NotNull List<ColumnAnalyticsProvider> getAnalyticsProviders()
+    {
+        if (!analyticsProviderInitialized)
+        {
+            // get the applicable ColumnAnalyticsProviders
+            AnalyticsProviderRegistry analyticsProviderRegistry = AnalyticsProviderRegistry.get();
+            if (analyticsProviderRegistry != null)
+            {
+                for (ColumnAnalyticsProvider columnAnalyticsProvider : analyticsProviderRegistry.getColumnAnalyticsProviders(_boundColumn, true))
+                {
+                    addAnalyticsProvider(columnAnalyticsProvider);
+                    columnAnalyticsProvider.addClientDependencies(_clientDependencies);
+                }
+            }
+            analyticsProviderInitialized = true;
+        }
+
+        return super.getAnalyticsProviders();
+    }
+
+
+    @Override
+    public @NotNull Set<ClientDependency> getClientDependencies()
+    {
+        // call getAnalyticsProviders() to make find any client dependencies
+        getAnalyticsProviders();
+        return super.getClientDependencies();
+    }
+
 
     protected ColumnInfo getDisplayField(@NotNull ColumnInfo col, boolean withLookups)
     {

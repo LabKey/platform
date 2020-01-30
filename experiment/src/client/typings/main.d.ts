@@ -4,6 +4,7 @@ type LabKey = {
     devMode: boolean
     container: any
     contextPath: string
+    helpLinkPrefix: string
     moduleContext: any
     user: any
     vis: any

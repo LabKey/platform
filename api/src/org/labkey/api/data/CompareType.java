@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -190,11 +191,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) > 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -224,11 +225,12 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) < 0;
+
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -258,11 +260,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) >= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) >= 0;
         }
     };
 
@@ -292,11 +294,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) <= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) <= 0;
         }
     };
 
@@ -776,6 +778,8 @@ public abstract class CompareType
 
     private static class QClause extends CompareType.CompareClause
     {
+        private List<ColumnInfo> _queryColumns = null;
+
         QClause(String value)
         {
             super(new FieldKey(null, "*"), Q, value);
@@ -793,7 +797,52 @@ public abstract class CompareType
         @Override
         public List<FieldKey> getFieldKeys()
         {
-            return Collections.emptyList();
+            return this.getQueryColumns(null).stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList());
+        }
+
+        private List<ColumnInfo> getQueryColumns(@Nullable Integer paramNum)
+        {
+            if (_selectColumns == null)
+                return Collections.emptyList();
+
+            if (_queryColumns == null)
+            {
+                _queryColumns = new ArrayList<>();
+                for (ColumnInfo column : _selectColumns)
+                {
+                    if (column == null)
+                        continue;
+
+                    // If the search term parsed as a number, include a test for the primary key column
+                    if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
+                    {
+                        _queryColumns.add(column);
+                    }
+
+                    // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
+                    if (column.isHidden())
+                        continue;
+
+                    // skip uninteresting things like 'Folder' and 'CreatedBy'
+                    ForeignKey fk = column.getFk();
+                    if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
+                        continue;
+
+                    ColumnInfo targetColumn = column.getDisplayField();
+                    if (targetColumn == null)
+                        targetColumn = column;
+
+                    // skip more uninteresting columns
+                    if (!targetColumn.isStringType() ||
+                            targetColumn.getName().equalsIgnoreCase("lsid") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
+                        continue;
+
+                    _queryColumns.add(targetColumn);
+                }
+            }
+            return _queryColumns;
         }
 
         @Override
@@ -820,7 +869,7 @@ public abstract class CompareType
             SQLFragment sql = new SQLFragment();
             String sep = "";
 
-            for (ColumnInfo column : _selectColumns)
+            for (ColumnInfo column : this.getQueryColumns(paramNum))
             {
                 if (column == null)
                     continue;
@@ -837,24 +886,7 @@ public abstract class CompareType
                     continue;
                 }
 
-                // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
-                if (column.isHidden())
-                    continue;
-
-                // skip uninteresting things like 'Folder' and 'CreatedBy'
-                ForeignKey fk = column.getFk();
-                if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
-                    continue;
-
-                ColumnInfo targetColumn = column.getDisplayField();
-                if (targetColumn == null)
-                    targetColumn = column;
-
-                // skip more uninteresting columns
-                if (!targetColumn.isStringType() || targetColumn.getName().equalsIgnoreCase("lsid") || targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") || targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
-                    continue;
-
-                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
+                ColumnInfo mappedColumn = columnMap.get(column.getFieldKey());
                 if (mappedColumn == null)
                     continue;
 
@@ -1214,6 +1246,22 @@ public abstract class CompareType
         {
             return getCompareType().meetsCriteria(col, value, getParamVals());
         }
+    }
+
+    // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+    // Widen numeric types before calling compareTo to avoid ClassCastException comparing Long to Integer
+    private static int compareTo(@NotNull Comparable a, @NotNull Comparable b)
+    {
+        if (a.getClass() == b.getClass())
+            return a.compareTo(b);
+
+        if (a instanceof Number && b instanceof Number)
+        {
+            // widen and compare both numbers as doubles
+            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        }
+
+        return ((Comparable)a).compareTo(b);
     }
 
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
@@ -2136,6 +2184,11 @@ public abstract class CompareType
             assertTrue(clause.meetsCriteria(userPd, user.getUserId()));
             assertFalse(clause.meetsCriteria(createdByDisplayCol, user.getUserId()));
             assertTrue(clause.meetsCriteria(createdByDisplayCol, user.getDisplayName(user)));
+
+            // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+            // call meetsCriteria with a Long value against an Integer column type
+            SimpleFilter.FilterClause gtClause = CompareType.GT.createFilterClause(createdByCol.getFieldKey(), "1000");
+            assertTrue(gtClause.meetsCriteria(createdByCol, 1001L));
         }
 
     }

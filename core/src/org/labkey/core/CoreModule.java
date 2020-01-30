@@ -850,6 +850,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
+        populateSiteSettingsWithStartupProps();
         populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
@@ -1206,15 +1207,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         for (ConfigProperty prop : startupProps)
         {
-            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
-            {
-                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
-                if (folderType != null)
-                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
-                else
-                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
-            }
-
             SiteResourceHandler handler = getResourceHandler(prop.getName());
             if (handler != null)
                 incrementRevision = setSiteResource(handler, prop, user);
@@ -1223,6 +1215,39 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
         if (incrementRevision)
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+    }
+
+    /**
+     * This method will handle those startup props for settings to apply at the site level.
+     */
+    private void populateSiteSettingsWithStartupProps()
+    {
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+
+        for (ConfigProperty prop : startupProps)
+        {
+            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            {
+                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
+                if (folderType != null)
+                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
+                else
+                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
+            }
+            else if ("homeProjectResetPermissions".equalsIgnoreCase(prop.getName()) && Boolean.valueOf(prop.getValue()))
+            {
+                // reset the home project permissions to remove the default assignments given at server install
+                MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
+                SecurityPolicyManager.savePolicy(homePolicy);
+                // remove the guest role assignment from the support subfolder
+                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                Group guests = SecurityManager.getGroup(Group.groupGuests);
+                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                    supportPolicy.removeRoleAssignment(guests, assignedRole);
+                SecurityPolicyManager.savePolicy(supportPolicy);
+            }
+        }
     }
 
     private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)

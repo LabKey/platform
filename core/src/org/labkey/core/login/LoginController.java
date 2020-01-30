@@ -424,6 +424,9 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
+            ModelAndView redirectView = redirectIfLoggedIn(form);
+            if (redirectView != null) return redirectView;
+
             if (!AuthenticationManager.isRegistrationEnabled())
                 throw new NotFoundException("Registration is not enabled.");
             PageConfig config = getPageConfig();
@@ -587,6 +590,26 @@ public class LoginController extends SpringActionController
         }
     }
 
+    /**
+     * If user is already logged in, then redirect immediately. This handles users clicking on stale login links
+     * (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
+     * @return a view that will redirect the user if they're already logged in, or null if they're not logged in already
+     */
+    @Nullable
+    private ModelAndView redirectIfLoggedIn(AbstractLoginForm form)
+    {
+        if (!getUser().isGuest())
+        {
+            URLHelper returnURL = form.getReturnURLHelper();
+
+            // Create LoginReturnProperties if we have a returnURL or skipProfile param
+            LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
+                    ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
+
+            return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
+        }
+        return null;
+    }
 
     @RequiresNoPermission
     @ActionNames("login, showLogin")
@@ -596,18 +619,8 @@ public class LoginController extends SpringActionController
     {
         public ModelAndView getView(LoginForm form, BindException errors)
         {
-            // If user is already logged in, then redirect immediately. This handles users clicking on stale login links
-            // (e.g., multiple tab scenario) but is also necessary because of Excel's link behavior (see #9246).
-            if (!getUser().isGuest())
-            {
-                URLHelper returnURL = form.getReturnURLHelper();
-
-                // Create LoginReturnProperties if we have a returnURL or skipProfile param
-                LoginReturnProperties properties = null != returnURL || form.getSkipProfile()
-                        ? new LoginReturnProperties(returnURL, form.getUrlhash(), form.getSkipProfile()) : null;
-
-                return HttpView.redirect(AuthenticationManager.getAfterLoginURL(getContainer(), properties, getUser()), true);
-            }
+            ModelAndView redirectView = redirectIfLoggedIn(form);
+            if (redirectView != null) return redirectView;
 
             HttpServletRequest request = getViewContext().getRequest();
 
@@ -920,7 +933,7 @@ public class LoginController extends SpringActionController
     }
 
     // Generic message that we display to users for most success and failure situations, to avoid revealing whether an account exists or not, #33907
-    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server then you will receive an email message with password reset instructions.";
+    private static final String GENERIC_RESET_PASSWORD_MESSAGE = "Password reset was attempted. If an active account with this email address exists on the server, you will receive an email message with password reset instructions.";
 
     private Pair<Boolean, String> resetPasswordResponse(User user, @Nullable String failureEmailMessage, @Nullable String failureLogMessage)
     {
@@ -1088,9 +1101,8 @@ public class LoginController extends SpringActionController
         }
         else if (isAdminOnlyMode())
         {
-            String content = "The site is currently undergoing maintenance.";
             WikiRenderingService wikiService = WikiRenderingService.get();
-            content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
+            String content = wikiService.getFormattedHtml(WikiRendererType.RADEOX, ModuleLoader.getInstance().getAdminOnlyMessage());
             HtmlView adminMessageView = new HtmlView("The site is currently undergoing maintenance", content);
             vBox.addView(adminMessageView);
         }

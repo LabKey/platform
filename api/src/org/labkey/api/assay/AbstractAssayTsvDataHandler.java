@@ -310,7 +310,6 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     {
                         domain = provider.getResultsDomain(protocol);
 
-                        AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                         AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
                         TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
                         if (assayDataTable != null)
@@ -321,7 +320,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                                 throw new IllegalStateException("Assay results table expected to have dataId lookup column and LSID column");
 
                             // select the assay results LSID column for all rows referenced by the data
-                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X"))
+                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
                                     .append(" FROM ").append(assayDataTable.getFromSQL("X"))
                                     .append(" WHERE ").append(dataIdCol.getValueSql("X")).append(" = ").append(d.getRowId());
                         }
@@ -363,6 +362,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             {
                                 throw new RuntimeSQLException(x);
                             }
+                        }
+
+                        // call pvs to delete assay result rows provenance
+                        ProvenanceService pvs = ProvenanceService.get();
+                        if (null != pvs)
+                        {
+                            pvs.deleteAssayResultProvenance(assayResultLsidSql);
                         }
 
                         OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);

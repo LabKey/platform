@@ -34,6 +34,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
@@ -48,6 +49,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -365,6 +367,17 @@ public class ExpDataIterators
         }
     }
 
+    /* setup mini dataiterator pipeline to process lineage */
+    public static void derive(User user, Container container, DataIterator di, boolean isSample) throws BatchValidationException
+    {
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, isSample);
+        DataIteratorContext context = new DataIteratorContext();
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        DataIterator derive = ddib.getDataIterator(context);
+        new Pump(derive, context).run();
+        if (context.getErrors().hasErrors())
+            throw context.getErrors();
+    }
 
     public static class DerivationDataIteratorBuilder implements DataIteratorBuilder
     {

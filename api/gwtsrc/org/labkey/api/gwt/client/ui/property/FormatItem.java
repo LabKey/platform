@@ -39,7 +39,7 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
     // Why is this global constant defined in such an obscure class? Ideally, we would define it in HelpTopic, but that class
     // is not available to GWT client code. Defining it here allows us to use it in both GWT and server code.
     // TODO: When the GWT domain designer is removed, move this constant to HelpTopic.java
-    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/12/docs/api/java.base/";
+    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/13/docs/api/java.base/";
 
     // Should match Formats.getDecimalFormatDocumentationURL()
     private static final String DECIMAL_FORMAT_DOCUMENTATION_LINK = JDK_JAVADOC_BASE_URL + "java/text/DecimalFormat.html";

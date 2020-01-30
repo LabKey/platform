@@ -67,10 +67,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
@@ -2945,7 +2947,6 @@ public class StudyController extends BaseStudyController
             // Need to handle this by groups of source lsids -- each assay container needs logging
             MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
 
-
             if (originalSourceLsid != null)
             {
                 sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
@@ -2979,7 +2980,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
-            def.deleteRows(allLsids);
+            def.deleteDatasetRows(getUser(), allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
@@ -3715,7 +3716,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No dataset found for id: " + _datasetId);
             }
             Set<String> lsids = null;
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));

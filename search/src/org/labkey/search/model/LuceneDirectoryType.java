@@ -30,37 +30,37 @@ import java.nio.file.Path;
 public enum LuceneDirectoryType
 {
     Default
-            {
-                @Override
-                public Directory open(Path path) throws IOException
-                {
-                    return FSDirectory.open(path);
-                }
-            },
+    {
+        @Override
+        public Directory open(Path path) throws IOException
+        {
+            return FSDirectory.open(path);
+        }
+    },
     MMapDirectory
-            {
-                @Override
-                public Directory open(Path path) throws IOException
-                {
-                    return new MMapDirectory(path);
-                }
-            },
+    {
+        @Override
+        public Directory open(Path path) throws IOException
+        {
+            return new MMapDirectory(path);
+        }
+    },
     NIOFSDirectory
-            {
-                @Override
-                public Directory open(Path path) throws IOException
-                {
-                    return new NIOFSDirectory(path);
-                }
-            },
+    {
+        @Override
+        public Directory open(Path path) throws IOException
+        {
+            return new NIOFSDirectory(path);
+        }
+    },
     SimpleFSDirectory
-            {
-                @Override
-                public Directory open(Path path) throws IOException
-                {
-                    return new SimpleFSDirectory(path);
-                }
-            };
+    {
+        @Override
+        public Directory open(Path path) throws IOException
+        {
+            return new SimpleFSDirectory(path);
+        }
+    };
 
     public abstract Directory open(Path path) throws IOException;
 }
