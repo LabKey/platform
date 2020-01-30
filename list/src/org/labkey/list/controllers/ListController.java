@@ -253,39 +253,39 @@ public class ListController extends SpringActionController
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
+        String listDesignerHeader = "List Designer";
 
         @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
-
             boolean createList = (null == form.getListId() || 0 == form.getListId()) && form.getName() == null;
             if (!createList)
                 _list = form.getList();
 
-            Map<String, String> props = new HashMap<>();
-
-            URLHelper returnURL = form.getReturnURLHelper();
-
-            props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-            props.put("allowFileLinkProperties", "0");
-            props.put("allowAttachmentProperties", "1");
-            props.put("showDefaultValueSettings", "1");
-            props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("loading", "Loading...");
-
-            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove once automated test conversion of new list designer is complete.
             if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
             {
-                //TODO: props above need to be represented in the new list designer
                 VBox listDesigner = new VBox();
                 listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "listDesigner"));
                 return listDesigner;
             }
-            else {
+            else
+             {
+
+                Map<String, String> props = new HashMap<>();
+
+                URLHelper returnURL = form.getReturnURLHelper();
+
+                props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
+                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+                props.put("allowFileLinkProperties", "0");
+                props.put("allowAttachmentProperties", "1");
+                props.put("showDefaultValueSettings", "1");
+                props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
+                props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("loading", "Loading...");
                 return new GWTView("org.labkey.list.Designer", props);
             }
         }
@@ -294,9 +294,19 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             if (null == _list)
-                root.addChild("Create new List");
+            {
+                if (experimentalFlagEnabled)
+                    root.addChild(listDesignerHeader);
+                else
+                    root.addChild("Create new List");
+            }
             else
-                appendListNavTrail(root, _list, null);
+            {
+                if (experimentalFlagEnabled)
+                    appendListNavTrail(root, _list, listDesignerHeader);
+                else
+                    appendListNavTrail(root, _list, null);
+            }
             return root;
         }
     }
