@@ -3493,8 +3493,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
-            form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
-            return new ApiSimpleResponse("success", true);
+            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
+            form.updateSampleSet(getContainer(), getUser(), sampleSet);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3535,7 +3536,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
             ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return new ApiSimpleResponse("success", true);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3554,16 +3555,23 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleSetImpl ss = form.getSampleSet(getContainer());
 
-            Map<String,Object> sampleSet = new HashMap<>();
-            sampleSet.put("name", ss.getName());
-            sampleSet.put("nameExpression", ss.getNameExpression());
-            sampleSet.put("description", ss.getDescription());
-            sampleSet.put("importAliases", ss.getImportAliasMap());
-            sampleSet.put("lsid", ss.getLSID());
-            sampleSet.put("rowId", ss.getRowId());
-
-            return new ApiSimpleResponse(Collections.singletonMap("sampleSet", sampleSet));
+            return getSampleSetApiResponse(ss);
         }
+    }
+
+    @NotNull
+    private static ApiSimpleResponse getSampleSetApiResponse(ExpSampleSet ss) throws IOException
+    {
+        Map<String,Object> sampleSet = new HashMap<>();
+        sampleSet.put("name", ss.getName());
+        sampleSet.put("nameExpression", ss.getNameExpression());
+        sampleSet.put("description", ss.getDescription());
+        sampleSet.put("importAliases", ss.getImportAliasMap());
+        sampleSet.put("lsid", ss.getLSID());
+        sampleSet.put("rowId", ss.getRowId());
+        sampleSet.put("domainId", ss.getDomain().getTypeId());
+
+        return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
 
     private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
