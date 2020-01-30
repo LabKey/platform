@@ -825,7 +825,10 @@ public class StudyManager
                             QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
                 }
                 indexDataset(null, datasetDefinition);
-            }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
+            }, CommitTaskOption.POSTCOMMIT);
+
+            // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
+            uncache(datasetDefinition);
             QueryService.get().updateLastModified();
             transaction.commit();
         }
