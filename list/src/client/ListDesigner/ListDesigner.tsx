@@ -33,19 +33,40 @@ type State = {
     // model?:  //TODO: define list model in labkey-ui-components
 
     //TODO: Not sure if these are needed given hasDesignListPermission above, carried over from ListController.EditListDefinitionAction:
-    hasInsertPermission: boolean,
-    hasDeleteListPermission: boolean
+    // hasInsertPermission: boolean,
+    // hasDeleteListPermission: boolean
 }
 
 export class App extends React.Component<any, State>
 {
+    constructor(props)
+    {
+        super(props);
+
+        const { listId } = ActionURL.getParameters();
+
+        let returnUrl = ActionURL.getParameter('returnUrl');
+
+        this.state = {
+            listId,
+            isLoadingModel: true,
+            returnUrl,
+            dirty: false, //TODO : handle this correctly,
+            allowFileLinkProperties: 0,
+            allowAttachmentProperties: 1,
+            showDefaultValueSettings: 1,
+        };
+    }
 
     render() {
         const { isLoadingModel, hasDesignListPermission, message } = this.state; //TODO: add model once its in labkey-ui-components
 
-        if (message) {
-            return <Alert>{message}</Alert>
-        }
+        return <Alert>New List Designer Page under construction</Alert>; //TODO: Remove
+
+        //TODO : uncomment
+        // if (message) {
+        //     return <Alert>{message}</Alert>
+        // }
 
         // set as loading until model is loaded and we know if the user has DesignListPerm
         if (isLoadingModel || hasDesignListPermission === undefined) {
@@ -53,7 +74,7 @@ export class App extends React.Component<any, State>
         }
 
         // check if this is a create list case with a user that doesn't have permissions
-        // if (model.isNew() && !hasDesignListPerm) { //TODO: use this when ListModel is in place in labkey-ui-components
+        // if (model.isNew() && !hasDesignListPermission) { //TODO: use this when ListModel is in place in labkey-ui-components
         if (!hasDesignListPermission) {
             return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
         }
