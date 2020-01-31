@@ -16,7 +16,7 @@ describe('<DragAndDropPane/>', () => {
 
         component = (
             <DragAndDropPane
-                rowInfo={SSO_CONFIGURATIONS}
+                authConfigs={SSO_CONFIGURATIONS}
                 canEdit={true}
                 isDragDisabled={false}
                 actionFunctions={actionFns}

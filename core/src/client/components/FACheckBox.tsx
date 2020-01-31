@@ -5,10 +5,9 @@ import { faCheckSquare } from '@fortawesome/free-solid-svg-icons';
 import { faSquare } from '@fortawesome/free-regular-svg-icons';
 
 interface Props {
-    key?: string;
-    checked?: boolean;
-    canEdit?: boolean;
-    onClick?: Function;
+    checked: boolean;
+    canEdit: boolean;
+    onClick: Function;
     name?: string;
 }
 
@@ -23,11 +22,9 @@ export default class FACheckBox extends PureComponent<Props> {
         const classNames = this.props.canEdit ? 'no-highlight clickable ' : 'no-highlight ';
 
         return (
-            <>
-                <span className={classNames + this.props.name} onClick={() => this.props.onClick()}>
-                    {checkedOrNot}
-                </span>
-            </>
+            <span className={classNames + this.props.name} onClick={() => this.props.onClick()}>
+                {checkedOrNot}
+            </span>
         );
     }
 }

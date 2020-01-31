@@ -5,41 +5,37 @@ import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import AuthRow from './AuthRow';
 
 interface Props {
-    stateSection?: string;
-    rowInfo?: AuthConfig[];
-    primaryProviders?: Record<string, any>;
-    secondaryProviders?: Record<string, any>;
+    configType?: string;
+    authConfigs?: AuthConfig[];
+    primaryProviders?: AuthConfigProvider[];
+    secondaryProviders?: AuthConfigProvider[];
     canEdit?: boolean;
     isDragDisabled?: boolean;
-    actionFunctions?: { [key: string]: Function };
+    actions?: Actions;
 }
 
 export default class DragAndDropPane extends PureComponent<Props> {
-    constructor(props) {
-        super(props);
-    }
-
     render() {
-        const { primaryProviders, secondaryProviders, stateSection } = this.props;
-        const { onDragEnd, ...otherActionFunctions } = this.props.actionFunctions;
+        const { primaryProviders, secondaryProviders, configType } = this.props;
+        const { onDragEnd, ...otherActions } = this.props.actions;
         const providers = primaryProviders ? primaryProviders : secondaryProviders;
 
-        const DragAndDropAuthRows = this.props.rowInfo.map((item, index) => (
+        const DragAndDropAuthRows = this.props.authConfigs.map((authConfig, index) => (
             <Draggable
-                key={item.configuration}
-                draggableId={item.configuration}
+                key={authConfig.configuration}
+                draggableId={authConfig.configuration}
                 index={index}
                 isDragDisabled={this.props.isDragDisabled}>
                 {provided => (
                     <div ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
                         <AuthRow
                             index={index.toString()}
-                            {...item} // contains data of an individual auth config
-                            {...otherActionFunctions} // contains authRow-level functions
+                            {...authConfig}
+                            {...otherActions} // Contains authRow-level functions
                             canEdit={this.props.canEdit}
                             draggable={true}
-                            modalType={providers && { ...providers[item.provider] }}
-                            stateSection={stateSection}
+                            modalType={providers ? providers[authConfig.provider] : null }
+                            configType={configType}
                         />
                     </div>
                 )}
@@ -48,7 +44,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
 
         return (
             <DragDropContext onDragEnd={onDragEnd}>
-                <Droppable droppableId={stateSection}>
+                <Droppable droppableId={configType}>
                     {provided => (
                         <div ref={provided.innerRef} {...provided.droppableProps}>
                             {DragAndDropAuthRows}

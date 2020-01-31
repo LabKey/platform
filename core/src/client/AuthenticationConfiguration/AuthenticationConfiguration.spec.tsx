@@ -52,21 +52,6 @@ describe('<AuthenticationConfiguration/>', () => {
         expect(window.location.assign).toHaveBeenCalledWith(ActionURL.buildURL('admin', 'showAdmin'));
     });
 
-    // For the life of me, I can't get this one to work
-    // test('Save button triggers', () => {
-    //     // const spy = jest.spyOn(wrapper.instance(), 'saveChanges').mockImplementation(() => {return true});
-    //     wrapper.instance().saveChanges = jest.fn(() => true);
-    //
-    //     window.location.assign = jest.fn();
-    //     wrapper.update();
-    //
-    //     const saveButton1 = wrapper.find('.parent-panel__save-button').at(0);
-    //     saveButton1.simulate('click');
-    //
-    //     expect(wrapper.instance().saveChanges).toHaveBeenCalled();
-    //     // expect(spy).toHaveBeenCalled();
-    // });
-
     test('Making global checkbox fields dirty sets dirtiness flag, brings up alert message', () => {
         let checkbox = wrapper.find(".fa-check-square").at(0);
         checkbox.simulate('click');

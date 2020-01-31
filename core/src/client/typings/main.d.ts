@@ -24,7 +24,7 @@ interface AuthConfigField {
     defaultValue?: any;
     name?: string;
     caption: string;
-    description?: string;
+    description: string;
     type: string;
     required?: boolean;
     options?: Record<string, string>;
@@ -48,6 +48,27 @@ interface InputFieldProps {
     canEdit: boolean;
     type: string;
     value?: string;
-    handleChange?: Function;
+    onChange?: Function;
     key?: number;
+}
+
+interface DatabasePasswordRules {
+    Weak: string;
+    Strong: string;
+}
+
+interface DatabasePasswordSettings {
+    strength: string;
+    expiration: string;
+}
+
+interface Actions {
+    onDragEnd: (result: Record<string, any>) => void;
+    onDelete: (configuration: number, configType: string) => void;
+    updateAuthRowsAfterSave: (config: string, configType: string) => void;
+    toggleModalOpen: (modalOpen: boolean) => void;
+}
+
+interface Options {
+
 }

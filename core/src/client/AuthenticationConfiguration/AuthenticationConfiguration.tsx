@@ -14,14 +14,14 @@ interface State {
     formConfigurations?: AuthConfig[];
     ssoConfigurations?: AuthConfig[];
     secondaryConfigurations?: AuthConfig[];
-    primaryProviders?: Record<string, any>;
-    secondaryProviders?: Record<string, any>;
+    primaryProviders?: AuthConfigProvider[];
+    secondaryProviders?: AuthConfigProvider[];
     globalSettings?: Record<string, any>;
     helpLink?: string;
     canEdit?: boolean;
     dirtinessData?: Record<string, any>;
     dirty?: boolean;
-    someModalOpen?: boolean;
+    modalOpen?: boolean;
     authCount?: number;
 }
 
@@ -39,7 +39,7 @@ export class App extends PureComponent<{}, State> {
             canEdit: false,
             dirtinessData: null,
             dirty: false,
-            someModalOpen: false,
+            modalOpen: false,
             authCount: null,
         };
     }
@@ -83,11 +83,14 @@ export class App extends PureComponent<{}, State> {
         }
     };
 
-    toggleSomeModalOpen = (someModalOpen: boolean): void => {
-        this.setState({ someModalOpen });
+    toggleModalOpen = (modalOpen: boolean): void => {
+        this.setState({ modalOpen });
     };
 
     checkGlobalAuthBox = (id: string): void => {
+        if (!this.state.canEdit) {
+            return;
+        }
         const oldState = this.state.globalSettings[id];
         this.setState(
             prevState => ({
@@ -115,19 +118,19 @@ export class App extends PureComponent<{}, State> {
             form.append(item, this.state.globalSettings[item]);
         });
 
-        const dirtyStateSections = this.draggableIsDirty();
-        if (dirtyStateSections.length !== 0) {
-            dirtyStateSections.map(stateSection => {
-                if (stateSection == 'formConfigurations') {
+        const dirtyConfigType = this.draggableIsDirty();
+        if (dirtyConfigType.length !== 0) {
+            dirtyConfigType.map(configType => {
+                if (configType == 'formConfigurations') {
                     // slice to remove database config, which has a fixed position
                     form.append(
-                        stateSection,
-                        this.getAuthConfigArray(this.state[stateSection])
+                        configType,
+                        this.getAuthConfigArray(this.state[configType])
                             .slice(0, -1)
                             .toString()
                     );
                 } else {
-                    form.append(stateSection, this.getAuthConfigArray(this.state[stateSection]).toString());
+                    form.append(configType, this.getAuthConfigArray(this.state[configType]).toString());
                 }
             });
         }
@@ -146,18 +149,22 @@ export class App extends PureComponent<{}, State> {
         });
     };
 
-    draggableIsDirty = (): string[] => {
-        const stateSections = ['formConfigurations', 'ssoConfigurations', 'secondaryConfigurations'];
+    onCancel = (): void => {
+        window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
+    };
 
-        return stateSections.filter(stateSection => {
-            const newOrdering = this.getAuthConfigArray(this.state[stateSection]);
-            const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[stateSection]);
+    draggableIsDirty = (): string[] => {
+        const configTypes = ['formConfigurations', 'ssoConfigurations', 'secondaryConfigurations'];
+
+        return configTypes.filter(configType => {
+            const newOrdering = this.getAuthConfigArray(this.state[configType]);
+            const oldOrdering = this.getAuthConfigArray(this.state.dirtinessData[configType]);
             return !isEquivalent(newOrdering, oldOrdering);
         });
     };
 
-    getAuthConfigArray = (stateSection: AuthConfig[]): AuthConfig[] => {
-        return stateSection.map((auth: any) => {
+    getAuthConfigArray = (configType: AuthConfig[]): AuthConfig[] => {
+        return configType.map((auth: any) => {
             return auth.configuration;
         });
     };
@@ -167,13 +174,13 @@ export class App extends PureComponent<{}, State> {
             return;
         }
 
-        const stateSection = result.source.droppableId;
+        const configType = result.source.droppableId;
 
-        const items = reorder(this.state[stateSection], result.source.index, result.destination.index);
+        const items = reorder(this.state[configType], result.source.index, result.destination.index);
 
         this.setState(
             () => ({
-                [stateSection]: items,
+                [configType]: items,
             }),
             () => {
                 const dirty = this.draggableIsDirty().length > 0;
@@ -182,8 +189,8 @@ export class App extends PureComponent<{}, State> {
         );
     };
 
-    deleteAction = (configuration: number, stateSection: string): void => {
-        const prevState = this.state[stateSection];
+    onDelete = (configuration: number, configType: string): void => {
+        const prevState = this.state[configType];
         const newState = prevState.filter(auth => {
             return auth.configuration !== configuration;
         });
@@ -198,31 +205,31 @@ export class App extends PureComponent<{}, State> {
             },
             success: function() {
                 const authCount = this.state.authCount - 1;
-                this.setState({ authCount, [stateSection]: newState });
+                this.setState({ authCount, [configType]: newState });
             },
         });
     };
 
-    updateAuthRowsAfterSave = (config: string, stateSection: string): void => {
-        const prevState = this.state[stateSection];
-        const newState = addOrUpdateAnAuthConfig(config, prevState, stateSection);
+    updateAuthRowsAfterSave = (config: string, configType: string): void => {
+        const prevState = this.state[configType];
+        const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
         // Update our dirtiness information with added modal, since dirtiness should only track reordering
         const dirtinessData = this.state.dirtinessData;
-        dirtinessData[stateSection] = newState;
+        dirtinessData[configType] = newState;
 
-        this.setState({ [stateSection]: newState, dirtinessData });
+        this.setState({ [configType]: newState, dirtinessData });
     };
 
     render() {
         const alertText =
             'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
-        const { globalSettings, dirtinessData, dirty, authCount, someModalOpen, ...restProps } = this.state;
-        const actionFunctions = {
+        const { globalSettings, dirtinessData, dirty, authCount, modalOpen, ...restProps } = this.state;
+        const actions = {
             onDragEnd: this.onDragEnd,
-            deleteAction: this.deleteAction,
+            onDelete: this.onDelete,
             updateAuthRowsAfterSave: this.updateAuthRowsAfterSave,
-            toggleSomeModalOpen: this.toggleSomeModalOpen,
+            toggleModalOpen: this.toggleModalOpen,
         };
 
         return (
@@ -238,21 +245,20 @@ export class App extends PureComponent<{}, State> {
 
                 <AuthConfigMasterPanel
                     {...restProps}
-                    isDragDisabled={this.state.someModalOpen}
-                    actionFunctions={actionFunctions}
+                    isDragDisabled={this.state.modalOpen}
+                    actions={actions}
                 />
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}
 
-                <Button className="labkey-button primary parent-panel__save-button" onClick={() => this.saveChanges}>
+                <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
                     Save and Finish
                 </Button>
 
                 <Button
                     className="labkey-button parent-panel__cancel-button"
-                    onClick={() => {
-                        window.location.assign(ActionURL.buildURL('admin', 'showAdmin'));
-                    }}>
+                    onClick={this.onCancel}
+                >
                     Cancel
                 </Button>
             </div>

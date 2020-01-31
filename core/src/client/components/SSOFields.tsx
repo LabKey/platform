@@ -5,40 +5,13 @@ import { ActionURL } from '@labkey/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage, faTimesCircle } from '@fortawesome/free-solid-svg-icons';
 
-interface Props {
-    headerLogoUrl?: string;
-    loginLogoUrl?: string;
-    onFileChange?: Function;
-    handleDeleteLogo?: Function;
-    canEdit?: boolean;
-}
-
-export class SSOFields extends PureComponent<Props> {
-    render() {
-        return (
-            <>
-                <ImageAndFileAttachmentForm
-                    text="Page Header Logo"
-                    imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
-                    onFileChange={this.props.onFileChange}
-                    handleDeleteLogo={this.props.handleDeleteLogo}
-                    fileTitle="auth_header_logo"
-                    canEdit={this.props.canEdit}
-                    index={1}
-                />
-
-                <div className="sso-fields__spacer"/>
-
-                <ImageAndFileAttachmentForm
-                    text="Login Page Logo"
-                    imageUrl={ActionURL.getBaseURL(true) + this.props.loginLogoUrl}
-                    onFileChange={this.props.onFileChange}
-                    handleDeleteLogo={this.props.handleDeleteLogo}
-                    fileTitle="auth_login_page_logo"
-                    canEdit={this.props.canEdit}
-                    index={2}
-                />
-            </>
+class NoImageSelectedDisplay extends PureComponent {
+    render () {
+        return(
+            <div className="sso-fields__null-image">
+                <FontAwesomeIcon icon={faImage} color="#DCDCDC" size="6x" />
+                <div className="sso-fields__null-image__text">None selected</div>
+            </div>
         );
     }
 }
@@ -46,8 +19,8 @@ export class SSOFields extends PureComponent<Props> {
 interface ImgFileAttachForm_Props {
     text: string;
     imageUrl: string;
-    onFileChange?: Function;
-    handleDeleteLogo?: Function;
+    onFileChange: Function;
+    handleDeleteLogo: Function;
     fileTitle: string;
     canEdit: boolean;
     index: number;
@@ -66,13 +39,6 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
     }
 
     render() {
-        const noImageSelectedDisplay = (
-            <div className="sso-fields__null-image">
-                <FontAwesomeIcon icon={faImage} color="#DCDCDC" size="6x" />
-                <div className="sso-fields__null-image__text">None selected</div>
-            </div>
-        );
-
         const img = (
             <img
                 className={
@@ -89,7 +55,7 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
         );
 
         return (
-            <div className={"sso-logo-pane-container"}>
+            <div className="sso-logo-pane-container">
                 <div className="sso-fields__label">{this.props.text}</div>
 
                 {this.props.canEdit ? (
@@ -102,8 +68,8 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
                                         className={
                                             (this.props.fileTitle == 'auth_header_logo'
                                                 ? 'sso-fields__delete-img--header-logo'
-                                                : 'sso-fields__delete-img--page-logo')
-                                            + ' sso-fields__delete-img clickable'
+                                                : 'sso-fields__delete-img--page-logo') +
+                                            ' sso-fields__delete-img clickable'
                                         }
                                         icon={faTimesCircle}
                                         color="#d9534f"
@@ -114,13 +80,12 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
                                     />
                                 </div>
                             ) : (
-                                noImageSelectedDisplay
+                                <NoImageSelectedDisplay/>
                             )}
                         </div>
 
                         <div className="sso-fields__file-attachment" id={this.props.fileTitle}>
                             <FileAttachmentForm
-                                key={this.props.text}
                                 index={this.props.index}
                                 showLabel={false}
                                 allowMultiple={false}
@@ -135,10 +100,48 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
                     </>
                 ) : (
                     <div className="sso-fields__image-holder--view-only">
-                        {this.state.imageUrl ? img : noImageSelectedDisplay}
+                        {this.state.imageUrl ? img : <NoImageSelectedDisplay/>}
                     </div>
                 )}
             </div>
+        );
+    }
+}
+
+interface Props {
+    headerLogoUrl: string;
+    loginLogoUrl: string;
+    onFileChange: Function;
+    handleDeleteLogo: Function;
+    canEdit: boolean;
+}
+
+export class SSOFields extends PureComponent<Props> {
+    render() {
+        return (
+            <>
+                <ImageAndFileAttachmentForm
+                    text="Page Header Logo"
+                    imageUrl={ActionURL.getBaseURL(true) + this.props.headerLogoUrl}
+                    onFileChange={this.props.onFileChange}
+                    handleDeleteLogo={this.props.handleDeleteLogo}
+                    fileTitle="auth_header_logo"
+                    canEdit={this.props.canEdit}
+                    index={1}
+                />
+
+                <div className="sso-fields__spacer" />
+
+                <ImageAndFileAttachmentForm
+                    text="Login Page Logo"
+                    imageUrl={ActionURL.getBaseURL(true) + this.props.loginLogoUrl}
+                    onFileChange={this.props.onFileChange}
+                    handleDeleteLogo={this.props.handleDeleteLogo}
+                    fileTitle="auth_login_page_logo"
+                    canEdit={this.props.canEdit}
+                    index={2}
+                />
+            </>
         );
     }
 }

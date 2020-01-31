@@ -80,7 +80,7 @@
     ],
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
     "preset": "ts-jest",
-    "moduleNameMapper":{
+    "moduleNameMapper": {
       "\\.(css|less|sass|scss)$": "./test/styleMock.ts"
     }
   },
@@ -89,7 +89,7 @@
     "@fortawesome/free-solid-svg-icons": "5.11.2",
     "@fortawesome/react-fontawesome": "0.1.7",
     "@labkey/api": "0.0.29",
-    "@labkey/components": "0.13.1-fb-compactFileAttachmentForm.0",
+    "@labkey/components": "0.21.1",
     "@labkey/eslint-config-react": "0.0.5",
     "react": "16.8.6",
     "react-beautiful-dnd": "11.0.3",

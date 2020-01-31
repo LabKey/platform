@@ -76,8 +76,39 @@ body {
   box-shadow: inset 0 1px 3px 2px #F3F3F4;
 }
 
+.auth-row:hover .domain-row-handle {
+  color: #2980B9;
+}
+
+.auth-row:hover .deleteIcon {
+  color: #d9534f;
+}
+
+.auth-row:hover .editOrViewIcon {
+  color: #0176AC;
+}
+
+.deleteIcon {
+  color: #999999;
+}
+
+.editOrViewIcon {
+  color: #999999;
+}
+
 .auth-row__field {
   margin-top: 5px;
+}
+
+.auth-row__delete-modal {
+  height: 80px;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.auth-row__confirm-delete {
+  margin-left: 510px;
+  margin-top: 10px;
 }
 
 .globalAuthConfig-textInput{
@@ -522,6 +553,7 @@ fieldset[disabled] .btn-primary.focus {
   width: 30px;
   vertical-align: middle;
   background-color: #F3F3F4;
+  color: #999999;
 }
 
 .domain-row-base-fields {

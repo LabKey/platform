@@ -1,8 +1,15 @@
 import React, { PureComponent } from 'react';
 
-import { Col } from 'react-bootstrap';
+import { Col, Modal, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPencilAlt, faInfoCircle, faTimesCircle, faGripVertical, faCircle } from '@fortawesome/free-solid-svg-icons';
+import {
+    faPencilAlt,
+    faInfoCircle,
+    faTimesCircle,
+    faGripVertical,
+    faCircle,
+    faTimes
+} from '@fortawesome/free-solid-svg-icons';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
@@ -13,55 +20,39 @@ interface Props extends AuthConfig {
     description?: string,
     details?: string,
     provider?: string,
-    stateSection?: string;
+    configType?: string;
     canEdit?: boolean;
     draggable?: boolean;
-    deleteAction?: Function;
-    toggleSomeModalOpen?: Function;
+    onDelete?: Function;
+    toggleModalOpen?: Function;
     updateAuthRowsAfterSave?: Function;
 }
 
 interface State {
-    modalOpen?: boolean;
-    highlight?: boolean;
+    editModalOpen?: boolean;
+    deleteModalOpen?: boolean;
 }
 
 export default class AuthRow extends PureComponent<Props, State> {
     constructor(props) {
         super(props);
         this.state = {
-            modalOpen: false,
+            editModalOpen: false,
+            deleteModalOpen: false,
         };
     }
 
-    onToggleModal = (toggled: string): void => {
+    onToggleModal = (localModalType: string, modalOpen: boolean): void => {
         this.setState(() => ({
-            [toggled]: !this.state[toggled],
-            highlight: false,
+            [localModalType]: !modalOpen,
         }));
     };
 
-    onDeleteClick = (): void => {
-        const response = confirm(
-            'Are you sure you want to delete ' + this.props.description + ' authentication configuration?'
-        );
-        if (response) {
-            this.props.deleteAction(this.props.configuration, this.props.stateSection);
-        }
-    };
-
-    setHighlight = (isHighlighted: boolean): void => {
-        if (this.state.modalOpen) {
-            return;
-        }
-        this.setState({ highlight: isHighlighted });
-    };
-
     render() {
-        const { canEdit, draggable, provider, toggleSomeModalOpen } = this.props;
+        const { canEdit, draggable, provider, toggleModalOpen } = this.props;
         const isDatabaseAuth = provider == 'Database';
 
-        const handle = draggable && canEdit ? <LightupHandle highlight={this.state.highlight} /> : null;
+        const handle = draggable && canEdit ? <LightupHandle /> : null;
 
         const enabledField = this.props.enabled ? (
             <>
@@ -75,59 +66,78 @@ export default class AuthRow extends PureComponent<Props, State> {
 
         const deleteIcon =
             canEdit && !isDatabaseAuth ? (
-                <div className="clickable" onClick={() => this.onDeleteClick()}>
-                    <FontAwesomeIcon icon={faTimesCircle} color={this.state.highlight ? "#d9534f" : "#999999"} />
+                <div className="clickable deleteIcon" onClick={() => this.setState({deleteModalOpen: true})}>
+                    <FontAwesomeIcon icon={faTimesCircle} />
                 </div>
             ) : null;
 
         const editOrViewIcon = canEdit ? (
             <div
-                className="clickable"
+                className="clickable editOrViewIcon"
                 onClick={() => {
-                    this.onToggleModal('modalOpen');
-                    toggleSomeModalOpen(true);
+                    this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                    toggleModalOpen(true);
                 }}>
-                <FontAwesomeIcon size="1x" icon={faPencilAlt} color={this.state.highlight ? "#0176AC" : "#999999"} />
+                <FontAwesomeIcon size="1x" icon={faPencilAlt} />
             </div>
         ) : (
-            <div className="clickable" onClick={() => this.onToggleModal('modalOpen')}>
-                <FontAwesomeIcon size="1x" icon={faInfoCircle} color="#999999" />
+            <div className="clickable" onClick={() => this.onToggleModal("editModalOpen", this.state.editModalOpen)}>
+                <FontAwesomeIcon size="1x" icon={faInfoCircle} />
             </div>
         );
 
-        const dynamicModal = this.state.modalOpen && (
-            <DynamicConfigurationModal
-                {...this.props}
-                closeModal={() => {
-                    this.onToggleModal('modalOpen');
-                    canEdit && toggleSomeModalOpen(false);
-                }}
-                updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
-            />
-        );
+        let modal;
+        if (isDatabaseAuth) {
+            modal =
+                <DatabaseConfigurationModal
+                    closeModal={() => {
+                        this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                        toggleModalOpen(false);
+                    }}
+                    canEdit={canEdit}
+                />
+        } else {
+            modal =
+                <DynamicConfigurationModal
+                    {...this.props}
+                    closeModal={() => {
+                        this.onToggleModal("editModalOpen", this.state.editModalOpen);
+                        canEdit && toggleModalOpen(false);
+                    }}
+                    updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                />
+        }
 
-        const databaseModal = (
-            <DatabaseConfigurationModal
-                closeModal={() => {
-                    this.onToggleModal('modalOpen');
-                    toggleSomeModalOpen(false);
-                }}
-                canEdit={canEdit}
-            />
-        );
+        const deleteModal =
+            <Modal show={true} onHide={() => {}}>
+                <Modal.Header>
+                    <Modal.Title>
+                        Warning
+                        <FontAwesomeIcon
+                            size="sm"
+                            icon={faTimes}
+                            className="modal__close-icon"
+                            onClick={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}
+                        />
+                    </Modal.Title>
+                </Modal.Header>
+                <div className={"auth-row__delete-modal"}>
+                    <div>
+                        {`Are you sure you want to delete authentication configuration ${this.props.description}?`}
+                    </div>
 
-        const modal = this.state.modalOpen && isDatabaseAuth ? databaseModal : dynamicModal;
+                    <Button
+                        className="labkey-button primary auth-row__confirm-delete"
+                        onClick={() => this.props.onDelete(this.props.configuration, this.props.configType)}
+                    >
+                        Yes
+                    </Button>
+                </div>
+            </Modal>;
 
         return (
             <div className="row-container">
-                <div
-                    className="auth-row"
-                    onMouseOver={() => {
-                        this.setHighlight(true);
-                    }}
-                    onMouseLeave={() => {
-                        this.setHighlight(false);
-                    }}>
+                <div className="auth-row">
                     <div className="domain-row-container">
                         <div className="domain-row-handle">{handle}</div>
 
@@ -160,7 +170,9 @@ export default class AuthRow extends PureComponent<Props, State> {
                                 </Col>
                             </Col>
 
-                            {modal}
+                            {this.state.editModalOpen && modal}
+                            {this.state.deleteModalOpen && deleteModal}
+
                         </div>
                     </div>
                 </div>
@@ -169,20 +181,12 @@ export default class AuthRow extends PureComponent<Props, State> {
     }
 }
 
-interface HandleProps {
-    highlight: boolean;
-}
-
-class LightupHandle extends PureComponent<HandleProps> {
+class LightupHandle extends PureComponent {
     render() {
-        const HIGHLIGHT_BLUE = '#2980B9';
-        const NOT_HIGHLIGHT_GRAY = '#999999';
-
         return (
             <div>
                 <FontAwesomeIcon
                     size="lg"
-                    color={this.props.highlight ? HIGHLIGHT_BLUE : NOT_HIGHLIGHT_GRAY}
                     icon={faGripVertical}
                 />
             </div>

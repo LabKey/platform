@@ -4,6 +4,13 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { ActionURL, Ajax } from '@labkey/api';
 
+const OPTIONS_MAP = {
+    Never: 'Never',
+    FiveSeconds: 'Every five seconds — for testing',
+    ThreeMonths: 'Every three months',
+    SixMonths: 'Every six months',
+    OneYear: 'Every twelve months',
+};
 
 interface Props extends AuthConfig {
     closeModal?: Function;
@@ -11,9 +18,9 @@ interface Props extends AuthConfig {
 }
 
 interface State {
-    passwordRules: Record<string, string>;
+    passwordRules: DatabasePasswordRules;
+    currentSettings: DatabasePasswordSettings;
     helpLink: string;
-    currentSettings: Record<string, string>;
 }
 
 export default class DatabaseConfigurationModal extends PureComponent<Props, State> {
@@ -25,7 +32,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                 Strong: '',
             },
             helpLink: null,
-            currentSettings: {strength: "", expiration: ""}
+            currentSettings: { strength: '', expiration: '' },
         };
     }
 
@@ -56,17 +63,10 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     };
 
     saveChanges = (): void => {
-        const { expiration, strength } = this.state.currentSettings;
-
-        const form = {
-            strength,
-            expiration,
-        };
-
         Ajax.request({
             url: ActionURL.buildURL('login', 'SaveDbLoginProperties'),
             method: 'POST',
-            jsonData: form,
+            jsonData: this.state.currentSettings,
             scope: this,
             failure: function(error) {
                 alert('Error: ' + error);
@@ -81,13 +81,6 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         const { canEdit } = this.props;
         const passwordStrength = this.state.currentSettings && this.state.currentSettings.strength;
         const expiration = this.state.currentSettings && this.state.currentSettings.expiration;
-        const optionsMap = {
-            Never: 'Never',
-            FiveSeconds: 'Every five seconds — for testing',
-            ThreeMonths: 'Every three months',
-            SixMonths: 'Every six months',
-            OneYear: 'Every twelve months',
-        };
 
         return (
             <Modal show={true} onHide={() => {}}>
@@ -129,12 +122,13 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         </span>
                     </div>
 
+                    {/* HTML set are text-only bullet points. */}
                     <div className="bold-text"> Weak </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
                     </div>
 
-                    <br />
+                    <br/>
 
                     <div className="bold-text"> Strong </div>
                     <div>
@@ -153,15 +147,16 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     name="expiration"
                                     placeholder="select"
                                     onChange={this.handleChange}
-                                    value={expiration}>
-                                    <option value="Never">Never</option>
-                                    <option value="FiveSeconds">Every five seconds — for testing</option>
-                                    <option value="ThreeMonths">Every three months</option>
-                                    <option value="SixMonths">Every six months</option>
-                                    <option value="OneYear">Every twelve months</option>
+                                    value={expiration}
+                                >
+                                    {Object.keys(OPTIONS_MAP).map((option) =>
+                                        <option value={option}>
+                                            {OPTIONS_MAP[option]}
+                                        </option>
+                                    )}
                                 </FormControl>
                             ) : (
-                                optionsMap[expiration]
+                                OPTIONS_MAP[expiration]
                             )}
                         </span>
                     </div>
@@ -169,7 +164,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                     <div className="database-modal__bottom">
                         <div className="modal__bottom-buttons">
                             <a target="_blank" href={this.state.helpLink} className="modal__help-link">
-                                {'More about authentication'}
+                                More about authentication
                             </a>
                             {canEdit && (
                                 <Button className="labkey-button primary" onClick={this.saveChanges}>

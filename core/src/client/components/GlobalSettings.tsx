@@ -33,17 +33,8 @@ interface Props {
     checkGlobalAuthBox?: (id: string) => void;
     authCount?: number;
 }
-interface State {
-    SelfRegistration?: boolean;
-    SelfServiceEmailChanges?: boolean;
-    AutoCreateAccounts?: boolean | null;
 
-    canEdit?: boolean;
-    checkGlobalAuthBox?: (id: string) => void;
-    authCount?: number;
-}
-
-export default class GlobalSettings extends PureComponent<Props, State> {
+export default class GlobalSettings extends PureComponent<Props, Props> {
     constructor(props) {
         super(props);
         this.state = {
@@ -53,12 +44,12 @@ export default class GlobalSettings extends PureComponent<Props, State> {
 
     render() {
         let rowTexts = ROW_TEXTS;
+        const { canEdit, authCount, checkGlobalAuthBox } = this.props;
 
         // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
-        if (this.props.authCount == 1) {
+        if (authCount == 1) {
             rowTexts = ROW_TEXTS.slice(0, -1);
         }
-        const { canEdit } = this.props;
 
         const rowTextComponents = rowTexts.map(text => (
             <div className="global-settings__text-row" key={text.id}>
@@ -66,13 +57,7 @@ export default class GlobalSettings extends PureComponent<Props, State> {
                     key={text.id}
                     checked={this.props[text.id]}
                     canEdit={canEdit}
-                    onClick={
-                        canEdit
-                            ? () => {
-                                  this.props.checkGlobalAuthBox(text.id);
-                              }
-                            : () => {}
-                    }
+                    onClick={() => checkGlobalAuthBox(text.id)}
                 />
 
                 <span className="global-settings__text">

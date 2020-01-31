@@ -26,20 +26,20 @@ describe('<AuthRow/>', () => {
 
     test('Modal opens on click', () => {
         const wrapper = shallow<AuthRow>(component);
-        const toggleSomeModalOpen = jest.fn(() => {});
-        wrapper.setProps({ toggleSomeModalOpen });
+        const toggleModalOpen = jest.fn(() => {});
+        wrapper.setProps({ toggleModalOpen });
 
         wrapper.instance().onToggleModal = jest.fn(() => wrapper.setState({ modalOpen: true }));
         wrapper.update();
 
-        expect(wrapper.state()).toHaveProperty('modalOpen', false);
+        expect(wrapper.state()).toHaveProperty('editModalOpen', false);
 
         const editIcon = wrapper.find('.clickable').last();
 
         editIcon.simulate('click');
         expect(wrapper.instance().onToggleModal).toHaveBeenCalled();
 
-        expect(wrapper.state()).toHaveProperty('modalOpen', true);
+        expect(wrapper.state()).toHaveProperty('editModalOpen', true);
     });
 
     test('Row deleted on click', () => {
