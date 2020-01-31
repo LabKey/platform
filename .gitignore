@@ -9,6 +9,7 @@ node_modules
 core/node_modules
 experiment/node_modules
 assay/node_modules
+list/node_modules
 
 # These files are copied to this location
 core/resources/scripts/Ext.js
@@ -46,3 +47,9 @@ assay/resources/views/assayDesigner.html
 assay/resources/views/assayDesigner.view.xml
 assay/resources/views/assayDesignerDev.html
 assay/resources/views/assayDesignerDev.view.xml
+
+list/resources/web/list/gen
+list/resources/views/listDesigner.html
+list/resources/views/listDesigner.view.xml
+list/resources/views/listDesignerDev.html
+list/resources/views/listDesignerDev.view.xml
