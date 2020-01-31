@@ -1,4 +1,4 @@
-# Shared Configurations for LabKey React Page Development
+# LabKey Module React Page Development
 
 The platform repository has been setup so that it contains the shared configurations needed to develop
 [React] pages within a LabKey module. These shared configurations include [webpack] configurations for 
