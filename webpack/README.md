@@ -76,23 +76,23 @@ To add a new `entryPoint` for a LabKey React page:
     1. `permission=<view.xml perm class>`
     1. `path=<entryPoint code path from step #1>`
 1. In your `src/client/<ENTRYPOINT_NAME>` dir, create an `app.tsx` file and a `dev.tsx` file based on
-an example from one of the existing app pages.
-1. Add your main app React component, `<ENTRYPOINT_NAME>.tsx` and any other components, models, actions, 
+    an example from one of the existing app pages. Add your main app React component file, 
+    `<ENTRYPOINT_NAME>.tsx`, and any other components, models, actions, 
     etc. in the `<module>/src/client/<ENTRYPOINT_NAME>` directory.
-1. Run the `./graldew deployModule` command for your module and verify that your new generated files
+1. Run the `./gradlew deployModule` command for your module and verify that your new generated files
     are created in your module's `resources` directory.
 
-### Developing with Hot Module Reloading
+### Developing with Hot Module Reloading (HMR)
 
 To allow updates made to TypeScript, JavaScript, CSS, and SCSS files to take effect on your LabKey
 React page without having to manually build the changes each time, you can develop with Hot Module 
-Reloading enabled via a webpack development server. You can run the HRM server from the 
+Reloading enabled via a webpack development server. You can run the HMR server from the 
 `trunk/server/modules/platform/<module>` directory via the `npm start` command. Once started, you 
 will need to access your page via an alternate action name to view the changes. The server action 
 is `module-entryPointDev.view` instead of the normal `module-entryPoint.view`.
 
 Note that since modules in the platform repository share configurations for the webpack development
-server, they are set to us the same port number for the HRM environment. This means that you can only
+server, they are set to us the same port number for the HMR environment. This means that you can only
 have one module's HMR mode enabled at a time. If you try to run `npm start` for a second module, you
 will get an error message saying that the `address is already in use`.
  
