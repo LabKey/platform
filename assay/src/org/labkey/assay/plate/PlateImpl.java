@@ -68,7 +68,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
 
-        for (WellGroupTemplateImpl groupTemplate : template.getWellGroupTemplates())
+        for (WellGroupTemplateImpl groupTemplate : template.getWellGroupTemplates(null))
             addWellGroup(new WellGroupImpl(this, groupTemplate));
         setContainer(template.getContainer());
     }
@@ -87,15 +87,9 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return (WellGroupImpl) groupTemplate;
     }
 
-    public List<WellGroup> getWellGroups(WellGroup.Type type)
+    public List<? extends WellGroupImpl> getWellGroups(WellGroup.Type type)
     {
-        List<WellGroup> groups = new ArrayList<>();
-        for (WellGroupTemplate entry : getWellGroupTemplates())
-        {
-            if (entry.getType() == type)
-                groups.add((WellGroupImpl) entry);
-        }
-        return groups;
+        return (List<? extends WellGroupImpl>)getWellGroupTemplates(type);
     }
 
     public List<WellGroupImpl> getWellGroups(Position position)

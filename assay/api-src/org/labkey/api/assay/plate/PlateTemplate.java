@@ -40,6 +40,8 @@ public interface PlateTemplate extends PropertySet
 
     List<? extends WellGroupTemplate> getWellGroups(Position position);
 
+    List<? extends WellGroupTemplate> getWellGroups(WellGroup.Type type);
+
     Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap();
 
     WellGroupTemplate addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight);

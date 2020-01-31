@@ -16,6 +16,9 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.plate.PlateMetadataForeignKey;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -54,6 +57,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -272,6 +276,15 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var lsidCol = createRowExpressionLsidColumn(this);
         addColumn(lsidCol);
 
+        var propsCol = createPropertiesColumn();
+        addColumn(propsCol);
+
+        if (_provider.supportsPlateMetadata())
+        {
+            var metadataCol = createPlateMetadataColumn();
+            addColumn(metadataCol);
+        }
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -295,10 +308,49 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setHidden(true);
         lsidCol.setCalculated(true);
         lsidCol.setUserEditable(false);
         lsidCol.setReadOnly(true);
         return lsidCol;
+    }
+
+    // Expensive render-time fetching of all ontology properties attached to the object row
+    protected BaseColumnInfo createPropertiesColumn()
+    {
+        var lsidColumn = getColumn("LSID");
+
+        var col = new AliasedColumn(this, "Properties", lsidColumn);
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
+        return col;
+    }
+
+    protected BaseColumnInfo createPlateMetadataColumn()
+    {
+        var lsidColumn = getColumn("LSID");
+
+        List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplatesUsedByAssay(_protocol.getContainer(), _protocol);
+
+        var alias = "PlateMetadata";
+        var ret = new AliasedColumn(this, alias, lsidColumn);
+        ret.setFk(new PlateMetadataForeignKey(getUserSchema(), _provider, _protocol, templates));
+        ret.setDescription("Plate metadata");
+        ret.setCalculated(true);
+        ret.setUserEditable(false);
+        ret.setReadOnly(true);
+        ret.setShownInDetailsView(false);
+        ret.setShownInInsertView(false);
+        ret.setShownInUpdateView(false);
+        ret.setIsUnselectable(true);
+        ret.setHidden(true);
+        ret.setConceptURI("http://www.labkey.org/exp/xml#" + alias);
+        ret.setPropertyURI("http://www.labkey.org/exp/xml#" + alias);
+        return ret;
     }
 
     private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)

@@ -22,6 +22,7 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -109,6 +110,8 @@ public interface PlateService
      */
     @NotNull
     List<? extends PlateTemplate> getPlateTemplates(Container container);
+
+    @NotNull List<? extends PlateTemplate> getPlateTemplatesUsedByAssay(@NotNull Container c, @NotNull ExpProtocol protocol);
 
     /**
      * Creates a new plate template.

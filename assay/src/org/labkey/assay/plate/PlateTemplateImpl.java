@@ -16,12 +16,13 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.data.Container;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
@@ -65,6 +66,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         _dataFileId = GUID.makeGUID();
     }
 
+    @Override
     public WellGroupTemplate addWellGroup(String name, WellGroup.Type type, Position upperLeft, Position lowerRight)
     {
         int regionWidth = lowerRight.getColumn() - upperLeft.getColumn() + 1;
@@ -78,6 +80,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return addWellGroup(name, type, allPositions);
     }
 
+    @Override
     public WellGroupTemplate addWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return storeWellGroup(createWellGroup(name, type, positions));
@@ -133,11 +136,11 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return true;
     }
 
-
+    @Override
     public List<? extends WellGroupTemplateImpl> getWellGroups(Position position)
     {
         List<WellGroupTemplateImpl> groups = new ArrayList<>();
-        for (WellGroupTemplateImpl template : getWellGroupTemplates())
+        for (WellGroupTemplateImpl template : getWellGroupTemplates(null))
         {
             if (template.contains(position))
                 groups.add(template);
@@ -145,9 +148,16 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return groups;
     }
 
+    @Override
     public List<? extends WellGroupTemplateImpl> getWellGroups()
     {
-        return getWellGroupTemplates();
+        return getWellGroupTemplates(null);
+    }
+
+    @Override
+    public List<? extends WellGroupTemplateImpl> getWellGroups(WellGroup.Type type)
+    {
+        return getWellGroupTemplates(type);
     }
 
     public WellGroupTemplateImpl getWellGroupTemplate(WellGroup.Type type, String name)
@@ -160,17 +170,27 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return typedGroups.get(name);
     }
 
-    public List<WellGroupTemplateImpl> getWellGroupTemplates()
+    public List<? extends WellGroupTemplateImpl> getWellGroupTemplates(@Nullable WellGroup.Type type)
     {
         List<WellGroupTemplateImpl> allGroupTemplates = new ArrayList<>();
         if (_groups != null)
         {
-            for (Map<String, WellGroupTemplateImpl> typedGroupTemplates : _groups.values())
-                allGroupTemplates.addAll(typedGroupTemplates.values());
+            if (type != null)
+            {
+                var typedGroupTemplates = _groups.get(type);
+                if (typedGroupTemplates != null && !typedGroupTemplates.isEmpty())
+                    allGroupTemplates.addAll(typedGroupTemplates.values());
+            }
+            else
+            {
+                for (Map<String, WellGroupTemplateImpl> typedGroupTemplates : _groups.values())
+                    allGroupTemplates.addAll(typedGroupTemplates.values());
+            }
         }
         return allGroupTemplates;
     }
 
+    @Override
     public Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap()
     {
         Map<WellGroup.Type, Map<String, WellGroupTemplate>> wellgroupTypeMap = new HashMap<>();
@@ -186,22 +206,26 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return wellgroupTypeMap;
     }
 
+    @Override
     public int getColumns()
     {
         return _columns;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public int getRows()
     {
         return _rows;
     }
 
 
+    @Override
     public PositionImpl getPosition(int row, int col)
     {
         return new PositionImpl(_container, row, col);
@@ -213,6 +237,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return true;
     }
 
+    @Override
     public Integer getRowId()
     {
         return _rowId;
@@ -233,6 +258,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         _rows = rows;
     }
 
+    @Override
     public void setName(String name)
     {
         _name = name;
@@ -278,6 +304,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return _container.getId();
     }
 
+    @Override
     public int getWellGroupCount()
     {
         int size = 0;
@@ -289,6 +316,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return size;
     }
 
+    @Override
     public int getWellGroupCount(WellGroup.Type type)
     {
         if (_groups != null)

@@ -18,28 +18,7 @@ package org.labkey.assay.plate;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.api.assay.dilution.DilutionCurve;
-import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.statistics.FitFailedException;
-import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.Plate;
 import org.labkey.api.assay.plate.PlateService;
@@ -50,19 +29,47 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.statistics.FitFailedException;
+import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.ObjectProperty;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.labkey.api.data.CompareType.IN;
 
 /**
  * User: brittp
@@ -170,8 +177,17 @@ public class PlateManager implements PlateService
     @NotNull
     public List<PlateTemplateImpl> getPlateTemplates(Container container)
     {
+        return getPlateTemplates(container, null);
+    }
+
+    @NotNull
+    public List<PlateTemplateImpl> getPlateTemplates(Container container, @Nullable Collection<Integer> templateIds)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
         filter.addCondition(FieldKey.fromParts("Container"), container);
+        if (templateIds != null)
+            filter.addCondition(FieldKey.fromParts("rowId"), templateIds, IN);
+
         List<PlateTemplateImpl> templates = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
                 filter, new Sort("Name")).getArrayList(PlateTemplateImpl.class);
         for (int i = 0; i < templates.size(); i++)
@@ -187,6 +203,33 @@ public class PlateManager implements PlateService
             }
         }
         return templates;
+    }
+
+    @Override
+    public @NotNull List<PlateTemplateImpl> getPlateTemplatesUsedByAssay(@NotNull Container c, @NotNull ExpProtocol protocol)
+    {
+        // TODO: caching
+        // TODO: need to get the property descriptor used on the run for the PlateTemplate -- faked as 91454 below
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT * FROM assay.plate p\n")
+                .append("WHERE p.template = true\n")
+                .append("AND p.container = ?\n").add(c.getId())
+                .append("AND p.rowid IN (")
+                .append("  SELECT op.floatvalue AS PlateTemplateId\n")
+                .append("  FROM exp.experimentrun r\n")
+                .append("  INNER JOIN exp.object o ON o.objecturi = r.lsid\n")
+                .append("  INNER JOIN exp.objectproperty op On o.objectid = op.objectid\n")
+                .append("  WHERE r.protocollsid IN (\n")
+                .append("    SELECT lsid\n")
+                .append("    FROM exp.protocol\n")
+                .append("    WHERE protocol.rowid = ?\n").add(protocol.getRowId())
+                .append("  )\n")
+                .append("AND op.propertyid = 91454")
+                .append(")");
+
+        SqlSelector se = new SqlSelector(ExperimentService.get().getSchema(), sql);
+        List<Integer> templateIds = se.getArrayList(Integer.class);
+        return getPlateTemplates(c, templateIds);
     }
 
     public PlateTemplate createPlateTemplate(Container container, String templateType, int rowCount, int colCount)
@@ -380,7 +423,7 @@ public class PlateManager implements PlateService
             PlateTemplateImpl newPlate = Table.insert(user, AssayDbSchema.getInstance().getTableInfoPlate(), plate);
             savePropertyBag(container, plateInstanceLsid, plateObjectLsid, newPlate.getProperties());
 
-            for (WellGroupTemplateImpl wellgroup : plate.getWellGroupTemplates())
+            for (WellGroupTemplateImpl wellgroup : plate.getWellGroupTemplates(null))
             {
                 String wellGroupInstanceLsid = getLsid(plate, WellGroup.class, true);
                 String wellGroupObjectLsid = getLsid(plate, WellGroup.class, false);
