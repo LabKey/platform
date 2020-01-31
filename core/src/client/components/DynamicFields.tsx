@@ -74,14 +74,14 @@ export class CheckBoxInput extends PureComponent<any> {
 
                 <span className="modal__input">
                     {this.props.canEdit ? (
-                        <FACheckBox
-                            name={name}
-                            checked={value}
-                            canEdit={true}
-                            onClick={() => {
-                                this.props.checkCheckBox(name);
-                            }}
-                        />
+                    <FACheckBox
+                        name={name}
+                        checked={value}
+                        canEdit={true}
+                        onClick={() => {
+                            this.props.checkCheckBox(name);
+                        }}
+                    />
                     ) : (
                         <FACheckBox name={name} checked={value == 'true'} canEdit={false} onClick={null} />
                     )}
@@ -92,7 +92,7 @@ export class CheckBoxInput extends PureComponent<any> {
 }
 
 interface OptionInputProps extends InputFieldProps {
-    options: Record<string, string>;
+    options: {[key: string]: string; };
 }
 
 export class Option extends PureComponent<OptionInputProps> {
@@ -223,6 +223,7 @@ interface DynamicFieldsProps {
     fields: AuthConfigField[];
     search: boolean;
     canEdit: boolean,
+    modalType: AuthConfigProvider;
     emptyRequiredFields: String[];
     onChange: (event) => void;
     checkCheckBox: (string) => void;
@@ -240,11 +241,6 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                 break;
             }
         }
-        let stopPoint1 = fields.findIndex((fields) => {return 'dictateFieldVisibility' in fields});
-        console.log("1", stopPoint1);
-        console.log("2", stopPoint);
-
-
         const fieldsToCreate = search ? fields : fields.slice(0, stopPoint);
 
         const allFields = fieldsToCreate.map((field, index) => {

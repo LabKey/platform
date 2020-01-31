@@ -16,10 +16,10 @@ interface State {
     secondaryConfigurations?: AuthConfig[];
     primaryProviders?: AuthConfigProvider[];
     secondaryProviders?: AuthConfigProvider[];
-    globalSettings?: Record<string, any>;
+    globalSettings?: {[key: string]: any;};
     helpLink?: string;
     canEdit?: boolean;
-    dirtinessData?: Record<string, any>;
+    dirtinessData?: {[key: string]: AuthConfig[] };
     dirty?: boolean;
     modalOpen?: boolean;
     authCount?: number;
@@ -112,6 +112,9 @@ export class App extends PureComponent<{}, State> {
     };
 
     saveChanges = (): void => {
+        // Do not warn about navigating away if user has pressed 'save'
+        window.removeEventListener('beforeunload', this.handleLeavePage);
+
         const form = new FormData();
 
         Object.keys(this.state.globalSettings).map(item => {
@@ -169,7 +172,7 @@ export class App extends PureComponent<{}, State> {
         });
     };
 
-    onDragEnd = (result: Record<string, any>): void => {
+    onDragEnd = (result: {[key: string]: any;}): void => {
         if (!result.destination) {
             return;
         }

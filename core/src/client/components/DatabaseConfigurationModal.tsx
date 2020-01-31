@@ -122,7 +122,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         </span>
                     </div>
 
-                    {/* HTML set are text-only bullet points. */}
+                    {/* this.state.passwordRules.Weak is safe server-generated HTML */}
                     <div className="bold-text"> Weak </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Weak }} />
@@ -130,6 +130,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
                     <br/>
 
+                    {/* this.state.passwordRules.Strong is safe server-generated HTML */}
                     <div className="bold-text"> Strong </div>
                     <div>
                         <div dangerouslySetInnerHTML={{ __html: this.state.passwordRules.Strong }} />
@@ -150,7 +151,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     value={expiration}
                                 >
                                     {Object.keys(OPTIONS_MAP).map((option) =>
-                                        <option value={option}>
+                                        <option value={option} key={option}>
                                             {OPTIONS_MAP[option]}
                                         </option>
                                     )}
