@@ -248,7 +248,7 @@ public class ListController extends SpringActionController
 
                 if (null == listDefinition)
                 {
-                    throw new NotFoundException("Could not locate List Definition for id: " + listDesignerForm.getListId());
+                    throw new NotFoundException("Could not locate List Definition for List Id: " + listDesignerForm.getListId());
                 }
                 else if (listDefinition.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
@@ -257,7 +257,7 @@ public class ListController extends SpringActionController
                     ListDef def = ListManager.get().getList(getContainer(), listDesignerForm.getListId());
                     GWTDomain<GWTPropertyDescriptor> domain = getDomainDescriptor(def);
                     list.setDomain(domain);
-                    return success("List '" + list.getName() + "'", list);
+                    return success("Success getting List '" + list.getName() + "'", list);
                 }
                 else
                 {
@@ -266,7 +266,7 @@ public class ListController extends SpringActionController
             }
             else
             {
-                throw new ApiUsageException("List Id required");
+                throw new ApiUsageException("Failed to retrieve the List - must provide a valid 'listId' in the request.");
             }
         }
 
@@ -275,13 +275,13 @@ public class ListController extends SpringActionController
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(def.getDomainId());
             if (null == dd)
             {
-                throw new NotFoundException("List DomainDescriptor not found for '" + def.getName() + "'");
+                throw new NotFoundException("List DomainDescriptor not found for list '" + def.getName() + "' with listId '" + def.getListId() + "'");
             }
 
             GWTDomain<GWTPropertyDescriptor> domain = DomainUtil.getDomainDescriptor(getUser(), dd.getDomainURI(), dd.getContainer());
             if (null == domain)
             {
-                throw new NotFoundException("List Domain not found for '" + def.getName() + "'");
+                throw new NotFoundException("List Domain not found for list '" + def.getName() + "' with listId '" + def.getListId() + "'");
             }
 
             return domain;
