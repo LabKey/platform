@@ -58,6 +58,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.SetDefaultValuesAction;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -65,6 +67,9 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.ModuleHtmlView;
@@ -113,6 +118,7 @@ import org.labkey.api.writer.ZipFile;
 import org.labkey.list.client.GWTList;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.model.ListAuditProvider;
+import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListManager;
@@ -248,6 +254,9 @@ public class ListController extends SpringActionController
                 {
                     ListEditorService listEditorService = new ListEditorServiceImpl(getViewContext());
                     GWTList list = listEditorService.getList(listDesignerForm.getListId());
+                    ListDef def = ListManager.get().getList(getContainer(), listDesignerForm.getListId());
+                    GWTDomain<GWTPropertyDescriptor> domain = getDomainDescriptor(def);
+                    list.setDomain(domain);
                     return success("List '" + list.getName() + "'", list);
                 }
                 else
@@ -259,6 +268,23 @@ public class ListController extends SpringActionController
             {
                 throw new ApiUsageException("List Id required");
             }
+        }
+
+        private GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(ListDef def)
+        {
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(def.getDomainId());
+            if (null == dd)
+            {
+                throw new NotFoundException("List DomainDescriptor not found for '" + def.getName() + "'");
+            }
+
+            GWTDomain<GWTPropertyDescriptor> domain = DomainUtil.getDomainDescriptor(getUser(), dd.getDomainURI(), dd.getContainer());
+            if (null == domain)
+            {
+                throw new NotFoundException("List Domain not found for '" + def.getName() + "'");
+            }
+
+            return domain;
         }
     }
 

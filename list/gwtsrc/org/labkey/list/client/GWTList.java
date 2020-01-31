@@ -17,6 +17,8 @@
 package org.labkey.list.client;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
@@ -53,6 +55,8 @@ public class GWTList implements IsSerializable
     public StringProperty eachItemBodyTemplate = new StringProperty();
 
     public BooleanProperty fileAttachmentIndex = new BooleanProperty(false);
+
+    private GWTDomain<GWTPropertyDescriptor> _domain;
 
     // client should only read these
     private String _typeURI;
@@ -113,6 +117,16 @@ public class GWTList implements IsSerializable
 //    {
 //        _typeURI.set(typeURI);
 //    }
+
+    public GWTDomain<GWTPropertyDescriptor> getDomain()
+    {
+        return _domain;
+    }
+
+    public void setDomain(GWTDomain<GWTPropertyDescriptor> domain)
+    {
+        _domain = domain;
+    }
 
     public String getDescription()
     {
