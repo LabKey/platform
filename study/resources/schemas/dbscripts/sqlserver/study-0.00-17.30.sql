@@ -1570,7 +1570,13 @@ ALTER TABLE study.AssaySpecimen ADD DataSet INTEGER;
 EXEC core.fn_dropifexists 'Events','codedprocs','CONSTRAINT','FK_CODEDPROCS_EVENTS_QCSTATE'
 EXEC core.fn_dropifexists 'Pkgs','codedprocs','CONSTRAINT','FK_CODEDPROCS_PKGS_QCSTATE'
 
-EXEC core.executeJavaUpgradeCode 'moveQCStateToCore';
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultAssayQCState;
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultDirectEntryQCState;
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultPipelineQCState;
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.QCState (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.QCState (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.QCState (RowId);
+DROP TABLE study.QCState;
 
 EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum';
 EXEC core.fn_dropifexists 'ParticipantVisit', 'study', 'INDEX', 'ix_participantvisit_sequencenum';
