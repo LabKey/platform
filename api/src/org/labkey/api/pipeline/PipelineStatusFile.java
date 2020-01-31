@@ -32,7 +32,7 @@ import java.util.List;
  */
 public interface PipelineStatusFile
 {
-    public interface StatusReader
+    interface StatusReader
     {
         @Deprecated
         PipelineStatusFile getStatusFile(File logFile);
@@ -49,7 +49,7 @@ public interface PipelineStatusFile
         List<? extends PipelineStatusFile> getJobsWaitingForFiles(Container c);
     }
 
-    public interface StatusWriter
+    interface StatusWriter
     {
         boolean setStatus(PipelineJob job, String status, @Nullable String statusInfo, boolean allowInsert) throws Exception;
 
@@ -64,7 +64,7 @@ public interface PipelineStatusFile
         void setHostName(String hostName);
     }
 
-    public interface JobStore
+    interface JobStore
     {
         void storeJob(PipelineJob job) throws NoSuchJobException;
 
