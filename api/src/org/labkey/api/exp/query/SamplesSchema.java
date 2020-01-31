@@ -126,11 +126,9 @@ public class SamplesSchema extends AbstractExpSchema
     {
         QueryView queryView = super.createView(context, settings, errors);
 
-        if (queryView != null && settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
-        {
-            // Use default delete button, but without showing the confirmation text
-            queryView.setShowDeleteButtonConfirmationText(false);
-        }
+        // Use default delete button, but without showing the confirmation text
+        // NOTE: custom queries in the schema don't support delete so setting this flag is ok
+        queryView.setShowDeleteButtonConfirmationText(false);
 
         return queryView;
     }

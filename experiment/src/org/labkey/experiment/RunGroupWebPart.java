@@ -97,7 +97,7 @@ public class RunGroupWebPart extends QueryView
         settings.setQueryName(ExpSchema.TableType.RunGroups.toString());
         if (!settings.isMaxRowsSet())
             settings.setMaxRows(20);
-        settings.getBaseSort().insertSortColumn("-RowId");
+        settings.getBaseSort().insertSortColumn("-Created");
         return settings;
     }
 
