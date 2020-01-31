@@ -12,6 +12,8 @@ describe("<SSOFields/>", () => {
                 canEdit={true}
                 headerLogoUrl={null}
                 loginLogoUrl={null}
+                onFileChange={() => {}}
+                handleDeleteLogo={() => {}}
             />;
 
         const tree = renderer.create(component).toJSON();
@@ -22,6 +24,10 @@ describe("<SSOFields/>", () => {
         const component =
             <SSOFields
                 canEdit={true}
+                headerLogoUrl={null}
+                loginLogoUrl={null}
+                onFileChange={() => {}}
+                handleDeleteLogo={() => {}}
             />;
 
         const tree = renderer.create(component).toJSON();
@@ -32,6 +38,10 @@ describe("<SSOFields/>", () => {
         const component =
             <SSOFields
                 canEdit={false}
+                headerLogoUrl={null}
+                loginLogoUrl={null}
+                onFileChange={() => {}}
+                handleDeleteLogo={() => {}}
             />;
 
         const tree = renderer.create(component).toJSON();
@@ -43,11 +53,12 @@ describe("<ImageAndFileAttachmentForm/>", () => {
     test("Click remove-image button", () => {
         const component =
             <ImageAndFileAttachmentForm
-                canEdit={true}
-                imageUrl={testImageUrl}
-                fileTitle={"auth_header_logo"}
                 text={"Page Header Logo"}
+                imageUrl={testImageUrl}
+                onFileChange={() => {}}
                 handleDeleteLogo={() => {}}
+                fileTitle={"auth_header_logo"}
+                canEdit={true}
                 index={1}
             />;
         const wrapper = shallow<SSOFields>(component);

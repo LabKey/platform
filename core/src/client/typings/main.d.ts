@@ -63,12 +63,8 @@ interface DatabasePasswordSettings {
 }
 
 interface Actions {
-    onDragEnd: (result: Record<string, any>) => void;
+    onDragEnd: (result: {[key:string]: any}) => void;
     onDelete: (configuration: number, configType: string) => void;
     updateAuthRowsAfterSave: (config: string, configType: string) => void;
     toggleModalOpen: (modalOpen: boolean) => void;
-}
-
-interface Options {
-
 }

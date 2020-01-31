@@ -6,8 +6,6 @@ exports[`<AuthRow/> Editable 1`] = `
 >
   <div
     className="auth-row"
-    onMouseLeave={[Function]}
-    onMouseOver={[Function]}
   >
     <div
       className="domain-row-container"
@@ -19,7 +17,6 @@ exports[`<AuthRow/> Editable 1`] = `
           <svg
             aria-hidden="true"
             className="svg-inline--fa fa-grip-vertical fa-w-10 fa-lg "
-            color="#999999"
             data-icon="grip-vertical"
             data-prefix="fas"
             focusable="false"
@@ -91,13 +88,12 @@ exports[`<AuthRow/> Editable 1`] = `
             className="delete auth-row__field col-xs-1"
           >
             <div
-              className="clickable"
+              className="clickable deleteIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-times-circle fa-w-16 "
-                color="#999999"
                 data-icon="times-circle"
                 data-prefix="fas"
                 focusable="false"
@@ -118,13 +114,12 @@ exports[`<AuthRow/> Editable 1`] = `
             className="editOrView auth-row__field col-xs-3"
           >
             <div
-              className="clickable"
+              className="clickable editOrViewIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                color="#999999"
                 data-icon="pencil-alt"
                 data-prefix="fas"
                 focusable="false"
@@ -154,8 +149,6 @@ exports[`<AuthRow/> Non-draggable 1`] = `
 >
   <div
     className="auth-row"
-    onMouseLeave={[Function]}
-    onMouseOver={[Function]}
   >
     <div
       className="domain-row-container"
@@ -167,7 +160,6 @@ exports[`<AuthRow/> Non-draggable 1`] = `
           <svg
             aria-hidden="true"
             className="svg-inline--fa fa-grip-vertical fa-w-10 fa-lg "
-            color="#999999"
             data-icon="grip-vertical"
             data-prefix="fas"
             focusable="false"
@@ -239,13 +231,12 @@ exports[`<AuthRow/> Non-draggable 1`] = `
             className="delete auth-row__field col-xs-1"
           >
             <div
-              className="clickable"
+              className="clickable deleteIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-times-circle fa-w-16 "
-                color="#999999"
                 data-icon="times-circle"
                 data-prefix="fas"
                 focusable="false"
@@ -266,13 +257,12 @@ exports[`<AuthRow/> Non-draggable 1`] = `
             className="editOrView auth-row__field col-xs-3"
           >
             <div
-              className="clickable"
+              className="clickable editOrViewIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                color="#999999"
                 data-icon="pencil-alt"
                 data-prefix="fas"
                 focusable="false"
@@ -302,8 +292,6 @@ exports[`<AuthRow/> View-only 1`] = `
 >
   <div
     className="auth-row"
-    onMouseLeave={[Function]}
-    onMouseOver={[Function]}
   >
     <div
       className="domain-row-container"
@@ -315,7 +303,6 @@ exports[`<AuthRow/> View-only 1`] = `
           <svg
             aria-hidden="true"
             className="svg-inline--fa fa-grip-vertical fa-w-10 fa-lg "
-            color="#999999"
             data-icon="grip-vertical"
             data-prefix="fas"
             focusable="false"
@@ -387,13 +374,12 @@ exports[`<AuthRow/> View-only 1`] = `
             className="delete auth-row__field col-xs-1"
           >
             <div
-              className="clickable"
+              className="clickable deleteIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-times-circle fa-w-16 "
-                color="#999999"
                 data-icon="times-circle"
                 data-prefix="fas"
                 focusable="false"
@@ -414,13 +400,12 @@ exports[`<AuthRow/> View-only 1`] = `
             className="editOrView auth-row__field col-xs-3"
           >
             <div
-              className="clickable"
+              className="clickable editOrViewIcon"
               onClick={[Function]}
             >
               <svg
                 aria-hidden="true"
                 className="svg-inline--fa fa-pencil-alt fa-w-16 fa-1x "
-                color="#999999"
                 data-icon="pencil-alt"
                 data-prefix="fas"
                 focusable="false"

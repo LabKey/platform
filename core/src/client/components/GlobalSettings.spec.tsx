@@ -10,14 +10,15 @@ describe('<GlobalSettings/>', () => {
     test('Clicking a checkbox toggles the checkbox', () => {
         const checkGlobalAuthBox = jest.fn(() => wrapper.setProps({ SelfRegistration: false }));
 
-        const props = {
-            SelfRegistration: true,
-            SelfServiceEmailChanges: true,
-            AutoCreateAccounts: false,
-            canEdit: true,
-            checkGlobalAuthBox,
-        };
-        const component = <GlobalSettings {...props} />;
+        const component =
+            <GlobalSettings
+                SelfRegistration={true}
+                SelfServiceEmailChanges={true}
+                AutoCreateAccounts={false}
+                canEdit={true}
+                authCount={3}
+                checkGlobalAuthBox={checkGlobalAuthBox}
+            />;
         const wrapper = mount(component);
 
         expect(wrapper.props()).toHaveProperty('SelfRegistration', true);
@@ -25,14 +26,22 @@ describe('<GlobalSettings/>', () => {
         // Click self registration checkbox
         const firstCheckBox = wrapper.find(FACheckBox).first();
         firstCheckBox.simulate('click');
-        expect(props.checkGlobalAuthBox).toHaveBeenCalled();
+        expect(checkGlobalAuthBox).toHaveBeenCalled();
 
         expect(wrapper.props()).toHaveProperty('SelfRegistration', false);
     });
 
     test('An authCount of 1 eliminates the option to auto-create authenticated users', () => {
-        const props = { SelfRegistration: true, SelfServiceEmailChanges: true, AutoCreateAccounts: false };
-        const component = <GlobalSettings {...props} />;
+        const checkGlobalAuthBox = jest.fn(() => wrapper.setProps({ SelfRegistration: false }));
+        const component =
+            <GlobalSettings
+                SelfRegistration={true}
+                SelfServiceEmailChanges={true}
+                AutoCreateAccounts={false}
+                canEdit={true}
+                authCount={3}
+                checkGlobalAuthBox={checkGlobalAuthBox}
+            />;
         const wrapper = mount(component);
 
         expect(wrapper.find(FACheckBox).length).toBe(3);
@@ -42,13 +51,16 @@ describe('<GlobalSettings/>', () => {
     });
 
     test('view-only mode', () => {
-        const props = {
-            SelfRegistration: true,
-            SelfServiceEmailChanges: true,
-            AutoCreateAccounts: false,
-            canEdit: false,
-        };
-        const component = <GlobalSettings {...props} />;
+        const checkGlobalAuthBox = (id: string): void => {};
+        const component =
+            <GlobalSettings
+                SelfRegistration={true}
+                SelfServiceEmailChanges={true}
+                AutoCreateAccounts={false}
+                canEdit={true}
+                authCount={3}
+                checkGlobalAuthBox={checkGlobalAuthBox}
+            />;
 
         const tree = renderer.create(component).toJSON();
         expect(tree).toMatchSnapshot();

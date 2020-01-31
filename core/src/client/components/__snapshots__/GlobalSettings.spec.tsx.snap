@@ -25,7 +25,7 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
       className="global-settings__text-row"
     >
       <span
-        className="no-highlight undefined"
+        className="no-highlight clickable undefined"
         onClick={[Function]}
       >
         <svg
@@ -80,7 +80,7 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
       className="global-settings__text-row"
     >
       <span
-        className="no-highlight undefined"
+        className="no-highlight clickable undefined"
         onClick={[Function]}
       >
         <svg
@@ -135,7 +135,7 @@ exports[`<GlobalSettings/> view-only mode 1`] = `
       className="global-settings__text-row"
     >
       <span
-        className="no-highlight undefined"
+        className="no-highlight clickable undefined"
         onClick={[Function]}
       >
         <svg

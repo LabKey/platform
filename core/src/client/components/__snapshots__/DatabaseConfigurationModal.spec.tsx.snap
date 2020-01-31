@@ -165,26 +165,31 @@ exports[`<DatabaseConfigurationModal/> Editable 1`] = `
           value=""
         >
           <option
+            key="Never"
             value="Never"
           >
             Never
           </option>
           <option
+            key="FiveSeconds"
             value="FiveSeconds"
           >
             Every five seconds — for testing
           </option>
           <option
+            key="ThreeMonths"
             value="ThreeMonths"
           >
             Every three months
           </option>
           <option
+            key="SixMonths"
             value="SixMonths"
           >
             Every six months
           </option>
           <option
+            key="OneYear"
             value="OneYear"
           >
             Every twelve months

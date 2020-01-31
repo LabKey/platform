@@ -29,7 +29,7 @@ describe('<AuthRow/>', () => {
         const toggleModalOpen = jest.fn(() => {});
         wrapper.setProps({ toggleModalOpen });
 
-        wrapper.instance().onToggleModal = jest.fn(() => wrapper.setState({ modalOpen: true }));
+        wrapper.instance().onToggleModal = jest.fn(() => wrapper.setState({ editModalOpen: true }));
         wrapper.update();
 
         expect(wrapper.state()).toHaveProperty('editModalOpen', false);
@@ -40,34 +40,6 @@ describe('<AuthRow/>', () => {
         expect(wrapper.instance().onToggleModal).toHaveBeenCalled();
 
         expect(wrapper.state()).toHaveProperty('editModalOpen', true);
-    });
-
-    test('Row deleted on click', () => {
-        const wrapper = shallow<AuthRow>(component);
-
-        wrapper.instance().onDeleteClick = jest.fn(() => true);
-        wrapper.update();
-
-        const editIcon = wrapper.find('.clickable').first();
-
-        editIcon.simulate('click');
-        expect(wrapper.instance().onDeleteClick).toHaveBeenCalled();
-        expect(wrapper.contains(<AuthRow />)).toBe(false);
-    });
-
-    test('Highlight draggable handle on hover-over', () => {
-        const wrapper = mount<AuthRow>(component);
-        const row = wrapper.find('.auth-row');
-        const spy = jest.spyOn(wrapper.instance(), 'setHighlight');
-        wrapper.update();
-
-        row.simulate('mouseOver');
-        expect(wrapper.state('highlight')).toBe(true);
-        expect(spy).toHaveBeenCalledTimes(1);
-
-        row.simulate('mouseLeave');
-        expect(wrapper.state('highlight')).toBe(false);
-        expect(spy).toHaveBeenCalledTimes(2);
     });
 
     test('Non-draggable', () => {

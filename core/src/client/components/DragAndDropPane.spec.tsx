@@ -11,15 +11,21 @@ describe('<DragAndDropPane/>', () => {
     let component;
 
     beforeEach(() => {
-        const basicFn = () => {};
-        const actionFns = { name: basicFn };
+        const onDragEnd = (result: {[key:string]: any}): void => {};
+        const toggleModalOpen = (modalOpen: boolean): void => {};
+        const onDelete = (configuration: number, configType: string): void => {};
+        const updateAuthRowsAfterSave = (config: string, configType: string): void => {};
+        const actionFns = {
+            onDragEnd: onDragEnd, toggleModalOpen: toggleModalOpen,
+            onDelete: onDelete, updateAuthRowsAfterSave: updateAuthRowsAfterSave
+        };
 
         component = (
             <DragAndDropPane
                 authConfigs={SSO_CONFIGURATIONS}
                 canEdit={true}
                 isDragDisabled={false}
-                actionFunctions={actionFns}
+                actions={actionFns}
             />
         );
     });

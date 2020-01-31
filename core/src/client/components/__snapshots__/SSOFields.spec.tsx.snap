@@ -19,7 +19,7 @@ Array [
             alt="Sign in"
             className="sso-fields__image__header-logo"
             onError={[Function]}
-            src="http://localhostundefined"
+            src="http://localhostnull"
           />
         </div>
         <svg
@@ -114,7 +114,7 @@ Array [
             alt="Sign in"
             className="sso-fields__image__page-logo"
             onError={[Function]}
-            src="http://localhostundefined"
+            src="http://localhostnull"
           />
         </div>
         <svg
@@ -401,7 +401,7 @@ Array [
         alt="Sign in"
         className="sso-fields__image__header-logo"
         onError={[Function]}
-        src="http://localhostundefined"
+        src="http://localhostnull"
       />
     </div>
   </div>,
@@ -423,7 +423,7 @@ Array [
         alt="Sign in"
         className="sso-fields__image__page-logo"
         onError={[Function]}
-        src="http://localhostundefined"
+        src="http://localhostnull"
       />
     </div>
   </div>,

@@ -79,10 +79,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form.append('configuration', this.props.configuration.toString());
         }
 
-        console.log("FORM")
         Object.keys(this.state).map(item => {
             form.append(item, this.state[item]);
-            console.log(item, this.state[item]);
         });
 
         Ajax.request({
@@ -98,7 +96,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             success: function(result) {
                 this.props.updateAuthRowsAfterSave(result.response, this.props.configType);
                 this.props.closeModal();
-                console.log("success", result.response)
             },
         });
     };
@@ -146,8 +143,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     };
 
     onFileChange = (attachment, logoType: string) => {
-        console.log("called");
-        this.setState(() => ({ [logoType]: attachment.first() }), () => console.log(this.state));
+        this.setState(() => ({ [logoType]: attachment.first() }));
     };
 
     onFileRemoval = (name: string) => {

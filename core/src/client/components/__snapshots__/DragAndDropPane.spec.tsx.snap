@@ -1,7 +1,9 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
 exports[`<DragAndDropPane/> Drag is disabled 1`] = `
-<DragDropContext>
+<DragDropContext
+  onDragEnd={[Function]}
+>
   <Connect(Droppable)
     direction="vertical"
     ignoreContainerClipping={false}
@@ -15,7 +17,9 @@ exports[`<DragAndDropPane/> Drag is disabled 1`] = `
 `;
 
 exports[`<DragAndDropPane/> Editable 1`] = `
-<DragDropContext>
+<DragDropContext
+  onDragEnd={[Function]}
+>
   <Connect(Droppable)
     direction="vertical"
     ignoreContainerClipping={false}
@@ -29,7 +33,9 @@ exports[`<DragAndDropPane/> Editable 1`] = `
 `;
 
 exports[`<DragAndDropPane/> View-only 1`] = `
-<DragDropContext>
+<DragDropContext
+  onDragEnd={[Function]}
+>
   <Connect(Droppable)
     direction="vertical"
     ignoreContainerClipping={false}

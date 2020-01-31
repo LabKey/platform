@@ -29,9 +29,9 @@ interface Props {
     SelfServiceEmailChanges?: boolean;
     AutoCreateAccounts?: boolean;
 
-    canEdit?: boolean;
-    checkGlobalAuthBox?: (id: string) => void;
-    authCount?: number;
+    canEdit: boolean;
+    checkGlobalAuthBox: (id: string) => void;
+    authCount: number;
 }
 
 export default class GlobalSettings extends PureComponent<Props, Props> {
