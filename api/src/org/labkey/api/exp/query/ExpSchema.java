@@ -421,7 +421,7 @@ public class ExpSchema extends AbstractExpSchema
                 QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
                 if (null == pipeline)
                     return null;
-                return pipeline.getTable("Jobs", getDefaultContainerFilter());
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -622,25 +622,16 @@ public class ExpSchema extends AbstractExpSchema
             };
         }
 
+        QueryView queryView = super.createView(context, settings, errors);
+
         if (TableType.Materials.name().equalsIgnoreCase(settings.getQueryName()) ||
-            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()))
+            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()) ||
+            TableType.Protocols.name().equalsIgnoreCase(settings.getQueryName()))
         {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
+            // Use default delete button, but without showing the confirmation text
+            queryView.setShowDeleteButtonConfirmationText(false);
         }
 
-        return super.createView(context, settings, errors);
+        return queryView;
     }
 }

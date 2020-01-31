@@ -352,7 +352,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return;
 
         Throwable exceptionToRender = _prepareException;
-        String errorMessage = null;
+        String errorHtml = null;
 
         String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing ignored = MiniProfiler.step(name))
@@ -379,11 +379,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 catch (UnauthorizedException x)
                 {
                     Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
-                    errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
+                    errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
                 catch (NotFoundException x)
                 {
-                    errorMessage = "Not Found : " + x.getMessage();
+                    errorHtml = PageFlowUtil.filter("Not Found : " + x.getMessage());
                 }
                 catch (Throwable t)
                 {
@@ -406,11 +406,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             }
 
             //if we received an exception during prepare or render, we'll display it here
-            if (exceptionToRender != null || errorMessage != null)
+            if (exceptionToRender != null || errorHtml != null)
             {
-                if (errorMessage != null)
+                if (errorHtml != null)
                 {
-                    response.getWriter().write(errorMessage);
+                    response.getWriter().write(errorHtml);
                 }
                 if (exceptionToRender != null)
                 {
