@@ -26,10 +26,13 @@ import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -101,11 +104,14 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
+import org.labkey.list.client.GWTList;
+import org.labkey.list.client.ListEditorService;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
@@ -220,6 +226,39 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Available Lists");
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetListDefinitionAction extends ReadOnlyApiAction<GWTList>
+    {
+        @Override
+        public Object execute(GWTList listDesignerForm, BindException errors) throws Exception
+        {
+            if (listDesignerForm.getListId() != 0)
+            {
+                ListDefinition listDefinition = ListService.get().getList(getContainer(), listDesignerForm.getListId());
+
+                if (null == listDefinition)
+                {
+                    throw new NotFoundException("Could not locate List Definition for id: " + listDesignerForm.getListId());
+                }
+                else if (listDefinition.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    ListEditorService listEditorService = new ListEditorServiceImpl(getViewContext());
+                    GWTList list = listEditorService.getList(listDesignerForm.getListId());
+                    return success("List '" + list.getName() + "'", list);
+                }
+                else
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+            else
+            {
+                throw new ApiUsageException("List Id required");
+            }
         }
     }
 

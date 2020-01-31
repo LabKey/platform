@@ -71,7 +71,12 @@ public class GWTList implements IsSerializable
 
     public int getListId()
     {
-        return _listId.getInt();
+        return _listId.intValue();
+    }
+
+    public void setListId(Integer listId)
+    {
+        _listId.setInt(listId);
     }
 
     public void _listId(int listId)
