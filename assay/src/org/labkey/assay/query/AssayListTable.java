@@ -17,20 +17,21 @@
 package org.labkey.assay.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryForeignKey;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.assay.AssayController;
 
@@ -47,7 +48,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
     {
         super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.AssayLocation(schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
-        addCondition(_rootTable.getColumn("ApplicationType"), "ExperimentRun");
+        addCondition(_rootTable.getColumn("ApplicationType"), ExpProtocol.ApplicationType.ExperimentRun.toString());
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);
         setTitleColumn("Name");
 
