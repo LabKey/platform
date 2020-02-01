@@ -215,9 +215,7 @@ public class IssuesQuerySchema extends UserSchema
                     @Override
                     public ActionButton createDeleteButton()
                     {
-                        ActionButton button = super.createDeleteButton();
-
-                        button.setRequiresSelection(true);
+                        ActionButton button = super.createDeleteButton(false);
                         button.setActionType(ActionButton.Action.GET);
 
                         return button;

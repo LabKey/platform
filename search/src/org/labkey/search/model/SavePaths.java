@@ -23,7 +23,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
@@ -117,7 +116,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
 
     // NOTE: not using a blocking cache since one request can cause multiple entries to be loaded
-    Cache<Path,Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache");
+    static Cache<Path,Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache");
 
 
     // -1 if not exists
@@ -132,7 +131,13 @@ public class SavePaths implements DavCrawler.SavePaths
         SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
         find.append(pathFilter(parentId, name));
         id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
-        return null != id ? id : -1;
+        if (id != null)
+        {
+            // don't cache misses, because we will add path if it is not in search.CrawlCollections
+            idcache.put(path, id);
+            return id;
+        }
+        return -1;
     }
 
 

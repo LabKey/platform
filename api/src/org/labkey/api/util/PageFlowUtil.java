@@ -1622,6 +1622,7 @@ public class PageFlowUtil
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
+        sb.append(getManifestIncludes(c, resources));
         sb.append(getJavaScriptIncludes(c, resources));
 
         return sb.toString();
@@ -1770,6 +1771,43 @@ public class PageFlowUtil
             }
             sb.append(");\n</script>\n");
         }
+    }
+
+    // Manifest files are included as links in the HTML head.  These files are used to identify resources for progressive
+    // web apps like flash page and home page link icons.  There can be multiple on the same page.
+    private static String getManifestIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (resources != null)
+        {
+            Set<String> manifestFiles = new HashSet<>();
+            for (ClientDependency r : resources)
+            {
+                for (String manifest : r.getManifestPaths(c))
+                {
+                    if (!manifestFiles.contains(manifest))
+                    {
+                        sb.append("<link href=\"");
+                        if (ClientDependency.isExternalDependency(manifest))
+                        {
+                            sb.append(filter(manifest));
+                        }
+                        else
+                        {
+                            sb.append(AppProps.getInstance().getContextPath());
+                            sb.append("/");
+                            sb.append(filter(manifest));
+                        }
+                        sb.append("\" rel=\"manifest\">");
+
+                        manifestFiles.add(manifest);
+                    }
+                }
+            }
+        }
+
+        return sb.toString();
     }
 
     public static final String extJsRoot()
