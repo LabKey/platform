@@ -321,6 +321,8 @@ public interface SearchService
 
     SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
 
+    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
+
     @Nullable SearchHit find(String docId) throws IOException;
 
     String escapeTerm(String term);

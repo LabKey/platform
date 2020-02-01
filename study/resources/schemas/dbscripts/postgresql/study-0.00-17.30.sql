@@ -1503,7 +1503,13 @@ ALTER TABLE study.VisitTag ADD Category VARCHAR(200);
 
 ALTER TABLE study.AssaySpecimen ADD COLUMN DataSet INTEGER;
 
-SELECT core.executeJavaUpgradeCode('moveQCStateToCore');
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultAssayQCState;
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultDirectEntryQCState;
+ALTER TABLE study.Study DROP CONSTRAINT FK_Study_DefaultPipelineQCState;
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultPipelineQCState FOREIGN KEY (DefaultPipelineQCState) REFERENCES core.QCState (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultDirectEntryQCState FOREIGN KEY (DefaultDirectEntryQCState) REFERENCES core.QCState (RowId);
+ALTER TABLE study.Study ADD CONSTRAINT FK_Study_DefaultAssayQCState FOREIGN KEY (DefaultAssayQCState) REFERENCES core.QCState (RowId);
+DROP TABLE study.QCState;
 
 --Drop existing indexes, if they exist
 SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'IX_PV_SequenceNum');

@@ -3051,7 +3051,7 @@ internal/webapp/vis/src/internal/RaphaelRenderer.js -text
 internal/webapp/vis/src/layer.js -text
 internal/webapp/vis/src/plot.js -text
 internal/webapp/vis/src/scale.js -text
-internal/webapp/vis/src/stat.js -text
+internal/webapp/vis/src/statistics.js -text
 internal/webapp/vis/src/utils.js -text
 internal/webapp/vis/SVGConverter.js -text
 internal/webapp/vis/vis.lib.xml -text
