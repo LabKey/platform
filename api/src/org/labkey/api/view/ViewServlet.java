@@ -390,7 +390,7 @@ public class ViewServlet extends HttpServlet
                             expand.replaceParameter(parameter.getKey(), parameter.getValue());
                     }
                     if ("GET".equals(request.getMethod()))
-                        throw new RedirectException(expand.getLocalURIString());
+                        throw new RedirectException(expand);
                     _log.warn(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
                 }
             }
@@ -419,7 +419,7 @@ public class ViewServlet extends HttpServlet
                     path = pathFixUp;
                     url.setPath(path);
                     if ("GET".equals(request.getMethod()))
-                        throw new RedirectException(url.getLocalURIString());
+                        throw new RedirectException(url);
                 }
             }
         }
@@ -456,7 +456,7 @@ public class ViewServlet extends HttpServlet
             {
                 url.setContainer(c);
                 if ("GET".equals(request.getMethod()))
-                    throw new RedirectException(url.getLocalURIString());
+                    throw new RedirectException(url);
             }
         }
         return c;

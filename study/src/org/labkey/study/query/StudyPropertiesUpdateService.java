@@ -23,8 +23,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -34,7 +32,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
