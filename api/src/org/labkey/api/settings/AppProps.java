@@ -95,7 +95,12 @@ public interface AppProps
     @NotNull
     UsageReportingLevel getUsageReportingLevel();
 
-    String getLabKeyVersionString();
+    String getReleaseVersion();
+
+    /**
+     * Convenience method for getting the core schema version, guaranteed non-null.
+     */
+    double getSchemaVersion();
 
     String getContextPath();
 
@@ -218,5 +223,4 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
-
 }

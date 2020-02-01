@@ -1245,7 +1245,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public String toString()
     {
-        return getName() + " " + getVersion() + " " + super.toString();
+        return getName() + " " + getReleaseVersion() + " " + getClass().getName();
     }
 
 

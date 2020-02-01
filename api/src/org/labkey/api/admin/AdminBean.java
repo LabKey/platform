@@ -45,7 +45,7 @@ public class AdminBean
     public final String webappDir = ModuleLoader.getServletContext().getRealPath("");
     public final String workingDir = new File("file").getAbsoluteFile().getParent();
     public final String osName = System.getProperty("os.name");
-    public final @Nullable String releaseVersion = ModuleLoader.getInstance().getCoreModule().getProperties().get("Release Version");
+    public final @Nullable String releaseVersion = ModuleLoader.getInstance().getCoreModule().getReleaseVersion();
     public final String mode = AppProps.getInstance().isDevMode() ? "Development" : "Production";
     public final String serverGuid = AppProps.getInstance().getServerGUID();
     public final String serverSessionGuid = AppProps.getInstance().getServerSessionGUID();
