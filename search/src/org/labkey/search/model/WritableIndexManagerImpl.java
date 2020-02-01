@@ -124,16 +124,19 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
 
+    @Override
     public void index(String id, Document doc) throws IOException
     {
         synchronized (_writerLock)
         {
             deleteDocument(id);
             getIndexWriter().addDocument(doc);
+            _manager.maybeRefresh(); // Make this document immediately available for searching (i.e., near-real-time searching), see #39330
         }
     }
 
 
+    @Override
     public void deleteDocument(String id)
     {
         try
@@ -142,6 +145,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter iw = getIndexWriter();
                 iw.deleteDocuments(new Term(LuceneSearchServiceImpl.FIELD_NAME.uniqueId.toString(), id));
+                _manager.maybeRefresh();
             }
         }
         catch (IndexManagerClosedException x)
@@ -167,6 +171,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
     }
 
+    @Override
     public void deleteQuery(Query query) throws IOException
     {
         try
@@ -175,6 +180,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
             {
                 IndexWriter w = getIndexWriter();
                 w.deleteDocuments(query);
+                _manager.maybeRefresh();
             }
         }
         catch (AlreadyClosedException e)
@@ -192,24 +198,6 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
         }
     }
 
-
-    public void clear()
-    {
-        try
-        {
-            synchronized (_writerLock)
-            {
-                getIndexWriter().deleteAll();
-                commit();
-            }
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-
     @Override
     public void close() throws IOException
     {
@@ -223,6 +211,7 @@ class WritableIndexManagerImpl extends IndexManager implements WritableIndexMana
     }
 
     // If this throws then re-initialize the index manager
+    @Override
     public void commit()
     {
         synchronized (_writerLock)

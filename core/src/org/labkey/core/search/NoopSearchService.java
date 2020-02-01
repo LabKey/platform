@@ -242,6 +242,12 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults)
+    {
+        return null;
+    }
+
+    @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit)
     {
         return null;
