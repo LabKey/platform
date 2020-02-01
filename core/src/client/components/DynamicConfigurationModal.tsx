@@ -8,7 +8,7 @@ import ReactBootstrapToggle from 'react-bootstrap-toggle';
 import { ActionURL, Ajax } from '@labkey/api';
 
 import { SSOFields } from './SSOFields';
-import { DynamicFields, TextInput } from './DynamicFields';
+import { DynamicFields, TextInput} from './DynamicFields';
 
 interface Props {
     modalType?: AuthConfigProvider;
@@ -87,11 +87,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                 form.append(item, this.state[item]);
             }
         });
-        if (this.props.provider == "Duo 2 Factor") {
-            let form = {integrationKey: "adf", secretKey:"asdf", apiHostname:"asdf", userIdentifier:"afds"}
-        }
-
-        console.log("TYPE", this.props.configType);
 
         Ajax.request({
             url: saveUrl,
@@ -99,7 +94,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form,
             scope: this,
             failure: function(error) {
-                console.log("ERROR", error);
                 const errorObj = JSON.parse(error.response);
                 const errorMessage = errorObj.exception;
                 this.setState(() => ({ errorMessage }));
@@ -177,9 +171,6 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const modalTitle = isAddNewConfig ? 'Add ' + title : 'Configure ' + this.props.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
         const requiredFieldEmpty = emptyRequiredFields.indexOf("description") !== -1;
-
-        console.log("props", this.props);
-        console.log("state", this.state);
 
         return (
             <Modal show={true} onHide={() => {}}>
