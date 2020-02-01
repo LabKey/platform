@@ -1,6 +1,8 @@
-package org.labkey.api.assay;
+package org.labkey.api.assay.plate;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.assay.AbstractAssayTsvDataHandler;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
@@ -55,6 +57,8 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
     @Override
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
-        // need to implement a json data loader
+        // this is just a noop data handler, the actual parsing and importing of the plate metadata needs to happen in
+        // AbstractAssayTsvDataHandler.addAssayPlateMetadata because we need to access the inserted result data to get at the
+        // lsids.
     }
 }
