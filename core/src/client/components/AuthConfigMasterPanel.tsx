@@ -50,7 +50,7 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
         const {addNewPrimaryDropdown, loginFormTipText, primaryTabLoginForm, SSOTipText, primaryTabSSO, canEdit} = this.props;
 
         return(
-            <Tab eventKey={1} title="Primary">
+            <>
                 <div className="configurations__auth-tab">
                     {canEdit && (
                         <div className="configurations__dropdown">
@@ -88,7 +88,7 @@ class PrimaryTab extends PureComponent<PrimaryTabProps> {
 
                     {primaryTabSSO}
                 </div>
-            </Tab>
+            </>
         );
     }
 }
@@ -104,21 +104,19 @@ class SecondaryTab extends PureComponent<SecondaryTabProps> {
         const {canEdit, addNewSecondaryDropdown, secondaryTabDuo} = this.props;
 
         return(
-            <Tab eventKey={2} title="Secondary">
-                <div className="configurations__auth-tab">
-                    {canEdit && (
-                        <div className="configurations__dropdown">
-                            <DropdownButton
-                                id="secondary-configurations-dropdown"
-                                title="Add New Secondary Configuration">
-                                {addNewSecondaryDropdown}
-                            </DropdownButton>
-                        </div>
-                    )}
+            <div className="configurations__auth-tab">
+                {canEdit && (
+                    <div className="configurations__dropdown">
+                        <DropdownButton
+                            id="secondary-configurations-dropdown"
+                            title="Add New Secondary Configuration">
+                            {addNewSecondaryDropdown}
+                        </DropdownButton>
+                    </div>
+                )}
 
-                    {secondaryTabDuo}
-                </div>
-            </Tab>
+                {secondaryTabDuo}
+            </div>
         );
     }
 }
@@ -297,20 +295,32 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     {dataBaseModal}
 
                     <Tabs defaultActiveKey={1} id="tab-panel">
-                        <PrimaryTab
-                            canEdit={canEdit}
-                            addNewPrimaryDropdown={addNewPrimaryDropdown}
-                            loginFormTipText={loginFormTipText}
-                            primaryTabLoginForm={primaryTabLoginForm}
-                            SSOTipText={SSOTipText}
-                            primaryTabSSO={primaryTabSSO}
-                        />
+                        <Tab eventKey={1} title="Primary">
+                            <PrimaryTab
+                                canEdit={canEdit}
+                                addNewPrimaryDropdown={addNewPrimaryDropdown}
+                                loginFormTipText={loginFormTipText}
+                                primaryTabLoginForm={primaryTabLoginForm}
+                                SSOTipText={SSOTipText}
+                                primaryTabSSO={primaryTabSSO}
+                            />
+                        </Tab>
 
-                        <SecondaryTab
-                            canEdit={canEdit}
-                            addNewSecondaryDropdown={addNewSecondaryDropdown}
-                            secondaryTabDuo={secondaryTabDuo}
-                        />
+                        <Tab eventKey={2} title="Secondary">
+                            <div className="configurations__auth-tab">
+                                {canEdit && (
+                                    <div className="configurations__dropdown">
+                                        <DropdownButton
+                                            id="secondary-configurations-dropdown"
+                                            title="Add New Secondary Configuration">
+                                            {addNewSecondaryDropdown}
+                                        </DropdownButton>
+                                    </div>
+                                )}
+
+                                {secondaryTabDuo}
+                            </div>
+                        </Tab>
                     </Tabs>
                 </Panel.Body>
             </Panel>

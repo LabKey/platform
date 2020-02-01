@@ -69,7 +69,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
     saveEditedModal = (): void => {
         const baseUrl = ActionURL.getBaseURL(true);
         const saveUrl = baseUrl + this.props.modalType.saveLink;
-        const form = new FormData();
+        let form = new FormData();
 
         if (this.areRequiredFieldsEmpty()) {
             return;
@@ -79,9 +79,19 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form.append('configuration', this.props.configuration.toString());
         }
 
+        form.append('description', this.state.description.toString());
+        form.append('enabled', this.state.enabled.toString());
+        let fields = this.props.modalType.settingsFields.map((field) => (field.name));
         Object.keys(this.state).map(item => {
-            form.append(item, this.state[item]);
+            if (fields.indexOf(item) !== -1){
+                form.append(item, this.state[item]);
+            }
         });
+        if (this.props.provider == "Duo 2 Factor") {
+            let form = {integrationKey: "adf", secretKey:"asdf", apiHostname:"asdf", userIdentifier:"afds"}
+        }
+
+        console.log("TYPE", this.props.configType);
 
         Ajax.request({
             url: saveUrl,
@@ -89,6 +99,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form,
             scope: this,
             failure: function(error) {
+                console.log("ERROR", error);
                 const errorObj = JSON.parse(error.response);
                 const errorMessage = errorObj.exception;
                 this.setState(() => ({ errorMessage }));
@@ -166,6 +177,9 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const modalTitle = isAddNewConfig ? 'Add ' + title : 'Configure ' + this.props.description;
         const finalizeButtonText = isAddNewConfig ? 'Finish' : 'Apply';
         const requiredFieldEmpty = emptyRequiredFields.indexOf("description") !== -1;
+
+        console.log("props", this.props);
+        console.log("state", this.state);
 
         return (
             <Modal show={true} onHide={() => {}}>
