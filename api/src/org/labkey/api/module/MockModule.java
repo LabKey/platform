@@ -97,9 +97,9 @@ public class MockModule implements Module
     }
 
     @Override
-    public String getFormattedVersion()
+    public String getReleaseVersion()
     {
-        return ModuleContext.formatVersion(getVersion());
+        return null;
     }
 
     @Override

@@ -8007,7 +8007,8 @@ public class AdminController extends SpringActionController
                     out.println("<div>" + _descriptionHtml + "</div><br/>");
                     out.println("\n<table class=\"labkey-data-region-legacy labkey-show-borders\">");
                     out.println("<tr><td class=\"labkey-column-header\">Name</td>");
-                    out.println("<td class=\"labkey-column-header\">Version</td>");
+                    out.println("<td class=\"labkey-column-header\">Release Version</td>");
+                    out.println("<td class=\"labkey-column-header\">Schema Version</td>");
                     out.println("<td class=\"labkey-column-header\">Class</td>");
                     out.println("<td class=\"labkey-column-header\">Source</td>");
                     out.println("<td class=\"labkey-column-header\">Schemas</td>");
@@ -8033,6 +8034,10 @@ public class AdminController extends SpringActionController
 
                         out.print("    <td>");
                         out.print(PageFlowUtil.filter(moduleContext.getName()));
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        out.print(PageFlowUtil.filter(null != module ? module.getReleaseVersion() : null));
                         out.println("</td>");
 
                         out.print("    <td>");

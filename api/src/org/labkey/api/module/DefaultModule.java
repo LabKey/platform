@@ -155,7 +155,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
-    private String _labkeyVersion = null;
+    private String _releaseVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
@@ -306,20 +306,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _controllerNameToClass.put(controllerName, controllerClass);
     }
 
-
     @Override
     public String getTabName(ViewContext context)
     {
         return getName();
     }
-
-
-    @Override
-    public String getFormattedVersion()
-    {
-        return ModuleContext.formatVersion(getVersion());
-    }
-
 
     @Override
     public void beforeUpdate(ModuleContext moduleContext)
@@ -573,7 +564,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
     public String getName()
     {
@@ -594,7 +584,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _name = name;
     }
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
     public double getVersion()
     {
@@ -686,6 +675,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _maintainer;
     }
 
+    @SuppressWarnings("unused")
     public final void setMaintainer(String maintainer)
     {
         checkLocked();
@@ -1002,15 +992,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _manageVersion;
     }
 
+    @SuppressWarnings("unused")  // "labkeyVersion" is the name of the property in module.xml
     public String getLabkeyVersion()
     {
-        return _labkeyVersion;
+        return _releaseVersion;
     }
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings("unused")  // "labkeyVersion" is the name of the property in module.xml
     public void setLabkeyVersion(String labkeyVersion)
     {
-        _labkeyVersion = labkeyVersion;
+        _releaseVersion = labkeyVersion;
+    }
+
+    @Override
+    public @Nullable String getReleaseVersion()
+    {
+        return _releaseVersion;
     }
 
     @Override
@@ -1019,9 +1016,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Map<String, String> props = new LinkedHashMap<>();
 
         props.put("Module Class", getClass().getName());
-        props.put("Version", getFormattedVersion());
-        if (StringUtils.isNotBlank(getLabkeyVersion()))
-            props.put("LabKey Version", getLabkeyVersion());
+        props.put("Schema Version", getFormattedSchemaVersion());
+        if (StringUtils.isNotBlank(getReleaseVersion()))
+            props.put("Release Version", getReleaseVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
@@ -1470,11 +1467,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             return Collections.emptySet();
 
         return getDependenciesFromFile();
-    }
-
-    public static boolean isRuntimeJar(String name)
-    {
-        return name.endsWith(".jar") && !name.endsWith("javadoc.jar") && !name.endsWith("sources.jar");
     }
 
     /**

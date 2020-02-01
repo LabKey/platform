@@ -48,6 +48,12 @@ public abstract class CodeOnlyModule extends DefaultModule
     }
 
     @Override
+    public @Nullable Double getSchemaVersion()
+    {
+        return null;
+    }
+
+    @Override
     public final boolean hasScripts()
     {
         return false;

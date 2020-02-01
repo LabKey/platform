@@ -1103,14 +1103,14 @@ public class ModuleLoader implements Filter
 
         if (coreContext.isNewInstall())
         {
-            _log.debug("Initializing core module to " + coreModule.getFormattedVersion());
+            _log.debug("Initializing core module to " + coreModule.getFormattedSchemaVersion());
         }
         else
         {
             if (coreContext.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
                 throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + Constants.getEarliestUpgradeVersion() + " or greater.");
 
-            _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
+            _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedSchemaVersion());
         }
 
         _contextMap.put(coreModule.getName(), coreContext);
