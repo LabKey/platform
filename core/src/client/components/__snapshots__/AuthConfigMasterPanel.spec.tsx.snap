@@ -26,12 +26,56 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
       defaultActiveKey={1}
       id="tab-panel"
     >
-      <PrimaryTab
-        SSOTipText="These configurations let LabKey users authenticate against an external service such as a SAML identify provider or a CAS server. LabKey will render SSO logos in the header and on the login page in the order that the configurations are listed below."
-        canEdit={true}
-        loginFormTipText="These configurations make use of LabKey's login page to collect credentials and authenticate against either hashed credentials stored in the LabKey database or external LDAP servers. LabKey will attempt authenticating against each configuration in the order they are listed below."
-        primaryTabLoginForm={
-          <div>
+      <Tab
+        eventKey={1}
+        title="Primary"
+      >
+        <PrimaryTab
+          SSOTipText="These configurations let LabKey users authenticate against an external service such as a SAML identify provider or a CAS server. LabKey will render SSO logos in the header and on the login page in the order that the configurations are listed below."
+          canEdit={true}
+          loginFormTipText="These configurations make use of LabKey's login page to collect credentials and authenticate against either hashed credentials stored in the LabKey database or external LDAP servers. LabKey will attempt authenticating against each configuration in the order they are listed below."
+          primaryTabLoginForm={
+            <div>
+              <DragAndDropPane
+                actions={
+                  Object {
+                    "onDelete": [Function],
+                    "onDragEnd": [Function],
+                    "toggleModalOpen": [Function],
+                    "updateAuthRowsAfterSave": [Function],
+                  }
+                }
+                authConfigs={
+                  Array [
+                    Object {
+                      "configuration": 107,
+                      "description": "LDAP Configurations",
+                      "details": "ldap://ldap.forumsys.com",
+                      "domain": "labkey.com",
+                      "enabled": true,
+                      "principalTemplate": "\${email}",
+                      "provider": "LDAP",
+                      "sasl": false,
+                      "search": false,
+                      "servers": "ldap://ldap.forumsys.com",
+                    },
+                  ]
+                }
+                canEdit={true}
+                configType="formConfigurations"
+                isDragDisabled={false}
+              />
+              <AuthRow
+                canEdit={true}
+                description="Standard database authentication"
+                draggable={false}
+                enabled={true}
+                provider="Database"
+                toggleModalOpen={[Function]}
+              />
+            </div>
+          }
+          primaryTabSSO={
             <DragAndDropPane
               actions={
                 Object {
@@ -44,93 +88,66 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               authConfigs={
                 Array [
                   Object {
-                    "configuration": 107,
-                    "description": "LDAP Configurations",
-                    "details": "ldap://ldap.forumsys.com",
-                    "domain": "labkey.com",
+                    "ForceAuth": true,
+                    "IdPSigningCertificate": "certificateText",
+                    "IdPSsoUrl": "IdP SSO URL",
+                    "IssuerUrl": "",
+                    "NameIdFormat": "transient",
+                    "SpEncryptCert": "",
+                    "configuration": 95,
+                    "description": "SAML Configuration",
+                    "details": "IdP SSO URL",
                     "enabled": true,
-                    "principalTemplate": "\${email}",
-                    "provider": "LDAP",
-                    "sasl": false,
-                    "search": false,
-                    "servers": "ldap://ldap.forumsys.com",
+                    "headerLogoUrl": null,
+                    "loginLogoUrl": null,
+                    "provider": "SAML",
+                  },
+                  Object {
+                    "autoRedirect": false,
+                    "configuration": 106,
+                    "description": "CAS Configurations",
+                    "details": "https://www.labkey.org/cas",
+                    "enabled": true,
+                    "headerLogoUrl": "/labkey/auth_header_logo.image?configuration=106&revision=69",
+                    "loginLogoUrl": "/labkey/auth_login_page_logo.image?configuration=106&revision=69",
+                    "provider": "CAS",
+                    "serverUrl": "https://www.labkey.org/cas",
+                  },
+                  Object {
+                    "autoRedirect": false,
+                    "configuration": 108,
+                    "description": "CAS Configuration 2",
+                    "details": "https://www.labkey.org/cas",
+                    "enabled": true,
+                    "headerLogoUrl": null,
+                    "loginLogoUrl": null,
+                    "provider": "CAS",
+                    "serverUrl": "https://www.labkey.org/cas",
                   },
                 ]
               }
               canEdit={true}
-              configType="formConfigurations"
+              configType="ssoConfigurations"
               isDragDisabled={false}
             />
-            <AuthRow
-              canEdit={true}
-              description="Standard database authentication"
-              draggable={false}
-              enabled={true}
-              provider="Database"
-              toggleModalOpen={[Function]}
+          }
+        />
+      </Tab>
+      <Tab
+        eventKey={2}
+        title="Secondary"
+      >
+        <div
+          className="configurations__auth-tab"
+        >
+          <div
+            className="configurations__dropdown"
+          >
+            <DropdownButton
+              id="secondary-configurations-dropdown"
+              title="Add New Secondary Configuration"
             />
           </div>
-        }
-        primaryTabSSO={
-          <DragAndDropPane
-            actions={
-              Object {
-                "onDelete": [Function],
-                "onDragEnd": [Function],
-                "toggleModalOpen": [Function],
-                "updateAuthRowsAfterSave": [Function],
-              }
-            }
-            authConfigs={
-              Array [
-                Object {
-                  "ForceAuth": true,
-                  "IdPSigningCertificate": "certificateText",
-                  "IdPSsoUrl": "IdP SSO URL",
-                  "IssuerUrl": "",
-                  "NameIdFormat": "transient",
-                  "SpEncryptCert": "",
-                  "configuration": 95,
-                  "description": "SAML Configuration",
-                  "details": "IdP SSO URL",
-                  "enabled": true,
-                  "headerLogoUrl": null,
-                  "loginLogoUrl": null,
-                  "provider": "SAML",
-                },
-                Object {
-                  "autoRedirect": false,
-                  "configuration": 106,
-                  "description": "CAS Configurations",
-                  "details": "https://www.labkey.org/cas",
-                  "enabled": true,
-                  "headerLogoUrl": "/labkey/auth_header_logo.image?configuration=106&revision=69",
-                  "loginLogoUrl": "/labkey/auth_login_page_logo.image?configuration=106&revision=69",
-                  "provider": "CAS",
-                  "serverUrl": "https://www.labkey.org/cas",
-                },
-                Object {
-                  "autoRedirect": false,
-                  "configuration": 108,
-                  "description": "CAS Configuration 2",
-                  "details": "https://www.labkey.org/cas",
-                  "enabled": true,
-                  "headerLogoUrl": null,
-                  "loginLogoUrl": null,
-                  "provider": "CAS",
-                  "serverUrl": "https://www.labkey.org/cas",
-                },
-              ]
-            }
-            canEdit={true}
-            configType="ssoConfigurations"
-            isDragDisabled={false}
-          />
-        }
-      />
-      <SecondaryTab
-        canEdit={true}
-        secondaryTabDuo={
           <DragAndDropPane
             actions={
               Object {
@@ -168,8 +185,8 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
             configType="secondaryConfigurations"
             isDragDisabled={false}
           />
-        }
-      />
+        </div>
+      </Tab>
     </Uncontrolled(Tabs)>
   </PanelBody>
 </Uncontrolled(Panel)>
@@ -202,7 +219,41 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
       <ul
         className="nav nav-tabs"
         role="tablist"
-      />
+      >
+        <li
+          className="active"
+          role="presentation"
+        >
+          <a
+            aria-controls="tab-panel-pane-1"
+            aria-selected={true}
+            href="#"
+            id="tab-panel-tab-1"
+            onClick={[Function]}
+            onKeyDown={[Function]}
+            role="tab"
+          >
+            Primary
+          </a>
+        </li>
+        <li
+          className=""
+          role="presentation"
+        >
+          <a
+            aria-controls="tab-panel-pane-2"
+            aria-selected={false}
+            href="#"
+            id="tab-panel-tab-2"
+            onClick={[Function]}
+            onKeyDown={[Function]}
+            role="tab"
+            tabIndex={-1}
+          >
+            Secondary
+          </a>
+        </li>
+      </ul>
       <div
         className="tab-content"
       >
