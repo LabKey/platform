@@ -164,28 +164,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
         catch (RuntimeException e)
         {
             _log.error("Failed to insert audit log event", e);
-            DbScope scope = AuditSchema.getInstance().getSchema().getScope();
-            // See issue 36948 - can't do things like look up configurations for how to handle audit logging transactions
-            // if there's a now-trashed connection associated with a transaction
-            if (scope.isTransactionActive())
-            {
-                // Use a different transaction kind to ensure a different DB connection is used
-                try (DbScope.Transaction t = scope.ensureTransaction(TRANSACTION_KIND))
-                {
-                    AuditLogService.handleAuditFailure(user, e);
-                    t.commit();
-                }
-            }
-            else
-            {
-                AuditLogService.handleAuditFailure(user, e);
-            }
+            AuditLogService.handleAuditFailure(user, e);
             throw e;
         }
         return null;
     }
-
-    private static final DbScope.TransactionKind TRANSACTION_KIND = () -> "AuditLog";
 
     @Override
     public String getTableName()
