@@ -79,13 +79,8 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
             form.append('configuration', this.props.configuration.toString());
         }
 
-        form.append('description', this.state.description.toString());
-        form.append('enabled', this.state.enabled.toString());
-        let fields = this.props.modalType.settingsFields.map((field) => (field.name));
         Object.keys(this.state).map(item => {
-            if (fields.indexOf(item) !== -1){
-                form.append(item, this.state[item]);
-            }
+            form.append(item, this.state[item]);
         });
 
         Ajax.request({
