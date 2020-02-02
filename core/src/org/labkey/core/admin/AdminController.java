@@ -7924,11 +7924,11 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String currentYear = ModuleContext.formatVersion(20.000);
+                    String lowestSchemaVersion = ModuleContext.formatVersion(Constants.getLowestSchemaVersion());
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
-                    url.addParameter("ignore", "0.00," + currentYear);
+                    url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + currentYear + " and unmanaged modules", url);
+                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + lowestSchemaVersion + " and unmanaged modules", url);
                 }
                 else
                 {
@@ -8097,11 +8097,11 @@ public class AdminController extends SpringActionController
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getPreviousReleaseVersion())
+                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getLowestSchemaVersion())
                 .collect(Collectors.toList());
 
             if (!modulesTooLow.isEmpty())
-                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getPreviousReleaseVersion() + ": " + modulesTooLow);
+                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getLowestSchemaVersion() + ": " + modulesTooLow);
         }
     }
 

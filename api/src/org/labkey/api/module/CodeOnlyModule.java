@@ -44,7 +44,7 @@ public abstract class CodeOnlyModule extends DefaultModule
     @Override
     public final double getVersion()
     {
-        return Constants.getPreviousReleaseVersion();
+        return Constants.getLowestSchemaVersion();
     }
 
     @Override

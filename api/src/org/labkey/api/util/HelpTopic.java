@@ -34,8 +34,8 @@ import java.util.Map;
 public class HelpTopic
 {
     private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
-    private static final String HELP_VERSION = Formats.f1.format(Constants.getPreviousReleaseVersion());
-    private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + HELP_VERSION + "/wiki-page.view?name=";
+    private static final String DOCUMENTATION_FOLDER_NAME = Constants.getDocumentationFolderName();
+    private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + DOCUMENTATION_FOLDER_NAME + "/wiki-page.view?name=";
 
     public static final HelpTopic DEFAULT_HELP_TOPIC = new HelpTopic("default");
 

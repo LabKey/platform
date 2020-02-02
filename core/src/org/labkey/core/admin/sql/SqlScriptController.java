@@ -16,7 +16,6 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -685,34 +684,10 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private abstract static class ScriptRangeForm
+    public static class ScriptRangeForm
     {
-        private String _module;
-        private String _schema;
         protected double _fromVersion;
-        protected double _toVersion;
-
-        public String getModule()
-        {
-            return _module;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setModule(String module)
-        {
-            _module = module;
-        }
-
-        public String getSchema()
-        {
-            return _schema;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setSchema(String schema)
-        {
-            _schema = schema;
-        }
+        protected double _toVersion = Constants.getLowestSchemaVersion() + 1;
 
         public double getFromVersion()
         {
@@ -740,12 +715,36 @@ public class SqlScriptController extends SpringActionController
 
     public static class ConsolidateForm extends ScriptRangeForm
     {
+        private String _module;
+        private String _schema;
         private boolean _includeSingleScripts = false;
 
         public ConsolidateForm()
         {
             _fromVersion = 0.0;
             _toVersion = Constants.getEarliestUpgradeVersion();
+        }
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setModule(String module)
+        {
+            _module = module;
+        }
+
+        public String getSchema()
+        {
+            return _schema;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSchema(String schema)
+        {
+            _schema = schema;
         }
 
         public boolean getIncludeSingleScripts()
@@ -894,10 +893,10 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
+    public class OrphanedScriptsAction extends SimpleViewAction<Void>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws IOException
+        public ModelAndView getView(Void form, BindException errors) throws IOException
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -1224,17 +1223,17 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
+    public class UnreachableScriptsAction extends SimpleViewAction<ScriptRangeForm>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors)
+        public ModelAndView getView(ScriptRangeForm form, BindException errors)
         {
             // Order scripts by fromVersion. If fromVersion is the same, use standard compare order (schema + from + to)
             Set<SqlScript> unreachableScripts = new TreeSet<>(Comparator.comparingDouble(SqlScript::getFromVersion).thenComparing(s -> s));
 
             Collection<Double> fromVersions = new LinkedList<>();
             fromVersions.add(0.00);
-            fromVersions.addAll(Constants.getValidVersions());
+            fromVersions.addAll(Constants.getMajorSchemaVersions());
 
             double toVersion = form.getToVersion();
 
@@ -1269,8 +1268,11 @@ public class SqlScriptController extends SpringActionController
             double previousRoundedVersion = -1;
             List<SqlScript> batch = new LinkedList<>();
 
-            StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading from any of the following versions: ");
-            html.append(ArrayUtils.toString(fromVersions)).append("<br>");
+            StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading to schema version " + ModuleContext.formatVersion(toVersion) + " from any of the following schema versions: ");
+            String joinedVersions = fromVersions.stream()
+                .map(ModuleContext::formatVersion)
+                .collect(Collectors.joining(", "));
+            html.append("[").append(joinedVersions).append("]<br>");
 
             for (SqlScript script : unreachableScripts)
             {
