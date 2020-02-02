@@ -138,7 +138,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     public void split(PipelineJob job) throws IOException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusManager.PipelineStatusTransactionKind(), SPLIT_LOCK))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND, SPLIT_LOCK))
         {
             // Make sure the join job has an existing status record before creating
             // the rows for the split jobs.  Just to ensure a consistent creation order.
@@ -179,7 +179,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusManager.PipelineStatusTransactionKind(), SPLIT_LOCK))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND, SPLIT_LOCK))
         {
             TaskId tid = job.getActiveTaskId();
 

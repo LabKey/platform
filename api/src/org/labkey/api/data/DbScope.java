@@ -160,7 +160,7 @@ public class DbScope
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
          * outer-most layer of the transaction has completed (either by committing or closing the connection).
          */
-        boolean isReleaseLocksOnFinalCommit();
+        default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
 
 
@@ -213,22 +213,7 @@ public class DbScope
     }
 
 
-    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
-    {
-        @NotNull
-        @Override
-        public String getKind()
-        {
-            return "NORMAL";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
-
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
     {
