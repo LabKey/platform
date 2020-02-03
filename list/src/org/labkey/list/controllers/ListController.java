@@ -26,10 +26,13 @@ import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -55,6 +58,8 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
 import org.labkey.api.defaults.ClearDefaultValuesAction;
 import org.labkey.api.defaults.SetDefaultValuesAction;
+import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
@@ -62,6 +67,9 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.ModuleHtmlView;
@@ -101,12 +109,16 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
+import org.labkey.list.client.GWTList;
+import org.labkey.list.client.ListEditorService;
 import org.labkey.list.model.ListAuditProvider;
+import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListManager;
@@ -223,6 +235,59 @@ public class ListController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetListDefinitionAction extends ReadOnlyApiAction<GWTList>
+    {
+        @Override
+        public Object execute(GWTList listDesignerForm, BindException errors) throws Exception
+        {
+            if (listDesignerForm.getListId() != 0)
+            {
+                ListDefinition listDefinition = ListService.get().getList(getContainer(), listDesignerForm.getListId());
+
+                if (null == listDefinition)
+                {
+                    throw new NotFoundException("Could not locate List Definition for List Id: " + listDesignerForm.getListId());
+                }
+                else if (listDefinition.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    ListEditorService listEditorService = new ListEditorServiceImpl(getViewContext());
+                    GWTList list = listEditorService.getList(listDesignerForm.getListId());
+                    ListDef def = ListManager.get().getList(getContainer(), listDesignerForm.getListId());
+                    GWTDomain<GWTPropertyDescriptor> domain = getDomainDescriptor(def);
+                    list.setDomain(domain);
+                    return success("Success getting List '" + list.getName() + "'", list);
+                }
+                else
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+            else
+            {
+                throw new ApiUsageException("Failed to retrieve the List - must provide a valid 'listId' in the request.");
+            }
+        }
+
+        private GWTDomain<GWTPropertyDescriptor> getDomainDescriptor(ListDef def)
+        {
+            DomainDescriptor dd = OntologyManager.getDomainDescriptor(def.getDomainId());
+            if (null == dd)
+            {
+                throw new NotFoundException("List DomainDescriptor not found for list '" + def.getName() + "' with listId '" + def.getListId() + "'");
+            }
+
+            GWTDomain<GWTPropertyDescriptor> domain = DomainUtil.getDomainDescriptor(getUser(), dd.getDomainURI(), dd.getContainer());
+            if (null == domain)
+            {
+                throw new NotFoundException("List Domain not found for list '" + def.getName() + "' with listId '" + def.getListId() + "'");
+            }
+
+            return domain;
+        }
+    }
+
     @RequiresPermission(DesignListPermission.class)
     public class DomainImportServiceAction extends GWTServiceAction
     {
@@ -253,39 +318,39 @@ public class ListController extends SpringActionController
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
+        String listDesignerHeader = "List Designer";
 
         @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
-
             boolean createList = (null == form.getListId() || 0 == form.getListId()) && form.getName() == null;
             if (!createList)
                 _list = form.getList();
 
-            Map<String, String> props = new HashMap<>();
-
-            URLHelper returnURL = form.getReturnURLHelper();
-
-            props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-            props.put("allowFileLinkProperties", "0");
-            props.put("allowAttachmentProperties", "1");
-            props.put("showDefaultValueSettings", "1");
-            props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("loading", "Loading...");
-
-            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove once automated test conversion of new list designer is complete.
             if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
             {
-                //TODO: props above need to be represented in the new list designer
                 VBox listDesigner = new VBox();
                 listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "listDesigner"));
                 return listDesigner;
             }
-            else {
+            else
+             {
+
+                Map<String, String> props = new HashMap<>();
+
+                URLHelper returnURL = form.getReturnURLHelper();
+
+                props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
+                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+                props.put("allowFileLinkProperties", "0");
+                props.put("allowAttachmentProperties", "1");
+                props.put("showDefaultValueSettings", "1");
+                props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
+                props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("loading", "Loading...");
                 return new GWTView("org.labkey.list.Designer", props);
             }
         }
@@ -294,9 +359,19 @@ public class ListController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             if (null == _list)
-                root.addChild("Create new List");
+            {
+                if (experimentalFlagEnabled)
+                    root.addChild(listDesignerHeader);
+                else
+                    root.addChild("Create new List");
+            }
             else
-                appendListNavTrail(root, _list, null);
+            {
+                if (experimentalFlagEnabled)
+                    appendListNavTrail(root, _list, listDesignerHeader);
+                else
+                    appendListNavTrail(root, _list, null);
+            }
             return root;
         }
     }
