@@ -79,7 +79,7 @@
         <isReadOnly>true</isReadOnly>
       </column>
       <column columnName="SchemaVersion">
-        <columnTitle>Version</columnTitle>
+        <columnTitle>Schema Version</columnTitle>
         <isReadOnly>true</isReadOnly>
       </column>
       <column columnName="ClassName">

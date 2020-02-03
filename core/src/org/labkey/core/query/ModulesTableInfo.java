@@ -29,7 +29,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -68,7 +68,8 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         nameCol.setURL(new StringExpressionFactory.URLStringExpression("${URL}"));
         nameCol.setURLTargetWindow("_blank");
 
-        addWrapColumn(getRealTable().getColumn("InstalledVersion"));
+        addTextColumn("ReleaseVersion").setScale(255);
+        addWrapColumn(getRealTable().getColumn("SchemaVersion"));
         addWrapColumn(getRealTable().getColumn("ClassName"));
 
         addTextColumn("Label").setScale(255);
@@ -92,12 +93,13 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         addWrapColumn(getRealTable().getColumn("Schemas"));
 
-        setDefaultVisibleColumns(Arrays.asList(
-                FieldKey.fromParts("Name"),
-                FieldKey.fromParts("InstalledVersion"),
-                FieldKey.fromParts("Label"),
-                FieldKey.fromParts("Organization"),
-                FieldKey.fromParts("License")
+        setDefaultVisibleColumns(List.of(
+            FieldKey.fromParts("Name"),
+            FieldKey.fromParts("ReleaseVersion"),
+            FieldKey.fromParts("SchemaVersion"),
+            FieldKey.fromParts("Label"),
+            FieldKey.fromParts("Organization"),
+            FieldKey.fromParts("License")
         ));
     }
 
@@ -132,6 +134,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             sep = ",\n";
             cte.append("(");
             cte.append("?").add(module.getName());
+            cte.append(",?").add(StringUtils.trimToNull(module.getReleaseVersion()));
             cte.append(",?").add(StringUtils.trimToNull(module.getLabel()));
             cte.append(",?").add(StringUtils.trimToNull(module.getDescription()));
             cte.append(",?").add(StringUtils.trimToNull(module.getUrl()));
@@ -148,6 +151,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         }
         cte.append(") AS T (");
         cte.append("ModuleName");
+        cte.append(",ReleaseVersion");
         cte.append(",Label");
         cte.append(",Description");
         cte.append(",Url");
@@ -163,7 +167,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         String token = ret.addCommonTableExpression(cte.toString(), tableName, cte);
 
         // join with core.modules
-        ret.append("(SELECT m.name, m.installedversion, m.classname, m.schemas");
+        ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
         ret.append(",").append(tableName).append(".*");
         ret.append("\n");
         ret.append("FROM ").append(getFromTable().getFromSQL("m")).append("\n");
