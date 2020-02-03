@@ -44,7 +44,7 @@ public class Constants
      * Returns the documentation folder name associated with this version of LabKey. These names have typically been the
      * version numbers of each major release, therefore, this constant should be updated just before every major release.
      */
-    public static String getDocumentationFolderName()
+    public static String getDocumentationVersion()
     {
         return "19.3";
     }

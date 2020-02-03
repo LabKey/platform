@@ -127,7 +127,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _name = null;
     private String _label = null;
     private String _description = null;
-    private double _version = 0.0;
+    private Double _schemaVersion = null;
     private double _requiredServerVersion = 0.0;
     private String _moduleDependenciesString = null;
     private String _url = null;
@@ -327,12 +327,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
+            assert null != getSchemaVersion();
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
             {
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
+                List<SqlScript> scripts = manager.getRecommendedScripts(getSchemaVersion());
 
                 if (!scripts.isEmpty())
                     SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
@@ -587,21 +588,33 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public double getVersion()
     {
-        return _version;
+        return -1;
     }
 
     public final void setVersion(double version)
     {
+        setSchemaVersion(version);
+    }
+
+    @Override
+    public @Nullable Double getSchemaVersion()
+    {
+        // For now, delegate to getVersion() for modules that still override that method
+        return -1 != getVersion() ? (Double)getVersion() : _schemaVersion;
+    }
+
+    public final void setSchemaVersion(Double schemaVersion)
+    {
         checkLocked();
-        if (0.0 == version)
+        if (null == schemaVersion)
             return;
-        if (0.0 != _version)
+        if (null != _schemaVersion)
         {
-            if (_version != version)
-                _log.error("Attempt to change version of module from " + _version + " to " + version + ".");
+            if (!_schemaVersion.equals(schemaVersion))
+                _log.error("Attempt to change version of module from " + _schemaVersion + " to " + schemaVersion + ".");
             return;
         }
-        _version = version;
+        _schemaVersion = schemaVersion;
     }
 
     public final double getRequiredServerVersion()

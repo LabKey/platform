@@ -58,18 +58,18 @@ import java.util.Set;
 public class MockModule implements Module
 {
     private final String _name;
-    private final double _version;
+    private final Double _schemaVersion;
     private final String[] _dependencies;
 
     public MockModule(String name, String... dependencies)
     {
-        this(name, 0, dependencies);
+        this(name, 0.0, dependencies);
     }
 
-    public MockModule(String name, double version, String... dependencies)
+    public MockModule(String name, Double schemaVersion, String... dependencies)
     {
         _name = name;
-        _version = version;
+        _schemaVersion = schemaVersion;
         _dependencies = dependencies;
     }
 
@@ -93,7 +93,13 @@ public class MockModule implements Module
     @Override
     public double getVersion()
     {
-        return _version;
+        return null != _schemaVersion ? _schemaVersion : 0.0;
+    }
+
+    @Override
+    public @Nullable Double getSchemaVersion()
+    {
+        return _schemaVersion;
     }
 
     @Override

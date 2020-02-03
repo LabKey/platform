@@ -8041,7 +8041,8 @@ public class AdminController extends SpringActionController
                         out.println("</td>");
 
                         out.print("    <td>");
-                        out.print(ModuleContext.formatVersion(moduleContext.getInstalledVersion()));
+                        Double schemaVersion = moduleContext.getSchemaVersion();
+                        out.print(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : "&nbsp;");
                         out.println("</td>");
 
                         out.print("    <td>");
@@ -8097,11 +8098,12 @@ public class AdminController extends SpringActionController
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getLowestSchemaVersion())
+                .filter(m->null != m.getSchemaVersion())
+                .filter(m->m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
                 .collect(Collectors.toList());
 
             if (!modulesTooLow.isEmpty())
-                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getLowestSchemaVersion() + ": " + modulesTooLow);
+                fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
         }
     }
 

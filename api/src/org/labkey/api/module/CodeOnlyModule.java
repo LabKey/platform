@@ -36,19 +36,8 @@ import java.util.Set;
  */
 public abstract class CodeOnlyModule extends DefaultModule
 {
-    /**
-     * All code-only modules use this version.
-     *
-     * @return The module version
-     */
     @Override
-    public final double getVersion()
-    {
-        return Constants.getLowestSchemaVersion();
-    }
-
-    @Override
-    public @Nullable Double getSchemaVersion()
+    public final @Nullable Double getSchemaVersion()
     {
         return null;
     }

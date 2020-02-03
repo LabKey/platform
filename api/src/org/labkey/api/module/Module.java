@@ -100,18 +100,13 @@ public interface Module extends Comparable<Module>
      * Return the version of this module. Allows us to track whether
      * module's version has changed.
      */
-    default double getVersion()
-    {
-        throw new IllegalStateException("You should override getSchemaVersion()");
-    }
+    @Deprecated  // Migrate all usages to getSchemaVersion() or getReleaseVersion(), as appropriate
+    double getVersion();
 
     /**
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
-    @Nullable default Double getSchemaVersion()
-    {
-        return getVersion();
-    }
+    @Nullable Double getSchemaVersion();
 
     @Nullable default String getFormattedSchemaVersion()
     {
