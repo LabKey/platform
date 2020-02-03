@@ -50,6 +50,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
@@ -278,9 +279,9 @@ public class SearchController extends SpringActionController
 
             if (null != t)
             {
-                String html = "<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>";
-                html += ExceptionUtil.renderException(t);
-                WebPartView configErrorView = new HtmlView(html);
+                HtmlStringBuilder builder = HtmlStringBuilder.of("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>");
+                builder.append(ExceptionUtil.renderException(t));
+                WebPartView configErrorView = new HtmlView(builder);
                 configErrorView.setTitle("Search Configuration Error");
                 configErrorView.setFrame(WebPartView.FrameType.PORTAL);
                 vbox.addView(configErrorView);
