@@ -85,7 +85,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     handleWindowBeforeUnload = (event) => {
-
         if (this.state.dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -102,13 +101,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             return;
         }
 
-        this.setState({
-            submitting: true
-        });
+        this.setState(() => ({submitting: true}));
 
         saveDomain(domain, undefined, undefined, undefined,  includeWarnings)
             .then((savedDomain) => {
-
                 this.setState(() => ({
                     domain: savedDomain,
                     submitting: false,
@@ -147,7 +143,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             includeWarnings : false,
             showWarnings : false,
             submitting : false
-        }), () => {this.submitHandler(true)});
+        }), () => {
+            this.submitHandler(true);
+        });
     };
 
     onSubmitWarningsCancel = () => {
@@ -158,7 +156,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty // if the state is already dirty, leave it as such
@@ -172,7 +169,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
-
         const { messages } = this.state;
 
         this.setState(Object.assign({}, additionalState, {
@@ -212,21 +208,31 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     renderWarningConfirm() {
         const { badDomain } = this.state;
-        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
-
-        let errors = badDomain.domainException.errors;
-        let question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
-        let warnings = errors.map((error) => {
-            return <div> {error.message} </div>
+        const errors = badDomain.domainException.errors;
+        const question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
+        const warnings = errors.map((error) => {
+            return <li> {error.message} </li>
         });
-        let suggestion = <p> {"See the following documentation page for further details: "}<br/>
-            <a href={rollupURI}> {"Specimen properties and rollup rules"}</a>
-                        </p>;
+
+        // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
+        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+        const suggestion = (
+            <p>
+                See the following documentation page for further details: <br/>
+                <a href={rollupURI} target={'_blank'}> {"Specimen properties and rollup rules"}</a>
+            </p>
+        );
 
         return (
             <ConfirmModal
                 title='Save without resolving issues?'
-                msg={<>{question}{warnings}{suggestion}</>}
+                msg={
+                    <>
+                        {question}
+                        <ul>{warnings}</ul>
+                        {suggestion}
+                    </>
+                }
                 confirmVariant='success'
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
@@ -240,10 +246,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         const { submitting } = this.state;
 
         return (
-                <div className={'domain-form-panel domain-designer-buttons'}>
-                    <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                    <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
-                </div>
+            <div className={'domain-form-panel domain-designer-buttons'}>
+                <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
+                <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+            </div>
         )
     }
 
