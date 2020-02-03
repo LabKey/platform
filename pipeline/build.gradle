@@ -31,7 +31,7 @@ dependencies {
         }
 
 
-    BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: 'apiCompile')
+    BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath:  BuildUtils.getPlatformModuleProjectPath(project.gradle, "core"), depProjectConfig: 'apiCompile')
 }
 
 // TODO move resources files into resources directory to avoid this overlap
