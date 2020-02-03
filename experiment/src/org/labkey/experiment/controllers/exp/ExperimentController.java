@@ -4497,13 +4497,37 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExportOptionsForm form, boolean reshow, BindException errors) throws Exception
         {
-            handlePost(form, errors);
+            // FormViewAction can reinvoke getView() in response to a POST if we're not redirecting the browser,
+            // so avoid double-creating the export
+            if ("get".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                handlePost(form, errors);
             return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+
+        public List<ExpRun> lookupRuns(ExportOptionsForm form)
+        {
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+            if (runIds.isEmpty())
+            {
+                throw new NotFoundException();
+            }
+            List<ExpRun> result = new ArrayList<>();
+
+            for (int id : runIds)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(id);
+                if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    throw new NotFoundException("Could not find run " + id);
+                }
+                result.add(run);
+            }
+            return result;
         }
     }
 
@@ -4512,44 +4536,22 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
-            if (runIds.isEmpty())
+            XarExportSelection selection = new XarExportSelection();
+            if (form.getExpRowId() != null)
             {
-                throw new NotFoundException();
-            }
-
-            try
-            {
-                for (int id : runIds)
+                ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
+                if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
-                    ExpRun run = ExperimentService.get().getExpRun(id);
-                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Could not find run " + id);
-                    }
+                    throw new NotFoundException("Run group " + form.getExpRowId());
                 }
-
-                XarExportSelection selection = new XarExportSelection();
-                if (form.getExpRowId() != null)
-                {
-                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
-                    if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Run group " + form.getExpRowId());
-                    }
-                    selection.addExperimentIds(experiment.getRowId());
-                }
-                selection.addRunIds(runIds);
-
-                _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
-                if (form.getDataRegionSelectionKey() != null)
-                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
-                return true;
+                selection.addExperimentIds(experiment.getRowId());
             }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException(runIds.toString());
-            }
+            selection.addRuns(lookupRuns(form));
+
+            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+            return true;
         }
     }
 
@@ -4586,40 +4588,18 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
-            if (runIds.isEmpty())
+            XarExportSelection selection = new XarExportSelection();
+            selection.setIncludeXarXml(false);
+            if ("role".equalsIgnoreCase(form.getFileExportType()))
             {
-                throw new NotFoundException();
+                selection.addRoles(form.getRoles());
             }
+            selection.addRuns(lookupRuns(form));
 
-            try
-            {
-                for (int id : runIds)
-                {
-                    ExpRun run = ExperimentService.get().getExpRun(id);
-                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Could not find run " + id);
-                    }
-                }
-
-                XarExportSelection selection = new XarExportSelection();
-                selection.setIncludeXarXml(false);
-                if ("role".equalsIgnoreCase(form.getFileExportType()))
-                {
-                    selection.addRoles(form.getRoles());
-                }
-                selection.addRunIds(runIds);
-
-                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
-                if (form.getDataRegionSelectionKey() != null)
-                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
-                return true;
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException(runIds.toString());
-            }
+            _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+            return true;
         }
     }
 
