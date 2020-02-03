@@ -90,6 +90,7 @@ public class AuditController extends SpringActionController
             super(ShowAuditLogForm.class);
         }
 
+        @Override
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
             VBox view = new VBox();
@@ -102,6 +103,7 @@ public class AuditController extends SpringActionController
             return view;
         }
 
+        @Override
         protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion)
         {
             String selected = form.getView();

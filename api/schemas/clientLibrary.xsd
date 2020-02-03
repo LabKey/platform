@@ -30,7 +30,16 @@
     </xsd:complexType>
 
     <xsd:complexType name="dependencyType">
-        <xsd:attribute name="path" type="xsd:string" use="required"/>
+        <xsd:attribute name="path" type="xsd:string" use="required">
+            <xsd:annotation>
+                <xsd:documentation>
+                    Supported dependency file types are JS, CSS and manifest. These will be added to the HTML head
+                    element as appropriate for the file type (script tag for JS and link tags for CSS and manifest).
+                    File type is determined by the file extensions .js, .css and .webmanifest. See Progressive Web App
+                    documentation for information on manifest files.
+                </xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
         <xsd:attribute name="mode" type="lib:modeTypeEnum" use="optional"/>
     </xsd:complexType>
 

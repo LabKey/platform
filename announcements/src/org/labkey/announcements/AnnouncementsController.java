@@ -74,7 +74,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
-import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryForm;
@@ -143,7 +142,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 

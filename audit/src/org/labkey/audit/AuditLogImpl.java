@@ -23,6 +23,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -160,11 +161,11 @@ public class AuditLogImpl implements AuditLogService, StartupListener
                 return LogManager.get()._insertEvent(user, event);
             }
         }
-        catch (Exception e)
+        catch (RuntimeException e)
         {
             _log.error("Failed to insert audit log event", e);
             AuditLogService.handleAuditFailure(user, e);
-            throw new RuntimeException(e);
+            throw e;
         }
         return null;
     }

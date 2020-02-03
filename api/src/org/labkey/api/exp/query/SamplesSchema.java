@@ -124,25 +124,13 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
-        {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
-        }
+        QueryView queryView = super.createView(context, settings, errors);
 
-        return super.createView(context, settings, errors);
+        // Use default delete button, but without showing the confirmation text
+        // NOTE: custom queries in the schema don't support delete so setting this flag is ok
+        queryView.setShowDeleteButtonConfirmationText(false);
+
+        return queryView;
     }
 
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
