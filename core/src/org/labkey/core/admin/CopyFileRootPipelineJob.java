@@ -348,7 +348,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                                         info("Retained existing file '" + pathString + "'");
                                         modifiedUpdated = true;
                                     }
-                                    catch (FileNotFoundException e)
+                                    catch (FileNotFoundException | NoSuchFileException e)
                                     {
                                         // S3 backed storage is not immediately consistent after the PUT. Try a few times
                                         // before declaring failure
@@ -377,7 +377,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                                     info("Copy complete '" + pathString + "'");
                                     modifiedUpdated = true;
                                 }
-                                catch (FileNotFoundException e)
+                                catch (FileNotFoundException | NoSuchFileException e)
                                 {
                                     // S3 backed storage is not immediately consistent after the PUT. Try a few times
                                     // before declaring failure
