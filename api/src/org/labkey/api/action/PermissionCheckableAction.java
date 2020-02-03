@@ -32,7 +32,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -191,7 +191,7 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (isPost())
                 permissionsRequired.add(adminConsoleAction.value());
             else
-                permissionsRequired.add(AdminReadPermission.class);
+                permissionsRequired.add(TroubleShooterPermission.class);
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
