@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.Factory;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -107,6 +108,12 @@ public interface Module extends Comparable<Module>
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
     @Nullable Double getSchemaVersion();
+
+    @Deprecated // Use getFormattedSchemaVersion() or getReleaseVersion() instead, as appropriate
+    default String getFormattedVersion()
+    {
+        return ObjectUtils.defaultIfNull(getFormattedSchemaVersion(), "");
+    }
 
     @Nullable default String getFormattedSchemaVersion()
     {
