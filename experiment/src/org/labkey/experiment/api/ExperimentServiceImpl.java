@@ -4043,8 +4043,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append("SELECT DISTINCT m2.runId\n")
                 .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
                 .append("WHERE m.rowId ").append(idInclause).append("\n")
-                .append("AND m.rowId != m2.rowId\n")
                 .append("AND m.runId = m2.runId\n")
+                .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
+                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("AND m2.rowId = m3.rowId\n")
+                .append(")\n")
                 .append(")");
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
