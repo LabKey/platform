@@ -1,6 +1,9 @@
 # Created by .ignore support plugin (hsz.mobi)
 dependencies.txt
 
+# OSX
+.DS_Store
+
 # Node modules
 node_modules
 core/node_modules
