@@ -232,6 +232,12 @@ public class InputTag extends SimpleTagBase
         this.value = HtmlString.of(s);
     }
 
+    // Needed to handle null rowIds, etc. correctly
+    public void setValue(Object o)
+    {
+        setValue(null != o ? o.toString() : null);
+    }
+
     public void setOnChange(String onChange)
     {
         this.onChange = onChange;

@@ -59,7 +59,7 @@
 </script>
 
 <labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return onSubmit(this);">
-<labkey:input type="hidden" name="rowId" value="<%=String.valueOf(ann.getRowId())%>"/>
+<labkey:input type="hidden" name="rowId" value="<%=ann.getRowId()%>"/>
 <labkey:input type="hidden" name="entityId" value="<%=ann.getEntityId()%>"/>
 <labkey:input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>"/>
 <%=generateReturnUrlFormField(bean.returnURL)%>

@@ -274,7 +274,7 @@
                     </div>
                 </div>
 
-                <labkey:input type="hidden" name="rowId" value="<%=String.valueOf(bean.getRowId())%>"/>
+                <labkey:input type="hidden" name="rowId" value="<%=bean.getRowId()%>"/>
                 <labkey:input type="hidden" name="returnUrl" value="<%=bean.getReturnUrl()%>"/>
 
                 <br/>

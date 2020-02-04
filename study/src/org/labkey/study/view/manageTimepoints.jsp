@@ -83,7 +83,7 @@
                   contextContent="A start date is required for date based studies."
                   value="<%=DateUtil.formatDate(getContainer(), form.getStartDate())%>" />
     <labkey:input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration"
-                  label="Default Timepoint Duration" value="<%=String.valueOf(form.getDefaultTimepointDuration())%>" />
+                  label="Default Timepoint Duration" value="<%=form.getDefaultTimepointDuration()%>" />
     <%= button("Update").submit(true) %>
     <%= generateBackButton() %>
 </labkey:form>

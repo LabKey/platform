@@ -1155,10 +1155,10 @@ public abstract class DisplayColumn extends RenderColumn
     protected void renderHiddenFormInput(RenderContext ctx, Writer out, String formFieldName, Object value) throws IOException
     {
         out.write(new Input.InputBuilder()
-                .name(getInputPrefix() + formFieldName)
-                .type("hidden")
-                .value(String.valueOf(value))
-                .toString());
+            .name(getInputPrefix() + formFieldName)
+            .type("hidden")
+            .value(null != value ? value.toString() : null)
+            .toString());
     }
 
     public void renderInputWrapperBegin(Writer out) throws IOException

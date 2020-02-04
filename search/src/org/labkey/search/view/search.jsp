@@ -295,7 +295,7 @@
             <% if (null != form.getTemplate()) { %>
             <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
             <% } %>
-            <input type="hidden" name="_dc" value="<%=String.valueOf(Math.round(1000 * Math.random()))%>">
+            <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
                 String hiddenInputs = template.getHiddenInputsHtml(ctx);
                 if (hiddenInputs != null)

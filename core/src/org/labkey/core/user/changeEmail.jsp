@@ -49,7 +49,7 @@
     <labkey:input type="text" name="currentEmail" id="currentEmail" label="Current Email" value="<%=currentEmail%>" isReadOnly="true"/>
     <labkey:input type="text" name="requestedEmail" id="requestedEmail" label="New Email" value="<%=form.getRequestedEmail()%>" />
     <labkey:input type="text" name="requestedEmailConfirmation" id="requestedEmailConfirmation" label="Retype New Email" value="<%=form.getRequestedEmailConfirmation()%>" />
-    <labkey:input type="hidden" name="userId" value="<%=String.valueOf(form.getUserId())%>"/>
+    <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>
     <labkey:input type="hidden" name="isChangeEmailRequest" value="true"/>
     <labkey:csrf/>
     <%= button("Submit").submit(true) %>
@@ -65,7 +65,7 @@
         <labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
             <labkey:input type="text" name="currentEmail" id="currentEmail" label="Email" value="<%=currentEmail%>" isReadOnly="true"/>
             <labkey:input id="password" name="password" type="password" label="Password" contextContent="<%=resetPasswordLink%>"/>
-            <labkey:input type="hidden" name="userId" value="<%=String.valueOf(form.getUserId())%>"/>
+            <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>
             <labkey:input type="hidden" name="requestedEmail" value="<%=form.getRequestedEmail()%>"/>
             <labkey:input type="hidden" name="verificationToken" value="<%=form.getVerificationToken()%>"/>
             <labkey:input type="hidden" name="isPasswordPrompt" value="true"/>
