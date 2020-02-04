@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.test.test.devtools;
+package org.labkey.test.tests.devtools;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
