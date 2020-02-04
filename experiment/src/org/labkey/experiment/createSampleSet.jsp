@@ -111,7 +111,7 @@
     </div>
 
     <br/>
-    <labkey:input type="hidden" name="isUpdate" value="<%=String.valueOf(bean.isUpdate())%>"/>
+    <labkey:input type="hidden" name="isUpdate" value="<%=bean.isUpdate()%>"/>
     <labkey:input type="hidden" name="LSID" value="<%=bean.getLSID()%>"/>
     <labkey:input type="hidden" name="rowId" value="<%=bean.getRowId()%>"/>
 

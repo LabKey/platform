@@ -286,8 +286,8 @@
             <% if (showAdvancedUI) { %>
             <labkey:input type="hidden" name="category" value="<%=categories%>"/>
             <labkey:input type="hidden" name="sortField" value="<%=form.getSortField()%>"/>
-            <labkey:input type="hidden" name="invertSort" value="<%=String.valueOf(form.isInvertSort())%>"/>
-            <labkey:input type="hidden" name="showAdvanced" value="<%=String.valueOf(form.isShowAdvanced())%>"/>
+            <labkey:input type="hidden" name="invertSort" value="<%=form.isInvertSort()%>"/>
+            <labkey:input type="hidden" name="showAdvanced" value="<%=form.isShowAdvanced()%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
             <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
