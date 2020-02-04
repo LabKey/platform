@@ -273,7 +273,7 @@
 <div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
         <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
-            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=h(value)%>"/>
+            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=value%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
@@ -284,16 +284,16 @@
             </small>
             <% } %>
             <% if (showAdvancedUI) { %>
-            <labkey:input type="hidden" name="category" value="<%=h(categories)%>"/>
-            <labkey:input type="hidden" name="sortField" value="<%=h(form.getSortField())%>"/>
-            <labkey:input type="hidden" name="invertSort" value="<%=h(form.isInvertSort())%>"/>
-            <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
+            <labkey:input type="hidden" name="category" value="<%=categories%>"/>
+            <labkey:input type="hidden" name="sortField" value="<%=form.getSortField()%>"/>
+            <labkey:input type="hidden" name="invertSort" value="<%=form.isInvertSort()%>"/>
+            <labkey:input type="hidden" name="showAdvanced" value="<%=form.isShowAdvanced()%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
             <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
             <% if (null != form.getTemplate()) { %>
-            <labkey:input type="hidden" name="template" value="<%=h(form.getTemplate())%>"/>
+            <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
             <% } %>
             <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
