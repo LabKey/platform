@@ -64,7 +64,7 @@
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return onSubmit(this);">
 <labkey:input type="hidden" name="cancelUrl" value="<%=bean.cancelURL%>" />
 <%=generateReturnUrlFormField(bean.cancelURL)%>
-<labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
+<labkey:input type="hidden" name="fromDiscussion" value="<%=String.valueOf(bean.fromDiscussion)%>" />
 <div style="max-width: 1050px;">
 <table style="width: 100%;" class="lk-fields-table">
 <%
@@ -99,7 +99,7 @@ if (settings.hasMemberList())
     %><tr><td class="labkey-form-label">Members</td><td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td><td><i><%
     if (settings.isSecure())
     {
-        %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it.  These users will also<%
+        %> This <%=h(settings.getConversationName().toLowerCase())%> is private; only editors and the users on this list can view it. These users will also<%
     }
     else
     {

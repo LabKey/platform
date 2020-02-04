@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.element.DisplayField;
 import org.labkey.api.util.element.Input;
@@ -58,7 +59,7 @@ public class InputTag extends SimpleTagBase
     private String state;
     private Integer step;
     private String type;
-    private Object value;
+    private HtmlString value;
 
     public void setAutoComplete(String autoComplete)
     {
@@ -215,9 +216,20 @@ public class InputTag extends SimpleTagBase
         this.type = type;
     }
 
-    public void setValue(Object value)
+    public void setValue(HasHtmlString hasHtmlString)
     {
-        this.value = value;
+        this.value = hasHtmlString.getHtmlString();
+    }
+
+    @Deprecated // TODO: Just call the String version without h(), like all the other tag attributes
+    public void setValue(HtmlString htmlString)
+    {
+        this.value = htmlString;
+    }
+
+    public void setValue(String s)
+    {
+        this.value = HtmlString.of(s);
     }
 
     public void setOnChange(String onChange)
@@ -289,7 +301,7 @@ public class InputTag extends SimpleTagBase
             .disabled(isDisabled)
             .required(isRequired)
             .readOnly(isReadOnly)
-            .unsafeValue(value) // 32433: mimic a normal <input/> where user is responsible for the encoding
+            .value(value)
             .checked(checked)
             .size(size)
             .maxLength(maxLength)

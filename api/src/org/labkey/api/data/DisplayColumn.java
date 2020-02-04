@@ -1157,7 +1157,7 @@ public abstract class DisplayColumn extends RenderColumn
         out.write(new Input.InputBuilder()
                 .name(getInputPrefix() + formFieldName)
                 .type("hidden")
-                .value(value)
+                .value(String.valueOf(value))
                 .toString());
     }
 

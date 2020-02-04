@@ -151,7 +151,7 @@
         for (int run : form.getRuns())
         {
     %>
-        <labkey:input type="hidden" name="runs" value="<%=run%>"/>
+        <labkey:input type="hidden" name="runs" value="<%=String.valueOf(run)%>"/>
     <%
         }
     %>
