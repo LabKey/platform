@@ -4028,8 +4028,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SELECT DISTINCT m2.runId
                 FROM exp.material m2
                 WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.rowId != m2.rowId
                     AND m.runId = m2.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.material m3
+                        WHERE m3.rowId in (3592, 3593, 3594)
+                            AND m2.rowId = m3.rowId
+                    )
             );
          */
 
