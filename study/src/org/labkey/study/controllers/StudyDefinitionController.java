@@ -123,6 +123,7 @@ public class StudyDefinitionController extends BaseStudyController
             return root.addChild(getPluralName());
         }
 
+        @Override
         protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion)
         {
             return new ExtensibleObjectQueryView(getUser(), getStudyRedirectIfNull(), getDomainInfo(), HttpView.currentContext(), false);

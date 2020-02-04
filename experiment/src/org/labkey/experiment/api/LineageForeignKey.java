@@ -137,7 +137,7 @@ class LineageForeignKey extends AbstractForeignKey
         abstract List<? extends ExpObject> getItems(UserSchema s);
     }
 
-    public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField)
+    public ColumnInfo _createLookupColumn(ColumnInfo parent, TableInfo table, String displayField, boolean unselectable)
     {
         if (table == null)
         {
@@ -164,7 +164,7 @@ class LineageForeignKey extends AbstractForeignKey
         col.setFk(lookup.getFk());
         col.setUserEditable(false);
         col.setReadOnly(true);
-        col.setIsUnselectable(true);
+        col.setIsUnselectable(unselectable);
         col.setDisplayColumnFactory(lookup.getDisplayColumnFactory());
         return col;
     }
@@ -172,7 +172,7 @@ class LineageForeignKey extends AbstractForeignKey
     @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
-        return _createLookupColumn(parent, getLookupTableInfo(), displayField);
+        return _createLookupColumn(parent, getLookupTableInfo(), displayField, true);
     }
 
     public void applyDisplayColumn(BaseColumnInfo column, Integer depth, String expType, String cpasType, @Nullable String lookupColumnName)
@@ -426,7 +426,7 @@ class LineageForeignKey extends AbstractForeignKey
         @Override
         public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
         {
-            return _createLookupColumn(parent, getLookupTableInfo(), displayField);
+            return _createLookupColumn(parent, getLookupTableInfo(), displayField, false);
         }
 
         @Override

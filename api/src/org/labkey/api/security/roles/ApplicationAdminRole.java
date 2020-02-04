@@ -29,7 +29,7 @@ public class ApplicationAdminRole extends AbstractRootContainerRole
 {
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         ApplicationAdminPermission.class,
-        AdminReadPermission.class,
+        TroubleShooterPermission.class,
         EnableRestrictedModules.class,
         UserManagementPermission.class
     );
