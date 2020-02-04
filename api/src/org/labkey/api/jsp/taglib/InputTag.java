@@ -227,12 +227,17 @@ public class InputTag extends SimpleTagBase
         this.value = htmlString;
     }
 
+    /**
+     * Sets value to HTML-encoded s or "" if s is null.
+     */
     public void setValue(String s)
     {
         this.value = HtmlString.of(s);
     }
 
-    // Needed to handle null rowIds, etc. correctly
+    /**
+     * Sets value to HTML-encoded o.toString() or "" if o is null. Especially useful for Integers and Booleans.
+     */
     public void setValue(Object o)
     {
         setValue(null != o ? o.toString() : null);
