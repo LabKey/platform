@@ -126,7 +126,7 @@
         if (currentState != null)
         {
     %>
-    <labkey:input type="displayfield" label="Current State" value="<%=h(currentState)%>"/>
+    <labkey:input type="displayfield" label="Current State" value="<%=currentState%>"/>
     <%
         }
     %>
@@ -155,7 +155,7 @@
     <%
         }
     %>
-    <labkey:input type="hidden" name="returnUrl" value="<%=h(form.getReturnUrl())%>"/>
+    <labkey:input type="hidden" name="returnUrl" value="<%=form.getReturnUrl()%>"/>
     <labkey:button text="update" submit="false" onclick="saveState();" id="update-btn"/>
     <labkey:button text="cancel" href="<%=form.getReturnUrl()%>" onclick="LABKEY.setSubmit(true);"/>
 </labkey:form>
