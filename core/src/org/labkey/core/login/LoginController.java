@@ -76,7 +76,7 @@ import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.WikiTermsOfUseProvider.TermsOfUseType;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
@@ -2576,7 +2576,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class GetDbLoginPropertiesAction extends ReadOnlyApiAction
     {
         @Override
@@ -2612,7 +2612,7 @@ public class LoginController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class InitialMountAction extends ReadOnlyApiAction
     {
         @Override
