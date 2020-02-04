@@ -5,9 +5,9 @@
  */
 module.exports = {
     apps: [{
-        name: 'listDesigner',
+        name: 'designer',
         title: 'List Designer',
         permission: 'read', // the component will check for DesignListPermission and show edit vs read only mode accordingly, see ListController.EditListDefinitionAction for main usage
-        path: './src/client/ListDesigner'
+        path: './src/client/Designer'
     }]
 };
