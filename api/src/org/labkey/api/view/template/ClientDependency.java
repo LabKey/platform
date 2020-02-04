@@ -60,7 +60,8 @@ public abstract class ClientDependency
         sass(".sass"),
         jsb2(".jsb2"),
         context(".context"),
-        lib(".lib.xml");
+        lib(".lib.xml"),
+        manifest(".webmanifest");
 
         TYPE(String extension)
         {
@@ -249,6 +250,19 @@ public abstract class ClientDependency
             scripts.addAll(function.apply(r));
 
         return scripts;
+    }
+
+    public @NotNull Set<String> getManifestPaths(Container c)
+    {
+        return getManifestPaths(c, AppProps.getInstance().isDevMode());
+    }
+
+    public @NotNull Set<String> getManifestPaths(Container c, boolean devMode)
+    {
+        if (devMode)
+            return getDevModeScripts(c, TYPE.manifest);
+        else
+            return getProductionScripts(c, TYPE.manifest);
     }
 
     public @NotNull Set<String> getCssPaths(Container c)

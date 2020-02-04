@@ -22,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.PropertyColumn;
@@ -31,6 +33,7 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.exp.query.ExpProtocolTable;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -41,6 +44,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> implements ExpProtocolTable
@@ -87,6 +91,15 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
                 col.setHidden(true);
                 return col;
             }
+            case RunCount:
+            {
+                SQLFragment sql = new SQLFragment("(SELECT COUNT(*) FROM ").append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "r")
+                        .append(" WHERE r.replacedByRunId IS NULL")
+                        .append(" AND r.protocolLsid = ").append(ExprColumn.STR_TABLE_ALIAS + ".lsid)");
+                ExprColumn runCountColumnInfo = new ExprColumn(this, "RunCount", sql, JdbcType.INTEGER);
+                runCountColumnInfo.setDescription("Contains the number of runs of this protocol type");
+                return runCountColumnInfo;
+            }
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -117,9 +130,25 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         addColumn(Column.Software);
         addColumn(Column.ApplicationType);
         addColumn(Column.ProtocolImplementation);
+        addColumn(Column.RunCount);
 
-        ActionURL urlDetails = new ActionURL(ExperimentController.ProtocolDetailsAction.class, _userSchema.getContainer());
-        setDetailsURL(new DetailsURL(urlDetails, Collections.singletonMap("rowId", "RowId")));
+        DetailsURL detailsURL = new DetailsURL(
+                new ActionURL(ExperimentController.ProtocolDetailsAction.class, _userSchema.getContainer()),
+                Collections.singletonMap("rowId", "RowId"));
+        setDetailsURL(detailsURL);
+        colRowId.setURL(detailsURL);
+        colName.setURL(detailsURL);
+
+        ActionURL deleteUrl = new ActionURL(ExperimentController.DeleteProtocolByRowIdsAction.class, getContainer());
+        setDeleteURL(new DetailsURL(deleteUrl));
+
+        LinkedHashSet<FieldKey> defaultVisible = new LinkedHashSet<>();
+        defaultVisible.add(FieldKey.fromParts(Column.Name));
+        defaultVisible.add(FieldKey.fromParts(Column.Created));
+        defaultVisible.add(FieldKey.fromParts(Column.CreatedBy));
+        defaultVisible.add(FieldKey.fromParts(Column.Description));
+
+        setDefaultVisibleColumns(defaultVisible);
     }
 
     @Override
