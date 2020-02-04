@@ -15,7 +15,7 @@
  */
 import * as React from 'react'
 import * as ReactDOM from 'react-dom'
-import {App} from './ListDesigner'
+import {App} from './Designer'
 
 // Need to wait for container element to be available in labkey wrapper before render
 window.addEventListener('DOMContentLoaded', (event) => {
