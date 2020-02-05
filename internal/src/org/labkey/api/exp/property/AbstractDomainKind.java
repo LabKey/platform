@@ -31,6 +31,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -46,7 +47,6 @@ import org.labkey.api.view.NavTree;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * User: kevink
@@ -107,6 +107,12 @@ public abstract class AbstractDomainKind extends DomainKind
 
     @Override
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        return null;
+    }
+
+    @Override
+    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         return null;
     }

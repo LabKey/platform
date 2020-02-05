@@ -50,6 +50,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -372,6 +373,12 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    /**
+     * DO NOT USE. This action has been deprecated in 20.3 in favor of GetDomainKindAction.
+     * Only here for backwards compatibility to resolve requests and redirect.
+     * //TODO: Deprecate/update docs
+     */
+    @Deprecated
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
@@ -391,6 +398,46 @@ public class PropertyController extends SpringActionController
             Integer domainId = form.getDomainId();
 
             return getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+        }
+    }
+
+    /**
+     * This action gets the specific domain kind's properties (if any), and returns json in this format:
+     *  {
+     *      "domainKindName":
+     *      "options": {}
+     *      "domainDesign":{}
+     *  }
+     */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDomainKindAction  extends ReadOnlyApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            String queryName = form.getQueryName();
+            String schemaName = form.getSchemaName();
+            Integer domainId = form.getDomainId();
+
+            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+            if (null != domain && null != domain.getDomainKind())
+            {
+                DomainKindDesign domainKindDesign = new DomainKindDesign();
+                domainKindDesign.setDomainDesign(gwtDomain);
+                domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
+                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
+                return domainKindDesign;
+            }
+            return gwtDomain;
         }
     }
 

@@ -28,6 +28,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -93,6 +94,15 @@ abstract public class DomainKind implements Handler<String>
 
     // CONSIDER: have DomainKind supply and IDomainInstance or similar
     // so that it can hold instance data (e.g. a DatasetDefinition)
+
+    /**
+     * Create a Domain appropriate for this DomainKind.
+     * @param domain The domain design.
+     * @param container Container
+     * @param user User
+     * @return Return Domain.
+     */
+    abstract public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user);
 
     /**
      * Create a Domain appropriate for this DomainKind.
