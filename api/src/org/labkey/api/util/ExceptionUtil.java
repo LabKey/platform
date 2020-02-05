@@ -151,22 +151,22 @@ public class ExceptionUtil
     }
 
 
-    public static String renderException(Throwable e)
+    public static HtmlString renderException(Throwable e)
     {
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         String s = PageFlowUtil.filter(sw.toString());
         s = s.replaceAll(" ", "&nbsp;");
         s = s.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-        return "<pre class='exception-stacktrace'>\n" + s + "</pre>\n";
+        return HtmlString.unsafe("<pre class='exception-stacktrace'>\n" + s + "</pre>\n");
     }
 
 
-    public static String getUnauthorizedMessage(ViewContext context)
+    public static HtmlString getUnauthorizedMessage(ViewContext context)
     {
-        return "<table width=\"100%\"><tr><td align=left>" +
+        return HtmlString.unsafe("<table width=\"100%\"><tr><td align=left>" +
                 (context.getUser().isGuest() ? "Please sign in to see this data." : "You do not have permission to see this data.") +
-                "</td></tr></table>";
+                "</td></tr></table>");
     }
 
 

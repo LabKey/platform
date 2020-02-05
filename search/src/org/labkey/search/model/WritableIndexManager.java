@@ -31,14 +31,10 @@ import java.util.Map;
 */
 public interface WritableIndexManager
 {
-    void clear();
-
     void deleteDocument(String id);
 
-    @SuppressWarnings("RedundantThrows")  // IntelliJ believes the throws clause is not needed, but javac strongly disagrees
     IndexSearcher getSearcher() throws IOException;
 
-    @SuppressWarnings("RedundantThrows")  // IntelliJ believes the throws clause is not needed, but javac strongly disagrees
     void releaseSearcher(IndexSearcher searcher) throws IOException;
 
     void deleteQuery(Query query) throws IOException;

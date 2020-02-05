@@ -4,7 +4,7 @@
         <script path="/vis/MeasureStore.js"/>
         <script path="/vis/src/utils.js"/>
         <script path="/vis/src/geom.js"/>
-        <script path="/vis/src/stat.js"/>
+        <script path="/vis/src/statistics.js"/>
         <script path="/vis/src/scale.js"/>
         <script path="/vis/src/layer.js"/>
         <script path="/vis/src/internal/RaphaelRenderer.js"/>

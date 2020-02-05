@@ -225,6 +225,7 @@
     String safeCategories = categories == null ? "" : categories.toLowerCase();
     String queryString = form.getQueryString();
     String sortField = form.getSortField();
+    boolean invertSort = form.isInvertSort();
 
     SearchConfiguration searchConfig = form.getConfig();
     boolean includeNavigationResults = !form.isWebPart() && searchConfig.includeNavigationLinks() && template.includeNavigationLinks() && scope != SearchScope.Folder;
@@ -248,11 +249,11 @@
     {
         try
         {
-            result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, sortField, offset, hitsPerPage);
+            result = searchConfig.getSearchResult(template.reviseQuery(ctx, queryString), categories, user, c, scope, sortField, offset, hitsPerPage, invertSort);
 
             if (includeNavigationResults)
             {
-                navResult = SearchService.get().search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, sortField, offset, hitsPerPage);
+                navResult = SearchService.get().search(queryString, Arrays.asList(SearchService.navigationCategory), user, c, scope, sortField, offset, hitsPerPage, invertSort);
                 hasNavResults = navResult != null && navResult.hits.size() > 0;
             }
         }
@@ -272,7 +273,7 @@
 <div<%=text(form.isWebPart() ? "" : " class=\"col-md-12\"")%>>
     <div style="position:relative;">
         <labkey:form id="<%=searchFormId%>" className="lk-search-form" action="<%=searchConfig.getPostURL(c)%>">
-            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=h(value)%>"/>
+            <labkey:input type="text" name="q" placeholder="<%=form.isWebPart() ? \"\" : SearchUtils.getPlaceholder(c)%>" formGroup="false" value="<%=value%>"/>
             <a class="search-overlay fa fa-search"></a>
             <% if (showAdvancedUI) { %>
             <small>
@@ -283,15 +284,16 @@
             </small>
             <% } %>
             <% if (showAdvancedUI) { %>
-            <labkey:input type="hidden" name="category" value="<%=h(categories)%>"/>
-            <labkey:input type="hidden" name="sortField" value="<%=h(form.getSortField())%>"/>
-            <labkey:input type="hidden" name="showAdvanced" value="<%=h(form.isShowAdvanced())%>"/>
+            <labkey:input type="hidden" name="category" value="<%=categories%>"/>
+            <labkey:input type="hidden" name="sortField" value="<%=form.getSortField()%>"/>
+            <labkey:input type="hidden" name="invertSort" value="<%=form.isInvertSort()%>"/>
+            <labkey:input type="hidden" name="showAdvanced" value="<%=form.isShowAdvanced()%>"/>
             <% } %>
             <% if (null == template.getSearchScope()) { %>
             <labkey:input type="hidden" name="scope" value="<%=form.getSearchScope()%>"/>
             <% } %>
             <% if (null != form.getTemplate()) { %>
-            <labkey:input type="hidden" name="template" value="<%=h(form.getTemplate())%>"/>
+            <labkey:input type="hidden" name="template" value="<%=form.getTemplate()%>"/>
             <% } %>
             <input type="hidden" name="_dc" value="<%=h(Math.round(1000 * Math.random()))%>">
             <%
@@ -393,7 +395,7 @@
                 <div class="form-group">
                     <div class="col-sm-4">
                         <h5>Sort
-                            <%= helpPopup("Sort", "Sort the results by the relevance, created, or modified date")%>
+                            <%= helpPopup("Sort", "Sort the results by the relevance, created/modified date, or folder path")%>
                         </h5>
                         <div style="padding-top: 1px;">
                             <div class="radio">
@@ -409,6 +411,16 @@
                             <div class="radio">
                                 <label>
                                     <input type="radio" name="sortField" value="<%=text("modified")%>" <%=checked("modified".equals(sortField))%>> Modified
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="sortField" value="<%=text("container")%>" <%=checked("container".equals(sortField))%>> Folder Path
+                                </label>
+                            </div>
+                            <div class="checkbox">
+                                <label>
+                                    <input type="checkbox" name="invertSort" value="true" <%=checked(invertSort)%>> Reverse Sort Results
                                 </label>
                             </div>
                         </div>
@@ -603,6 +615,7 @@
 
             advForm.change(function() {
                 var category = '', sep = '';
+                var doInvert = false;
                 advForm.serializeArray().forEach(function(p) {
                     if (p.name.toLowerCase() === 'scope') {
                         form.find('input[name="scope"]').val(p.value);
@@ -610,11 +623,16 @@
                     else if (p.name.toLowerCase() === "sortfield") {
                         form.find('input[name="sortField"]').val(p.value);
                     }
-                    else {
+                    else if (p.name.toLowerCase() === "invertsort" && p.value === "true") {
+                        doInvert = true;
+                    }
+                    else if (p.name.toLowerCase() === "category") {
                         category += sep + p.value;
                         sep = '+';
                     }
                 });
+
+                form.find('input[name="invertSort"]').val(doInvert);
                 form.find('input[name="category"]').val(category);
             });
 
@@ -625,6 +643,9 @@
                     }
                     else if (e.name === 'showAdvanced' && e.value.toLowerCase() === 'false') {
                         e.value = '';
+                    }
+                    else if (e.name === 'invertSort' && e.value.toLowerCase() === 'false') {
+                            e.value = '';
                     }
                     else if (e.name === 'sortField' && e.value.toLocaleLowerCase() === 'score') {
                         e.value = '';

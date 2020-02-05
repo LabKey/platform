@@ -15,7 +15,6 @@
  */
 package org.labkey.api.util.element;
 
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HasHtmlString;
@@ -25,7 +24,6 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.text.Format;
 
 // TODO: Need handling for checkbox, file, and radio types
 public class Input extends DisplayElement implements HasHtmlString
@@ -83,7 +81,6 @@ public class Input extends DisplayElement implements HasHtmlString
     private final boolean _disabled;
     private final String _dirName;
     private final boolean _forceSmallContext;
-    private final Format _format;
     private final String _form;
     private final String _formAction;
     private final String _formEncType;
@@ -114,8 +111,7 @@ public class Input extends DisplayElement implements HasHtmlString
     private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
-    private final boolean _unsafeValue;
-    private final Object _value;
+    private final HtmlString _value;
 
     protected Input(InputBuilder builder)
     {
@@ -133,7 +129,6 @@ public class Input extends DisplayElement implements HasHtmlString
         _formMethod = builder._formMethod;
         _formTarget = builder._formTarget;
         _formNoValidate = builder._formNoValidate == null ? false : builder._formNoValidate;
-        _format = builder._format;
         _formGroup = builder._formGroup == null ? false : builder._formGroup;
         _id = builder._id;
         _label = builder._label;
@@ -157,7 +152,6 @@ public class Input extends DisplayElement implements HasHtmlString
         _state = builder._state;
         _step = builder._step;
         _showLabel = builder._showLabel == null ? builder._label != null : builder._showLabel;
-        _unsafeValue = builder._unsafeValue == null ? false : builder._unsafeValue;
         _value = builder._value;
         _needsWrapping = builder._needsWrapping == null ? true : builder._needsWrapping;
     }
@@ -200,11 +194,6 @@ public class Input extends DisplayElement implements HasHtmlString
     public boolean isForceSmallContext()
     {
         return _forceSmallContext;
-    }
-
-    public Format getFormat()
-    {
-        return _format;
     }
 
     public boolean isFormGroup()
@@ -297,14 +286,9 @@ public class Input extends DisplayElement implements HasHtmlString
         return _type;
     }
 
-    public Object getValue()
+    public HtmlString getValue()
     {
         return _value;
-    }
-
-    protected boolean isUnsafeValue()
-    {
-        return _unsafeValue;
     }
 
     public boolean needsWrapping()
@@ -626,29 +610,14 @@ public class Input extends DisplayElement implements HasHtmlString
         {
             sb.append(" checked");
         }
+        renderValue(sb);
+    }
 
-        if (getValue() != null && !"".equals(getValue()))
+    protected void renderValue(StringBuilder sb)
+    {
+        if (getValue() != null && !"".equals(getValue().toString()))
         {
-            // 4934: Don't render form input values with formatter since we don't parse formatted inputs on post.
-            // For now, we can at least render disabled inputs with formatting since a
-            // hidden input with the actual value is emitted for disabled items.
-            String stringValue;
-            if (null != getFormat() && isDisabled())
-            {
-                try
-                {
-                    stringValue = getFormat().format(getValue());
-                }
-                catch (IllegalArgumentException x)
-                {
-                    stringValue = ConvertUtils.convert(getValue());
-                }
-            }
-            else
-                stringValue = ConvertUtils.convert(getValue());
-
-            // TODO: HtmlString - should always filter, or else take an HtmlString value as an option
-            sb.append(" value=\"").append(isUnsafeValue() ? stringValue : PageFlowUtil.filter(stringValue)).append("\"");
+            sb.append(" value=\"").append(_value.toString()).append("\"");
         }
     }
 
@@ -664,7 +633,6 @@ public class Input extends DisplayElement implements HasHtmlString
         private Boolean _disabled;
         private String _dirName;
         private Boolean _forceSmallContext;
-        private Format _format;
         private String _form;
         private String _formAction;
         private String _formEncodingType;
@@ -693,8 +661,7 @@ public class Input extends DisplayElement implements HasHtmlString
         private Integer _step;
         private String _stateMessage;
         private String _type = "text";
-        private Boolean _unsafeValue;
-        private Object _value;
+        private HtmlString _value;
         private Boolean _needsWrapping;
 
         public InputBuilder()
@@ -728,12 +695,6 @@ public class Input extends DisplayElement implements HasHtmlString
         public T forceSmallContext(boolean forceSmallContext)
         {
             _forceSmallContext = forceSmallContext;
-            return (T)this;
-        }
-
-        public T formatter(Format format)
-        {
-            _format = format;
             return (T)this;
         }
 
@@ -841,17 +802,15 @@ public class Input extends DisplayElement implements HasHtmlString
             return (T)this;
         }
 
-        public T unsafeValue(Object unsafeValue)
+        public T value(HtmlString value)
         {
-            _unsafeValue = true;
-            _value = unsafeValue;
+            _value = value;
             return (T)this;
         }
 
-        public T value(Object value)
+        public T value(String value)
         {
-            _unsafeValue = false;
-            _value = value;
+            _value = HtmlString.of(value);
             return (T)this;
         }
 

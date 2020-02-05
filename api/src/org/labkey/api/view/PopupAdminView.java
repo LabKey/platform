@@ -24,7 +24,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.menu.FolderAdminMenu;
 import org.labkey.api.view.menu.ProjectAdminMenu;
@@ -81,7 +81,7 @@ public class PopupAdminView
         User user = context.getUser();
         NavTree navTree = new NavTree("Admin");
 
-        if (user.hasRootPermission(AdminReadPermission.class))
+        if (user.hasRootPermission(TroubleShooterPermission.class))
         {
             NavTree siteAdmin = new NavTree("Site");
             siteAdmin.addChildren(SiteAdminMenu.getNavTree(context));
