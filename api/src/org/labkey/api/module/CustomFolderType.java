@@ -21,7 +21,7 @@ import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HelpTopic;
@@ -150,7 +150,7 @@ public class CustomFolderType implements FolderType
             if (container.hasPermission(user, ReadPermission.class))
                 tabs.add(new NavTree("Projects", PageFlowUtil.urlProvider(CoreUrls.class).getProjectsURL(context.getContainer())));
 
-            if (container.hasPermission(user, AdminReadPermission.class))
+            if (container.hasPermission(user, TroubleShooterPermission.class))
             {
                 url = PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
                 tabs.add(new NavTree("Admin Console", url));

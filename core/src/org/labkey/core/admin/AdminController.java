@@ -134,7 +134,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -9257,7 +9257,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class TestMothershipReportAction extends ReadOnlyApiAction<MothershipReportSelectionForm>
     {
         @Override
@@ -9355,7 +9355,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class SuspiciousAction extends SimpleViewAction<Object>
     {
         @Override

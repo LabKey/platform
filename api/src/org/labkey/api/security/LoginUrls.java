@@ -23,8 +23,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
-import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
@@ -36,7 +34,6 @@ import java.util.List;
 public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
-    ActionURL getConfigureDbLoginURL();
     ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters);
     ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
     ActionURL getInitialUserURL();
@@ -47,12 +44,7 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLogoutURL(Container c, URLHelper returnURL);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
-    ActionURL getEnableProviderURL(AuthenticationProvider provider);
-    ActionURL getDisableProviderURL(AuthenticationProvider provider);
-    ActionURL getSSORedirectURL(SSOAuthenticationConfiguration configuration, URLHelper returnURL, boolean skipProfile);
-    ActionURL getEnableConfigParameterURL(String name);
-    ActionURL getDisableConfigParameterURL(String name);
+    ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
-    ModelAndView getPickLogosView(@Nullable Integer rowId, boolean reshow, boolean formatInTable, BindException errors);
 }

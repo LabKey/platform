@@ -111,7 +111,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class<?>, String>> INSTANTIATED_MODULES = new HashSet<>();
+    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
     private static final String XML_FILENAME = "module.xml";
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
@@ -219,7 +219,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class<?>, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class, String> reg = new Pair<>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else

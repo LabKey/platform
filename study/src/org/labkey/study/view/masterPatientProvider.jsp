@@ -115,8 +115,8 @@
     <labkey:form method="post" layout="horizontal" onsubmit="LABKEY.setSubmit(true);">
         <%= options %>
 
-        <labkey:input type="text" label="Server URL *" name="url" value="<%= h(settings != null ? settings.getUrl() : null) %>" size="50" isRequired="true" onChange="LABKEY.setDirty(true);"/>
-        <labkey:input type="text" label="User *" name="username" value="<%= h(settings != null ? settings.getUsername() : null) %>"
+        <labkey:input type="text" label="Server URL *" name="url" value="<%=settings != null ? settings.getUrl() : null%>" size="50" isRequired="true" onChange="LABKEY.setDirty(true);"/>
+        <labkey:input type="text" label="User *" name="username" value="<%=settings != null ? settings.getUsername() : null%>"
                       isRequired="true" contextContent="Provide a valid user name for logging onto the Master Patient Index server" forceSmallContext="true" onChange="LABKEY.setDirty(true);"/>
         <labkey:input type="password" label="Password *" name="password"
                       isRequired="true" contextContent="Provide the password for the user name" forceSmallContext="true" onChange="LABKEY.setDirty(true);"/>

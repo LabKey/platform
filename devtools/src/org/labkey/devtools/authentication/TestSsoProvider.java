@@ -17,37 +17,31 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.security.AuthenticationConfiguration;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
-import org.labkey.devtools.authentication.TestSsoController.TestSsoConfigureForm;
+import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationAction;
+import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationForm;
 
 /**
  * Created by adam on 6/5/2016.
  */
-public class TestSsoProvider implements SSOAuthenticationProvider
+public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfiguration>
 {
     public static final String NAME = "TestSSO";
     static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
-    public AuthenticationConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
+    public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
         return new TestSsoConfiguration(this, cs.getStandardSettings());
     }
 
-    @Nullable
     @Override
-    public ActionURL getConfigurationLink()
+    public @NotNull ActionURL getSaveLink()
     {
-        return getConfigurationLink(null);
-    }
-
-    @Override
-    public @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
-    {
-        return TestSsoController.getConfigureURL(rowId);
+        return new ActionURL(TestSsoSaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull
@@ -64,9 +58,11 @@ public class TestSsoProvider implements SSOAuthenticationProvider
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
     }
 
+    // TODO: Remove this once we stop upgrading from 19.3
+
     @Override
-    public @Nullable TestSsoConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
+    public @Nullable TestSsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos)
     {
-        return active || hasLogos ? new TestSsoConfigureForm() : null;
+        return active || hasLogos ? new TestSsoSaveConfigurationForm() : null;
     }
 }

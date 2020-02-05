@@ -26,6 +26,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
@@ -352,7 +353,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return;
 
         Throwable exceptionToRender = _prepareException;
-        String errorHtml = null;
+        HtmlString errorHtml = null;
 
         String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing ignored = MiniProfiler.step(name))
@@ -383,7 +384,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 }
                 catch (NotFoundException x)
                 {
-                    errorHtml = PageFlowUtil.filter("Not Found : " + x.getMessage());
+                    errorHtml = HtmlString.of("Not Found : " + x.getMessage());
                 }
                 catch (Throwable t)
                 {
@@ -410,7 +411,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             {
                 if (errorHtml != null)
                 {
-                    response.getWriter().write(errorHtml);
+                    response.getWriter().write(errorHtml.toString());
                 }
                 if (exceptionToRender != null)
                 {
