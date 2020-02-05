@@ -22,6 +22,7 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -411,7 +412,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         // NOTE: this will only be needed in HaplotypeAssayProvider; thus this is no-op.
     }
@@ -1042,6 +1043,13 @@ public abstract class AbstractAssayProvider implements AssayProvider
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
             domains.add(domainInfo.getKey());
 
+        // see if there is a plate metadata domain associated with this protocol
+        if (AssayPlateMetadataService.getService(getDataType()) != null)
+        {
+            Domain plateDomain = AssayPlateMetadataService.getService(getDataType()).getPlateDataDomain(protocol);
+            if (plateDomain != null)
+                domains.add(plateDomain);
+        }
         Set<Container> defaultValueContainers = new HashSet<>();
         defaultValueContainers.add(protocol.getContainer());
         defaultValueContainers.addAll(protocol.getExpRunContainers());

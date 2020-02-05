@@ -457,7 +457,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             addAssayResultRowsProvenance(container, run, inserted, rowIdToLsidMap);
 
             // add plate metadata if the assay is configured to support it
-            addAssayPlateMetadata(container, user, run, provider, protocol, inserted, rowIdToLsidMap);
+            addAssayPlateMetadata(container, user, run, provider, protocol, data, inserted, rowIdToLsidMap);
 
             if (shouldAddInputMaterials())
             {
@@ -543,7 +543,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     private void addAssayPlateMetadata(Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
-                                       List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
+                                       ExpData resultData, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
     {
         if (provider.isPlateMetadataEnabled(protocol))
         {
@@ -554,7 +554,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExpData plateMetadata = datas.get(0);
                 AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateMetadata.getDataType());
                 if (svc != null)
-                    svc.addAssayPlateMetadata(plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
+                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
                 else
                     throw new ExperimentException("No PlateMetadataService registered for data type : " + plateMetadata.getDataType().toString());
             }
