@@ -45,7 +45,7 @@ public class UpdateView extends DataView
     @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
-        return col.isShownInUpdateView();
+        return col.isUserEditable() && col.isShownInUpdateView();
     }
 
     @Override
