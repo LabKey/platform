@@ -23,6 +23,9 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayService;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 
 /**
  * User: kevink
@@ -49,7 +52,15 @@ public class AssayProviderTable extends VirtualTable<AssaySchema>
 
         ExprColumn runLSIDPrefixCol = new ExprColumn(this, "RunLSIDPrefix", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".RunLSIDPrefix"), JdbcType.INTEGER);
         runLSIDPrefixCol.setHidden(true);
+        runLSIDPrefixCol.setShownInDetailsView(false);
         addColumn(runLSIDPrefixCol);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return ReadPermission.class.isAssignableFrom(perm) &&
+                getUserSchema().getContainer().hasPermission(user, perm);
     }
 
     @Override @NotNull
