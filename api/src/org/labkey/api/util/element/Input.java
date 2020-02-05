@@ -16,6 +16,7 @@
 package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
@@ -111,7 +112,7 @@ public class Input extends DisplayElement implements HasHtmlString
     private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
-    private final HtmlString _value;
+    private final @Nullable HtmlString _value;
 
     protected Input(InputBuilder builder)
     {
