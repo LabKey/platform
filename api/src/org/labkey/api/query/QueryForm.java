@@ -158,7 +158,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     }
 
     @Override
-    public @NotNull BindException bindParameters(PropertyValues params)
+    public final @NotNull BindException bindParameters(PropertyValues params)
     {
         return doBindParameters(params);
     }

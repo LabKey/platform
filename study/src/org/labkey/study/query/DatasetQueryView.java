@@ -586,10 +586,6 @@ public class DatasetQueryView extends StudyQueryView
         private int _datasetId;
         private int _visitRowId;
 
-        public @NotNull BindException bindParameters(PropertyValues params)
-        {
-            return BaseViewAction.springBindParameters(this, "form", params);
-        }
 
         public String getCohortFilterType()
         {
