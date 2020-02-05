@@ -976,7 +976,6 @@ public class RolapTestCase extends Assert
                 "    NON EMPTY [Assay].[Name].members ON ROWS\n" +
                 "FROM junitcube"
         );
-//        System.out.println(cs); System.out.flush();
         assertEquals( 4, cs.size());
         assertEquals(48, (int)cs.get("[Assay].[Flow Cytometry]"));
         assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
