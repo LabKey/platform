@@ -91,24 +91,25 @@ export class App extends PureComponent<{}, State> {
         if (!this.state.canEdit) {
             return;
         }
+        const globalSettingsDirtinessData = this.state.dirtinessData.globalSettings;
         const oldState = this.state.globalSettings[id];
+        const newState = {...this.state.globalSettings, [id]: !oldState };
+
         this.setState(
             prevState => ({
                 ...prevState,
-                globalSettings: {
-                    ...prevState.globalSettings,
-                    [id]: !oldState,
-                },
-            }),
-            () => {
-                this.checkIfDirty(this.state.globalSettings, this.state.dirtinessData.globalSettings);
-            }
+                globalSettings: { ...newState },
+                dirty: !isEquivalent(newState, globalSettingsDirtinessData)
+            })
         );
-    };
 
-    checkIfDirty = (obj1: any, obj2: any): void => {
-        const dirty = !isEquivalent(obj1, obj2);
-        this.setState(() => ({ dirty }));
+        // tried out something like this. Not getting it working so I'm going to leave it for tonight
+        // this.setState((prevState) => {
+        //     const globalSettings = {...prevState.globalSettings, [id]: !prevState.globalSettings[id]};
+        //     const dirty = !isEquivalent(globalSettings, prevState.globalSettings);
+        //
+        //     return {...prevState, globalSettings, dirty}
+        // });
     };
 
     saveChanges = (): void => {
@@ -181,15 +182,19 @@ export class App extends PureComponent<{}, State> {
 
         const items = reorder(this.state[configType], result.source.index, result.destination.index);
 
-        this.setState(
-            () => ({
-                [configType]: items,
-            }),
-            () => {
-                const dirty = this.draggableIsDirty().length > 0;
-                this.setState(() => ({ dirty }));
-            }
-        );
+        this.setState((state) => {
+            const newState = {...state, [configType]: items };
+
+            const configTypes = ['formConfigurations', 'ssoConfigurations', 'secondaryConfigurations'];
+            const dirtyStateAreas = configTypes.filter(configType => {
+                const newOrdering = newState[configType];
+                const oldOrdering = state.dirtinessData[configType];
+                return !isEquivalent(newOrdering, oldOrdering);
+            });
+            const dirty = dirtyStateAreas.length > 0;
+
+            return {...newState, dirty};
+        });
     };
 
     onDelete = (configuration: number, configType: string): void => {
@@ -218,8 +223,7 @@ export class App extends PureComponent<{}, State> {
         const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
         // Update our dirtiness information with added modal, since dirtiness should only track reordering
-        const dirtinessData = this.state.dirtinessData;
-        dirtinessData[configType] = newState;
+        const dirtinessData = { ...this.state.dirtinessData, [configType]: newState };
 
         this.setState({ [configType]: newState, dirtinessData });
     };

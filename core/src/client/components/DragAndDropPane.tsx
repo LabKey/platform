@@ -5,20 +5,18 @@ import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 import AuthRow from './AuthRow';
 
 interface Props {
-    configType?: string;
-    authConfigs?: AuthConfig[];
-    primaryProviders?: AuthConfigProvider[];
-    secondaryProviders?: AuthConfigProvider[];
-    canEdit?: boolean;
-    isDragDisabled?: boolean;
-    actions?: Actions;
+    configType: string;
+    authConfigs: AuthConfig[];
+    providers: AuthConfigProvider[];
+    canEdit: boolean;
+    isDragDisabled: boolean;
+    actions: Actions;
 }
 
 export default class DragAndDropPane extends PureComponent<Props> {
     render() {
-        const { primaryProviders, secondaryProviders, configType } = this.props;
+        const { providers, configType } = this.props;
         const { onDragEnd, ...otherActions } = this.props.actions;
-        const providers = primaryProviders ? primaryProviders : secondaryProviders;
 
         const DragAndDropAuthRows = this.props.authConfigs.map((authConfig, index) => (
             <Draggable

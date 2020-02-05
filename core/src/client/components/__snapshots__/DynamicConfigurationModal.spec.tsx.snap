@@ -224,6 +224,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
         bsStyle="default"
         className="labkey-button modal__save-button"
         disabled={false}
+        onClick={[Function]}
       >
         Cancel
       </Button>
@@ -445,6 +446,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
         bsStyle="default"
         className="labkey-button modal__save-button"
         disabled={false}
+        onClick={[Function]}
       >
         Close
       </Button>
@@ -715,6 +717,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
         bsStyle="default"
         className="labkey-button modal__save-button"
         disabled={false}
+        onClick={[Function]}
       >
         Cancel
       </Button>
@@ -974,6 +977,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
         bsStyle="default"
         className="labkey-button modal__save-button"
         disabled={false}
+        onClick={[Function]}
       >
         Close
       </Button>

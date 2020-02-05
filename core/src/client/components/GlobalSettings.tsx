@@ -35,13 +35,6 @@ interface Props {
 }
 
 export default class GlobalSettings extends PureComponent<Props, Props> {
-    constructor(props) {
-        super(props);
-        this.state = {
-            ...this.props,
-        };
-    }
-
     render() {
         let rowTexts = ROW_TEXTS;
         const { canEdit, authCount, checkGlobalAuthBox } = this.props;

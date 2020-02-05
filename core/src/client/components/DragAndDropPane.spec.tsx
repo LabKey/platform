@@ -3,7 +3,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import EnzymeToJson from 'enzyme-to-json';
 
-import { SSO_CONFIGURATIONS } from '../../../test/data';
+import { SSO_CONFIGURATIONS, PRIMARY_PROVIDERS, PROVIDERS } from '../../../test/data';
 
 import DragAndDropPane from './DragAndDropPane';
 
@@ -22,7 +22,9 @@ describe('<DragAndDropPane/>', () => {
 
         component = (
             <DragAndDropPane
+                configType={"ssoConfigurations"}
                 authConfigs={SSO_CONFIGURATIONS}
+                providers={PROVIDERS}
                 canEdit={true}
                 isDragDisabled={false}
                 actions={actionFns}

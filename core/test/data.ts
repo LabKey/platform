@@ -295,6 +295,28 @@ export const SECONDARY_CONFIGURATIONS = [ {
     "integrationKey" : "fdas"
 }];
 
+export const PROVIDERS = [{
+        "helpLink" : "https://www.labkey.org/Documentation/20.0/wiki-page.view?name=configureCas",
+        "saveLink" : "/labkey/casclient-casSaveConfiguration.view?",
+        "settingsFields" : [ {
+        "defaultValue" : "",
+        "name" : "serverUrl",
+        "caption" : "CAS Server URL",
+        "description" : "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+        "type" : "input",
+        "required" : true
+    }, {
+        "defaultValue" : false,
+        "name" : "autoRedirect",
+        "caption" : "Default to CAS Login",
+        "description" : "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+        "type" : "checkbox",
+        "required" : false
+    } ],
+        "description" : "Central Authentication Service (CAS)",
+        "sso" : true
+}];
+
 export const PRIMARY_PROVIDERS = {
     "CAS" : {
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",

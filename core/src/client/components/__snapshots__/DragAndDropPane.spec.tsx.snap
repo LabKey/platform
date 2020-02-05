@@ -6,6 +6,7 @@ exports[`<DragAndDropPane/> Drag is disabled 1`] = `
 >
   <Connect(Droppable)
     direction="vertical"
+    droppableId="ssoConfigurations"
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}
@@ -22,6 +23,7 @@ exports[`<DragAndDropPane/> Editable 1`] = `
 >
   <Connect(Droppable)
     direction="vertical"
+    droppableId="ssoConfigurations"
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}
@@ -38,6 +40,7 @@ exports[`<DragAndDropPane/> View-only 1`] = `
 >
   <Connect(Droppable)
     direction="vertical"
+    droppableId="ssoConfigurations"
     ignoreContainerClipping={false}
     isCombineEnabled={false}
     isDropDisabled={false}

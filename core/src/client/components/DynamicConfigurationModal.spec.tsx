@@ -9,14 +9,27 @@ import DynamicConfigurationModal from './DynamicConfigurationModal';
 
 describe('<DynamicConfigurationModal/>', () => {
     test('CAS Modal', () => {
-        const component = <DynamicConfigurationModal modalType={CAS_MODAL_TYPE} provider="CAS" canEdit={true} />;
+        const component =
+            <DynamicConfigurationModal
+                modalType={CAS_MODAL_TYPE}
+                provider="CAS" canEdit={true}
+                updateAuthRowsAfterSave={() => {}}
+                closeModal={() => {}}
+            />;
 
         const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test('CAS Modal View-only', () => {
-        const component = <DynamicConfigurationModal modalType={CAS_MODAL_TYPE} provider="CAS" canEdit={false} />;
+        const component =
+            <DynamicConfigurationModal
+                modalType={CAS_MODAL_TYPE}
+                provider="CAS"
+                canEdit={false}
+                updateAuthRowsAfterSave={() => {}}
+                closeModal={() => {}}
+            />;
 
         const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
@@ -24,7 +37,13 @@ describe('<DynamicConfigurationModal/>', () => {
 
     test('Duo Modal', () => {
         const component = (
-            <DynamicConfigurationModal modalType={DUO_MODAL_TYPE} provider="Duo 2 Factor" canEdit={true} />
+            <DynamicConfigurationModal
+                modalType={DUO_MODAL_TYPE}
+                provider="Duo 2 Factor"
+                canEdit={true}
+                updateAuthRowsAfterSave={() => {}}
+                closeModal={() => {}}
+            />
         );
 
         const wrapper = shallow(component);
@@ -33,7 +52,13 @@ describe('<DynamicConfigurationModal/>', () => {
 
     test('Duo Modal View-only', () => {
         const component = (
-            <DynamicConfigurationModal modalType={DUO_MODAL_TYPE} provider="Duo 2 Factor" canEdit={false} />
+            <DynamicConfigurationModal
+                modalType={DUO_MODAL_TYPE}
+                provider="Duo 2 Factor"
+                canEdit={false}
+                updateAuthRowsAfterSave={() => {}}
+                closeModal={() => {}}
+            />
         );
 
         const wrapper = shallow(component);

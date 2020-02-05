@@ -21,8 +21,8 @@ interface Props extends AuthConfig {
     details?: string,
     provider?: string,
     configType?: string;
-    canEdit?: boolean;
-    draggable?: boolean;
+    canEdit: boolean;
+    draggable: boolean;
     onDelete?: Function;
     toggleModalOpen?: Function;
     updateAuthRowsAfterSave?: Function;
@@ -50,7 +50,7 @@ export default class AuthRow extends PureComponent<Props, State> {
 
     render() {
         const { canEdit, draggable, provider, toggleModalOpen } = this.props;
-        const isDatabaseAuth = provider == 'Database';
+        const isDatabaseAuth = (provider == 'Database');
 
         const handle = draggable && canEdit ? <LightupHandle /> : null;
 

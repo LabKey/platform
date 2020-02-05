@@ -15,11 +15,11 @@ interface Props {
     configType?: string;
     description?: string;
     enabled?: boolean;
-    canEdit?: boolean;
+    canEdit: boolean;
     title?: string;
     provider?: string;
-    updateAuthRowsAfterSave?: Function;
-    closeModal?: Function;
+    updateAuthRowsAfterSave: Function;
+    closeModal: Function;
     configuration?: number;
     headerLogoUrl?: string;
     loginLogoUrl?: string;

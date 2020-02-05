@@ -9,15 +9,13 @@ import AuthRow from './AuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 
 interface ViewOnlyAuthConfigRowsProps {
-    data?: AuthConfig[];
-    primaryProviders?: AuthConfigProvider[];
-    secondaryProviders?: AuthConfigProvider[];
+    data: AuthConfig[];
+    providers?: AuthConfigProvider[];
 }
 
 class ViewOnlyAuthConfigRows extends PureComponent<ViewOnlyAuthConfigRowsProps> {
     render() {
-        const { primaryProviders, secondaryProviders, data } = this.props;
-        const providers = primaryProviders ? primaryProviders : secondaryProviders;
+        const { providers, data } = this.props;
 
         return (
             <div>
@@ -47,7 +45,14 @@ interface PrimaryTabProps {
 
 class PrimaryTab extends PureComponent<PrimaryTabProps> {
     render() {
-        const {addNewPrimaryDropdown, loginFormTipText, primaryTabLoginForm, SSOTipText, primaryTabSSO, canEdit} = this.props;
+        const {
+            addNewPrimaryDropdown,
+            loginFormTipText,
+            primaryTabLoginForm,
+            SSOTipText,
+            primaryTabSSO,
+            canEdit
+        } = this.props;
 
         return(
             <>
@@ -213,14 +218,14 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     <DragAndDropPane
                         configType="formConfigurations"
                         authConfigs={formConfigurations.slice(0, -1)} // Database config is excluded from DragAndDrop
-                        primaryProviders={primaryProviders}
-                        canEdit={this.props.canEdit}
+                        providers={primaryProviders}
+                        canEdit={canEdit}
                         isDragDisabled={this.props.isDragDisabled}
                         actions={this.props.actions}
                     />
 
                     <AuthRow
-                        canEdit={this.props.canEdit}
+                        canEdit={canEdit}
                         draggable={false}
                         description={dbAuth.description}
                         provider={dbAuth.provider}
@@ -229,7 +234,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     />
                 </div>
             ) : (
-                <ViewOnlyAuthConfigRows data={formConfigurations} primaryProviders={primaryProviders} />
+                <ViewOnlyAuthConfigRows data={formConfigurations} providers={primaryProviders} />
             );
 
         const primaryTabSSO =
@@ -237,13 +242,13 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                 <DragAndDropPane
                     configType="ssoConfigurations"
                     authConfigs={ssoConfigurations}
-                    primaryProviders={primaryProviders}
-                    canEdit={this.props.canEdit}
+                    providers={primaryProviders}
+                    canEdit={canEdit}
                     isDragDisabled={this.props.isDragDisabled}
                     actions={this.props.actions}
                 />
             ) : (
-                <ViewOnlyAuthConfigRows data={ssoConfigurations} primaryProviders={primaryProviders} />
+                <ViewOnlyAuthConfigRows data={ssoConfigurations} providers={primaryProviders} />
             );
 
         const secondaryTabDuo =
@@ -251,13 +256,13 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                 <DragAndDropPane
                     configType="secondaryConfigurations"
                     authConfigs={secondaryConfigurations}
-                    secondaryProviders={secondaryProviders}
-                    canEdit={this.props.canEdit}
+                    providers={secondaryProviders}
+                    canEdit={canEdit}
                     isDragDisabled={this.props.isDragDisabled}
                     actions={this.props.actions}
                 />
             ) : (
-                <ViewOnlyAuthConfigRows data={secondaryConfigurations} secondaryProviders={secondaryProviders} />
+                <ViewOnlyAuthConfigRows data={secondaryConfigurations} providers={secondaryProviders} />
             );
 
         const dataBaseModal = (this.state.primaryModalOpen || this.state.secondaryModalOpen) &&
@@ -270,7 +275,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                         configType={this.determineconfigType(this.state.addModalType)}
                         description={this.state.addModalType + ' Configuration'}
                         enabled={true}
-                        canEdit={this.props.canEdit}
+                        canEdit={canEdit}
                         title={'New ' + this.state.addModalType + ' Configuration'}
                         provider={this.state.addModalType}
                         updateAuthRowsAfterSave={this.props.actions.updateAuthRowsAfterSave}
@@ -307,19 +312,11 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                         </Tab>
 
                         <Tab eventKey={2} title="Secondary">
-                            <div className="configurations__auth-tab">
-                                {canEdit && (
-                                    <div className="configurations__dropdown">
-                                        <DropdownButton
-                                            id="secondary-configurations-dropdown"
-                                            title="Add New Secondary Configuration">
-                                            {addNewSecondaryDropdown}
-                                        </DropdownButton>
-                                    </div>
-                                )}
-
-                                {secondaryTabDuo}
-                            </div>
+                            <SecondaryTab
+                                canEdit={canEdit}
+                                addNewSecondaryDropdown={addNewSecondaryDropdown}
+                                secondaryTabDuo={secondaryTabDuo}
+                            />
                         </Tab>
                     </Tabs>
                 </Panel.Body>

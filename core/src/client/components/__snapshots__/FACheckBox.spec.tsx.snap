@@ -2,7 +2,7 @@
 
 exports[`<FACheckBox/> Checked, clickable 1`] = `
 <span
-  className="no-highlight clickable undefined"
+  className="no-highlight clickable "
   onClick={[Function]}
 >
   <svg
@@ -28,7 +28,7 @@ exports[`<FACheckBox/> Checked, clickable 1`] = `
 
 exports[`<FACheckBox/> Checked, view-only 1`] = `
 <span
-  className="no-highlight undefined"
+  className="no-highlight "
   onClick={[Function]}
 >
   <svg
@@ -54,7 +54,7 @@ exports[`<FACheckBox/> Checked, view-only 1`] = `
 
 exports[`<FACheckBox/> Unchecked, clickable 1`] = `
 <span
-  className="no-highlight clickable undefined"
+  className="no-highlight clickable "
   onClick={[Function]}
 >
   <svg
@@ -80,7 +80,7 @@ exports[`<FACheckBox/> Unchecked, clickable 1`] = `
 
 exports[`<FACheckBox/> Unchecked, view-only 1`] = `
 <span
-  className="no-highlight undefined"
+  className="no-highlight "
   onClick={[Function]}
 >
   <svg

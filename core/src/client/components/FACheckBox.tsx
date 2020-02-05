@@ -22,7 +22,7 @@ export default class FACheckBox extends PureComponent<Props> {
         const classNames = this.props.canEdit ? 'no-highlight clickable ' : 'no-highlight ';
 
         return (
-            <span className={classNames + this.props.name} onClick={() => this.props.onClick()}>
+            <span className={classNames + (this.props.name ? this.props.name : "")} onClick={() => this.props.onClick()}>
                 {checkedOrNot}
             </span>
         );

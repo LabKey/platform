@@ -7,14 +7,14 @@ import DatabaseConfigurationModal from './DatabaseConfigurationModal';
 
 describe('<DatabaseConfigurationModal/>', () => {
     test('View-only', () => {
-        const component = <DatabaseConfigurationModal canEdit={false} />;
+        const component = <DatabaseConfigurationModal canEdit={false} closeModal={() => {}} />;
 
         const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();
     });
 
     test('Editable', () => {
-        const component = <DatabaseConfigurationModal canEdit={true} />;
+        const component = <DatabaseConfigurationModal canEdit={true} closeModal={() => {}} />;
 
         const wrapper = shallow(component);
         expect(EnzymeToJson(wrapper)).toMatchSnapshot();

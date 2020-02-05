@@ -13,7 +13,7 @@ const OPTIONS_MAP = {
 };
 
 interface Props extends AuthConfig {
-    closeModal?: Function;
+    closeModal: Function;
     canEdit: boolean;
 }
 
@@ -103,7 +103,6 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                         <span className="database-modal__field">
                             <ButtonGroup onClick={this.handleChange}>
                                 <Button
-                                    data-key="1"
                                     value="Weak"
                                     name="strength"
                                     active={passwordStrength == 'Weak'}
@@ -111,7 +110,6 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                     Weak
                                 </Button>
                                 <Button
-                                    data-key="2"
                                     value="Strong"
                                     name="strength"
                                     active={passwordStrength == 'Strong'}

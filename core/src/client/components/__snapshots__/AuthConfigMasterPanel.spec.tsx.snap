@@ -137,55 +137,48 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
         eventKey={2}
         title="Secondary"
       >
-        <div
-          className="configurations__auth-tab"
-        >
-          <div
-            className="configurations__dropdown"
-          >
-            <DropdownButton
-              id="secondary-configurations-dropdown"
-              title="Add New Secondary Configuration"
-            />
-          </div>
-          <DragAndDropPane
-            actions={
-              Object {
-                "onDelete": [Function],
-                "onDragEnd": [Function],
-                "toggleModalOpen": [Function],
-                "updateAuthRowsAfterSave": [Function],
+        <SecondaryTab
+          canEdit={true}
+          secondaryTabDuo={
+            <DragAndDropPane
+              actions={
+                Object {
+                  "onDelete": [Function],
+                  "onDragEnd": [Function],
+                  "toggleModalOpen": [Function],
+                  "updateAuthRowsAfterSave": [Function],
+                }
               }
-            }
-            authConfigs={
-              Array [
-                Object {
-                  "apiHostname": "Key1",
-                  "configuration": 87,
-                  "description": "Duo 2 Factor Configuration",
-                  "details": "Key1",
-                  "enabled": false,
-                  "integrationKey": "Key1",
-                  "provider": "Duo 2 Factor",
-                  "userIdentifier": "UserID",
-                },
-                Object {
-                  "apiHostname": "Key2",
-                  "configuration": 88,
-                  "description": "Duo 2 Factor Configuration 2",
-                  "details": "Key2",
-                  "enabled": false,
-                  "integrationKey": "fdas",
-                  "provider": "Duo 2 Factor",
-                  "userIdentifier": "UserID",
-                },
-              ]
-            }
-            canEdit={true}
-            configType="secondaryConfigurations"
-            isDragDisabled={false}
-          />
-        </div>
+              authConfigs={
+                Array [
+                  Object {
+                    "apiHostname": "Key1",
+                    "configuration": 87,
+                    "description": "Duo 2 Factor Configuration",
+                    "details": "Key1",
+                    "enabled": false,
+                    "integrationKey": "Key1",
+                    "provider": "Duo 2 Factor",
+                    "userIdentifier": "UserID",
+                  },
+                  Object {
+                    "apiHostname": "Key2",
+                    "configuration": 88,
+                    "description": "Duo 2 Factor Configuration 2",
+                    "details": "Key2",
+                    "enabled": false,
+                    "integrationKey": "fdas",
+                    "provider": "Duo 2 Factor",
+                    "userIdentifier": "UserID",
+                  },
+                ]
+              }
+              canEdit={true}
+              configType="secondaryConfigurations"
+              isDragDisabled={false}
+            />
+          }
+        />
       </Tab>
     </Uncontrolled(Tabs)>
   </PanelBody>
