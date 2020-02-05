@@ -19,6 +19,7 @@
 <tables xsi:schemaLocation="http://labkey.org/data/xml ../../../api/schemas/tableInfo.xsd"
         xmlns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <table tableName="Announcements" tableDbType="TABLE">
+    <tableUrl>org.labkey.announcements.AnnouncementsController$ThreadAction.class?rowId=${RowId}</tableUrl>
     <columns>
       <column columnName="RowId">
         <columnTitle>Row Id</columnTitle>
