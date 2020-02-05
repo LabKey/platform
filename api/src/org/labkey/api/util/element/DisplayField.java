@@ -36,7 +36,7 @@ public class DisplayField extends Input
     @Override
     protected void doValue(StringBuilder sb)
     {
-        renderValue(sb);
+        renderValueIfNonEmpty(sb::append);
     }
 
     @Override

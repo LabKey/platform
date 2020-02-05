@@ -72,7 +72,7 @@ public class TextArea extends Input
     @Override
     protected void doValue(StringBuilder sb)
     {
-        renderValue(sb);
+        renderValueIfNonEmpty(sb::append);
     }
 
     public static class TextAreaBuilder extends InputBuilder<TextAreaBuilder>

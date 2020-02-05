@@ -25,6 +25,7 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
 public class Input extends DisplayElement implements HasHtmlString
@@ -611,14 +612,14 @@ public class Input extends DisplayElement implements HasHtmlString
         {
             sb.append(" checked");
         }
-        renderValue(sb);
+        renderValueIfNonEmpty(s -> sb.append(" value=\"").append(s).append("\""));
     }
 
-    protected void renderValue(StringBuilder sb)
+    protected void renderValueIfNonEmpty(Consumer<String> consumer)
     {
-        if (getValue() != null && !"".equals(getValue().toString()))
+        if (_value != null && !"".equals(_value.toString()))
         {
-            sb.append(" value=\"").append(_value.toString()).append("\"");
+            consumer.accept(_value.toString());
         }
     }
 
