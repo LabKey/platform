@@ -18,11 +18,9 @@ import {List} from "immutable";
 import * as React from 'react'
 import {Button, Col, Panel, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, WizardNavButtons} from "@glass/base";
-import {DomainForm, DomainDesign, clearFieldDetails, fetchDomain, saveDomain, SEVERITY_LEVEL_ERROR, SEVERITY_LEVEL_WARN, IBannerMessage, getBannerMessages} from "@glass/domainproperties"
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
 
-import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@labkey/components/dist/components.css"
 import "./domainDesigner.scss";
 
 interface IAppState {
@@ -35,6 +33,9 @@ interface IAppState {
     schemaName: string
     showConfirm: boolean
     submitting: boolean
+    includeWarnings: boolean
+    showWarnings: boolean
+    badDomain : DomainDesign
 }
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
@@ -60,7 +61,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             submitting: false,
             messages,
             showConfirm: false,
-            dirty: false
+            dirty: false,
+            includeWarnings: true
         };
     }
 
@@ -83,7 +85,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     handleWindowBeforeUnload = (event) => {
-
         if (this.state.dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
@@ -94,19 +95,16 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     submitHandler = (navigate : boolean) => {
-        const { domain, submitting } = this.state;
+        const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
             return;
         }
 
-        this.setState({
-            submitting: true
-        });
+        this.setState(() => ({submitting: true}));
 
-        saveDomain(domain)
+        saveDomain(domain, undefined, undefined, undefined,  includeWarnings)
             .then((savedDomain) => {
-
                 this.setState(() => ({
                     domain: savedDomain,
                     submitting: false,
@@ -120,10 +118,19 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }
             })
             .catch((badDomain) => {
-                this.setState(() => ({
-                    domain: badDomain,
-                    submitting: false
-                }));
+                // if there are only warnings then show ConfirmModel
+                if (badDomain.domainException.severity === "Warning") {
+                    this.setState(() => ({
+                        showWarnings : true,
+                        badDomain: badDomain
+                    }))
+                }
+                else {
+                    this.setState(() => ({
+                        domain: badDomain,
+                        submitting: false
+                    }));
+                }
             });
     };
 
@@ -131,8 +138,24 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         this.submitHandler(true);
     };
 
-    onChangeHandler = (newDomain, dirty) => {
+    confirmWarningAndNavigate = () => {
+        this.setState(() => ({
+            includeWarnings : false,
+            showWarnings : false,
+            submitting : false
+        }), () => {
+            this.submitHandler(true);
+        });
+    };
 
+    onSubmitWarningsCancel = () => {
+        this.setState(() => ({
+            showWarnings : false,
+            submitting : false
+        }))
+    };
+
+    onChangeHandler = (newDomain, dirty) => {
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty // if the state is already dirty, leave it as such
@@ -146,7 +169,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
-
         const { messages } = this.state;
 
         this.setState(Object.assign({}, additionalState, {
@@ -184,19 +206,50 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         )
     }
 
-    renderButtons() {
-        const { submitting, domain } = this.state;
+    renderWarningConfirm() {
+        const { badDomain } = this.state;
+        const errors = badDomain.domainException.errors;
+        const question = <p> {"There are issues with the following fields that you may wish to resolve:"} </p>;
+        const warnings = errors.map((error) => {
+            return <li> {error.message} </li>
+        });
+
+        // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
+        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+        const suggestion = (
+            <p>
+                See the following documentation page for further details: <br/>
+                <a href={rollupURI} target={'_blank'}> {"Specimen properties and rollup rules"}</a>
+            </p>
+        );
 
         return (
-                <Row>
-                    <Col xs={1}>
-                        <Button className='domain-designer-save-btn' onClick={this.onCancelBtnHandler}>Cancel</Button>
-                    </Col>
-                    <Col xs={10} />
-                    <Col xs={1}>
-                        <Button className='pull-right domain-designer-save-btn' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
-                    </Col>
-                </Row>
+            <ConfirmModal
+                title='Save without resolving issues?'
+                msg={
+                    <>
+                        {question}
+                        <ul>{warnings}</ul>
+                        {suggestion}
+                    </>
+                }
+                confirmVariant='success'
+                onConfirm={this.confirmWarningAndNavigate}
+                onCancel={this.onSubmitWarningsCancel}
+                cancelButtonText='No, edit and resolve issues'
+                confirmButtonText='Yes, save changes'
+            />
+        )
+    }
+
+    renderButtons() {
+        const { submitting } = this.state;
+
+        return (
+            <div className={'domain-form-panel domain-designer-buttons'}>
+                <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
+                <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+            </div>
         )
     }
 
@@ -210,7 +263,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, messages, showConfirm } = this.state;
+        const { domain, messages, showConfirm, showWarnings } = this.state;
         const isLoading = domain === undefined && messages === undefined;
 
         if (isLoading) {
@@ -220,13 +273,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <>
                 { showConfirm && this.renderNavigateConfirm() }
+                { showWarnings && this.renderWarningConfirm() }
                 { domain && domain.instructions && this.renderInstructionsPanel()}
                 { domain &&
                     <DomainForm
                         headerTitle={'Fields'}
                         domain={domain}
                         onChange={this.onChangeHandler}
-                        showHeaderFieldCount={false}
                         useTheme={true}
                     />
                 }

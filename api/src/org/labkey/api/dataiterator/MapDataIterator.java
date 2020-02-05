@@ -149,7 +149,7 @@ public interface MapDataIterator extends DataIterator
         @Override
         public void debugLogInfo(StringBuilder sb)
         {
-            sb.append(this.getClass().getName() + "\n");
+            sb.append("  " + getDebugName() + ": " + this.getClass().getName() + "\n");
             if (null != _input)
                 _input.debugLogInfo(sb);
         }

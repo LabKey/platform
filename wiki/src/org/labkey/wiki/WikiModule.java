@@ -121,6 +121,7 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         WikiController.registerAdminConsoleLinks();
     }
 
+    // TODO should this move to CoreModule.populateLookAndFeelWithStartupProps()?
     private void populateHomeProjectWebpartsWithStartupProps()
     {
         String propName = "homeProjectInitWebparts";

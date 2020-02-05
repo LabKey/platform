@@ -18,7 +18,10 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter.FilterClause;
+import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
@@ -30,6 +33,7 @@ import org.labkey.data.xml.ConditionalFormatType;
 import org.labkey.data.xml.ConditionalFormatsType;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -67,16 +71,85 @@ public class ConditionalFormat extends GWTConditionalFormat
         return result;
     }
 
-    public boolean meetsCriteria(Object value)
+    /**
+     * Checks if the conditional format applies to the value.
+     * @throws RuntimeSQLException if the filter parameters are invalid.
+     */
+    private boolean _meetsCriteria(ColumnRenderProperties col, Object value)
     {
         for (FilterClause filterClause : getSimpleFilter().getClauses())
         {
-            if (!filterClause.meetsCriteria(value))
+            if (!filterClause.meetsCriteria(col, value))
             {
                 return false;
             }
         }
         return true;
+    }
+
+    /**
+     * Checks if the conditional format applies to the value.
+     */
+    public boolean meetsCriteria(ColumnInfo col, Object value)
+    {
+        try
+        {
+            return _meetsCriteria(col, value);
+        }
+        catch (RuntimeSQLException e)
+        {
+            // CompareType.convertParamValue will throw if the filter clause parameter(s) can't be converted
+            if (e.getSQLException() instanceof SQLGenerationException)
+            {
+                // Error message should have already been reported by <code>validateFormat</code>
+                return false;
+            }
+            else
+            {
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Validates the conditional format filter parameter values.
+     * @return An error message if the format is invalid, otherwise null
+     */
+    @Nullable
+    public String validateFormat(@NotNull ColumnRenderProperties col)
+    {
+        try
+        {
+            _meetsCriteria(col, newValue(col));
+            return null;
+        }
+        catch (RuntimeSQLException e)
+        {
+            // Deal with unparseable filter values - see issue 23321
+            // CompareType.convertParamValue will throw if the filter clause parameter(s) can't be converted
+            if (e.getSQLException() instanceof SQLGenerationException)
+            {
+                return "Invalid conditional format filter: " + e.getMessage();
+            }
+            else
+            {
+                throw e;
+            }
+        }
+    }
+
+    // best-effort to create new value instance for validating conditional format parameters
+    private Object newValue(ColumnRenderProperties col)
+    {
+        try
+        {
+            return col.getJavaClass().getDeclaredConstructor().newInstance();
+        }
+        catch (ReflectiveOperationException e)
+        {
+            // ok
+            return null;
+        }
     }
 
     @NotNull

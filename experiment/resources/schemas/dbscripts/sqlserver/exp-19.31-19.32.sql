@@ -1,0 +1,1 @@
+ALTER TABLE exp.ProtocolApplication ALTER COLUMN Comments NVARCHAR(MAX);

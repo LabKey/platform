@@ -172,7 +172,10 @@ public class AssayProviderSchema extends AssaySchema
             //if (protocolSchema == null)
             //    protocolSchema = new AssayProtocolSchema(_user, _container, protocol, provider);
             if (protocolSchema != null)
+            {
+                protocolSchema.setDefaultSchema(getDefaultSchema());
                 _protocolSchemas.put(protocol, protocolSchema);
+            }
         }
         return protocolSchema;
     }

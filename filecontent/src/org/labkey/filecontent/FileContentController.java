@@ -27,12 +27,12 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -42,6 +42,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SimpleFilter;
@@ -66,7 +67,6 @@ import org.labkey.api.files.FilesAdminOptions;
 import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
@@ -98,7 +98,6 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -161,16 +160,19 @@ public class FileContentController extends SpringActionController
 
     public static class FileUrlsImpl implements FileUrls
     {
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
+        @Override
         public ActionURL urlShowAdmin(Container container)
         {
             return new ActionURL(ShowAdminAction.class, container);
         }
 
+        @Override
         public ActionURL urlFileEmailPreference(Container container)
         {
             return new ActionURL(FileEmailPreferenceAction.class, container);
@@ -180,8 +182,9 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class SendFileAction extends SimpleViewAction<SendFileForm>
     {
-        WebdavResource _resource;
+        private WebdavResource _resource;
 
+        @Override
         public ModelAndView getView(SendFileForm form, BindException errors) throws Exception
         {
             if (null == form.getFileName())
@@ -393,6 +396,7 @@ public class FileContentController extends SpringActionController
             }
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
@@ -821,43 +825,35 @@ public class FileContentController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<ReturnUrlForm>
+    public class DesignerAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         @Override
-        public ModelAndView getView(ReturnUrlForm form, BindException errors)
+        public URLHelper getRedirectURL(ReturnUrlForm form)
         {
+            ActionURL successUrl = null;
             FileContentService svc = FileContentService.get();
-            String uri = svc.getDomainURI(getContainer());
-            // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
+            if (null != svc)
             {
-                OntologyManager.ensureDomainDescriptor(uri, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                String domainURI = svc.getDomainURI(getContainer());
+
+                // TODO consider moving ignoreSqlUpdates() into ensureDomainDescriptor()
+                try (var ignore = SpringActionController.ignoreSqlUpdates())
+                {
+                    OntologyManager.ensureDomainDescriptor(domainURI, FileContentServiceImpl.PROPERTIES_DOMAIN, getContainer());
+                }
+
+                Domain domain = PropertyService.get().getDomain(getContainer(), domainURI);
+                if (domain != null)
+                {
+                    successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
+                    form.propagateReturnURL(successUrl);
+                }
             }
-            Map<String, String> properties = new HashMap<>();
 
-            properties.put("typeURI", uri);
-            properties.put("domainName", FileContentServiceImpl.PROPERTIES_DOMAIN);
-            properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
-            properties.put(ActionURL.Param.cancelUrl.name(), form.getReturnUrl());
+            if (successUrl == null)
+                throw new NotFoundException("Unable to find file properties domain.");
 
-            return new GWTView("org.labkey.filecontent.designer.FilePropertiesDesigner", properties);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("propertyFields");
-            return root.addChild("File Properties Designer");
-        }
-    }
-
-    // GWT Action
-    @RequiresPermission(AdminPermission.class)
-    public class FilePropertiesServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new FilePropertiesServiceImpl(getViewContext());
+            return successUrl;
         }
     }
 
@@ -1360,34 +1356,33 @@ public class FileContentController extends SpringActionController
             // Issue 38409: limit number of exp.data to be process to prevent OutOfMemoryError
             final int MAX_ROW_COUNT = 10000;
 
-            new TableSelector(tableInfo, columns, null, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("dataFileUrl"), null, CompareType.NONBLANK);
+
+            new TableSelector(tableInfo, columns, filter, null).setMaxRows(MAX_ROW_COUNT).forEachMap(data ->
             {
                 Object encodedUrl = data.get("dataFileUrl");
-                if (null != encodedUrl)
+                Map<String, Object> row = new HashMap<>();
+                java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
+                row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
+                row.put("rowId", data.get("RowId"));
+                row.put("name", data.get("Name"));
+                if (null != form.getCustomProperties())
                 {
-                    Map<String, Object> row = new HashMap<>();
-                    java.nio.file.Path dataFilePath = FileUtil.stringToPath(getContainer(), (String) encodedUrl);
-                    row.put("dataFileUrl", null != dataFilePath ? FileUtil.pathToString(dataFilePath) : null);
-                    row.put("rowId", data.get("RowId"));
-                    row.put("name", data.get("Name"));
-                    if (null != form.getCustomProperties())
+                    for (String property : form.getCustomProperties())
                     {
-                        for (String property : form.getCustomProperties())
+                        ColumnInfo column = tableInfo.getColumn(property);
+                        if (null != column)
                         {
-                            ColumnInfo column = tableInfo.getColumn(property);
-                            if (null != column)
-                            {
-                                ColumnInfo displayColumn = column.getDisplayField();
+                            ColumnInfo displayColumn = column.getDisplayField();
 
-                                Map<String, Object> map = new HashMap<>();
-                                map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
-                                StringExpression url = column.getEffectiveURL();
-                                if (null != url)
-                                    map.put("url", url.eval(data));
+                            Map<String, Object> map = new HashMap<>();
+                            map.put("value", data.get(displayColumn == null ? column.getAlias() : displayColumn.getAlias()));
+                            StringExpression url = column.getEffectiveURL();
+                            if (null != url)
+                                map.put("url", url.eval(data));
 
-                                // Display value for a lookup has already been handled by Exp.Data
-                                row.put(property, map);
-                            }
+                            // Display value for a lookup has already been handled by Exp.Data
+                            row.put(property, map);
                         }
                     }
                     rows.add(row);
@@ -1708,7 +1703,6 @@ public class FileContentController extends SpringActionController
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                 controller.new DesignerAction(),
-                controller.new FilePropertiesServiceAction(),
                 controller.new ResetFileOptionsAction(),
                 controller.new SetDefaultEmailPrefAction(),
                 controller.new ShowFilesHistoryAction()

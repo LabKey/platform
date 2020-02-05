@@ -18,6 +18,8 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -28,10 +30,13 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
-import org.labkey.api.security.SSOConfigureAction.SSOConfigureForm;
+import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.settings.WriteableAppProps;
@@ -67,11 +72,40 @@ public interface AuthenticationProvider
             ExpireAccountProvider.class
     );
 
-    @Nullable ActionURL getConfigurationLink();
-    default @Nullable ActionURL getConfigurationLink(@Nullable Integer rowId)
+    default @Nullable ActionURL getSaveLink()
     {
-        return getConfigurationLink();
+        return null;
     }
+
+    // Generic authentication topic -- implementers should provide the wiki name for their configuration doc page
+    default @NotNull String getHelpTopic()
+    {
+        return "authenticationModule";
+    }
+
+    // Most providers don't have a test action
+    default @Nullable ActionURL getTestLink()
+    {
+        return null;
+    }
+
+    @RemoveIn20_1  // Not used -- but need to remove usages in compliance and CDS, which don't have a multiAuthUI branch
+    default @Nullable ActionURL getConfigurationLink()
+    {
+        return null;
+    }
+
+    /**
+     * Returns a JSONArray of the field descriptors for the required provider-specific settings. JSON metadata is a small
+     * subset of our standard column metadata (e.g., what getQueryDetails.api returns).
+     *
+     * @return A JSONArray of field descriptors or null if this provider doesn't have any custom fields
+     */
+    default @NotNull JSONArray getSettingsFields()
+    {
+        return new JSONArray();
+    }
+
     @NotNull String getName();
     @NotNull String getDescription();
 
@@ -93,15 +127,31 @@ public interface AuthenticationProvider
     }
 
     // Helper that retrieves all the configuration properties in the specified categories, populates them into a form, and saves the form
-    default <FORM extends AuthenticationConfigureForm> void saveStartupProperties(Collection<String> categories, Class<FORM> clazz)
+    default <FORM extends SaveConfigurationForm, AC extends AuthenticationConfiguration> void saveStartupProperties(Collection<String> categories, Class<FORM> formClass, Class<AC> configurationClass)
     {
         Map<String, String> map = getPropertyMap(categories);
 
         if (!map.isEmpty())
         {
-            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(clazz);
+            ObjectFactory<FORM> factory = ObjectFactory.Registry.getFactory(formClass);
             FORM form = factory.fromMap(map);
-            AuthenticationConfigureAction.saveForm(form, null);
+
+            // If description is provided in the startup properties file and an existing configuration for this provider
+            // matches that description then update the existing configuration. If not, create a new configuration. #39474
+            if (form.getDescription() != null)
+            {
+                AuthenticationConfigurationCache.getConfigurations(configurationClass).stream()
+                    .filter(ac -> ac.getDescription().equals(form.getDescription()))
+                    .map(AuthenticationConfiguration::getRowId)
+                    .findFirst()
+                    .ifPresent(form::setRowId);
+            }
+            else
+            {
+                form.setDescription(form.getProvider() + " Configuration");
+            }
+
+            SaveConfigurationAction.saveForm(form, null);
         }
     }
 
@@ -126,22 +176,8 @@ public interface AuthenticationProvider
             .collect(Collectors.toMap(ConfigProperty::getName, ConfigProperty::getValue));
     }
 
-    interface PrimaryAuthenticationProvider<AC extends AuthenticationConfiguration> extends AuthenticationProvider
+    interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        // Providers that need to do special batch-wide processing can override this method
-        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
-        {
-            return configurations.stream()
-                .map(this::getAuthenticationConfiguration)
-                .collect(Collectors.toList());
-        }
-
-        // Most providers need to override this method to translate a single ConfigurationSettings into an AuthenticationConfiguration
-        default AC getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
-        {
-            throw new IllegalStateException("Shouldn't invoke this method for " + getName());
-        }
-
         default void logout(HttpServletRequest request)
         {
         }
@@ -149,36 +185,23 @@ public interface AuthenticationProvider
         void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
-    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration> extends PrimaryAuthenticationProvider<AC>
+    interface LoginFormAuthenticationProvider<AC extends LoginFormAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        // This override allows LdapAuthenticationProvider to invoke the default implementation in PrimaryAuthenticationProvider
-        @Override
-        default List<AC> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> configurations)
-        {
-            return PrimaryAuthenticationProvider.super.getAuthenticationConfigurations(configurations);
-        }
-
         // id and password will not be blank (not null, not empty, not whitespace only)
         @NotNull AuthenticationResponse authenticate(AC configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws InvalidEmailException;
 
-        @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active);
+        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
 
         @Override
-        default void migrateOldConfiguration(boolean active, User user) throws Throwable
+        default void migrateOldConfiguration(boolean active, User user)
         {
-            AuthenticationConfigureForm form = getFormFromOldConfiguration(active);
-
-            if (null != form)
-            {
-                form.setEnabled(active);
-                AuthenticationConfigureAction.saveForm(form, user);
-            }
+            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
         }
     }
 
-    interface SSOAuthenticationProvider extends PrimaryAuthenticationProvider
+    interface SSOAuthenticationProvider<AC extends SSOAuthenticationConfiguration<?>> extends PrimaryAuthenticationProvider<AC>, AuthenticationConfigurationFactory<AC>
     {
-        @Nullable SSOConfigureForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
+        @Nullable SsoSaveConfigurationForm getFormFromOldConfiguration(boolean active, boolean hasLogos);
 
         @Override
         default void migrateOldConfiguration(boolean active, User user) throws Throwable
@@ -191,25 +214,20 @@ public interface AuthenticationProvider
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-            SSOConfigureForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SsoSaveConfigurationForm form = getFormFromOldConfiguration(active, !logos.isEmpty());
+            SaveConfigurationAction.saveOldProperties(form, user);
 
-            if (null != form)
+            if (null != form && !logos.isEmpty())
             {
-                form.setEnabled(active);
-                AuthenticationConfigureAction.saveForm(form, user);
+                SSOAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
 
-                if (!logos.isEmpty())
-                {
-                    SSOAuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(SSOAuthenticationConfiguration.class, form.getRowId());
+                List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
+                svc.addAttachments(configuration, attachmentFiles, user);
+                for (AuthLogoType alt : AuthLogoType.values())
+                    svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
 
-                    List<AttachmentFile> attachmentFiles = svc.getAttachmentFiles(configuration, logos);
-                    svc.addAttachments(configuration, attachmentFiles, user);
-                    for (AuthLogoType alt : AuthLogoType.values())
-                        svc.renameAttachment(configuration, alt.getOldPrefix() + getName(), alt.getFileName(), user);
-
-                    AttachmentCache.clearAuthLogoCache();
-                    WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-                }
+                AttachmentCache.clearAuthLogoCache();
+                WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             }
         }
     }
@@ -235,13 +253,14 @@ public interface AuthenticationProvider
         @Nullable SecurityMessage getAPIResetPasswordMessage(User user, boolean isAdminCopy);
     }
 
-    interface SecondaryAuthenticationProvider extends AuthenticationProvider
+    interface SecondaryAuthenticationProvider<AC extends SecondaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        /**
-         *  Initiate secondary authentication process for the specified user. Candidate has been authenticated via one of the primary providers,
-         *  but isn't officially authenticated until user successfully validates with all enabled SecondaryAuthenticationProviders as well.
-         */
-        ActionURL getRedirectURL(User candidate, Container c);
+        @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active);
+
+        default void migrateOldConfiguration(boolean active, User user)
+        {
+            SaveConfigurationAction.saveOldProperties(getFormFromOldConfiguration(active), user);
+        }
 
         /**
          * Bypass authentication from this provider. Might be configured via labkey.xml parameter to

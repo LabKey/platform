@@ -70,6 +70,8 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -290,7 +292,7 @@ public class SecurityApiActions
                 user = currentUser;
 
             if (null == user)
-                throw new IllegalArgumentException("No user found that matches specified userId or email address");
+                throw new IllegalArgumentException("No user found that matches specified userId or email address.");
 
             //if user is not current user, current user must have admin perms in container
             if (!user.equals(currentUser) && !container.hasPermission(currentUser, AdminPermission.class))
@@ -774,15 +776,15 @@ public class SecurityApiActions
                 {
                     // AppAdmin cannot change assignments to roles with SiteAdminPermission or PlatformDeveloperPermission
                     if (changedRole.getPermissions().contains(SiteAdminPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Site Admin role or permission.");
                     if (changedRole.getPermissions().contains(PlatformDeveloperPermission.class))
-                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission");
+                        errors.reject(ERROR_MSG, "You do not have permission to modify the Platform Developer role or permission.");
                 }
             }
 
             //if root container permissions update, check for app admin removal
-            if (container.isRoot() && resource.getResourceName().equals("") && user.hasApplicationAdminPermission()
-                    && !user.hasApplicationAdminPermissionForPolicy(policy) && !form.isConfirm())
+            if (container.isRoot() && resourceId.equals(container.getId()) && user.isApplicationAdmin()
+                    && !user.hasApplicationAdminForPolicy(policy) && !form.isConfirm())
             {
                 Map<String, Object> props = new HashMap<>();
                 props.put("success", false);
@@ -1989,9 +1991,10 @@ public class SecurityApiActions
 
     public static class CreateNewUserForm
     {
-        private String _email;
+        private String _email; // supports a semicolon list of email addresses
         private boolean _sendEmail = true;
         private boolean _skipFirstLogin = false;
+        private String _optionalMessage;
 
         public String getEmail()
         {
@@ -2022,6 +2025,16 @@ public class SecurityApiActions
         {
             _skipFirstLogin = skipFirstLogin;
         }
+
+        public String getOptionalMessage()
+        {
+            return _optionalMessage;
+        }
+
+        public void setOptionalMessage(String optionalMessage)
+        {
+            _optionalMessage = optionalMessage;
+        }
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -2029,44 +2042,60 @@ public class SecurityApiActions
     {
         public ApiResponse execute(CreateNewUserForm form, BindException errors) throws Exception
         {
-            if (null == StringUtils.trimToNull(form.getEmail()))
-                throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<Map<String, Object>> responses = new ArrayList<>();
 
             //FIX: 8585 -- must have Admin perm on the project as well as the current container
             Container c = getContainer();
             if (!c.isRoot() && !c.getProject().hasPermission(getUser(), AdminPermission.class))
-                throw new UnauthorizedException("You must be an administrator at the project level to add new users");
+                throw new UnauthorizedException("You must be an administrator at the project level to add new users.");
+            else if (c.isRoot() && !getUser().hasRootPermission(UserManagementPermission.class))
+                throw new UnauthorizedException("You do not have permissions to create new users.");
 
-            ValidEmail email;
+            String[] rawEmails = form.getEmail() == null ? null : form.getEmail().split(";");
+            List<String> invalidEmails = new ArrayList<>();
+            List<ValidEmail> validEmails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
-            try
+            if (invalidEmails.size() > 0)
+                throw new IllegalArgumentException("Invalid email address" + (invalidEmails.size() > 1 ? "es" : "") + ": " + PageFlowUtil.filter(StringUtils.join(invalidEmails)));
+            if (validEmails.size() == 0)
+                throw new IllegalArgumentException("You must specify a valid email address in the 'email' parameter!");
+
+            for (ValidEmail email : validEmails)
             {
-                email = new ValidEmail(form.getEmail().trim());
+                String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), form.getOptionalMessage());
+                User user = UserManager.getUser(email);
+                if (null == user)
+                    throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
+
+                boolean isNew = msg != null;
+                HtmlString htmlMsg = msg == null ? HtmlString.of(email + " was already a registered system user.") : HtmlString.unsafe(msg);
+
+                // Allow tests to create users that immediately register as having "logged in"
+                if (getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
+                {
+                    user.setLastLogin(new Date());
+                    UserManager.updateLogin(user);
+                    UserManager.clearUserList();
+                }
+
+                // if only one user being added, keep response object at top level for backwards compatibility
+                if (validEmails.size() == 1)
+                {
+                    response.put("userId", user.getUserId());
+                    response.put("email", user.getEmail());
+                    response.put("message", htmlMsg);
+                }
+                responses.add(Map.of(
+                    "userId", user.getUserId(),
+                    "email", user.getEmail(),
+                    "message", htmlMsg,
+                    "isNew", isNew
+                ));
             }
-            catch (InvalidEmailException e)
-            {
-                throw new IllegalArgumentException(e.getMessage());
-            }
 
-            String msg = SecurityManager.addUser(getViewContext(), email, form.isSendEmail(), null);
-            User user = UserManager.getUser(email);
-            if (null == user)
-                throw new IllegalArgumentException(null != msg ? msg : "Error creating new user account.");
-
-            // Allow tests to create users that immediately register as having "logged in"
-            if (getViewContext().getUser().hasSiteAdminPermission() && form.isSkipFirstLogin())
-            {
-                user.setLastLogin(new Date());
-                UserManager.updateLogin(user);
-                UserManager.clearUserList();
-            }
-
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            response.put("userId", user.getUserId());
-            response.put("email", user.getEmail());
-            if (null != msg)
-                response.put("message", msg);
-
+            response.put("success", true);
+            response.put("users", responses);
             return response;
         }
     }

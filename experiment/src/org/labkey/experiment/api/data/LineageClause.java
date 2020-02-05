@@ -80,7 +80,7 @@ public abstract class LineageClause extends CompareType.CompareClause
         if (runsToInvestigate.isEmpty())
             return new SQLFragment("(1 = 2)");
 
-        SQLFragment tree = svc.generateExperimentTreeSQL(runsToInvestigate, options);
+        SQLFragment tree = svc.generateExperimentTreeSQLLsidSeeds(runsToInvestigate, options);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(").append(alias).append(") IN (");

@@ -47,6 +47,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerService;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
@@ -63,6 +65,7 @@ import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
@@ -114,6 +117,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -418,8 +422,19 @@ public class PropertyController extends SpringActionController
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            updateErrors.setBindExceptionErrors(errors, ERROR_MSG);
+            boolean includeWarnings = form.includeWarnings();
+            boolean hasErrors = false;
+
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser(), includeWarnings);
+
+            for (ValidationError ve : updateErrors.getErrors())
+            {
+                if (ve.getSeverity().equals(ValidationException.SEVERITY.ERROR))
+                    hasErrors = true;
+            }
+
+            if (hasErrors || includeWarnings)
+                updateErrors.setBindExceptionErrors(errors, ERROR_MSG, includeWarnings);
 
             Domain domain = PropertyService.get().getDomain(getContainer(), newDomain.getDomainURI());
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -464,6 +479,7 @@ public class PropertyController extends SpringActionController
         private String schemaName;
         private String queryName;
         private Integer domainId;
+        private boolean includeWarnings;
 
         public Integer getDomainId()
         {
@@ -603,6 +619,16 @@ public class PropertyController extends SpringActionController
         public void setContainerPath(String containerPath)
         {
             this.containerPath = containerPath;
+        }
+
+        public boolean includeWarnings()
+        {
+            return includeWarnings;
+        }
+
+        public void setIncludeWarnings(boolean includeWarnings)
+        {
+            this.includeWarnings = includeWarnings;
         }
     }
 
@@ -965,7 +991,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                             Container container, User user)
+                                             Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -978,7 +1004,7 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        return kind.updateDomain(original, update, container, user);
+        return kind.updateDomain(original, update, container, user, includeWarnings);
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)
@@ -1172,9 +1198,8 @@ public class PropertyController extends SpringActionController
                     ContainerService.get().getForPath(containerDomainForm.getContainerPath());
 
             List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
-            ApiSimpleResponse resp = new ApiSimpleResponse();
 
-            return resp.put("domains", listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
+            return success(listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
     }
 
@@ -1252,6 +1277,71 @@ public class PropertyController extends SpringActionController
             this.includeProjectAndShared = includeProjectAndShared;
         }
     }
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectMetaData.class)
+    @Marshal(Marshaller.Jackson)
+    public class GetPropertiesAction extends ReadOnlyApiAction<GetPropertiesForm>
+    {
+        @Override
+        public Object execute(GetPropertiesForm form, BindException errors) throws Exception
+        {
+            Stream<PropertyDescriptor> properties;
+            if (form.getPropertyIds() != null && !form.getPropertyIds().isEmpty())
+            {
+                properties = form.getPropertyIds().stream()
+                        .filter(Objects::nonNull)
+                        .map(OntologyManager::getPropertyDescriptor)
+                        .filter(Objects::nonNull)
+                        .filter(pd -> getContainer().equals(pd.getContainer()));
+            }
+            else if (form.getPropertyURIs() != null && !form.getPropertyURIs().isEmpty())
+            {
+                properties = form.getPropertyURIs().stream()
+                        .filter(Objects::nonNull)
+                        .map(uri -> OntologyManager.getPropertyDescriptor(uri, getContainer()))
+                        .filter(Objects::nonNull);
+            }
+            else
+            {
+                throw new ApiUsageException("Expected propertyIds or propertyURIs");
+            }
+
+            List<GWTPropertyDescriptor> gwtProps = properties
+                    .map(DomainUtil::getPropertyDescriptor)
+                    .collect(Collectors.toList());
+
+            return success(gwtProps);
+        }
+    }
+
+    public static class GetPropertiesForm
+    {
+        private List<Integer> propertyIds;
+        private List<String> propertyURIs;
+
+        public List<Integer> getPropertyIds()
+        {
+            return propertyIds;
+        }
+
+        public void setPropertyIds(List<Integer> propertyIds)
+        {
+            this.propertyIds = propertyIds;
+        }
+
+        public List<String> getPropertyURIs()
+        {
+            return propertyURIs;
+        }
+
+        public void setPropertyURIs(List<String> propertyURIs)
+        {
+            this.propertyURIs = propertyURIs;
+        }
+
+    }
+
 
     public static class TestCase extends Assert
     {

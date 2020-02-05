@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.api.TourServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
-import org.labkey.announcements.config.MessageConfigServiceImpl;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementType;
@@ -45,11 +44,9 @@ import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.notification.EmailService;
 import org.labkey.api.rss.RSSService;
 import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
@@ -66,7 +63,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -78,7 +74,6 @@ import java.util.Set;
  * NOTE: Wiki handles some of the shared Communications module stuff.
  * e.g. it handles ContainerListener and Attachments
  * <p/>
- * TODO: merge announcementModel & wiki into one module?
  */
 public class AnnouncementModule extends DefaultModule implements SearchService.DocumentProvider
 {
@@ -102,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override
@@ -155,12 +150,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public void doStartup(ModuleContext moduleContext)
     {
-        AnnouncementListener listener = new AnnouncementListener();
-        ContainerManager.addContainerListener(listener);
-        UserManager.addUserListener(listener);
-        SecurityManager.addGroupListener(listener);
+        ContainerManager.addContainerListener(new AnnouncementContainerListener());
+        UserManager.addUserListener(new AnnouncementUserListener());
         AuditLogService.get().registerAuditType(new MessageAuditProvider());
-        EmailService.setInstance(new EmailServiceImpl());
 
         TourListener tourListener = new TourListener();
         ContainerManager.addContainerListener(tourListener);
@@ -178,8 +170,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         // initialize message digests
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
 
-        // initialize message config service and add a config provider for announcements
-        MessageConfigService.setInstance(new MessageConfigServiceImpl());
+        // add a config provider for announcements
         MessageConfigService.get().registerConfigType(new AnnouncementEmailConfig());
         
         SearchService ss = SearchService.get();
@@ -210,10 +201,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                AnnouncementManager.TestCase.class,
-                EmailServiceImpl.TestCase.class
-        ));
+        return Set.of(
+            AnnouncementManager.TestCase.class
+        );
     }
 
     @Override

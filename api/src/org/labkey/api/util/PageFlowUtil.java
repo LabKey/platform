@@ -36,7 +36,6 @@ import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -51,6 +50,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
@@ -137,7 +137,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -1255,16 +1254,6 @@ public class PageFlowUtil
         return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
     }
 
-    /**
-     *  Returns an onClick handler that posts to the specified url, providing a CSRF token.
-     */
-    @Deprecated
-    @RemoveIn20_1  // TODO: Unused -- all callers now delegate to builder methods that implement post-on-click
-    public static String postOnClickJavaScript(ActionURL url)
-    {
-        return postOnClickJavaScript(url.getLocalURIString(), null);
-    }
-
     public static ButtonBuilder button(String text)
     {
         return new ButtonBuilder(text);
@@ -1329,24 +1318,6 @@ public class PageFlowUtil
     public static HtmlString generateBackButton(String text)
     {
         return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
-    }
-
-    @RemoveIn20_1 // No usages
-    public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
-    {
-        return button(text)
-                .attributes(attributes)
-                .dropdown(true)
-                .href(href)
-                .onClick(onClick)
-                .toString();
-    }
-
-    /* Renders a span and a drop down arrow image wrapped in a link */
-    @RemoveIn20_1 // No usages
-    public static String generateDropDownButton(String text, String href, String onClick)
-    {
-        return generateDropDownButton(text, href, onClick, null);
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
@@ -1431,76 +1402,6 @@ public class PageFlowUtil
     public static String textLink(String text, URLHelper url)
     {
         return link(text).href(url).toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, String id)
-    {
-        return link(text).href(url).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, String id)
-    {
-        return link(text).href(href).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href)
-    {
-        return link(text).href(href).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String unstyledTextLink(String text, String href, String onClickScript, String id)
-    {
-        return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String unstyledTextLink(String text, URLHelper url)
-    {
-        return link(text).href(url).clearClasses().toString();
-    }
-
-    @Deprecated    // Use LinkBuilder directly - no usages
-    @RemoveIn20_1
-    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
-    {
-        return iconLink(iconCls, tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String helpPopup(String title, String helpText)
@@ -1721,6 +1622,7 @@ public class PageFlowUtil
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
+        sb.append(getManifestIncludes(c, resources));
         sb.append(getJavaScriptIncludes(c, resources));
 
         return sb.toString();
@@ -1871,6 +1773,43 @@ public class PageFlowUtil
         }
     }
 
+    // Manifest files are included as links in the HTML head.  These files are used to identify resources for progressive
+    // web apps like flash page and home page link icons.  There can be multiple on the same page.
+    private static String getManifestIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
+    {
+        StringBuilder sb = new StringBuilder();
+
+        if (resources != null)
+        {
+            Set<String> manifestFiles = new HashSet<>();
+            for (ClientDependency r : resources)
+            {
+                for (String manifest : r.getManifestPaths(c))
+                {
+                    if (!manifestFiles.contains(manifest))
+                    {
+                        sb.append("<link href=\"");
+                        if (ClientDependency.isExternalDependency(manifest))
+                        {
+                            sb.append(filter(manifest));
+                        }
+                        else
+                        {
+                            sb.append(AppProps.getInstance().getContextPath());
+                            sb.append("/");
+                            sb.append(filter(manifest));
+                        }
+                        sb.append("\" rel=\"manifest\">");
+
+                        manifestFiles.add(manifest);
+                    }
+                }
+            }
+        }
+
+        return sb.toString();
+    }
+
     public static final String extJsRoot()
     {
         return "ext-3.4.1";
@@ -1888,6 +1827,7 @@ public class PageFlowUtil
 
             // TODO: This needs to be refactored to allow themes by convention
             if (!"seattle".equalsIgnoreCase(themeName) &&
+                    !"sky".equalsIgnoreCase(themeName) &&
                     !"overcast".equalsIgnoreCase(themeName) &&
                     !"harvest".equalsIgnoreCase(themeName) &&
                     !"leaf".equalsIgnoreCase(themeName) &&
@@ -2194,10 +2134,10 @@ public class PageFlowUtil
         if (null != project)
         {
             JSONObject projectProps = new JSONObject();
-
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
+            projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }
 

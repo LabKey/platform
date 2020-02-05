@@ -138,9 +138,9 @@ public class VocabularyDomainKind extends AbstractDomainKind
 
         if (!container.isContainerFor(ContainerType.DataType.domainDefinitions))
         {
-            throw new IllegalArgumentException("Vocabulary  can not be created in this Container type.");
+            throw new IllegalArgumentException("Vocabulary can not be created in this Container type.");
         }
-        String domainURI = generateDomainURI( name, container);
+        String domainURI = generateDomainURI(name, container);
 
         List<GWTPropertyDescriptor> properties = domain.getFields();
         Domain vocabularyDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);

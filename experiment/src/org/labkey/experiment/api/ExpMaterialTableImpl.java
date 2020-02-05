@@ -39,6 +39,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -562,7 +563,12 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                     propColumn.setNullable(false);
                     propColumn.setDisplayColumnFactory(new IdColumnRendererFactory());
                 }
-                visibleColumns.add(propColumn.getFieldKey());
+
+                //fix for Issue 38341: domain designer advanced settings 'show in default view' setting is not respected
+                if (!propColumn.isHidden())
+                {
+                    visibleColumns.add(propColumn.getFieldKey());
+                }
             }
             addColumn(propColumn);
         }
@@ -704,7 +710,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         // TODO: subclass PersistDataIteratorBuilder to index Materials! not DataClass!
         try
         {
-            DataIteratorBuilder persist = new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
+            DataIteratorBuilder persist = LoggingDataIterator.wrap(new ExpDataIterators.PersistDataIteratorBuilder(data, this, propertiesTable, getUserSchema().getContainer(), getUserSchema().getUser(), _ss.getImportAliasMap(), sampleSetObjectId)
                     .setFileLinkDirectory("sampleset")
                     .setIndexFunction(lsids -> () ->
                     {
@@ -714,9 +720,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                             if (null != expMaterial)
                                 expMaterial.index(null);
                         }
-                    });
+                    }));
 
-            return new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap());
+            return LoggingDataIterator.wrap(new AliasDataIteratorBuilder(persist, getUserSchema().getContainer(), getUserSchema().getUser(), ExperimentService.get().getTinfoMaterialAliasMap()));
         }
         catch (IOException e)
         {

@@ -83,7 +83,7 @@ public class GroupManager
 
     static
     {
-        SecurityManager.addGroupListener(new GroupListener());
+        SecurityManager.addGroupListener(new GroupListener(), true);
     }
 
     // Returns the expanded group list for this principal
@@ -327,12 +327,14 @@ public class GroupManager
 
     public static class GroupListener implements SecurityManager.GroupListener
     {
+        @Override
         public void principalAddedToGroup(Group group, UserPrincipal principal)
         {
             GroupMembershipCache.handleGroupChange(group, principal);
             addAuditEvent(group, principal, principal.getPrincipalType().getDescription() + ": " + principal.getName() + " was added as a member to Group: " + group.getName());
         }
 
+        @Override
         public void principalDeletedFromGroup(Group group, UserPrincipal principal)
         {
             GroupMembershipCache.handleGroupChange(group, principal);
@@ -369,6 +371,7 @@ public class GroupManager
             AuditLogService.get().addEvent(user, event);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent evt)
         {
         }

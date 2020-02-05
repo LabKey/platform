@@ -997,9 +997,9 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results rs = dr.getResultSet(ctx);
+        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        TSVGridWriter tsv = new TSVGridWriter(rs, cols);
+        TSVGridWriter tsv = new TSVGridWriter(results, cols);
         tsv.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return tsv;
     }
@@ -1011,9 +1011,9 @@ public class SpecimenUtils
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(specimenRequest.getContainer());
         ctx.setBaseFilter(getSpecimenListFilter(specimenRequest, srcLocation, type));
-        Results rs = dr.getResultSet(ctx);
+        Results results = dr.getResults(ctx);
         List<DisplayColumn> cols = dr.getDisplayColumns();
-        ExcelWriter xl = new ExcelWriter(rs, cols);
+        ExcelWriter xl = new ExcelWriter(results, cols);
         xl.setFilenamePrefix(getSpecimenListFileName(srcLocation, destLocation));
         return xl;
     }

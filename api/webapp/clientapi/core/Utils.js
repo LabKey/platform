@@ -209,17 +209,25 @@ LABKEY.Utils = new function()
     /** @scope LABKEY.Utils */
     return {
         /**
-        * Encodes the html passed in so that it will not be interpreted as HTML by the browser.
-        * For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
+        * Encodes the html passed in and converts it to a String so that it will not be interpreted as HTML
+        * by the browser. For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
         * "&amp;lt;p&amp;gt;Hello&amp;lt;/p&amp;gt;". If you set an element's innerHTML property
         * to this string, the HTML markup will be displayed as literal text rather than being
-        * interpreted as HTML.
+        * interpreted as HTML. By default this function will return an empty string if a value
+        * of undefined or null is passed it. To prevent this default, you can pass in a second
+        * optional parameter value of true to retain the empty value's type.
         *
-        * @param {String} html The HTML to encode
+        * @param {String} html The HTML to encode and return as a String value. If the value of this parameter is null or undefined, an empty string will be returned by default.
+        * @param {boolean} retainEmptyValueTypes An optional boolean parameter indicating that the empty values (null and undefined) should be returned as is from this function.
 		* @return {String} The encoded HTML
 		*/
-        encodeHtml : function(html)
+        encodeHtml : function(html, retainEmptyValueTypes)
         {
+            // Issue 39628: default to returning an empty string when this function is called with a value of undefined or null
+            if (html === undefined || html === null) {
+                return retainEmptyValueTypes ? html : '';
+            }
+
             // https://stackoverflow.com/a/7124052
             return String(html)
                     .replace(/&/g, '&amp;')
@@ -1096,6 +1104,7 @@ LABKEY.Utils = new function()
  * @param fn {function} This will be called with the provided argument list {args} after the modal is shown. You can generate content in
  * the modal via the following empty div: &lt;div id="modal-fn-body">&lt;/div>
  * @param args {array} Array of arguments to be applied to the function when it is called.
+ * @param disableBackdrop {boolean} True to disable closing the modal on background click.
  *
  * @example &lt;script type="text/javascript"&gt;
  *

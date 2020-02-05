@@ -442,19 +442,22 @@
 
     Map<FieldKey, ColumnInfo> allColumns = getQueryColumns(table);
     ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
-    Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults();
-    int rowCount = dsResults.getSize();
-    while (dsResults.next())
-    {
-        Object sequenceNum = seqnumColumn.getValue(dsResults);
-        Object key = null == keyColumn ? "" : keyColumn.getValue(dsResults);
 
-        Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(sequenceNum);
-        if (null == keyMap)
-            seqKeyRowMap.put(((Number)sequenceNum).doubleValue(), keyMap = new HashMap<>());
-        keyMap.put(key, dsResults.getRowMap());
+    final int rowCount;
+    try (Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults())
+    {
+        rowCount = dsResults.getSize();
+        while (dsResults.next())
+        {
+            Object sequenceNum = seqnumColumn.getValue(dsResults);
+            Object key = null == keyColumn ? "" : keyColumn.getValue(dsResults);
+
+            Map<Object, Map<String, Object>> keyMap = seqKeyRowMap.get(sequenceNum);
+            if (null == keyMap)
+                seqKeyRowMap.put(((Number) sequenceNum).doubleValue(), keyMap = new HashMap<>());
+            keyMap.put(key, dsResults.getRowMap());
+        }
     }
-    ResultSetUtil.close(dsResults);
     if (rowCount == 0)
         continue;
 %>

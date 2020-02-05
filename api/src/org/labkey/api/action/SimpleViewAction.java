@@ -55,7 +55,7 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
         {
             // GET parameters have already been validated in ViewServlet
             PropertyValues pvs = getPropertyValues();
-            if (!"GET".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (!isGet())
                 validateUnicodePropertyValues(pvs);
             errors = bindParameters(pvs);
         }

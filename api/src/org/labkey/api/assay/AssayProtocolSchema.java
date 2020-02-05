@@ -313,7 +313,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     {
         ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this, cf);
         table.populate();
-        table.setAssayProtocol(getProtocol());
+        table.setAssayProtocol(getProvider(), getProtocol());
         return table;
     }
 
@@ -717,7 +717,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
-                            try (Results r = dataView.getDataRegion().getResultSet(dataView.getRenderContext()))
+                            try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
                             {
                                 final int rowCount = r.getSize();
 

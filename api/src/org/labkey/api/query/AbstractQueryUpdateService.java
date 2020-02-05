@@ -357,7 +357,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         ListofMapsDataIterator maps = new ListofMapsDataIterator(colNames, rows);
         maps.setDebugName(debugName);
-        return LoggingDataIterator.wrap(maps);
+        return LoggingDataIterator.wrap((DataIterator)maps);
     }
 
 

@@ -20,10 +20,15 @@ import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.security.AuthenticationConfigurationCache;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.PrimaryAuthenticationResult;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SaveConfigurationAction;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -49,14 +54,40 @@ public class TestSecondaryController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    public static ActionURL getTestSecondaryURL(Container c)
+    public static ActionURL getTestSecondaryURL(Container c, int rowId)
     {
-        return new ActionURL(TestSecondaryAction.class, c);
+        ActionURL url = new ActionURL(TestSecondaryAction.class, c);
+        url.addParameter("configuration", rowId);
+
+        return url;
     }
 
     public static class TestSecondaryForm extends ReturnUrlForm
     {
+        private String _email = null;
+        private int _configuration = -1;
         private boolean _valid;
+
+        public String getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(String email)
+        {
+            _email = email;
+        }
+
+        public int getConfiguration()
+        {
+            return _configuration;
+        }
+
+        @SuppressWarnings("unused")
+        public void setConfiguration(int configuration)
+        {
+            _configuration = configuration;
+        }
 
         public boolean isValid()
         {
@@ -90,12 +121,13 @@ public class TestSecondaryController extends SpringActionController
             if (null == result || null == result.getUser())
                 throw new NotFoundException("You must login before initiating secondary authentication");
 
-            String email = result.getUser().getEmail();
+            form.setEmail(result.getUser().getEmail());
 
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setIncludeLoginLink(false);
+            getPageConfig().setIncludeSearch(false);
 
-            return new JspView<>("/org/labkey/devtools/authentication/testSecondary.jsp", email, errors);
+            return new JspView<>("/org/labkey/devtools/authentication/testSecondary.jsp", form, errors);
         }
 
         @Override
@@ -106,7 +138,12 @@ public class TestSecondaryController extends SpringActionController
                 User user = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser();
 
                 if (null != user)
-                    AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), TestSecondaryProvider.class, user);
+                {
+                    TestSecondaryConfiguration configuration = AuthenticationConfigurationCache.getActiveConfiguration(TestSecondaryConfiguration.class, form.getConfiguration());
+
+                    if (null != configuration)
+                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), configuration.getRowId(), user);
+                }
 
                 return true;
             }
@@ -124,6 +161,24 @@ public class TestSecondaryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class TestSecondarySaveConfigurationAction extends SaveConfigurationAction<TestSecondarySaveConfigurationForm, TestSecondaryConfiguration>
+    {
+        @Override
+        public void validate(TestSecondarySaveConfigurationForm form, Errors errors)
+        {
+        }
+    }
+
+    public static class TestSecondarySaveConfigurationForm extends SaveConfigurationForm
+    {
+        @Override
+        public String getProvider()
+        {
+            return TestSecondaryProvider.NAME;
         }
     }
 }

@@ -1,7 +1,11 @@
 # Created by .ignore support plugin (hsz.mobi)
 dependencies.txt
 
+# OSX
+.DS_Store
+
 # Node modules
+node_modules
 core/node_modules
 experiment/node_modules
 assay/node_modules
@@ -22,18 +26,10 @@ core/resources/scripts/labkey/Utils.js
 # Auto-generated files
 core/resources/web/core/css
 experiment/resources/web/experiment/gen
-experiment/resources/views/assayDesigner.html
-experiment/resources/views/assayDesigner.view.xml
-experiment/resources/views/assayDesignerDev.html
-experiment/resources/views/assayDesignerDev.view.xml
 experiment/resources/views/domainDesigner.html
 experiment/resources/views/domainDesigner.view.xml
 experiment/resources/views/domainDesignerDev.html
 experiment/resources/views/domainDesignerDev.view.xml
-experiment/resources/views/assayDataImport.html
-experiment/resources/views/assayDataImport.view.xml
-experiment/resources/views/assayDataImportDev.html
-experiment/resources/views/assayDataImportDev.view.xml
 
 assay/resources/web/assay/gen
 assay/resources/views/assayDataImport.html
@@ -45,4 +41,9 @@ assay/resources/views/assayDesigner.view.xml
 assay/resources/views/assayDesignerDev.html
 assay/resources/views/assayDesignerDev.view.xml
 
-
+# React pages build
+core/resources/views/authenticationConfiguration.html
+core/resources/views/authenticationConfiguration.view.xml
+core/resources/views/authenticationConfigurationDev.html
+core/resources/views/authenticationConfigurationDev.view.xml
+core/resources/web/core/gen

@@ -18,6 +18,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
@@ -192,6 +194,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showInsertNewButton = true;
     private boolean _showImportDataButton = true;
     private boolean _showDeleteButton = true;
+    private boolean _showDeleteButtonConfirmationText = true;
     private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
 
@@ -886,6 +889,16 @@ public class QueryView extends WebPartView<Object>
         _showDeleteButton = showDeleteButton;
     }
 
+    public boolean showDeleteButtonConfirmationText()
+    {
+        return _showDeleteButtonConfirmationText;
+    }
+
+    public void setShowDeleteButtonConfirmationText(boolean showDeleteButtonConfirmationText)
+    {
+        _showDeleteButtonConfirmationText = showDeleteButtonConfirmationText;
+    }
+
     public boolean showRecordSelectors()
     {
         return _showRecordSelectors;
@@ -995,6 +1008,11 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     public ActionButton createDeleteButton()
     {
+        return createDeleteButton(showDeleteButtonConfirmationText());
+    }
+
+    public ActionButton createDeleteButton(boolean showConfirmation)
+    {
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
         if (urlDelete != null)
         {
@@ -1002,7 +1020,10 @@ public class QueryView extends WebPartView<Object>
             btnDelete.setIconCls("trash");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setDisplayPermission(DeletePermission.class);
-            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            if (showConfirmation)
+                btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            else
+                btnDelete.setRequiresSelection(true);
             return btnDelete;
         }
         return null;
@@ -2308,8 +2329,8 @@ public class QueryView extends WebPartView<Object>
         rc.setCache(false);
         try
         {
-            Results rs = rgn.getResultSet(rc);
-            TSVGridWriter tsv = new TSVGridWriter(rs, getExportColumns(rgn.getDisplayColumns()));
+            Results results = rgn.getResults(rc);
+            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()));
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
             // don't step on default
             if (null != headerType)
@@ -2345,7 +2366,7 @@ public class QueryView extends WebPartView<Object>
             rgn.setAllowAsync(async);
             view.getRenderContext().setCache(cache);
             RenderContext ctx = view.getRenderContext();
-            if (null == rgn.getResultSet(ctx))
+            if (null == rgn.getResults(ctx))
                 return null;
             return new ResultsImpl(ctx);
         }
@@ -2376,6 +2397,11 @@ public class QueryView extends WebPartView<Object>
 
     public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
     {
+        return getExcelWriter(docType, null);
+    }
+
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumns) throws IOException
+    {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
@@ -2383,9 +2409,8 @@ public class QueryView extends WebPartView<Object>
 
         try
         {
-            ResultSet rs = rgn.getResultSet(rc);
-            Map<FieldKey, ColumnInfo> map = rc.getFieldMap();
-            ExcelWriter ew = new ExcelWriter(rs, map, getExportColumns(rgn.getDisplayColumns()), docType);
+            Results results = rgn.getResults(rc);
+            ExcelWriter ew = renameColumns == null || renameColumns.isEmpty() ? new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType, renameColumns);
             ew.setFilenamePrefix(getSettings().getQueryName());
             ew.setAutoSize(true);
             return ew;
@@ -2396,7 +2421,40 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, ExcelWriter.ExcelDocumentType docType)
+    private static class AliasColumnExcelWriter extends ExcelWriter
+    {
+        private Map<String, String> _renameColumns;
+
+        public AliasColumnExcelWriter(Results results, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumns)
+        {
+            super(results, displayColumns, docType);
+            _renameColumns = renameColumns;
+        }
+
+        @Override
+        public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws
+                ExcelWriter.MaxRowsExceededException
+        {
+
+            super.renderColumnCaptions(sheet, visibleColumns);
+            if (_renameColumns == null || _renameColumns.isEmpty())
+                return;
+
+            int row = getCurrentRow() - 1;
+            for (int col = 0; col < visibleColumns.size(); col++)
+            {
+                String originalColName = visibleColumns.get(col).getName();
+                if (_renameColumns.containsKey(originalColName))
+                {
+                    Cell cell = sheet.getRow(row).getCell(col);
+                    if (cell != null)
+                        cell.setCellValue(_renameColumns.get(originalColName));
+                }
+            }
+        }
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, @NotNull Map<String, String> renameCols, @NotNull ExcelWriter.ExcelDocumentType docType)
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -2467,10 +2525,10 @@ public class QueryView extends WebPartView<Object>
             fieldKeys.addAll(requiredCols);
         }
 
-        return getExcelTemplateWriter(fieldKeys, docType);
+        return getExcelTemplateWriter(fieldKeys, docType, renameCols);
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType)
+    protected List<DisplayColumn> getExcelTemplateDisplayColumns(List<FieldKey> fieldKeys)
     {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
@@ -2503,7 +2561,15 @@ public class QueryView extends WebPartView<Object>
 
         // Need to remove special MV columns
         displayColumns.removeIf(col -> col.getColumnInfo() instanceof RawValueColumn);
-        return new ExcelWriter(null, displayColumns, docType);
+
+        return displayColumns;
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType, Map<String, String> renameCols)
+    {
+        List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
+
+        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(null, displayColumns, docType) : new AliasColumnExcelWriter(null, displayColumns, docType, renameCols);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
@@ -2532,7 +2598,7 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), null);
+        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), null);
     }
 
     public void exportToExcel(HttpServletResponse response,
@@ -2542,19 +2608,23 @@ public class QueryView extends WebPartView<Object>
                                  ExcelWriter.ExcelDocumentType docType,
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
-                                 @Nullable String prefix)
+                                 List<FieldKey> excludeColumns,
+                                 @NotNull Map<String, String> renameColumns,
+                                 @Nullable String prefix
+                                 )
             throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
+                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
                 ew.setCaptionType(headerType);
-                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
+                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns, excludeColumns);
                 if (prefix != null)
                     ew.setFilenamePrefix(prefix);
                 ew.write(response);
@@ -2726,7 +2796,7 @@ public class QueryView extends WebPartView<Object>
         // Assume that it can, and rely on the fact that Excel throws out rows if there are more than it can handle
         RenderContext ctx = configureForExcelExport(ExcelWriter.ExcelDocumentType.xlsx, view, rgn);
 
-        ResultSet rs = rgn.getResultSet(ctx);
+        Results results = rgn.getResults(ctx);
 
         // Bug 5610 & 6179. Excel web queries don't work over SSL if caching is disabled,
         // so we need to allow caching so that Excel can read from IE on Windows.
@@ -2734,7 +2804,7 @@ public class QueryView extends WebPartView<Object>
         ResponseHelper.setPrivate(response);
 
         HtmlWriter writer = new HtmlWriter();
-        writer.write(rs, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
+        writer.write(results, getExportColumns(rgn.getDisplayColumns()), response, ctx, true);
 
         logAuditEvent("Exported to Excel Web Query data", writer.getDataRowCount());
     }

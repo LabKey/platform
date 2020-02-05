@@ -61,6 +61,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
     protected Form _form;
 
+    @Override
     public void checkPermissions() throws UnauthorizedException
     {
         if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")))
@@ -69,6 +70,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     }
 
     /** Most subclasses should not override this method */
+    @Override
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
         // TODO: Do we need Sign action here?
@@ -163,6 +165,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         private TSVWriter.DELIM _delim;
         private TSVWriter.QUOTE _quote;
         private ColumnHeaderType _headerType;
+        private String _scriptType;
 
         public String getScriptType()
         {
@@ -174,8 +177,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         {
             _scriptType = scriptType;
         }
-
-        private String _scriptType;
 
         public String getExportType()
         {
@@ -193,6 +194,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return super.getDataRegionName();
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setExportRegion(String exportRegion)
         {
             super.setDataRegionName(exportRegion);
@@ -208,6 +210,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _delim;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDelim(TSVWriter.DELIM delim)
         {
             _delim = delim;
@@ -218,6 +221,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _quote;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setQuote(TSVWriter.QUOTE quote)
         {
             _quote = quote;
@@ -228,6 +232,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _headerType;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setHeaderType(ColumnHeaderType headerType)
         {
             _headerType = headerType;

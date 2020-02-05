@@ -11,6 +11,7 @@
         <script path="clientapi/dom/Security.js"/>
         <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.QueryWebPart -->
         <script path="clientapi/dom/WebPart.js"/>
+        <script path="clientapi/dom/WebSocket.js"/>
 
         <script path="clientapi/dom/DataRegion.js"/>
     </library>

@@ -602,6 +602,7 @@ public class SecurityController extends SpringActionController
 
             return new ActionURL(SecurityController.BeginAction.class, getContainer());
         }
+
     }
 
     public enum PermissionType implements EnumHasHtmlString<PermissionType>

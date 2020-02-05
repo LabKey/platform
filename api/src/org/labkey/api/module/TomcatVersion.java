@@ -15,7 +15,15 @@
  */
 package org.labkey.api.module;
 
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.util.ConfigurationException;
+
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Enum that specifies the versions of Apache Tomcat that LabKey supports plus their properties
@@ -24,10 +32,13 @@ import org.labkey.api.util.ConfigurationException;
  */
 public enum TomcatVersion
 {
-    TOMCAT_7_0(false, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
-    TOMCAT_8_5(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword", "certificateKeystoreType"),
-    TOMCAT_9_0(false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword" , "certificateKeystoreType");
+    TOMCAT_UNSUPPORTED(-1, true, null, null, null, null, null),
+    TOMCAT_7_0(70, true, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
+    TOMCAT_8_5(85, false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword", "certificateKeystoreType"),
+    TOMCAT_9_0(90, false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword" , "certificateKeystoreType"),
+    TOMCAT_FUTURE(Integer.MAX_VALUE, true, null, null, null, null, null);
 
+    private final int _version;
     private final boolean _deprecated;
     private final String _maxTotalMethodName;
     private final String _sslConfigPropName;
@@ -35,8 +46,9 @@ public enum TomcatVersion
     private final String _keystorePasswordPropertyName;
     private final String _keystoreTypePropertyName;
 
-    TomcatVersion(boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName, String keystoreTypePropertyName)
+    TomcatVersion(int version, boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName, String keystoreTypePropertyName)
     {
+        _version = version;
         _deprecated = deprecated;
         _maxTotalMethodName = maxTotalMethodName;
         _sslConfigPropName = sslConfigPropName;
@@ -78,6 +90,15 @@ public enum TomcatVersion
 
     private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
+    private final static Map<Integer, TomcatVersion> VERSION_MAP = Arrays.stream(values())
+        .collect(Collectors.toMap(jv->jv._version, jv->jv));
+
+    private final static int MAX_KNOWN_VERSION = Arrays.stream(values())
+        .filter(v->TOMCAT_FUTURE != v)
+        .map(v->v._version)
+        .max(Comparator.naturalOrder())
+        .orElseThrow();
+
     public static TomcatVersion get()
     {
         String serverInfo = ModuleLoader.getServletContext().getServerInfo();
@@ -91,18 +112,53 @@ public enum TomcatVersion
                 int majorVersion = Integer.valueOf(versionParts[0]);
                 int minorVersion = Integer.valueOf(versionParts[1]);
 
-                switch (majorVersion * 10 + minorVersion)
-                {
-                    case 70:
-                        return TomcatVersion.TOMCAT_7_0;
-                    case 85:
-                        return TomcatVersion.TOMCAT_8_5;
-                    case 90:
-                        return TomcatVersion.TOMCAT_9_0;
-                }
+                TomcatVersion tv = get(majorVersion * 10 + minorVersion);
+
+                if (TOMCAT_UNSUPPORTED != tv)
+                    return tv;
             }
         }
 
         throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.0.x, 8.5.x, or 9.0.x.");
+    }
+
+    private static @NotNull TomcatVersion get(int version)
+    {
+        if (version > MAX_KNOWN_VERSION)
+        {
+            return TOMCAT_FUTURE;
+        }
+        else
+        {
+            TomcatVersion tv = VERSION_MAP.get(version);
+            return null != tv ? tv : TOMCAT_UNSUPPORTED;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test()
+        {
+            // Good
+            test(70, TOMCAT_7_0);
+            test(85, TOMCAT_8_5);
+            test(90, TOMCAT_9_0);
+
+            // Future
+            test(100, TOMCAT_FUTURE);
+            test(110, TOMCAT_FUTURE);
+            test(120, TOMCAT_FUTURE);
+
+            // Bad
+            test(60, TOMCAT_UNSUPPORTED);
+            test(50, TOMCAT_UNSUPPORTED);
+            test(40, TOMCAT_UNSUPPORTED);
+        }
+
+        private void test(int version, TomcatVersion expectedVersion)
+        {
+            Assert.assertEquals(get(version), expectedVersion);
+        }
     }
 }

@@ -31,30 +31,48 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.announcements.DiscussionService;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.BaseDownloadAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.compliance.ComplianceService;
 import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
@@ -128,19 +146,15 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
-import org.labkey.api.util.HtmlString;
-import org.labkey.study.assay.PublishConfirmAction;
-import org.labkey.study.assay.PublishStartAction;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -173,6 +187,8 @@ import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.assay.PublishConfirmAction;
+import org.labkey.study.assay.PublishStartAction;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
@@ -210,14 +226,12 @@ import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.net.URISyntaxException;
-import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1011,7 +1025,7 @@ public class StudyController extends BaseStudyController
             {
                 return new HtmlView("User does not have read permission on this dataset.");
             }
-            else
+            else if (DiscussionService.get() != null)
             {
                 // add discussions
                 DiscussionService service = DiscussionService.get();
@@ -2210,6 +2224,9 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getConfirmView(IdForm idForm, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Unused Visits");
+
             StudyImpl study = getStudyThrowIfNull();
 
             redirectToSharedVisitStudy(study, getViewContext().getActionURL());
@@ -2930,7 +2947,6 @@ public class StudyController extends BaseStudyController
             // Need to handle this by groups of source lsids -- each assay container needs logging
             MultiValuedMap<String,String> sourceLsid2datasetLsid = new ArrayListValuedHashMap<>();
 
-
             if (originalSourceLsid != null)
             {
                 sourceLsid2datasetLsid.putAll(originalSourceLsid, allLsids);
@@ -2964,7 +2980,7 @@ public class StudyController extends BaseStudyController
                     StudyService.get().addAssayRecallAuditEvent(def, entry.getValue().size(), sourceContainer, getUser());
                 }
             }
-            def.deleteRows(allLsids);
+            def.deleteDatasetRows(getUser(), allLsids);
 
             ExpProtocol protocol = ExperimentService.get().getExpProtocol(NumberUtils.toInt(protocolId));
             if (protocol != null && originalSourceLsid != null)
@@ -3385,8 +3401,6 @@ public class StudyController extends BaseStudyController
 
         if (table != null)
         {
-            ResultSet rs = null;
-
             try
             {
                 // Do a single-column query to get the list of participants that match the filter criteria for this
@@ -3403,25 +3417,24 @@ public class StudyController extends BaseStudyController
                     RenderContext ctx = dataView.getRenderContext();
                     DataRegion dataRegion = dataView.getDataRegion();
                     queryView.getSettings().setShowRows(ShowRows.ALL);
-                    rs = ctx.getResultSet(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false);
-                    int ptidIndex = (null != ptidColumnInfo) ? rs.findColumn(ptidColumnInfo.getAlias()) : 0;
-
-                    Set<String> participantSet = new LinkedHashSet<>();
-                    while (rs.next() && ptidIndex > 0)
+                    try (Results results = ctx.getResults(columns, dataRegion.getDisplayColumns(), table, queryView.getSettings(), dataRegion.getQueryParameters(), Table.ALL_ROWS, dataRegion.getOffset(), dataRegion.getName(), false))
                     {
-                        String ptid = rs.getString(ptidIndex);
-                        participantSet.add(ptid);
+                        int ptidIndex = results.findColumn(ptidColumnInfo.getAlias());
+
+                        Set<String> participantSet = new LinkedHashSet<>();
+                        while (results.next() && ptidIndex > 0)
+                        {
+                            String ptid = results.getString(ptidIndex);
+                            participantSet.add(ptid);
+                        }
+
+                        return new ArrayList<>(participantSet);
                     }
-                    return new ArrayList<>(participantSet);
                 }
             }
             catch (Exception x)
             {
                 throw new RuntimeException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
         return Collections.emptyList();
@@ -3703,7 +3716,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No dataset found for id: " + _datasetId);
             }
             Set<String> lsids = null;
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));
@@ -3906,93 +3919,6 @@ public class StudyController extends BaseStudyController
             return root.addChild("Define Dataset Schemas");
         }
     }
-
-    // TODO: Delete? Doesn't seem to be used. Dataset import "Download Template" button invokes query-exportExcelTemplate.
-    @RequiresPermission(ReadPermission.class)
-    @DeprecatedAction
-    @RemoveIn20_1
-    public class TemplateAction extends ExportAction
-    {
-        @Override
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
-        {
-            Study study = getStudyThrowIfNull();
-            ViewContext context = getViewContext();
-
-            int datasetId = null == context.get(DatasetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DatasetDefinition.DATASETKEY));
-            DatasetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-            if (null == def)
-            {
-                redirectTypeNotFound(datasetId);
-                return;
-            }
-            String typeURI = def.getTypeURI();
-            if (null == typeURI)
-                redirectTypeNotFound(datasetId);
-
-            TableInfo tinfo = def.getTableInfo(getUser(), true);
-
-            DataRegion dr = new DataRegion();
-            dr.setTable(tinfo);
-
-            Set<String> ignoreColumns = new CaseInsensitiveHashSet("createdby", "modifiedby", "lsid", "_key", "participantsequencenum", "datasetid", "visitdate", "sourcelsid", "created", "modified", "visitrowid", "day", "qcstate", "dataset");
-            if (study.getTimepointType() != TimepointType.VISIT)
-                ignoreColumns.add("SequenceNum");
-
-            // If this is demographic data, user doesn't need to enter visit info -- we have defaults.
-            if (def.isDemographicData())
-            {
-                if (study.getTimepointType() == TimepointType.VISIT)
-                    ignoreColumns.add("SequenceNum");
-                else // DATE or NONE
-                    ignoreColumns.add("Date");
-            }
-            if (def.getKeyManagementType() == KeyManagementType.None)
-            {
-                // Do not include a server-managed key field
-                ignoreColumns.add(def.getKeyPropertyName());
-            }
-
-            // Need to ignore field-level qc columns that are generated
-            for (ColumnInfo col : tinfo.getColumns())
-            {
-                if (col.isMvEnabled())
-                {
-                    ignoreColumns.add(col.getMvColumnName().getName());
-                    ignoreColumns.add(col.getName() + RawValueColumn.RAW_VALUE_SUFFIX);
-                }
-            }
-
-            for (ColumnInfo col : tinfo.getColumns())
-            {
-                if (ignoreColumns.contains(col.getName()))
-                    continue;
-
-                DataColumn dc = new DataColumn(col);
-                //DO NOT use friendly names. We will import this later.
-                dc.setCaption(col.getAlias());
-                dr.addDisplayColumn(dc);
-            }
-            DisplayColumn replaceColumn = new SimpleDisplayColumn();
-            replaceColumn.setCaption("replace");
-            dr.addDisplayColumn(replaceColumn);
-
-            SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause("0 = 1", new Object[]{});
-
-            RenderContext ctx = new RenderContext(getViewContext());
-            ctx.setContainer(getContainer());
-            ctx.setBaseFilter(filter);
-
-            Results rs = dr.getResultSet(ctx);
-            List<DisplayColumn> cols = dr.getDisplayColumns();
-            try (ExcelWriter xl = new ExcelWriter(rs, cols))
-            {
-                xl.write(response);
-            }
-        }
-    }
-
 
     public static ActionURL getViewPreferencesURL(Container c, int id, String viewName)
     {
@@ -6777,6 +6703,9 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getConfirmView(Object o, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Clear Custom Mapping");
+
             return new HtmlView("Are you sure you want to delete the visit import custom mapping for this study?");
         }
 

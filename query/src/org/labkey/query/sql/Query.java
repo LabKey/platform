@@ -80,7 +80,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
@@ -1694,7 +1693,11 @@ public class Query
                 "                              INNER JOIN folderTree p ON c.parent = p.entityId \n" +
                 "  ) \n" +
                 "  SELECT * \n" +
-                "  FROM folderTree", -1, -1)
+                "  FROM folderTree", -1, -1),
+        new SqlTest("WITH UserCTE AS (SELECT 1001 as UserId) \n" +
+                "SELECT U1.UserId Expr1, U2.UserId Expr2\n" +
+                "FROM UserCTE AS U1, UserCTE AS U2 \n" +
+                "WHERE U1.UserId = U2.UserId", 2, 1)
     };
 
 
@@ -2089,7 +2092,6 @@ public class Query
             User user = TestContext.get().getUser();
             Container c = JunitUtil.getTestContainer();
             Container sub = getSubfolder();
-            ResultSet rs = null;
 
             lists = DefaultSchema.get(user, c).getSchema("lists");
             if (1==1 || null == lists)
@@ -2116,17 +2118,19 @@ public class Query
                 selectQ.validate(this, c);
                 selectQ.validate(this, sub);
 
-                rs = resultset(selectQ._sql, c);
-                boolean hasNext = rs.next();
-                assert hasNext;
-                assertEquals(rs.getInt(2), c.getRowId());
-                ResultSetUtil.close(rs); rs = null;
+                try (ResultSet rs = resultset(selectQ._sql, c))
+                {
+                    boolean hasNext = rs.next();
+                    assert hasNext;
+                    assertEquals(rs.getInt(2), c.getRowId());
+                }
 
-                rs = resultset(selectQ._sql, sub);
-                hasNext = rs.next();
-                assert hasNext;
-                assertEquals(rs.getInt(2), sub.getRowId());
-                ResultSetUtil.close(rs); rs = null;
+                try (ResultSet rs = resultset(selectQ._sql, sub))
+                {
+                    boolean hasNext = rs.next();
+                    assert hasNext;
+                    assertEquals(rs.getInt(2), sub.getRowId());
+                }
 
                 //
                 // can you think of more good tests
@@ -2137,7 +2141,6 @@ public class Query
                 QueryDefinition q = QueryService.get().getQueryDef(user, JunitUtil.getTestContainer(), "lists", "QThisContainer");
                 if (null != q)
                     q.delete(user);
-                ResultSetUtil.close(rs);
             }
 
             GUID testGUID = new GUID("01234567-ABCD-ABCD-ABCD-012345679ABC");
@@ -2155,14 +2158,14 @@ public class Query
                     return new SQLFragment(" ~~CONTAINERFILTER~~ ");
                 }
 
-                @Nullable
+                @NotNull
                 @Override
                 public Collection<GUID> getIds(Container currentContainer)
                 {
                     return Collections.singletonList(testGUID);
                 }
 
-                @Nullable
+                @NotNull
                 @Override
                 public Type getType()
                 {

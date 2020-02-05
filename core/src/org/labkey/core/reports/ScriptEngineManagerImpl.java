@@ -626,8 +626,6 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     // ScriptEngineManagerImpl.TestCase tests bootstrap property setting, so we need a way to force this into new install mode
     public void populateScriptEngineDefinitionsWithStartupProps(Boolean startupModeForTest)
     {
-        final boolean isBootstrap = null != startupModeForTest?startupModeForTest : ModuleLoader.getInstance().isNewInstall();
-
         // populate script engine definition with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like:
         //        ScriptEngineDefinition.{name}.external;bootstrap=True
@@ -642,31 +640,28 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
 
         for (ConfigProperty prop: startupProps)
         {
-            if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
+            String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
+            if (scriptEngineNameAndParamSplit.length == 2)
             {
-                String[] scriptEngineNameAndParamSplit = prop.getName().split("\\.");
-                if (scriptEngineNameAndParamSplit.length == 2)
+                String engineName = scriptEngineNameAndParamSplit[0];
+                String engineParam = scriptEngineNameAndParamSplit[1];
+                String paramValue = prop.getValue();
+                if (enginePropertyMap.containsKey(engineName))
                 {
-                    String engineName = scriptEngineNameAndParamSplit[0];
-                    String engineParam = scriptEngineNameAndParamSplit[1];
-                    String paramValue = prop.getValue();
-                    if (enginePropertyMap.containsKey(engineName))
-                    {
-                        Map<String, String> propertyMap = enginePropertyMap.get(engineName);
-                        propertyMap.put(engineParam, paramValue);
-                        enginePropertyMap.put(engineName, propertyMap);
-                    }
-                    else
-                    {
-                        Map<String, String> propertyMap = new HashMap<>();
-                        propertyMap.put(engineParam, paramValue);
-                        enginePropertyMap.put(engineName, propertyMap);
-                    }
+                    Map<String, String> propertyMap = enginePropertyMap.get(engineName);
+                    propertyMap.put(engineParam, paramValue);
+                    enginePropertyMap.put(engineName, propertyMap);
                 }
                 else
                 {
-                    throw new ConfigurationException("Startup properties for creating script engine definition not formatted correctly: " + prop.getName());
+                    Map<String, String> propertyMap = new HashMap<>();
+                    propertyMap.put(engineParam, paramValue);
+                    enginePropertyMap.put(engineName, propertyMap);
                 }
+            }
+            else
+            {
+                throw new ConfigurationException("Startup properties for creating script engine definition not formatted correctly: " + prop.getName());
             }
         }
 

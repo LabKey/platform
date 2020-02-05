@@ -67,7 +67,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
@@ -1334,7 +1334,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override

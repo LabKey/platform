@@ -380,6 +380,8 @@ public class WikiController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(WikiNameForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Wiki");
             _wiki = WikiSelectManager.getWiki(getContainer(), form.getName());
             if (null == _wiki)
                 throw new NotFoundException();
@@ -1000,6 +1002,7 @@ public class WikiController extends SpringActionController
 
             return true;
         }
+
     }
 
 
@@ -1084,7 +1087,7 @@ public class WikiController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#copy");
-            return null;
+            return root.addChild("Copy Wiki Location");
         }
     }
 
@@ -1202,7 +1205,7 @@ public class WikiController extends SpringActionController
                 WebPartView v = new WikiView(_wiki, _wikiversion, existing);
 
                 // get discussion view
-                if (existing)
+                if (existing && DiscussionService.get() != null)
                 {
                     ActionURL pageUrl = new PageAction(getViewContext(), _wiki, _wikiversion).getUrl();
                     String discussionTitle = "discuss page - " +  _wikiversion.getTitle();

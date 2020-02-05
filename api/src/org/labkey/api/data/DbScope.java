@@ -139,6 +139,7 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
+    private final boolean _rds;
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -159,7 +160,7 @@ public class DbScope
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
          * outer-most layer of the transaction has completed (either by committing or closing the connection).
          */
-        boolean isReleaseLocksOnFinalCommit();
+        default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
 
 
@@ -212,22 +213,7 @@ public class DbScope
     }
 
 
-    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
-    {
-        @NotNull
-        @Override
-        public String getKind()
-        {
-            return "NORMAL";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
-
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
     {
@@ -278,6 +264,7 @@ public class DbScope
         _tableCache = null;
         _labkeyProps = null;
         _dsProps = null;
+        _rds = false;
     }
 
 
@@ -366,6 +353,7 @@ public class DbScope
             _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+            _rds = _dialect.isRds(this);
         }
     }
 
@@ -1145,6 +1133,7 @@ public class DbScope
     /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
+        QueryService.get().updateLastModified();
         _schemaCache.remove(schemaName, type);
         invalidateAllTables(schemaName, type);
     }
@@ -1162,6 +1151,7 @@ public class DbScope
     // from the DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
+        QueryService.get().updateLastModified();
         _tableCache.remove(schemaName, tableName, type);
         _schemaCache.remove(schemaName, type);
     }
@@ -1294,6 +1284,11 @@ public class DbScope
     public static boolean isPrimaryDataSource(String dsName)
     {
         return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
+    }
+
+    public boolean isRds()
+    {
+        return _rds;
     }
 
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception

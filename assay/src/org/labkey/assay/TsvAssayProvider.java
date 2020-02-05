@@ -24,10 +24,21 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayDataCollector;
+import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayPipelineProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssaySaveHandler;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.FileUploadDataCollector;
+import org.labkey.api.assay.PipelineDataCollector;
+import org.labkey.api.assay.PreviouslyUploadedDataCollector;
+import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -44,21 +55,9 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayDataCollector;
-import org.labkey.api.assay.AssayDataType;
-import org.labkey.api.assay.AssayPipelineProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssaySaveHandler;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.FileUploadDataCollector;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.assay.PipelineDataCollector;
-import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HttpView;
@@ -112,12 +111,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public TsvAssayProvider()
     {
-        this("GeneralAssayProtocol", "GeneralAssayRun", ModuleLoader.getInstance().getModule(assayModuleClass));
+        this("GeneralAssayProtocol", "GeneralAssayRun", "General" + RESULT_LSID_PREFIX_PART, ModuleLoader.getInstance().getModule(assayModuleClass));
     }
 
-    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, Module declaringModule)
+    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
         setMaxFileInputs(100);  // no specific requirement for this, can be changed easily
     }
 

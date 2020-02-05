@@ -79,7 +79,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         {
             String message = e.getMessage();
             // Verify that the exception message does not contain SQL (we don't want to display SQL to users...
-            assertTrue("Exception message " + message + " seems to contain SQL",  !message.contains("SELECT"));
+            assertFalse("Exception message " + message + " seems to contain SQL", message.contains("SELECT"));
             // ...and that the exception is decorated, so the SQL does end up in mothership
             String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
             assertNotNull("Exception was not decorated", decoration);
@@ -233,7 +233,6 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             assertEquals(count, selector.getValueMap().size());
             assertTrue("Expected getValueMap() to fail with unstable column ordering", stable);
             assertTrue("Expected getValueMap() to fail with " + StringUtilsLabKey.pluralize(columnCount, "column"), columnCount > 1);
-
         }
         catch (IllegalStateException e)
         {
@@ -264,7 +263,7 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         }
 
         //noinspection UnusedDeclaration
-        try (Results rs = selector.getResults())
+        try (Results results = selector.getResults())
         {
             assertTrue("Expected getResults() to fail with unstable column ordering", stable);
         }

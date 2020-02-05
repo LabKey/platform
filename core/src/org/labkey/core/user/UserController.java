@@ -46,6 +46,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
@@ -97,9 +98,6 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
-import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.util.PageFlowUtil;
@@ -135,29 +133,26 @@ import org.labkey.core.query.UsersDomainKind;
 import org.labkey.core.query.UsersTable;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.view.template.bootstrap.PrintTemplate;
-import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.imageio.ImageIO;
 import javax.mail.Message;
 import javax.mail.internet.MimeMessage;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class UserController extends SpringActionController
 {
@@ -327,7 +322,7 @@ public class UserController extends SpringActionController
             deactivate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Re-Activate");
+            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
             activate.setRequiresSelection(true);
             activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
@@ -393,7 +388,6 @@ public class UserController extends SpringActionController
     public static class UserIdForm extends ReturnUrlForm
     {
         private Integer[] _userId;
-        private String _redirUrl;
 
         public Integer[] getUserId()
         {
@@ -441,7 +435,7 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToUpdate(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -450,17 +444,17 @@ public class UserController extends SpringActionController
                 //try to get a user selection list from the dataregion
                 Set<Integer> userIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
                 if (userIds.isEmpty())
-                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
+                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL());
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToUpdate(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
 
             if (bean.getUsers().size() == 0)
-                throw new RedirectException(bean.getRedirUrl().getLocalURIString());
+                throw new RedirectException(bean.getRedirUrl());
 
             return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
@@ -474,20 +468,10 @@ public class UserController extends SpringActionController
             User curUser = getUser();
             for (Integer userId : form.getUserId())
             {
-                if (isValidUserToUpdate(userId))
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.setUserActive(curUser, userId, _active);
             }
             return true;
-        }
-
-        private boolean isValidUserToUpdate(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user activate/deactivate themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
         }
 
         @Override
@@ -501,7 +485,7 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            String title = _active ? "Re-activate Users" : "Deactivate Users";
+            String title = _active ? "Reactivate Users" : "Deactivate Users";
             return root.addChild(title);
         }
     }
@@ -524,6 +508,89 @@ public class UserController extends SpringActionController
         }
     }
 
+    private boolean isValidUserToUpdate(Integer formUserId, User currentUser)
+    {
+        User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
+
+        return null != formUser
+                && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
+    }
+
+    @RequiresPermission(UserManagementPermission.class)
+    public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
+    {
+        private List<Integer> validUserIds = new ArrayList<>();
+        private List<Integer> invalidUserIds = new ArrayList<>();
+
+        @Override
+        public void validateForm(UpdateUserStateForm form, Errors errors)
+        {
+            if (form.getUserId() == null || form.getUserId().length == 0)
+            {
+                errors.reject(ERROR_MSG, "UserId parameter must be provided.");
+            }
+            else
+            {
+                for (Integer userId : form.getUserId())
+                {
+                    if (isValidUserToUpdate(userId, getUser()))
+                        validUserIds.add(userId);
+                    else
+                        invalidUserIds.add(userId);
+                }
+
+                if (invalidUserIds.size() > 0)
+                    errors.reject(ERROR_MSG, "Invalid user id(s) provided: " + StringUtils.join(invalidUserIds, ", ") + ".");
+            }
+        }
+
+        @Override
+        public Object execute(UpdateUserStateForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            for (Integer userId : validUserIds)
+            {
+                if (form.isDelete())
+                    UserManager.deleteUser(userId);
+                else
+                    UserManager.setUserActive(getUser(), userId, form.isActivate());
+            }
+
+            response.put("success", true);
+            response.put("delete", form.isDelete());
+            response.put("activate", form.isActivate());
+            response.put("userIds", validUserIds);
+            return response;
+        }
+    }
+
+    public static class UpdateUserStateForm extends UserIdForm
+    {
+        private boolean activate;
+        private boolean delete;
+
+        public boolean isActivate()
+        {
+            return activate;
+        }
+
+        public void setActivate(boolean activate)
+        {
+            this.activate = activate;
+        }
+
+        public boolean isDelete()
+        {
+            return delete;
+        }
+
+        public void setDelete(boolean delete)
+        {
+            this.delete = delete;
+        }
+    }
+
     @RequiresPermission(UserManagementPermission.class)
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
@@ -535,14 +602,14 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
-            String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
+            ActionURL siteUsersUrl = new UserUrlsImpl().getSiteUsersURL();
             DeleteUsersBean bean = new DeleteUsersBean();
 
             if (null != form.getUserId())
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToDelete(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -555,7 +622,7 @@ public class UserController extends SpringActionController
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToDelete(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
@@ -573,23 +640,12 @@ public class UserController extends SpringActionController
                 return false;
 
             User curUser = getUser();
-
             for (Integer userId : form.getUserId())
             {
-                if (null != userId && userId != curUser.getUserId())
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.deleteUser(userId);
             }
             return true;
-        }
-
-        private boolean isValidUserToDelete(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user delete themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin delete a site admin
         }
 
         @Override
@@ -902,7 +958,6 @@ public class UserController extends SpringActionController
     {
         Integer _userId;
         Integer _pkVal;
-        PropertyValue _deletedAttachments;
 
         @Override
         public ModelAndView getView(QueryUpdateForm form, boolean reshow, BindException errors)
@@ -932,10 +987,6 @@ public class UserController extends SpringActionController
                 TableInfo table = ((UpdateView) view).getTable();
                 if (table instanceof UsersTable)
                     ((UsersTable)table).setMustCheckPermissions(false);
-/*
-                view.getViewContext().addContextualRole(ReadPermission.class);
-                view.getViewContext().addContextualRole(UpdatePermission.class);
-*/
             }
             else
             {
@@ -954,7 +1005,6 @@ public class UserController extends SpringActionController
             QueryForm form = new UserQueryForm();
             form.setViewContext(context);
             PropertyValues propertyValues = context.getBindPropertyValues();
-            _deletedAttachments = propertyValues.getPropertyValue("deletedAttachments");
             form.bindParameters(propertyValues);
             return form;
         }
@@ -963,14 +1013,15 @@ public class UserController extends SpringActionController
         public void validateCommand(QueryUpdateForm form, Errors errors)
         {
             TableInfo table = form.getTable();
-
-            if (table instanceof UsersTable)
+            if (!(table instanceof UsersTable))
+            {
+                errors.reject(ERROR_MSG, "Unexpected table parameter " + form.getTable() + ".");
+                return;
+            }
+            else
             {
                 for (Map.Entry<String, Object> entry : form.getTypedColumns().entrySet())
                 {
-                    if (entry.getKey().equals("ExpirationDate") && !AuthenticationManager.canSetUserExpirationDate(getUser(), getContainer()))
-                        errors.reject(ERROR_MSG, "User does not have permission to edit the ExpirationDate field.");
-
                     if (entry.getValue() != null)
                     {
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
@@ -989,68 +1040,8 @@ public class UserController extends SpringActionController
             String userId = form.getPkVal().toString();
             if (userId == null)
             {
-                errors.reject(SpringActionController.ERROR_MSG, "User Id cannot be null");
+                errors.reject(SpringActionController.ERROR_MSG, "UserId parameter must be provided.");
                 return;
-            }
-
-            User user = getModifiableUser(NumberUtils.toInt(userId));
-
-            // don't let non-site admin edit details of site admin account
-            if (user.hasSiteAdminPermission() && !getUser().hasSiteAdminPermission())
-                throw new UnauthorizedException("Can not edit details for a Site Admin user");
-
-            String userEmailAddress = user.getEmail();
-            String displayName = (String)form.getTypedColumns().get("DisplayName");
-
-            if (displayName != null)
-            {
-                if (displayName.contains("@"))
-                {
-                    if (!displayName.equalsIgnoreCase(userEmailAddress))
-                        errors.reject(SpringActionController.ERROR_MSG, "User display name should not contain '@'. Please enter a different value");
-                }
-
-                //ensure that display name is unique
-                User existingUser = UserManager.getUserByDisplayName(displayName);
-                //if there's a user with this display name and it's not the user currently being edited
-                if (existingUser != null && !existingUser.equals(user))
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "The specified display name is already in use. Please enter a different value");
-                }
-            }
-
-            Timestamp expirationDate = (Timestamp) form.getTypedColumns().get("ExpirationDate");
-            if (expirationDate != null)
-            {
-                if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
-                    errors.reject(SpringActionController.ERROR_MSG, "Expiration Date cannot be in the past.");
-
-                if (isOwnRecord(form))
-                    errors.reject(SpringActionController.ERROR_MSG, "Cannot set your own expiration date.");
-            }
-
-            // validate the original size of the avatar image
-            SpringAttachmentFile file = getAvatarFileFromFileMap();
-            if (file != null)
-            {
-                try (InputStream is = file.openInputStream())
-                {
-                    BufferedImage image = ImageIO.read(is);
-                    float desiredSize = ThumbnailService.ImageType.Large.getHeight();
-
-                    if (image == null)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must be an image file.");
-                    }
-                    else if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
-                    {
-                        errors.reject(SpringActionController.ERROR_MSG, "Avatar file must have a height and width of at least " + desiredSize + "px.");
-                    }
-                }
-                catch (IOException e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, "Unable to open avatar file.");
-                }
             }
         }
 
@@ -1068,101 +1059,16 @@ public class UserController extends SpringActionController
             User postingUser = getUser();
             boolean isOwnRecord = isOwnRecord(form);
 
-            Date oldExpirationDate = null;
-            User targetUser = UserManager.getUser(_pkVal);
-            if (targetUser != null)
-                oldExpirationDate = targetUser.getExpirationDate();
-
             if (postingUser.hasRootPermission(UserManagementPermission.class) || isOwnRecord)
             {
                 TableInfo table = form.getTable();
                 if (table instanceof UsersTable)
                     ((UsersTable)table).setMustCheckPermissions(false);
+
                 doInsertUpdate(form, errors, false);
-
-                if (0 == errors.getErrorCount())
-                {
-                    auditExpirationDateChange(oldExpirationDate, form);
-                }
-
-                updateAvatarThumbnail();
             }
+
             return 0 == errors.getErrorCount();
-        }
-
-        private void auditExpirationDateChange(Date oldExpirationDate, QueryUpdateForm form)
-        {
-            User targetUser = UserManager.getUser(_pkVal);
-            if (targetUser == null)
-                return;
-
-            Date newExpirationDate = targetUser.getExpirationDate();
-            String currentUserEmail = getUser().getEmail();
-            String targetUserEmail = targetUser.getEmail();
-            Container c = getContainer();
-
-            String message;
-
-            if (oldExpirationDate == null && newExpirationDate == null)
-                return;
-            else if (oldExpirationDate == null)
-            {
-                message = String.format("%1$s set expiration date for %2$s to %3$s.",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, newExpirationDate));
-            }
-            else if (newExpirationDate == null)
-            {
-                message = String.format("%1$s removed expiration date for %2$s. Previous value was %3$s",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate));
-            }
-            else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
-            {
-                message = String.format("%1$s changed expiration date for %2$s from %3$s to %4$s.",
-                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate), DateUtil.formatDateTime(c, newExpirationDate));
-            }
-            else
-                return;
-
-            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(getContainer().getId(), message, targetUser);
-            AuditLogService.get().addEvent(getUser(), event);
-        }
-
-        private SpringAttachmentFile getAvatarFileFromFileMap()
-        {
-            String avatarFieldKey = "quf_" + UserAvatarDisplayColumnFactory.FIELD_KEY;
-            if (getFileMap().containsKey(avatarFieldKey) && !getFileMap().get(avatarFieldKey).isEmpty())
-            {
-                return new SpringAttachmentFile(getFileMap().get(avatarFieldKey));
-            }
-
-            return null;
-        }
-
-        private void updateAvatarThumbnail() throws IOException
-        {
-            User user = UserManager.getUser(_pkVal);
-            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
-            ThumbnailService svc = ThumbnailService.get();
-
-            if (svc != null)
-            {
-                // check if there is a request to delete the existing avatar
-                if (_deletedAttachments != null && UserAvatarDisplayColumnFactory.FIELD_KEY.equalsIgnoreCase(_deletedAttachments.getValue().toString()))
-                {
-                    svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
-                }
-
-                // add any new avatars by using the ThumbnailService to generate and attach to the User's entityid
-                SpringAttachmentFile file = getAvatarFileFromFileMap();
-                if (file != null)
-                {
-                    try (InputStream is = file.openInputStream())
-                    {
-                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
-                        svc.replaceThumbnail(wrapper, imageType, null, getViewContext());
-                    }
-                }
-            }
         }
 
         @Override
@@ -1177,6 +1083,61 @@ public class UserController extends SpringActionController
             addUserDetailsNavTrail(root, _pkVal);
             root.addChild("Update");
             return root.addChild(UserManager.getEmailForId(_pkVal));
+        }
+    }
+
+    @RequiresLogin // permission check will happen with form.mustCheckPermissions
+    public class UpdateUserDetailsAction extends MutatingApiAction<UserQueryForm>
+    {
+        @Override
+        public void validateForm(UserQueryForm form, Errors errors)
+        {
+            if (form.getUserId() <= 0)
+            {
+                errors.reject(ERROR_MSG, "UserId parameter must be provided.");
+            }
+            else if (UserManager.getUser(form.getUserId()) == null || form.mustCheckPermissions(getUser(), form.getUserId()))
+            {
+                errors.reject(ERROR_MSG, "You do not have permissions to update user details.");
+            }
+        }
+
+        @Override
+        public Object execute(UserQueryForm form, BindException errors) throws Exception
+        {
+            Container root = ContainerManager.getRoot();
+            UserSchema schema = form.getSchema();
+            UsersTable table = (UsersTable)schema.getTable(CoreQuerySchema.USERS_TABLE_NAME, false);
+            table.setMustCheckPermissions(form.mustCheckPermissions(getUser(), form.getUserId()));
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
+            {
+                QueryUpdateForm queryUpdateForm = new QueryUpdateForm(table, getViewContext(), true);
+                queryUpdateForm.bindParameters(form.getInitParameters());
+                Map<String, Object> row = queryUpdateForm.getTypedColumns();
+
+                // handle file attachment for avatar file
+                Map<String, MultipartFile> fileMap = getFileMap();
+                if (fileMap != null && fileMap.containsKey(UserAvatarDisplayColumnFactory.FIELD_KEY))
+                {
+                    SpringAttachmentFile file = new SpringAttachmentFile(fileMap.get(UserAvatarDisplayColumnFactory.FIELD_KEY));
+                    if (!file.isEmpty())
+                        row.put(UserAvatarDisplayColumnFactory.FIELD_KEY, file);
+                }
+                // handle deletion of the current avatar file for a user
+                else if ("null".equals(row.get(UserAvatarDisplayColumnFactory.FIELD_KEY)))
+                    row.put(UserAvatarDisplayColumnFactory.FIELD_KEY, null);
+
+                List<Map<String, Object>> rows = new ArrayList<>(Arrays.asList(row));
+                List<Map<String, Object>> keys = new ArrayList<>(Arrays.asList(Map.of("UserId", form.getUserId())));
+
+                response.put("updatedRows", table.getUpdateService().updateRows(getUser(), root, rows, keys, null, null));
+                response.put("success", true);
+
+                transaction.commit();
+            }
+            return response;
         }
     }
 
@@ -1195,7 +1156,7 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public UserSchema getSchema()
+        public UserSchema createSchema()
         {
             int userId = getUserId();
             boolean checkPermission = mustCheckPermissions(getUser(), userId);
@@ -1203,7 +1164,7 @@ public class UserController extends SpringActionController
             return new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer(), checkPermission);
         }
 
-        private boolean mustCheckPermissions(User user, int userRecordId)
+        public boolean mustCheckPermissions(User user, int userRecordId)
         {
             if (user.hasRootPermission(UserManagementPermission.class))
                 return false;
@@ -1603,7 +1564,7 @@ public class UserController extends SpringActionController
                     ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                     deactivateUrl.addParameter("userId", _detailsUserId);
                     deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
-                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
+                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
                     deleteUrl.addParameter("userId", _detailsUserId);
@@ -2403,10 +2364,11 @@ public class UserController extends SpringActionController
     {
         private String _group;
         private Integer _groupId;
-        private String _name;
-        private boolean _allMembers;
-        private boolean _active;
-        private Permission[] _permissions;
+        private String _name; // prefix to match against displayName and email address
+        private boolean _allMembers; // when getting members of a group, should we get the direct members of the group (allMembers=false) or also members of subgroups (allMembers=true)
+        private boolean _active; // should we get only active members (relevant only if permissions is empty)
+        private Permission[] _permissions; // the  permissions each user must have (They must have all of these)
+        private Set<Class<? extends Permission>> _permissionClasses = Collections.emptySet(); // the set of permission classes corresponding to the permissions array
 
         public String getGroup()
         {
@@ -2453,9 +2415,18 @@ public class UserController extends SpringActionController
             return _permissions;
         }
 
+        public Set<Class<? extends Permission>> getPermissionClasses()
+        {
+           return _permissionClasses;
+        }
+
         public void setPermissions(Permission[] permission)
         {
             _permissions = permission;
+            if (_permissions == null)
+                _permissionClasses = Collections.emptySet();
+            else
+                _permissionClasses = Arrays.stream(_permissions).filter(Objects::nonNull).map(Permission::getClass).collect(Collectors.toSet());
         }
 
         public boolean getActive()
@@ -2469,6 +2440,16 @@ public class UserController extends SpringActionController
         }
     }
 
+
+    /**
+     * Collects a set of users either from a particular group or from any of the project groups of the current container.
+     * Optionally filters for those users who have a given set of permissions. Can also include deactivated users (though if
+     * checking for permissions, no deactivated users will be included).
+     *
+     * N.B. Users that have permissions within the current project but are not part of any project group WILL NOT be returned unless
+     * the user is in one of the global groups (such as SiteAdmins) and you set allMembers=true.  In other words, this is probably
+     * not the API you're looking for.  Consider using GetUsersWithPermissions instead.
+     */
     @RequiresLogin
     @RequiresPermission(ReadPermission.class)
     public class GetUsersAction extends ReadOnlyApiAction<GetUsersForm>
@@ -2494,7 +2475,7 @@ public class UserController extends SpringActionController
             //if requesting users in a specific group...
             if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
             {
-                users = getGroupUsers(form, container, currentUser, response);
+                users = getProjectGroupUsers(form, response);
             }
             else
             {
@@ -2507,62 +2488,33 @@ public class UserController extends SpringActionController
                     users = SecurityManager.getProjectUsers(container, form.isAllMembers(), !form.getActive());
             }
 
-            if (null != users)
-            {
-                //trim name filter to empty so we are guaranteed a non-null string
-                //and convert to lower-case for the compare below
-                String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
-
-                if (nameFilter.length() > 0)
-                    response.put("name", nameFilter);
-
-                boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
-                boolean userHasPermission;
-
-                for (User user : users)
-                {
-                    // TODO: consider performance here
-                    // if permissions passed, then validate the user has all of such permissions
-                    if (form.getPermissions() != null)
-                    {
-                        userHasPermission = true;
-                        for (Permission permission : form.getPermissions())
-                        {
-                            if (permission != null && !container.hasPermission(user, permission.getClass()))
-                            {
-                                userHasPermission = false;
-                                break;
-                            }
-                        }
-                        if (!userHasPermission)
-                            continue;
-                    }
-
-                    //according to the docs, startsWith will return true even if nameFilter is empty string
-                    if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
-                    {
-                        Map<String,Object> userInfo = new HashMap<>();
-                        userInfo.put(PROP_USER_ID, user.getUserId());
-
-                        //force sanitize of the display name, even for logged-in users
-                        userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
-
-                        //include email address, if user is allowed to see them
-                        if (includeEmail)
-                            userInfo.put("email", user.getEmail());
-
-                        userResponseList.add(userInfo);
-                    }
-                }
-            }
-
-            response.put("users", userResponseList);
+            this.setUsersList(form, filterForPermissions(form, users), response);
             return response;
         }
 
-        private Collection<User> getGroupUsers(GetUsersForm form, Container container, User currentUser, ApiSimpleResponse response)
+        // Filter the collection of users to those that have all of the permissions provided in the form.
+        // If no permissions are provided, no filtering will occur.
+        protected Set<User> filterForPermissions(GetUsersForm form, Collection<User> users)
         {
-            Container project = container.getProject();
+            Container container = getContainer();
+            return users.stream().filter(user -> {
+                boolean userHasPermission = true;
+                for (Class<? extends Permission> permClass : form.getPermissionClasses())
+                {
+                    if (!container.hasPermission(user, permClass))
+                    {
+                        userHasPermission = false;
+                        break;
+                    }
+                }
+                return userHasPermission;
+            }).collect(Collectors.toSet());
+        }
+
+        @NotNull
+        protected Collection<User> getProjectGroupUsers(GetUsersForm form, ApiSimpleResponse response)
+        {
+            Container project = getContainer().getProject();
 
             //get users in given group/role name
             Integer groupId = form.getGroupId();
@@ -2597,6 +2549,92 @@ public class UserController extends SpringActionController
                 users = SecurityManager.getGroupMembers(group, userMemberType);
 
             return users;
+        }
+
+        protected void setUsersList(GetUsersForm form, Collection<User> users, ApiSimpleResponse response)
+        {
+            User currentUser = getUser();
+            List<Map<String,Object>> userResponseList = new ArrayList<>();
+            //trim name filter to empty so we are guaranteed a non-null string
+            //and convert to lower-case for the compare below
+            String nameFilter = StringUtils.trimToEmpty(form.getName()).toLowerCase();
+
+            if (nameFilter.length() > 0)
+                response.put("name", nameFilter);
+
+            boolean includeEmail = SecurityManager.canSeeUserDetails(getContainer(), currentUser);
+
+            for (User user : users)
+            {
+                //according to the docs, startsWith will return true even if nameFilter is empty string
+                if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
+                {
+                    Map<String,Object> userInfo = new HashMap<>();
+                    userInfo.put(PROP_USER_ID, user.getUserId());
+
+                    //force sanitize of the display name, even for logged-in users
+                    userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
+
+                    //include email address, if user is allowed to see them
+                    if (includeEmail)
+                        userInfo.put("email", user.getEmail());
+
+                    userResponseList.add(userInfo);
+                }
+            }
+            response.put("users", userResponseList);
+        }
+    }
+
+    /**
+     * Retrieves the set of users that have all of a specified set of permissions.  A group
+     * may be provided and only users within that group will be returned.  A name (prefix) may be
+     * provided and only users whose email or display name starts with the prefix will be returned.
+     * This will not return any deactivated users (since they do not have permissions of any sort).
+     */
+    @RequiresLogin
+    @RequiresPermission(ReadPermission.class)
+    public class GetUsersWithPermissionsAction extends GetUsersAction
+    {
+        @Override
+        public void validateForm(GetUsersForm form, Errors errors)
+        {
+            if (form.getPermissions() == null || form.getPermissions().length == 0)
+            {
+                errors.reject(ERROR_REQUIRED, "Permissions are required");
+            }
+            else if (form.getPermissionClasses().size() == 0)
+            {
+                errors.reject(ERROR_GENERIC, "No valid permission classes provided.");
+            }
+        }
+
+        @Override
+        public ApiResponse execute(GetUsersForm form, BindException errors)
+        {
+            Container container = getContainer();
+            User currentUser = getUser();
+
+            if (container.isRoot() && !currentUser.hasRootPermission(UserManagementPermission.class))
+                throw new UnauthorizedException("Only site/application administrators may see users in the root container!");
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("container", container.getPath());
+
+            Collection<User> users;
+
+            //if requesting users in a specific group...
+            if (null != StringUtils.trimToNull(form.getGroup()) || null != form.getGroupId())
+            {
+                users = filterForPermissions(form, getProjectGroupUsers(form, response));
+            }
+            else
+            {
+                users = SecurityManager.getUsersWithPermissions(container, form.getPermissionClasses());
+            }
+
+            this.setUsersList(form, users, response);
+            return response;
         }
     }
 
@@ -2895,7 +2933,8 @@ public class UserController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                 controller.new BeginAction(),
-                controller.new GetUsersAction()
+                controller.new GetUsersAction(),
+                controller.new GetUsersWithPermissionsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)

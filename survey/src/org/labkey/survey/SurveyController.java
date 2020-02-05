@@ -206,7 +206,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild(_title);
+            return (null != _title ? root.addChild(_title) : root.addChild("Update Survey"));
         }
     }
 

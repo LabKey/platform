@@ -336,10 +336,20 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     @Override
                     public TableInfo getLookupTableInfo()
                     {
+                        ContainerFilter cf = getLookupContainerFilter();
+                        UserSchema schema = getUserSchema();
+                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey(schema.getContainer());
+                        // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                        return schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
+                    }
+
+                    private TableInfo createLookupTableInfo()
+                    {
                         // TODO ContainerFilter: getLookupTableInfo() should not mutate table
                         // for now use forWrite==true to get mutable tableinfo
                         ExpTable result = (ExpTable)getExpSchema().getTable(ExpSchema.TableType.RunGroupMap.name(), getLookupContainerFilter(), true, true);
                         result.getMutableColumn(ExpRunGroupMapTable.Column.RunGroup).setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), false));
+                        result.setLocked(true);
                         return result;
                     }
                 }, ExpRunGroupMapTable.Column.RunGroup.toString()));
@@ -453,6 +463,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         ret.setDescription("Contains pointers to all of the different kinds of inputs (both materials and data files) that could be used for this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRun, getContainerFilter()));
         ret.setIsUnselectable(true);
+        ret.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         return ret;
     }
 
@@ -465,6 +476,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         ret.setDescription("Contains pointers to all of the different kinds of outputs (both materials and data files) that could be produced by this run");
         ret.setFk(new InputForeignKey(getExpSchema(), ExpProtocol.ApplicationType.ExperimentRunOutput, getContainerFilter()));
         ret.setIsUnselectable(true);
+        ret.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         return ret;
     }
 
@@ -666,7 +678,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             String value = buildString(ctx, false);
             for (ConditionalFormat format : getBoundColumn().getConditionalFormats())
             {
-                if (format.meetsCriteria(value))
+                if (format.meetsCriteria(getBoundColumn(), value))
                 {
                     return format.getCssStyle();
                 }

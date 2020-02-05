@@ -19,7 +19,6 @@ package org.labkey.query;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.SetValuedMap;
-import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
@@ -35,10 +34,11 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -118,6 +118,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -132,6 +133,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -159,11 +161,39 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
+    private static final FileSystemDirectoryListener INVALIDATE_QUERY_METADATA_HANDLER = new FileSystemDirectoryListener()
+    {
+        @Override
+        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            QueryService.get().updateLastModified();
+        }
+
+        @Override
+        public void overflow()
+        {
+        }
+    };
+
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
+
+    private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
             CompareType.EQUAL,
@@ -360,6 +390,31 @@ public class QueryServiceImpl implements QueryService
     {
         return (QueryServiceImpl)QueryService.get();
     }
+
+    static class CacheListener implements org.labkey.api.cache.CacheListener
+    {
+        @Override
+        public void clearCaches()
+        {
+            QueryServiceImpl.get().updateLastModified();
+        }
+    }
+
+    /** Get the value used for the "Last-Modified" time stamp in query metadata API responses. */
+    @Override
+    public long metadataLastModified()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_LAST_MODIFIED) ?
+            _metadataLastModified.get() : Long.MIN_VALUE;
+    }
+
+    /** Invalidate the value used for the "Last-Modified" time stamp. */
+    @Override
+    public void updateLastModified()
+    {
+        _metadataLastModified.set(new Date().getTime());
+    }
+
 
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
@@ -625,7 +680,13 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                 .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+        }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -971,7 +1032,13 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+        }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -2094,7 +2161,13 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+        }
+
+        @Override
+        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
@@ -2315,7 +2388,8 @@ public class QueryServiceImpl implements QueryService
         return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
     }
 
-	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+	@Override
+    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
 	{
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
@@ -2492,6 +2566,7 @@ public class QueryServiceImpl implements QueryService
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
         Set<FieldKey> fieldKeySet = allColumns.stream()
+                .map(col -> col instanceof WrappedColumn ? ((WrappedColumn)col).getWrappedColumn() : col)
                 .map(ColumnInfo::getFieldKey)
                 .collect(Collectors.toSet());
         SQLFragment getfromsql = table.getFromSQL(tableAlias, fieldKeySet);
@@ -3193,37 +3268,37 @@ public class QueryServiceImpl implements QueryService
             assertEquals(JdbcType.TINYINT, t.getColumn("ti").getJdbcType());
             assertEquals(JdbcType.VARCHAR, t.getColumn("s").getJdbcType());
 
-            try (Results rs = new TableSelector(t).getResults())
+            try (Results results = new TableSelector(t).getResults())
             {
-                assertEquals(JdbcType.BIGINT, rs.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
-                assertEquals(JdbcType.BOOLEAN, rs.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
-                assertEquals(JdbcType.CHAR, rs.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
-                assertEquals(JdbcType.DOUBLE, rs.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
-                assertEquals(JdbcType.INTEGER, rs.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
-                assertEquals(JdbcType.LONGVARCHAR, rs.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
-                assertEquals(JdbcType.DECIMAL, rs.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
-                assertEquals(JdbcType.REAL, rs.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
-                assertEquals(JdbcType.SMALLINT, rs.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
-                assertEquals(JdbcType.TIMESTAMP, rs.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
-                assertEquals(JdbcType.TINYINT, rs.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
-                assertEquals(JdbcType.VARCHAR, rs.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
+                assertEquals(JdbcType.BIGINT, results.findColumnInfo(new FieldKey(null, "bint")).getJdbcType());
+                assertEquals(JdbcType.BOOLEAN, results.findColumnInfo(new FieldKey(null, "bit")).getJdbcType());
+                assertEquals(JdbcType.CHAR, results.findColumnInfo(new FieldKey(null, "char")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "dec")).getJdbcType());
+                assertEquals(JdbcType.DOUBLE, results.findColumnInfo(new FieldKey(null, "d")).getJdbcType());
+                assertEquals(JdbcType.INTEGER, results.findColumnInfo(new FieldKey(null, "i")).getJdbcType());
+                assertEquals(JdbcType.LONGVARCHAR, results.findColumnInfo(new FieldKey(null, "text")).getJdbcType());
+                assertEquals(JdbcType.DECIMAL, results.findColumnInfo(new FieldKey(null, "num")).getJdbcType());
+                assertEquals(JdbcType.REAL, results.findColumnInfo(new FieldKey(null, "real")).getJdbcType());
+                assertEquals(JdbcType.SMALLINT, results.findColumnInfo(new FieldKey(null, "sint")).getJdbcType());
+                assertEquals(JdbcType.TIMESTAMP, results.findColumnInfo(new FieldKey(null, "ts")).getJdbcType());
+                assertEquals(JdbcType.TINYINT, results.findColumnInfo(new FieldKey(null, "ti")).getJdbcType());
+                assertEquals(JdbcType.VARCHAR, results.findColumnInfo(new FieldKey(null, "s")).getJdbcType());
 
-                ResultSetMetaData rsmd = rs.getMetaData();
-                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(rs.findColumn("bint")));
-                assertTrue(Types.BIT==rsmd.getColumnType(rs.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(rs.findColumn("bit")));
-                assertTrue(Types.CHAR==rsmd.getColumnType(rs.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(rs.findColumn("char")));
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("dec")));
-                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(rs.findColumn("d")));
-                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(rs.findColumn("i")));
-                int columntype = rsmd.getColumnType(rs.findColumn("text"));
+                ResultSetMetaData rsmd = results.getMetaData();
+                assertEquals(JdbcType.BIGINT.sqlType, rsmd.getColumnType(results.findColumn("bint")));
+                assertTrue(Types.BIT==rsmd.getColumnType(results.findColumn("bit")) || Types.BOOLEAN==rsmd.getColumnType(results.findColumn("bit")));
+                assertTrue(Types.CHAR==rsmd.getColumnType(results.findColumn("char")) || Types.NCHAR==rsmd.getColumnType(results.findColumn("char")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("dec"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("dec")));
+                assertEquals(JdbcType.DOUBLE.sqlType, rsmd.getColumnType(results.findColumn("d")));
+                assertEquals(JdbcType.INTEGER.sqlType, rsmd.getColumnType(results.findColumn("i")));
+                int columntype = rsmd.getColumnType(results.findColumn("text"));
                 assertTrue(Types.LONGVARCHAR == columntype || Types.CLOB == columntype || Types.VARCHAR == columntype || Types.LONGNVARCHAR == columntype);
-                assertTrue(Types.DECIMAL==rsmd.getColumnType(rs.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(rs.findColumn("num")));
-                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(rs.findColumn("real")));
-                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(rs.findColumn("sint")));
-                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(rs.findColumn("ts")));
-                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(rs.findColumn("ti")));
-                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(rs.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(rs.findColumn("s")));
+                assertTrue(Types.DECIMAL==rsmd.getColumnType(results.findColumn("num"))||Types.NUMERIC==rsmd.getColumnType(results.findColumn("num")));
+                assertEquals(JdbcType.REAL.sqlType, rsmd.getColumnType(results.findColumn("real")));
+                assertEquals(JdbcType.SMALLINT.sqlType, rsmd.getColumnType(results.findColumn("sint")));
+                assertEquals(JdbcType.TIMESTAMP.sqlType, rsmd.getColumnType(results.findColumn("ts")));
+                assertEquals(t.getSqlDialect().isPostgreSQL() ? JdbcType.SMALLINT.sqlType : JdbcType.TINYINT.sqlType, rsmd.getColumnType(results.findColumn("ti")));
+                assertTrue(JdbcType.VARCHAR.sqlType==rsmd.getColumnType(results.findColumn("s")) || Types.NVARCHAR==rsmd.getColumnType(results.findColumn("s")));
             }
         }
 

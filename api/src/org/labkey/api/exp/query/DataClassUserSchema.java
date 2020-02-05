@@ -104,25 +104,13 @@ public class DataClassUserSchema extends AbstractExpSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
-        {
-            return new QueryView(this, settings, errors) {
-                @Override
-                public @Nullable ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
+        QueryView queryView = super.createView(context, settings, errors);
 
-                    return button;
-                }
-            };
-        }
+        // Use default delete button, but without showing the confirmation text
+        // NOTE: custom queries in the schema don't support delete so setting this flag is ok
+        queryView.setShowDeleteButtonConfirmationText(false);
 
-        return super.createView(context, settings, errors);
+        return queryView;
     }
 
     @Override

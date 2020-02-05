@@ -68,6 +68,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -92,7 +93,6 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpLineage;
-import org.labkey.api.exp.api.ExpLineageItem;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpMaterialRunInput;
@@ -246,6 +246,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -343,11 +344,15 @@ public class ExperimentController extends SpringActionController
 
     @ActionNames("begin,gridView")
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends ShowRunsAction
+    public class BeginAction extends SimpleViewAction
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            VBox result = new VBox(super.getView(o, errors));
+            VBox result = new VBox();
+
+            VBox runListView = createRunListView(20);
+            result.addView(runListView);
+
             RunGroupWebPart runGroups = new RunGroupWebPart(getViewContext(), false);
             runGroups.showHeader();
             result.addView(runGroups);
@@ -370,15 +375,7 @@ public class ExperimentController extends SpringActionController
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
-            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
-
-            ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
-            VBox result = new VBox(chooserView, view);
-            result.setTitle(view.getTitle());
-            result.setFrame(WebPartView.FrameType.PORTAL);
-            view.setFrame(WebPartView.FrameType.NONE);
+            VBox result = createRunListView(100);
             return result;
         }
 
@@ -386,6 +383,27 @@ public class ExperimentController extends SpringActionController
         {
             return appendRootNavTrail(root).addChild("Experiment Runs");
         }
+    }
+
+    private VBox createRunListView(int defaultMaxRows)
+    {
+        Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
+        ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
+        JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+
+        ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
+        view.setFrame(WebPartView.FrameType.NONE);
+
+        // When paginated and the user hasn't explicitly set a maxRows, use the default maxRows size.
+        QuerySettings settings = view.getSettings();
+        if (!settings.isMaxRowsSet() && settings.getShowRows() == ShowRows.PAGINATED)
+        {
+            settings.setMaxRows(defaultMaxRows);
+        }
+
+        VBox result = new VBox(chooserView, view);
+        result.setFrame(WebPartView.FrameType.PORTAL);
+        return result;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -2945,7 +2963,7 @@ public class ExperimentController extends SpringActionController
             }
 
             response.putIfAbsent("success", !errors.hasErrors());
-            return new ApiSimpleResponse();
+            return response;
         }
 
         protected abstract ApiSimpleResponse deleteObjects(CascadeDeleteForm form) throws Exception;
@@ -3493,8 +3511,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
-            form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
-            return new ApiSimpleResponse("success", true);
+            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
+            form.updateSampleSet(getContainer(), getUser(), sampleSet);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3535,7 +3554,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
             ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return new ApiSimpleResponse("success", true);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3554,16 +3573,23 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleSetImpl ss = form.getSampleSet(getContainer());
 
-            Map<String,Object> sampleSet = new HashMap<>();
-            sampleSet.put("name", ss.getName());
-            sampleSet.put("nameExpression", ss.getNameExpression());
-            sampleSet.put("description", ss.getDescription());
-            sampleSet.put("importAliases", ss.getImportAliasMap());
-            sampleSet.put("lsid", ss.getLSID());
-            sampleSet.put("rowId", ss.getRowId());
-
-            return new ApiSimpleResponse(Collections.singletonMap("sampleSet", sampleSet));
+            return getSampleSetApiResponse(ss);
         }
+    }
+
+    @NotNull
+    private static ApiSimpleResponse getSampleSetApiResponse(ExpSampleSet ss) throws IOException
+    {
+        Map<String,Object> sampleSet = new HashMap<>();
+        sampleSet.put("name", ss.getName());
+        sampleSet.put("nameExpression", ss.getNameExpression());
+        sampleSet.put("description", ss.getDescription());
+        sampleSet.put("importAliases", ss.getImportAliasMap());
+        sampleSet.put("lsid", ss.getLSID());
+        sampleSet.put("rowId", ss.getRowId());
+        sampleSet.put("domainId", ss.getDomain().getTypeId());
+
+        return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
 
     private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
@@ -3957,6 +3983,24 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
             return root;
+        }
+
+        @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            final String renameParamPrefix = "importAlias.";
+            Map<String, String> renameColumns = new CaseInsensitiveHashMap<>();
+            PropertyValue[] pvs = _form.getInitParameters().getPropertyValues();
+            for (PropertyValue pv : pvs)
+            {
+                String paramName = pv.getName();
+                if (!paramName.startsWith(renameParamPrefix) || pv.getValue() == null)
+                    continue;
+
+                renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
+            }
+
+            return renameColumns;
         }
     }
 
@@ -6461,7 +6505,7 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class LineageAction extends ReadOnlyApiAction<ExpLineageOptions>
     {
-        private Set<ExpLineageItem> _seeds;
+        private Set<Identifiable> _seeds;
 
         @Override
         public void validateForm(ExpLineageOptions options, Errors errors)
@@ -6475,16 +6519,11 @@ public class ExperimentController extends SpringActionController
                     if (id == null)
                         throw new NotFoundException("Unable to resolve object: " + lsid);
 
-                    if (!(id instanceof ExpLineageItem))
-                        throw new ApiUsageException("Lineage seed must be a data, material, or run: " + id.getClass().getName());
-
-                    ExpLineageItem seed = (ExpLineageItem)id;
-
                     // ensure that the protocol output lineage is in the same container as the request
-                    if (seed instanceof ExpObject && !getContainer().equals(seed.getContainer()))
-                        throw new ApiUsageException("Protocol requested must be in the same folder that the request originates. Protocol folder : " + seed.getContainer().getPath());
+                    if (!getContainer().equals(id.getContainer()))
+                        throw new ApiUsageException("Object requested must be in the same folder that the request originates: " + id.getContainer().getPath());
 
-                    _seeds.add(seed);
+                    _seeds.add(id);
                 }
             }
             else
@@ -6496,7 +6535,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
         {
-            ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getViewContext(), _seeds, options);
+            ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
             return new ApiSimpleResponse(lineage.toJSON(options.isSingleSeedRequested()));
         }
     }

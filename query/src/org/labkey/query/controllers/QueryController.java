@@ -1191,6 +1191,8 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(SourceForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Query");
             _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
 
             if (null == _queryDef)
@@ -1647,6 +1649,14 @@ public class QueryController extends SpringActionController
      *     For example, this can be used to add a fake column that is only supported during the import process.
      *     </dd>
      *
+     *     <dt>excludeColumn</dt>
+     *     <dd>List of column names to exclude.
+     *     </dd>
+     *
+     *     <dt>exportAlias.columns</dt>
+     *     <dd>Use alternative column name in excel: exportAlias.originalColumnName=aliasColumnName
+     *     </dd>
+     *
      *     <dt>captionType</dt>
      *     <dd>determines which column property is used in the header.  either Label or Name</dd>
      * </dl>
@@ -1672,13 +1682,15 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumns(), form.getFilenamePrefix());
         }
     }
 
     public static class ExportQueryForm extends QueryForm
     {
         protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
+        FieldKey[] excludeColumn;
+        Map<String, String> renameColumns = null;
 
         public ColumnHeaderType getHeaderType()
         {
@@ -1689,6 +1701,39 @@ public class QueryController extends SpringActionController
         {
             _headerType = headerType;
         }
+
+        public List<FieldKey> getExcludeColumns()
+        {
+            if (excludeColumn == null || excludeColumn.length == 0)
+                return Collections.emptyList();
+            return Arrays.asList(excludeColumn);
+        }
+
+        public void setExcludeColumn(FieldKey[] excludeColumn)
+        {
+            this.excludeColumn = excludeColumn;
+        }
+
+        public Map<String, String> getRenameColumns()
+        {
+            if (renameColumns != null)
+                return renameColumns;
+
+            renameColumns = new CaseInsensitiveHashMap<>();
+            final String renameParamPrefix = "exportAlias.";
+            PropertyValue[] pvs = getInitParameters().getPropertyValues();
+            for (PropertyValue pv : pvs)
+            {
+                String paramName = pv.getName();
+                if (!paramName.startsWith(renameParamPrefix) || pv.getValue() == null)
+                    continue;
+
+                renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
+            }
+
+            return renameColumns;
+        }
+
     }
 
     public static class ExportRowsTsvForm extends ExportQueryForm
@@ -2354,6 +2399,7 @@ public class QueryController extends SpringActionController
         {
             return form.getReturnActionURL();
         }
+
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -2465,6 +2511,9 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Insert Row");
+
             InsertView view = new InsertView(tableForm, errors);
             view.getDataRegion().setButtonBar(createSubmitCancelButtonBar(tableForm));
             return view;
@@ -4110,6 +4159,13 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getConfirmView(F form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete Schema");
+
+            if (null == form.getBean().getUserSchemaName())
+            {
+                throw new NotFoundException("Schema not specified");
+            }
             form.refreshFromDb();
             return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
         }
@@ -5296,6 +5352,12 @@ public class QueryController extends SpringActionController
     @ApiVersion(12.3)
     public class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
+        @Override
+        protected long getLastModified(GetSchemasForm form)
+        {
+            return QueryService.get().metadataLastModified();
+        }
+
         public ApiResponse execute(GetSchemasForm form, BindException errors)
         {
             final Container container = getContainer();
@@ -5421,6 +5483,12 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
+        @Override
+        protected long getLastModified(GetQueriesForm form)
+        {
+            return QueryService.get().metadataLastModified();
+        }
+
         public ApiResponse execute(GetQueriesForm form, BindException errors)
         {
             if (null == StringUtils.trimToNull(form.getSchemaName()))
@@ -5599,6 +5667,12 @@ public class QueryController extends SpringActionController
     @Action(ActionType.SelectMetaData.class)
     public class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
+        @Override
+        protected long getLastModified(GetQueryViewsForm form)
+        {
+            return QueryService.get().metadataLastModified();
+        }
+
         public ApiResponse execute(GetQueryViewsForm form, BindException errors)
         {
             if (null == StringUtils.trimToNull(form.getSchemaName()))

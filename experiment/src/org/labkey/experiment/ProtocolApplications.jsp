@@ -18,6 +18,7 @@
 <%@ page import="org.json.JSONObject"%>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.ExperimentDataHandler" %>
+<%@ page import="org.labkey.api.exp.Identifiable" %>
 <%@ page import="org.labkey.api.exp.api.ExpData" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataProtocolInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpDataRunInput" %>
@@ -26,6 +27,8 @@
 <%@ page import="org.labkey.api.exp.api.ExpMaterialRunInput" %>
 <%@ page import="org.labkey.api.exp.api.ExpProtocolApplication" %>
 <%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.exp.api.ProvenanceService" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -33,9 +36,13 @@
 <%@ page import="org.labkey.experiment.api.ExpMaterialRunInputImpl" %>
 <%@ page import="org.labkey.experiment.api.ExpProtocolApplicationImpl" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ page import="java.util.Collections" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.exp.LsidManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExpRun> me = (JspView<ExpRun>) HttpView.currentView();
@@ -44,6 +51,25 @@
     int rowCount = 0;
 
     boolean debug = getViewContext().getRequest().getParameter("_debug") != null;
+    ProvenanceService pvs = ProvenanceService.get();
+
+%>
+<%!
+    final Pair<Identifiable, ActionURL> EMPTY_PAIR = Pair.of(null, null);
+    Map<String, Pair<Identifiable, ActionURL>> provCache = new HashMap<>();
+    Pair<Identifiable, ActionURL> getObject(String lsid)
+    {
+        if (lsid == null)
+            return EMPTY_PAIR;
+
+        return provCache.computeIfAbsent(lsid, (l) -> {
+            Identifiable obj = LsidManager.get().getObject(lsid);
+            if (obj == null)
+                return EMPTY_PAIR;
+            ActionURL url = LsidManager.get().getDisplayURL(lsid);
+            return Pair.of(obj, url);
+        });
+    }
 %>
 
 <% if (debug) { %>
@@ -68,6 +94,10 @@
         List<? extends ExpDataRunInput> dataRunInputs = protocolApplication.getDataInputs();
         List<? extends ExpMaterialRunInput> materialRunOutputs = protocolApplication.getMaterialOutputs();
         List<? extends ExpDataRunInput> dataRunOutputs = protocolApplication.getDataOutputs();
+
+        Set<Pair<String, String>> provenance = Collections.emptySet();
+        if (pvs != null)
+            provenance = pvs.getProvenanceObjectUris(protocolApplication.getRowId());
     %>
         <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top">
@@ -92,7 +122,7 @@
             </td>
         </tr>
 
-        <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty() || !materialRunOutputs.isEmpty() || !dataRunOutputs.isEmpty()) { %>
+        <% if (!materialRunInputs.isEmpty() || !dataRunInputs.isEmpty() || !materialRunOutputs.isEmpty() || !dataRunOutputs.isEmpty() || !provenance.isEmpty()) { %>
         <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
             <td valign="top"></td>
             <td valign="top" colspan="8" style="padding: 5px;">
@@ -170,6 +200,34 @@
                         <td>
                             <% Map<String, Object> map = ((ExpDataRunInputImpl)dataRunInput).getProperties(); %>
                             <% if (!map.isEmpty()) out.print(h(new JSONObject(map).toString(2))); %>
+                        </td>
+                    </tr>
+                    <% } %>
+                </table>
+                <% } %>
+
+                <% if (!provenance.isEmpty()) { %>
+                <b>Provenance</b><br>
+                <table class="labkey-protocol-applications labkey-data-region-legacy labkey-show-borders" width="100%">
+                    <% for (Pair<String, String> pair : provenance) { %>
+                    <% String fromLsid = pair.first; %>
+                    <% String toLsid = pair.second; %>
+                    <% Pair<Identifiable, ActionURL> fromObj = getObject(fromLsid); %>
+                    <% Pair<Identifiable, ActionURL> toObj = getObject(toLsid); %>
+                    <tr class="labkey-row">
+                        <td width="100px">
+                            <% if (fromObj == EMPTY_PAIR) { %>
+                            <%= h(fromLsid) %>
+                            <% } else { %>
+                            <a href="<%=h(fromObj.second)%>" title="<%=h(fromLsid)%>"><%= h(fromObj.first.getName()) %></a>
+                            <% } %>
+                        </td>
+                        <td width="100px">
+                            <% if (toObj == EMPTY_PAIR) { %>
+                            <%= h(toLsid) %>
+                            <% } else { %>
+                            <a href="<%=h(toObj.second)%>" title="<%=h(toLsid)%>"><%= h(toObj.first.getName()) %></a>
+                            <% } %>
                         </td>
                     </tr>
                     <% } %>

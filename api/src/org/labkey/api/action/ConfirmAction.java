@@ -71,7 +71,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 
         if (success)
         {
-            if ("POST".equals(context.getRequest().getMethod()))
+            if (isPost())
             {
                 success = handlePost(form, errors);
 
@@ -89,6 +89,10 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
                 JspView<ConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this);
                 confirmWrapper.setBody(confirmView);
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
+
+                // catch all for actions that don't set the page title
+                if (getPageConfig().getTitle() == null)
+                    setTitle("Confirmation");
                 return confirmWrapper;
             }
         }

@@ -276,7 +276,16 @@ public class SecurityManager
 
     public static void addGroupListener(GroupListener listener)
     {
-        _listeners.add(listener);
+        addGroupListener(listener, false);
+    }
+
+    /** Adds a listener with option to specify that it needs to be executed before the other listeners */
+    public static void addGroupListener(GroupListener listener, boolean meFirst)
+    {
+        if (meFirst)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
     private static List<GroupListener> getListeners()
@@ -549,10 +558,11 @@ public class SecurityManager
             }
         }
 
-        if (null == u)
-        {
-            u = AuthenticationManager.attemptRequestAuthentication(request);
-        }
+//  We don't register any RequestAuthenticationProvider implementations, so don't bother
+//        if (null == u)
+//        {
+//            u = AuthenticationManager.attemptRequestAuthentication(request);
+//        }
 
         return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }
@@ -3236,14 +3246,11 @@ public class SecurityManager
 
     public static void populateUserGroupsWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                     String[] groups = prop.getValue().split(",");
@@ -3292,14 +3299,11 @@ public class SecurityManager
 
     public static void populateGroupRolesWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
                     if (null == group)
@@ -3337,14 +3341,11 @@ public class SecurityManager
 
     public static void populateUserRolesWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                     String[] roles = prop.getValue().split(",");

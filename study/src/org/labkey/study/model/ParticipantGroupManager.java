@@ -31,9 +31,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Results;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -636,7 +634,6 @@ public class ParticipantGroupManager
     {
         final String subjectColumnName = StudyService.get().getSubjectColumnName(c);
         final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
-        final int BLOCK_SIZE = 1000;
 
         StudyQuerySchema schema = (StudyQuerySchema)QueryService.get().getUserSchema(user, c, "study");
 
@@ -648,20 +645,12 @@ public class ParticipantGroupManager
 
         TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
         String[] participantIds = group.getParticipantIds();
-        int idx = 0;
 
-        // avoid the IN clause parameter limit, issue : 21901
-        while (idx < participantIds.length)
-        {
-            int start = idx;
-            int end = Math.min(idx + BLOCK_SIZE, participantIds.length);
-            SimpleFilter participantFilter = new SimpleFilter();
-            participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(Arrays.copyOfRange(participantIds, start, end)));
-            TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
-            ts.forEachMap(m -> participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container")));
+        SimpleFilter participantFilter = new SimpleFilter();
+        participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(participantIds));
+        TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
+        ts.forEachMap(m -> participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container")));
 
-            idx += BLOCK_SIZE;
-        }
         return participantIdMap;
     }
 

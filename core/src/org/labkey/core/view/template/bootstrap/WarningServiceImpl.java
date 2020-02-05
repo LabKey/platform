@@ -82,15 +82,15 @@ public class WarningServiceImpl implements WarningService
         "            var config = {\n" +
         "                url: %1$s,\n" +
         "                method: 'POST',\n" +
-        "                success: function () {$(\".lk-dismissable-warn\").hide();$('#headerWarningIcon').show();},\n" +
+        "                success: function () {$('.lk-dismissable-warn').hide();$('#headerWarningIcon').show();},\n" +
         "                failure: LABKEY.Utils.displayAjaxErrorResponse\n" +
         "            };\n" +
         "            LABKEY.Ajax.request(config); \n" +
         "            return false;\n" +
         "        }\n" +
-        "       $('body').on('click', 'a.lk-dismissable-warn-close', function() {\n" +
-        "           dismissMessage();\n" +
-        "       });" +
+        "        $('body').on('click', 'a.lk-dismissable-warn-close', function() {\n" +
+        "            dismissMessage();\n" +
+        "        });\n" +
         "    })(jQuery);\n" +
         "</script>\n";
 
@@ -115,7 +115,7 @@ public class WarningServiceImpl implements WarningService
     {
         HtmlStringBuilder html = HtmlStringBuilder.of(HtmlString.unsafe("<div class=\"alert alert-warning alert-dismissable\">\n<a href=\"#\" class=\"close lk-dismissable-warn-close\" data-dismiss=\"alert\" aria-label=\"dismiss\" title=\"dismiss\">×</a>\n<div class=\"lk-dismissable-warn\">"));
         appendMessageContent(warnings, html);
-        html.append(HtmlString.unsafe("</div>"));
+        html.append(HtmlString.unsafe("</div>\n"));
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         if (coreUrls != null)
         {

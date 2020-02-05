@@ -16,20 +16,16 @@ import {
     fetchAllAssays,
     importGeneralAssayRun,
     naturalSort,
-    hasAllPermissions
-} from "@glass/base";
-import {
+    hasAllPermissions,
     AssayProtocolModel,
     AssayPropertiesPanel,
-    DomainField,
     DomainDesign,
     saveAssayDesign,
     fetchProtocol,
     setDomainFields
-} from '@glass/domainproperties'
+} from '@labkey/components'
 
-import "@glass/base/dist/base.css"
-import "@glass/domainproperties/dist/domainproperties.css"
+import "@labkey/components/dist/components.css"
 import "./assayDataImport.scss";
 
 import {AssayRunForm} from "./AssayRunForm";
@@ -67,7 +63,7 @@ export class App extends React.Component<Props, State> {
         }
     }
 
-    componentWillMount() {
+    componentDidMount() {
         fetchAllAssays('General')
             .then((assays) => {
                 const sortedAssays = assays.sortBy(assay => assay.name, naturalSort).toList();
@@ -177,7 +173,7 @@ export class App extends React.Component<Props, State> {
             }
 
             // get each domain as a variable we can set the results fields from inferredFields and clear the batch domain default fields
-            const batchDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Batch'), List<DomainField>());
+            const batchDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Batch'), List<QueryColumn>());
             const runDomain = protocolModel.getDomainByNameSuffix('Run');
             const resultsDomain = setDomainFields(protocolModel.getDomainByNameSuffix('Data'), inferredFields);
 
@@ -188,14 +184,14 @@ export class App extends React.Component<Props, State> {
             });
 
             // the AssayProtocolModel.create call drops the name, so put it back
-            newProtocol = newProtocol.set('name', protocolModel.name);
+            newProtocol = newProtocol.set('name', protocolModel.name) as AssayProtocolModel;
 
             saveAssayDesign(newProtocol)
                 .then((newAssay) => {
                     this.importFileAsRun(newAssay.protocolId);
                 })
-                .catch((reason) => {
-                    this.setErrorMsg(reason);
+                .catch((errorModel) => {
+                    this.setErrorMsg(errorModel.exception);
                 });
         }
     };
@@ -277,7 +273,7 @@ export class App extends React.Component<Props, State> {
     getCardsFromAssays(): List<any> {
         const { assays, protocolModel } = this.state;
         const selectedAssay = this.getSelectedAssay();
-        let cards = List<any>(); // TODO should we be exporting ICardProps from @glass and using here instead of any?
+        let cards = List<any>(); // TODO should we be exporting ICardProps from @labkey/components and using here instead of any?
 
         if (selectedAssay) {
             cards = cards.push({
@@ -369,9 +365,8 @@ export class App extends React.Component<Props, State> {
                     <Panel.Body>
                         <AssayPropertiesPanel
                             asPanel={false}
-                            showEditSettings={false}
                             model={protocolModel}
-                            basePropertiesOnly={true}
+                            appPropertiesOnly={true}
                             onChange={this.onAssayPropertiesChange}
                         >
                             <p>
@@ -480,12 +475,12 @@ export class App extends React.Component<Props, State> {
         return (
             <>
                 {this.renderWarning()}
-                {this.renderError()}
                 {this.renderAvailableAssays()}
                 {this.renderRunDataUpload()}
                 {this.renderNewAssayProperties()}
                 {this.renderRunProperties()}
                 {this.renderButtons()}
+                {this.renderError()}
                 {this.renderProgress()}
             </>
         )

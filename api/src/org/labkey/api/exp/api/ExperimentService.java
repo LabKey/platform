@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RemapCache;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -67,7 +68,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -173,7 +173,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Create a new DataClass with the provided properties.
      */
-    ExpDataClass createDataClass(Container c, User u, String name, String description,
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
                                  @Nullable TemplateInfo templateInfo)
             throws ExperimentException, SQLException;
@@ -205,6 +205,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Requires a user to check for container read permission.
      */
     ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, int rowId);
+
+    /**
+     * Get a DataClass by LSID.
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     */
+    ExpDataClass getDataClass(@NotNull String lsid);
 
     /**
      * Get materials with the given names, optionally within the provided sample set.
@@ -239,6 +245,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Looks in all the sample sets visible from the given container for a single match with the specified name
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+
+    @Nullable ExpData findExpData(Container c, User user,
+                                  @NotNull String dataClassName, String dataName,
+                                  RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException;
+
+    @Nullable ExpMaterial findExpMaterial(Container c, User user,
+                                          String sampleSetName, String sampleName,
+                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException;
 
     /**
      * Use {@link SampleSetService} instead.
@@ -430,31 +446,28 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start);
 
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
      * ignoring any sample children derived from ExpData children.
      */
-    Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+    Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */
-    Set<ExpData> getNearestParentDatas(ExpMaterial start);
+    Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
     /**
-     * @deprecated : use the variant which takes a ContainerUser parameter
+     * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
+     * a ExpData (in a DataClass), or an ExpRun.
      */
     @NotNull
-    @Deprecated
-    ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
-
-    @NotNull
-    ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+    ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
@@ -565,6 +578,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterialAliasMap();
 
+    TableInfo getTinfoEdge();
+
     @Deprecated
     default String getDefaultSampleSetLsid()
     {
@@ -672,10 +687,25 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param inputDatas      map from input role name to input data
      * @param outputMaterials map from output role name to output material
      * @param outputDatas     map from output role name to output data
+     * @param transformedDatas map of output rolw name to transformed output data
      * @param info            context information, including the user
      * @param log             output log target
+     * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
     ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+
+    ExpRun saveSimpleExperimentRun(ExpRun run,
+                                   Map<ExpMaterial, String> inputMaterials,
+                                   Map<ExpData, String> inputDatas,
+                                   Map<ExpMaterial, String> outputMaterials,
+                                   Map<ExpData, String> outputDatas,
+                                   Map<ExpData, String> transformedDatas,
+                                   ViewBackgroundInfo info,
+                                   Logger log,
+                                   boolean loadDataFiles,
+                                   @Nullable Set<String> runInputLsids,
+                                   @Nullable Set<Pair<String, String>> finalOutputLsids)
+            throws ExperimentException;
 
     /**
      * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
@@ -779,9 +809,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;
 
     // see org.labkey.experiment.LSIDRelativizer
-    public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
-    public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
-    public static final String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
+    String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
+    String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
+    String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
 
     /**
      * Get the set of runs that can be deleted based on the materials supplied.
@@ -793,7 +823,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useUXDomainDesigner();
 
-    public static class XarExportOptions
+    class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
         String _xarXmlFileName = "experiment.xar";
@@ -870,7 +900,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         }
     }
 
-    public static class XarImportOptions
+    class XarImportOptions
     {
         boolean _replaceExistingRuns = false;
         boolean _useOriginalDataFileUrl = false;
