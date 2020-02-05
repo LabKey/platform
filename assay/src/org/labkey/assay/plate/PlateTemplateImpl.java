@@ -328,6 +328,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return 0;
     }
 
+    @Override
     public String getType()
     {
         return _type;

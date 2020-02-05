@@ -106,4 +106,12 @@
       </column>
     </columns>
   </table>
+  <table tableName="wellGroupPositions" tableDbType="TABLE">
+    <description>Contains well to well group association.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="WellId"/>
+      <column columnName="WellGroupId"/>
+    </columns>
+  </table>
 </tables>

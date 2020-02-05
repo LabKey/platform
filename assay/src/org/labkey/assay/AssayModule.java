@@ -91,7 +91,7 @@ public class AssayModule extends SpringModule
     @Override
     public double getVersion()
     {
-        return 20.000;
+        return 20.001;
     }
 
     @Override

@@ -74,11 +74,13 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
     }
 
 
+    @Override
     public WellImpl getWell(int row, int col)
     {
         return _wells[row][col];
     }
 
+    @Override
     public WellGroup getWellGroup(WellGroup.Type type, String wellGroupName)
     {
         WellGroupTemplate groupTemplate = getWellGroupTemplate(type, wellGroupName);
@@ -87,21 +89,25 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return (WellGroupImpl) groupTemplate;
     }
 
+    @Override
     public List<? extends WellGroupImpl> getWellGroups(WellGroup.Type type)
     {
         return (List<? extends WellGroupImpl>)getWellGroupTemplates(type);
     }
 
+    @Override
     public List<WellGroupImpl> getWellGroups(Position position)
     {
         return (List<WellGroupImpl>) super.getWellGroups(position);
     }
 
+    @Override
     public List<WellGroupImpl> getWellGroups()
     {
         return (List<WellGroupImpl>) super.getWellGroups();
     }
 
+    @Override
     protected WellGroupTemplateImpl createWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return new WellGroupImpl(this, name, type, positions);
@@ -146,6 +152,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return _runId == PlateService.NO_RUNID;
     }
 
+    @Override
     public int getPlateNumber()
     {
         return _plateNumber;

@@ -16,11 +16,14 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * User: brittp
@@ -62,16 +65,19 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         return sortedPositions;
     }
 
+    @Override
     public List<Position> getPositions()
     {
         return Collections.unmodifiableList(_positions);
     }
 
+    @Override
     public WellGroup.Type getType()
     {
         return _type;
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -82,6 +88,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         _name = name;
     }
 
+    @Override
     public boolean contains(Position position)
     {
         return _positions.contains(position);
@@ -102,6 +109,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         _positions = sortPositions(positions);
     }
 
+    @Override
     public Integer getRowId()
     {
         return _rowId;

@@ -36,6 +36,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
@@ -66,8 +67,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.labkey.api.data.CompareType.IN;
 
@@ -326,38 +330,65 @@ public class PlateManager implements PlateService
         // set plate properties:
         setProperties(plate.getContainer(), plate);
 
-        // populate wells:
-        Map<String, List<PositionImpl>> groupLsidToPositions = new HashMap<>();
         Position[][] positionArray;
         if (plate.isTemplate())
             positionArray = new Position[plate.getRows()][plate.getColumns()];
         else
             positionArray = new WellImpl[plate.getRows()][plate.getColumns()];
+
+        // get position objects
         PositionImpl[] positions = getPositions(plate);
+
+        // query for all well to well group mappings on the plate
+        SQLFragment sql = new SQLFragment();
+        sql.append("SELECT wgp.wellId, wgp.wellGroupId FROM ")
+                .append(AssayDbSchema.getInstance().getTableInfoWellGroupPositions(), "wgp")
+                .append(" INNER JOIN ")
+                .append(AssayDbSchema.getInstance().getTableInfoWell(), "w")
+                .append(" ON w.rowId = wgp.wellId")
+                .append(" WHERE w.plateId = ?").add(plate.getRowId())
+                .append(" ORDER BY wgp.wellId");
+        SqlSelector ss = new SqlSelector(AssayDbSchema.getInstance().getScope(), sql);
+        Collection<Map<String, Object>> allGroupPositions = ss.getMapCollection();
+
+        // construct wellToWellGroups: map of wellId -> Set of wellGroupId
+        Map<Integer, Set<Integer>> wellToWellGroups = new HashMap<>();
+        for (Map<String, Object> groupPosition : allGroupPositions)
+        {
+            Integer wellId = (Integer) groupPosition.get("wellId");
+            Integer wellGroupId = (Integer) groupPosition.get("wellGroupId");
+            Set<Integer> wellGroupIds = wellToWellGroups.computeIfAbsent(wellId, k -> new HashSet<>());
+            wellGroupIds.add(wellGroupId);
+        }
+
+        // construct groupIdToPositions: map of wellGroupId -> List of PositionImpl
+        Map<Integer, List<PositionImpl>> groupIdToPositions = new HashMap<>();
         for (PositionImpl position : positions)
         {
             positionArray[position.getRow()][position.getColumn()] = position;
-            Map<String, Object> props = OntologyManager.getProperties(plate.getContainer(), position.getLsid());
-            // this is a bit counter-intuitive: the groups to which a position belongs are indicated by the values of the properties
-            // associated with the position:
-            for (Map.Entry<String, Object> entry : props.entrySet())
+
+            Set<Integer> wellGroupIds = wellToWellGroups.get(position.getRowId());
+            if (wellGroupIds != null)
             {
-                String wellgroupLsid = (String) entry.getValue();
-                List<PositionImpl> groupPositions = groupLsidToPositions.computeIfAbsent(wellgroupLsid, k -> new ArrayList<>());
-                groupPositions.add(position);
+                for (Integer wellGroupId : wellGroupIds)
+                {
+                    List<PositionImpl> groupPositions = groupIdToPositions.computeIfAbsent(wellGroupId, k -> new ArrayList<>());
+                    groupPositions.add(position);
+                }
             }
         }
 
         if (plate instanceof PlateImpl)
             ((PlateImpl) plate).setWells((WellImpl[][]) positionArray);
 
-        // populate well groups:
+        // populate well groups: assign all positions to the well group object
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
         List<WellGroupTemplateImpl> sortedGroups = new ArrayList<>();
         for (WellGroupTemplateImpl wellgroup : wellgroups)
         {
             setProperties(plate.getContainer(), wellgroup);
-            List<PositionImpl> groupPositions = groupLsidToPositions.get(wellgroup.getLSID());
+            List<PositionImpl> groupPositions = groupIdToPositions.get(wellgroup.getRowId());
+
             wellgroup.setPositions(groupPositions != null ? groupPositions : Collections.emptyList());
             sortedGroups.add(wellgroup);
         }
@@ -429,41 +460,66 @@ public class PlateManager implements PlateService
                 String wellGroupObjectLsid = getLsid(plate, WellGroup.class, false);
                 wellgroup.setLsid(wellGroupInstanceLsid);
                 wellgroup.setPlateId(newPlate.getRowId());
-                Table.insert(user, AssayDbSchema.getInstance().getTableInfoWellGroup(), wellgroup);
+
+                assert wellgroup.getRowId() == null;
+                WellGroupTemplateImpl newWellGroup = Table.insert(user, AssayDbSchema.getInstance().getTableInfoWellGroup(), wellgroup);
+                assert newWellGroup.getRowId() != null && newWellGroup.getRowId() > 0;
+
                 savePropertyBag(container, wellGroupInstanceLsid, wellGroupObjectLsid, wellgroup.getProperties());
             }
 
             String wellInstanceLsidPrefix = getLsid(plate, Well.class, true);
             String wellObjectLsid = getLsid(plate, Well.class, false);
+
+            List<List<Integer>> wellGroupPositions = new LinkedList<>();
             for (int row = 0; row < plate.getRows(); row++)
             {
                 for (int col = 0; col < plate.getColumns(); col++)
                 {
                     PositionImpl position = plate.getPosition(row, col);
+                    assert position.getRowId() == null || position.getRowId() == 0;
+
                     String wellLsid = wellInstanceLsidPrefix + "-well-" + position.getRow() + "-" + position.getCol();
                     position.setLsid(wellLsid);
                     position.setPlateId(newPlate.getRowId());
-                    Table.insert(user, AssayDbSchema.getInstance().getTableInfoWell(), position);
-                    savePropertyBag(container, wellLsid, wellObjectLsid, getPositionProperties(plate, position));
+                    PositionImpl newPosition = Table.insert(user, AssayDbSchema.getInstance().getTableInfoWell(), position);
+                    assert newPosition.getRowId() != 0;
+
+                    // collect well group positions to save
+                    wellGroupPositions.addAll(getWellGroupPositions(plate, position));
                 }
             }
+
+            // save well group positions
+            String insertSql = "INSERT INTO " + AssayDbSchema.getInstance().getTableInfoWellGroupPositions() +
+                    " (wellId, wellGroupId) VALUES (?, ?)";
+            Table.batchExecute(AssayDbSchema.getInstance().getSchema(), insertSql, wellGroupPositions);
+
             transaction.commit();
             clearCache();
             return newPlate.getRowId();
         }
     }
 
-    private Map<String, Object> getPositionProperties(PlateTemplateImpl plate, PositionImpl position)
+    // return a list of wellId and wellGroupId pairs
+    private List<List<Integer>> getWellGroupPositions(PlateTemplateImpl plate, PositionImpl position) throws SQLException
     {
         List<? extends WellGroupTemplateImpl> groups = plate.getWellGroups(position);
-        Map<String, Object> properties = new HashMap<>();
-        int index = 0;
+        List<List<Integer>> wellGroupPositions = new ArrayList<>(groups.size());
+
         for (WellGroupTemplateImpl group : groups)
         {
             if (group.contains(position))
-                properties.put("Group " + index++, group.getLSID());
+            {
+                assert position.getRowId() > 0;
+                assert group.getRowId() != null && group.getRowId() > 0;
+                Integer wellId = position.getRowId();
+                Integer wellGroupId = group.getRowId();
+                wellGroupPositions.add(List.<Integer>of(wellId, wellGroupId));
+            }
         }
-        return properties;
+
+        return wellGroupPositions;
     }
 
     private void savePropertyBag(Container container, String ownerLsid,
@@ -494,9 +550,11 @@ public class PlateManager implements PlateService
 
     public void deletePlate(Container container, int rowid)
     {
+        final AssayDbSchema schema = AssayDbSchema.getInstance();
+
         SimpleFilter plateFilter = SimpleFilter.createContainerFilter(container);
         plateFilter.addCondition(FieldKey.fromParts("RowId"), rowid);
-        PlateTemplateImpl plate = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(),
+        PlateTemplateImpl plate = new TableSelector(schema.getTableInfoPlate(),
                 plateFilter, null).getObject(PlateTemplateImpl.class);
         WellGroupTemplateImpl[] wellgroups = getWellGroups(plate);
         PositionImpl[] positions = getPositions(plate);
@@ -511,13 +569,16 @@ public class PlateManager implements PlateService
         SimpleFilter plateIdFilter = SimpleFilter.createContainerFilter(container);
         plateIdFilter.addCondition(FieldKey.fromParts("PlateId"), plate.getRowId());
 
-        DbScope scope = AssayDbSchema.getInstance().getSchema().getScope();
+        DbScope scope = schema.getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             OntologyManager.deleteOntologyObjects(container, lsids.toArray(new String[lsids.size()]));
-            Table.delete(AssayDbSchema.getInstance().getTableInfoWell(), plateIdFilter);
-            Table.delete(AssayDbSchema.getInstance().getTableInfoWellGroup(), plateIdFilter);
-            Table.delete(AssayDbSchema.getInstance().getTableInfoPlate(), plateFilter);
+            new SqlExecutor(scope).execute("" +
+                    "DELETE FROM " + schema.getTableInfoWellGroupPositions() + " WHERE wellId IN " +
+                    "(SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE plateId=?)", plate.getRowId());
+            Table.delete(schema.getTableInfoWell(), plateIdFilter);
+            Table.delete(schema.getTableInfoWellGroup(), plateIdFilter);
+            Table.delete(schema.getTableInfoPlate(), plateFilter);
             transaction.commit();
             clearCache();
         }
@@ -525,10 +586,15 @@ public class PlateManager implements PlateService
 
     public void deleteAllPlateData(Container container)
     {
+        final AssayDbSchema schema = AssayDbSchema.getInstance();
+        new SqlExecutor(schema.getScope()).execute("" +
+                "DELETE FROM " + schema.getTableInfoWellGroupPositions() + " WHERE wellId IN " +
+                "(SELECT rowId FROM " + schema.getTableInfoWell() + " WHERE container=?)", container.getId());
+
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-        Table.delete(AssayDbSchema.getInstance().getTableInfoWell(), filter);
-        Table.delete(AssayDbSchema.getInstance().getTableInfoWellGroup(), filter);
-        Table.delete(AssayDbSchema.getInstance().getTableInfoPlate(), filter);
+        Table.delete(schema.getTableInfoWell(), filter);
+        Table.delete(schema.getTableInfoWellGroup(), filter);
+        Table.delete(schema.getTableInfoPlate(), filter);
         clearCache();
     }
 
