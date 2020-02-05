@@ -4,14 +4,27 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.jsp.taglib.ErrorsTag;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -661,7 +674,60 @@ public class DOM
                     Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
             return DOM.FORM(attrs, body, csrfInput);
         }
+
+        public static Renderable ERRORS(PageContext pageContext)
+        {
+            int count=0;
+            Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
+            List<Renderable> list = new ArrayList<>();
+            while (e.hasMoreElements())
+            {
+                String s = e.nextElement();
+                if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
+                {
+                    Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
+                    if (o instanceof BindingResult)
+                        list.add(ERRORS((BindingResult)o));
+                }
+            }
+            if (list.isEmpty())
+                return null;
+            return createHtmlFragment(list.toArray());
+        }
+
+
+        public static Renderable ERRORS(BindingResult errors)
+        {
+            return ERRORS(errors.getAllErrors());
+        }
+
+        public static Renderable ERRORS(List<ObjectError> z)
+        {
+            if (null == z || z.isEmpty())
+                return HtmlString.unsafe("");
+            final ViewContext context = HttpView.getRootContext();
+            return DIV(cl("labkey-error"),
+                z.stream().map(error ->
+                {
+                    try
+                    {
+                        if (error instanceof LabKeyError)
+                            return createHtmlFragment(HtmlString.unsafe((((LabKeyError)error).renderToHTML(context))),BR());
+                        else
+                            return createHtmlFragment(HtmlString.unsafe(PageFlowUtil.filter(context.getMessage(error), true)),BR());
+                    }
+                    catch (NoSuchMessageException nsme)
+                    {
+                        ExceptionUtil.logExceptionToMothership(context.getRequest(), nsme);
+                        Logger log = Logger.getLogger(ErrorsTag.class);
+                        log.error("Failed to find a message: " + error, nsme);
+                        return createHtmlFragment("Unknown error: " + error, BR());
+                    }
+                })
+            );
+        }
     }
+
     @Deprecated /* use LK */
     public static class X extends LK
     {

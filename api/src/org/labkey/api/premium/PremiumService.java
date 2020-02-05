@@ -54,6 +54,12 @@ public interface PremiumService
 
     boolean isRemoteREnabled();
 
+    default ActionURL getUpdateModuleURL(String module)
+    {
+        return null;
+    }
+
+
     interface AntiVirusProvider
     {
         @NotNull String getId();             // something unique e.g. className

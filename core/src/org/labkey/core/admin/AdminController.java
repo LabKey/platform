@@ -103,6 +103,7 @@ import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.SimpleModule;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -111,6 +112,7 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -174,6 +176,7 @@ import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
+import org.labkey.bootstrap.ExplodedModuleService;
 import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
@@ -230,6 +233,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -239,6 +243,8 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
@@ -7915,8 +7921,8 @@ public class AdminController extends SpringActionController
             knownModules.removeAll(unknownModules);
 
             Set<Double> ignoreSet = form.getIgnoreSet();
-            String managedLink = "";
-            String unmanagedLink = "";
+            HtmlString managedLink = HtmlString.EMPTY_STRING;
+            HtmlString unmanagedLink = HtmlString.EMPTY_STRING;
 
             // Option to filter out all modules whose version shouldn't be managed, or whose version matches the previous release
             // version or 0.00. This can be helpful during the end-of-release consolidation process. Show the link only in dev mode.
@@ -7928,7 +7934,7 @@ public class AdminController extends SpringActionController
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("ignore", "0.00," + currentYear);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + currentYear + " and unmanaged modules", url);
+                    managedLink = PageFlowUtil.link("Click here to ignore 0.00, " + currentYear + " and unmanaged modules").href(url).getHtmlString();
                 }
                 else
                 {
@@ -7940,33 +7946,47 @@ public class AdminController extends SpringActionController
                     String ignoreString = ignore.isEmpty() ? null : ignore.toString();
                     String unmanaged = form.isManagedOnly() ? "unmanaged" : null;
 
-                    managedLink = "(Currently ignoring " + Joiner.on(" and ").skipNulls().join(new String[]{ignoreString, unmanaged}) + ") ";
+                    managedLink = HtmlString.of("(Currently ignoring " + Joiner.on(" and ").skipNulls().join(new String[]{ignoreString, unmanaged}) + ") ");
                 }
 
                 if (!form.isUnmanagedOnly())
                 {
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
                     url.addParameter("unmanagedOnly", true);
-                    unmanagedLink = PageFlowUtil.textLink("Click here to show unmanaged modules only", url);
+                    unmanagedLink = PageFlowUtil.link("Click here to show unmanaged modules only").href(url).getHtmlString();
                 }
                 else
                 {
-                    unmanagedLink = "(Currently showing unmanaged modules only)";
+                    unmanagedLink = HtmlString.of("(Currently showing unmanaged modules only)");
                 }
             }
 
             ManageFilter filter = form.isManagedOnly() ? ManageFilter.ManagedOnly : (form.isUnmanagedOnly() ? ManageFilter.UnmanagedOnly : ManageFilter.All);
-            String deleteInstructions = hasAdminOpsPerm ? "<br><br>" + PageFlowUtil.filter("The delete links below will remove all record of a module from the database tables, " +
-                "but to remove a module completely you must also manually delete its .module file and exploded module directory from your LabKey Server deployment directory. " +
-                "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.") : "";
-            String docLink = "<br><br>Additional modules available, click " + (new HelpTopic("defaultModules").getSimpleLinkHtml("here")) + " to learn more.";
-            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + managedLink + unmanagedLink + deleteInstructions + docLink, null, ignoreSet, filter);
-            HttpView unknown = new ModulesView(unknownModules, "Unknown",
-                PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
-                "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
-                "module is no longer being distributed, the module has been renamed, the server location where the module " +
-                "is stored is not accessible, or the module file is corrupted.") + deleteInstructions, PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
-                "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.emptySet(), filter);
+
+            HtmlStringBuilder deleteInstructions = HtmlStringBuilder.of("");
+            if (hasAdminOpsPerm)
+            {
+                deleteInstructions.append(unsafe("<br><br>")).append(
+                    "The delete links below will remove all record of a module from the database tables, " +
+                    "but to remove a module completely you must also manually delete its .module file and exploded module directory from your LabKey Server deployment directory. " +
+                    "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.");
+            }
+
+            HtmlStringBuilder docLink = HtmlStringBuilder.of("");
+            docLink.append(unsafe("<br><br>")).append("Additional modules available, click ").append(new HelpTopic("defaultModules").getSimpleLinkHtml("here")).append(" to learn more.");
+
+            HtmlStringBuilder knownDescription = HtmlStringBuilder.of("")
+                .append("Each of these modules is installed and has a valid module file. ").append(managedLink).append(unmanagedLink).append(deleteInstructions).append(docLink);
+            HttpView known = new ModulesView(knownModules, "Known", knownDescription.getHtmlString(), null, ignoreSet, filter);
+
+            HtmlStringBuilder unknownDescription = HtmlStringBuilder.of("")
+                    .append(1 == unknownModules.size() ? "This module" : "Each of these modules").append(" has been installed on this server " +
+                    "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
+                    "module is no longer being distributed, the module has been renamed, the server location where the module " +
+                    "is stored is not accessible, or the module file is corrupted.").append(deleteInstructions);
+            HtmlString noModulesDescription = HtmlString.of("A module is considered \"unknown\" if it was installed on this server " +
+                    "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules.");
+            HttpView unknown = new ModulesView(unknownModules, "Unknown", unknownDescription.getHtmlString(), noModulesDescription, Collections.emptySet(), filter);
 
             return new VBox(known, unknown);
         }
@@ -7974,12 +7994,12 @@ public class AdminController extends SpringActionController
         private class ModulesView extends WebPartView
         {
             private final Collection<ModuleContext> _contexts;
-            private final String _descriptionHtml;
-            private final String _noModulesDescriptionHtml;
+            private final HtmlString _descriptionHtml;
+            private final HtmlString _noModulesDescriptionHtml;
             private final Set<Double> _ignoreVersions;
             private final ManageFilter _manageFilter;
 
-            private ModulesView(Collection<ModuleContext> contexts, String type, String descriptionHtml, String noModulesDescriptionHtml, Set<Double> ignoreVersions, ManageFilter manageFilter)
+            private ModulesView(Collection<ModuleContext> contexts, String type, HtmlString descriptionHtml, HtmlString noModulesDescriptionHtml, Set<Double> ignoreVersions, ManageFilter manageFilter)
             {
                 super(FrameType.PORTAL);
                 List<ModuleContext> sorted = new ArrayList<>(contexts);
@@ -7996,7 +8016,9 @@ public class AdminController extends SpringActionController
             @Override
             protected void renderView(Object model, PrintWriter out)
             {
-                boolean hasAdminOpsPerm = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
+                boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
+                final AtomicInteger rowCount = new AtomicInteger();
+                ExplodedModuleService moduleService = !hasAdminOpsPerm ? null : ServiceRegistry.get().getService(ExplodedModuleService.class);
 
                 if (_contexts.isEmpty())
                 {
@@ -8004,66 +8026,41 @@ public class AdminController extends SpringActionController
                 }
                 else
                 {
-                    out.println("<div>" + _descriptionHtml + "</div><br/>");
-                    out.println("\n<table class=\"labkey-data-region-legacy labkey-show-borders\">");
-                    out.println("<tr><td class=\"labkey-column-header\">Name</td>");
-                    out.println("<td class=\"labkey-column-header\">Version</td>");
-                    out.println("<td class=\"labkey-column-header\">Class</td>");
-                    out.println("<td class=\"labkey-column-header\">Source</td>");
-                    out.println("<td class=\"labkey-column-header\">Schemas</td>");
-                    if (hasAdminOpsPerm) // this is for the "delete module and schema" column links
-                        out.println("<td class=\"labkey-column-header\"></td></tr>");
+                    DIV(
+                        DIV(_descriptionHtml),
+                        TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
+                            TR(
+                                TD(cl("labkey-column-header"),"Name"),
+                                TD(cl("labkey-column-header"),"Version"),
+                                TD(cl("labkey-column-header"),"Class"),
+                                TD(cl("labkey-column-header"),"Source"),
+                                TD(cl("labkey-column-header"),"Schemas"),
+                                null == moduleService ? null : TD(cl("labkey-column-header"),""),    // update actions
+                                !hasAdminOpsPerm ? null : TD(cl("labkey-column-header"),"")     // delete actions
+                            ),
+                            _contexts.stream()
+                                .filter(moduleContext -> !_ignoreVersions.contains(moduleContext.getInstalledVersion()))
+                                .map(moduleContext -> new Pair<>(moduleContext,ModuleLoader.getInstance().getModule(moduleContext.getName())))
+                                .filter(pair -> null != pair.getValue() && _manageFilter.accept(pair.getValue()))
+                                .map(pair ->
+                                {
+                                    ModuleContext moduleContext = pair.getKey();
+                                    Module module = pair.getValue();
+                                    List<String> schemas = moduleContext.getSchemaList();
+                                    boolean maybeReplaceable = module.getClass() == SimpleModule.class && schemas.isEmpty();
 
-                    int rowCount = 0;
-                    for (ModuleContext moduleContext : _contexts)
-                    {
-                        if (_ignoreVersions.contains(moduleContext.getInstalledVersion()))
-                            continue;
-
-                        Module module = ModuleLoader.getInstance().getModule(moduleContext.getName());
-
-                        if (null != module && !_manageFilter.accept(module))
-                            continue;
-
-                        List<String> schemas = moduleContext.getSchemaList();
-                        if (rowCount % 2 == 0)
-                            out.println("  <tr class=\"labkey-alternate-row\">");
-                        else
-                            out.println("  <tr class=\"labkey-row\">");
-
-                        out.print("    <td>");
-                        out.print(PageFlowUtil.filter(moduleContext.getName()));
-                        out.println("</td>");
-
-                        out.print("    <td>");
-                        out.print(ModuleContext.formatVersion(moduleContext.getInstalledVersion()));
-                        out.println("</td>");
-
-                        out.print("    <td>");
-                        out.print(PageFlowUtil.filter(moduleContext.getClassName()));
-                        out.println("</td>");
-
-                        out.print("    <td>");
-                        out.print(null != module ? PageFlowUtil.filter(module.getSourcePath()) : "");
-                        out.println("</td>");
-
-                        out.print("    <td>");
-                        out.print(PageFlowUtil.filter(StringUtils.join(schemas, ", ")));
-                        out.println("</td>");
-
-                        if (hasAdminOpsPerm)
-                        {
-                            out.print("    <td>");
-                            out.print(PageFlowUtil.textLink("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : ""))), getDeleteURL(moduleContext.getName())));
-                            out.println("</td>");
-                        }
-
-                        out.println("  </tr>");
-
-                        rowCount++;
-                    }
-
-                    out.println("</table>");
+                                    return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
+                                        TD(moduleContext.getName()),
+                                        TD(String.valueOf(moduleContext.getInstalledVersion())),
+                                        TD(moduleContext.getClassName()),
+                                        TD(module.getSourcePath()),
+                                        TD(StringUtils.join(schemas, ", ")),
+                                        null == moduleService ? null : TD(!maybeReplaceable ? HtmlString.NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
+                                        !hasAdminOpsPerm ? null : TD( PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
+                                    );
+                                })
+                        )
+                    ).appendTo(out);
                 }
             }
         }
@@ -8073,6 +8070,16 @@ public class AdminController extends SpringActionController
             ActionURL url = new ActionURL(DeleteModuleAction.class, ContainerManager.getRoot());
             url.addParameter("name", name);
 
+            return url;
+        }
+
+        private ActionURL getUpdateURL(String name)
+        {
+            ActionURL url = PremiumService.get().getUpdateModuleURL(name);
+            if (null != url)
+                return url;
+            url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
+            url.addParameter("name", name);
             return url;
         }
 
@@ -8170,6 +8177,22 @@ public class AdminController extends SpringActionController
         public URLHelper getSuccessURL(ModuleForm form)
         {
             return new ActionURL(ModulesAction.class, ContainerManager.getRoot());
+        }
+    }
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class UpdateModuleAction extends SimpleViewAction<ModuleForm>
+    {
+        @Override
+        public ModelAndView getView(ModuleForm moduleForm, BindException errors) throws Exception
+        {
+            return new HtmlView(HtmlString.of("This is a premium feature, please refer to our documenatation on www.labkey.org"));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
         }
     }
 

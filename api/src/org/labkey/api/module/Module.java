@@ -318,6 +318,10 @@ public interface Module extends Comparable<Module>
      */
     void setExplodedPath(File path);
 
+    @Nullable
+    File getZippedPath();
+    void setZippedPath(File zipped);
+
     /**
      * Returns a list of sql script file names for a given schema
      *

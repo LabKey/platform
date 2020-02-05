@@ -147,9 +147,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildOS = null;
     private String _buildPath = null;
     private String _sourcePath = null;
+    private boolean _useSourcePath = false;
     private String _buildNumber = null;
     private String _enlistmentId = null;
     private File _explodedPath = null;
+    private File _zippedPath = null;
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
@@ -1047,6 +1049,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
         props.put("Source Path", getSourcePath());
+        if (null != getZippedPath())
+            props.put("Module File", getZippedPath().getPath());
         props.put("Build Number", getBuildNumber());
         props.put("Enlistment ID", getEnlistmentId());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
@@ -1064,6 +1068,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final void setExplodedPath(File path)
     {
         _explodedPath = path.getAbsoluteFile();
+    }
+
+    @Override
+    public @Nullable File getZippedPath()
+    {
+        return _zippedPath;
+    }
+
+    @Override
+    public void setZippedPath(File zipped)
+    {
+        _zippedPath = zipped;
     }
 
     @Override

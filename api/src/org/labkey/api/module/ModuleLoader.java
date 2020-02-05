@@ -75,6 +75,7 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
 import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
+import org.labkey.bootstrap.ExplodedModuleService;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
@@ -101,8 +102,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -269,6 +272,14 @@ public class ModuleLoader implements Filter
     /** Do basic module loading, shared between the web server and remote pipeline deployments */
     public List<Module> doInit(List<File> explodedModuleDirs)
     {
+        List<Map.Entry<File,File>> moduleDirs = explodedModuleDirs.stream()
+                .map(dir -> new AbstractMap.SimpleEntry<File,File>(dir,null))
+                .collect(Collectors.toList());
+        return doInitWithSourceModule(moduleDirs);
+    }
+
+    public List<Module> doInitWithSourceModule(List<Map.Entry<File,File>> explodedModuleDirs)
+    {
         _log.debug("ModuleLoader init");
 
 
@@ -298,6 +309,90 @@ public class ModuleLoader implements Filter
         return _modules;
     }
 
+    // Proxy to teleport ExplodedModuleService from outer ClassLoader to inner
+    static class _Proxy implements InvocationHandler
+    {
+        private final Object delegate;
+        private Method m_getExplodedModuleDirectories;
+        private Method m_getExplodedModules;
+        private Method m_updateModule;
+
+        public static ExplodedModuleService newInstance(Object obj)
+        {
+            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()))
+                return null;
+            Class interfaces[] = new Class[] {ExplodedModuleService.class};
+            return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
+        }
+
+        private _Proxy(Object obj)
+        {
+            this.delegate = obj;
+            Arrays.stream(obj.getClass().getMethods()).forEach(method -> {
+                switch (method.getName())
+                {
+                    case "getExplodedModuleDirectories":
+                        m_getExplodedModuleDirectories = method;
+                        break;
+                    case "getExplodedModules":
+                        m_getExplodedModules = method;
+                        break;
+                    case "updateModule":
+                        m_updateModule = method;
+                        break;
+                }
+            });
+            if (null == m_getExplodedModuleDirectories || null == m_getExplodedModules || null == m_updateModule)
+                throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment");
+        }
+
+        public Object invoke(Object proxy, Method m, Object[] args)
+                throws Throwable
+        {
+            try
+            {
+                switch (m.getName())
+                {
+                    case "getExplodedModuleDirectories":
+                        return m_getExplodedModuleDirectories.invoke(delegate, args);
+                    case "getExplodedModules":
+                        return m_getExplodedModules.invoke(delegate, args);
+                    case "updateModule":
+                        return m_updateModule.invoke(delegate, args);
+                }
+                throw new IllegalArgumentException(m.getName());
+            }
+            catch (InvocationTargetException e)
+            {
+                throw e.getTargetException();
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("unexpected invocation exception: " + e.getMessage());
+            }
+        }
+    }
+
+    /* this is called if new archives are exploded (for existing or new modules) */
+    public void updateModuleDirectories(List<Map.Entry<File,File>> list)
+    {
+        /* TODO if we add new elements to list of modules, we would need to synchronize something */
+        Map<File,Module> map = new HashMap<>();
+        for (Module module : getModules())
+            map.put(module.getExplodedPath(), module);
+
+        for (var e : list)
+        {
+            var dir = e.getKey();
+            var archive = e.getValue();
+            var module = map.get(dir);
+            if (null == module || null==archive)
+                continue;
+            if (!archive.equals(module.getZippedPath()))
+                module.setZippedPath(archive);
+        }
+    }
+
     /** Full web-server initialization */
     private void doInit(ServletContext servletCtx, boolean terminateAfterStartup) throws Exception
     {
@@ -314,29 +409,30 @@ public class ModuleLoader implements Filter
         // load startup configuration information from properties, side-effect may set newinstall=true
         loadStartupProps();
 
-        List<File> explodedModuleDirs;
+        List<Map.Entry<File,File>> explodedModuleDirs = new ArrayList<>();
 
-        try
+        // find modules exploded by LabKeyBootStrapClassLoader
+        ClassLoader webappClassLoader = getClass().getClassLoader();
+        ExplodedModuleService service = _Proxy.newInstance(webappClassLoader);
+        if (null != service)
         {
-            ClassLoader webappClassLoader = getClass().getClassLoader();
-            Method m = webappClassLoader.getClass().getMethod("getExplodedModuleDirectories");
-            explodedModuleDirs = (List<File>)m.invoke(webappClassLoader);
-        }
-        catch (NoSuchMethodException e)
-        {
-            // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
-            File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
-            if (!webinfModulesDir.isDirectory())
-                throw new ConfigurationException("Could not find expected method.", "You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />", e);
-            File[] modules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
-            explodedModuleDirs = null==modules ? Collections.emptyList() : Arrays.asList(modules);
-        }
-        catch (InvocationTargetException e)
-        {
-            throw new RuntimeException(e);
+            explodedModuleDirs.addAll(service.getExplodedModules());
+            ServiceRegistry.get().registerService(ExplodedModuleService.class, service);
         }
 
-        doInit(explodedModuleDirs);
+        // support WAR style deployment (w/o LabKeyBootstrapClassLoader) if modules are found at webapp/WEB-INF/modules
+        File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
+        if (!webinfModulesDir.isDirectory() && null == service)
+            throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
+        File[] modules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+        if (null != modules)
+        {
+            Arrays.stream(modules)
+                    .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
+                    .forEach(e -> explodedModuleDirs.add(e));
+        }
+
+        doInitWithSourceModule(explodedModuleDirs);
 
         // set the project source root before calling .initialize() on modules
         Module coreModule = _modules.isEmpty() ? null : _modules.get(0);
@@ -655,15 +751,18 @@ public class ModuleLoader implements Filter
         }
     }
 
-    private List<Module> loadModules(List<File> explodedModuleDirs)
+    private List<Module> loadModules(List<Map.Entry<File,File>> explodedModuleDirs)
     {
         ApplicationContext parentContext = ServiceRegistry.get().getApplicationContext();
 
         CaseInsensitiveHashMap<File> moduleNameToFile = new CaseInsensitiveHashMap<>();
         CaseInsensitiveTreeMap<Module> moduleNameToModule = new CaseInsensitiveTreeMap<>();
         Pattern moduleNamePattern = Pattern.compile(MODULE_NAME_REGEX);
-        for(File moduleDir : explodedModuleDirs)
+        for (var moduleSource : explodedModuleDirs)
         {
+            File moduleDir = moduleSource.getKey();
+            File moduleFile = moduleSource.getValue();
+
             File moduleXml = new File(moduleDir, "config/module.xml");
             try
             {
@@ -699,6 +798,9 @@ public class ModuleLoader implements Filter
                     else
                     {
                         module.setExplodedPath(moduleDir);
+                        if (null != moduleFile && moduleFile.getName().endsWith(".module") && moduleFile.isFile())
+                            module.setZippedPath(moduleFile);
+
                         moduleNameToFile.put(module.getName(), moduleDir);
                         moduleNameToModule.put(module.getName(), module);
                     }
