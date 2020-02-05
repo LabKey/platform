@@ -102,14 +102,6 @@ export class App extends PureComponent<{}, State> {
                 dirty: !isEquivalent(newState, globalSettingsDirtinessData)
             })
         );
-
-        // tried out something like this. Not getting it working so I'm going to leave it for tonight
-        // this.setState((prevState) => {
-        //     const globalSettings = {...prevState.globalSettings, [id]: !prevState.globalSettings[id]};
-        //     const dirty = !isEquivalent(globalSettings, prevState.globalSettings);
-        //
-        //     return {...prevState, globalSettings, dirty}
-        // });
     };
 
     saveChanges = (): void => {
@@ -218,7 +210,7 @@ export class App extends PureComponent<{}, State> {
         });
     };
 
-    updateAuthRowsAfterSave = (config: string, configType: string): void => {
+    updateAuthRowsAfterSave1 = (config: string, configType: string): void => {
         const prevState = this.state[configType];
         const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
 
@@ -226,6 +218,17 @@ export class App extends PureComponent<{}, State> {
         const dirtinessData = { ...this.state.dirtinessData, [configType]: newState };
 
         this.setState({ [configType]: newState, dirtinessData });
+    };
+
+    updateAuthRowsAfterSave = (config: string, configType: string): void => {
+        this.setState((state) => {
+            const prevState = state[configType];
+            const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
+
+            // Update our dirtiness information with added modal, since dirtiness should only track reordering
+            const dirtinessData = { ...state.dirtinessData, [configType]: newState };
+            return { [configType]: newState, dirtinessData };
+        });
     };
 
     render() {
