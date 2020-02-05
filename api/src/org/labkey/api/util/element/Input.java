@@ -492,8 +492,10 @@ public class Input extends DisplayElement implements HasHtmlString
             sb.append(" pattern=\"").append(getRegExp()).append("\"");
         if (getStep() != null)
             sb.append(" step=\"").append(getStep()).append("\"");
+        if ((isCheckbox() || isRadio()) && isChecked())
+            sb.append(" checked");
 
-        doValue(sb);
+        renderValueIfNonEmpty(s->sb.append(" value=\"").append(s).append("\""));
         doInputEvents(sb);
 
         if (isRequired())
@@ -604,15 +606,6 @@ public class Input extends DisplayElement implements HasHtmlString
             sb.append(getContextContent());
             sb.append("</p>");
         }
-    }
-
-    protected void doValue(StringBuilder sb)
-    {
-        if ((isCheckbox() || isRadio()) && isChecked())
-        {
-            sb.append(" checked");
-        }
-        renderValueIfNonEmpty(s -> sb.append(" value=\"").append(s).append("\""));
     }
 
     protected void renderValueIfNonEmpty(Consumer<String> consumer)
