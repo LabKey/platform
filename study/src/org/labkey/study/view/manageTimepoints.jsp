@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <labkey:errors />
@@ -80,9 +81,9 @@
     </ul>
     <labkey:input type="text" id="startDateInput" name="startDate" label="Start Date"
                   contextContent="A start date is required for date based studies."
-                  value="<%=formatDate(form.getStartDate())%>" />
+                  value="<%=DateUtil.formatDate(getContainer(), form.getStartDate())%>" />
     <labkey:input type="number" id="defaultTimepointDurationInput" name="defaultTimepointDuration"
-                  label="Default Timepoint Duration" value="<%=h(form.getDefaultTimepointDuration())%>" />
+                  label="Default Timepoint Duration" value="<%=form.getDefaultTimepointDuration()%>" />
     <%= button("Update").submit(true) %>
     <%= generateBackButton() %>
 </labkey:form>

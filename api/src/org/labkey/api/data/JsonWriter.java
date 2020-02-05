@@ -304,17 +304,11 @@ public class JsonWriter
             lookupInfo.put("isPublic", isPublic);
             lookupInfo.put("public", isPublic);
             String queryName;
-            String schemaName;
+            String schemaName = lookupTable.getPublicSchemaName();
             if (isPublic)
-            {
                 queryName = lookupTable.getPublicName();
-                schemaName = lookupTable.getPublicSchemaName();
-            }
             else
-            {
                 queryName = lookupTable.getName();
-                schemaName = lookupTable.getSchemaName();
-            }
 
             // Duplicate info with different property names for backwards compatibility
             lookupInfo.put("queryName", queryName);
@@ -343,13 +337,15 @@ public class JsonWriter
             //Issue 20092: the target column specified by the FK does not necessarily need to be a true PK
             // PERF computing getLookupColumnName() can be expensive, but we only want to do this work when it is not == default pk
             // suggest having fk.getLookupColumnName() which returns explicitly set LookupColumnName, and fk.computeLookupColumnName()
-            if (fk.getLookupColumnName() != null)
+            // NOTE: Don't try to resolve the lookup column on the lookup table because
+            // the MVFK lookup column is on the junction table instead of the far-right lookup table.
+            if (fk.getLookupColumnName() != null && !(fk instanceof MultiValuedForeignKey))
             {
                 key = fk.getLookupColumnName();
                 if (lookupTable instanceof TableInfo)
                 {
                     //NOTE: the XML could specify a column with different casing than the canonical name.  this could be problematic for client side JS.  \
-                    ColumnInfo targetCol = ((TableInfo)lookupTable).getColumn(fk.getLookupColumnName());
+                    ColumnInfo targetCol = ((TableInfo)lookupTable).getColumn(key);
                     if (targetCol != null)
                         key = targetCol.getName();
                 }

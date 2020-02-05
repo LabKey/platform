@@ -1091,7 +1091,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpProtocolApplicationTableImpl createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf)
     {
         return new ExpProtocolApplicationTableImpl(name, schema, cf);
     }
@@ -1500,6 +1500,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
+            List<ExpRun> runs = new ArrayList<>();
             for (int id : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(id);
@@ -1507,6 +1508,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     throw new NotFoundException("Could not find run " + id);
                 }
+                runs.add(run);
             }
 
             XarExportSelection selection = new XarExportSelection();
@@ -1519,7 +1521,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
                 selection.addExperimentIds(experiment.getRowId());
             }
-            selection.addRunIds(runIds);
+            selection.addRuns(runs);
             // NOTE: selection distinguishes between null and empty (careful)
             // TODO have ArchiveURLRewriter() differentiate between input and output roles
             // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)

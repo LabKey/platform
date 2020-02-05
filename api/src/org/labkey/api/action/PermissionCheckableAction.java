@@ -32,7 +32,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
@@ -113,12 +113,35 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
         }
     }
 
+    protected boolean isGet()
+    {
+        return "GET".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPost()
+    {
+        return "POST".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPut()
+    {
+        return "PUT".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isDelete()
+    {
+        return "DELETE".equals(getViewContext().getRequest().getMethod());
+    }
+
+    protected boolean isPatch()
+    {
+        return "PATCH".equals(getViewContext().getRequest().getMethod());
+    }
+
 
     private void _checkActionPermissions(Set<Role> contextualRoles) throws UnauthorizedException
     {
         ViewContext context = getViewContext();
-        String method = context.getRequest().getMethod();
-        boolean isPOST = "POST".equals(method);
 
         Container c = context.getContainer();
         User user = context.getUser();
@@ -165,10 +188,10 @@ public abstract class PermissionCheckableAction implements Controller, Permissio
             if (!c.isRoot())
                 throw new NotFoundException();
 
-            if (isPOST)
+            if (isPost())
                 permissionsRequired.add(adminConsoleAction.value());
             else
-                permissionsRequired.add(AdminReadPermission.class);
+                permissionsRequired.add(TroubleShooterPermission.class);
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);

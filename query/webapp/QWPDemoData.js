@@ -7,6 +7,7 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
 
     function getSuccessHandler(dd, queryName) {
         console.log('The Sample Set \'' + queryName + '\' already exists.', true);
+        additionalCallBack.call();
     }
 
     function getErrorHandler() {
@@ -41,16 +42,14 @@ function sampleSetDomainTypeTest(queryName, rows, description, additionalCallBac
                         schemaName: 'Samples',
                         queryName: queryName,
                         rows: rows,
-                        success: function() {
-                            location.reload();
+                        success: additionalCallBack,
+                        failure: function(response) {
+                            console.log('Failed to insert rows into the \'' + queryName + '\' Sample Set');
                         }
                     });
                 }, function(response) {
-                    console.log('Failed to update the \'' + queryName + '\' Sample Set');
+                    console.log('Failed to create the \'' + queryName + '\' Sample Set');
                 }, 'Samples', queryName);
-                if (additionalCallBack) {
-                    additionalCallBack.call();
-                }
             });
         }
 
@@ -96,7 +95,9 @@ function setUpDomains() {
     var rows3 =[ {"Alias":  'alias 3-1', "Id": 301, "Sort": 500,  "Tag": 'Hispanic'}];
     sampleSetDomainTypeTest('sampleDataTest1', rows1, 'A sample set with color tags', function() {
         sampleSetDomainTypeTest('sampleDataTest2', rows2, 'A sample set with shape tags', function(){
-            sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags');
+            sampleSetDomainTypeTest('sampleDataTest3', rows3, 'A sample set with race tags', function(){
+                location.reload();
+            });
         });
     }, ([
     '<tables xmlns="http://labkey.org/data/xml">',

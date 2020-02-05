@@ -81,7 +81,7 @@ public class ListModule extends SpringModule
     @Override
     public double getVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     // Note: ExperimentModule handles the list schema

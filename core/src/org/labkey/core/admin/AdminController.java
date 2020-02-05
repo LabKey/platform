@@ -134,7 +134,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
@@ -7924,12 +7924,11 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String previousRelease = ModuleContext.formatVersion(Constants.getPreviousReleaseVersion());
-                    String nextRelease = ModuleContext.formatVersion(Constants.getNextReleaseVersion());
+                    String currentYear = ModuleContext.formatVersion(20.000);
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
-                    url.addParameter("ignore", "0.00," + previousRelease + "," + nextRelease);
+                    url.addParameter("ignore", "0.00," + currentYear);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + previousRelease + ", " + nextRelease + " and unmanaged modules", url);
+                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + currentYear + " and unmanaged modules", url);
                 }
                 else
                 {
@@ -9251,7 +9250,7 @@ public class AdminController extends SpringActionController
     }
 
     @SuppressWarnings("UnusedDeclaration")
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class TestMothershipReportAction extends ReadOnlyApiAction<MothershipReportSelectionForm>
     {
         @Override
@@ -9349,7 +9348,7 @@ public class AdminController extends SpringActionController
     }
 
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class SuspiciousAction extends SimpleViewAction<Object>
     {
         @Override

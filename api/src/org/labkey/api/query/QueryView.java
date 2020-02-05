@@ -194,6 +194,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showInsertNewButton = true;
     private boolean _showImportDataButton = true;
     private boolean _showDeleteButton = true;
+    private boolean _showDeleteButtonConfirmationText = true;
     private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
 
@@ -888,6 +889,16 @@ public class QueryView extends WebPartView<Object>
         _showDeleteButton = showDeleteButton;
     }
 
+    public boolean showDeleteButtonConfirmationText()
+    {
+        return _showDeleteButtonConfirmationText;
+    }
+
+    public void setShowDeleteButtonConfirmationText(boolean showDeleteButtonConfirmationText)
+    {
+        _showDeleteButtonConfirmationText = showDeleteButtonConfirmationText;
+    }
+
     public boolean showRecordSelectors()
     {
         return _showRecordSelectors;
@@ -997,6 +1008,11 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     public ActionButton createDeleteButton()
     {
+        return createDeleteButton(showDeleteButtonConfirmationText());
+    }
+
+    public ActionButton createDeleteButton(boolean showConfirmation)
+    {
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
         if (urlDelete != null)
         {
@@ -1004,7 +1020,10 @@ public class QueryView extends WebPartView<Object>
             btnDelete.setIconCls("trash");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setDisplayPermission(DeletePermission.class);
-            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            if (showConfirmation)
+                btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            else
+                btnDelete.setRequiresSelection(true);
             return btnDelete;
         }
         return null;
@@ -2590,7 +2609,7 @@ public class QueryView extends WebPartView<Object>
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
                                  List<FieldKey> excludeColumns,
-                                 Map<String, String> renameColumns,
+                                 @NotNull Map<String, String> renameColumns,
                                  @Nullable String prefix
                                  )
             throws IOException
@@ -2599,7 +2618,8 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType) : getExcelWriter(docType, renameColumns))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
+                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();

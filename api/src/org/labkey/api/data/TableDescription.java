@@ -12,14 +12,13 @@ public interface TableDescription
 
     String getPublicName();
 
-    // TODO replace with (or add) getPublicSchemaKey()
+    // CONSIDER replace with (or add) getPublicSchemaKey()
+    /** @return The public (queryable) schema name in SchemaKey encoding. */
     String getPublicSchemaName();
 
     String getName();
 
-    /* TODO this is called by JsonWriter, but is this actually useful? */
-    String getSchemaName();  // same as ((TableInfo)this).getSchema().getName()
-
+    /** @return the default display value for this table if it's the target of a foreign key */
     String getTitleColumn();
 
     List<String> getPkColumnNames();

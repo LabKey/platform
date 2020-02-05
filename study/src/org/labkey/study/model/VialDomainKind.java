@@ -15,14 +15,29 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
 import org.labkey.study.query.SpecimenTablesProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -145,5 +160,76 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
         return null != template ? template.getExtraVialProperties() : Collections.emptySet();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
+    {
+        ValidationException exception;
+        try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            exception = new ValidationException();
+            SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+            Domain domainSpecimen = stp.getDomain("specimen", false);
+            Domain domainVial = stp.getDomain("vial", false);
+
+            // Check for the same name in Specimen and Vial
+            CaseInsensitiveHashSet specimenFields = new CaseInsensitiveHashSet();
+            if (null != domainSpecimen)
+            {
+                for (DomainProperty prop : domainSpecimen.getProperties())
+                {
+                    if (null != prop.getName())
+                    {
+                        specimenFields.add(prop.getName().toLowerCase());
+                    }
+                }
+            }
+
+            List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
+            for (GWTPropertyDescriptor prop : update.getFields())
+            {
+                if (null != prop.getName())
+                {
+                    if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
+                    {
+                        if (specimenFields.contains(prop.getName().toLowerCase()))
+                        {
+                            exception.addError(new PropertyValidationError("Vial cannot have a custom field of the same name as a Specimen field.", prop.getName(), prop.getPropertyId()));
+                        }
+
+                        optionalVialFields.add(getPropFromGwtProp(prop));
+                        if (prop.getName().contains(" "))
+                        {
+                            exception.addError(new PropertyValidationError("Name '" + prop.getName() + "' should not contain spaces.", prop.getName(), prop.getPropertyId()));
+                        }
+                    }
+                }
+            }
+
+            exception = checkRollups(optionalVialFields, null, container, user, exception, includeWarnings);
+            exception.addErrors(super.updateDomain(original, update, container, user, includeWarnings));
+
+            if (!exception.hasErrors())
+            {
+                transaction.commit();
+            }
+            return exception;
+        }
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        Set<String> names = new HashSet<>();
+        names.add(COMMENTS);
+        names.add(COLUMN);
+        return names;
     }
 }

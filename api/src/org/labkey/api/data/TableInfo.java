@@ -45,7 +45,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,9 +58,6 @@ import java.util.Set;
  */
 public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
-    @Override
-    String getName();
-
     /** Get title, falling back to the name if title is null **/
     String getTitle();
 
@@ -107,8 +103,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     /** getSchema().getSqlDialect() */
     SqlDialect getSqlDialect();
-
-    List<String> getPkColumnNames();
 
     @NotNull List<ColumnInfo> getPkColumns();
 
@@ -172,10 +166,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     ColumnInfo getVersionColumn();
 
     String getVersionColumnName();
-
-    /** @return the default display value for this table if it's the target of a foreign key */
-    @Override
-    String getTitleColumn();
 
     boolean hasDefaultTitleColumn();
 
@@ -328,22 +318,6 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * getImportTemplates() should be used instead
      */
     List<Pair<String, StringExpression>> getRawImportTemplates();
-
-    @Override
-    boolean isPublic();
-
-    @Override
-    String getPublicName();
-
-    /** @return The public (queryable) schema name in SchemaKey encoding. */
-    @Override
-    String getPublicSchemaName();
-
-    /* TODO this is called by JsonWriter, but is this actually useful? */
-    default String getSchemaName()
-    {
-        return getSchema().getName();
-    }
 
     // Most datasets do not have a container column
     boolean hasContainerColumn();

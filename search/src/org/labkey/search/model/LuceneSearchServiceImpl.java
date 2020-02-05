@@ -39,6 +39,8 @@ import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.BoostQuery;
+import org.apache.lucene.search.FieldComparator;
+import org.apache.lucene.search.FieldComparatorSource;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -112,7 +114,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -123,6 +124,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -146,6 +148,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
     private final Analyzer _standardAnalyzer = LuceneAnalyzer.LabKeyAnalyzer.getAnalyzer();
     private final AutoDetectParser _autoDetectParser;
+    // We track this to avoid clearing last indexed multiple times in certain cases (delete index, upgrade), see #39330
+    private final AtomicLong _countIndexedSinceClearLastIndexed = new AtomicLong(1);
 
     enum FIELD_NAME
     {
@@ -204,7 +208,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         _autoDetectParser = new AutoDetectParser(config);
     }
 
-
+    /**
+     * Initializes the index, if possible. Recovers from some common failures, such as incompatible existing index formats.
+     */
     private void initializeIndex()
     {
         try
@@ -302,7 +308,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _log.error("Closing index", e);
         }
 
-        // Initialize new index and clear the last indexed
+        // Initialize new index and clear last indexed
         initializeIndex();
         clearLastIndexed();
     }
@@ -400,6 +406,17 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             FileUtil.deleteDir(indexDir);
 
         clearLastIndexed();
+    }
+
+    @Override
+    public void clearLastIndexed()
+    {
+        // Short circuit if nothing has been indexed since clearLastIndexed() was last called
+        if (_countIndexedSinceClearLastIndexed.get() > 0)
+        {
+            super.clearLastIndexed();
+            _countIndexedSinceClearLastIndexed.set(0);
+        }
     }
 
     // Custom property code path needs to ignore "known properties", the properties we handle by name. See #26015.
@@ -587,6 +604,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
             doc.add(new Field(FIELD_NAME.uniqueId.toString(), r.getDocumentId(), StringField.TYPE_STORED));
             doc.add(new Field(FIELD_NAME.container.toString(), r.getContainerId(), StringField.TYPE_STORED));
+
+            // See: https://stackoverflow.com/questions/29695307/sortiing-string-field-alphabetically-in-lucene-5-0
+            doc.add(new SortedDocValuesField(FIELD_NAME.container.toString(), new BytesRef(r.getContainerId())));
 
             // === Index and analyze, don't store ===
 
@@ -1144,6 +1164,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
+    @Override
     protected void deleteDocument(String id)
     {
         _indexManager.deleteDocument(id);
@@ -1173,7 +1194,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
 
-
     private long getDocCount(Query query) throws IOException
     {
         IndexSearcher searcher = _indexManager.getSearcher();
@@ -1189,19 +1209,20 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-    protected boolean index(String id, WebdavResource r, Document doc)
+    private boolean index(String id, WebdavResource r, Document doc)
     {
         try
         {
             _indexManager.index(r.getDocumentId(), doc);
+            _countIndexedSinceClearLastIndexed.incrementAndGet();
             return true;
         }
         catch (IndexManagerClosedException x)
         {
             // Happens when an admin switches the index configuration, e.g., setting a new path to the index files.
             // We've swapped in the new IndexManager, but the indexing thread still holds an old (closed) IndexManager.
-            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories
-            // anyway, so everything's getting reindexed anyway.
+            // The document is not marked as indexed so it'll get reindexed... plus we're switching index directories,
+            // so everything's getting reindexed anyway.
         }
         catch(Throwable e)
         {
@@ -1209,7 +1230,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         return false;
-
     }
 
     @Override
@@ -1277,7 +1297,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _indexManager.releaseSearcher(searcher);
         }
     }
-    
+
 
     private static final String[] standardFields;
     private static final Map<String, Float> boosts = new HashMap<>();
@@ -1312,6 +1332,15 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                                Container current, SearchScope scope,
                                @Nullable String sortField,
                                int offset, int limit) throws IOException
+    {
+        return search(queryString, categories, user, current, scope, sortField, offset, limit, false);
+    }
+
+    @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
+                               Container current, SearchScope scope,
+                               @Nullable String sortField,
+                               int offset, int limit, boolean invertResults) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
@@ -1402,9 +1431,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (sortField != null && !sortField.equals("score"))
             {
                 if (sortField.equals(FIELD_NAME.created.name()) || sortField.equals(FIELD_NAME.modified.name()))
-                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, true), SortField.FIELD_SCORE);
+                    sort = new Sort(new SortField(sortField, SortField.Type.LONG, !invertResults), SortField.FIELD_SCORE);
+                else if (sortField.equals(FIELD_NAME.container.name()))
+                    sort = new Sort(new SortField(sortField, new ContainerFieldComparatorSource(), invertResults), SortField.FIELD_SCORE);
                 else
-                    sort = new Sort(new SortField(sortField, SortField.Type.STRING), SortField.FIELD_SCORE);
+                    sort = new Sort(new SortField(sortField, SortField.Type.STRING, invertResults), SortField.FIELD_SCORE);
             }
 
             IndexSearcher searcher = _indexManager.getSearcher();
@@ -1558,7 +1589,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     {
         return contentType.startsWith("image/");
     }
-    
+
 
     private boolean isZip(String contentType)
     {
@@ -1937,6 +1968,35 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             SearchResult result = _ss.search(query, Collections.singletonList(_category), _context.getUser(), _c, SearchScope.Folder, null, 0, 100);
 
             return result.hits;
+        }
+    }
+
+    private static class ContainerFieldComparatorSource extends FieldComparatorSource
+    {
+        @Override
+        public FieldComparator<?> newComparator(String fieldname, int numHits, int sortPos, boolean reversed)
+        {
+            return new FieldComparator.TermValComparator(numHits, fieldname, reversed) {
+                @Override
+                public int compareValues(BytesRef val1, BytesRef val2)
+                {
+                    Container c1 = ContainerManager.getForId(val1.utf8ToString());
+                    Container c2 = ContainerManager.getForId(val2.utf8ToString());
+
+                    if (c1 == null)
+                    {
+                        return c2 == null ? 0 : 1;
+                    }
+                    else if (c2 == null)
+                    {
+                        return -1;
+                    }
+                    else
+                    {
+                        return c1.compareTo(c2);
+                    }
+                }
+            };
         }
     }
 }

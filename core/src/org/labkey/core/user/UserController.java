@@ -388,7 +388,6 @@ public class UserController extends SpringActionController
     public static class UserIdForm extends ReturnUrlForm
     {
         private Integer[] _userId;
-        private String _redirUrl;
 
         public Integer[] getUserId()
         {
@@ -445,7 +444,7 @@ public class UserController extends SpringActionController
                 //try to get a user selection list from the dataregion
                 Set<Integer> userIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
                 if (userIds.isEmpty())
-                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
+                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL());
 
                 for (Integer id : userIds)
                 {
@@ -455,7 +454,7 @@ public class UserController extends SpringActionController
             }
 
             if (bean.getUsers().size() == 0)
-                throw new RedirectException(bean.getRedirUrl().getLocalURIString());
+                throw new RedirectException(bean.getRedirUrl());
 
             return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
@@ -603,7 +602,7 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
-            String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
+            ActionURL siteUsersUrl = new UserUrlsImpl().getSiteUsersURL();
             DeleteUsersBean bean = new DeleteUsersBean();
 
             if (null != form.getUserId())

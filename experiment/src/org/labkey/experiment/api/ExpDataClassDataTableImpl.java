@@ -50,6 +50,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -70,6 +71,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -695,6 +697,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.index(null);
             }
+
+            ret.put("lsid", lsid);
+            return ret;
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+
+            /* setup mini dataiterator pipeline to process lineage */
+            DataIterator di = _toDataIterator("updateRows.lineage", ret);
+            ExpDataIterators.derive(user, container, di, false);
 
             return ret;
         }

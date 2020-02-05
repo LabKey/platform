@@ -36,6 +36,7 @@ public interface ExpRun extends ExpObject, Identifiable
     @Nullable ExpExperiment getBatch();
     ExpProtocol getProtocol();
 
+    /** @return true if the data is an output from the run, and not an intermediate/temporary file within the run */
     boolean isFinalOutput(ExpData data);
 
     /**
