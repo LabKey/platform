@@ -34,6 +34,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -51,7 +52,6 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -219,6 +219,12 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public void deletePropertyDescriptor(Domain domain, User user, PropertyDescriptor pd)
     {
+    }
+
+    @Override
+    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

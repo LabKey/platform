@@ -31,6 +31,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
@@ -51,10 +52,10 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.list.client.ListEditorService;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
+import org.labkey.list.client.ListEditorService;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -408,6 +409,13 @@ public abstract class ListDomainKind extends AbstractDomainKind
         }
 
         return list.getDomain();
+    }
+
+    @Override
+    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    {
+        ListDefinition list = ListService.get().getList(container, domain.getName());
+        return ListManager.get().getList(container, list.getListId());
     }
 
     @Override
