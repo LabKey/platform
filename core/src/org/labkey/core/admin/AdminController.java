@@ -8019,6 +8019,7 @@ public class AdminController extends SpringActionController
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
                 final AtomicInteger rowCount = new AtomicInteger();
                 ExplodedModuleService moduleService = !hasAdminOpsPerm ? null : ServiceRegistry.get().getService(ExplodedModuleService.class);
+                final File externalModulesDir = moduleService==null ? null : moduleService.getExternalModulesDirectory();
 
                 if (_contexts.isEmpty())
                 {
@@ -8035,7 +8036,7 @@ public class AdminController extends SpringActionController
                                 TD(cl("labkey-column-header"),"Class"),
                                 TD(cl("labkey-column-header"),"Source"),
                                 TD(cl("labkey-column-header"),"Schemas"),
-                                null == moduleService ? null : TD(cl("labkey-column-header"),""),    // update actions
+                                null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // update actions
                                 !hasAdminOpsPerm ? null : TD(cl("labkey-column-header"),"")     // delete actions
                             ),
                             _contexts.stream()
@@ -8047,7 +8048,13 @@ public class AdminController extends SpringActionController
                                     ModuleContext moduleContext = pair.getKey();
                                     Module module = pair.getValue();
                                     List<String> schemas = moduleContext.getSchemaList();
-                                    boolean maybeReplaceable = module.getClass() == SimpleModule.class && schemas.isEmpty();
+                                    boolean maybeReplaceable = false;
+                                    if (module.getClass() == SimpleModule.class && schemas.isEmpty())
+                                    {
+                                        File zip = module.getZippedPath();
+                                        if (null != zip && zip.getParentFile().equals(externalModulesDir))
+                                            maybeReplaceable = true;
+                                    }
 
                                     return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
                                         TD(moduleContext.getName()),
@@ -8055,7 +8062,7 @@ public class AdminController extends SpringActionController
                                         TD(moduleContext.getClassName()),
                                         TD(module.getSourcePath()),
                                         TD(StringUtils.join(schemas, ", ")),
-                                        null == moduleService ? null : TD(!maybeReplaceable ? HtmlString.NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
+                                        null == externalModulesDir ? null : TD(!maybeReplaceable ? HtmlString.NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
                                         !hasAdminOpsPerm ? null : TD( PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
                                 })

@@ -313,9 +313,7 @@ public class ModuleLoader implements Filter
     static class _Proxy implements InvocationHandler
     {
         private final Object delegate;
-        private Method m_getExplodedModuleDirectories;
-        private Method m_getExplodedModules;
-        private Method m_updateModule;
+        private final Map<String,Method> _methods = new HashMap<>();
 
         public static ExplodedModuleService newInstance(Object obj)
         {
@@ -332,18 +330,14 @@ public class ModuleLoader implements Filter
                 switch (method.getName())
                 {
                     case "getExplodedModuleDirectories":
-                        m_getExplodedModuleDirectories = method;
-                        break;
                     case "getExplodedModules":
-                        m_getExplodedModules = method;
-                        break;
                     case "updateModule":
-                        m_updateModule = method;
-                        break;
+                    case "getExternalModulesDirectory":
+                        _methods.put(method.getName(), method);
                 }
             });
-            if (null == m_getExplodedModuleDirectories || null == m_getExplodedModules || null == m_updateModule)
-                throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment");
+            Arrays.asList("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory")
+                    .forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment"); });
         }
 
         public Object invoke(Object proxy, Method m, Object[] args)
@@ -351,16 +345,10 @@ public class ModuleLoader implements Filter
         {
             try
             {
-                switch (m.getName())
-                {
-                    case "getExplodedModuleDirectories":
-                        return m_getExplodedModuleDirectories.invoke(delegate, args);
-                    case "getExplodedModules":
-                        return m_getExplodedModules.invoke(delegate, args);
-                    case "updateModule":
-                        return m_updateModule.invoke(delegate, args);
-                }
-                throw new IllegalArgumentException(m.getName());
+                Method delegate_method = _methods.get(m.getName());
+                if (null == delegate_method)
+                    throw new IllegalArgumentException(m.getName());
+                return delegate_method.invoke(delegate, args);
             }
             catch (InvocationTargetException e)
             {
