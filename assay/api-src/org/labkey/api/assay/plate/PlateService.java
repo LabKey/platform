@@ -98,6 +98,14 @@ public interface PlateService
     /**
      * Gets an existing plate template.
      * @param container The template's container.
+     * @param lsid The template's lsid.
+     * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
+     */
+    PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
+
+    /**
+     * Gets an existing plate template.
+     * @param container The template's container.
      * @param plateId The template's id.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */

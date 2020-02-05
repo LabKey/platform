@@ -51,6 +51,6 @@ public interface AssayPlateMetadataService
      * @param inserted the inserted result data
      * @param rowIdToLsidMap a map of result data rowIds to result data lsids
      */
-    public void addAssayPlateMetadata(ExpData plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
+    void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
                                       ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
 }

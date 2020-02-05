@@ -52,6 +52,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -74,6 +76,7 @@ import org.springframework.web.servlet.mvc.Controller;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -98,6 +101,9 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     private static final Set<String> dateImportAliases;
 
     public static final Class<Module> assayModuleClass;
+
+    public static final String WELL_LOCATION_COLUMN_NAME = "WellLocation";
+    public static final String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
 
     static
     {
@@ -182,36 +188,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         if (resultDomain != null)
             result.add(resultDomain);
         return result;
-    }
-
-    @Override
-    public Domain getRunDomain(ExpProtocol protocol)
-    {
-        Domain runDomain = super.getRunDomain(protocol);
-
-        if (isPlateMetadataEnabled(protocol))
-        {
-            try (var ignore = SpringActionController.ignoreSqlUpdates())
-            {
-                if (runDomain.getPropertyByName(PLATE_TEMPLATE_PROPERTY_NAME) == null)
-                {
-                    try
-                    {
-                        DomainProperty template = addProperty(runDomain, PLATE_TEMPLATE_PROPERTY_NAME, PLATE_TEMPLATE_PROPERTY_CAPTION, PropertyType.INTEGER);
-                        template.setLookup(new Lookup(protocol.getContainer(), AssaySchema.NAME + "." + getResourceName(), TsvProviderSchema.PLATE_TEMPLATE_TABLE));
-                        template.setRequired(true);
-                        template.setShownInUpdateView(false);
-                        template.getPropertyDescriptor().setPropertyURI(runDomain.getTypeURI() + "#" + PLATE_TEMPLATE_PROPERTY_NAME);
-                        runDomain.save(User.getSearchUser());
-                    }
-                    catch (ChangePropertyDescriptorException e)
-                    {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        }
-        return runDomain;
     }
 
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
@@ -332,6 +308,48 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public boolean supportsPlateMetadata()
     {
         return true;
+    }
+
+    @Override
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
+    {
+        super.changeDomain(user, protocol, orig, update);
+
+        if (isPlateMetadataEnabled(protocol))
+        {
+            // for plate metadata support we need to ensure specific fields on both the run and result domains
+            Domain runDomain = getRunDomain(protocol);
+            if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
+            {
+                if (!update.getFields().stream().anyMatch(field -> field.getName().equals(PLATE_TEMPLATE_COLUMN_NAME)))
+                {
+                    List<GWTPropertyDescriptor> newFields = new ArrayList<>(update.getFields());
+
+                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
+                    plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
+                    plateTemplate.setRequired(true);
+                    plateTemplate.setShownInUpdateView(false);
+
+                    newFields.add(plateTemplate);
+                    update.setFields(newFields);
+                }
+            }
+
+            Domain resultsDomain = getResultsDomain(protocol);
+            if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
+            {
+                if (!update.getFields().stream().anyMatch(field -> field.getName().equals(WELL_LOCATION_COLUMN_NAME)))
+                {
+                    List<GWTPropertyDescriptor> newFields = new ArrayList<>(update.getFields());
+                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLocation.setShownInUpdateView(false);
+                    newFields.add(wellLocation);
+
+                    update.setFields(newFields);
+                }
+            }
+        }
     }
 
     public static class TestCase extends Assert

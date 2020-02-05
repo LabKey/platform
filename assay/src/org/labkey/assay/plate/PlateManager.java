@@ -160,6 +160,21 @@ public class PlateManager implements PlateService
         return template;
     }
 
+    @Override
+    public PlateTemplate getPlateTemplateFromLsid(Container container, String lsid)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);
+        filter.addCondition(FieldKey.fromParts("Lsid"), lsid);
+        filter.addCondition(FieldKey.fromParts("Container"), container);
+        PlateTemplateImpl template = new TableSelector(AssayDbSchema.getInstance().getTableInfoPlate(), filter, null).getObject(PlateTemplateImpl.class);
+        if (template != null)
+        {
+            populatePlate(template);
+            cache(template);
+        }
+        return template;
+    }
+
     public PlateTemplateImpl getPlateTemplate(Container container, int plateId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Template"), Boolean.TRUE);

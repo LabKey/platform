@@ -27,8 +27,7 @@ public class TsvProviderSchema extends AssayProviderSchema
     @Override
     public Set<String> getTableNames()
     {
-        // for now don't expose the table in schema browser
-        return Collections.emptySet();
+        return Collections.singleton(PLATE_TEMPLATE_TABLE);
     }
 
     @Override
@@ -47,7 +46,7 @@ public class TsvProviderSchema extends AssayProviderSchema
         {
             super(AssayDbSchema.getInstance().getTableInfoPlate(), schema, cf);
 
-            BaseColumnInfo column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId")));
+            BaseColumnInfo column = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Lsid")));
             column.setKeyField(true);
 
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
