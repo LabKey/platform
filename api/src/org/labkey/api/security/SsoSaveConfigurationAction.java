@@ -1,6 +1,6 @@
 package org.labkey.api.security;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -8,6 +8,7 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
+import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
@@ -18,18 +19,18 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
-public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigureForm<AC>, AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureAction<F, AC>
+public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationForm, AC extends SSOAuthenticationConfiguration<?>> extends SaveConfigurationAction<F, AC>
 {
     @Override
-    public boolean handlePost(F form, BindException errors)
+    public void save(F form, @Nullable User user, BindException errors)
     {
-        super.handlePost(form, errors);
-        return handleLogos(form, errors);  // Always reshow the page so user can view updates. After post, second button will change to "Done".
+        super.save(form, user, errors);
+        handleLogos(form, errors);  // Always reshow the page so user can view updates. After post, second button will change to "Done".
     }
 
-    protected boolean handleLogos(F form, BindException errors)
+    protected void handleLogos(F form, BindException errors)
     {
-        SSOAuthenticationConfiguration configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
+        SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
         boolean changedLogos = deleteLogos(form, configuration);
 
@@ -41,7 +42,6 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
         catch (Exception e)
         {
             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-            return false;
         }
 
         // If user changed one or both logos then...
@@ -52,12 +52,10 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
             // Bump the look & feel revision to force browsers to retrieve new logo
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
         }
-
-        return true;
     }
 
     // Returns true if a new logo is saved
-    private boolean handleLogo(SSOAuthenticationConfiguration configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
+    private boolean handleLogo(SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
     {
         if (null == configuration)
             throw new NotFoundException("Configuration not found");
@@ -77,49 +75,50 @@ public abstract class SSOConfigureAction<F extends SSOConfigureAction.SSOConfigu
     }
 
     // Returns true if a logo is deleted
-    public boolean deleteLogos(F form, SSOAuthenticationConfiguration configuration)
+    public boolean deleteLogos(F form, SSOAuthenticationConfiguration<?> configuration)
     {
-        String[] deletedLogos = form.getDeletedLogos();
+        String deletedLogos = form.getDeletedLogos();
 
         if (null == deletedLogos)
             return false;
 
-        for (String logoName : deletedLogos)
+        for (String logoName : deletedLogos.split(","))
             AttachmentService.get().deleteAttachment(configuration, logoName, getUser());
 
         return true;
     }
 
-    public static abstract class SSOConfigureForm<AC extends SSOAuthenticationConfiguration> extends AuthenticationConfigureForm<AC>
+    @Override
+    protected Map<String, Object> getConfigurationMap(int rowId)
+    {
+        AC configuration = getFromCache(rowId);
+        return AuthenticationManager.getSsoConfigurationMap(configuration);
+    }
+
+    public static abstract class SsoSaveConfigurationForm extends SaveConfigurationForm
     {
         private boolean _autoRedirect = false;
-        private String[] _deletedLogos;
+        private String _deletedLogos;  // If non-null, this is a comma-separated list of logo names
 
-        @Override
-        public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
-        {
-            super.setAuthenticationConfiguration(authenticationConfiguration);
-
-            _autoRedirect = authenticationConfiguration.isAutoRedirect();
-        }
-
+        @SuppressWarnings("unused") // Accessed via reflection in Table.insert()/update()
         public boolean isAutoRedirect()
         {
             return _autoRedirect;
         }
 
+        @SuppressWarnings("unused") // Accessed via reflection in Table.insert()/update()
         public void setAutoRedirect(boolean autoRedirect)
         {
             _autoRedirect = autoRedirect;
         }
 
-        public String[] getDeletedLogos()
+        public String getDeletedLogos()
         {
             return _deletedLogos;
         }
 
         @SuppressWarnings("unused")
-        public void setDeletedLogos(String[] deletedLogos)
+        public void setDeletedLogos(String deletedLogos)
         {
             _deletedLogos = deletedLogos;
         }

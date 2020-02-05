@@ -1,10 +1,8 @@
 package org.labkey.api.security;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.action.ReturnUrlForm;
 
-public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfiguration> extends ReturnUrlForm
+public abstract class SaveConfigurationForm
 {
     private Integer _configuration;
     private String _description;
@@ -28,12 +26,6 @@ public abstract class AuthenticationConfigureForm<AC extends AuthenticationConfi
     public void setConfiguration(Integer configuration)
     {
         _configuration = configuration;
-    }
-
-    public void setAuthenticationConfiguration(@NotNull AC authenticationConfiguration)
-    {
-        _description = authenticationConfiguration.getDescription();
-        _enabled = authenticationConfiguration.isEnabled();
     }
 
     public abstract String getProvider();

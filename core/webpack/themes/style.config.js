@@ -9,7 +9,7 @@ const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 const inProduction = process.env.NODE_ENV === 'production';
-const baseJsDir = './resources/styles/js/';
+const baseJsDir = '../resources/styles/js/';
 const styleJs = baseJsDir + 'style.js';
 const ext4Js = baseJsDir + 'ext4.js';
 const ext3Js = baseJsDir + 'ext3.js';
@@ -46,7 +46,7 @@ module.exports = function(env) {
         entry: entry,
 
         output: {
-            path: path.resolve(__dirname, '../resources/web/core/css'),
+            path: path.resolve(__dirname, '../../resources/web/core/css'),
             publicPath: './',
             filename: '[name].js'
         },
