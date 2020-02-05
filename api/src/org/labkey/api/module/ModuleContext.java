@@ -80,8 +80,14 @@ public class ModuleContext implements Cloneable
     @SuppressWarnings({"UnusedDeclaration"})
     public void setSchemaVersion(Double schemaVersion)
     {
-        _installedSchemaVersion = schemaVersion;
-        _originalVersion = schemaVersion;
+        // IMPORTANT check for "upgrade from 20.2" case: at initial startup, before the InstalledVersion column is renamed
+        // to SchemaVersion, this setter will be called with BOTH the InstalledVersion value AND with SchemaVersion (NULL)
+        // because QueryServiceImpl selects "NULL AS SchemaVersion" based on core.xml mentioning the missing column
+        if (null == _installedSchemaVersion)
+        {
+            _installedSchemaVersion = schemaVersion;
+            _originalVersion = schemaVersion;
+        }
     }
 
     // For convenience and backwards compatibility, this method returns schema version as a double, returning 0.0 for null
@@ -90,7 +96,15 @@ public class ModuleContext implements Cloneable
         return null != _installedSchemaVersion ? _installedSchemaVersion : 0.0;
     }
 
-    // InstalledVersion gets changed after upgrade... OriginalVersion keeps the version as it existed at server startup
+    // LEAVE THIS IN PLACE until we stop upgrading from 20.2. Before that upgrade happens, the server loads module contexts
+    // from the old table, which still had an InstalledVersion column.
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setInstalledVersion(double installedVersion)
+    {
+        setSchemaVersion(installedVersion);
+    }
+
+    // InstalledVersion gets changed after upgrade process... OriginalVersion keeps the version as it existed at server startup
     public double getOriginalVersion()
     {
         return null != _originalVersion ? _originalVersion : 0.0;

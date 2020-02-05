@@ -8091,10 +8091,10 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ModuleVersionTestCase extends Assert
+    public static class SchemaVersionTestCase extends Assert
     {
         @Test
-        public void verifyMinimumModuleVersion()
+        public void verifyMinimumSchemaVersion()
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)

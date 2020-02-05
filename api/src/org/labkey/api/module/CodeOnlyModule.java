@@ -17,7 +17,6 @@ package org.labkey.api.module;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.Constants;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 
