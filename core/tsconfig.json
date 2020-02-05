@@ -1,14 +1,5 @@
 {
-  "compilerOptions": {
-    "target": "es6",
-    "jsx": "react",
-    "sourceMap": false,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "types": ["jest"]
-  },
+  "extends": "../tsconfig.json",
   "exclude": [
     "node_modules",
     "resources"
