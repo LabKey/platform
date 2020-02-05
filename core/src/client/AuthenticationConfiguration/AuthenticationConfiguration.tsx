@@ -210,16 +210,6 @@ export class App extends PureComponent<{}, State> {
         });
     };
 
-    updateAuthRowsAfterSave1 = (config: string, configType: string): void => {
-        const prevState = this.state[configType];
-        const newState = addOrUpdateAnAuthConfig(config, prevState, configType);
-
-        // Update our dirtiness information with added modal, since dirtiness should only track reordering
-        const dirtinessData = { ...this.state.dirtinessData, [configType]: newState };
-
-        this.setState({ [configType]: newState, dirtinessData });
-    };
-
     updateAuthRowsAfterSave = (config: string, configType: string): void => {
         this.setState((state) => {
             const prevState = state[configType];
