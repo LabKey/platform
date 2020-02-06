@@ -63,7 +63,7 @@ describe("<ImageAndFileAttachmentForm/>", () => {
             />;
         const wrapper = shallow<SSOFields>(component);
 
-        const deleteImgButton = wrapper.find('.sso-fields__delete-img--header-logo');
+        const deleteImgButton = wrapper.find('.sso-fields__delete-img-div');
         deleteImgButton.simulate('click');
 
         expect(wrapper.state()).toHaveProperty('imageUrl', null)

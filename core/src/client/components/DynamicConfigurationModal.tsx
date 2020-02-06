@@ -1,8 +1,5 @@
 import React, { PureComponent } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
-
 import ReactBootstrapToggle from 'react-bootstrap-toggle';
 
 import { ActionURL, Ajax } from '@labkey/api';
@@ -168,19 +165,12 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
         const requiredFieldEmpty = emptyRequiredFields.indexOf("description") !== -1;
 
         return (
-            <Modal show={true} onHide={() => {}}>
-                <Modal.Header>
+            <Modal show={true} onHide={closeModal}>
+                <Modal.Header closeButton>
                     <Modal.Title>
                         {modalTitle}
-                        <FontAwesomeIcon
-                            size="sm"
-                            icon={faTimes}
-                            className="modal__close-icon"
-                            onClick={() => closeModal()}
-                        />
                     </Modal.Title>
                 </Modal.Header>
-
                 <Modal.Body>
                     <div className="modal__top">
                         <span className="bold-text"> Configuration Status </span>
