@@ -67,9 +67,11 @@ import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
 import org.labkey.assay.view.PlateMetadataDataCollector;
 import org.springframework.web.servlet.mvc.Controller;
 
@@ -151,9 +153,15 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     {
         if (context.getProvider().isPlateMetadataEnabled(context.getProtocol()))
         {
-            return new PlateMetadataDataCollector(1);
+            return new PlateMetadataDataCollector(1, context);
         }
         return null;
+    }
+
+    @Override
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    {
+        return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
     }
 
     public String getName()

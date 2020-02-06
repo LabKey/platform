@@ -111,6 +111,13 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context);
 
     /**
+     * Return the ActionURL to download (or render) an example of the plate metadata format necessary
+     * to support importing of plate metadata. This will be rendered in the import wizard.
+     */
+    @Nullable
+    ActionURL getPlateMetadataTemplateURL(Container container);
+
+    /**
      * @return the name of the assay provider.
      * This should not change once assay designs have been created, or they will be orphaned because they will no longer match.
      */

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataCollectorDisplayColumn;
@@ -627,10 +628,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addSampleInputColumns(newRunForm, insertView);
         if (shouldShowDataCollectorUI(newRunForm))
         {
-            insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
-
             if (_provider.getPlateMetadataDataCollector(newRunForm) != null)
                 insertView.getDataRegion().addDisplayColumn(new PlateMetadataDisplayColumn(newRunForm));
+
+            insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
         }
 
         if (warnings)
@@ -1167,7 +1168,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
     {
-        private final AssayRunUploadForm _form;
+        private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
         private ColumnInfo _col;
 
         public PlateMetadataDisplayColumn(AssayRunUploadForm form)
@@ -1197,18 +1198,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
-            //HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);
             AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
             if (collector != null)
             {
                 try
                 {
-/*
-                if (descriptionView != null)
-                {
-                    descriptionView.render(ctx.getRequest(), ctx.getViewContext().getResponse());
-                }
-*/
                     collector.getView(_form).render(ctx.getRequest(), ctx.getViewContext().getResponse());
                 }
                 catch (Exception e)

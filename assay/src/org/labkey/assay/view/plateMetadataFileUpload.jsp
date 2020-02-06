@@ -17,6 +17,8 @@
 %>
 <%@ page import="org.labkey.api.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.assay.AssayRunUploadContext" %>
+<%@ page import="org.labkey.api.assay.AssayUrls" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.view.PlateMetadataDataCollector" %>
@@ -24,11 +26,17 @@
 <%
     JspView<PlateMetadataDataCollector> me = (JspView<PlateMetadataDataCollector>) HttpView.currentView();
     PlateMetadataDataCollector<? extends AssayRunUploadContext<? extends AssayProvider>> bean = me.getModelBean();
+    AssayProvider provider = bean.getContext().getProvider();
+    ActionURL plateUrl =urlProvider(AssayUrls.class).getPlateMetadataTemplateURL(getContainer(), provider);
 %>
 
 <table id="plate-metadata-file-upload-tbl">
+    <tr><td>Plate metadata should be uploaded as a specifically formatted JSON file.</td></tr>
+    <% if (plateUrl != null) { %>
+        <tr><td><%= link("download example metadata file", plateUrl)%></td></tr>
+    <% } %>
     <tr>
         <td><input type="file" name="<%=h(bean.getInputName())%>" size="40" style="border: none"></td>
     </tr>
-</table>
+</table><br>
 

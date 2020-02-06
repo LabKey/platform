@@ -18,9 +18,17 @@ import java.util.Map;
 
 public class PlateMetadataDataCollector<ContextType extends AssayRunUploadContext<? extends AssayProvider>> extends FileUploadDataCollector<ContextType>
 {
-    public PlateMetadataDataCollector(int maxFileInputs)
+    private AssayRunUploadContext _context;
+
+    public PlateMetadataDataCollector(int maxFileInputs, AssayRunUploadContext context)
     {
         super(maxFileInputs, Collections.emptyMap(), AssayDataCollector.PLATE_METADATA_FILE);
+        _context = context;
+    }
+
+    public AssayRunUploadContext getContext()
+    {
+        return _context;
     }
 
     public String getInputName()

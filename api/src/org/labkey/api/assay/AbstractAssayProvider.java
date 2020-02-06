@@ -690,6 +690,12 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    {
+        return null;
+    }
+
+    @Override
     public AssayRunCreator getRunCreator()
     {
         return new DefaultAssayRunCreator<>(this);
