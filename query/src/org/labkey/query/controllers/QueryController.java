@@ -5991,8 +5991,9 @@ public class QueryController extends SpringActionController
             }
 
             SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
-            QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
-            QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
+            QueryManager.get().validateQueryMetadata(schema, table, getUser(), getContainer(), parseErrors, parseWarnings);
+            QueryManager.get().validateQueryView(form, errors, schema, table, getUser(), getContainer(), parseErrors, parseWarnings);
+            QueryManager.get().validateQueryCustomViews(schema, table, schemaKey, form.getQueryName(), getUser(), getContainer(), parseErrors, parseWarnings);
 
             for (QueryParseException e : parseErrors)
             {

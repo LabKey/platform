@@ -32,6 +32,7 @@ import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.FilterInfo;
 import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.SimpleFilter;
@@ -46,9 +47,11 @@ import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -58,6 +61,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.validation.BindException;
 
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
@@ -661,18 +665,10 @@ public class QueryManager
      * Experimental.  The goal is to provide a more thorough validation of query metadata, including warnings of potentially
      * invalid conditions, like autoincrement columns set userEditable=true.
      */
-    public boolean validateQueryMetadata(SchemaKey schemaPath, String queryName, User user, Container container,
+    public boolean validateQueryMetadata(UserSchema schema, TableInfo table, User user, Container container,
                                              @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings)
     {
         Set<ColumnInfo> columns = new HashSet<>();
-        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
-        if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + schemaPath.getName() + "'!");
-
-        TableInfo table = schema.getTable(queryName);
-        if (null == table)
-            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schemaPath.getName() + "'!");
-
         try
         {
             //validate foreign keys and other metadata warnings
@@ -849,21 +845,42 @@ public class QueryManager
     }
 
     /**
+     * Experimental.  Checks the QueryView configuration for:
+     * - non empty column list
+     * - has a details URL if showDetailsColumn is true
+     */
+    public boolean validateQueryView(QueryForm form, BindException e,
+                                     UserSchema schema, TableInfo table,
+                                     User user, Container container,
+                                     @NotNull List<QueryParseException> errors,
+                                     @NotNull List<QueryParseException> warnings)
+    {
+        int errorCount = e.getErrorCount();
+        QueryView qview = schema.createView(form, e);
+
+        List<DisplayColumn> displayColumns = qview.getDisplayColumns();
+        if (displayColumns.isEmpty())
+        {
+            warnings.add(new QueryParseWarning(schema.getSchemaName() + "." + table.getPublicName() + " QueryView has no display columns", null, 0, 0));
+        }
+
+        if (qview.isShowDetailsColumn() && qview.getDetailsURL() == null && !qview.getTable().hasDetailsURL())
+        {
+            warnings.add(new QueryParseWarning(schema.getSchemaName() + "." + table.getPublicName() + " QueryView has showDetailsColumn=true but QueryView and TableInfo have no details URL", null, 0, 0));
+        }
+
+        return errors.isEmpty() && e.getErrorCount() == errorCount;
+    }
+
+    /**
      * Experimental.  The goal is to provide a more thorough validation of saved views, including errors like invalid
      * column names or case errors (which cause problems for case-sensitive js)
      */
-    public boolean validateQueryViews(SchemaKey schemaPath, String queryName, User user, Container container,
-                                          @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws QueryParseException
+    public boolean validateQueryCustomViews(UserSchema schema, TableInfo table,
+                                            SchemaKey schemaPath, String queryName,
+                                            User user, Container container,
+                                            @NotNull List<QueryParseException> errors, @NotNull List<QueryParseException> warnings) throws QueryParseException
     {
-        UserSchema schema = QueryService.get().getUserSchema(user, container, schemaPath);
-        if (null == schema)
-            throw new IllegalArgumentException("Could not find the schema '" + schemaPath.getName() + "'!");
-
-        TableInfo table = schema.getTable(queryName);
-        if (null == table)
-            throw new IllegalArgumentException("The query '" + queryName + "' was not found in the schema '" + schema.getSchemaName() + "'!");
-
-        //validate views
         try
         {
             List<CustomView> views = QueryService.get().getCustomViews(user, container, null, schema.getSchemaName(), queryName, true);

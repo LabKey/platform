@@ -3024,6 +3024,11 @@ public class QueryView extends WebPartView<Object>
         _showRStudioButton = showRStudioButton;
     }
 
+    public final boolean isShowDetailsColumn()
+    {
+        return _showDetailsColumn;
+    }
+
     public void setShowDetailsColumn(boolean showDetailsColumn)
     {
         _showDetailsColumn = showDetailsColumn;
@@ -3042,6 +3047,11 @@ public class QueryView extends WebPartView<Object>
     public void setUpdateURL(DetailsURL updateURL)
     {
         _updateURL = updateURL;
+    }
+
+    public final DetailsURL getDetailsURL()
+    {
+        return _detailsURL;
     }
 
     public void setDetailsURL(String detailsURL)
