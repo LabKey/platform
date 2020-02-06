@@ -139,6 +139,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -8017,8 +8018,9 @@ public class AdminController extends SpringActionController
             protected void renderView(Object model, PrintWriter out)
             {
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
+                boolean hasUploadModulePerm = getUser().hasRootPermission(UploadFileBasedModulePermission.class);
                 final AtomicInteger rowCount = new AtomicInteger();
-                ExplodedModuleService moduleService = !hasAdminOpsPerm ? null : ServiceRegistry.get().getService(ExplodedModuleService.class);
+                ExplodedModuleService moduleService = !hasUploadModulePerm ? null : ServiceRegistry.get().getService(ExplodedModuleService.class);
                 final File externalModulesDir = moduleService==null ? null : moduleService.getExternalModulesDirectory();
 
                 if (_contexts.isEmpty())
