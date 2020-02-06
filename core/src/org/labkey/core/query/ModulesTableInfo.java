@@ -103,6 +103,16 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         ));
     }
 
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        if ("InstalledVersion".equalsIgnoreCase(name))
+        {
+            return getColumn("SchemaVersion");
+        }
+        return super.resolveColumn(name);
+    }
+
     private BaseColumnInfo addTextColumn(String name)
     {
         var col = new BaseColumnInfo(FieldKey.fromParts(name), this, JdbcType.VARCHAR);
