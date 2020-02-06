@@ -23,7 +23,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.SecurityUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserUrls;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -53,7 +53,7 @@ public class SiteAdminMenu extends NavTreeMenu
         SecurityUrls securityUrls = PageFlowUtil.urlProvider(SecurityUrls.class);
         List<NavTree> items = new ArrayList<>();
 
-        if (user.hasRootPermission(AdminReadPermission.class))
+        if (user.hasRootPermission(TroubleShooterPermission.class))
             items.add(getAdminConsole(context));
 
         URLHelper returnURL = context.getActionURL().getReturnURL() == null ? context.getActionURL() : context.getActionURL().getReturnURL();
@@ -81,7 +81,7 @@ public class SiteAdminMenu extends NavTreeMenu
     @Override
     public boolean isVisible()
     {
-        return getViewContext().getUser().hasRootPermission(AdminReadPermission.class);
+        return getViewContext().getUser().hasRootPermission(TroubleShooterPermission.class);
     }
 
     @Nullable

@@ -183,7 +183,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public boolean isFinalOutput(ExpData data)
     {
-        return data.getSourceApplication().getActionSequence() == getMaxOutputActionSequence();
+        ExpProtocolApplication sourceApplication = data.getSourceApplication();
+        return sourceApplication != null && sourceApplication.getActionSequence() == getMaxOutputActionSequence();
     }
 
     private int getMaxOutputActionSequence()

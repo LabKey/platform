@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentType;
 import org.labkey.api.data.ContainerManager;
 
+import java.util.Collections;
 import java.util.Map;
 
 public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationProvider> implements AuthenticationConfiguration<AP>
@@ -13,23 +14,16 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     private final boolean _enabled;
     private final int _rowId;
     private final String _entityId;
+    private final Integer _sortOrder;
 
-    protected BaseAuthenticationConfiguration(String key, AP provider, Map<String, String> props)
+    public BaseAuthenticationConfiguration(AP provider, Map<String, Object> standardSettings)
     {
-        _rowId = 0;
-        _entityId = null;
         _provider = provider;
-        _description = props.get("Description");
-        _enabled = Boolean.valueOf(props.get("Enabled"));
-    }
-
-    public BaseAuthenticationConfiguration(AP provider, Map<String, Object> props)
-    {
-        _rowId = (Integer)props.get("RowId");
-        _entityId = (String)props.get("EntityId");
-        _provider = provider;
-        _description = (String)props.get("Description");
-        _enabled = (Boolean)props.get("Enabled");
+        _rowId = (Integer)standardSettings.get("RowId");
+        _entityId = (String)standardSettings.get("EntityId");
+        _description = (String)standardSettings.get("Description");
+        _enabled = (Boolean)standardSettings.get("Enabled");
+        _sortOrder = (Integer)standardSettings.get("SortOrder");
     }
 
     @Override
@@ -73,5 +67,17 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     public boolean isEnabled()
     {
         return _enabled;
+    }
+
+    @Override
+    public int getSortOrder()
+    {
+        return _sortOrder;
+    }
+
+    @Override
+    public Map<String, Object> getCustomProperties()
+    {
+        return Collections.emptyMap();
     }
 }

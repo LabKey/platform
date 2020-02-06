@@ -63,7 +63,7 @@ public class SearchModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.001;
     }
@@ -192,8 +192,8 @@ public class SearchModule extends DefaultModule
     {
         return Set.of
         (
-            LuceneSearchServiceImpl.TikaTestCase.class,
-            LuceneSearchServiceImpl.TestCase.class
+            LuceneSearchServiceImpl.TestCase.class,
+            LuceneSearchServiceImpl.TikaTestCase.class
         );
     }
 }

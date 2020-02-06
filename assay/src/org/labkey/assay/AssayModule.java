@@ -89,7 +89,7 @@ public class AssayModule extends SpringModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.001;
     }
@@ -247,17 +247,18 @@ public class AssayModule extends SpringModule
     @Override
     public @NotNull Set<Class> getIntegrationTests()
     {
-        return Collections.singleton(ModuleAssayCache.TestCase.class);
+        return Set.of(
+            ModuleAssayCache.TestCase.class
+        );
     }
 
     @Override
     public @NotNull Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(TsvAssayProvider.TestCase.class);
-        set.add(AssaySchemaImpl.TestCase.class);
-        set.add(AssayProviderSchema.TestCase.class);
-
-        return set;
+        return Set.of(
+            TsvAssayProvider.TestCase.class,
+            AssaySchemaImpl.TestCase.class,
+            AssayProviderSchema.TestCase.class
+        );
     }
 }

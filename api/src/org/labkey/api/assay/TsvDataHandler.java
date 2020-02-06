@@ -98,8 +98,6 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     @Override
     public String getFileName(ExpData data, String defaultName)
     {
-        ExpRun run = data.getRun();
-
         if (!data.isFinalRunOutput())
             return defaultName;
 

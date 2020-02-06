@@ -17,36 +17,40 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
-import org.labkey.api.security.User;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.view.ActionURL;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationAction;
+import org.labkey.devtools.authentication.TestSecondaryController.TestSecondarySaveConfigurationForm;
 
 /**
  * User: adam
  * Date: 3/11/2015
  * Time: 7:45 AM
  */
-public class TestSecondaryProvider implements SecondaryAuthenticationProvider
+public class TestSecondaryProvider implements SecondaryAuthenticationProvider<TestSecondaryConfiguration>
 {
+    public static final String NAME = "TestSecondary";
+
     @Override
-    public ActionURL getRedirectURL(User candidate, Container c)
+    public TestSecondaryConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
     {
-        return TestSecondaryController.getTestSecondaryURL(c);
+        return new TestSecondaryConfiguration(this, cs.getStandardSettings());
     }
 
-    @Nullable
     @Override
-    public ActionURL getConfigurationLink()
+    public @Nullable ActionURL getSaveLink()
     {
-        return null;
+        return new ActionURL(TestSecondarySaveConfigurationAction.class, ContainerManager.getRoot());
     }
 
     @NotNull
     @Override
     public String getName()
     {
-        return "Test Secondary Authentication";
+        return NAME;
     }
 
     @NotNull
@@ -60,5 +64,11 @@ public class TestSecondaryProvider implements SecondaryAuthenticationProvider
     public boolean bypass()
     {
         return false;
+    }
+
+    @Override
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
+    {
+        return active ? new TestSecondarySaveConfigurationForm() : null;
     }
 }

@@ -50,7 +50,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
@@ -2143,8 +2142,8 @@ public class PageFlowUtil
 
         json.put("tours", getTourJson(container));
         String serverName = appProps.getServerName();
-        json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
-        json.put("versionString", appProps.getLabKeyVersionString());
+        json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "LabKey Server");
+        json.put("versionString", appProps.getReleaseVersion());
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
         json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
