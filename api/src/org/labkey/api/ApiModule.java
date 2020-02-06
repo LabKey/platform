@@ -164,6 +164,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,

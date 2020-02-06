@@ -216,7 +216,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.000;
     }
@@ -732,14 +732,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SampleMindedTransformTask.TestCase.class);
-        set.add(DatasetDataWriter.TestCase.class);
-        set.add(SpecimenWriter.TestCase.class);
-        set.add(SequenceNumImportHelper.SequenceNumTest.class);
-        set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
-        set.add(DefaultStudyDesignWriter.TestCase.class);
-        return set;
+        return Set.of(
+            DatasetDataWriter.TestCase.class,
+            DefaultStudyDesignWriter.TestCase.class,
+            ParticipantIdImportHelper.ParticipantIdTest.class,
+            SampleMindedTransformTask.TestCase.class,
+            SequenceNumImportHelper.SequenceNumTest.class,
+            SpecimenWriter.TestCase.class
+        );
     }
 
     @Override

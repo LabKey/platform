@@ -275,7 +275,7 @@ public class ViewServlet extends HttpServlet
         initializeAllSpringControllers();
         securityPointcut = SecurityPointcutService.get();
 
-        _serverHeader =  "Labkey/" + AppProps.getInstance().getLabKeyVersionString();
+        _serverHeader =  "LabKey/" + AppProps.getInstance().getReleaseVersion();
     }
 
 

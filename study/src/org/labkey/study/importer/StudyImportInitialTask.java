@@ -17,13 +17,13 @@
 package org.labkey.study.importer;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.AbstractTaskFactory;
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.FileType;
@@ -54,6 +54,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
     private static final int DELAY_INCREMENT = 10;
 
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -79,7 +80,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             }
 
             // verify the archiveVersion
-            double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
+            double currVersion = AppProps.getInstance().getSchemaVersion();
             if (studyXml.isSetArchiveVersion() && studyXml.getArchiveVersion() > currVersion)
                 throw new PipelineJobException("Can't import study archive. The archive version " + studyXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
