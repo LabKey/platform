@@ -1,0 +1,431 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<SSOFields/> Editable mode 1`] = `
+Array [
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Page Header Logo
+    </div>
+    <div
+      className="sso-fields__image-holder"
+    >
+      <div>
+        <div>
+          <img
+            alt="Sign in"
+            className="sso-fields__image__header-logo"
+            onError={[Function]}
+            src="http://localhostnull"
+          />
+        </div>
+        <svg
+          aria-hidden="true"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img clickable"
+          color="#d9534f"
+          data-icon="times-circle"
+          data-prefix="fas"
+          focusable="false"
+          onClick={[Function]}
+          role="img"
+          style={Object {}}
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+            fill="currentColor"
+            style={Object {}}
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      className="sso-fields__file-attachment"
+      id="auth_header_logo"
+    >
+      <span
+        className="translator--toggle__wizard"
+      >
+        <div
+          className="row"
+        >
+          <div
+            className="col-sm-12"
+          >
+            <div
+              className="wizard-row--container"
+            >
+              <div>
+                <div
+                  className="file-upload--container block"
+                >
+                  <label
+                    className="file-upload--label"
+                    htmlFor="fileUpload1"
+                    onDragEnter={[Function]}
+                    onDragLeave={[Function]}
+                    onDragOver={[Function]}
+                    onDrop={[Function]}
+                  >
+                    <i
+                      aria-hidden="true"
+                      className="fa fa-cloud-upload fa-2x cloud-logo"
+                    />
+                    Select file or drag and drop here.
+                  </label>
+                  <input
+                    accept=".jpg,.jpeg,.png,.gif,.tif"
+                    className="file-upload--input"
+                    id="fileUpload1"
+                    multiple={false}
+                    name="fileUpload1"
+                    onChange={[Function]}
+                    type="file"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>,
+  <div
+    className="sso-fields__spacer"
+  />,
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Login Page Logo
+    </div>
+    <div
+      className="sso-fields__image-holder"
+    >
+      <div>
+        <div>
+          <img
+            alt="Sign in"
+            className="sso-fields__image__page-logo"
+            onError={[Function]}
+            src="http://localhostnull"
+          />
+        </div>
+        <svg
+          aria-hidden="true"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img clickable"
+          color="#d9534f"
+          data-icon="times-circle"
+          data-prefix="fas"
+          focusable="false"
+          onClick={[Function]}
+          role="img"
+          style={Object {}}
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+            fill="currentColor"
+            style={Object {}}
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      className="sso-fields__file-attachment"
+      id="auth_login_page_logo"
+    >
+      <span
+        className="translator--toggle__wizard"
+      >
+        <div
+          className="row"
+        >
+          <div
+            className="col-sm-12"
+          >
+            <div
+              className="wizard-row--container"
+            >
+              <div>
+                <div
+                  className="file-upload--container block"
+                >
+                  <label
+                    className="file-upload--label"
+                    htmlFor="fileUpload2"
+                    onDragEnter={[Function]}
+                    onDragLeave={[Function]}
+                    onDragOver={[Function]}
+                    onDrop={[Function]}
+                  >
+                    <i
+                      aria-hidden="true"
+                      className="fa fa-cloud-upload fa-2x cloud-logo"
+                    />
+                    Select file or drag and drop here.
+                  </label>
+                  <input
+                    accept=".jpg,.jpeg,.png,.gif,.tif"
+                    className="file-upload--input"
+                    id="fileUpload2"
+                    multiple={false}
+                    name="fileUpload2"
+                    onChange={[Function]}
+                    type="file"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>,
+]
+`;
+
+exports[`<SSOFields/> No images attached 1`] = `
+Array [
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Page Header Logo
+    </div>
+    <div
+      className="sso-fields__image-holder"
+    >
+      <div>
+        <div>
+          <img
+            alt="Sign in"
+            className="sso-fields__image__header-logo"
+            onError={[Function]}
+            src="http://localhostnull"
+          />
+        </div>
+        <svg
+          aria-hidden="true"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--header-logo sso-fields__delete-img clickable"
+          color="#d9534f"
+          data-icon="times-circle"
+          data-prefix="fas"
+          focusable="false"
+          onClick={[Function]}
+          role="img"
+          style={Object {}}
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+            fill="currentColor"
+            style={Object {}}
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      className="sso-fields__file-attachment"
+      id="auth_header_logo"
+    >
+      <span
+        className="translator--toggle__wizard"
+      >
+        <div
+          className="row"
+        >
+          <div
+            className="col-sm-12"
+          >
+            <div
+              className="wizard-row--container"
+            >
+              <div>
+                <div
+                  className="file-upload--container block"
+                >
+                  <label
+                    className="file-upload--label"
+                    htmlFor="fileUpload1"
+                    onDragEnter={[Function]}
+                    onDragLeave={[Function]}
+                    onDragOver={[Function]}
+                    onDrop={[Function]}
+                  >
+                    <i
+                      aria-hidden="true"
+                      className="fa fa-cloud-upload fa-2x cloud-logo"
+                    />
+                    Select file or drag and drop here.
+                  </label>
+                  <input
+                    accept=".jpg,.jpeg,.png,.gif,.tif"
+                    className="file-upload--input"
+                    id="fileUpload1"
+                    multiple={false}
+                    name="fileUpload1"
+                    onChange={[Function]}
+                    type="file"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>,
+  <div
+    className="sso-fields__spacer"
+  />,
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Login Page Logo
+    </div>
+    <div
+      className="sso-fields__image-holder"
+    >
+      <div>
+        <div>
+          <img
+            alt="Sign in"
+            className="sso-fields__image__page-logo"
+            onError={[Function]}
+            src="http://localhostnull"
+          />
+        </div>
+        <svg
+          aria-hidden="true"
+          className="svg-inline--fa fa-times-circle fa-w-16 sso-fields__delete-img--page-logo sso-fields__delete-img clickable"
+          color="#d9534f"
+          data-icon="times-circle"
+          data-prefix="fas"
+          focusable="false"
+          onClick={[Function]}
+          role="img"
+          style={Object {}}
+          viewBox="0 0 512 512"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M256 8C119 8 8 119 8 256s111 248 248 248 248-111 248-248S393 8 256 8zm121.6 313.1c4.7 4.7 4.7 12.3 0 17L338 377.6c-4.7 4.7-12.3 4.7-17 0L256 312l-65.1 65.6c-4.7 4.7-12.3 4.7-17 0L134.4 338c-4.7-4.7-4.7-12.3 0-17l65.6-65-65.6-65.1c-4.7-4.7-4.7-12.3 0-17l39.6-39.6c4.7-4.7 12.3-4.7 17 0l65 65.7 65.1-65.6c4.7-4.7 12.3-4.7 17 0l39.6 39.6c4.7 4.7 4.7 12.3 0 17L312 256l65.6 65.1z"
+            fill="currentColor"
+            style={Object {}}
+          />
+        </svg>
+      </div>
+    </div>
+    <div
+      className="sso-fields__file-attachment"
+      id="auth_login_page_logo"
+    >
+      <span
+        className="translator--toggle__wizard"
+      >
+        <div
+          className="row"
+        >
+          <div
+            className="col-sm-12"
+          >
+            <div
+              className="wizard-row--container"
+            >
+              <div>
+                <div
+                  className="file-upload--container block"
+                >
+                  <label
+                    className="file-upload--label"
+                    htmlFor="fileUpload2"
+                    onDragEnter={[Function]}
+                    onDragLeave={[Function]}
+                    onDragOver={[Function]}
+                    onDrop={[Function]}
+                  >
+                    <i
+                      aria-hidden="true"
+                      className="fa fa-cloud-upload fa-2x cloud-logo"
+                    />
+                    Select file or drag and drop here.
+                  </label>
+                  <input
+                    accept=".jpg,.jpeg,.png,.gif,.tif"
+                    className="file-upload--input"
+                    id="fileUpload2"
+                    multiple={false}
+                    name="fileUpload2"
+                    onChange={[Function]}
+                    type="file"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </span>
+    </div>
+  </div>,
+]
+`;
+
+exports[`<SSOFields/> View-only mode 1`] = `
+Array [
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Page Header Logo
+    </div>
+    <div
+      className="sso-fields__image-holder--view-only"
+    >
+      <img
+        alt="Sign in"
+        className="sso-fields__image__header-logo"
+        onError={[Function]}
+        src="http://localhostnull"
+      />
+    </div>
+  </div>,
+  <div
+    className="sso-fields__spacer"
+  />,
+  <div
+    className="sso-logo-pane-container"
+  >
+    <div
+      className="sso-fields__label"
+    >
+      Login Page Logo
+    </div>
+    <div
+      className="sso-fields__image-holder--view-only"
+    >
+      <img
+        alt="Sign in"
+        className="sso-fields__image__page-logo"
+        onError={[Function]}
+        src="http://localhostnull"
+      />
+    </div>
+  </div>,
+]
+`;

@@ -34,7 +34,7 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -680,7 +680,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                 .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -1032,7 +1032,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -2161,7 +2161,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override

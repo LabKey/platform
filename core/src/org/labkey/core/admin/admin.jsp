@@ -73,7 +73,7 @@
     </div>
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
-            <h3 class="header-title labkey-page-section-header">LabKey Server <%=h(ObjectUtils.defaultIfNull(bean.labkeyVersion, "Information"))%></h3>
+            <h3 class="header-title labkey-page-section-header">LabKey Server <%=h(ObjectUtils.defaultIfNull(bean.releaseVersion, "Information"))%></h3>
             <% for (NavTree link : bean.getLinks(getViewContext())) { %>
             <div class="header-link">
                 <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
@@ -82,9 +82,9 @@
             <h4>Core Database Configuration</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
                 if (null != location)
@@ -158,7 +158,7 @@
                         <%=h(module.getName())%>
                     </span>
                         <span style="color: #333;">
-                        <%=h(module.getFormattedVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
+                        <%=h(module.getReleaseVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
                     </span>
                     </td>
                 </tr>

@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.devtools.authentication.TestSecondaryController.TestSecondaryForm" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
+    TestSecondaryForm form = (TestSecondaryForm)getModelBean();
     String message1 = "Secondary Authentication";
-    String email = (String)getModelBean();
-    String message2 = "Is " + h(email) + " really you?"; //testing for this string in automated test 'SecondaryAuthenticationTest'
+    String message2 = "Is " + h(form.getEmail()) + " really you?"; //testing for this string in automated test 'SecondaryAuthenticationTest'
 %>
 <p><%=h(message1)%></p>
 <p><%=h(message2)%></p>

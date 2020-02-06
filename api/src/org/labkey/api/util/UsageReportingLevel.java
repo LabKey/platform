@@ -279,7 +279,7 @@ public enum UsageReportingLevel
             moduleBuildInfo.put("vcsBranch", module.getVcsBranch());
             moduleBuildInfo.put("vcsRevision", module.getVcsRevision());
             moduleBuildInfo.put("vcsTag", module.getVcsTag());
-            moduleBuildInfo.put("version", module.getFormattedVersion());
+            moduleBuildInfo.put("version", module.getFormattedSchemaVersion()); // TODO: call this "schemaVersion"? Also send "releaseVersion"?
 
             // Add to the module's info to be included in the submission
             moduleStats.put("buildInfo", moduleBuildInfo);
