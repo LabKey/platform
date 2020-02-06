@@ -128,8 +128,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
         // set the report version to the one that is stored in the query module
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
-        if (queryModule != null)
-            setProperty(Prop.version, String.valueOf(queryModule.getVersion()));
+        if (queryModule != null && queryModule.getSchemaVersion() != null)
+            setProperty(Prop.version, String.valueOf(queryModule.getSchemaVersion()));
     }
 
     @Override

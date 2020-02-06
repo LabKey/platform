@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -706,7 +707,9 @@ public class QueryManager
 
         validateFk(col, user, container, parentTable, errors, warnings, errorBase);
 
-        List<String> specialCols = new ArrayList<>();
+        Set<String> specialCols = new CaseInsensitiveHashSet();
+        specialCols.add("LSID");
+        specialCols.add("entityId");
         specialCols.add("container");
         specialCols.add("created");
         specialCols.add("createdby");
@@ -730,19 +733,9 @@ public class QueryManager
         if(col.isAutoIncrement() && col.isShownInUpdateView())
             warnings.add(new QueryParseWarning(errorBase + " column is autoIncrement, but has shownInUpdateView set to true", null, 0, 0));
 
-//        if(col.isShownInInsertView() && !col.isUserEditable())
-//            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is not userEditable");
-//        if(col.isShownInUpdateView() && !col.isUserEditable())
-//            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is not userEditable");
-
-//        if(col.isShownInInsertView() && col.isHidden())
-//            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is hidden");
-//        if(col.isShownInUpdateView() && col.isHidden())
-//            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is hidden");
-
         try
         {
-            if(col.getDisplayWidth() != null && Integer.parseInt(col.getDisplayWidth()) > 200 && !"textarea".equalsIgnoreCase(col.getInputType()))
+            if (StringUtils.isNotBlank(col.getDisplayWidth()) && Integer.parseInt(col.getDisplayWidth()) > 200 && !"textarea".equalsIgnoreCase(col.getInputType()))
             {
                 if (col.isUserEditable() && col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class)
                     warnings.add(new QueryParseWarning(errorBase + " column has a displayWidth > 200, but does not use a textarea as the inputType", null, 0, 0));
@@ -750,7 +743,7 @@ public class QueryManager
         }
         catch (NumberFormatException e)
         {
-            warnings.add(new QueryParseWarning(errorBase + " column has a blank value for displayWidth: '" + col.getDisplayWidth() + "'", null, 0, 0));
+            warnings.add(new QueryParseWarning(errorBase + " column has invalid value for displayWidth: '" + col.getDisplayWidth() + "'", null, 0, 0));
         }
         return errors.isEmpty();
     }
@@ -788,7 +781,7 @@ public class QueryManager
 
         if (!isPublic)
         {
-            warnings.add(new QueryParseWarning(errorBase + " has a lookup to a non-public table: " + schemaPath.toDisplayString() + "." + queryName, null, 0, 0));
+            warnings.add(new QueryParseWarning(errorBase + " has a lookup to a non-public table: " + (schemaPath == null ? "<null>" : schemaPath.toDisplayString()) + "." + queryName, null, 0, 0));
             return errors.isEmpty();
         }
 

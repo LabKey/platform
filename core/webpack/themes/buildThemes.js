@@ -8,7 +8,7 @@ var TARGET_THEME_DIR = 'resources/styles/themeVariables/';
 var TEMP_VARIABLE_FILE = '_variables.scss';
 var OUTPUT_DIR = 'resources/web/core/css/';
 
-var BASE_BUILD_CMD = 'webpack --config webpack/style.config.js --progress';
+var BASE_BUILD_CMD = 'webpack --config webpack/themes/style.config.js --progress';
 
 // white-list javascript file output for cleanup
 var VALID_JS_OUTPUTS = ['core.js'];

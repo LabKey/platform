@@ -16,6 +16,7 @@
 package org.labkey.api.util.element;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
@@ -24,6 +25,7 @@ import org.labkey.api.view.DisplayElement;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.function.Consumer;
 
 // TODO: Need handling for checkbox, file, and radio types
 public class Input extends DisplayElement implements HasHtmlString
@@ -111,7 +113,7 @@ public class Input extends DisplayElement implements HasHtmlString
     private final String _stateMessage;
     private final boolean _showLabel;
     private final String _type;
-    private final HtmlString _value;
+    private final @Nullable HtmlString _value;
 
     protected Input(InputBuilder builder)
     {
@@ -490,8 +492,10 @@ public class Input extends DisplayElement implements HasHtmlString
             sb.append(" pattern=\"").append(getRegExp()).append("\"");
         if (getStep() != null)
             sb.append(" step=\"").append(getStep()).append("\"");
+        if ((isCheckbox() || isRadio()) && isChecked())
+            sb.append(" checked");
 
-        doValue(sb);
+        renderValueIfNonEmpty(s->sb.append(" value=\"").append(s).append("\""));
         doInputEvents(sb);
 
         if (isRequired())
@@ -604,20 +608,11 @@ public class Input extends DisplayElement implements HasHtmlString
         }
     }
 
-    protected void doValue(StringBuilder sb)
+    protected void renderValueIfNonEmpty(Consumer<String> consumer)
     {
-        if ((isCheckbox() || isRadio()) && isChecked())
+        if (_value != null && !"".equals(_value.toString()))
         {
-            sb.append(" checked");
-        }
-        renderValue(sb);
-    }
-
-    protected void renderValue(StringBuilder sb)
-    {
-        if (getValue() != null && !"".equals(getValue().toString()))
-        {
-            sb.append(" value=\"").append(_value.toString()).append("\"");
+            consumer.accept(_value.toString());
         }
     }
 
