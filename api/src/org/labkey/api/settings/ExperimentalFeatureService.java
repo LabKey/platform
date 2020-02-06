@@ -15,7 +15,6 @@
  */
 package org.labkey.api.settings;
 
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
@@ -23,7 +22,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.settings.AppPropsImpl.EXPERIMENTAL_FEATURE_PREFIX;
 
@@ -51,6 +52,10 @@ public interface ExperimentalFeatureService
     void removeFeatureListener(String feature, ExperimentFeatureListener listener);
 
     void setFeatureEnabled(String feature, boolean enabled, User user);
+
+    Map<String, Boolean> getExperimentalFeatures();
+
+    void setExperimentalFeatures(User user, Map<String, Boolean> flags);
 
     interface ExperimentFeatureListener
     {
@@ -92,8 +97,13 @@ public interface ExperimentalFeatureService
         public void setFeatureEnabled(String feature, boolean enabled, User user)
         {
             WriteableAppProps props = AppProps.getWriteableInstance();
-            props.storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
+            setFeatureEnabled(feature, enabled, props);
             props.save(user);
+        }
+
+        private void setFeatureEnabled(String feature, boolean enabled, WriteableAppProps props)
+        {
+            props.storeBooleanValue(EXPERIMENTAL_FEATURE_PREFIX + feature, enabled);
 
             if (_listeners != null && _listeners.containsKey(feature))
             {
@@ -102,6 +112,36 @@ public interface ExperimentalFeatureService
                     listener.featureChanged(feature, enabled);
                 }
             }
+        }
+
+        @Override
+        public Map<String, Boolean> getExperimentalFeatures()
+        {
+            Map<String, Boolean> flags = new HashMap<>();
+            for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags())
+            {
+                flags.put(flag.getFlag(), isFeatureEnabled(flag.getFlag()));
+            }
+            return Collections.unmodifiableMap(flags);
+        }
+
+        @Override
+        public void setExperimentalFeatures(User user, Map<String, Boolean> flags)
+        {
+            if (flags == null || flags.isEmpty())
+                return;
+
+            Set<String> availableFlags = AdminConsole.getExperimentalFeatureFlags().stream()
+                    .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
+                    .collect(Collectors.toSet());
+
+            WriteableAppProps props = AppProps.getWriteableInstance();
+            for (Map.Entry<String, Boolean> flag : flags.entrySet())
+            {
+                if (availableFlags.contains(flag.getKey()))
+                    setFeatureEnabled(flag.getKey(), flag.getValue(), props);
+            }
+            props.save(user);
         }
     }
 }

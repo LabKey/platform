@@ -40,6 +40,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -8229,6 +8230,48 @@ public class AdminController extends SpringActionController
             return new ApiSimpleResponse(ret);
         }
     }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class GetExperimentalFeaturesAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            var flags = ExperimentalFeatureService.get().getExperimentalFeatures();
+            return success(flags);
+        }
+    }
+
+
+    public static class SetExperimentalFeaturesForm
+    {
+        private Map<String, Boolean> _flags;
+
+        public Map<String, Boolean> getFlags()
+        {
+            return _flags;
+        }
+
+        public void setFlags(Map<String, Boolean> flags)
+        {
+            _flags = flags;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminOperationsPermission.class)
+    public class SetExperimentalFeaturesAction extends MutatingApiAction<SetExperimentalFeaturesForm>
+    {
+        @Override
+        public Object execute(SetExperimentalFeaturesForm form, BindException errors)
+        {
+            ExperimentalFeatureService.get().setExperimentalFeatures(getUser(), form.getFlags());
+            var flags = ExperimentalFeatureService.get().getExperimentalFeatures();
+            return success(flags);
+        }
+    }
+
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
