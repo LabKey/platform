@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.23.0-fb-ddDataTypes39341.0"
+    "@labkey/components": "0.23.1"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
