@@ -64,20 +64,22 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
                             {this.state.imageUrl ? (
                                 <div>
                                     <div>{img}</div>
-                                    <FontAwesomeIcon
-                                        className={
-                                            (this.props.fileTitle == 'auth_header_logo'
-                                                ? 'sso-fields__delete-img--header-logo'
-                                                : 'sso-fields__delete-img--page-logo') +
-                                            ' sso-fields__delete-img clickable'
-                                        }
-                                        icon={faTimesCircle}
-                                        color="#d9534f"
+                                    <div
                                         onClick={() => {
                                             this.setState({ imageUrl: null });
                                             this.props.handleDeleteLogo(this.props.fileTitle);
                                         }}
-                                    />
+                                    >
+                                        <FontAwesomeIcon
+                                            className={
+                                                (this.props.fileTitle == 'auth_header_logo'
+                                                    ? 'sso-fields__delete-img--header-logo'
+                                                    : 'sso-fields__delete-img--page-logo') +
+                                                ' sso-fields__delete-img clickable'
+                                            }
+                                            icon={faTimesCircle}
+                                        />
+                                    </div>
                                 </div>
                             ) : (
                                 <NoImageSelectedDisplay/>

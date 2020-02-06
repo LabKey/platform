@@ -180,6 +180,10 @@ body {
   margin-left: 7px;
 }
 
+.sso-fields__delete-img {
+  color: #d9534f;
+}
+
 .sso-fields__delete-img--page-logo {
   position: relative;
   bottom: 54px;
@@ -231,11 +235,6 @@ body {
   position: absolute;
   left: 285px;
   top: 192px;
-}
-
-.modal__close-icon {
-  float: right;
-  margin-top: 5px;
 }
 
 .modal__enable-toggle {
