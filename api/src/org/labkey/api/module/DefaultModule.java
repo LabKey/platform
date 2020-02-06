@@ -153,7 +153,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
-    private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
     private String _releaseVersion = null;
 
@@ -961,28 +960,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings("unused")
-    public Boolean getConsolidateScripts()
-    {
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
-    public void setConsolidateScripts(Boolean consolidate)
-    {
-        _consolidateScripts = consolidate;
-    }
-
-    @Override
-    public boolean shouldConsolidateScripts()
-    {
-        // Default value depends on location -- we don't consolidate external modules
-        if (null == _consolidateScripts)
-            return !getSourcePath().contains("externalModules");
-
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
     public Boolean getManageVersion()
     {
         return _manageVersion;
@@ -994,33 +971,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
-
     @Override
     public boolean shouldManageVersion()
     {
-        // Default value depends on location -- we don't manage module versions in external modules
-        if (null == _manageVersion)
-            return !getSourcePath().contains("externalModules");
-
         return _manageVersion;
-    }
-
-    @SuppressWarnings("unused")  // "labkeyVersion" is the name of the property in module.xml
-    public String getLabkeyVersion()
-    {
-        return _releaseVersion;
-    }
-
-    @SuppressWarnings("unused")  // "labkeyVersion" is the name of the property in module.xml
-    public void setLabkeyVersion(String labkeyVersion)
-    {
-        _releaseVersion = labkeyVersion;
     }
 
     @Override
     public @Nullable String getReleaseVersion()
     {
         return _releaseVersion;
+    }
+
+    @SuppressWarnings("unused")
+    public void setReleaseVersion(String releaseVersion)
+    {
+        _releaseVersion = releaseVersion;
     }
 
     @Override
@@ -1649,5 +1615,33 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (_locked)
             throw new IllegalStateException("Module info setters can only be called in constructor.");
+    }
+
+    // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
+    // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
+
+    // consolidateScripts property is no longer read or used. But, leave getter and setter behind for now so Spring
+    // doesn't explode if it sees this property in an old module.
+    @SuppressWarnings("unused")
+    public Boolean getConsolidateScripts()
+    {
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public void setConsolidateScripts(Boolean consolidate)
+    {
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public String getLabkeyVersion()
+    {
+        return _releaseVersion;
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _releaseVersion = labkeyVersion;
     }
 }

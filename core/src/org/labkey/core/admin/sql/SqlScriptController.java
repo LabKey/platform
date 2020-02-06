@@ -185,17 +185,17 @@ public class SqlScriptController extends SpringActionController
 
     public static class ScriptsForm
     {
-        private boolean _consolidateOnly = false;
+        private boolean _managedOnly = false;
 
-        public boolean isConsolidateOnly()
+        public boolean isManagedOnly()
         {
-            return _consolidateOnly;
+            return _managedOnly;
         }
 
         @SuppressWarnings("unused")
-        public void setConsolidateOnly(boolean consolidateOnly)
+        public void setManagedOnly(boolean managedOnly)
         {
-            _consolidateOnly = consolidateOnly;
+            _managedOnly = managedOnly;
         }
     }
 
@@ -212,10 +212,10 @@ public class SqlScriptController extends SpringActionController
             {
                 html.append("<tr><td colspan=4>");
 
-                if (form.isConsolidateOnly())
+                if (form.isManagedOnly())
                     html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
-                    html.append(PageFlowUtil.link("show only \"consolidate scripts\" modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("consolidateOnly", true)));
+                    html.append(PageFlowUtil.link("show only managed modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
 
                 html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
@@ -231,10 +231,10 @@ public class SqlScriptController extends SpringActionController
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
-            if (form.isConsolidateOnly())
+            if (form.isManagedOnly())
             {
                 modules = modules.stream()
-                    .filter(Module::shouldConsolidateScripts)
+                    .filter(Module::shouldManageVersion)
                     .collect(Collectors.toList());
             }
 
@@ -433,7 +433,7 @@ public class SqlScriptController extends SpringActionController
 
         for (Module module : modules)
         {
-            if (!module.shouldConsolidateScripts())
+            if (!module.shouldManageVersion())
                 continue;
 
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
@@ -905,7 +905,7 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (!module.shouldConsolidateScripts())
+                if (!module.shouldManageVersion())
                     continue;
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);

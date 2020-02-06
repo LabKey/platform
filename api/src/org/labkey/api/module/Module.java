@@ -323,7 +323,6 @@ public interface Module extends Comparable<Module>
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore
     Set<Module> getResolvedModuleDependencies();
-    boolean shouldConsolidateScripts();
     boolean shouldManageVersion();
 
     /**
