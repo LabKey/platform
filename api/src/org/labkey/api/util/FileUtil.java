@@ -148,6 +148,7 @@ public class FileUtil
             catch (InterruptedException e)
             {
                 // give up
+                log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 return false;
             }
         }
