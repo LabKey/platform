@@ -951,7 +951,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
-            return new SQLFragment("CAST(" + (new DecimalFormat("0.0###")).format(ModuleLoader.getInstance().getCoreModule().getVersion()) + " AS NUMERIC(15,4))");
+            return new SQLFragment("CAST(" + (new DecimalFormat("0.000#")).format(AppProps.getInstance().getSchemaVersion()) + " AS NUMERIC(15,4))");
         }
     }
 
@@ -1001,15 +1001,11 @@ public abstract class Method
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
-            ret.add(new Callable(){
-                @Override
-                public Object call()
-                {
-                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
-                    if (null == user)
-                        return null;
-                    return user.getDisplayName(user);
-                }
+            ret.add((Callable) () -> {
+                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                if (null == user)
+                    return null;
+                return user.getDisplayName(user);
             });
             return ret;
         }

@@ -19,9 +19,16 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.FolderImporterImpl;
 import org.labkey.api.admin.ImportOptions;
-import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.AbstractTaskFactorySettings;
+import org.labkey.api.pipeline.CancelledException;
+import org.labkey.api.pipeline.DirectoryNotDeletedException;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobWarning;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -29,7 +36,9 @@ import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /*
 * User: cnathe
@@ -75,7 +84,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         {
             // verify the archiveVersion
             FolderDocument.Folder folderXml = importContext.getXml();
-            double currVersion = ModuleLoader.getInstance().getCoreModule().getVersion();
+            double currVersion = AppProps.getInstance().getSchemaVersion();
             if (folderXml.isSetArchiveVersion() && folderXml.getArchiveVersion() > currVersion)
                 throw new PipelineJobException("Can't import folder archive. The archive version " + folderXml.getArchiveVersion() + " is newer than the server version " + currVersion + ".");
 
