@@ -23,6 +23,7 @@ Array [
           />
         </div>
         <div
+          className="sso-fields__delete-img-div"
           onClick={[Function]}
         >
           <svg
@@ -120,6 +121,7 @@ Array [
           />
         </div>
         <div
+          className="sso-fields__delete-img-div"
           onClick={[Function]}
         >
           <svg
@@ -219,6 +221,7 @@ Array [
           />
         </div>
         <div
+          className="sso-fields__delete-img-div"
           onClick={[Function]}
         >
           <svg
@@ -316,6 +319,7 @@ Array [
           />
         </div>
         <div
+          className="sso-fields__delete-img-div"
           onClick={[Function]}
         >
           <svg

@@ -65,6 +65,7 @@ export class ImageAndFileAttachmentForm extends PureComponent<ImgFileAttachForm_
                                 <div>
                                     <div>{img}</div>
                                     <div
+                                        className={'sso-fields__delete-img-div'}
                                         onClick={() => {
                                             this.setState({ imageUrl: null });
                                             this.props.handleDeleteLogo(this.props.fileTitle);
