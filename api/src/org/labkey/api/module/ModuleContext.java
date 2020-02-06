@@ -126,23 +126,6 @@ public class ModuleContext implements Cloneable
         _className = name;
     }
 
-    public String getMessage()
-    {
-        Module module = ModuleLoader.getInstance().getModule(_name);
-
-        // This could happen if a module failed to initialize
-        if (null == module)
-        {
-            //noinspection ThrowableInstanceNeverThrown
-            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
-            return "Configuration problem with this module";
-        }
-
-        double targetVersion = module.getVersion();
-
-        return getModuleState().describeModuleState(this, getInstalledVersion(), targetVersion);
-    }
-
     private static DecimalFormat df2 = new DecimalFormat("0.00#");
     private static DecimalFormat df3 = new DecimalFormat("0.000");
 

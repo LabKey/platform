@@ -585,17 +585,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public double getVersion()
-    {
-        return -1;
-    }
-
-    public final void setVersion(double version)
-    {
-        setSchemaVersion(version);
-    }
-
-    @Override
     public @Nullable Double getSchemaVersion()
     {
         // For now, delegate to getVersion() for modules that still override that method
@@ -1619,6 +1608,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
     // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
+
+    public double getVersion()
+    {
+        return -1;
+    }
+
+    public final void setVersion(double version)
+    {
+        setSchemaVersion(version);
+    }
 
     // consolidateScripts property is no longer read or used. But, leave getter and setter behind for now so Spring
     // doesn't explode if it sees this property in an old module.

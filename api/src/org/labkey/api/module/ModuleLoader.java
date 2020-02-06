@@ -175,44 +175,12 @@ public class ModuleLoader implements Filter
     {
         Disabled,
         Loading,
-        InstallRequired
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                if (installedVersion > 0.0)
-                    return "Upgrade Required: " + ModuleContext.formatVersion(installedVersion) + " -> " + ModuleContext.formatVersion(targetVersion);
-                else
-                    return "Not Installed.";
-            }
-        },
+        InstallRequired,
         Installing,
         InstallComplete,
-        ReadyToStart
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " ready to start.";
-            }
-        },
-        Starting
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " starting up.";
-            }
-        },
+        ReadyToStart,
+        Starting,
         Started
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " started.";
-            }
-        };
-
-        public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-        {
-            return toString();
-        }
     }
 
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */

@@ -98,13 +98,6 @@ public interface Module extends Comparable<Module>
     String getName();
 
     /**
-     * Return the version of this module. Allows us to track whether
-     * module's version has changed.
-     */
-    @Deprecated  // Migrate all usages to getSchemaVersion() or getReleaseVersion(), as appropriate
-    double getVersion();
-
-    /**
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
     @Nullable Double getSchemaVersion();

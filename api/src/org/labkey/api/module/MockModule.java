@@ -91,12 +91,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public double getVersion()
-    {
-        return null != _schemaVersion ? _schemaVersion : 0.0;
-    }
-
-    @Override
     public @Nullable Double getSchemaVersion()
     {
         return _schemaVersion;

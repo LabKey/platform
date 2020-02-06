@@ -112,11 +112,7 @@ public class SqlScriptController extends SpringActionController
                 JSONObject moduleJSON = new JSONObject();
                 ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
                 moduleJSON.put("name", module.getName());
-                moduleJSON.put("message", ctx.getMessage());
                 moduleJSON.put("state", ctx.getModuleState().toString());
-                moduleJSON.put("version", module.getVersion());
-                moduleJSON.put("originalVersion", ctx.getOriginalVersion());
-                moduleJSON.put("installedVersion", ctx.getInstalledVersion());
 
                 JSONArray scriptsJSON = new JSONArray();
 
