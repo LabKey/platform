@@ -30,6 +30,10 @@ import javax.servlet.http.HttpServletRequest;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 
 /**
@@ -42,7 +46,7 @@ public class ReturnURLString
 {
     private static final Logger LOG = Logger.getLogger(ReturnURLString.class);
 
-    private final String _source;
+    private final @Nullable URLHelper _url;
 
     public static ReturnURLString EMPTY = new ReturnURLString("");
 
@@ -52,19 +56,25 @@ public class ReturnURLString
      */
     public ReturnURLString(CharSequence s)
     {
-        _source = s == null ? null : scrub(String.valueOf(s));
+        this(scrub(s));
     }
 
     public ReturnURLString(URLHelper url)
     {
-        _source = url.getLocalURIString();
+        _url = url;
     }
 
-    private static String scrub(String s)
+    @Nullable
+    private static URLHelper scrub(CharSequence cs)
     {
-        // silently ignore non http urls
-        if (!URLHelper.isHttpURL(s))
+        if (!ViewServlet.validChars(cs))
+            throw new ConversionException("Invalid characters in string");
+
+        final String s = Objects.toString(cs, null);
+        if (StringUtils.isBlank(s))
             return null;
+
+        URLHelper url = null;
 
         // If there are multiple values of the returnUrl HTTP parameter for this request (say, both GET and
         // POST variants), Spring will concatenate them before converting them to a ReturnURLString. Look
@@ -72,119 +82,123 @@ public class ReturnURLString
         String[] split = s.split(",");
         if (split.length > 1)
         {
-            boolean identical = true;
-            for (int i = 1; i < split.length; i++)
+            List<URLHelper> urls = Arrays.stream(split)
+                    .map(ReturnURLString::createValidURL)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+            if (!urls.isEmpty())
             {
-                // See if all of the pieces are identical
-                if (!split[i].equals(split[i - 1]))
+                URLHelper first = urls.get(0);
+                String s0 = first.toString();
+
+                // See if all of the parts are identical
+                if (urls.stream().allMatch(u -> s0.equals(u.toString())))
                 {
-                    identical = false;
-                    break;
+                    url = first;
                 }
             }
-            if (identical)
-            {
-                // We appear to have dupes, so just use one of them
-                s = split[0];
-            }
         }
 
-        if (!isAllowableHost(s))
+        if (url == null)
         {
-            return null;
+            url = createValidURL(s);
         }
 
-        return s;
+        return url;
     }
 
-    private static boolean isAllowableHost(String url)
+    @Nullable
+    private static URLHelper createValidURL(String s)
     {
-        // Issue 35986 - Disallow URLs that have a full host name for security reasons
+        if (StringUtils.isBlank(s))
+            return null;
+
         try
         {
-            URLHelper h = new URLHelper(url);
-            // We have a returnURL that includes a server host name
-            if (h.getHost() != null)
-            {
-                // Check if it matches the current server's preferred host name, per the base server URL setting
-                String allowedHost = null;
-                try
-                {
-                    allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
-                }
-                catch (MalformedURLException ignored) {}
+            URLHelper url = new URLHelper(s);
 
-                if (!h.getHost().equalsIgnoreCase(allowedHost))
-                {
-                    // Server host name that doesn't match, log and possibly reject based on config
-                    // Allow 'localhost' for servers in dev mode
-                    boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(h.getHost());
+            // silently ignore non http/https urls
+            if (!url.isHttpURL())
+                return null;
 
-                    //look in the list of configured external redirect hosts
-                    for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectHosts())
-                    {
-                        if (StringUtils.isNotBlank(externalRedirectHostURL) && externalRedirectHostURL.equalsIgnoreCase(h.getHost()))
-                            isConfigured = true;
-                    }
+            if (!isAllowableHost(url))
+                return null;
 
-                    if (!isConfigured)
-                    {
-                        String logMessageDetails = "returnURL value: " + url;
-                        HttpServletRequest request = HttpView.currentRequest();
-                        if (request != null)
-                        {
-                            logMessageDetails += " from URL: " + request.getRequestURL();
-                            if (request.getHeader("Referer") != null)
-                            {
-                                logMessageDetails += " with referrer: " + request.getHeader("Referer");
-                            }
-                        }
-
-                        LOG.warn("Rejected external host redirect " + logMessageDetails +
-                                "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
-                        return false;
-                    }
-                    else
-                    {
-                        LOG.debug("Detected configured external host returnURL: " + url);
-                    }
-                }
-            }
+            return url;
         }
         catch (URISyntaxException e)
         {
-            return false;
+            return null;
         }
+    }
+
+    // Issue 35986 - Disallow URLs that have a full host name for security reasons
+    private static boolean isAllowableHost(@NotNull URLHelper h)
+    {
+        // We have a returnURL that includes a server host name
+        if (h.getHost() != null)
+        {
+            // Check if it matches the current server's preferred host name, per the base server URL setting
+            String allowedHost = null;
+            try
+            {
+                allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
+            }
+            catch (MalformedURLException ignored) {}
+
+            if (!h.getHost().equalsIgnoreCase(allowedHost))
+            {
+                // Server host name that doesn't match, log and possibly reject based on config
+                // Allow 'localhost' for servers in dev mode
+                boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(h.getHost());
+
+                //look in the list of configured external redirect hosts
+                for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectHosts())
+                {
+                    if (StringUtils.isNotBlank(externalRedirectHostURL) && externalRedirectHostURL.equalsIgnoreCase(h.getHost()))
+                        isConfigured = true;
+                }
+
+                if (!isConfigured)
+                {
+                    String logMessageDetails = "returnURL value: " + h.toString();
+                    HttpServletRequest request = HttpView.currentRequest();
+                    if (request != null)
+                    {
+                        logMessageDetails += " from URL: " + request.getRequestURL();
+                        if (request.getHeader("Referer") != null)
+                        {
+                            logMessageDetails += " with referrer: " + request.getHeader("Referer");
+                        }
+                    }
+
+                    LOG.warn("Rejected external host redirect " + logMessageDetails +
+                            "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
+                    return false;
+                }
+                else
+                {
+                    LOG.debug("Detected configured external host returnURL: " + h.toString());
+                }
+            }
+        }
+
         return true;
     }
 
     public boolean isEmpty()
     {
-        if (StringUtils.isEmpty(_source))
-            return true;
-        return null == getURLHelper();
+        return _url == null;
     }
 
-
-    public String getSource()
-    {
-        return _source;
-    }
 
     @Override @NotNull
     public String toString()
     {
-        try
-        {
-            if (StringUtils.isEmpty(_source))
-                return "";
-            new ActionURL(getSource());
-            return _source;
-        }
-        catch (Exception x)
-        {
+        if (_url == null)
             return "";
-        }
+        return _url.getLocalURIString();
     }
 
 
@@ -193,9 +207,9 @@ public class ReturnURLString
     {
         try
         {
-            if (StringUtils.isEmpty(_source))
+            if (_url == null)
                 return null;
-            return new ActionURL(_source);
+            return new ActionURL(_url.getLocalURIString());
         }
         catch (Exception x)
         {
@@ -214,16 +228,7 @@ public class ReturnURLString
     @Nullable
     public URLHelper getURLHelper()
     {
-        try
-        {
-            if (StringUtils.isEmpty(_source))
-                return null;
-            return new URLHelper(_source);
-        }
-        catch (Exception x)
-        {
-            return null;
-        }
+        return _url;
     }
 
     @Nullable
@@ -235,7 +240,7 @@ public class ReturnURLString
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
-		private static ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
+        private static ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
 
         public Object convert(Class type, Object value)
         {
@@ -248,9 +253,6 @@ public class ReturnURLString
                 seq = (CharSequence)value;
             else
                 seq = (String)_impl.convert(String.class, value);
-
-            if (!ViewServlet.validChars(seq))
-                throw new ConversionException("Invalid characters in string");
 
             return new ReturnURLString(seq);
         }

@@ -857,21 +857,25 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         filter.applyToURL(this, dataRegionName);
     }
 
+    public boolean isHttpURL()
+    {
+        if (null == getScheme() && null == getHost())
+            return true;
+        if (null == getScheme() || null == getHost())
+            return false;
+        String scheme = getScheme().toLowerCase();
+        if ("https".equals(scheme) || "http".equals(scheme))
+            return true;
+        return false;
+    }
+
     public static boolean isHttpURL(String url)
     {
         if (StringUtils.isEmpty(url))
             return false;
         try
         {
-            URLHelper h = new URLHelper(url);
-            if (null == h.getScheme() && null == h.getHost())
-                return true;
-            if (null == h.getScheme() || null == h.getHost())
-                return false;
-            String scheme = h.getScheme().toLowerCase();
-            if ("https".equals(scheme) || "http".equals(scheme))
-                return true;
-            return false;
+            return new URLHelper(url).isHttpURL();
         }
         catch (URISyntaxException x)
         {
