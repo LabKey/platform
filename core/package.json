@@ -14,7 +14,7 @@
     "build-themes": "bnr build-themes:dev",
     "prebuild-themes-prod": "bnr clean",
     "build-themes-prod": "bnr build-themes:prod",
-    "test": "bnr build:jest-test",
+    "test": "cross-env NODE_ENV=test jest",
     "lint": "eslint --ext '*.ts,*.tsx'",
     "lint-all": "eslint --ext '*.ts,*.tsx' src/client/**/*",
     "lint-fix": "eslint --fix --ext '*.ts,*.tsx'"
@@ -22,12 +22,6 @@
   "betterScripts": {
     "clean": {
       "command": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi"
-    },
-    "build:jest-test": {
-      "command": "jest",
-      "env": {
-        "NODE_ENV": "test"
-      }
     },
     "build-themes:dev": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
@@ -71,19 +65,15 @@
       "ts",
       "tsx"
     ],
-    "moduleDirectories": [
-      "node_modules"
-    ],
     "setupFilesAfterEnv": [
-      "./test/setup.ts"
-    ],
-    "testPathIgnorePatterns": [
-      "/node_modules/"
+      "<rootDir>/test/jest.setup.ts"
     ],
     "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
-    "preset": "ts-jest",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
     "moduleNameMapper": {
-      "\\.(css|less|sass|scss)$": "./test/styleMock.ts"
+      "\\.(scss)$": "<rootDir>/test/styleMock.ts"
     }
   },
   "dependencies": {
@@ -97,14 +87,12 @@
     "@types/enzyme": "3.9.3",
     "@types/enzyme-adapter-react-16": "1.0.5",
     "@types/jest": "24.0.18",
-    "@types/jsdom": "12.2.3",
-    "@types/react": "16.9.17",
     "@types/react-hot-loader": "4.1.0",
     "@typescript-eslint/eslint-plugin": "2.12.0",
     "@typescript-eslint/parser": "2.12.0",
-    "babel-jest": "24.9.0",
     "better-npm-run": "0.1.1",
     "bootstrap-sass": "3.4.1",
+    "cross-env": "5.2.1",
     "enzyme": "3.10.0",
     "enzyme-adapter-react-16": "1.14.0",
     "enzyme-to-json": "3.4.3",
@@ -114,11 +102,8 @@
     "eslint-plugin-jest": "23.1.1",
     "eslint-plugin-prettier": "3.1.2",
     "eslint-plugin-react": "7.17.0",
-    "font-awesome": "4.7.0",
     "fs-extra": "8.1.0",
-    "imports-loader": "0.8.0",
     "jest": "24.9.0",
-    "jsdom": "15.1.1",
     "mixin-deep": "2.0.1",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "prettier": "1.19.1",
