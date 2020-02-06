@@ -15,6 +15,7 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.element.DisplayField;
@@ -59,7 +60,7 @@ public class InputTag extends SimpleTagBase
     private String state;
     private Integer step;
     private String type;
-    private HtmlString value;
+    private @Nullable HtmlString value;
 
     public void setAutoComplete(String autoComplete)
     {
@@ -218,7 +219,7 @@ public class InputTag extends SimpleTagBase
 
     public void setValue(HasHtmlString hasHtmlString)
     {
-        this.value = hasHtmlString.getHtmlString();
+        this.value = null != hasHtmlString ? hasHtmlString.getHtmlString() : null;
     }
 
     @Deprecated // TODO: Just call the String version without h(), like all the other tag attributes

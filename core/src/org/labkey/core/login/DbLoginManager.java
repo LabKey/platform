@@ -17,7 +17,9 @@ package org.labkey.core.login;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
 import java.util.Map;
 
@@ -60,12 +62,12 @@ public class DbLoginManager
 
     public enum Key { Strength, Expiration }
 
-    public static void saveProperties(LoginController.Config config)
+    public static void saveProperties(SaveDbLoginPropertiesForm form)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+        PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
         map.clear();
-        map.put(Key.Strength.toString(), config.getStrength());
-        map.put(Key.Expiration.toString(), config.getExpiration());
+        map.put(Key.Strength.toString(), form.getStrength());
+        map.put(Key.Expiration.toString(), form.getExpiration());
         map.save();
     }
 

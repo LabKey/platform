@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cloud.CloudStoreService;
@@ -409,7 +410,7 @@ public class PipeRootImpl implements PipeRoot
         return importDir;
     }
 
-    public void deleteImportDirectory() throws DirectoryNotDeletedException
+    public void deleteImportDirectory(@Nullable Logger logger) throws DirectoryNotDeletedException
     {
         File importDir = getImportDirectory();
         if (importDir.exists() && !FileUtil.deleteDir(importDir))

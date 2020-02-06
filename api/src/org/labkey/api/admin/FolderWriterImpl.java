@@ -18,7 +18,7 @@ package org.labkey.api.admin;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;
@@ -94,7 +94,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         // Insert standard comment explaining where the data lives, who exported it, and when
         XmlBeansUtil.addStandardExportComment(folderXml, ctx.getContainer(), ctx.getUser());
 
-        folderXml.setArchiveVersion(ModuleLoader.getInstance().getCoreModule().getVersion());
+        folderXml.setArchiveVersion(AppProps.getInstance().getSchemaVersion());
         folderXml.setLabel(c.getName());
 
         folderXml.setType(c.getContainerType().getName());

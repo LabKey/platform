@@ -68,6 +68,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -392,8 +393,13 @@ public class ExperimentController extends SpringActionController
 
         ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
         view.setFrame(WebPartView.FrameType.NONE);
-        if (!view.getSettings().isMaxRowsSet())
-            view.getSettings().setMaxRows(defaultMaxRows);
+
+        // When paginated and the user hasn't explicitly set a maxRows, use the default maxRows size.
+        QuerySettings settings = view.getSettings();
+        if (!settings.isMaxRowsSet() && settings.getShowRows() == ShowRows.PAGINATED)
+        {
+            settings.setMaxRows(defaultMaxRows);
+        }
 
         VBox result = new VBox(chooserView, view);
         result.setFrame(WebPartView.FrameType.PORTAL);

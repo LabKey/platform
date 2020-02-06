@@ -2,48 +2,119 @@
   "name": "labkey-core",
   "version": "0.0.0",
   "scripts": {
+    "prebuild": "bnr clean",
+    "build": "bnr build-themes:dev && bnr build-pages:prod",
+    "prebuild-prod": "bnr clean",
+    "build-prod": "bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
-    "build": "npm run clean && bnr build:dev",
-    "build-prod": "npm run clean && bnr build:prod",
-    "prebuild": "npm run clean",
-    "setup": "npm install"
+    "setup": "npm install",
+    "start": "bnr build-pages:watch",
+    "build-pages": "bnr build-pages:prod",
+    "prebuild-themes": "bnr clean",
+    "build-themes": "bnr build-themes:dev",
+    "prebuild-themes-prod": "bnr clean",
+    "build-themes-prod": "bnr build-themes:prod",
+    "test": "cross-env NODE_ENV=test jest",
+    "lint": "eslint --ext '*.ts,*.tsx'",
+    "lint-all": "eslint --ext '*.ts,*.tsx' src/client/**/*",
+    "lint-fix": "eslint --fix --ext '*.ts,*.tsx'"
   },
   "betterScripts": {
     "clean": {
-      "command": "rimraf resources/web/core/css && rimraf resources/web/clientapi"
+      "command": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi"
     },
-    "build:dev": {
-      "command": "node build.js && node webpack/buildThemes.js",
+    "build-themes:dev": {
+      "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "development"
       }
     },
-    "build:prod": {
-      "command": "node build.js && node webpack/buildThemes.js",
+    "build-themes:prod": {
+      "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "production"
       }
+    },
+    "build-pages:prod": {
+      "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
+      "env": {
+        "LK_MODULE": "core",
+        "NODE_ENV": "production"
+      }
+    },
+    "build-pages:watch": {
+      "command": "webpack-dev-server --config ../webpack/dev.config.js",
+      "env": {
+        "LK_MODULE": "core",
+        "NODE_ENV": "development"
+      }
     }
   },
-  "dependencies": {},
+  "jest": {
+    "globals": {
+      "LABKEY": {
+        "container": {
+          "formats": {
+            "dateFormat": "yyyy-MM-dd"
+          }
+        }
+      }
+    },
+    "moduleFileExtensions": [
+      "js",
+      "ts",
+      "tsx"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test/jest.setup.ts"
+    ],
+    "testRegex": "(\\.(test|spec))\\.(ts|tsx)$",
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "\\.(scss)$": "<rootDir>/test/styleMock.ts"
+    }
+  },
+  "dependencies": {
+    "@labkey/components": "0.23.0",
+    "@labkey/eslint-config-react": "0.0.5",
+    "react-toggle-button": "2.2.0"
+  },
   "devDependencies": {
-    "@labkey/api": "0.0.22",
+    "@hot-loader/react-dom": "16.9.0",
+    "@labkey/eslint-config-base": "0.0.5",
+    "@types/enzyme": "3.9.3",
+    "@types/enzyme-adapter-react-16": "1.0.5",
+    "@types/jest": "24.0.18",
+    "@types/react-hot-loader": "4.1.0",
+    "@typescript-eslint/eslint-plugin": "2.12.0",
+    "@typescript-eslint/parser": "2.12.0",
     "better-npm-run": "0.1.1",
     "bootstrap-sass": "3.4.1",
-    "css-loader": "3.2.0",
-    "file-loader": "4.2.0",
-    "font-awesome": "4.7.0",
+    "cross-env": "5.2.1",
+    "enzyme": "3.10.0",
+    "enzyme-adapter-react-16": "1.14.0",
+    "enzyme-to-json": "3.4.3",
+    "eslint": "6.7.2",
+    "eslint-config-prettier": "6.7.0",
+    "eslint-plugin-import": "2.19.1",
+    "eslint-plugin-jest": "23.1.1",
+    "eslint-plugin-prettier": "3.1.2",
+    "eslint-plugin-react": "7.17.0",
     "fs-extra": "8.1.0",
-    "mini-css-extract-plugin": "0.8.0",
+    "jest": "24.9.0",
     "mixin-deep": "2.0.1",
-    "node-sass": "4.12.0",
     "optimize-css-assets-webpack-plugin": "5.0.3",
-    "postcss-loader": "3.0.0",
+    "prettier": "1.19.1",
+    "react-hot-loader": "4.12.17",
+    "react-test-renderer": "16.8.6",
     "rimraf": "3.0.0",
-    "sass-loader": "8.0.0",
+    "ts-jest": "24.0.2",
     "uglifyjs-webpack-plugin": "2.2.0",
-    "url-loader": "2.2.0",
     "webpack": "4.41.2",
-    "webpack-cli": "3.3.9"
-  }
+    "webpack-cli": "3.3.9",
+    "webpack-dev-server": "3.9.0"
+  },
+  "typings": "./src/client/typings/main.d.ts"
 }
