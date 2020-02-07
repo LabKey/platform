@@ -44,18 +44,18 @@
 <labkey:errors/>
 <br>
 <labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post" layout="horizontal">
-    <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=h(nameToShow)%>" isRequired="true"/>
-    <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%= h(url) %>" forceSmallContext="true"
+    <labkey:input type="text" label="Connection Name *" name="newConnectionName" id="newConnectionName" size="50" value="<%=nameToShow%>" isRequired="true"/>
+    <labkey:input type="text" label="Server URL *" name="url" id="url" size="50" value="<%=url%>" forceSmallContext="true"
                   contextContent="Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name."
                   isRequired="true"/>
-    <labkey:input type="text" label="User *" name="user" id="user" size="50" value="<%= h(user)%>" isRequired="true"/>
+    <labkey:input type="text" label="User *" name="user" id="user" size="50" value="<%=user%>" isRequired="true"/>
     <labkey:input type="password" label="Password *" name="password" id="password" size="50" isRequired="true"/>
-    <labkey:input type="text" label="Folder Path *" name="container" id="container" size="50" value="<%=h(container)%>"
+    <labkey:input type="text" label="Folder Path *" name="container" id="container" size="50" value="<%=container%>"
                   contextContent="Enter the folder path on the LabKey server. An example folder path is 'My Folder/My Subfolder'." forceSmallContext="true"
                   isRequired="true"/>
 
-    <labkey:input type="hidden" name="connectionName"  value="<%=h(name)%>"/>
-    <labkey:input type="hidden" name="connectionKind"  value="<%=h(connectionKind)%>"/>
+    <labkey:input type="hidden" name="connectionName"  value="<%=name%>"/>
+    <labkey:input type="hidden" name="connectionKind"  value="<%=connectionKind%>"/>
 
     <labkey:button text="save" submit="true"/>
     <labkey:button text="cancel" href="<%=new ActionURL(QueryController.ManageRemoteConnectionsAction.class, getContainer())%>"/>

@@ -115,7 +115,15 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CommandLineTokenizer;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -173,7 +181,6 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
-import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
@@ -237,7 +244,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -388,10 +394,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
                 {
                     Map<String, Object> healthValues = new HashMap<>();
-                    boolean allConnected = true;
+                    Boolean allConnected = true;
                     for (DbScope dbScope : DbScope.getDbScopes())
                     {
-                        boolean dbConnected;
+                        Boolean dbConnected;
                         try (Connection conn = dbScope.getConnection())
                         {
                             dbConnected = conn != null;
@@ -564,7 +570,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -591,7 +597,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -725,7 +731,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
 
-            for (Map.Entry<String, String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+            for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
             {
                 Map<String, Object> params = new HashMap<>();
                 params.put("Container", rootContainerId);
@@ -1000,8 +1006,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         TempTableTracker.init();
     }
 
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
-
     @Override
     public String getTabName(ViewContext context)
     {
@@ -1032,7 +1036,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Must be mutable since we add the dialect tests below
         Set<Class> testClasses = Sets.newHashSet
         (
-            AdminController.ModuleVersionTestCase.class,
+            AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AttachmentServiceImpl.TestCase.class,
@@ -1066,11 +1070,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
-            CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
-            PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class
+            StatsServiceImpl.TestCase.class,
+            CommandLineTokenizer.TestCase.class
         );
     }
 

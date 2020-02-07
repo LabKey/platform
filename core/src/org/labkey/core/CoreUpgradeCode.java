@@ -329,7 +329,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked from 19.20-19.30 to move existing authentication property configurations to core.AuthenticationConfigurations table
+     * Invoked from 19.20-19.30 to move existing primary authentication property configurations to core.AuthenticationConfigurations table
      */
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
@@ -354,5 +354,29 @@ public class CoreUpgradeCode implements UpgradeCode
                 ExceptionUtil.logExceptionToMothership(null, t);
             }
         });
+    }
+
+    /**
+     * Invoked at 19.35 to move existing secondary authentication property configurations to core.AuthenticationConfigurations table
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateSecondaryAuthenticationConfigurations(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            User user = context.getUpgradeUser();
+            Set<String> active = AuthenticationManager.getActiveProviderNamesFromProperties();
+            AuthenticationManager.getAllSecondaryProviders().forEach(provider -> {
+                try
+                {
+                    provider.migrateOldConfiguration(active.contains(provider.getName()), user);
+                }
+                catch (Throwable t)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, t);
+                }
+            });
+        }
     }
 }
