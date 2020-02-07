@@ -4690,7 +4690,7 @@ public class ExperimentServiceImpl implements ExperimentService
          */
         SQLFragment sql = new SQLFragment();
 
-        sql.append("SELECT DISTINCT d.datalID\n");
+        sql.append("SELECT DISTINCT d.dataID\n");
         sql.append("FROM ").append(getTinfoDataInput(), "d").append(", \n\t");
         sql.append(getTinfoProtocolApplication(), "pa").append("\n");
         sql.append("WHERE d.TargetApplicationId = pa.rowId\n\t")

@@ -3119,7 +3119,7 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(DeletePermission.class)
-    public class GetDataClassDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
+    public class GetDataDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
     {
         @Override
         public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
