@@ -16,21 +16,28 @@
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils} from "@labkey/api";
-import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay , fetchProtocol} from "@labkey/components"; //TODO: include List model and panel added in labkey-ui-components
+import {
+    Alert,
+    LoadingSpinner,
+    PermissionTypes,
+    DomainFieldsDisplay,
+    fetchProtocol,
+    ListDesignerPanels,
+    ListModel,
+    fetchListDesign,
+    // AssayProtocolModel
+} from "@labkey/components"; //TODO: include List model and panel added in labkey-ui-components
 
 import "@labkey/components/dist/components.css"
 
 type State = {
     listId: number,
     returnUrl: string,
-    allowFileLinkProperties: 0,
-    allowAttachmentProperties: 1,
-    showDefaultValueSettings: 1,
     hasDesignListPermission?: boolean,
     isLoadingModel: boolean,
     message?: string,
     dirty: boolean,
-    // model?:  //TODO: define list model in labkey-ui-components
+    model?: any,
 
     //TODO: Not sure if these are needed given hasDesignListPermission above, carried over from ListController.EditListDefinitionAction:
     // hasInsertPermission: boolean,
@@ -43,50 +50,71 @@ export class App extends React.Component<any, State>
     {
         super(props);
 
-        const { listId } = ActionURL.getParameters();
-
-        let returnUrl = ActionURL.getParameter('returnUrl');
+        const { listId, returnUrl } = ActionURL.getParameters();
 
         this.state = {
             listId,
-            isLoadingModel: true,
             returnUrl,
+            isLoadingModel: true,
             dirty: false, //TODO : handle this correctly,
-            allowFileLinkProperties: 0,
-            allowAttachmentProperties: 1,
-            showDefaultValueSettings: 1,
         };
     }
 
+    componentDidMount() {
+        // TODO: Query and set hasDesignListPermission based on whether user can save list designs
+
+        const domainId = "2280"; // TODO: we should grab this from the url or elsewhere
+        fetchListDesign(domainId) // if domainId is not present, fetchListDesign generates template
+            .then((model) => {
+                this.setState(() => ({
+                    model,
+                    isLoadingModel: false
+                })
+                , () => {console.log("NewState", this.state)}
+                )
+            })
+            .catch((error) => {
+                this.setState(() => ({
+                    message: error.exception,
+                    isLoadingModel: false
+                }));
+            })
+    }
+
     render() {
-        const { isLoadingModel, hasDesignListPermission, message } = this.state; //TODO: add model once its in labkey-ui-components
+        const { isLoadingModel, hasDesignListPermission, message, model } = this.state; //TODO: add model once its in labkey-ui-components
 
-        return <Alert>New List Designer Page under construction</Alert>; //TODO: Remove
-
-        //TODO : uncomment
-        // if (message) {
-        //     return <Alert>{message}</Alert>
-        // }
+        if (message) {
+            return <Alert>{message}</Alert>
+        }
 
         // set as loading until model is loaded and we know if the user has DesignListPerm
-        if (isLoadingModel || hasDesignListPermission === undefined) {
+        // toDo: use hasDesignListPermission
+        if (isLoadingModel || model === undefined) {
             return <LoadingSpinner/>
         }
 
         // check if this is a create list case with a user that doesn't have permissions
         // if (model.isNew() && !hasDesignListPermission) { //TODO: use this when ListModel is in place in labkey-ui-components
-        if (!hasDesignListPermission) {
-            return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
-        }
+        // if (!hasDesignListPermission) {
+        //     return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
+        // }
+
 
         return (
             <>
-                {hasDesignListPermission
-                    ? this.renderDesignerView()
-                    : this.renderReadOnlyView()
-                }
+                {/*{hasDesignListPermission*/}
+                {/*    ? this.renderDesignerView()*/}
+                {/*    : this.renderReadOnlyView()*/}
+                {/*}*/}
+
+
+                <ListDesignerPanels
+                    model={model}
+                />
+
             </>
-        )
+        );
     }
 
     //TODO: revisit/uncomment once ListDesignerPanels is in place in labkey-ui-components
