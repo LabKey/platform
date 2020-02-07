@@ -1,5 +1,4 @@
 import React, { PureComponent } from 'react';
-
 import { Col, Modal, Button } from 'react-bootstrap';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -7,8 +6,7 @@ import {
     faInfoCircle,
     faTimesCircle,
     faGripVertical,
-    faCircle,
-    faTimes
+    faCircle
 } from '@fortawesome/free-solid-svg-icons';
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
@@ -109,16 +107,10 @@ export default class AuthRow extends PureComponent<Props, State> {
         }
 
         const deleteModal =
-            <Modal show={true} onHide={() => {}}>
-                <Modal.Header>
+            <Modal show={true} onHide={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}>
+                <Modal.Header closeButton>
                     <Modal.Title>
                         Warning
-                        <FontAwesomeIcon
-                            size="sm"
-                            icon={faTimes}
-                            className="modal__close-icon"
-                            onClick={() => this.onToggleModal("deleteModalOpen", this.state.deleteModalOpen)}
-                        />
                     </Modal.Title>
                 </Modal.Header>
                 <div className={"auth-row__delete-modal"}>
