@@ -4059,6 +4059,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
     }
 
+    /**
+     * Finds the subset of data that are used as inputs to runs.
+     */
+    public List<Integer> getDataUsedAsInput(Collection<Integer> dataIds)
+    {
+        if (dataIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, dataIds);
+        return new SqlSelector(getExpSchema(), getDataUsedAsInputs(rowIdInFrag)).getArrayList(Integer.class);
+    }
+
 
     public void deleteDataByRowIds(User user, Container container, Collection<Integer> selectedDataIds)
     {
@@ -4656,6 +4669,35 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("\n)");
 
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
+    }
+
+    /**
+     * Generate a query to get the subset of dataIs from the supplied set of data RowIds
+     * that are inputs to runs.
+     *
+     * @param dataRowIdSQL --  SQL clause generating data rowIds used to limit results
+     * @return Query to retrieve subset of dataIds
+     */
+    private SQLFragment getDataUsedAsInputs(SQLFragment dataRowIdSQL)
+    {
+        // ex SQL:
+        /*
+            SELECT DISTINCT d.dataId
+            FROM exp.DataInput d, exp.protocolapplication pa
+            WHERE d.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND d.dataId <dataRowIdSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT d.datalID\n");
+        sql.append("FROM ").append(getTinfoDataInput(), "d").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE d.TargetApplicationId = pa.rowId\n\t")
+                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+                .append("AND d.dataID ").append(dataRowIdSQL).append("\n");
+
+        return sql;
     }
 
     /**
