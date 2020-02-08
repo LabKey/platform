@@ -267,7 +267,7 @@ public class ListController extends SpringActionController
             if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
             {
                 VBox listDesigner = new VBox();
-                listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "listDesigner"));
+                listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer"));
                 return listDesigner;
             }
             else
