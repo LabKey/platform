@@ -161,13 +161,7 @@ public class PopupMenu extends DisplayElement
 
             out.append(bldr.toString());
         }
-        else if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT)
-        {
-            assert !requiresSelection : "Only button-style popups can require selection.";
-            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
-                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes));
-        }
-        else if (_buttonStyle == ButtonStyle.IMAGE)
+        else if (_buttonStyle == ButtonStyle.IMAGE || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
         {
             assert !requiresSelection : "Only button-style popups can require selection.";
             if (_navTree.getImageCls() != null && _navTree.getImageCls().length() > 0)
@@ -181,6 +175,18 @@ public class PopupMenu extends DisplayElement
                 out.append(PageFlowUtil.generateDropDownImage(_navTree.getText(), "javascript:void(0)",
                         onClickScript, _navTree.getImageSrc(), _imageId, _navTree.getImageHeight(), _navTree.getImageWidth(), attributes));
             }
+
+            if (_buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
+            {
+                out.append(" ");
+            }
+        }
+
+        if (_buttonStyle == ButtonStyle.TEXT || _buttonStyle == ButtonStyle.BOLDTEXT || _buttonStyle == ButtonStyle.IMAGE_AND_TEXT)
+        {
+            assert !requiresSelection : "Only button-style popups can require selection.";
+            out.append(PageFlowUtil.generateDropDownTextLink(_navTree.getText(), "javascript:void(0)",
+                    onClickScript, _buttonStyle == ButtonStyle.BOLDTEXT, _offset, _navTree.getId(), attributes));
         }
 
         out.append("<ul class=\"dropdown-menu dropdown-menu-left\">");
@@ -251,6 +257,9 @@ public class PopupMenu extends DisplayElement
         BOLDTEXT,
         TEXT,
         TEXTBUTTON,
-        IMAGE
+        /** Icon only */
+        IMAGE,
+        /** Icon and text rendered like a link */
+        IMAGE_AND_TEXT
     }
 }
