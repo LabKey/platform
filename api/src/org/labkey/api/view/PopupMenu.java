@@ -255,6 +255,7 @@ public class PopupMenu extends DisplayElement
     {
         MENUBUTTON,
         BOLDTEXT,
+        /** Text only, rendered like a link */
         TEXT,
         TEXTBUTTON,
         /** Icon only */
