@@ -50,121 +50,128 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         PlateTemplate template = getPlateTemplate(run, provider, protocol);
         if (template != null)
         {
-            Map<String, PlateLayer> layers = parseDataFile(plateMetadata.getFile());
-            Map<Position, Map<String, Object>> plateData = new HashMap<>();
-            Domain domain = ensureDomain(protocol);
-
-            // map the metadata to the plate template
-            for (int row=0; row < template.getRows(); row++)
+            try
             {
-                for (int col=0; col < template.getColumns(); col++)
-                {
-                    Position pos = template.getPosition(row, col);
-                    Map<String, Object> wellProps = new CaseInsensitiveHashMap<>();
-                    plateData.put(pos, wellProps);
+                Map<String, PlateLayer> layers = parseDataFile(plateMetadata.getFile());
+                Map<Position, Map<String, Object>> plateData = new HashMap<>();
+                Domain domain = ensureDomain(protocol);
 
-                    for (WellGroupTemplate group : template.getWellGroups(pos))
+                // map the metadata to the plate template
+                for (int row=0; row < template.getRows(); row++)
+                {
+                    for (int col=0; col < template.getColumns(); col++)
                     {
-                        PlateLayer plateLayer = layers.get(group.getType().name());
-                        if (plateLayer != null)
+                        Position pos = template.getPosition(row, col);
+                        Map<String, Object> wellProps = new CaseInsensitiveHashMap<>();
+                        plateData.put(pos, wellProps);
+
+                        for (WellGroupTemplate group : template.getWellGroups(pos))
                         {
-                            PlateLayer.WellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
-                            if (wellGroup != null)
+                            PlateLayer plateLayer = layers.get(group.getType().name());
+                            if (plateLayer != null)
                             {
-                                for (Map.Entry<String, Object> entry : wellGroup.getProperties().entrySet())
+                                PlateLayer.WellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
+                                if (wellGroup != null)
                                 {
-                                    DomainProperty domainProperty = ensureDomainProperty(domain, entry);
-                                    if (!wellProps.containsKey(domainProperty.getName()))
-                                        wellProps.put(domainProperty.getName(), entry.getValue());
-                                    else
-                                        throw new ExperimentException("The metadata property name : " + domainProperty.getName() + " already exists from a different well group for " +
-                                                "the well location : " + pos.getDescription() + ". If well groups overlap from different layers, their metadata property names " +
-                                                "need to be unique.");
+                                    for (Map.Entry<String, Object> entry : wellGroup.getProperties().entrySet())
+                                    {
+                                        DomainProperty domainProperty = ensureDomainProperty(domain, entry);
+                                        if (!wellProps.containsKey(domainProperty.getName()))
+                                            wellProps.put(domainProperty.getName(), entry.getValue());
+                                        else
+                                            throw new ExperimentException("The metadata property name : " + domainProperty.getName() + " already exists from a different well group for " +
+                                                    "the well location : " + pos.getDescription() + ". If well groups overlap from different layers, their metadata property names " +
+                                                    "need to be unique.");
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            if (_domainDirty)
-            {
-                domain.save(user);
-                domain = getPlateDataDomain(protocol);
-            }
-
-            Map<String, PropertyDescriptor> descriptorMap = domain.getProperties().stream().collect(Collectors.toMap(DomainProperty :: getName, DomainProperty :: getPropertyDescriptor));
-            List<Map<String, Object>> jsonData = new ArrayList<>();
-            Set<PropertyDescriptor> propsToInsert = new HashSet<>();
-
-            // merge the plate data with the uploaded result data
-            for (Map<String, Object> row : inserted)
-            {
-                // ensure the result data includes a wellLocation field with values like : A1, F12, etc
-                if (row.containsKey(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME))
+                if (_domainDirty)
                 {
-                    Object rowId = row.get("RowId");
-                    if (rowId != null)
-                    {
-                        PositionImpl well = new PositionImpl(container, String.valueOf(row.get(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME)));
-                        // need to adjust the column value to be 0 based to match the template locations
-                        well.setColumn(well.getColumn()-1);
+                    domain.save(user);
+                    domain = getPlateDataDomain(protocol);
+                }
 
-                        if (plateData.containsKey(well))
+                Map<String, PropertyDescriptor> descriptorMap = domain.getProperties().stream().collect(Collectors.toMap(DomainProperty :: getName, DomainProperty :: getPropertyDescriptor));
+                List<Map<String, Object>> jsonData = new ArrayList<>();
+                Set<PropertyDescriptor> propsToInsert = new HashSet<>();
+
+                // merge the plate data with the uploaded result data
+                for (Map<String, Object> row : inserted)
+                {
+                    // ensure the result data includes a wellLocation field with values like : A1, F12, etc
+                    if (row.containsKey(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME))
+                    {
+                        Object rowId = row.get("RowId");
+                        if (rowId != null)
                         {
-                            Map<String, Object> jsonRow = new HashMap<>();
-                            plateData.get(well).forEach((k, v) -> {
-                                if (descriptorMap.containsKey(k))
-                                {
-                                    jsonRow.put(descriptorMap.get(k).getURI(), v);
-                                    propsToInsert.add(descriptorMap.get(k));
-                                }
-                            });
-                            jsonRow.put("RowId", rowId);
-                            jsonData.add(jsonRow);
+                            PositionImpl well = new PositionImpl(container, String.valueOf(row.get(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME)));
+                            // need to adjust the column value to be 0 based to match the template locations
+                            well.setColumn(well.getColumn()-1);
+
+                            if (plateData.containsKey(well))
+                            {
+                                Map<String, Object> jsonRow = new HashMap<>();
+                                plateData.get(well).forEach((k, v) -> {
+                                    if (descriptorMap.containsKey(k))
+                                    {
+                                        jsonRow.put(descriptorMap.get(k).getURI(), v);
+                                        propsToInsert.add(descriptorMap.get(k));
+                                    }
+                                });
+                                jsonRow.put("RowId", rowId);
+                                jsonData.add(jsonRow);
+                            }
                         }
                     }
+                    else
+                        throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration");
                 }
-                else
-                    throw new ExperimentException("Imported data must contain a WellLocation column to support plate metadata integration");
-            }
 
-            if (!jsonData.isEmpty())
-            {
-                try
+                if (!jsonData.isEmpty())
                 {
-                    final OntologyManager.ImportHelper helper = new OntologyManager.ImportHelper()
+                    try
                     {
-                        @Override
-                        public String beforeImportObject(Map<String, Object> map) throws SQLException
+                        final OntologyManager.ImportHelper helper = new OntologyManager.ImportHelper()
                         {
-                            Integer rowId = (Integer) map.get("RowId");
-                            if (rowId != null)
+                            @Override
+                            public String beforeImportObject(Map<String, Object> map) throws SQLException
                             {
-                                return rowIdToLsidMap.get(rowId);
+                                Integer rowId = (Integer) map.get("RowId");
+                                if (rowId != null)
+                                {
+                                    return rowIdToLsidMap.get(rowId);
+                                }
+                                else
+                                    throw new SQLException("No RowId found in the row map.");
                             }
-                            else
-                                throw new SQLException("No RowId found in the row map.");
-                        }
 
-                        @Override
-                        public void afterBatchInsert(int currentRow) throws SQLException
-                        {
-                        }
+                            @Override
+                            public void afterBatchInsert(int currentRow) throws SQLException
+                            {
+                            }
 
-                        @Override
-                        public void updateStatistics(int currentRow) throws SQLException
-                        {
-                        }
-                    };
+                            @Override
+                            public void updateStatistics(int currentRow) throws SQLException
+                            {
+                            }
+                        };
 
-                    int objectId = OntologyManager.ensureObject(container, resultData.getLSID());
-                    OntologyManager.insertTabDelimited(container, user, objectId, helper, new ArrayList<>(propsToInsert), jsonData, true);
+                        int objectId = OntologyManager.ensureObject(container, resultData.getLSID());
+                        OntologyManager.insertTabDelimited(container, user, objectId, helper, new ArrayList<>(propsToInsert), jsonData, true);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new ExperimentException(e);
+                    }
                 }
-                catch (Exception e)
-                {
-                    throw new ExperimentException(e);
-                }
+            }
+            catch (Exception e)
+            {
+                throw new ExperimentException(e);
             }
         }
         else

@@ -17,6 +17,12 @@ package org.labkey.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayResultTable;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.assay.AssayWellExclusionService;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -28,13 +34,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.flag.FlagColumnRenderer;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayResultTable;
-import org.labkey.api.assay.AssayUrls;
-import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
@@ -124,6 +130,29 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                     ((BaseColumnInfo)col).setDisplayColumnFactory(new _FlagDisplayColumnFactory(schema.getProtocol(), this.getName()));
                 }
             }
+
+            // placeholder : inject in plate metadata property columns until we can add them in a more structured way
+            List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
+            Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
+            if (plateDataDomain != null)
+            {
+                ColumnInfo lsidCol = getColumn("lsid");
+                if (lsidCol != null)
+                {
+
+                    BaseColumnInfo colProperty = new AliasedColumn("PlateData", lsidCol);
+                    colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), plateDataDomain));
+                    colProperty.setUserEditable(false);
+                    colProperty.setCalculated(true);
+                    addColumn(colProperty);
+
+                    for (DomainProperty prop : plateDataDomain.getProperties())
+                    {
+                        defaultColumns.add(FieldKey.fromParts("PlateData", prop.getName()));
+                    }
+                }
+            }
+            setDefaultVisibleColumns(defaultColumns);
         }
     }
 
