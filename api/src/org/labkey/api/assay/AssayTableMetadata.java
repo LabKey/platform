@@ -15,11 +15,7 @@
  */
 package org.labkey.api.assay;
 
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssaySchema;
-import org.labkey.api.assay.AssayService;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -27,11 +23,11 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.util.Pair;
 
 import java.sql.ResultSet;
@@ -57,21 +53,32 @@ public class AssayTableMetadata
 
     private final FieldKey _runFieldKey;
     private final FieldKey _resultRowIdFieldKey;
+    private final FieldKey _resultLsidFieldKey;
     private final FieldKey _specimenDetailParentFieldKey;
     /** The name of the property in the dataset that points back to the RowId-type column in the assay's data table */
     private final String _datasetRowIdPropertyName;
 
     public AssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey)
     {
-        this(provider, protocol, specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName());
+        this(provider, protocol, specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName(), null);
     }
 
     public AssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey, String datasetRowIdPropertyName)
+    {
+        this(provider, protocol, specimenDetailParentFieldKey, runFieldKey, resultRowIdFieldKey, resultRowIdFieldKey.getName(), null);
+    }
+
+    public AssayTableMetadata(AssayProvider provider, ExpProtocol protocol, FieldKey specimenDetailParentFieldKey, FieldKey runFieldKey, FieldKey resultRowIdFieldKey, String datasetRowIdPropertyName, @Nullable FieldKey resultLsidFieldKey)
     {
         _provider = provider;
         _protocol = protocol;
         _runFieldKey = runFieldKey;
         _resultRowIdFieldKey = resultRowIdFieldKey;
+        _resultLsidFieldKey = resultLsidFieldKey;
+        if (resultLsidFieldKey != null && provider.getResultRowLSIDPrefix() == null)
+            throw new IllegalArgumentException("Expected provider.getResultRowLSIDPrefix()");
+        if (resultLsidFieldKey == null && provider.getResultRowLSIDPrefix() != null)
+            throw new IllegalArgumentException("Expected assay metadata resultLsidFieldKey");
         _specimenDetailParentFieldKey = specimenDetailParentFieldKey;
         _datasetRowIdPropertyName = datasetRowIdPropertyName;
     }
@@ -123,6 +130,17 @@ public class AssayTableMetadata
     public FieldKey getRunRowIdFieldKeyFromResults()
     {
         return new FieldKey(_runFieldKey, ExpRunTable.Column.RowId.toString());
+    }
+
+    /**
+     * The LSID or ObjectURI column of the assay result table unique for every assay result row.
+     * Used by the provenance service to associate input materials of an assay run with the imported
+     * assay result row as well as associating the assay result row with the published dataset row.
+     */
+    @Nullable
+    public FieldKey getResultLsidFieldKey()
+    {
+        return _resultLsidFieldKey;
     }
 
     public FieldKey getResultRowIdFieldKey()

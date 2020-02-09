@@ -251,7 +251,8 @@ public class ExperimentServiceImpl implements ExperimentService
         return run == null ? null : new ExpRunImpl(run);
     }
 
-    private List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
+    @Override
+    public List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
     {
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowids);
         TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
