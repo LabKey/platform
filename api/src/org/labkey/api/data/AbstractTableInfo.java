@@ -575,7 +575,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     @Override
     public List<ColumnInfo> getColumns()
     {
-        return Collections.unmodifiableList(new ArrayList<>(_columnMap.values()));
+        return List.copyOf(_columnMap.values());
     }
 
     @NotNull
@@ -583,9 +583,9 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         checkLocked();
         return _columnMap.values().stream()
-                .map(c -> (BaseColumnInfo)c)
-                .peek(BaseColumnInfo::checkLocked)
-                .collect(Collectors.toList());
+            .map(c -> (BaseColumnInfo)c)
+            .peek(BaseColumnInfo::checkLocked)
+            .collect(Collectors.toList());
     }
 
     @Override

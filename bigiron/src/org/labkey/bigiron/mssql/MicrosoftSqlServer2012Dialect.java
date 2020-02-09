@@ -17,6 +17,7 @@ package org.labkey.bigiron.mssql;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.dialect.TableResolver;
 
 /**
  * User: adam
@@ -25,6 +26,11 @@ import org.labkey.api.data.SQLFragment;
  */
 public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
 {
+    public MicrosoftSqlServer2012Dialect(TableResolver tableResolver)
+    {
+        super(tableResolver);
+    }
+
     // Called only if rowCount and offset are both > 0... and order is non-blank
     @Override
     protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)

@@ -16,6 +16,7 @@
 package org.labkey.announcements;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.announcements.api.AnnouncementServiceImpl;
 import org.labkey.announcements.api.TourServiceImpl;
 import org.labkey.announcements.config.AnnouncementEmailConfig;
@@ -95,7 +96,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     }
 
     @Override
-    public double getVersion()
+    public @Nullable Double getSchemaVersion()
     {
         return 20.000;
     }

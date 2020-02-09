@@ -29,17 +29,8 @@ public class DisplayField extends Input
     protected void doInput(StringBuilder sb)
     {
         sb.append("<p class=\"form-control-static\">");
-        doValue(sb);
+        renderValueIfNonEmpty(sb::append);
         sb.append("</p>");
-    }
-
-    @Override
-    protected void doValue(StringBuilder sb)
-    {
-        if (getValue() != null && !"".equals(getValue()))
-        {
-            sb.append(isUnsafeValue() ? getValue() : PageFlowUtil.filter(getValue()));
-        }
     }
 
     @Override
@@ -71,6 +62,7 @@ public class DisplayField extends Input
 
     public static class DisplayFieldBuilder extends InputBuilder<DisplayFieldBuilder>
     {
+        @Override
         public DisplayField build()
         {
             return new DisplayField(this);

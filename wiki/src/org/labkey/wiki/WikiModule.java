@@ -35,7 +35,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.api.webdav.WebdavService;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.export.WikiImporterFactory;

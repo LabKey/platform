@@ -147,7 +147,7 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.000;
     }
@@ -227,12 +227,12 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
-                new QueryWebPartFactory(),
-                new ReportsWebPartFactory(),
-                new DataViewsWebPartFactory()
-//                new QueryBrowserWebPartFactory()
-        ));
+        return Arrays.asList(
+            new DataViewsWebPartFactory(),
+            new QueryWebPartFactory(),
+            new ReportsWebPartFactory()
+//            new QueryBrowserWebPartFactory()
+        );
     }
 
     @Override
@@ -338,35 +338,35 @@ public class QueryModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                Query.QueryTestCase.class,
-                QueryServiceImpl.TestCase.class,
-                RolapReader.RolapTest.class,
-                RolapTestCase.class,
-                MultiValueTest.class,
-                OlapController.TestCase.class,
-                QueryController.TestCase.class,
-                ModuleReportCache.TestCase.class,
-                ServerManager.TestCase.class
-        ));
+        return Set.of(
+            ModuleReportCache.TestCase.class,
+            MultiValueTest.class,
+            OlapController.TestCase.class,
+            Query.QueryTestCase.class,
+            QueryController.TestCase.class,
+            QueryServiceImpl.TestCase.class,
+            RolapReader.RolapTest.class,
+            RolapTestCase.class,
+            ServerManager.TestCase.class
+        );
     }
 
     @Override
     @NotNull
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-                SqlParser.SqlParserTestCase.class,
-                JdbcType.TestCase.class,
-                QNode.TestCase.class,
-                TableWriter.TestCase.class,
-                AggregateQueryDataTransform.TestCase.class,
-                FilterClauseBuilder.TestCase.class,
-                MemberSet.TestCase.class,
-                MetadataElementBase.TestCase.class,
-                AttachmentReport.TestCase.class,
-                ReportsController.SerializationTest.class
-        ));
+        return Set.of(
+            AggregateQueryDataTransform.TestCase.class,
+            AttachmentReport.TestCase.class,
+            FilterClauseBuilder.TestCase.class,
+            JdbcType.TestCase.class,
+            MemberSet.TestCase.class,
+            MetadataElementBase.TestCase.class,
+            QNode.TestCase.class,
+            ReportsController.SerializationTest.class,
+            SqlParser.SqlParserTestCase.class,
+            TableWriter.TestCase.class
+        );
     }
 
     @Override

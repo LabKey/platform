@@ -18,6 +18,7 @@ package org.labkey.experiment.xar;
 
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.experiment.ArchiveURLRewriter;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +42,7 @@ import java.util.Set;
 public class XarExportSelection implements Serializable
 {
     private List<Integer> _expIds = new ArrayList<>();
-    private List<Integer> _runIds = new ArrayList<>();
+    private Set<ExpRun> _runs = new LinkedHashSet<>();
     private List<Integer> _dataIds = new ArrayList<>();
     private List<Integer> _sampleSetIds = new ArrayList<>();
     private List<Integer> _protocolIds = new ArrayList<>();
@@ -55,17 +57,9 @@ public class XarExportSelection implements Serializable
         }
     }
 
-    public void addRunId(int runId)
+    public void addRuns(Collection<? extends ExpRun> runs)
     {
-        _runIds.add(runId);
-    }
-
-    public void addRunIds(Collection<Integer> runIds)
-    {
-        for (int runId : runIds)
-        {
-            _runIds.add(runId);
-        }
+        _runs.addAll(runs);
     }
 
     public void addDataIds(int... dataIds)
@@ -119,9 +113,9 @@ public class XarExportSelection implements Serializable
             exporter.addExperiment(ExperimentServiceImpl.get().getExpExperiment(expId));
         }
 
-        for (int runId : _runIds)
+        for (ExpRun run : _runs)
         {
-            exporter.addExperimentRun(ExperimentServiceImpl.get().getExpRun(runId));
+            exporter.addExperimentRun(run);
         }
 
         for (int protocolId : _protocolIds)

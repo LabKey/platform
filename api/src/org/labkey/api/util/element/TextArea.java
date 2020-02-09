@@ -64,18 +64,9 @@ public class TextArea extends Input
 
         sb.append(">");
 
-        doValue(sb);
+        renderValueIfNonEmpty(sb::append);
 
         sb.append("</textarea>");
-    }
-
-    @Override
-    protected void doValue(StringBuilder sb)
-    {
-        if (getValue() != null && !"".equals(getValue()))
-        {
-            sb.append(isUnsafeValue() ? getValue() : PageFlowUtil.filter(getValue()));
-        }
     }
 
     public static class TextAreaBuilder extends InputBuilder<TextAreaBuilder>

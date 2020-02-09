@@ -99,11 +99,7 @@ public class FolderXarWriterFactory implements FolderWriterFactory
             }
 
             List<? extends ExpRun> expRuns = ExperimentService.get().getExpRuns(ctx.getContainer(), null, null);
-            // Add runs.
-            for (ExpRun run: expRuns)
-            {
-                selection.addRunId(run.getRowId());
-            }
+            selection.addRuns(expRuns);
 
             ctx.getXml().addNewXar().setDir(XAR_DIRECTORY);
             VirtualFile xarDir = vf.getDir(XAR_DIRECTORY);
