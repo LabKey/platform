@@ -53,10 +53,6 @@ public interface ExperimentalFeatureService
 
     void setFeatureEnabled(String feature, boolean enabled, User user);
 
-    Map<String, Boolean> getExperimentalFeatures();
-
-    void setExperimentalFeatures(User user, Map<String, Boolean> flags);
-
     interface ExperimentFeatureListener
     {
         void featureChanged(String feature, boolean enabled);
@@ -114,34 +110,5 @@ public interface ExperimentalFeatureService
             }
         }
 
-        @Override
-        public Map<String, Boolean> getExperimentalFeatures()
-        {
-            Map<String, Boolean> flags = new HashMap<>();
-            for (AdminConsole.ExperimentalFeatureFlag flag : AdminConsole.getExperimentalFeatureFlags())
-            {
-                flags.put(flag.getFlag(), isFeatureEnabled(flag.getFlag()));
-            }
-            return Collections.unmodifiableMap(flags);
-        }
-
-        @Override
-        public void setExperimentalFeatures(User user, Map<String, Boolean> flags)
-        {
-            if (flags == null || flags.isEmpty())
-                return;
-
-            Set<String> availableFlags = AdminConsole.getExperimentalFeatureFlags().stream()
-                    .map(AdminConsole.ExperimentalFeatureFlag::getFlag)
-                    .collect(Collectors.toSet());
-
-            WriteableAppProps props = AppProps.getWriteableInstance();
-            for (Map.Entry<String, Boolean> flag : flags.entrySet())
-            {
-                if (availableFlags.contains(flag.getKey()))
-                    setFeatureEnabled(flag.getKey(), flag.getValue(), props);
-            }
-            props.save(user);
-        }
     }
 }

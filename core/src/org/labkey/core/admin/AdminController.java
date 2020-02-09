@@ -8217,58 +8217,21 @@ public class AdminController extends SpringActionController
             if (feature == null)
                 throw new ApiUsageException("feature is required");
 
-            if (isPost())
-            {
-                ExperimentalFeatureService svc = ExperimentalFeatureService.get();
-                if (svc != null)
-                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled(), getUser());
-            }
+            ExperimentalFeatureService svc = ExperimentalFeatureService.get();
+            if (svc == null)
+                throw new IllegalStateException();
 
             Map<String, Object> ret = new HashMap<>();
-            ret.put("feature", form.getFeature());
-            ret.put("enabled", AppProps.getInstance().isExperimentalFeatureEnabled(form.getFeature()));
+            ret.put("feature", feature);
+
+            if (isPost())
+            {
+                ret.put("previouslyEnabled", svc.isFeatureEnabled(feature));
+                svc.setFeatureEnabled(feature, form.isEnabled(), getUser());
+            }
+
+            ret.put("enabled", svc.isFeatureEnabled(feature));
             return new ApiSimpleResponse(ret);
-        }
-    }
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class GetExperimentalFeaturesAction extends ReadOnlyApiAction<Object>
-    {
-        @Override
-        public Object execute(Object form, BindException errors)
-        {
-            var flags = ExperimentalFeatureService.get().getExperimentalFeatures();
-            return success(flags);
-        }
-    }
-
-
-    public static class SetExperimentalFeaturesForm
-    {
-        private Map<String, Boolean> _flags;
-
-        public Map<String, Boolean> getFlags()
-        {
-            return _flags;
-        }
-
-        public void setFlags(Map<String, Boolean> flags)
-        {
-            _flags = flags;
-        }
-    }
-
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class SetExperimentalFeaturesAction extends MutatingApiAction<SetExperimentalFeaturesForm>
-    {
-        @Override
-        public Object execute(SetExperimentalFeaturesForm form, BindException errors)
-        {
-            ExperimentalFeatureService.get().setExperimentalFeatures(getUser(), form.getFlags());
-            var flags = ExperimentalFeatureService.get().getExperimentalFeatures();
-            return success(flags);
         }
     }
 
