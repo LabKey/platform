@@ -4028,8 +4028,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SELECT DISTINCT m2.runId
                 FROM exp.material m2
                 WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.rowId != m2.rowId
                     AND m.runId = m2.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.material m3
+                        WHERE m3.rowId in (3592, 3593, 3594)
+                            AND m2.rowId = m3.rowId
+                    )
             );
          */
 
@@ -4043,8 +4049,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append("SELECT DISTINCT m2.runId\n")
                 .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
                 .append("WHERE m.rowId ").append(idInclause).append("\n")
-                .append("AND m.rowId != m2.rowId\n")
                 .append("AND m.runId = m2.runId\n")
+                .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
+                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("AND m2.rowId = m3.rowId\n")
+                .append(")\n")
                 .append(")");
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
