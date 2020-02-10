@@ -16,8 +16,11 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Extracted DisplayColumn handling out of TSVGridWriter so rendering DisplayColumns
@@ -52,20 +55,23 @@ public abstract class TSVColumnWriter extends TSVWriter
         _applyFormats = applyFormats;
     }
 
-    protected void writeColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns)
+    protected void writeColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns, @NotNull Map<String, String> renameColumn)
     {
         if (_columnHeaderType != null && _columnHeaderType != ColumnHeaderType.None)
-            writeLine(getColumnHeaders(ctx, columns));
+            writeLine(getColumnHeaders(ctx, columns, renameColumn));
     }
 
-    protected Iterable<String> getColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns)
+    protected Iterable<String> getColumnHeaders(RenderContext ctx, Iterable<DisplayColumn> columns, @NotNull Map<String, String> renameColumn)
     {
         List<String> headers = new ArrayList<>();
         for (DisplayColumn dc : columns)
         {
             if (dc.isVisible(ctx))
             {
-                headers.add(_columnHeaderType.getText(dc));
+                String header = _columnHeaderType.getText(dc);
+                if (renameColumn.containsKey(header))
+                    header = renameColumn.get(header);
+                headers.add(header);
             }
         }
 

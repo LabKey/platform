@@ -585,6 +585,6 @@ public class DomainTemplate
     public TemplateInfo getTemplateInfo()
     {
         Module m = ModuleLoader.getInstance().getModule(getModuleName());
-        return new TemplateInfo(m.getName(), getTemplateGroup(), getTemplateName(), m.getVersion());
+        return new TemplateInfo(m.getName(), getTemplateGroup(), getTemplateName(), m.getSchemaVersion());
     }
 }

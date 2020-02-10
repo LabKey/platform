@@ -558,10 +558,11 @@ public class SecurityManager
             }
         }
 
-        if (null == u)
-        {
-            u = AuthenticationManager.attemptRequestAuthentication(request);
-        }
+//  We don't register any RequestAuthenticationProvider implementations, so don't bother
+//        if (null == u)
+//        {
+//            u = AuthenticationManager.attemptRequestAuthentication(request);
+//        }
 
         return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }

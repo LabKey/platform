@@ -27,7 +27,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -81,7 +81,6 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
-import javax.servlet.jsp.JspFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -165,6 +164,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
@@ -222,11 +222,11 @@ public class ApiModule extends CodeOnlyModule
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
             JspTemplate.TestCase.class,
+            LabKeyCollectors.TestCase.class,
             MapLoader.MapLoaderTestCase.class,
             MarkdownService.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
-            MultiValuedMapCollectors.TestCase.class,
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,

@@ -715,7 +715,7 @@ public class AssayTest extends AbstractAssayTest
         DomainFormPanel domainFormPanel = designerPage.expandFieldsPanel("Results");
         domainFormPanel.getField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
         domainFormPanel.getField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        domainFormPanel.removeField(domainFormPanel.getField(4).getName());
+        domainFormPanel.removeField(domainFormPanel.getField(4).getName(), true);
         designerPage.clickFinish();
 
         //ensure that label has changed in run data in Lab 1 folder

@@ -56,6 +56,7 @@ public class VisualizationModule extends CodeOnlyModule
         return NAME;
     }
 
+    @Override
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {

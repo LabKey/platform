@@ -1500,6 +1500,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
+            List<ExpRun> runs = new ArrayList<>();
             for (int id : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(id);
@@ -1507,6 +1508,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     throw new NotFoundException("Could not find run " + id);
                 }
+                runs.add(run);
             }
 
             XarExportSelection selection = new XarExportSelection();
@@ -1519,7 +1521,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
                 selection.addExperimentIds(experiment.getRowId());
             }
-            selection.addRunIds(runIds);
+            selection.addRuns(runs);
             // NOTE: selection distinguishes between null and empty (careful)
             // TODO have ArchiveURLRewriter() differentiate between input and output roles
             // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)
@@ -4026,8 +4028,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SELECT DISTINCT m2.runId
                 FROM exp.material m2
                 WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.rowId != m2.rowId
                     AND m.runId = m2.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.material m3
+                        WHERE m3.rowId in (3592, 3593, 3594)
+                            AND m2.rowId = m3.rowId
+                    )
             );
          */
 
@@ -4041,8 +4049,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append("SELECT DISTINCT m2.runId\n")
                 .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
                 .append("WHERE m.rowId ").append(idInclause).append("\n")
-                .append("AND m.rowId != m2.rowId\n")
                 .append("AND m.runId = m2.runId\n")
+                .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
+                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("AND m2.rowId = m3.rowId\n")
+                .append(")\n")
                 .append(")");
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));

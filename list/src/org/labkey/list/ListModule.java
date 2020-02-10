@@ -80,7 +80,7 @@ public class ListModule extends SpringModule
 
     // Note: ExperimentModule handles the list schema
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.000;
     }
@@ -208,9 +208,9 @@ public class ListModule extends SpringModule
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
             ListManager.TestCase.class,
             ListWriter.TestCase.class
-        ));
+        );
     }
 }

@@ -91,15 +91,15 @@
 
         <div>
         <% if (null != bean.email) { %>
-            <labkey:input type="hidden" name="email" value="<%=h(bean.email)%>"/>
+            <labkey:input type="hidden" name="email" value="<%=bean.email%>"/>
         <% }
 
         if (null != bean.form.getVerification()) { %>
-            <labkey:input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"/>
+            <labkey:input type="hidden" name="verification" value="<%=bean.form.getVerification()%>"/>
         <% }
 
         if (null != bean.form.getMessage()) { %>
-            <labkey:input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"/>
+            <labkey:input type="hidden" name="message" value="<%=bean.form.getMessage()%>"/>
         <% }
 
         if (bean.form.getSkipProfile()) { %>

@@ -81,9 +81,9 @@
 <labkey:errors/>
 <labkey:form name="networkDrive" method="post" layout="horizontal">
 
-    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= h(NetworkDriveProps.getNetworkDriveLetter()) %>" size="1" maxLength="1" isRequired="true"/>
-    <labkey:input type="text" label="Path *" name="networkDrivePath" id="networkDrivePath" value="<%= h(NetworkDriveProps.getNetworkDrivePath()) %>" size="50" isRequired="true"/>
-    <labkey:input type="text" label="User *" name="networkDriveUser" id="networkDriveUser" value="<%= h(NetworkDriveProps.getNetworkDriveUser()) %>"
+    <labkey:input type="text" label="Drive letter *" name="networkDriveLetter" id="networkDriveLetter" value="<%= NetworkDriveProps.getNetworkDriveLetter() %>" size="1" maxLength="1" isRequired="true"/>
+    <labkey:input type="text" label="Path *" name="networkDrivePath" id="networkDrivePath" value="<%= NetworkDriveProps.getNetworkDrivePath() %>" size="50" isRequired="true"/>
+    <labkey:input type="text" label="User *" name="networkDriveUser" id="networkDriveUser" value="<%= NetworkDriveProps.getNetworkDriveUser() %>"
                   isRequired="true" contextContent="Provide a valid user name for logging onto the share; you can specify the value 'none' if no user name or password is required" forceSmallContext="true"/>
     <labkey:input type="password" label="Password *" name="networkDrivePassword" id="networkDrivePassword"
                   isRequired="true" contextContent="Provide the password for the user name; you can specify the value 'none' if no user name or password is required" forceSmallContext="true"/>

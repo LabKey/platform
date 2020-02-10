@@ -2320,6 +2320,11 @@ public class QueryView extends WebPartView<Object>
 
     protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType) throws IOException
     {
+        return getTsvWriter(headerType, Collections.emptyMap());
+    }
+
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
         _exportView = true;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
@@ -2330,7 +2335,7 @@ public class QueryView extends WebPartView<Object>
         try
         {
             Results results = rgn.getResults(rc);
-            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()));
+            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()), renameColumn);
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
             // don't step on default
             if (null != headerType)
@@ -2601,6 +2606,11 @@ public class QueryView extends WebPartView<Object>
         exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), null);
     }
 
+    public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
+        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), renameColumn, null);
+    }
+
     public void exportToExcel(HttpServletResponse response,
                                  boolean templateOnly,
                                  ColumnHeaderType headerType,
@@ -2609,7 +2619,7 @@ public class QueryView extends WebPartView<Object>
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
                                  List<FieldKey> excludeColumns,
-                                 Map<String, String> renameColumns,
+                                 @NotNull Map<String, String> renameColumns,
                                  @Nullable String prefix
                                  )
             throws IOException
@@ -2618,7 +2628,8 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType) : getExcelWriter(docType, renameColumns))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
+                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
@@ -2681,20 +2692,25 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
+        exportToTsv(response, delim, quote, headerType, Collections.emptyMap());
+    }
+
+    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, delim, quote, headerType);
+            int rowCount = doExport(response, delim, quote, headerType, renameColumn);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
 
-    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
+    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
     {
-        try (TSVGridWriter tsv = getTsvWriter(headerType))
+        try (TSVGridWriter tsv = renameColumn.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumn))
         {
             tsv.setDelimiterCharacter(delim);
             tsv.setQuoteCharacter(quote);

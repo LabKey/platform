@@ -1,6 +1,9 @@
 # Created by .ignore support plugin (hsz.mobi)
 dependencies.txt
 
+# OSX
+.DS_Store
+
 # Node modules
 node_modules
 core/node_modules
@@ -22,8 +25,12 @@ core/resources/scripts/labkey/Security.js
 core/resources/scripts/labkey/Utils.js
 
 # Auto-generated files
-core/resources/styles/themeVariables/_variables.scss
 core/resources/web/core/css
+core/resources/web/core/gen
+core/resources/views/authenticationConfiguration.html
+core/resources/views/authenticationConfiguration.view.xml
+core/resources/views/authenticationConfigurationDev.html
+core/resources/views/authenticationConfigurationDev.view.xml
 
 experiment/resources/web/experiment/gen
 experiment/resources/views/domainDesigner.html

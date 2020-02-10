@@ -78,8 +78,8 @@
         <isKeyField>true</isKeyField>
         <isReadOnly>true</isReadOnly>
       </column>
-      <column columnName="InstalledVersion">
-        <columnTitle>Version</columnTitle>
+      <column columnName="SchemaVersion">
+        <columnTitle>Schema Version</columnTitle>
         <isReadOnly>true</isReadOnly>
       </column>
       <column columnName="ClassName">
