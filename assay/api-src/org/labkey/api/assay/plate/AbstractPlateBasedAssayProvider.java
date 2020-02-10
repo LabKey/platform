@@ -64,9 +64,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public static final String METADATA_INPUT_FORMAT_SUFFIX = "#SampleMetadataInputFormat";
     public static final String VIRUS_WELL_GROUP_NAME = "VirusWellGroupName";
 
-    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
+    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLsidPrefix, AssayDataType dataType, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLsidPrefix, dataType, declaringModule);
     }
 
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)

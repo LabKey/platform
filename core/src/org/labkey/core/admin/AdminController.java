@@ -98,6 +98,7 @@ import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -134,9 +135,9 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -8104,6 +8105,22 @@ public class AdminController extends SpringActionController
 
             if (!modulesTooLow.isEmpty())
                 fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
+        }
+
+        @Test
+        public void modulesWithSchemaVersionButNoScripts()
+        {
+            // Flag all managed modules that have a schema version but don't have scripts. Their schema version should be null.
+            List<String> moduleNames = ModuleLoader.getInstance().getModules().stream()
+                .filter(m->m.getSchemaVersion() != null)
+                .filter(m->m.getSchemaVersion() != 20.3) // These will become null soon enough
+                .filter(m->!((DefaultModule)m).hasScripts())
+                .filter(m->!Set.of("rstudio", "Recipe").contains(m.getName()))  // Filter out oddball modules
+                .map(m->m.getName() + ": " + m.getSchemaVersion())
+                .collect(Collectors.toList());
+
+            if (!moduleNames.isEmpty())
+                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames.toString());
         }
     }
 
