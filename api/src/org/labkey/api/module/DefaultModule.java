@@ -1609,6 +1609,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
     // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
 
+    @Deprecated
     public double getVersion()
     {
         return -1;
