@@ -312,6 +312,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         lsidCol.setCalculated(true);
         lsidCol.setUserEditable(false);
         lsidCol.setReadOnly(true);
+        lsidCol.setHidden(true);
         return lsidCol;
     }
 

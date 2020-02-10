@@ -1,14 +1,13 @@
 import React, { PureComponent } from 'react';
-
 import { Button, Alert } from 'react-bootstrap';
-
 import { Ajax, ActionURL } from '@labkey/api';
 
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
+import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 
+import "@labkey/components/dist/components.css"
 import './authenticationConfiguration.scss';
-import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils'
 
 interface State {
     formConfigurations?: AuthConfig[];

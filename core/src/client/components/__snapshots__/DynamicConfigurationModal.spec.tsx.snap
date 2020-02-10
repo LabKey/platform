@@ -28,7 +28,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
 >
   <ModalHeader
     bsClass="modal-header"
-    closeButton={false}
+    closeButton={true}
     closeLabel="Close"
   >
     <ModalTitle
@@ -36,38 +36,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       componentClass="h4"
     >
       Configure undefined
-      <FontAwesomeIcon
-        border={false}
-        className="modal__close-icon"
-        fixedWidth={false}
-        flip={null}
-        icon={
-          Object {
-            "icon": Array [
-              352,
-              512,
-              Array [],
-              "f00d",
-              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
-            ],
-            "iconName": "times",
-            "prefix": "fas",
-          }
-        }
-        inverse={false}
-        listItem={false}
-        mask={null}
-        onClick={[Function]}
-        pull={null}
-        pulse={false}
-        rotation={null}
-        size="sm"
-        spin={false}
-        swapOpacity={false}
-        symbol={false}
-        title=""
-        transform={null}
-      />
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -261,7 +229,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
 >
   <ModalHeader
     bsClass="modal-header"
-    closeButton={false}
+    closeButton={true}
     closeLabel="Close"
   >
     <ModalTitle
@@ -269,38 +237,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       componentClass="h4"
     >
       Configure undefined
-      <FontAwesomeIcon
-        border={false}
-        className="modal__close-icon"
-        fixedWidth={false}
-        flip={null}
-        icon={
-          Object {
-            "icon": Array [
-              352,
-              512,
-              Array [],
-              "f00d",
-              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
-            ],
-            "iconName": "times",
-            "prefix": "fas",
-          }
-        }
-        inverse={false}
-        listItem={false}
-        mask={null}
-        onClick={[Function]}
-        pull={null}
-        pulse={false}
-        rotation={null}
-        size="sm"
-        spin={false}
-        swapOpacity={false}
-        symbol={false}
-        title=""
-        transform={null}
-      />
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -483,7 +419,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
 >
   <ModalHeader
     bsClass="modal-header"
-    closeButton={false}
+    closeButton={true}
     closeLabel="Close"
   >
     <ModalTitle
@@ -491,38 +427,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       componentClass="h4"
     >
       Configure undefined
-      <FontAwesomeIcon
-        border={false}
-        className="modal__close-icon"
-        fixedWidth={false}
-        flip={null}
-        icon={
-          Object {
-            "icon": Array [
-              352,
-              512,
-              Array [],
-              "f00d",
-              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
-            ],
-            "iconName": "times",
-            "prefix": "fas",
-          }
-        }
-        inverse={false}
-        listItem={false}
-        mask={null}
-        onClick={[Function]}
-        pull={null}
-        pulse={false}
-        rotation={null}
-        size="sm"
-        spin={false}
-        swapOpacity={false}
-        symbol={false}
-        title=""
-        transform={null}
-      />
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -754,7 +658,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
 >
   <ModalHeader
     bsClass="modal-header"
-    closeButton={false}
+    closeButton={true}
     closeLabel="Close"
   >
     <ModalTitle
@@ -762,38 +666,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       componentClass="h4"
     >
       Configure undefined
-      <FontAwesomeIcon
-        border={false}
-        className="modal__close-icon"
-        fixedWidth={false}
-        flip={null}
-        icon={
-          Object {
-            "icon": Array [
-              352,
-              512,
-              Array [],
-              "f00d",
-              "M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z",
-            ],
-            "iconName": "times",
-            "prefix": "fas",
-          }
-        }
-        inverse={false}
-        listItem={false}
-        mask={null}
-        onClick={[Function]}
-        pull={null}
-        pulse={false}
-        rotation={null}
-        size="sm"
-        spin={false}
-        swapOpacity={false}
-        symbol={false}
-        title=""
-        transform={null}
-      />
     </ModalTitle>
   </ModalHeader>
   <ModalBody
