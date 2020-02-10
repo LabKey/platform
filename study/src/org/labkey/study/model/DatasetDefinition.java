@@ -94,6 +94,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -124,6 +125,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 
 /**
@@ -2569,48 +2573,44 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
     {
-        // The subset of recalled rows from the “StudyPublish” run should be removed from the input provenance and mapping provenance.
-        Map<ExpRun, List<String>> selectedLsidsRunMap = new HashMap<>();
-        Map<ExpRun, List<String>> allLsidsRunMap = new HashMap<>();
+        // Get the ExpRuns referenced by the dataset row LSIDs
+        List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
 
-        // get runs for selected lsids
-        lsids.forEach(lsid -> {
-            Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
-
-            if (!protocolApplications.isEmpty())
-            {
-                protocolApplications.forEach(protocolApp -> {
-                    ExpRun run = ExperimentService.get().getExpProtocolApplication(protocolApp).getRun();
-                    selectedLsidsRunMap.computeIfAbsent(run, k -> new ArrayList<>()).add(lsid);
-                });
-            }
-
-        });
-
-        // get all lsids for the runs of selected lsids
-        selectedLsidsRunMap.forEach((expRun, lsidList) -> {
-            Set<String> allRunLsids = new HashSet<>(pvs.getLSIDs(expRun.getInputProtocolApplication().getObjectId()));
-            allRunLsids.addAll(pvs.getLSIDs(expRun.getOutputProtocolApplication().getObjectId()));
-            allLsidsRunMap.put(expRun, new ArrayList<>(allRunLsids));
-        });
-
-        lsids.forEach(lsid -> {
-            OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+        // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
+        for (String lsid : lsids)
+        {
+            // NOTE: We need to get and delete the objects individually instead of deleting in bulk
+            // NOTE: because the objects live in a different container than the run.
+            // CONSIDER: This could be optimized by select from.exp object and performing bulk deletes partitioned by container
+            OntologyObject expObject = OntologyManager.getOntologyObject(null/*any container*/, lsid);
             if (null != expObject)
             {
                 pvs.deleteObjectProvenance(expObject.getObjectId());
-                OntologyManager.deleteOntologyObject(lsid, getContainer(), false);
+                OntologyManager.deleteOntologyObject(lsid, expObject.getContainer(), false);
             }
-        });
+        }
 
         // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
-        selectedLsidsRunMap.forEach((run, lsidList) -> {
-            ExperimentService.get().syncRunEdges(run);
-            if (null != allLsidsRunMap.get(run) && lsidList.size() == allLsidsRunMap.get(run).size())
+        // NOTE: Should we do this for other run types as well?  In the future, other runs might have a provenance reference to the dataset LSID
+        for (ExpRun run : runs)
+        {
+            boolean syncNeeded = true;
+            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
             {
-                ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
+                // get all the input and output LSIDs that remain for the selected runs
+                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getObjectId()));
+                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getObjectId()));
+
+                if (allRunLsids.isEmpty())
+                {
+                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
+                    syncNeeded = false;
+                }
             }
-        });
+
+            if (syncNeeded)
+                ExperimentService.get().syncRunEdges(run);
+        }
     }
 
     public void deleteDatasetRows(User u, Collection<String> lsids)
