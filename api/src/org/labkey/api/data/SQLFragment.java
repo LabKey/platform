@@ -27,7 +27,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -484,6 +483,12 @@ public class SQLFragment implements Appendable, CharSequence
         append("'");
         append(s);
         append("'");
+        return this;
+    }
+
+    public SQLFragment appendInClause(@NotNull Collection<?> params, SqlDialect dialect)
+    {
+        dialect.appendInClauseSql(this, params);
         return this;
     }
 
