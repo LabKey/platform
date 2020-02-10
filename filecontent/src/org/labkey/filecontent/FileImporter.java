@@ -22,6 +22,9 @@ import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderArchiveDataTypes;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -69,6 +72,10 @@ public class FileImporter implements FolderImporter<XmlObject>
             {
                 copy(filesVF, rootFile);
             }
+
+            // Ensure that we have an exp.data row for each file
+            ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(job.getUser(), job.getContainer()), null);
+            service.ensureFileData(table);
         }
     }
 
