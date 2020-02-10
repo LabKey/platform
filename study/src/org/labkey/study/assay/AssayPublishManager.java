@@ -22,6 +22,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -49,7 +55,6 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.qc.QCState;
@@ -70,14 +75,8 @@ import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -111,8 +110,11 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.labkey.study.query.DatasetTableImpl.ASSAY_RESULT_LSID;
 
 /**
  * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
@@ -124,9 +126,6 @@ public class AssayPublishManager implements AssayPublishService
 {
     private static final int MIN_ASSAY_ID = 5000;
     private static final Logger LOG = Logger.getLogger(AssayPublishManager.class);
-
-    private static final String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
-    private static final String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
 
     public synchronized static AssayPublishManager getInstance()
     {
@@ -337,73 +336,10 @@ public class AssayPublishManager implements AssayPublishService
                 defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
             lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
-            // If provenance module is not present, do nothing
-            ProvenanceService pvs = ProvenanceService.get();
 
-            if (null != pvs)
-            {
-                // Create a new experiment run using the "Study Publish" Protocol
-                ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
-                ExpProtocol studyPublishProtocol = null;
-
-                try
-                {
-                    studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
-
-                    run.setProtocol(studyPublishProtocol);
-                    ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
-                    PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
-                    run.setFilePathRoot(pipeRoot.getRootPath());
-
-                    run = ExperimentService.get().saveSimpleExperimentRun(run,
-                            Collections.emptyMap(),
-                            Collections.emptyMap(),
-                            Collections.emptyMap(),
-                            Collections.emptyMap(),
-                            Collections.emptyMap(),
-                            info, LOG, false);
-                }
-                catch (ExperimentException e)
-                {
-                    errors.add("StudyPublishRun can not be created.");
-                    LOG.error(e);
-                }
-
-                if (!errors.isEmpty())
-                    return null;
-
-                // Add Provenance details
-                AssayProvider provider = AssayService.get().getProvider(protocol);
-
-                if (provider != null && dataset != null && dataset.getDomain() != null)
-                {
-                    Set<Pair<String, String>> lsidPairs = new HashSet<>();
-
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
-
-                    String domainName = dataset.getDomain().getName();
-                    Collection<Map<String, Object>> resultRowsMap = new TableSelector(dataset.getDomainKind().getTableInfo(user, targetContainer, domainName), filter, null).getMapCollection();
-                    Set<String> resultRowLsids = new LinkedHashSet<>();
-
-                    for (Map<String, Object> resultRow : resultRowsMap)
-                    {
-                        String resultRowLsid = resultRow.get("assayResultLsid").toString();
-                        String datasetLsid = resultRow.get("lsid").toString();
-                        lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
-                        resultRowLsids.add(resultRowLsid);
-                    }
-
-                    // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
-                    pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
-
-                    // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
-                    pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
-
-                    // Call syncRunEdges
-                    ExperimentService.get().syncRunEdges(run);
-                }
-
-            }
+            createProvenanceRun(user, targetContainer, assayName, protocol, errors, dataset, lsids);
+            if (!errors.isEmpty())
+                return null;
 
             transaction.commit();
         }
@@ -417,6 +353,7 @@ public class AssayPublishManager implements AssayPublishService
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
             {
+                // CONSIDER: add reference to the provenance run?
                 AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
                         entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
 
@@ -434,6 +371,94 @@ public class AssayPublishManager implements AssayPublishService
         StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
+    }
+
+    private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
+    {
+        if (lsids.isEmpty())
+            return;
+
+        // If provenance module is not present, do nothing
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return;
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+        {
+            errors.add("provenance error: assay provider for '" + protocol.getName() + "' not found");
+            return;
+        }
+
+        if (provider.getResultRowLSIDPrefix() == null)
+        {
+            LOG.info("Can't create provenance run; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+            return;
+        }
+
+        String domainName = dataset.getDomain().getName();
+        TableInfo datasetTable = dataset.getDomainKind().getTableInfo(user, targetContainer, domainName);
+        if (datasetTable.getColumn(ASSAY_RESULT_LSID) == null)
+        {
+            errors.add("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
+            return;
+        }
+
+        // Add Provenance details
+        // Create a mapping from the assay result LSID to the dataset LSID
+        Set<Pair<String, String>> lsidPairs = new HashSet<>();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
+        Collection<Map<String, Object>> resultRowsMap = new TableSelector(datasetTable, datasetTable.getColumns("lsid", ASSAY_RESULT_LSID), filter, null).getMapCollection();
+        Set<String> resultRowLsids = new LinkedHashSet<>();
+        for (Map<String, Object> resultRow : resultRowsMap)
+        {
+            String resultRowLsid = Objects.toString(resultRow.get(ASSAY_RESULT_LSID), null);
+            String datasetLsid = Objects.toString(resultRow.get("lsid"), null);
+            if (resultRowLsid == null || datasetLsid == null)
+            {
+                errors.add("provenance error: Expected assay result row to have an lsid: " + resultRow);
+                return;
+            }
+            lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
+            resultRowLsids.add(resultRowLsid);
+        }
+
+        // Create a new experiment run using the "Study Publish" Protocol
+        ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
+        ExpProtocol studyPublishProtocol = null;
+
+        try
+        {
+            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+
+            run.setProtocol(studyPublishProtocol);
+            ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+            run.setFilePathRoot(pipeRoot.getRootPath());
+
+            run = ExperimentService.get().saveSimpleExperimentRun(run,
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    info, LOG, false);
+        }
+        catch (ExperimentException e)
+        {
+            errors.add("provenance error: StudyPublishRun can not be created.");
+            LOG.error(e);
+            return;
+        }
+
+        // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
+        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
+
+        // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+        pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
+
+        // Call syncRunEdges
+        ExperimentService.get().syncRunEdges(run);
     }
 
     private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
