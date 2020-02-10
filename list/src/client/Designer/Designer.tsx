@@ -46,8 +46,7 @@ type State = {
 
 export class App extends React.Component<any, State>
 {
-    constructor(props)
-    {
+    constructor(props) {
         super(props);
 
         const { listId, returnUrl } = ActionURL.getParameters();
