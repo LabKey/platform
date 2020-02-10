@@ -30,7 +30,7 @@ public class AssayPlateMetadataTemplateAction extends ExportAction
                 "      \"POSITIVE\" : {\"dilution\":  0.5},\n" +
                 "      \"NEGATIVE\" : {\"dilution\":  5.0}\n" +
                 "    },\n" +
-                "    \"specimen\" : {\n" +
+                "    \"sample\" : {\n" +
                 "      -- arbitrary properties can be associated with the \n" +
                 "      -- well group, these will be imported into the results grid\n" +
                 "      -- as columns for example : dilution and ID fields\n" +

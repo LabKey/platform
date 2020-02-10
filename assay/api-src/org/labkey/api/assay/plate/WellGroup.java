@@ -33,7 +33,8 @@ public interface WellGroup extends WellData, WellGroupTemplate
         REPLICATE,
         ANTIGEN,
         OTHER,
-        VIRUS
+        VIRUS,
+        SAMPLE
     }
 
     List<? extends WellData> getWellData(boolean combineReplicates);

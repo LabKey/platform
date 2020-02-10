@@ -94,6 +94,7 @@ import java.util.Set;
  */
 public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
+    public static final String NAME = "General";
     public static final String PLATE_TEMPLATE_PROPERTY_NAME = "PlateTemplate";
     public static final String PLATE_TEMPLATE_PROPERTY_CAPTION = "Plate Template";
 
@@ -166,7 +167,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public String getName()
     {
-        return "General";
+        return NAME;
     }
 
     @Override
