@@ -110,6 +110,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(int rowid);
 
+    List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
+
     ExpRun getExpRun(String lsid);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);

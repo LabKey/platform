@@ -69,7 +69,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         ctx.setBaseFilter(filter);
 
         Results results = dr.getResults(ctx);
-        try (ExcelWriter xl = new ExcelWriter(results, dr.getDisplayColumns()))
+        try (ExcelWriter xl = new ExcelWriter(results, dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx))
         {
             xl.write(getViewContext().getResponse());
         }

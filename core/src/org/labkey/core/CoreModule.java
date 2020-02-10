@@ -37,7 +37,6 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
@@ -47,7 +46,6 @@ import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.message.settings.MessageConfigService;
-import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -117,7 +115,15 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CommandLineTokenizer;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -130,7 +136,6 @@ import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -239,7 +244,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -566,7 +570,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -593,7 +597,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -1002,8 +1006,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         TempTableTracker.init();
     }
 
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
-
     @Override
     public String getTabName(ViewContext context)
     {
@@ -1034,7 +1036,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Must be mutable since we add the dialect tests below
         Set<Class> testClasses = Sets.newHashSet
         (
-            AdminController.ModuleVersionTestCase.class,
+            AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AttachmentServiceImpl.TestCase.class,

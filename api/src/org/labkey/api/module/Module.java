@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.Factory;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -97,13 +98,26 @@ public interface Module extends Comparable<Module>
     String getName();
 
     /**
-     * Return the version of this module. Allows us to track whether
-     * module's version has changed.
+     * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
-    double getVersion();
+    @Nullable Double getSchemaVersion();
 
-    /** @return Formatted version number for display purposes. */
-    String getFormattedVersion();
+    @Deprecated // Use getFormattedSchemaVersion() or getReleaseVersion() instead, as appropriate
+    default String getFormattedVersion()
+    {
+        return ObjectUtils.defaultIfNull(getFormattedSchemaVersion(), "");
+    }
+
+    @Nullable default String getFormattedSchemaVersion()
+    {
+        Double schemaVersion = getSchemaVersion();
+        return null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : null;
+    }
+
+    /**
+     * Return this module's release version, e.g., "20.3-SNAPSHOT" or "20.3.4"
+     */
+    @Nullable String getReleaseVersion();
 
     /** One line description of module's purpose (capitalized and without a period at the end) */
     @Nullable String getLabel();
@@ -302,7 +316,6 @@ public interface Module extends Comparable<Module>
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore
     Set<Module> getResolvedModuleDependencies();
-    boolean shouldConsolidateScripts();
     boolean shouldManageVersion();
 
     /**

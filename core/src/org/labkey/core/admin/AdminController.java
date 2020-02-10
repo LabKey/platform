@@ -98,6 +98,7 @@ import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -134,9 +135,9 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
 import org.labkey.api.security.roles.Role;
@@ -7924,11 +7925,11 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String currentYear = ModuleContext.formatVersion(20.000);
+                    String lowestSchemaVersion = ModuleContext.formatVersion(Constants.getLowestSchemaVersion());
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
-                    url.addParameter("ignore", "0.00," + currentYear);
+                    url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + currentYear + " and unmanaged modules", url);
+                    managedLink = PageFlowUtil.textLink("Click here to ignore 0.00, " + lowestSchemaVersion + " and unmanaged modules", url);
                 }
                 else
                 {
@@ -8007,7 +8008,8 @@ public class AdminController extends SpringActionController
                     out.println("<div>" + _descriptionHtml + "</div><br/>");
                     out.println("\n<table class=\"labkey-data-region-legacy labkey-show-borders\">");
                     out.println("<tr><td class=\"labkey-column-header\">Name</td>");
-                    out.println("<td class=\"labkey-column-header\">Version</td>");
+                    out.println("<td class=\"labkey-column-header\">Release Version</td>");
+                    out.println("<td class=\"labkey-column-header\">Schema Version</td>");
                     out.println("<td class=\"labkey-column-header\">Class</td>");
                     out.println("<td class=\"labkey-column-header\">Source</td>");
                     out.println("<td class=\"labkey-column-header\">Schemas</td>");
@@ -8036,7 +8038,12 @@ public class AdminController extends SpringActionController
                         out.println("</td>");
 
                         out.print("    <td>");
-                        out.print(ModuleContext.formatVersion(moduleContext.getInstalledVersion()));
+                        out.print(PageFlowUtil.filter(null != module ? module.getReleaseVersion() : null));
+                        out.println("</td>");
+
+                        out.print("    <td>");
+                        Double schemaVersion = moduleContext.getSchemaVersion();
+                        out.print(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : "&nbsp;");
                         out.println("</td>");
 
                         out.print("    <td>");
@@ -8085,18 +8092,35 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ModuleVersionTestCase extends Assert
+    public static class SchemaVersionTestCase extends Assert
     {
         @Test
-        public void verifyMinimumModuleVersion()
+        public void verifyMinimumSchemaVersion()
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getPreviousReleaseVersion())
+                .filter(m->null != m.getSchemaVersion())
+                .filter(m->m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
                 .collect(Collectors.toList());
 
             if (!modulesTooLow.isEmpty())
-                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getPreviousReleaseVersion() + ": " + modulesTooLow);
+                fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
+        }
+
+        @Test
+        public void modulesWithSchemaVersionButNoScripts()
+        {
+            // Flag all managed modules that have a schema version but don't have scripts. Their schema version should be null.
+            List<String> moduleNames = ModuleLoader.getInstance().getModules().stream()
+                .filter(m->m.getSchemaVersion() != null)
+                .filter(m->m.getSchemaVersion() != 20.3) // These will become null soon enough
+                .filter(m->!((DefaultModule)m).hasScripts())
+                .filter(m->!Set.of("rstudio", "Recipe").contains(m.getName()))  // Filter out oddball modules
+                .map(m->m.getName() + ": " + m.getSchemaVersion())
+                .collect(Collectors.toList());
+
+            if (!moduleNames.isEmpty())
+                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames.toString());
         }
     }
 
