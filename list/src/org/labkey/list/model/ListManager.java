@@ -184,6 +184,20 @@ public class ListManager implements SearchService.DocumentProvider
         return list;
     }
 
+    public ListDomainKindProperties getListDomainKindProperties(Container container, int listId)
+    {
+        SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
+        ListDomainKindProperties list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+
+        // Workbooks can see their parent's lists, so check that container if we didn't find the list the first time
+        if (list == null && container.isWorkbook())
+        {
+            filter = new PkFilter(getListMetadataTable(), new Object[]{container.getParent(), listId});
+            list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+        }
+        return list;
+    }
+
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds)
     {
