@@ -133,7 +133,7 @@ public class ReturnURLString
         }
     }
 
-    // Issue 35986 - Disallow URLs that have a full host name for security reasons
+    // Issue 35896 - Disallow external redirects to URLs not on the whitelist
     private static boolean isAllowableHost(@NotNull URLHelper h)
     {
         // We have a returnURL that includes a server host name
