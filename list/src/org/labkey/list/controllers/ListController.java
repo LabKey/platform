@@ -30,6 +30,8 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -248,6 +250,16 @@ public class ListController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
+    {
+        @Override
+        public Object execute(ListDefinitionForm listDefinitionForm, BindException errors) throws Exception
+        {
+            return ListManager.get().getListDomainKindProperties(getContainer(), listDefinitionForm.getListId());
+        }
+    }
 
     @RequiresPermission(DesignListPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>

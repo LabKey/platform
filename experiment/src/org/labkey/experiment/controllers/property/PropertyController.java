@@ -411,7 +411,7 @@ public class PropertyController extends SpringActionController
      */
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
-    public class GetDomainKindAction  extends ReadOnlyApiAction<DomainApiForm>
+    public class GetDomainDetailsAction  extends ReadOnlyApiAction<DomainApiForm>
     {
         @Override
         protected ObjectMapper createResponseObjectMapper()
