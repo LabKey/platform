@@ -1,7 +1,5 @@
 import React, { PureComponent } from 'react';
 import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { ActionURL, Ajax } from '@labkey/api';
 
 const OPTIONS_MAP = {
@@ -83,16 +81,10 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
         const expiration = this.state.currentSettings && this.state.currentSettings.expiration;
 
         return (
-            <Modal show={true} onHide={() => {}}>
-                <Modal.Header>
+            <Modal show={true} onHide={this.props.closeModal}>
+                <Modal.Header closeButton>
                     <Modal.Title>
                         Configure Database Authentication
-                        <FontAwesomeIcon
-                            size="sm"
-                            icon={faTimes}
-                            className="modal__close-icon"
-                            onClick={() => this.props.closeModal()}
-                        />
                     </Modal.Title>
                 </Modal.Header>
 

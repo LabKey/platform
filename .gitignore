@@ -25,6 +25,12 @@ core/resources/scripts/labkey/Utils.js
 
 # Auto-generated files
 core/resources/web/core/css
+core/resources/web/core/gen
+core/resources/views/authenticationConfiguration.html
+core/resources/views/authenticationConfiguration.view.xml
+core/resources/views/authenticationConfigurationDev.html
+core/resources/views/authenticationConfigurationDev.view.xml
+
 experiment/resources/web/experiment/gen
 experiment/resources/views/domainDesigner.html
 experiment/resources/views/domainDesigner.view.xml
@@ -40,10 +46,3 @@ assay/resources/views/assayDesigner.html
 assay/resources/views/assayDesigner.view.xml
 assay/resources/views/assayDesignerDev.html
 assay/resources/views/assayDesignerDev.view.xml
-
-# React pages build
-core/resources/views/authenticationConfiguration.html
-core/resources/views/authenticationConfiguration.view.xml
-core/resources/views/authenticationConfigurationDev.html
-core/resources/views/authenticationConfigurationDev.view.xml
-core/resources/web/core/gen
