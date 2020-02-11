@@ -15,6 +15,7 @@
  */
 package org.labkey.filecontent;
 
+import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,6 +39,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.labkey.filecontent.FileWriter.DIR_NAME;
 
@@ -47,12 +50,16 @@ import static org.labkey.filecontent.FileWriter.DIR_NAME;
  */
 public class FileImporter implements FolderImporter<XmlObject>
 {
+    /** Milliseconds between log progress messages */
+    public static final long LOG_INTERVAL = TimeUnit.MINUTES.toMillis(2);
+
     @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.FILES;
     }
 
+    @Override
     public String getDescription()
     {
         return getDataType().toLowerCase();
@@ -70,23 +77,37 @@ public class FileImporter implements FolderImporter<XmlObject>
                 Files.createDirectories(rootFile);
             if (Files.isDirectory(rootFile))
             {
-                copy(filesVF, rootFile);
+                ctx.getLogger().info("Starting to copy files");
+                AtomicInteger count = new AtomicInteger();
+                copy(filesVF, rootFile, ctx.getLogger(), System.currentTimeMillis() + LOG_INTERVAL, count);
+
+                ctx.getLogger().info("Copied " + count.get() + " files");
+
+                ctx.getLogger().info("Ensuring exp.data rows exist for imported files");
+                // Ensure that we have an exp.data row for each file
+                ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(ctx.getUser(), ctx.getContainer()), null);
+                service.ensureFileData(table);
             }
 
-            // Ensure that we have an exp.data row for each file
-            ExpDataTable table = ExperimentService.get().createDataTable("data", new ExpSchema(job.getUser(), job.getContainer()), null);
-            service.ensureFileData(table);
         }
     }
 
-    private void copy(VirtualFile virtualFile, Path realPath) throws IOException
+    private void copy(VirtualFile virtualFile, Path realPath, Logger log, long nextLogTime, AtomicInteger count) throws IOException
     {
         for (String child : virtualFile.list())
         {
             Path childPath = realPath.resolve(child);
             try (InputStream in = virtualFile.getInputStream(child))
             {
+                if (nextLogTime < System.currentTimeMillis())
+                {
+                    log.info(count.get() + " files copied, now copying " + child);
+                    nextLogTime = System.currentTimeMillis() + LOG_INTERVAL;
+                }
+
                 Files.copy(in, childPath, StandardCopyOption.REPLACE_EXISTING);
+                count.incrementAndGet();
+
             }
         }
 
@@ -99,7 +120,7 @@ public class FileImporter implements FolderImporter<XmlObject>
             {
                 throw new IOException("Failed to create directory " + realChildDir);        // TODO probably unnecessary
             }
-            copy(virtualFile.getDir(childDir), realChildDir);
+            copy(virtualFile.getDir(childDir), realChildDir, log, nextLogTime, count);
         }
     }
 
@@ -119,6 +140,7 @@ public class FileImporter implements FolderImporter<XmlObject>
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new FileImporter();
