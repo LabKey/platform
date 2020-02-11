@@ -3131,27 +3131,13 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
         {
-            // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false));
-            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(canDelete);
+
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getDataUsedAsInput(deleteForm.getIds(false));
-            canDelete.removeAll(cannotDelete);
-            List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-            List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
-            allData.forEach((dataObject) -> {
-                Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
-                if (canDelete.contains(dataObject.getRowId()))
-                    canDeleteRows.add(rowMap);
-                else
-                    cannotDeleteRows.add(rowMap);
-            });
 
-
-            Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-            partitionedIds.put("canDelete", canDeleteRows);
-            partitionedIds.put("cannotDelete", cannotDeleteRows);
-            return success(partitionedIds);
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allData));
         }
     }
 
@@ -3171,26 +3157,11 @@ public class ExperimentController extends SpringActionController
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false));
-            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(canDelete);
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
-            canDelete.removeAll(cannotDelete);
-            List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-            List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
-            allMaterials.forEach((material) -> {
-                Map<String, Object> rowMap = Map.of("RowId", material.getRowId(), "Name", material.getName());
-                if (canDelete.contains(material.getRowId()))
-                    canDeleteRows.add(rowMap);
-                else
-                    cannotDeleteRows.add(rowMap);
-            });
-
-
-            Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-            partitionedIds.put("canDelete", canDeleteRows);
-            partitionedIds.put("cannotDelete", cannotDeleteRows);
-            return success(partitionedIds);
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials));
         }
     }
 
