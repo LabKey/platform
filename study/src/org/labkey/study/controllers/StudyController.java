@@ -1881,7 +1881,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
@@ -1906,7 +1906,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
