@@ -24,6 +24,7 @@ import org.labkey.test.SortDirection;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.StudyHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,7 +167,7 @@ public class StudyPHIExportTest extends StudyExportTest
 
         log("Verify second export and clinic masking");
 
-        startSpecimenImport(4, SPECIMEN_ARCHIVE_A);
+        startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
         waitForPipelineJobsToComplete(4, "Specimen import", false);
         exportStudy(true, false, PhiSelectType.NotPHI, true, true, true, null);
 
