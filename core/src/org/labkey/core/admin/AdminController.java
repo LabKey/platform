@@ -543,6 +543,12 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public ActionURL getModulesDetailsURL()
+        {
+            return new ActionURL(GetModulesAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
         public ActionURL getManageFoldersURL(Container c)
         {
             return new ActionURL(ManageFoldersAction.class, c);
