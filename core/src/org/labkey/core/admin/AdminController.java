@@ -8071,7 +8071,7 @@ public class AdminController extends SpringActionController
 
                                     return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
                                         TD(moduleContext.getName()),
-                                        TD(null != module ? module.getReleaseVersion() : NBSP),
+                                        TD(at(Attribute.style,"white-space:nowrap;"), null != module ? module.getReleaseVersion() : NBSP),
                                         TD(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : NBSP),
                                         TD(moduleContext.getClassName()),
                                         TD(module.getSourcePath()),
