@@ -40,9 +40,6 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 /**
  * User: adam
@@ -52,14 +49,29 @@ import java.util.stream.Collectors;
 public class CollectionUtils
 {
     // Collections.Unmodifiable* classes are not public, so grab them statically to use in the methods below
-    private static final Class<? extends Collection> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
-    private static final Class<? extends Map> UNMODIFIABLE_MAP_CLASS = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
-    private static final Class<? extends Set> SINGLETON_SET_CLASS = Collections.singleton(null).getClass();
-    private static final Class<? extends List> SINGLETON_LIST_CLASS = Collections.singletonList(null).getClass();
-    private static final Class<? extends Map> SINGLETON_MAP_CLASS = Collections.singletonMap(null, null).getClass();
-    private static final Class<? extends Set> EMPTY_SET_CLASS = Collections.emptySet().getClass();
-    private static final Class<? extends List> EMPTY_LIST_CLASS = Collections.emptyList().getClass();
-    private static final Class<? extends Map> EMPTY_MAP_CLASS = Collections.emptyMap().getClass();
+    private static final Class<?> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
+
+    private static final Set<Class<?>> UNMODIFIABLE_LIST_CLASSES = Set.of(
+        Collections.emptyList().getClass(),
+        Collections.singletonList(null).getClass(),
+        List.of().getClass(),  // ImmutableCollections.ListN
+        List.of(1).getClass()  // ImmutableCollections.List12
+    );
+
+    private static final Set<Class<?>> UNMODIFIABLE_SET_CLASSES = Set.of(
+        Collections.emptySet().getClass(),
+        Collections.singleton(null).getClass(),
+        Set.of().getClass(),  // ImmutableCollections.SetN
+        Set.of(1).getClass()  // ImmutableCollections.Set12
+    );
+
+    private static final Set<Class<?>> UNMODIFIABLE_MAP_CLASSES = Set.of(
+        Collections.unmodifiableMap(Collections.emptyMap()).getClass(),
+        Collections.singletonMap(null, null).getClass(),
+        Collections.emptyMap().getClass(),
+        Map.of().getClass(),   // ImmutableCollections.MapN
+        Map.of(1, 1).getClass()  // ImmutableCollections.Map1
+    );
 
     // Returns true if value is an Array or value is a Collection or Map that is not a known immutable type; otherwise,
     // returns false. See note below about currently recognized immutable types.
@@ -88,12 +100,12 @@ public class CollectionUtils
             {
                 if (value instanceof Set)
                 {
-                    if (!EMPTY_SET_CLASS.isInstance(value) && !SINGLETON_SET_CLASS.isInstance(value))
+                    if (!UNMODIFIABLE_SET_CLASSES.contains(value.getClass()))
                         return "a modifiable set (" + value.getClass() + ")";
                 }
                 else if (value instanceof List)
                 {
-                    if (!EMPTY_LIST_CLASS.isInstance(value) && !SINGLETON_LIST_CLASS.isInstance(value))
+                    if (!UNMODIFIABLE_LIST_CLASSES.contains(value.getClass()))
                         return "a modifiable list (" + value.getClass() + ")";
                 }
                 else
@@ -104,7 +116,7 @@ public class CollectionUtils
         }
         else if (value instanceof Map)
         {
-            if (!UNMODIFIABLE_MAP_CLASS.isInstance(value) && !EMPTY_MAP_CLASS.isInstance(value) && !SINGLETON_MAP_CLASS.isInstance(value))
+            if (UNMODIFIABLE_MAP_CLASSES.stream().noneMatch(c->c.isInstance(value)))
                 return "a modifiable map (" + value.getClass() + ")";
         }
         else if (value.getClass().isArray())
@@ -160,18 +172,30 @@ public class CollectionUtils
             assertUnmodifiable(Collections.emptyList());
             assertUnmodifiable(Collections.singletonList(null));
             assertUnmodifiable(Collections.unmodifiableList(new ArrayList<>()));
+            assertUnmodifiable(List.of());
+            assertUnmodifiable(List.of(1));
+            assertUnmodifiable(List.of(1, 2));
+            assertUnmodifiable(List.of(1, 2, 3, 4));
 
             // Unmodifiable Sets
             assertUnmodifiable(Collections.emptySet());
             assertUnmodifiable(Collections.singleton(null));
             assertUnmodifiable(Collections.unmodifiableSet(new HashSet<>()));
             assertUnmodifiable(Collections.unmodifiableSortedSet(new TreeSet<>()));
+            assertUnmodifiable(Set.of());
+            assertUnmodifiable(Set.of(1));
+            assertUnmodifiable(Set.of(1, 2));
+            assertUnmodifiable(Set.of(1, 2, 3, 4));
 
             // Unmodifiable Maps
             assertUnmodifiable(Collections.emptyMap());
             assertUnmodifiable(Collections.singletonMap(null, null));
             assertUnmodifiable(Collections.unmodifiableMap(new HashMap<>()));
             assertUnmodifiable(Collections.unmodifiableSortedMap(new TreeMap<>()));
+            assertUnmodifiable(Map.of());
+            assertUnmodifiable(Map.of(1, 1));
+            assertUnmodifiable(Map.of(1, 1, 2, 2));
+            assertUnmodifiable(Map.of(1, 1, 2, 2, 3, 3, 4, 4));
 
             // Unmodifiable MultiMap
             assertUnmodifiable(UnmodifiableMultiValuedMap.unmodifiableMultiValuedMap(new ArrayListValuedHashMap<>()));
