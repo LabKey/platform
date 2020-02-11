@@ -54,6 +54,7 @@ public interface PremiumService
 
     boolean isRemoteREnabled();
 
+    @Nullable
     default ActionURL getUpdateModuleURL(String module)
     {
         return null;

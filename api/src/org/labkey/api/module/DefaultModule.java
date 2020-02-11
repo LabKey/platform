@@ -147,7 +147,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildOS = null;
     private String _buildPath = null;
     private String _sourcePath = null;
-    private boolean _useSourcePath = false;
     private String _buildNumber = null;
     private String _enlistmentId = null;
     private File _explodedPath = null;
