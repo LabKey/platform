@@ -15,7 +15,7 @@
  */
 import * as React from 'react'
 import {Panel} from "react-bootstrap";
-import {ActionURL, Security, Utils} from "@labkey/api";
+import {ActionURL, Security, Utils, Ajax} from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -38,6 +38,7 @@ type State = {
     message?: string,
     dirty: boolean,
     model?: any,
+    domainId?: number;
 
     //TODO: Not sure if these are needed given hasDesignListPermission above, carried over from ListController.EditListDefinitionAction:
     // hasInsertPermission: boolean,
@@ -62,22 +63,45 @@ export class App extends React.Component<any, State>
     componentDidMount() {
         // TODO: Query and set hasDesignListPermission based on whether user can save list designs
 
-        const domainId = "2280"; // TODO: we should grab this from the url or elsewhere
-        fetchListDesign(domainId) // if domainId is not present, fetchListDesign generates template
-            .then((model) => {
+        // const domainId = "2280"; // TODO: we should grab this from the url or elsewhere
+
+        Ajax.request({
+            url: ActionURL.buildURL('list', 'GetListProperties'),
+            method: 'GET',
+            params: { listId: this.state.listId },
+            scope: this,
+            failure: function(error) {
                 this.setState(() => ({
-                    model,
-                    isLoadingModel: false
-                })
-                , () => {console.log("NewState", this.state)}
-                )
-            })
-            .catch((error) => {
-                this.setState(() => ({
-                    message: error.exception,
+                    message: error,
                     isLoadingModel: false
                 }));
-            })
+            },
+            success: function(result) {
+                const response = JSON.parse(result.response);
+                this.setState({domainId: response.domainId});
+                console.log("componentDidMount", response.domainId);
+
+                fetchListDesign(response.domainId) // if domainId is not present, fetchListDesign generates template
+                    .then((model) => {
+                        this.setState(() => ({
+                                model,
+                                isLoadingModel: false
+                            })
+                            , () => {console.log("NewState", this.state)}
+                        )
+                    })
+                    .catch((error) => {
+                        this.setState(() => ({
+                            message: error.exception,
+                            isLoadingModel: false
+                        }));
+                    })
+            },
+        });
+
+
+
+
     }
 
     render() {
