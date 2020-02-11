@@ -247,6 +247,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
 import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
 import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
@@ -8042,7 +8043,8 @@ public class AdminController extends SpringActionController
                         TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
                             TR(
                                 TD(cl("labkey-column-header"),"Name"),
-                                TD(cl("labkey-column-header"),"Version"),
+                                TD(cl("labkey-column-header"),"Release Version"),
+                                TD(cl("labkey-column-header"),"Schema Version"),
                                 TD(cl("labkey-column-header"),"Class"),
                                 TD(cl("labkey-column-header"),"Source"),
                                 TD(cl("labkey-column-header"),"Schemas"),
@@ -8069,14 +8071,12 @@ public class AdminController extends SpringActionController
 
                                     return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
                                         TD(moduleContext.getName()),
-
-                                        TD(null != module ? String.valueOf(module.getReleaseVersion()) : null),
-                                        TD(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : HtmlString.NBSP),
-
-                                            TD(moduleContext.getClassName()),
+                                        TD(null != module ? module.getReleaseVersion() : NBSP),
+                                        TD(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : NBSP),
+                                        TD(moduleContext.getClassName()),
                                         TD(module.getSourcePath()),
                                         TD(StringUtils.join(schemas, ", ")),
-                                        null == externalModulesDir ? null : TD(!maybeReplaceable ? HtmlString.NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
+                                        null == externalModulesDir ? null : TD(!maybeReplaceable ? NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
                                         !hasAdminOpsPerm ? null : TD( PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
                                 })
