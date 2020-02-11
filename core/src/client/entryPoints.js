@@ -6,8 +6,8 @@
 module.exports = {
     apps: [{
         name: 'authenticationConfiguration',
-        title: 'Auth Config',
-        permission: 'admin', // May be changed
-        path: '../src/client/AuthenticationConfiguration'
+        title: 'Authentication',
+        permission: 'admin',
+        path: './src/client/AuthenticationConfiguration'
     }]
 };

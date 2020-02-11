@@ -29,10 +29,10 @@ import java.io.File;
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
 public class SpecimenReplaceTest extends SpecimenMergeTest
 {
-    protected static final String LAB_EDITED_SPECIMENS = "/sampledata/study/specimens/lab19edit.specimens";
-    protected static final String LAB15_SPECIMENS = "/sampledata/study/specimens/lab15.specimens";
-    protected static final String LAB20_SPECIMENS = "/sampledata/study/specimens/lab20.specimens";
-    protected static final String LAB21_SPECIMENS = "/sampledata/study/specimens/lab21.specimens";
+    protected static final File LAB_EDITED_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab19edit.specimens");
+    protected static final File LAB15_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab15.specimens");
+    protected static final File LAB20_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab20.specimens");
+    protected static final File LAB21_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab21.specimens");
 
     @Test
     public void testSteps()
@@ -47,7 +47,7 @@ public class SpecimenReplaceTest extends SpecimenMergeTest
 
     private void verifyReplaceWithNewData()
     {
-        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), new File[] {new File(TestFileUtils.getLabKeyRoot(), LAB15_SPECIMENS)}, new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_TEMP_DIR), FOLDER_NAME, ++pipelineJobCount);
+        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), new File[] {LAB15_SPECIMENS}, SPECIMEN_TEMP_DIR, FOLDER_NAME, ++pipelineJobCount);
         importer.setExpectError(true);
         importer.importAndWaitForComplete();
         //go to individual vial list
@@ -61,7 +61,7 @@ public class SpecimenReplaceTest extends SpecimenMergeTest
 
     private void verifyReplaceWithSlightlyModifiedData()
     {
-        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), new File[] {new File(TestFileUtils.getLabKeyRoot(), LAB_EDITED_SPECIMENS)}, new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_TEMP_DIR), FOLDER_NAME, ++pipelineJobCount);
+        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), new File[] {LAB_EDITED_SPECIMENS}, SPECIMEN_TEMP_DIR, FOLDER_NAME, ++pipelineJobCount);
         importer.setExpectError(true);
         importer.importAndWaitForComplete();
         //go to individual vial list

@@ -1,13 +1,7 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "es6",
-    "jsx": "react",
-    "sourceMap": false,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "types": ["jest"]
+    "types": ["jest"] // implicitly include only jest types; otherwise get those included via import
   },
   "exclude": [
     "node_modules",

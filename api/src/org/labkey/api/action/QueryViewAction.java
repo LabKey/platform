@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
@@ -144,10 +145,14 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         // Issue 37914 - be sure we have a fully populated QuerySettings to generate the right dataRegionSelectionKey
         if (settings.getSchemaName() == null)
         {
-            UserSchema schema = result.getTable().getUserSchema();
-            if (schema != null)
+            TableInfo table = result.getTable();
+            if (table != null)
             {
-                settings.setSchemaName(schema.getName());
+                UserSchema schema = table.getUserSchema();
+                if (schema != null)
+                {
+                    settings.setSchemaName(schema.getName());
+                }
             }
         }
         return result;
