@@ -23,6 +23,7 @@ import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -110,7 +111,6 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -127,8 +127,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.util.PageFlowUtil.encode;
 
 /**
  * User: jeckels
@@ -839,6 +837,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
         sortDomainList(domains);
+
+        // see if there is a plate metadata domain associated with this protocol
+        if (AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE) != null)
+        {
+            Domain plateDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(protocol);
+            if (plateDomain != null)
+            {
+                Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(plateDomain.getContainer(), plateDomain);
+                domains.add(new Pair<>(plateDomain, values));
+            }
+        }
         return domains;
     }
 
@@ -1050,13 +1059,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
         for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
             domains.add(domainInfo.getKey());
 
-        // see if there is a plate metadata domain associated with this protocol
-        if (AssayPlateMetadataService.getService(getDataType()) != null)
-        {
-            Domain plateDomain = AssayPlateMetadataService.getService(getDataType()).getPlateDataDomain(protocol);
-            if (plateDomain != null)
-                domains.add(plateDomain);
-        }
         Set<Container> defaultValueContainers = new HashSet<>();
         defaultValueContainers.add(protocol.getContainer());
         defaultValueContainers.addAll(protocol.getExpRunContainers());

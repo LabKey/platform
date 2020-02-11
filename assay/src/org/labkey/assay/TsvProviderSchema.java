@@ -5,10 +5,12 @@ import org.labkey.api.assay.AssayProviderSchema;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.security.User;
+import org.labkey.assay.plate.TsvPlateTypeHandler;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.util.Collections;
@@ -51,6 +53,9 @@ public class TsvProviderSchema extends AssayProviderSchema
 
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));
             addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Name")));
+            addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Type")));
+
+            addCondition(new SimpleFilter(FieldKey.fromParts("Type"), TsvPlateTypeHandler.TYPE));
 
             // need to override the title column on the base table
             setTitleColumn("Name");

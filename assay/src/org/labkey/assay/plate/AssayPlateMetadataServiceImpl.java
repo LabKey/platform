@@ -11,6 +11,7 @@ import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -75,7 +76,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                 {
                                     for (Map.Entry<String, Object> entry : wellGroup.getProperties().entrySet())
                                     {
-                                        DomainProperty domainProperty = ensureDomainProperty(domain, entry);
+                                        DomainProperty domainProperty = ensureDomainProperty(user, domain, entry);
                                         if (!wellProps.containsKey(domainProperty.getName()))
                                             wellProps.put(domainProperty.getName(), entry.getValue());
                                         else
@@ -267,11 +268,16 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domain;
     }
 
-    private DomainProperty ensureDomainProperty(Domain domain, Map.Entry<String, Object> prop)
+    private DomainProperty ensureDomainProperty(User user, Domain domain, Map.Entry<String, Object> prop) throws ExperimentException
     {
         DomainProperty domainProperty = domain.getPropertyByName(prop.getKey());
         if (domainProperty == null && prop.getValue() != null)
         {
+            // we are dynamically adding a new property to the plate data domain, ensure the user has at least
+            // the DesignAssayPermission
+            if (!domain.getContainer().hasPermission(user, DesignAssayPermission.class))
+                throw new ExperimentException("This import will create a new plate metadata field : " + prop.getKey() + ". Only users with the AssayDesigner role are allowed to do this.");
+
             _domainDirty = true;
             PropertyStorageSpec spec = new PropertyStorageSpec(prop.getKey(), JdbcType.valueOf(prop.getValue().getClass()));
             return domain.addProperty(spec);
