@@ -152,7 +152,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 protocol,
                 null,
                 FieldKey.fromParts("Run"),
-                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
+                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME),
+                AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME,
+                FieldKey.fromParts("LSID")
+        );
     }
 
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)

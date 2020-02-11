@@ -40,6 +40,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -98,6 +99,7 @@ import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
@@ -136,9 +138,9 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.UploadFileBasedModulePermission;
 import org.labkey.api.security.roles.FolderAdminRole;
 import org.labkey.api.security.roles.ProjectAdminRole;
@@ -7937,11 +7939,11 @@ public class AdminController extends SpringActionController
             {
                 if (ignoreSet.isEmpty() && !form.isManagedOnly())
                 {
-                    String currentYear = ModuleContext.formatVersion(20.000);
+                    String lowestSchemaVersion = ModuleContext.formatVersion(Constants.getLowestSchemaVersion());
                     ActionURL url = new ActionURL(ModulesAction.class, ContainerManager.getRoot());
-                    url.addParameter("ignore", "0.00," + currentYear);
+                    url.addParameter("ignore", "0.00," + lowestSchemaVersion);
                     url.addParameter("managedOnly", true);
-                    managedLink = PageFlowUtil.link("Click here to ignore 0.00, " + currentYear + " and unmanaged modules").href(url).getHtmlString();
+                    managedLink = PageFlowUtil.link("Click here to ignore 0.00, " + lowestSchemaVersion + " and unmanaged modules").href(url).getHtmlString();
                 }
                 else
                 {
@@ -8056,6 +8058,7 @@ public class AdminController extends SpringActionController
                                     ModuleContext moduleContext = pair.getKey();
                                     Module module = pair.getValue();
                                     List<String> schemas = moduleContext.getSchemaList();
+                                    Double schemaVersion = moduleContext.getSchemaVersion();
                                     boolean maybeReplaceable = false;
                                     if (module.getClass() == SimpleModule.class && schemas.isEmpty())
                                     {
@@ -8066,8 +8069,11 @@ public class AdminController extends SpringActionController
 
                                     return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
                                         TD(moduleContext.getName()),
-                                        TD(String.valueOf(moduleContext.getInstalledVersion())),
-                                        TD(moduleContext.getClassName()),
+
+                                        TD(null != module ? String.valueOf(module.getReleaseVersion()) : null),
+                                        TD(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : HtmlString.NBSP),
+
+                                            TD(moduleContext.getClassName()),
                                         TD(module.getSourcePath()),
                                         TD(StringUtils.join(schemas, ", ")),
                                         null == externalModulesDir ? null : TD(!maybeReplaceable ? HtmlString.NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
@@ -8107,18 +8113,35 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class ModuleVersionTestCase extends Assert
+    public static class SchemaVersionTestCase extends Assert
     {
         @Test
-        public void verifyMinimumModuleVersion()
+        public void verifyMinimumSchemaVersion()
         {
             List<Module> modulesTooLow = ModuleLoader.getInstance().getModules().stream()
                 .filter(ManageFilter.ManagedOnly::accept)
-                .filter(m->m.getVersion() > 0.00 && m.getVersion() < Constants.getPreviousReleaseVersion())
+                .filter(m->null != m.getSchemaVersion())
+                .filter(m->m.getSchemaVersion() > 0.00 && m.getSchemaVersion() < Constants.getLowestSchemaVersion())
                 .collect(Collectors.toList());
 
             if (!modulesTooLow.isEmpty())
-                fail("The following module" + (1 == modulesTooLow.size() ? " needs its version number" : "s need their version numbers") + " increased to " + Constants.getPreviousReleaseVersion() + ": " + modulesTooLow);
+                fail("The following module" + (1 == modulesTooLow.size() ? " needs its schema version" : "s need their schema versions") + " increased to " + ModuleContext.formatVersion(Constants.getLowestSchemaVersion()) + ": " + modulesTooLow);
+        }
+
+        @Test
+        public void modulesWithSchemaVersionButNoScripts()
+        {
+            // Flag all managed modules that have a schema version but don't have scripts. Their schema version should be null.
+            List<String> moduleNames = ModuleLoader.getInstance().getModules().stream()
+                .filter(m->m.getSchemaVersion() != null)
+                .filter(m->m.getSchemaVersion() != 20.3) // These will become null soon enough
+                .filter(m->!((DefaultModule)m).hasScripts())
+                .filter(m->!Set.of("rstudio", "Recipe").contains(m.getName()))  // Filter out oddball modules
+                .map(m->m.getName() + ": " + m.getSchemaVersion())
+                .collect(Collectors.toList());
+
+            if (!moduleNames.isEmpty())
+                fail("The following module" + (1 == moduleNames.size() ? "" : "s") + " should have a null schema version: " + moduleNames.toString());
         }
     }
 
@@ -8247,19 +8270,24 @@ public class AdminController extends SpringActionController
             if (feature == null)
                 throw new ApiUsageException("feature is required");
 
-            if (isPost())
-            {
-                ExperimentalFeatureService svc = ExperimentalFeatureService.get();
-                if (svc != null)
-                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled(), getUser());
-            }
+            ExperimentalFeatureService svc = ExperimentalFeatureService.get();
+            if (svc == null)
+                throw new IllegalStateException();
 
             Map<String, Object> ret = new HashMap<>();
-            ret.put("feature", form.getFeature());
-            ret.put("enabled", AppProps.getInstance().isExperimentalFeatureEnabled(form.getFeature()));
+            ret.put("feature", feature);
+
+            if (isPost())
+            {
+                ret.put("previouslyEnabled", svc.isFeatureEnabled(feature));
+                svc.setFeatureEnabled(feature, form.isEnabled(), getUser());
+            }
+
+            ret.put("enabled", svc.isFeatureEnabled(feature));
             return new ApiSimpleResponse(ret);
         }
     }
+
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)

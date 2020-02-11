@@ -128,7 +128,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
         return 20.000;
     }
@@ -481,40 +481,41 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                OntologyManager.TestCase.class,
-                DomainPropertyImpl.TestCase.class,
-                ExpDataClassDataTestCase.class,
-                ExpSampleSetTestCase.class,
-                UniqueValueCounterTestCase.class,
-                ExperimentServiceImpl.TestCase.class,
-                ExpDataTableImpl.TestCase.class,
-                ExperimentStressTest.class,
-                LineageTest.class
-                , LineagePerfTest.class));
+        return Set.of(
+            DomainPropertyImpl.TestCase.class,
+            ExpDataClassDataTestCase.class,
+            ExpDataTableImpl.TestCase.class,
+            ExpSampleSetTestCase.class,
+            ExperimentServiceImpl.TestCase.class,
+            ExperimentStressTest.class,
+            LineagePerfTest.class,
+            LineageTest.class,
+            OntologyManager.TestCase.class,
+            UniqueValueCounterTestCase.class
+        );
     }
 
     @NotNull
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-            Lsid.TestCase.class,
-            LSIDRelativizer.TestCase.class,
-            LsidUtils.TestCase.class,
+        return Set.of(
             GraphAlgorithms.TestCase.class,
+            LSIDRelativizer.TestCase.class,
+            Lsid.TestCase.class,
+            LsidUtils.TestCase.class,
             PropertyController.TestCase.class
-        ));
+        );
     }
 
     @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(
-                ExpSchema.SCHEMA_NAME,
-                DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
-                SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
+        return Set.of(
+            ExpSchema.SCHEMA_NAME,
+            DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
+            SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 

@@ -127,7 +127,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _name = null;
     private String _label = null;
     private String _description = null;
-    private double _version = 0.0;
+    private Double _schemaVersion = null;
     private double _requiredServerVersion = 0.0;
     private String _moduleDependenciesString = null;
     private String _url = null;
@@ -154,9 +154,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
-    private Boolean _consolidateScripts = null;
     private Boolean _manageVersion = null;
-    private String _labkeyVersion = null;
+    private String _releaseVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
@@ -307,20 +306,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _controllerNameToClass.put(controllerName, controllerClass);
     }
 
-
     @Override
     public String getTabName(ViewContext context)
     {
         return getName();
     }
-
-
-    @Override
-    public String getFormattedVersion()
-    {
-        return ModuleContext.formatVersion(getVersion());
-    }
-
 
     @Override
     public void beforeUpdate(ModuleContext moduleContext)
@@ -337,12 +327,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
+            assert null != getSchemaVersion();
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
             {
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
+                List<SqlScript> scripts = manager.getRecommendedScripts(getSchemaVersion());
 
                 if (!scripts.isEmpty())
                     SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
@@ -574,7 +565,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
     public String getName()
     {
@@ -595,25 +585,25 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _name = name;
     }
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
-    public double getVersion()
+    public @Nullable Double getSchemaVersion()
     {
-        return _version;
+        // For now, delegate to getVersion() for modules that still override that method
+        return -1 != getVersion() ? (Double)getVersion() : _schemaVersion;
     }
 
-    public final void setVersion(double version)
+    public final void setSchemaVersion(Double schemaVersion)
     {
         checkLocked();
-        if (0.0 == version)
+        if (null == schemaVersion)
             return;
-        if (0.0 != _version)
+        if (null != _schemaVersion)
         {
-            if (_version != version)
-                _log.error("Attempt to change version of module from " + _version + " to " + version + ".");
+            if (!_schemaVersion.equals(schemaVersion))
+                _log.error("Attempt to change version of module from " + _schemaVersion + " to " + schemaVersion + ".");
             return;
         }
-        _version = version;
+        _schemaVersion = schemaVersion;
     }
 
     public final double getRequiredServerVersion()
@@ -687,6 +677,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _maintainer;
     }
 
+    @SuppressWarnings("unused")
     public final void setMaintainer(String maintainer)
     {
         checkLocked();
@@ -959,28 +950,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings("unused")
-    public Boolean getConsolidateScripts()
-    {
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
-    public void setConsolidateScripts(Boolean consolidate)
-    {
-        _consolidateScripts = consolidate;
-    }
-
-    @Override
-    public boolean shouldConsolidateScripts()
-    {
-        // Default value depends on location -- we don't consolidate external modules
-        if (null == _consolidateScripts)
-            return !getSourcePath().contains("externalModules");
-
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
     public Boolean getManageVersion()
     {
         return _manageVersion;
@@ -992,26 +961,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
-
     @Override
     public boolean shouldManageVersion()
     {
-        // Default value depends on location -- we don't manage module versions in external modules
-        if (null == _manageVersion)
-            return !getSourcePath().contains("externalModules");
-
         return _manageVersion;
     }
 
-    public String getLabkeyVersion()
+    @Override
+    public @Nullable String getReleaseVersion()
     {
-        return _labkeyVersion;
+        return _releaseVersion;
     }
 
     @SuppressWarnings("unused")
-    public void setLabkeyVersion(String labkeyVersion)
+    public void setReleaseVersion(String releaseVersion)
     {
-        _labkeyVersion = labkeyVersion;
+        _releaseVersion = releaseVersion;
     }
 
     @Override
@@ -1020,9 +985,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Map<String, String> props = new LinkedHashMap<>();
 
         props.put("Module Class", getClass().getName());
-        props.put("Version", getFormattedVersion());
-        if (StringUtils.isNotBlank(getLabkeyVersion()))
-            props.put("LabKey Version", getLabkeyVersion());
+        props.put("Schema Version", getFormattedSchemaVersion());
+        if (StringUtils.isNotBlank(getReleaseVersion()))
+            props.put("Release Version", getReleaseVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
@@ -1263,7 +1228,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public String toString()
     {
-        return getName() + " " + getVersion() + " " + super.toString();
+        return getName() + " " + getReleaseVersion() + " " + getClass().getName();
     }
 
 
@@ -1487,11 +1452,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return getDependenciesFromFile();
     }
 
-    public static boolean isRuntimeJar(String name)
-    {
-        return name.endsWith(".jar") && !name.endsWith("javadoc.jar") && !name.endsWith("sources.jar");
-    }
-
     /**
      * List of .jar files that might be produced from module's own source.
      * This default set is not meant to be definitive for every module; not all of these jars
@@ -1659,5 +1619,44 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (_locked)
             throw new IllegalStateException("Module info setters can only be called in constructor.");
+    }
+
+    // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
+    // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
+
+    @Deprecated
+    public double getVersion()
+    {
+        return -1;
+    }
+
+    public final void setVersion(double version)
+    {
+        setSchemaVersion(version);
+    }
+
+    // consolidateScripts property is no longer read or used. But, leave getter and setter behind for now so Spring
+    // doesn't explode if it sees this property in an old module.
+    @SuppressWarnings("unused")
+    public Boolean getConsolidateScripts()
+    {
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public void setConsolidateScripts(Boolean consolidate)
+    {
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public String getLabkeyVersion()
+    {
+        return _releaseVersion;
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _releaseVersion = labkeyVersion;
     }
 }

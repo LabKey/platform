@@ -68,6 +68,11 @@ public class FileUtil
 
     public static boolean deleteDirectoryContents(File dir)
     {
+        return deleteDirectoryContents(dir, null);
+    }
+
+    public static boolean deleteDirectoryContents(File dir, @Nullable Logger log)
+    {
         if (dir.isDirectory())
         {
             String[] children = dir.list();
@@ -77,7 +82,7 @@ public class FileUtil
 
             for (String aChildren : children)
             {
-                boolean success = deleteDir(new File(dir, aChildren));
+                boolean success = deleteDir(new File(dir, aChildren), log);
                 if (!success)
                 {
                     return false;
@@ -111,18 +116,43 @@ public class FileUtil
      * delete all the contents and the directory */
     public static boolean deleteDir(File dir)
     {
+        return deleteDir(dir, null);
+    }
+
+    public static boolean deleteDir(File dir, Logger log)
+    {
+        log = log == null ? LOG : log;
+
         // Issue 22336: See note in FileUtils.isSymLink() about windows-specific bugs for symlinks:
         // http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FileUtils.html
         if (!Files.isSymbolicLink(dir.toPath()))
         {
-            boolean success = deleteDirectoryContents(dir);
+            boolean success = deleteDirectoryContents(dir, log);
             if (!success)
+                return false;
+        }
+
+        // The directory is now either a sym-link or empty, so delete it
+        for (int i = 0; i < 5; i++)
+        {
+            if (dir.delete())
+                return true;
+
+            // Issue 39579: Folder import sometimes fails to delete temp directory
+            // wait a little then try again
+            try
             {
+                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+                Thread.sleep(1000);
+            }
+            catch (InterruptedException e)
+            {
+                // give up
+                log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 return false;
             }
         }
 
-        // The directory is now either a sym-link or empty, so delete it
         return dir.delete();
     }
 
