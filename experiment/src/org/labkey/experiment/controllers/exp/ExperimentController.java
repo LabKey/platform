@@ -75,6 +75,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DuplicateMaterialException;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -626,10 +627,12 @@ public class ExperimentController extends SpringActionController
             QuerySettings settings = schema.getSettings(getViewContext(), "Material", _source.getName());
             QueryView queryView = new SampleSetContentsView(_source, schema, settings, errors);
 
-            DetailsView detailsView = new DetailsView(getMaterialSourceRegion(getViewContext()), _source.getRowId());
-            detailsView.getDataRegion().getDisplayColumn("Name").setURL(null);
-            detailsView.getDataRegion().getDisplayColumn("LSID").setVisible(false);
-            detailsView.getDataRegion().getDisplayColumn("MaterialLSIDPrefix").setVisible(false);
+            ExpSchema expSchema = (ExpSchema)QueryService.get().getUserSchema(getUser(), getContainer(), ExpSchema.SCHEMA_NAME);
+            TableInfo sampleSetsTable = expSchema.getTable(ExpSchema.TableType.SampleSets);
+
+            TableViewForm detailsViewForm = new TableViewForm(sampleSetsTable);
+            detailsViewForm.setPkVal(_source.getRowId());
+            DetailsView detailsView = new DetailsView(detailsViewForm);
             detailsView.setTitle("Sample Set Properties");
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
@@ -722,7 +725,6 @@ public class ExperimentController extends SpringActionController
                         ActionButton uploadButton = new ActionButton(importURL, "Import More Samples", ActionButton.Action.LINK);
                         uploadButton.setDisplayPermission(UpdatePermission.class);
                         detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(uploadButton);
-
                     }
                 }
             }
@@ -3440,33 +3442,6 @@ public class ExperimentController extends SpringActionController
                 return Collections.emptyList();
             }
         }
-    }
-
-    private DataRegion getMaterialSourceRegion(ViewContext model)
-    {
-        TableInfo tableInfo = ExperimentServiceImpl.get().getTinfoMaterialSource();
-
-        QuerySettings settings = new QuerySettings(model, "MaterialsSource");
-        settings.setSelectionKey(DataRegionSelection.getSelectionKey(tableInfo.getSchema().getName(), tableInfo.getName(), "SampleSets", settings.getDataRegionName()));
-
-        DataRegion dr = new DataRegion();
-        dr.setSettings(settings);
-        dr.addColumns(tableInfo.getUserEditableColumns());
-        dr.removeColumns("lastindexed");
-        dr.getDisplayColumn(0).setVisible(false);
-
-        dr.getDisplayColumn("idcol1").setVisible(false);
-        dr.getDisplayColumn("idcol2").setVisible(false);
-        dr.getDisplayColumn("idcol3").setVisible(false);
-        dr.getDisplayColumn("lsid").setVisible(false);
-        dr.getDisplayColumn("materiallsidprefix").setVisible(false);
-        dr.getDisplayColumn("parentcol").setVisible(false);
-
-        ActionURL url = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, model.getContainer());
-        dr.getDisplayColumn(1).setURL(url.toString() + "rowId=${RowId}");
-        dr.setShowRecordSelectors(getContainer().hasOneOf(getUser(), DeletePermission.class, UpdatePermission.class));
-
-        return dr;
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
