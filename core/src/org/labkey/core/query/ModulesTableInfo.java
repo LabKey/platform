@@ -214,6 +214,8 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
+            // This DisplayColumn's rendering assumes column type is Double; fail fast if it's something else
+            assert colInfo.getJdbcType() == JdbcType.DOUBLE;
             return new DisplayColumnDecorator(_factory.createRenderer(colInfo))
             {
                 {
