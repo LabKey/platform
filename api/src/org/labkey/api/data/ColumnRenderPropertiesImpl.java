@@ -26,6 +26,7 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -41,9 +42,9 @@ import java.util.regex.Pattern;
  */
 public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperties
 {
-    protected static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet(
+    protected static final Set<String> NON_EDITABLE_COL_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(
             "created", "createdBy", "modified", "modifiedBy",
-            "_ts", "entityId", "container", "lsid", "lastIndexed");
+            "_ts", "entityId", "container", "lsid", "lastIndexed"));
 
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
