@@ -62,6 +62,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -114,6 +115,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystemException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -1337,10 +1339,31 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
+    public List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user,
+                               Container current, SearchScope scope,
+                               @Nullable String sortField,
+                               int offset, int limit, boolean invertResults) throws IOException
+    {
+        List<String> results = new ArrayList<>();
+        doSearch(queryString, categories, user, current, scope, sortField, offset, limit, invertResults, false, new SearchResult(), results);
+        return results;
+    }
+
+    @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user,
                                Container current, SearchScope scope,
                                @Nullable String sortField,
                                int offset, int limit, boolean invertResults) throws IOException
+    {
+        SearchResult results = new SearchResult();
+        doSearch(queryString, categories, user, current, scope, sortField, offset, limit, invertResults, true, results, new ArrayList<>());
+        return results;
+    }
+
+    private void doSearch(String queryString, @Nullable List<SearchCategory> categories, User user,
+                          Container current, SearchScope scope,
+                          @Nullable String sortField,
+                          int offset, int limit, boolean invertResults, boolean fullResult, @NotNull SearchResult searchResult, @NotNull List<String> searchResultUniqueIds) throws IOException
     {
         InvocationTimer<SEARCH_PHASE> iTimer = TIMER.getInvocationTimer();
 
@@ -1460,7 +1483,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     topDocs = searcher.search(query, hitsToRetrieve, sort);
 
                 iTimer.setPhase(SEARCH_PHASE.processHits);
-                SearchResult result = createSearchResult(offset, hitsToRetrieve, topDocs, searcher);
+
+                if (fullResult)
+                    processSearchResult(offset, hitsToRetrieve, topDocs, searcher, searchResult);
+                else
+                    processSearchResultUniqueIds(offset, hitsToRetrieve, topDocs, searcher, searchResultUniqueIds);
+
 
 // Uncomment to log an explanation of each hit
 //                for (SearchHit hit : result.hits)
@@ -1468,9 +1496,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 //                    Explanation e = searcher.explain(query, hit.doc);
 //                    _log.info(e.toString());
 //                }
-
-
-                return result;
             }
             finally
             {
@@ -1483,8 +1508,14 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
-
     private SearchResult createSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher) throws IOException
+    {
+        SearchResult result = new SearchResult();
+        processSearchResult(offset, hitsToRetrieve, topDocs, searcher, result);
+        return result;
+    }
+
+    private void processSearchResult(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, SearchResult result) throws IOException
     {
         ScoreDoc[] hits = topDocs.scoreDocs;
 
@@ -1530,12 +1561,21 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             ret.add(hit);
         }
 
-        SearchResult result = new SearchResult();
         result.totalHits = topDocs.totalHits.value;
         result.hits = ret;
-        return result;
     }
 
+    private void processSearchResultUniqueIds(int offset, int hitsToRetrieve, TopDocs topDocs, IndexSearcher searcher, List<String> searchResultUniqueIds) throws IOException
+    {
+        ScoreDoc[] hits = topDocs.scoreDocs;
+
+        for (int i = offset; i < Math.min(hitsToRetrieve, hits.length); i++)
+        {
+            ScoreDoc scoreDoc = hits[i];
+            Document doc = searcher.doc(scoreDoc.doc);
+            searchResultUniqueIds.add(doc.get(FIELD_NAME.uniqueId.toString()));
+        }
+    }
 
     @Override
     protected void shutDown()
