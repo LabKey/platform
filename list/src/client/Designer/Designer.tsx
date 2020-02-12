@@ -63,8 +63,6 @@ export class App extends React.Component<any, State>
     componentDidMount() {
         // TODO: Query and set hasDesignListPermission based on whether user can save list designs
 
-        // const domainId = "2280"; // TODO: we should grab this from the url or elsewhere
-
         Ajax.request({
             url: ActionURL.buildURL('list', 'GetListProperties'),
             method: 'GET',
@@ -98,46 +96,6 @@ export class App extends React.Component<any, State>
                     })
             },
         });
-
-
-
-
-    }
-
-    render() {
-        const { isLoadingModel, hasDesignListPermission, message, model } = this.state; //TODO: add model once its in labkey-ui-components
-
-        if (message) {
-            return <Alert>{message}</Alert>
-        }
-
-        // set as loading until model is loaded and we know if the user has DesignListPerm
-        // toDo: use hasDesignListPermission
-        if (isLoadingModel || model === undefined) {
-            return <LoadingSpinner/>
-        }
-
-        // check if this is a create list case with a user that doesn't have permissions
-        // if (model.isNew() && !hasDesignListPermission) { //TODO: use this when ListModel is in place in labkey-ui-components
-        // if (!hasDesignListPermission) {
-        //     return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
-        // }
-
-
-        return (
-            <>
-                {/*{hasDesignListPermission*/}
-                {/*    ? this.renderDesignerView()*/}
-                {/*    : this.renderReadOnlyView()*/}
-                {/*}*/}
-
-
-                <ListDesignerPanels
-                    model={model}
-                />
-
-            </>
-        );
     }
 
     //TODO: revisit/uncomment once ListDesignerPanels is in place in labkey-ui-components
@@ -180,5 +138,41 @@ export class App extends React.Component<any, State>
         this.setState(() => ({dirty: false}), () => {
             window.location.href = returnUrl || defaultUrl;
         });
+    }
+
+    render() {
+        const { isLoadingModel, hasDesignListPermission, message, model } = this.state; //TODO: add model once its in labkey-ui-components
+
+        if (message) {
+            return <Alert>{message}</Alert>
+        }
+
+        // set as loading until model is loaded and we know if the user has DesignListPerm
+        // toDo: use hasDesignListPermission
+        if (isLoadingModel || model === undefined) {
+            return <LoadingSpinner/>
+        }
+
+        // check if this is a create list case with a user that doesn't have permissions
+        // if (model.isNew() && !hasDesignListPermission) { //TODO: use this when ListModel is in place in labkey-ui-components
+        // if (!hasDesignListPermission) {
+        //     return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
+        // }
+
+
+        return (
+            <>
+                {/*{hasDesignListPermission*/}
+                {/*    ? this.renderDesignerView()*/}
+                {/*    : this.renderReadOnlyView()*/}
+                {/*}*/}
+
+
+                <ListDesignerPanels
+                    model={model}
+                    onCancel={this.onCancel}
+                />
+            </>
+        );
     }
 }
