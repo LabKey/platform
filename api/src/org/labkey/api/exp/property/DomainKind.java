@@ -50,7 +50,7 @@ abstract public class DomainKind<T>  implements Handler<String>
 
     /**
      * Return a class of DomainKind's bean which carries domain specific properties.
-     * This class will used for marshalling and unmarshalling during Create and Save/Update Domain
+     * This class will used during marshalling and unmarshalling during Create and Save/Update Domain
      * @return Class of DomainKind's bean with domain specific properties
      */
     abstract public Class<? extends T> getTypeClass();
