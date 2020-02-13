@@ -24,13 +24,14 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayPipelineProvider;
 import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProviderSchema;
+import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySaveHandler;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.AssayTableMetadata;
@@ -41,7 +42,6 @@ import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
@@ -50,7 +50,6 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -104,9 +103,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     private static final Set<String> dateImportAliases;
 
     public static final Class<Module> assayModuleClass;
-
-    public static final String WELL_LOCATION_COLUMN_NAME = "WellLocation";
-    public static final String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
 
     static
     {
@@ -333,17 +329,18 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain runDomain = getRunDomain(protocol);
             if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (!update.getFields().stream().anyMatch(field -> field.getName().equals(PLATE_TEMPLATE_COLUMN_NAME)))
+                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME)))
                 {
-                    List<GWTPropertyDescriptor> newFields = new ArrayList<>(update.getFields());
-
-                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
                     plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
                     plateTemplate.setRequired(true);
                     plateTemplate.setShownInUpdateView(false);
 
+                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
                     newFields.add(plateTemplate);
+                    newFields.addAll(update.getFields());
+
                     update.setFields(newFields);
                 }
             }
@@ -351,12 +348,14 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
             Domain resultsDomain = getResultsDomain(protocol);
             if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
             {
-                if (!update.getFields().stream().anyMatch(field -> field.getName().equals(WELL_LOCATION_COLUMN_NAME)))
+                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)))
                 {
-                    List<GWTPropertyDescriptor> newFields = new ArrayList<>(update.getFields());
-                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
                     wellLocation.setShownInUpdateView(false);
+
+                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
                     newFields.add(wellLocation);
+                    newFields.addAll(update.getFields());
 
                     update.setFields(newFields);
                 }

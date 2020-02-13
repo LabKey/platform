@@ -28,21 +28,21 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
@@ -151,10 +151,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomain.setProvisioned(domain.isProvisioned());
             gwtDomains.add(gwtDomain);
 
+            DomainKind kind = domain.getDomainKind();
+
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
-            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
+            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(domain));
 
             for (DomainProperty prop : properties)
             {

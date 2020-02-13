@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayRunDomainKind;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateService;
@@ -104,12 +106,12 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 for (Map<String, Object> row : inserted)
                 {
                     // ensure the result data includes a wellLocation field with values like : A1, F12, etc
-                    if (row.containsKey(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME))
+                    if (row.containsKey(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME))
                     {
                         Object rowId = row.get("RowId");
                         if (rowId != null)
                         {
-                            PositionImpl well = new PositionImpl(container, String.valueOf(row.get(TsvAssayProvider.WELL_LOCATION_COLUMN_NAME)));
+                            PositionImpl well = new PositionImpl(container, String.valueOf(row.get(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)));
                             // need to adjust the column value to be 0 based to match the template locations
                             well.setColumn(well.getColumn()-1);
 
@@ -185,7 +187,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private PlateTemplate getPlateTemplate(ExpRun run, AssayProvider provider, ExpProtocol protocol)
     {
         Domain runDomain = provider.getRunDomain(protocol);
-        DomainProperty plateTemplate = runDomain.getPropertyByName(TsvAssayProvider.PLATE_TEMPLATE_COLUMN_NAME );
+        DomainProperty plateTemplate = runDomain.getPropertyByName(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME);
         if (plateTemplate != null)
         {
             Object templateLsid = run.getProperty(plateTemplate);
