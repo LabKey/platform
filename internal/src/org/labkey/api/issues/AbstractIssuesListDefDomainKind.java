@@ -32,6 +32,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.list.ListDefinition;
@@ -69,7 +70,7 @@ import java.util.stream.Collectors;
 /**
  * Created by davebradlee on 8/3/16.
  */
-public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
+public abstract class AbstractIssuesListDefDomainKind<T> extends AbstractDomainKind<JSONObject>
 {
     protected static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     protected static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -126,6 +127,12 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public Set<PropertyStorageSpec.Index> getPropertyIndices(Domain domain)
     {
         return INDEXES;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -269,7 +276,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;

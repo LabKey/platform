@@ -21,6 +21,7 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObject;
@@ -373,9 +374,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     @Nullable
     @Override
-    public AbstractIssuesListDefDomainKind getDomainKind()
+    public AbstractIssuesListDefDomainKind<JSONObject> getDomainKind()
     {
-        return (AbstractIssuesListDefDomainKind)super.getDomainKind();
+        return (AbstractIssuesListDefDomainKind<JSONObject>)super.getDomainKind();
     }
 
     @Nullable

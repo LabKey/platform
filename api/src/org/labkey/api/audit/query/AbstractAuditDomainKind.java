@@ -17,6 +17,7 @@ package org.labkey.api.audit.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -52,14 +53,13 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * User: klum
  * Date: 7/8/13
  */
-public abstract class AbstractAuditDomainKind extends DomainKind
+public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
 {
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -129,6 +129,12 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -228,7 +234,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         throw new UnsupportedOperationException();
     }

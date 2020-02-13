@@ -20,7 +20,6 @@ import org.labkey.api.data.Builder;
 import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Entity;
 import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.list.ListDefinition.BodySetting;
 import org.labkey.api.exp.list.ListDefinition.DiscussionSetting;
 import org.labkey.api.exp.list.ListDefinition.IndexSetting;
@@ -29,7 +28,7 @@ import org.labkey.api.util.UnexpectedException;
 
 import java.util.Date;
 
-public class ListDef extends Entity implements Cloneable, DomainKindProperties
+public class ListDef extends Entity implements Cloneable
 {
     protected int _listId; // Unique within this container
     protected String _name;

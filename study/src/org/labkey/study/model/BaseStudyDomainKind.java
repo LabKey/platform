@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -30,7 +31,7 @@ import java.util.Set;
  * Date: Jul 30, 2008
  * Time: 2:31:04 PM
  */
-public abstract class BaseStudyDomainKind extends AbstractDomainKind
+public abstract class BaseStudyDomainKind extends AbstractDomainKind<JSONObject>
 {
     public String getKindName()
     {
@@ -71,5 +72,11 @@ public abstract class BaseStudyDomainKind extends AbstractDomainKind
     {
         TableInfo table = getTableInfo();
         return table.getColumnNameSet();
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 }

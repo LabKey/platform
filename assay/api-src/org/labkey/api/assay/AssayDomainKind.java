@@ -23,6 +23,7 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -31,10 +32,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.security.DesignAssayPermission;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -50,7 +49,7 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
-public abstract class AssayDomainKind extends AbstractDomainKind
+public abstract class AssayDomainKind extends AbstractDomainKind<JSONObject>
 {
     private final String _namespacePrefix;
     private final Priority _priority;
@@ -64,6 +63,12 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     {
         _namespacePrefix = namespacePrefix;
         _priority = priority;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     public String getTypeLabel(Domain domain)
@@ -188,7 +193,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
         dd = dd.edit().setDescription(domain.getDescription()).build();

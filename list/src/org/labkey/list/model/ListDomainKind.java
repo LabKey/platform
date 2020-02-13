@@ -74,7 +74,7 @@ import static org.labkey.api.exp.property.DomainTemplate.findProperty;
  * Date: 5/8/13
  * Time: 4:12 PM
  */
-public abstract class ListDomainKind extends AbstractDomainKind
+public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindProperties>
 {
     /*
      * the columns common to all lists
@@ -331,11 +331,16 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user,
-        @Nullable TemplateInfo templateInfo)
+    public Class<? extends ListDomainKindProperties> getTypeClass()
+    {
+        return ListDomainKindProperties.class;
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        String keyName = arguments.containsKey("keyName") ? (String)arguments.get("keyName") : null;
+        String keyName = listProperties.getKeyName();
 
         if (name == null)
             throw new IllegalArgumentException("List name must not be null");
@@ -347,9 +352,9 @@ public abstract class ListDomainKind extends AbstractDomainKind
 
         KeyType keyType = getDefaultKeyType();
 
-        if (arguments.containsKey("keyType"))
+        if (null != listProperties.getKeyType())
         {
-            String rawKeyType = (String)arguments.get("keyType");
+            String rawKeyType = listProperties.getKeyType();
             if (EnumUtils.isValidEnum(KeyType.class, rawKeyType))
                 keyType = KeyType.valueOf(rawKeyType);
             else
@@ -415,7 +420,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         ListDefinition list = ListService.get().getList(container, domain.getName());
-        return ListManager.get().getList(container, list.getListId());
+        return ListManager.get().getListDomainKindProperties(container, list.getListId());
     }
 
     @Override

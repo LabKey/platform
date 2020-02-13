@@ -29,6 +29,7 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -63,7 +64,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/15/15
  */
-public class DataClassDomainKind extends AbstractDomainKind
+public class DataClassDomainKind extends AbstractDomainKind<JSONObject>
 {
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
@@ -101,6 +102,12 @@ public class DataClassDomainKind extends AbstractDomainKind
     public String getKindName()
     {
         return "DataClass";
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -201,7 +208,7 @@ public class DataClassDomainKind extends AbstractDomainKind
 
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)

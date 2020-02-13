@@ -20,6 +20,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
@@ -37,7 +38,7 @@ import java.util.Set;
 /**
  * Created by marty on 8/2/2017.
  */
-public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
+public abstract class ExtendedTableDomainKind<T> extends SimpleTableDomainKind<JSONObject>
 {
     protected abstract String getSchemaName();
     protected abstract String getNamespacePrefix();
@@ -67,7 +68,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain gwtDomain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         if (gwtDomain.getName() == null)
             throw new IllegalArgumentException("table name is required");

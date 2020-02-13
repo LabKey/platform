@@ -22,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -489,7 +490,18 @@ public class DomainUtil
         {
             throw new ValidationException(ve);
         }
-        Domain created = kind.createDomain(domain, arguments, container, user, templateInfo);
+        ObjectMapper mapper = new ObjectMapper();
+        Domain created;
+        if (JSONObject.class == kind.getTypeClass())
+        {
+            created = kind.createDomain(domain, arguments, container, user, templateInfo);
+        }
+        else
+        {
+            Object options = mapper.convertValue(arguments, kind.getTypeClass());
+            created = kind.createDomain(domain, options, container, user, templateInfo);
+        }
+
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
         return created;

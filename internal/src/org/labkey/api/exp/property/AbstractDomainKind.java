@@ -45,7 +45,6 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,7 +52,7 @@ import java.util.Set;
  * Date: Jun 4, 2010
  * Time: 3:29:46 PM
  */
-public abstract class AbstractDomainKind extends DomainKind
+public abstract class AbstractDomainKind<T> extends DomainKind<T>
 {
 
     public static final String OBJECT_URI_COLUMN_NAME = "lsid";
@@ -106,7 +105,7 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         return null;
     }

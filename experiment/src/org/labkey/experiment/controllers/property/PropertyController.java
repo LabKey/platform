@@ -402,11 +402,15 @@ public class PropertyController extends SpringActionController
     }
 
     /**
-     * This action gets the specific domain kind's properties (if any), and returns json in this format:
+     * If DomainKind specific properties are available, then json response is of this format:
      *  {
      *      "domainKindName":
      *      "options": {}
-     *      "domainDesign":{}
+     *      "domainDesign": {}
+     *  }
+     *  Otherwise, json response is of this format:
+     *  {
+     *      "domainDesign": {}
      *  }
      */
     @Marshal(Marshaller.Jackson)
