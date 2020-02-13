@@ -26,12 +26,12 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
 
     //Index Entire List as a Single Document
     protected String entireListTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
-    protected String entireListIndexSetting = String.valueOf(ListDefinition.IndexSetting.MetaData.getValue());
-    protected String entireListBodySetting = String.valueOf(ListDefinition.BodySetting.TextOnly.getValue());
+    protected int entireListIndexSetting = ListDefinition.IndexSetting.MetaData.getValue();
+    protected int entireListBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
     //Index Each Item as a Separate Document
     protected String eachItemTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
-    protected String eachItemBodySetting = String.valueOf(ListDefinition.BodySetting.TextOnly.getValue());
+    protected int eachItemBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
     protected boolean entireListIndex = false;
     protected String entireListBodyTemplate = null;
@@ -40,6 +40,7 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
     protected String eachItemBodyTemplate = null;
 
     protected boolean fileAttachmentIndex = false;
+
     public int getListId()
     {
         return listId;
@@ -170,22 +171,22 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
         this.entireListTitleTemplate = entireListTitleTemplate;
     }
 
-    public String getEntireListIndexSetting()
+    public int getEntireListIndexSetting()
     {
         return entireListIndexSetting;
     }
 
-    public void setEntireListIndexSetting(String entireListIndexSetting)
+    public void setEntireListIndexSetting(int entireListIndexSetting)
     {
         this.entireListIndexSetting = entireListIndexSetting;
     }
 
-    public String getEntireListBodySetting()
+    public int getEntireListBodySetting()
     {
         return entireListBodySetting;
     }
 
-    public void setEntireListBodySetting(String entireListBodySetting)
+    public void setEntireListBodySetting(int entireListBodySetting)
     {
         this.entireListBodySetting = entireListBodySetting;
     }
@@ -200,12 +201,12 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
         this.eachItemTitleTemplate = eachItemTitleTemplate;
     }
 
-    public String getEachItemBodySetting()
+    public int getEachItemBodySetting()
     {
         return eachItemBodySetting;
     }
 
-    public void setEachItemBodySetting(String eachItemBodySetting)
+    public void setEachItemBodySetting(int eachItemBodySetting)
     {
         this.eachItemBodySetting = eachItemBodySetting;
     }
