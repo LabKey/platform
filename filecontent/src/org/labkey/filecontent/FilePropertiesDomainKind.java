@@ -18,6 +18,7 @@ package org.labkey.filecontent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -37,7 +38,7 @@ import java.util.Set;
  * Date: May 4, 2010
  * Time: 4:24:36 PM
  */
-public class FilePropertiesDomainKind extends AbstractDomainKind
+public class FilePropertiesDomainKind extends AbstractDomainKind<JSONObject>
 {
     private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
             "name",
@@ -65,6 +66,12 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     public String getKindName()
     {
         return FileContentServiceImpl.NAMESPACE_PREFIX;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override

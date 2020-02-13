@@ -30,6 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -68,7 +69,7 @@ import java.util.stream.Collectors;
  * Date: May 4, 2007
  * Time: 1:01:43 PM
  */
-public abstract class DatasetDomainKind extends AbstractDomainKind
+public abstract class DatasetDomainKind extends AbstractDomainKind<JSONObject>
 {
     public final static String LSID_PREFIX = "StudyDataset";
 
@@ -155,6 +156,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
     }
 
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
+    }
 
     abstract public String getKindName();
 
@@ -315,7 +321,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user,
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user,
         @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();

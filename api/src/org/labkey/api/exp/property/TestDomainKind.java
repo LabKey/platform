@@ -25,6 +25,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -47,7 +48,7 @@ import java.util.Set;
  * For the StorageProvisioner integration tests, when the Study module is not present.
  *
  */
-public class TestDomainKind extends DomainKind
+public class TestDomainKind extends DomainKind<JSONObject>
 {
     public static final String NAME = "TestDomainKind";
     private static final String SCHEMA = DbSchema.TEMP_SCHEMA_NAME;
@@ -76,6 +77,12 @@ public class TestDomainKind extends DomainKind
     public String getKindName()
     {
         return NAME;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -164,7 +171,7 @@ public class TestDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         throw new UnsupportedOperationException();
     }

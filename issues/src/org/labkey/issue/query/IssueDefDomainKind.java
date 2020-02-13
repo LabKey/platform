@@ -16,6 +16,7 @@
 package org.labkey.issue.query;
 
 import com.google.common.collect.Sets;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -41,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Created by klum on 4/6/2016.
  */
-public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
+public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind<JSONObject>
 {
     public static final String NAME = "IssueDefinition";
     private static final Set<PropertyStorageSpec> REQUIRED_PROPERTIES;

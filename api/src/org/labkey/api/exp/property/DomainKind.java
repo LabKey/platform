@@ -42,12 +42,12 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-abstract public class DomainKind implements Handler<String>
+abstract public class DomainKind<T>  implements Handler<String>
 {
     abstract public String getKindName();
+    abstract public Class<? extends T> getTypeClass();
     abstract public String getTypeLabel(Domain domain);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
 
@@ -100,19 +100,19 @@ abstract public class DomainKind implements Handler<String>
      * @param domain The domain design.
      * @param container Container
      * @param user User
-     * @return Return Domain.
+     * @return Return DomainKindProperties.
      */
     abstract public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user);
 
     /**
      * Create a Domain appropriate for this DomainKind.
      * @param domain The domain design.
-     * @param arguments Any extra arguments.
+     * @param jSONObject Any domain kind specific properties/options.
      * @param container Container
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain domain, T jSONObject, Container container, User user, @Nullable TemplateInfo templateInfo);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.

@@ -847,7 +847,7 @@ public class IssuesController extends SpringActionController
                 }
 
                 IssueListDef issueListDef = formIssueListDef != null ? formIssueListDef : defaultIssueListDef;
-                AbstractIssuesListDefDomainKind kind = issueListDef.getDomainKind();
+                AbstractIssuesListDefDomainKind<JSONObject> kind = issueListDef.getDomainKind();
                 if (kind != null)
                 {
                     Map<String, Object> prevIssueProps = prevIssue == null ? Collections.emptyMap() : prevIssue.getProperties();

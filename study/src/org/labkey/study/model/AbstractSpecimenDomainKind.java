@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -53,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
+public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind<JSONObject>
 {
     protected static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Specimen
     protected static final String COLUMN = "Column";                       // Reserved field name for Vial, Specimen and Event
@@ -90,6 +91,12 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());   // TODO: view specimen grid
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override

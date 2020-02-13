@@ -26,6 +26,7 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -48,7 +49,7 @@ import java.util.Set;
 /**
  * Created by klum on 12/10/13.
  */
-public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
+public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind<JSONObject>
 {
     private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -116,6 +117,12 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     protected String getTableName()
     {
         return _tableName;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override

@@ -28,6 +28,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
@@ -53,7 +54,7 @@ import java.util.Set;
  *
  * A domain kind for {@link SimpleUserSchema.SimpleTable}s.
  */
-public class SimpleTableDomainKind extends AbstractDomainKind
+public class SimpleTableDomainKind<T> extends AbstractDomainKind<JSONObject>
 {
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -96,6 +97,12 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     public String getKindName()
     {
         return SimpleModule.NAMESPACE_PREFIX;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -252,7 +259,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String schemaName = (String)arguments.get("schemaName");
         String tableName = (String)arguments.get("tableName");
