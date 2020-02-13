@@ -1,7 +1,13 @@
 package org.labkey.assay.plate;
 
+import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -9,6 +15,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -40,6 +47,35 @@ public class AssayPlateDataDomainKind extends AssayDomainKind
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return getAssayReservedPropertyNames();
+    }
+
+    @Override
+    public Set<PropertyStorageSpec> getBaseProperties(Domain domain)
+    {
+        return Collections.singleton(new PropertyStorageSpec("Lsid", JdbcType.VARCHAR, 300).setNullable(false));
+    }
+
+    @Override
+    public DbScope getScope()
+    {
+        return getSchema().getScope();
+    }
+
+    @Override
+    public String getStorageSchemaName()
+    {
+        return AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME;
+    }
+
+    private DbSchema getSchema()
+    {
+        return DbSchema.get(getStorageSchemaName(), getSchemaType());
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 
     @Override

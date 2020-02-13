@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -103,6 +104,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     };
 
     private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
+    private JSONObject _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
@@ -551,7 +553,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 ExpData plateMetadata = datas.get(0);
                 AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateMetadata.getDataType());
                 if (svc != null)
-                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
+                {
+                    if (plateMetadata.getFile() != null || getRawPlateMetadata() != null)
+                    {
+                        svc.addAssayPlateMetadata(resultData, plateMetadata, getRawPlateMetadata(), container, user, run, provider, protocol, inserted, rowIdToLsidMap);
+                    }
+                    else
+                        throw new ExperimentException("There was no plate metadata JSON available for this run");
+                }
                 else
                     throw new ExperimentException("No PlateMetadataService registered for data type : " + plateMetadata.getDataType().toString());
             }
@@ -1120,6 +1129,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), protocol, run.getRowId());
         }
         return null;
+    }
+
+    @Nullable
+    public JSONObject getRawPlateMetadata()
+    {
+        return _rawPlateMetadata;
+    }
+
+    public void setRawPlateMetadata(JSONObject metadataJson)
+    {
+        _rawPlateMetadata = metadataJson;
     }
 
     /** Wrapper around a row's key->value map that can find the values based on any of the DomainProperty's potential

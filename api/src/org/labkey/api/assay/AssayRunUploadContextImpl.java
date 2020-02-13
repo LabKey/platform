@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
@@ -72,6 +73,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
     private final List<Map<String, Object>> _rawData;
+    private final JSONObject _rawPlateMetadata;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
     private final Map<?, String> _outputDatas;
@@ -108,6 +110,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
+        _rawPlateMetadata = factory._rawPlateMetadata;
 
         _uploadedData = factory._uploadedData;
 
@@ -304,6 +307,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public List<Map<String, Object>> getRawData()
     {
         return _rawData;
+    }
+
+    @Override
+    public @Nullable JSONObject getRawPlateMetadata()
+    {
+        return _rawPlateMetadata;
     }
 
     @NotNull

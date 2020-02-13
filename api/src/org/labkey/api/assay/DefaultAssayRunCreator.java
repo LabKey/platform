@@ -473,6 +473,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
+                dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
                 dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
             }
         }

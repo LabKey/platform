@@ -19,7 +19,6 @@ public class AssayPlateMetadataTemplateAction extends ExportAction
                 "-- this is not valid JSON but is an example of the required structure\n" +
                 "-- of the plate metadata file contents (removing the comments will make it valid)\n" +
                 "{\n" +
-                "  \"metadata\" : {\n" +
                 "    -- each layer in the plate template can be matched by name\n" +
                 "    -- with a JSON object, in this example both control and specimen\n" +
                 "    -- are defined in the plate template that will be selected in\n" +
@@ -39,7 +38,6 @@ public class AssayPlateMetadataTemplateAction extends ExportAction
                 "      \"SA03\" : {\"dilution\": 3.0, \"ID\" : 333},\n" +
                 "      \"SA04\" : {\"dilution\": 4.0, \"ID\" : 444}\n" +
                 "    }\n" +
-                "  }\n" +
                 "}";
         PageFlowUtil.streamFileBytes(getViewContext().getResponse(), "metadataTemplate.json", template.getBytes(StringUtilsLabKey.DEFAULT_CHARSET), true);
     }

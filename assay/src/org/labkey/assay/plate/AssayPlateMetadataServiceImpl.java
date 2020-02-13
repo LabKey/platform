@@ -3,6 +3,8 @@ package org.labkey.assay.plate;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayResultDomainKind;
 import org.labkey.api.assay.AssayRunDomainKind;
@@ -18,8 +20,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -28,12 +30,13 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
-import org.labkey.assay.TsvAssayProvider;
+import org.labkey.assay.TSVProtocolSchema;
 
 import java.io.File;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,7 +50,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private boolean _domainDirty;
 
     @Override
-    public void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
+    public void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, JSONObject rawPlateMetadata, Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
                                       List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
     {
         PlateTemplate template = getPlateTemplate(run, provider, protocol);
@@ -55,7 +58,11 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             try
             {
-                Map<String, PlateLayer> layers = parseDataFile(plateMetadata.getFile());
+                Map<String, PlateLayer> layers = parseDataFile(plateMetadata.getFile(), rawPlateMetadata);
+                if (layers.isEmpty())
+                {
+                    throw new ExperimentException("No plate information was parsed from the JSON metadata, please check the format of the metadata.");
+                }
                 Map<Position, Map<String, Object>> plateData = new HashMap<>();
                 Domain domain = ensureDomain(protocol);
 
@@ -73,12 +80,19 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                             PlateLayer plateLayer = layers.get(group.getType().name());
                             if (plateLayer != null)
                             {
+                                // ensure the column for the plate layer that we will insert the well group name into
+                                String layerName = plateLayer.getName() + TSVProtocolSchema.PLATE_DATA_LAYER_SUFFIX;
+                                ensureDomainProperty(user, domain, layerName, JdbcType.VARCHAR);
+
                                 PlateLayer.WellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
                                 if (wellGroup != null)
                                 {
+                                    // insert the well group name into the layer
+                                    wellProps.put(layerName, wellGroup.getName());
+
                                     for (Map.Entry<String, Object> entry : wellGroup.getProperties().entrySet())
                                     {
-                                        DomainProperty domainProperty = ensureDomainProperty(user, domain, entry);
+                                        DomainProperty domainProperty = ensureDomainProperty(user, domain, entry.getKey(), JdbcType.valueOf(entry.getValue().getClass()));
                                         if (!wellProps.containsKey(domainProperty.getName()))
                                             wellProps.put(domainProperty.getName(), entry.getValue());
                                         else
@@ -125,7 +139,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                                         propsToInsert.add(descriptorMap.get(k));
                                     }
                                 });
-                                jsonRow.put("RowId", rowId);
+                                jsonRow.put("Lsid", rowIdToLsidMap.get(rowId));
                                 jsonData.add(jsonRow);
                             }
                         }
@@ -138,33 +152,19 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
                 {
                     try
                     {
-                        final OntologyManager.ImportHelper helper = new OntologyManager.ImportHelper()
+                        AssayProtocolSchema schema = provider.createProtocolSchema(user, container, protocol, null);
+                        TableInfo tableInfo = schema.createTable(TSVProtocolSchema.PLATE_DATA_TABLE, null);
+                        if (tableInfo != null)
                         {
-                            @Override
-                            public String beforeImportObject(Map<String, Object> map) throws SQLException
-                            {
-                                Integer rowId = (Integer) map.get("RowId");
-                                if (rowId != null)
-                                {
-                                    return rowIdToLsidMap.get(rowId);
-                                }
-                                else
-                                    throw new SQLException("No RowId found in the row map.");
-                            }
+                            QueryUpdateService qus = tableInfo.getUpdateService();
+                            BatchValidationException errors = new BatchValidationException();
 
-                            @Override
-                            public void afterBatchInsert(int currentRow) throws SQLException
+                            qus.insertRows(user, container, jsonData, errors, null, null);
+                            if (errors.hasErrors())
                             {
+                                throw new ExperimentException(errors.getLastRowError());
                             }
-
-                            @Override
-                            public void updateStatistics(int currentRow) throws SQLException
-                            {
-                            }
-                        };
-
-                        int objectId = OntologyManager.ensureObject(container, resultData.getLSID());
-                        OntologyManager.insertTabDelimited(container, user, objectId, helper, new ArrayList<>(propsToInsert), jsonData, true);
+                        }
                     }
                     catch (Exception e)
                     {
@@ -199,17 +199,23 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return null;
     }
 
-    private Map<String, PlateLayer> parseDataFile(File dataFile) throws ExperimentException
+    private Map<String, PlateLayer> parseDataFile(File dataFile, JSONObject rawPlateMetadata) throws ExperimentException
     {
         try
         {
             ObjectMapper mapper = new ObjectMapper();
             Map<String, PlateLayer> layers = new CaseInsensitiveHashMap<>();
 
-            JsonNode rootNode = mapper.readTree(dataFile);
+            if (dataFile == null && rawPlateMetadata == null)
+                throw new ExperimentException("No plate metadata was uploaded");
 
-            JsonNode metadata = rootNode.get("metadata");
-            metadata.fields().forEachRemaining(layerEntry -> {
+            JsonNode rootNode;
+            if (dataFile != null)
+                rootNode = mapper.readTree(dataFile);
+            else
+                rootNode = mapper.readTree(rawPlateMetadata.toString());
+
+            rootNode.fields().forEachRemaining(layerEntry -> {
 
                 String layerName = layerEntry.getKey();
                 if (!layers.containsKey(layerName))
@@ -270,18 +276,18 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domain;
     }
 
-    private DomainProperty ensureDomainProperty(User user, Domain domain, Map.Entry<String, Object> prop) throws ExperimentException
+    private DomainProperty ensureDomainProperty(User user, Domain domain, String name, JdbcType type) throws ExperimentException
     {
-        DomainProperty domainProperty = domain.getPropertyByName(prop.getKey());
-        if (domainProperty == null && prop.getValue() != null)
+        DomainProperty domainProperty = domain.getPropertyByName(name);
+        if (domainProperty == null)
         {
             // we are dynamically adding a new property to the plate data domain, ensure the user has at least
             // the DesignAssayPermission
             if (!domain.getContainer().hasPermission(user, DesignAssayPermission.class))
-                throw new ExperimentException("This import will create a new plate metadata field : " + prop.getKey() + ". Only users with the AssayDesigner role are allowed to do this.");
+                throw new ExperimentException("This import will create a new plate metadata field : " + name + ". Only users with the AssayDesigner role are allowed to do this.");
 
             _domainDirty = true;
-            PropertyStorageSpec spec = new PropertyStorageSpec(prop.getKey(), JdbcType.valueOf(prop.getValue().getClass()));
+            PropertyStorageSpec spec = new PropertyStorageSpec(name, type);
             return domain.addProperty(spec);
         }
         return domainProperty;

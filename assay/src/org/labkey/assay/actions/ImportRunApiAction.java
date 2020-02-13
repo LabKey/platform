@@ -31,11 +31,14 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -251,6 +254,15 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
         }
 
+        if (form.getPlateMetadata() != null)
+        {
+            ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+            plateData.save(getUser());
+            outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
+
+            factory.setRawPlateMetadata(form.getPlateMetadata());
+        }
+
         factory.setInputDatas(inputData)
                 .setOutputDatas(outputData)
                 .setInputMaterials(inputMaterial)
@@ -307,6 +319,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _runFilePath;
         private String _module;
         private boolean _saveDataAsFile;
+        private JSONObject _plateMetadata;
 
         public JSONObject getJson()
         {
@@ -406,6 +419,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setDataRows(JSONArray dataRows)
         {
             _dataRows = dataRows;
+        }
+
+        public JSONObject getPlateMetadata()
+        {
+            return _plateMetadata;
+        }
+
+        public void setPlateMetadata(JSONObject plateMetadata)
+        {
+            _plateMetadata = plateMetadata;
         }
 
         public String getRunFilePath()

@@ -1,6 +1,7 @@
 package org.labkey.api.assay.plate;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
@@ -48,9 +49,10 @@ public interface AssayPlateMetadataService
      * result data has been imported
      *
      * @param plateMetadata the uploaded plate metadata
+     * @param rawPlateMetadata the raw plate metadata JSON when no file upload has occured, this would be the case for API access
      * @param inserted the inserted result data
      * @param rowIdToLsidMap a map of result data rowIds to result data lsids
      */
-    void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
-                                      ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
+    void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, JSONObject rawPlateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
+                               ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
 }
