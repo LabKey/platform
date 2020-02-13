@@ -47,7 +47,14 @@ import java.util.Set;
 abstract public class DomainKind<T>  implements Handler<String>
 {
     abstract public String getKindName();
+
+    /**
+     * Return a class of DomainKind's bean which carries domain specific properties.
+     * This class will used for marshalling and unmarshalling during Create and Save/Update Domain
+     * @return Class of DomainKind's bean with domain specific properties
+     */
     abstract public Class<? extends T> getTypeClass();
+
     abstract public String getTypeLabel(Domain domain);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
 
