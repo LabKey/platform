@@ -3119,6 +3119,31 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(DeletePermission.class)
+    public class GetDataDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
+    {
+        @Override
+        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
+        {
+            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
+        {
+
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(deleteRequest);
+
+            List<Integer> cannotDelete = ExperimentServiceImpl.get().getDataUsedAsInput(deleteForm.getIds(false));
+
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allData));
+        }
+    }
+
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(DeletePermission.class)
     public class GetMaterialDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
     {
         @Override
@@ -3132,26 +3157,11 @@ public class ExperimentController extends SpringActionController
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false));
-            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(canDelete);
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
-            canDelete.removeAll(cannotDelete);
-            List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-            List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
-            allMaterials.forEach((material) -> {
-                Map<String, Object> rowMap = Map.of("RowId", material.getRowId(), "Name", material.getName());
-                if (canDelete.contains(material.getRowId()))
-                    canDeleteRows.add(rowMap);
-                else
-                    cannotDeleteRows.add(rowMap);
-            });
-
-
-            Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-            partitionedIds.put("canDelete", canDeleteRows);
-            partitionedIds.put("cannotDelete", cannotDeleteRows);
-            return success(partitionedIds);
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials));
         }
     }
 
