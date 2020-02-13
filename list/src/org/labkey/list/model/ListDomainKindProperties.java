@@ -18,26 +18,28 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
     protected String description;
     protected Date lastIndexed;
 
-    protected ListDefinition.DiscussionSetting discussionSetting = ListDefinition.DiscussionSetting.None;
     protected boolean allowDelete = true;
     protected boolean allowUpload = true;
     protected boolean allowExport = true;
 
+    protected int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
+
+    //Index Entire List as a Single Document
+    protected String entireListTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
+    protected String entireListIndexSetting = String.valueOf(ListDefinition.IndexSetting.MetaData.getValue());
+    protected String entireListBodySetting = String.valueOf(ListDefinition.BodySetting.TextOnly.getValue());
+
+    //Index Each Item as a Separate Document
+    protected String eachItemTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
+    protected String eachItemBodySetting = String.valueOf(ListDefinition.BodySetting.TextOnly.getValue());
+
     protected boolean entireListIndex = false;
-    protected ListDefinition.IndexSetting entireListIndexSetting = ListDefinition.IndexSetting.MetaData;
-    protected ListDefinition.TitleSetting entireListTitleSetting = ListDefinition.TitleSetting.Standard;
-    protected String entireListTitleTemplate = null;
-    protected ListDefinition.BodySetting entireListBodySetting = ListDefinition.BodySetting.TextOnly;
     protected String entireListBodyTemplate = null;
 
     protected boolean eachItemIndex = false;
-    protected ListDefinition.TitleSetting eachItemTitleSetting = ListDefinition.TitleSetting.Standard;
-    protected String eachItemTitleTemplate = null;
-    protected ListDefinition.BodySetting eachItemBodySetting = ListDefinition.BodySetting.TextOnly;
     protected String eachItemBodyTemplate = null;
 
     protected boolean fileAttachmentIndex = false;
-
     public int getListId()
     {
         return listId;
@@ -118,16 +120,6 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
         this.lastIndexed = lastIndexed;
     }
 
-    public ListDefinition.DiscussionSetting getDiscussionSetting()
-    {
-        return discussionSetting;
-    }
-
-    public void setDiscussionSetting(ListDefinition.DiscussionSetting discussionSetting)
-    {
-        this.discussionSetting = discussionSetting;
-    }
-
     public boolean isAllowDelete()
     {
         return allowDelete;
@@ -158,34 +150,14 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
         this.allowExport = allowExport;
     }
 
-    public boolean isEntireListIndex()
+    public int getDiscussionSetting()
     {
-        return entireListIndex;
+        return discussionSetting;
     }
 
-    public void setEntireListIndex(boolean entireListIndex)
+    public void setDiscussionSetting(int discussionSetting)
     {
-        this.entireListIndex = entireListIndex;
-    }
-
-    public ListDefinition.IndexSetting getEntireListIndexSetting()
-    {
-        return entireListIndexSetting;
-    }
-
-    public void setEntireListIndexSetting(ListDefinition.IndexSetting entireListIndexSetting)
-    {
-        this.entireListIndexSetting = entireListIndexSetting;
-    }
-
-    public ListDefinition.TitleSetting getEntireListTitleSetting()
-    {
-        return entireListTitleSetting;
-    }
-
-    public void setEntireListTitleSetting(ListDefinition.TitleSetting entireListTitleSetting)
-    {
-        this.entireListTitleSetting = entireListTitleSetting;
+        this.discussionSetting = discussionSetting;
     }
 
     public String getEntireListTitleTemplate()
@@ -198,14 +170,54 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
         this.entireListTitleTemplate = entireListTitleTemplate;
     }
 
-    public ListDefinition.BodySetting getEntireListBodySetting()
+    public String getEntireListIndexSetting()
+    {
+        return entireListIndexSetting;
+    }
+
+    public void setEntireListIndexSetting(String entireListIndexSetting)
+    {
+        this.entireListIndexSetting = entireListIndexSetting;
+    }
+
+    public String getEntireListBodySetting()
     {
         return entireListBodySetting;
     }
 
-    public void setEntireListBodySetting(ListDefinition.BodySetting entireListBodySetting)
+    public void setEntireListBodySetting(String entireListBodySetting)
     {
         this.entireListBodySetting = entireListBodySetting;
+    }
+
+    public String getEachItemTitleTemplate()
+    {
+        return eachItemTitleTemplate;
+    }
+
+    public void setEachItemTitleTemplate(String eachItemTitleTemplate)
+    {
+        this.eachItemTitleTemplate = eachItemTitleTemplate;
+    }
+
+    public String getEachItemBodySetting()
+    {
+        return eachItemBodySetting;
+    }
+
+    public void setEachItemBodySetting(String eachItemBodySetting)
+    {
+        this.eachItemBodySetting = eachItemBodySetting;
+    }
+
+    public boolean isEntireListIndex()
+    {
+        return entireListIndex;
+    }
+
+    public void setEntireListIndex(boolean entireListIndex)
+    {
+        this.entireListIndex = entireListIndex;
     }
 
     public String getEntireListBodyTemplate()
@@ -226,36 +238,6 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
     public void setEachItemIndex(boolean eachItemIndex)
     {
         this.eachItemIndex = eachItemIndex;
-    }
-
-    public ListDefinition.TitleSetting getEachItemTitleSetting()
-    {
-        return eachItemTitleSetting;
-    }
-
-    public void setEachItemTitleSetting(ListDefinition.TitleSetting eachItemTitleSetting)
-    {
-        this.eachItemTitleSetting = eachItemTitleSetting;
-    }
-
-    public String getEachItemTitleTemplate()
-    {
-        return eachItemTitleTemplate;
-    }
-
-    public void setEachItemTitleTemplate(String eachItemTitleTemplate)
-    {
-        this.eachItemTitleTemplate = eachItemTitleTemplate;
-    }
-
-    public ListDefinition.BodySetting getEachItemBodySetting()
-    {
-        return eachItemBodySetting;
-    }
-
-    public void setEachItemBodySetting(ListDefinition.BodySetting eachItemBodySetting)
-    {
-        this.eachItemBodySetting = eachItemBodySetting;
     }
 
     public String getEachItemBodyTemplate()
