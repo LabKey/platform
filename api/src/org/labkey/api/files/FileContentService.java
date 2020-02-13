@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -283,12 +284,9 @@ public interface FileContentService
     String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container);
 
     /**
-     * Ensure an entry in the exp.data table exists for all files.
-     * @param qus QueryUpdateService for exp.data
-     * @param user user
-     * @param container container
+     * Ensure an entry in the exp.data table exists for all files in the container's file root.
      */
-    void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container);
+    void ensureFileData(@NotNull ExpDataTable table);
 
     /**
      * Allows a module to register a directory pattern to be checked in the files webpart in order to zip the matching directory before uploading.
