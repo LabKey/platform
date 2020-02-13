@@ -39,6 +39,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getExperimentalFeaturesURL();
     ActionURL getMaintenanceURL(URLHelper returnURL);
     ActionURL getModulesDetailsURL();
+    ActionURL getDeleteModuleURL(String moduleName);
 
     // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);

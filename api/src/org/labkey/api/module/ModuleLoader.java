@@ -294,19 +294,13 @@ public class ModuleLoader implements Filter
 
         private _Proxy(Object obj)
         {
+            Set<String> methodNames = Set.of("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory", "getDeletedModulesDirectory");
             this.delegate = obj;
             Arrays.stream(obj.getClass().getMethods()).forEach(method -> {
-                switch (method.getName())
-                {
-                    case "getExplodedModuleDirectories":
-                    case "getExplodedModules":
-                    case "updateModule":
-                    case "getExternalModulesDirectory":
+                if (methodNames.contains(method.getName()))
                         _methods.put(method.getName(), method);
-                }
             });
-            Arrays.asList("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory")
-                    .forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment"); });
+            methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment.  Could not find method: " + name); });
         }
 
         public Object invoke(Object proxy, Method m, Object[] args)
@@ -1519,10 +1513,17 @@ public class ModuleLoader implements Filter
     // Not transacted: SQL Server sp_dropapprole can't be called inside a transaction
     public void removeModule(ModuleContext context)
     {
+        removeModule(context, false);
+    }
+
+    public void removeModule(ModuleContext context, boolean deleteFiles)
+    {
         DbScope scope = _core.getSchema().getScope();
         SqlDialect dialect = _core.getSqlDialect();
 
         String moduleName = context.getName();
+        Module m = getModule(moduleName);
+
         _log.info("Deleting module " + moduleName);
         String sql = "DELETE FROM " + _core.getTableInfoSqlScripts() + " WHERE ModuleName = ? AND Filename " + dialect.getCaseInsensitiveLikeOperator() + " ?";
 
@@ -1534,6 +1535,13 @@ public class ModuleLoader implements Filter
         }
 
         Table.delete(getTableInfoModules(), context.getName());
+
+        if (null != m && deleteFiles)
+        {
+            FileUtil.deleteDir(m.getExplodedPath());
+            if (null != m.getZippedPath())
+                m.getZippedPath().delete();
+        }
     }
 
 

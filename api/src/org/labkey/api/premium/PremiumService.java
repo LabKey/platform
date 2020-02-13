@@ -60,6 +60,11 @@ public interface PremiumService
         return null;
     }
 
+    @Nullable
+    default ActionURL getDeleteModuleURL(String module)
+    {
+        return null;
+    }
 
     interface AntiVirusProvider
     {
