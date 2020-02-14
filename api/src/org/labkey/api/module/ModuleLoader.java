@@ -367,6 +367,15 @@ public class ModuleLoader implements Filter
 
             synchronized (_modulesLock)
             {
+                /* VERY IMPORTANT: we expect all these additions to file-based, non-schema modules! */
+                moduleList.forEach(module ->
+                {
+                    if (SimpleModule.class != module.getClass())
+                        throw new IllegalStateException("Can only add file-based module after startup");
+                    if (!module.getSchemaNames().isEmpty())
+                        throw new IllegalStateException("Can not add modules with schema after startup");
+                });
+
                 moduleList.forEach(module ->
                 {
                     // TODO @AdamR anything else
@@ -376,6 +385,26 @@ public class ModuleLoader implements Filter
                     _moduleMap.put(module.getName(), module);
                     _modules.add(module);
                     _moduleClassMap.put(module.getClass(), module);
+                });
+
+                initializeAndPruneModules(moduleList);
+
+                // initializeAndPruneModules() might have vetoed some modules, check that they are still in the map
+                moduleList.stream().filter(module -> _moduleMap.containsKey(module.getName())).forEach(m ->
+                {
+                    // Module startup
+                    try
+                    {
+                        ModuleContext ctx = getModuleContext(m);
+                        ctx.setModuleState(ModuleState.Starting);
+                        m.startup(ctx);
+                        ctx.setModuleState(ModuleState.Started);
+                    }
+                    catch (Throwable x)
+                    {
+                        setStartupFailure(x);
+                        _log.error("Failure starting module: " + m.getName(), x);
+                    }
                 });
             }
         }
@@ -449,7 +478,7 @@ public class ModuleLoader implements Filter
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
-        initializeAndPruneModules();
+        initializeAndPruneModules(getModules());
 
         if (!_duplicateModuleErrors.isEmpty())
         {
@@ -580,17 +609,17 @@ public class ModuleLoader implements Filter
     }
 
     /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
-    private void initializeAndPruneModules()
+    private void initializeAndPruneModules(List<Module> modules)
     {
-        ListIterator<Module> iterator = getModules().listIterator();
-        Module core = iterator.next();  // Skip core because we already initialized it
-        if (!core.equals(getCoreModule()))
-            throw new IllegalStateException("First module should be core");
+        ListIterator<Module> iterator = modules.listIterator();
+        Module core = getCoreModule();
 
         //initialize each module in turn
         while (iterator.hasNext())
         {
             Module module = iterator.next();
+            if (module == core)
+                continue;
 
             try
             {
@@ -655,9 +684,12 @@ public class ModuleLoader implements Filter
             _log.warn("Unable to initialize module " + name + " due to: " + t.getMessage());
         }
 
-        iterator.remove();
-        removeMapValue(current, _moduleClassMap);
-        removeMapValue(current, _moduleMap);
+        synchronized (_modulesLock)
+        {
+            iterator.remove();
+            removeMapValue(current, _moduleClassMap);
+            removeMapValue(current, _moduleMap);
+        }
     }
 
     private void removeMapValue(Module module, Map<?, Module> map)
@@ -1590,6 +1622,14 @@ public class ModuleLoader implements Filter
             FileUtil.deleteDir(m.getExplodedPath());
             if (null != m.getZippedPath())
                 m.getZippedPath().delete();
+        }
+
+        synchronized (_modulesLock)
+        {
+            removeMapValue(m, _moduleClassMap);
+            removeMapValue(m, _moduleMap);
+            _moduleContextMap.remove(context.getName());
+            _modules.remove(m);
         }
     }
 
