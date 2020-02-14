@@ -61,6 +61,12 @@ public interface PremiumService
     }
 
     @Nullable
+    default ActionURL getCreateModuleURL()
+    {
+        return null;
+    }
+
+    @Nullable
     default ActionURL getDeleteModuleURL(String module)
     {
         return null;

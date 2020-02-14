@@ -188,11 +188,17 @@ public class ModuleLoader implements Filter
 
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
     private final List<HtmlString> _duplicateModuleErrors = new ArrayList<>();
-    private Map<String, ModuleContext> _contextMap = new HashMap<>();
+
+
+    // these four collections are protected by _modulesLock
+    // all names start with _modules to make it easier to search for usages
+    private final Object _modulesLock = new Object();
+    private Map<String, ModuleContext> _moduleContextMap = new HashMap<>();
     private Map<String, Module> _moduleMap = new CaseInsensitiveHashMap<>();
     private Map<Class<? extends Module>, Module> _moduleClassMap = new HashMap<>();
-
     private List<Module> _modules;
+
+
     private MultiValuedMap<String, ConfigProperty> _configPropertyMap = new HashSetValuedHashMap<>();
 
     public ModuleLoader()
@@ -263,19 +269,22 @@ public class ModuleLoader implements Filter
         ConvertHelper.getPropertyEditorRegistrar();
 
         //load module instances using Spring
-        _modules = loadModules(explodedModuleDirs);
+        List<Module> moduleList = loadModules(explodedModuleDirs);
 
         //sort the modules by dependencies
-        ModuleDependencySorter sorter = new ModuleDependencySorter();
-        _modules = sorter.sortModulesByDependencies(_modules);
-
-        for (Module module : _modules)
+        synchronized (_modulesLock)
         {
-            _moduleMap.put(module.getName(), module);
-            _moduleClassMap.put(module.getClass(), module);
+            ModuleDependencySorter sorter = new ModuleDependencySorter();
+            _modules = sorter.sortModulesByDependencies(moduleList);
+
+            for (Module module : _modules)
+            {
+                _moduleMap.put(module.getName(), module);
+                _moduleClassMap.put(module.getClass(), module);
+            }
         }
 
-        return _modules;
+        return getModules();
     }
 
     // Proxy to teleport ExplodedModuleService from outer ClassLoader to inner
@@ -294,7 +303,7 @@ public class ModuleLoader implements Filter
 
         private _Proxy(Object obj)
         {
-            Set<String> methodNames = Set.of("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory", "getDeletedModulesDirectory");
+            Set<String> methodNames = Set.of("getExplodedModuleDirectories", "getExplodedModules", "updateModule", "getExternalModulesDirectory", "getDeletedModulesDirectory", "newModule");
             this.delegate = obj;
             Arrays.stream(obj.getClass().getMethods()).forEach(method -> {
                 if (methodNames.contains(method.getName()))
@@ -327,20 +336,48 @@ public class ModuleLoader implements Filter
     /* this is called if new archives are exploded (for existing or new modules) */
     public void updateModuleDirectories(List<Map.Entry<File,File>> list)
     {
-        /* TODO if we add new elements to list of modules, we would need to synchronize something */
-        Map<File,Module> map = new HashMap<>();
-        for (Module module : getModules())
-            map.put(module.getExplodedPath(), module);
-
-        for (var e : list)
+        synchronized (_modulesLock)
         {
-            var dir = e.getKey();
-            var archive = e.getValue();
-            var module = map.get(dir);
-            if (null == module || null==archive)
-                continue;
-            if (!archive.equals(module.getZippedPath()))
-                module.setZippedPath(archive);
+            /* TODO if we add new elements to list of modules, we would need to synchronize something */
+            Map<File, Module> map = new HashMap<>();
+            for (Module module : getModules())
+                map.put(module.getExplodedPath(), module);
+
+            List<Map.Entry<File,File>> newModules = new ArrayList<>();
+
+            for (var e : list)
+            {
+                var dir = e.getKey();
+                var archive = e.getValue();
+                var module = map.get(dir);
+
+                if (null == module)
+                {
+                    newModules.add(e);
+                }
+                else
+                {
+                    if (null != archive && !archive.equals(module.getZippedPath()))
+                        module.setZippedPath(archive);
+                    // TODO @AdamR anything else
+                }
+            }
+
+            List<Module> moduleList = loadModules(newModules);
+
+            synchronized (_modulesLock)
+            {
+                moduleList.forEach(module ->
+                {
+                    // TODO @AdamR anything else
+                    ModuleContext context = new ModuleContext(module);
+                    saveModuleContext(context);
+                    _moduleContextMap.put(context.getName(), context);
+                    _moduleMap.put(module.getName(), module);
+                    _modules.add(module);
+                    _moduleClassMap.put(module.getClass(), module);
+                });
+            }
         }
     }
 
@@ -375,10 +412,10 @@ public class ModuleLoader implements Filter
         File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
         if (!webinfModulesDir.isDirectory() && null == service)
             throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
-        File[] modules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
-        if (null != modules)
+        File[] webInfModules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+        if (null != webInfModules)
         {
-            Arrays.stream(modules)
+            Arrays.stream(webInfModules)
                     .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
                     .forEach(e -> explodedModuleDirs.add(e));
         }
@@ -386,7 +423,8 @@ public class ModuleLoader implements Filter
         doInitWithSourceModule(explodedModuleDirs);
 
         // set the project source root before calling .initialize() on modules
-        Module coreModule = _modules.isEmpty() ? null : _modules.get(0);
+        var modules = getModules();
+        Module coreModule = modules.isEmpty() ? null : modules.get(0);
         if (coreModule == null || !DefaultModule.CORE_MODULE_NAME.equals(coreModule.getName()))
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
@@ -436,46 +474,51 @@ public class ModuleLoader implements Filter
         // module schemas via the tables in its own "labkey" schema.
         upgradeLabKeySchemaInExternalDataSources();
 
-        for (ModuleContext context : getAllModuleContexts())
-            _contextMap.put(context.getName(), context);
-
+        ModuleContext coreCtx;
         List<String> modulesRequiringUpgrade = new LinkedList<>();
         List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
         List<String> downgradedModules = new LinkedList<>();
 
-        //Make sure we have a context for all modules, even ones we haven't seen before
-        for (Module module : _modules)
+        synchronized (_modulesLock)
         {
-            ModuleContext context = _contextMap.get(module.getName());
+            for (ModuleContext context : getAllModuleContexts())
+                _moduleContextMap.put(context.getName(), context);
 
-            if (null == context)
+            //Make sure we have a context for all modules, even ones we haven't seen before
+            for (Module module : modules)
             {
-                context = new ModuleContext(module);
-                _contextMap.put(module.getName(), context);
+                ModuleContext context = _moduleContextMap.get(module.getName());
+
+                if (null == context)
+                {
+                    context = new ModuleContext(module);
+                    _moduleContextMap.put(module.getName(), context);
+                }
+
+                if (context.needsUpgrade(module.getSchemaVersion()))
+                {
+                    context.setModuleState(ModuleState.InstallRequired);
+                    modulesRequiringUpgrade.add(context.getName());
+                }
+                else
+                {
+                    context.setModuleState(ModuleState.ReadyToStart);
+
+                    // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
+                    // The scenario is a schema in an external data source that needs to be installed or upgraded.
+                    List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(module);
+                    additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
+
+                    // Also check for module "downgrades" so we can warn admins, #30773
+                    if (context.isDowngrade(module.getSchemaVersion()))
+                        downgradedModules.add(context.getName());
+                }
             }
 
-            if (context.needsUpgrade(module.getSchemaVersion()))
-            {
-                context.setModuleState(ModuleState.InstallRequired);
-                modulesRequiringUpgrade.add(context.getName());
-            }
-            else
-            {
-                context.setModuleState(ModuleState.ReadyToStart);
-
-                // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
-                // The scenario is a schema in an external data source that needs to be installed or upgraded.
-                List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(module);
-                additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
-
-                // Also check for module "downgrades" so we can warn admins, #30773
-                if (context.isDowngrade(module.getSchemaVersion()))
-                    downgradedModules.add(context.getName());
-            }
+            coreCtx = _moduleContextMap.get(DefaultModule.CORE_MODULE_NAME);
         }
 
         // Core module should be upgraded and ready-to-run
-        ModuleContext coreCtx = _contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToStart == coreCtx.getModuleState());
 
         if (WarningService.get().showAllWarnings() || !downgradedModules.isEmpty())
@@ -539,7 +582,7 @@ public class ModuleLoader implements Filter
     /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
     private void initializeAndPruneModules()
     {
-        ListIterator<Module> iterator = _modules.listIterator();
+        ListIterator<Module> iterator = getModules().listIterator();
         Module core = iterator.next();  // Skip core because we already initialized it
         if (!core.equals(getCoreModule()))
             throw new IllegalStateException("First module should be core");
@@ -573,11 +616,6 @@ public class ModuleLoader implements Filter
             }
         }
 
-        // Make the collections of modules read-only since we expect no further modifications
-        _modules = Collections.unmodifiableList(_modules);
-        _moduleMap = Collections.unmodifiableMap(_moduleMap);
-        _moduleClassMap = Collections.unmodifiableMap(_moduleClassMap);
-
         // All modules are initialized (controllers are registered), so initialize the controller-related maps
         ViewServlet.initialize();
         ModuleLoader.getInstance().initControllerToModule();
@@ -586,9 +624,12 @@ public class ModuleLoader implements Filter
     // Check a module's dependencies and throw on the first one that's not present (i.e., it was removed because its initialize() failed)
     private void verifyDependencies(Module module)
     {
-        for (String dependency : module.getModuleDependenciesAsSet())
-            if (!_moduleMap.containsKey(dependency))
-                throw new ModuleDependencyException(dependency);
+        synchronized (_modulesLock)
+        {
+            for (String dependency : module.getModuleDependenciesAsSet())
+                if (!_moduleMap.containsKey(dependency))
+                    throw new ModuleDependencyException(dependency);
+        }
     }
 
     private static class ModuleDependencyException extends ConfigurationException
@@ -1158,7 +1199,10 @@ public class ModuleLoader implements Filter
             _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedSchemaVersion());
         }
 
-        _contextMap.put(coreModule.getName(), coreContext);
+        synchronized (_modulesLock)
+        {
+            _moduleContextMap.put(coreModule.getName(), coreContext);
+        }
 
         try
         {
@@ -1257,7 +1301,10 @@ public class ModuleLoader implements Filter
 
     public ModuleContext getModuleContext(Module module)
     {
-        return _contextMap.get(module.getName());
+        synchronized (_modulesLock)
+        {
+            return _moduleContextMap.get(module.getName());
+        }
     }
 
     @Override
@@ -1429,7 +1476,7 @@ public class ModuleLoader implements Filter
             {
                 _backgroundThreadsStarted = true;
 
-                for (Module module : _modules)
+                for (Module module : getModules())
                 {
                     try
                     {
@@ -1457,7 +1504,9 @@ public class ModuleLoader implements Filter
      */
     private void completeStartup()
     {
-        for (Module m : _modules)
+        var modules = getModules();
+
+        for (Module m : modules)
         {
             // Module startup
             try
@@ -1476,7 +1525,7 @@ public class ModuleLoader implements Filter
 
         // Run any deferred upgrades, after all of the modules are in the Running state so that we
         // know they've registered their listeners
-        for (Module m : _modules)
+        for (Module m : modules)
         {
             try
             {
@@ -1685,27 +1734,38 @@ public class ModuleLoader implements Filter
     @Override
     public void destroy()
     {
+
         // In the case of a startup failure, _modules may be null. We want to allow a context reload to succeed in this case,
         // since the reload may contain the code change to fix the problem
-        if (_modules != null)
+        var modules = getModules();
+        if (modules != null)
         {
-            _modules.forEach(Module::destroy);
+            modules.forEach(Module::destroy);
         }
     }
 
     public boolean hasModule(String name)
     {
-        return _moduleMap.containsKey(name);
+        synchronized (_modulesLock)
+        {
+            return _moduleMap.containsKey(name);
+        }
     }
 
     public Module getModule(String name)
     {
-        return _moduleMap.get(name);
+        synchronized (_modulesLock)
+        {
+            return _moduleMap.get(name);
+        }
     }
 
     public <M extends Module> M getModule(Class<M> moduleClass)
     {
-        return (M) _moduleClassMap.get(moduleClass);
+        synchronized (_modulesLock)
+        {
+            return (M) _moduleClassMap.get(moduleClass);
+        }
     }
 
     public Module getCoreModule()
@@ -1716,18 +1776,24 @@ public class ModuleLoader implements Filter
     /** @return all known modules, sorted in dependency order */
     public List<Module> getModules()
     {
-        return _modules;
+        synchronized (_modulesLock)
+        {
+            return List.copyOf(_modules);
+        }
     }
 
     public List<Module> getModules(boolean userHasEnableRestrictedModulesPermission)
     {
-        if (userHasEnableRestrictedModulesPermission)
-            return getModules();
+        synchronized (_modulesLock)
+        {
+            if (userHasEnableRestrictedModulesPermission)
+                return getModules();
 
-        return _modules
-            .stream()
-            .filter(module -> !module.getRequireSitePermission())
-            .collect(Collectors.toList());
+            return _modules
+                    .stream()
+                    .filter(module -> !module.getRequireSitePermission())
+                    .collect(Collectors.toList());
+        }
     }
 
     /**
@@ -1747,13 +1813,16 @@ public class ModuleLoader implements Filter
     // Returns a set of data source names representing all external data sources that are required for module schemas
     public Set<String> getAllModuleDataSourceNames()
     {
-        // Find all the external data sources that modules require
-        Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
+        synchronized (_modulesLock)
+        {
+            // Find all the external data sources that modules require
+            Set<String> allModuleDataSourceNames = new LinkedHashSet<>();
 
-        for (Module module : _modules)
-            allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
+            for (Module module : _modules)
+                allModuleDataSourceNames.addAll(getModuleDataSourceNames(module));
 
-        return allModuleDataSourceNames;
+            return allModuleDataSourceNames;
+        }
     }
 
     public Set<String> getModuleDataSourceNames(Module module)
@@ -1783,12 +1852,15 @@ public class ModuleLoader implements Filter
     // CONSIDER: ModuleUtil.java
     public Collection<String> getModuleSummaries(Container c)
     {
-        LinkedList<String> list = new LinkedList<>();
+        synchronized (_modulesLock)
+        {
+            LinkedList<String> list = new LinkedList<>();
 
-        for (Module m : _modules)
-            list.addAll(m.getSummary(c));
+            for (Module m : _modules)
+                list.addAll(m.getSummary(c));
 
-        return list;
+            return list;
+        }
     }
 
     public void initControllerToModule()
@@ -1995,7 +2067,7 @@ public class ModuleLoader implements Filter
 
     public Resource getResource(Path path)
     {
-        for (Module m : _modules)
+        for (Module m : getModules())
         {
             Resource r = m.getModuleResource(path);
             if (r != null && r.exists())

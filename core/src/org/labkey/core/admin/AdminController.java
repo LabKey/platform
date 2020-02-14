@@ -8002,8 +8002,10 @@ public class AdminController extends SpringActionController
             if (hasAdminOpsPerm)
             {
                 deleteInstructions.append(unsafe("<br><br>")).append(
-                    "To delete a module that does not have a delete link, first delete its .module file and exploded module directory from your Labkey deployment directory, and restart the server. " +
-                    "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.");
+                        "To delete a module that does not have a delete link, first delete its .module file and exploded module directory from your Labkey deployment directory, and restart the server. " +
+                        "Module files are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.")
+                    .append(unsafe("<br><br>")).append(
+                        PageFlowUtil.link("Create new empty module").href(getCreateURL()));
             }
 
             HtmlStringBuilder docLink = HtmlStringBuilder.of("");
@@ -8129,6 +8131,15 @@ public class AdminController extends SpringActionController
                 return url;
             url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
             url.addParameter("name", name);
+            return url;
+        }
+
+        private ActionURL getCreateURL()
+        {
+            ActionURL url = PremiumService.get().getCreateModuleURL();
+            if (null != url)
+                return url;
+            url = new ActionURL(CreateModuleAction.class, ContainerManager.getRoot());
             return url;
         }
 
@@ -8268,7 +8279,7 @@ public class AdminController extends SpringActionController
         @Override
         public ModelAndView getView(ModuleForm moduleForm, BindException errors) throws Exception
         {
-            return new HtmlView(HtmlString.of("This is a premium feature, please refer to our documenatation on www.labkey.org"));
+            return new HtmlView(HtmlString.of("This is a premium feature, please refer to our documentation on www.labkey.org"));
         }
 
         @Override
@@ -8277,6 +8288,24 @@ public class AdminController extends SpringActionController
             return root;
         }
     }
+
+
+    @RequiresPermission(AdminOperationsPermission.class)
+    public static class CreateModuleAction extends SimpleViewAction<ModuleForm>
+    {
+        @Override
+        public ModelAndView getView(ModuleForm moduleForm, BindException errors) throws Exception
+        {
+            return new HtmlView(HtmlString.of("This is a premium feature, please refer to our documentation on www.labkey.org"));
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 
     public static class ExperimentalFeaturesForm
     {
