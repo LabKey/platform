@@ -1573,7 +1573,9 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             ScoreDoc scoreDoc = hits[i];
             Document doc = searcher.doc(scoreDoc.doc);
-            searchResultUniqueIds.add(doc.get(FIELD_NAME.uniqueId.toString()));
+            String id = doc.get(FIELD_NAME.uniqueId.toString());
+            if (id != null)
+                searchResultUniqueIds.add(id);
         }
     }
 
