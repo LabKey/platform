@@ -47,9 +47,9 @@ import java.util.Set;
  */
 public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRunUploadForm> extends AbstractPlateBasedAssayProvider implements DilutionAssayProvider<FormType>
 {
-    public AbstractDilutionAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
+    public AbstractDilutionAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLsidPrefix, AssayDataType dataType, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLsidPrefix, dataType, declaringModule);
     }
 
     @NotNull
@@ -61,7 +61,9 @@ public abstract class AbstractDilutionAssayProvider<FormType extends DilutionRun
                 protocol,
                 FieldKey.fromParts(DilutionDataHandler.DILUTION_INPUT_MATERIAL_DATA_PROPERTY, "Property"),
                 FieldKey.fromParts("Run"),
-                FieldKey.fromParts("RowId"));
+                FieldKey.fromParts("RowId"),
+                "RowId",
+                null);
     }
 
     @Override

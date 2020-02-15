@@ -326,7 +326,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
-            assert null != getSchemaVersion();
+            if (null == getSchemaVersion())
+            {
+                // TODO: Change to an assert or exception once we no longer support old version methods/properties
+                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
+                return;
+            }
+
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
@@ -1609,6 +1615,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
     // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
 
+    @Deprecated
     public double getVersion()
     {
         return -1;

@@ -57,7 +57,7 @@ public class SampleMindedImportTest extends BaseWebDriverTest
     @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
-        File specimenDir = new File(TestFileUtils.getLabKeyRoot() + "/sampledata/study/specimens");
+        File specimenDir = TestFileUtils.getSampleData("study/specimens");
         File specimenArchive = new File(specimenDir, "SampleMindedExport.specimens");
         specimenArchive.delete();
 
