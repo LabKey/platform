@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
@@ -26,6 +27,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -45,10 +48,13 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     private int _columns;
     private int _createdBy;
     private long _created;
+    private int _modifiedBy;
+    private long _modified;
     private String _dataFileId;
     private String _type;
 
     private Map<WellGroup.Type, Map<String, WellGroupTemplateImpl>> _groups;
+    private List<WellGroupTemplateImpl> _deletedGroups;
 
     public PlateTemplateImpl()
     {
@@ -81,7 +87,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     }
 
     @Override
-    public WellGroupTemplate addWellGroup(String name, WellGroup.Type type, List<Position> positions)
+    public WellGroupTemplateImpl addWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return storeWellGroup(createWellGroup(name, type, positions));
     }
@@ -96,7 +102,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return storeWellGroup(template);
     }
 
-    protected WellGroupTemplate storeWellGroup(WellGroupTemplateImpl template)
+    protected WellGroupTemplateImpl storeWellGroup(WellGroupTemplateImpl template)
     {
         if (_groups == null)
             _groups = new HashMap<>();
@@ -155,11 +161,22 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     }
 
     @Override
+    public @Nullable WellGroupTemplateImpl getWellGroup(int rowId)
+    {
+        return getWellGroupTemplates(null)
+                .stream()
+                .filter(wg -> wg.getRowId() != null && wg.getRowId() == rowId)
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
     public List<? extends WellGroupTemplateImpl> getWellGroups(WellGroup.Type type)
     {
         return getWellGroupTemplates(type);
     }
 
+    @Nullable
     public WellGroupTemplateImpl getWellGroupTemplate(WellGroup.Type type, String name)
     {
         if (_groups == null)
@@ -170,6 +187,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         return typedGroups.get(name);
     }
 
+    @NotNull
     public List<? extends WellGroupTemplateImpl> getWellGroupTemplates(@Nullable WellGroup.Type type)
     {
         List<WellGroupTemplateImpl> allGroupTemplates = new ArrayList<>();
@@ -198,8 +216,7 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         {
             for (Map.Entry<WellGroup.Type, Map<String, WellGroupTemplateImpl>> templateEntry : _groups.entrySet())
             {
-                Map<String, WellGroupTemplate> templateMap = new HashMap<>();
-                templateMap.putAll(templateEntry.getValue());
+                Map<String, WellGroupTemplate> templateMap = new HashMap<>(templateEntry.getValue());
                 wellgroupTypeMap.put(templateEntry.getKey(), templateMap);
             }
         }
@@ -284,6 +301,26 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         _createdBy = createdBy;
     }
 
+    public Date getModified()
+    {
+        return new Date(_modified);
+    }
+
+    public void setModified(Date modified)
+    {
+        _modified = modified.getTime();
+    }
+
+    public int getModifiedBy()
+    {
+        return _modifiedBy;
+    }
+
+    public void setModifiedBy(int modifiedBy)
+    {
+        _modifiedBy = modifiedBy;
+    }
+
     public String getDataFileId()
     {
         return _dataFileId;
@@ -337,5 +374,31 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
     public void setType(String type)
     {
         _type = type;
+    }
+
+    public void markWellGroupForDeletion(WellGroupTemplateImpl wellGroup)
+    {
+        if (wellGroup.getRowId() == null || wellGroup.getRowId() <= 0)
+            throw new IllegalArgumentException();
+
+        WellGroupTemplateImpl existing = getWellGroup(wellGroup.getRowId());
+        if (existing == null)
+            throw new IllegalArgumentException("WellGroup doesn't exist on plate: " + wellGroup.getRowId());
+
+        Map<String, WellGroupTemplateImpl> groupsForType = _groups.get(existing.getType());
+        if (groupsForType != null)
+            groupsForType.remove(existing.getName());
+
+        if (_deletedGroups == null)
+            _deletedGroups = new ArrayList<>();
+
+        wellGroup.delete();
+        _deletedGroups.add(wellGroup);
+    }
+
+    @NotNull
+    public List<? extends WellGroupTemplateImpl> getDeletedWellGroups()
+    {
+        return _deletedGroups == null ? Collections.emptyList() : Collections.unmodifiableList(_deletedGroups);
     }
 }

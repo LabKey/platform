@@ -35,6 +35,8 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     private Integer _rowId;
     private String _name;
     private WellGroup.Type _type;
+    boolean _deleted;
+
     protected Integer _plateId;
     protected List<? extends Position> _positions;
 
@@ -55,13 +57,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
         List<? extends Position> sortedPositions = new ArrayList<>(positions);
-        sortedPositions.sort((Comparator<Position>) (first, second) ->
-        {
-            int comp = first.getColumn() - second.getColumn();
-            if (comp == 0)
-                comp = first.getRow() - second.getRow();
-            return comp;
-        });
+        sortedPositions.sort((Comparator<Position>) Comparator.comparingInt(Position::getColumn).thenComparingInt(Position::getRow));
         return sortedPositions;
     }
 
@@ -69,6 +65,12 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     public List<Position> getPositions()
     {
         return Collections.unmodifiableList(_positions);
+    }
+
+    @Override
+    public void setPositions(List<? extends Position> positions)
+    {
+        _positions = sortPositions(positions);
     }
 
     @Override
@@ -102,11 +104,6 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         if (_positions.size() == 1)
             return _positions.get(0).getDescription();
         return _positions.get(0).getDescription() + "-" + _positions.get(_positions.size() - 1).getDescription();
-    }
-
-    public void setPositions(List<? extends Position> positions)
-    {
-        _positions = sortPositions(positions);
     }
 
     @Override
@@ -150,5 +147,14 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         if (_positions.isEmpty())
             return null;
         return _positions.get(0);
+    }
+
+    /**
+     * Mark the well group as deleted.
+     * @see PlateTemplateImpl#markWellGroupForDeletion(WellGroupTemplateImpl)
+     */
+    public void delete()
+    {
+        _deleted = true;
     }
 }

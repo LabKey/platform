@@ -87,6 +87,7 @@
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Type</td>
         <td class="labkey-column-header">&nbsp;</td>
     </tr>
 <%
@@ -97,6 +98,7 @@
 %>
     <tr class="<%=getShadeRowClass(index)%>">
         <td><%= h(template.getName()) %></td>
+        <td><%= h(template.getType()) %></td>
         <td>
         <%
             if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))

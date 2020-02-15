@@ -108,16 +108,22 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
     }
 
     @Override
+    public @Nullable WellGroupImpl getWellGroup(int rowId)
+    {
+        return (WellGroupImpl)super.getWellGroup(rowId);
+    }
+
+    @Override
     protected WellGroupTemplateImpl createWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return new WellGroupImpl(this, name, type, positions);
     }
 
     @Override
-    protected WellGroupTemplate storeWellGroup(WellGroupTemplateImpl template)
+    protected WellGroupImpl storeWellGroup(WellGroupTemplateImpl template)
     {
         ((WellGroupImpl) template).setPlate(this);
-        return super.storeWellGroup(template);
+        return (WellGroupImpl)super.storeWellGroup(template);
     }
 
     @Override

@@ -92,7 +92,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.001;
+        return 20.002;
     }
 
     @Override
@@ -260,7 +260,8 @@ public class AssayModule extends SpringModule
         return Set.of(
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
-            AssayProviderSchema.TestCase.class
+            AssayProviderSchema.TestCase.class,
+            PlateManager.TestCase.class
         );
     }
 }

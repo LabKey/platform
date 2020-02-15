@@ -61,6 +61,12 @@ public class PropertySetImpl implements PropertySet
         _properties.put(name, value);
     }
 
+    @Override
+    public void setProperties(Map<String, Object> properties)
+    {
+        _properties = new HashMap<>(properties);
+    }
+
     public Map<String, Object> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
