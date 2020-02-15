@@ -16,12 +16,13 @@
 
 package org.labkey.assay.plate;
 
+import org.apache.commons.math3.analysis.function.Exp;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.AfterClass;
-import org.labkey.assay.query.AssayDbSchema;
 import org.junit.Test;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.plate.AbstractPlateTypeHandler;
 import org.labkey.api.assay.plate.Plate;
@@ -51,10 +52,14 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -64,6 +69,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.query.AssayDbSchema;
 
 import java.sql.SQLException;
@@ -72,14 +78,18 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -246,30 +256,65 @@ public class PlateManager implements PlateService
     }
 
     @Override
-    public @NotNull List<PlateTemplateImpl> getPlateTemplatesUsedByAssay(@NotNull Container c, @NotNull ExpProtocol protocol)
+    public List<? extends ExpRun> getRunsUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate)
     {
-        // TODO: caching
-        // TODO: need to get the property descriptor used on the run for the PlateTemplate -- faked as 91454 below
-        SQLFragment sql = new SQLFragment()
-                .append("SELECT * FROM assay.plate p\n")
-                .append("WHERE p.template = true\n")
-                .append("AND p.container = ?\n").add(c.getId())
-                .append("AND p.rowid IN (")
-                .append("  SELECT op.floatvalue AS PlateTemplateId\n")
-                .append("  FROM exp.experimentrun r\n")
-                .append("  INNER JOIN exp.object o ON o.objecturi = r.lsid\n")
-                .append("  INNER JOIN exp.objectproperty op On o.objectid = op.objectid\n")
-                .append("  WHERE r.protocollsid IN (\n")
-                .append("    SELECT lsid\n")
-                .append("    FROM exp.protocol\n")
-                .append("    WHERE protocol.rowid = ?\n").add(protocol.getRowId())
-                .append("  )\n")
-                .append("AND op.propertyid = 91454")
-                .append(")");
+        SqlSelector se = selectRunUsingPlateTemplate(c, plateTemplate);
+        if (se == null)
+            return emptyList();
 
-        SqlSelector se = new SqlSelector(ExperimentService.get().getSchema(), sql);
-        List<Integer> templateIds = se.getArrayList(Integer.class);
-        return getPlateTemplates(c, templateIds);
+        Collection<Integer> runIds = se.getCollection(Integer.class);
+        return ExperimentService.get().getExpRuns(runIds);
+    }
+
+    @Override
+    public int getRunCountUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate)
+    {
+        SqlSelector se = selectRunUsingPlateTemplate(c, plateTemplate);
+        if (se == null)
+            return 0;
+
+        return (int)se.getRowCount();
+    }
+
+    private @Nullable SqlSelector selectRunUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate)
+    {
+        if (plateTemplate == null)
+            return null;
+
+        // first, get the list of GPAT protocols in the container
+        AssayProvider gpat = AssayService.get().getProvider(TsvAssayProvider.NAME);
+        if (gpat == null)
+            return null;
+
+        List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(c, gpat);
+
+        // next, for the plate metadata enabled assays,
+        // get the set of "PlateTemplate" PropertyDescriptors from the RunDomains of those assays
+        List<PropertyDescriptor> plateTemplateProps = protocols.stream()
+                .filter(p -> gpat.isPlateMetadataEnabled(p))
+                .map(p -> gpat.getRunDomain(p))
+                .filter(Objects::nonNull)
+                .map(r -> r.getPropertyByName(TsvAssayProvider.PLATE_TEMPLATE_PROPERTY_NAME))
+                .filter(Objects::nonNull)
+                .map(DomainProperty::getPropertyDescriptor)
+                .collect(toUnmodifiableList());
+
+        if (plateTemplateProps.isEmpty())
+            return null;
+
+        List<Integer> plateTemplatePropIds = plateTemplateProps.stream().map(PropertyDescriptor::getPropertyId).collect(Collectors.toUnmodifiableList());
+
+        // query for runs with that property that point to the plate by LSID
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT r.rowId\n")
+                .append("FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append("\n")
+                .append("INNER JOIN ").append(OntologyManager.getTinfoObject(), "o").append(" ON o.objectUri = r.lsid\n")
+                .append("INNER JOIN ").append(OntologyManager.getTinfoObjectProperty(), "op").append(" ON op.objectId = o.objectId\n")
+                .append("WHERE r.container = ?\n").add(c.getId())
+                .append("AND op.propertyId ").appendInClause(plateTemplatePropIds, AssayDbSchema.getInstance().getSchema().getSqlDialect()).append("\n")
+                .append("AND op.stringvalue = ?").add(plateTemplate.getLSID());
+
+        return new SqlSelector(ExperimentService.get().getSchema(), sql);
     }
 
     @Override
@@ -430,7 +475,7 @@ public class PlateManager implements PlateService
             setProperties(plate.getContainer(), wellgroup);
             List<PositionImpl> groupPositions = groupIdToPositions.get(wellgroup.getRowId());
 
-            wellgroup.setPositions(groupPositions != null ? groupPositions : Collections.emptyList());
+            wellgroup.setPositions(groupPositions != null ? groupPositions : emptyList());
             sortedGroups.add(wellgroup);
         }
 

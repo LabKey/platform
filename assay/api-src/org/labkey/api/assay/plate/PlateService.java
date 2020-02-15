@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -119,7 +120,9 @@ public interface PlateService
     @NotNull
     List<? extends PlateTemplate> getPlateTemplates(Container container);
 
-    @NotNull List<? extends PlateTemplate> getPlateTemplatesUsedByAssay(@NotNull Container c, @NotNull ExpProtocol protocol);
+    int getRunCountUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
+
+    List<? extends ExpRun> getRunsUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
 
     /**
      * Creates a new plate template.

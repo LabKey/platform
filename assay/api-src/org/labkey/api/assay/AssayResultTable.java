@@ -16,9 +16,6 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.assay.plate.PlateMetadataForeignKey;
-import org.labkey.api.assay.plate.PlateService;
-import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
@@ -279,12 +276,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var propsCol = createPropertiesColumn();
         addColumn(propsCol);
 
-        if (_provider.supportsPlateMetadata())
-        {
-            var metadataCol = createPlateMetadataColumn();
-            addColumn(metadataCol);
-        }
-
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -331,28 +322,6 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         return col;
     }
 
-    protected BaseColumnInfo createPlateMetadataColumn()
-    {
-        var lsidColumn = getColumn("LSID");
-
-        List<? extends PlateTemplate> templates = PlateService.get().getPlateTemplatesUsedByAssay(_protocol.getContainer(), _protocol);
-
-        var alias = "PlateMetadata";
-        var ret = new AliasedColumn(this, alias, lsidColumn);
-        ret.setFk(new PlateMetadataForeignKey(getUserSchema(), _provider, _protocol, templates));
-        ret.setDescription("Plate metadata");
-        ret.setCalculated(true);
-        ret.setUserEditable(false);
-        ret.setReadOnly(true);
-        ret.setShownInDetailsView(false);
-        ret.setShownInInsertView(false);
-        ret.setShownInUpdateView(false);
-        ret.setIsUnselectable(true);
-        ret.setHidden(true);
-        ret.setConceptURI("http://www.labkey.org/exp/xml#" + alias);
-        ret.setPropertyURI("http://www.labkey.org/exp/xml#" + alias);
-        return ret;
-    }
 
     private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)
     {
