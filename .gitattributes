@@ -1299,7 +1299,6 @@ api/src/org/labkey/api/security/permissions/AbstractPermission.java -text
 api/src/org/labkey/api/security/permissions/AbstractSitePermission.java -text
 api/src/org/labkey/api/security/permissions/AdminOperationsPermission.java -text
 api/src/org/labkey/api/security/permissions/AdminPermission.java -text
-api/src/org/labkey/api/security/permissions/AdminReadPermission.java -text
 api/src/org/labkey/api/security/permissions/AnalystPermission.java -text
 api/src/org/labkey/api/security/permissions/ApplicationAdminPermission.java -text
 api/src/org/labkey/api/security/permissions/BrowserDeveloperPermission.java -text
@@ -1973,7 +1972,6 @@ core/api-src/org/labkey/api/admin/sitevalidation/SiteValidationService.java -tex
 core/api-src/org/labkey/api/admin/sitevalidation/SiteValidatorDescriptor.java -text
 core/api-src/org/labkey/api/admin/TableXmlUtils.java -text
 core/module.properties -text
-core/postcss.config.js -text
 core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
@@ -2120,13 +2118,10 @@ core/src/org/labkey/core/filters/SetCharacterEncodingFilter.java -text
 core/src/org/labkey/core/junit/JunitManager.java -text
 core/src/org/labkey/core/junit/JunitRunner.java -text
 core/src/org/labkey/core/LabKeyDbSchema.java -text
-core/src/org/labkey/core/login/configuration.jsp -text
-core/src/org/labkey/core/login/configureDbLogin.jsp -text
 core/src/org/labkey/core/login/DbLoginAuthenticationProvider.java -text
 core/src/org/labkey/core/login/DbLoginManager.java -text
 core/src/org/labkey/core/login/finishResetPassword.jsp -text
 core/src/org/labkey/core/login/PasswordRule.java -text
-core/src/org/labkey/core/login/pickAuthLogo.jsp -text
 core/src/org/labkey/core/login/resetPassword.jsp -text
 core/src/org/labkey/core/login/setPassword.jsp -text
 core/src/org/labkey/core/login/termsOfUse.jsp -text
