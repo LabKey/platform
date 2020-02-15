@@ -336,6 +336,9 @@ public class ModuleLoader implements Filter
     /* this is called if new archives are exploded (for existing or new modules) */
     public void updateModuleDirectories(List<Map.Entry<File,File>> list)
     {
+        // NOTE: I would like to put call to ContextListener.fireModuleChangeEvent() here
+        // but really the caller knows which modules have just been changed
+
         synchronized (_modulesLock)
         {
             /* TODO if we add new elements to list of modules, we would need to synchronize something */
@@ -358,7 +361,9 @@ public class ModuleLoader implements Filter
                 else
                 {
                     if (null != archive && !archive.equals(module.getZippedPath()))
+                    {
                         module.setZippedPath(archive);
+                    }
                     // TODO @AdamR anything else
                 }
             }
@@ -1631,6 +1636,8 @@ public class ModuleLoader implements Filter
             _moduleContextMap.remove(context.getName());
             _modules.remove(m);
         }
+
+        ContextListener.fireModuleChangeEvent(context.getName());
     }
 
 

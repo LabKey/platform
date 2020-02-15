@@ -35,6 +35,7 @@ public class ContextListener implements ServletContextListener
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
+    private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
 
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
@@ -157,5 +158,26 @@ public class ContextListener implements ServletContextListener
     {
         for (NewInstallCompleteListener listener : _newInstallCompleteListeners)
             listener.onNewInstallComplete();
+    }
+
+
+    public static void addModuleChangeListener(ModuleChangeListener l)
+    {
+        _moduleChangeListeners.add(l);
+    }
+
+    public static void fireModuleChangeEvent(String moduleName)
+    {
+        for (var l : _moduleChangeListeners.toArray(new ModuleChangeListener[0]))
+        {
+            try
+            {
+                l.onModuleChanged(moduleName);
+            }
+            catch (Throwable t)
+            {
+                ExceptionUtil.logExceptionToMothership(null, t);
+            }
+        }
     }
 }
