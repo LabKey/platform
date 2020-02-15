@@ -52,25 +52,25 @@ public class CollectionUtils
     private static final Class<?> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
 
     private static final Set<Class<?>> UNMODIFIABLE_LIST_CLASSES = Set.of(
-        Collections.emptyList().getClass(),
-        Collections.singletonList(null).getClass(),
-        List.of().getClass(),  // ImmutableCollections.ListN
-        List.of(1).getClass()  // ImmutableCollections.List12
+            Collections.emptyList().getClass(),
+            Collections.singletonList(null).getClass(),
+            List.of().getClass(),  // ImmutableCollections.ListN
+            List.of(1).getClass()  // ImmutableCollections.List12
     );
 
     private static final Set<Class<?>> UNMODIFIABLE_SET_CLASSES = Set.of(
-        Collections.emptySet().getClass(),
-        Collections.singleton(null).getClass(),
-        Set.of().getClass(),  // ImmutableCollections.SetN
-        Set.of(1).getClass()  // ImmutableCollections.Set12
+            Collections.emptySet().getClass(),
+            Collections.singleton(null).getClass(),
+            Set.of().getClass(),  // ImmutableCollections.SetN
+            Set.of(1).getClass()  // ImmutableCollections.Set12
     );
 
     private static final Set<Class<?>> UNMODIFIABLE_MAP_CLASSES = Set.of(
-        Collections.unmodifiableMap(Collections.emptyMap()).getClass(),
-        Collections.singletonMap(null, null).getClass(),
-        Collections.emptyMap().getClass(),
-        Map.of().getClass(),   // ImmutableCollections.MapN
-        Map.of(1, 1).getClass()  // ImmutableCollections.Map1
+            Collections.unmodifiableMap(Collections.emptyMap()).getClass(),
+            Collections.singletonMap(null, null).getClass(),
+            Collections.emptyMap().getClass(),
+            Map.of().getClass(),   // ImmutableCollections.MapN
+            Map.of(1, 1).getClass()  // ImmutableCollections.Map1
     );
 
     // Returns true if value is an Array or value is a Collection or Map that is not a known immutable type; otherwise,

@@ -326,7 +326,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
-            assert null != getSchemaVersion();
+            if (null == getSchemaVersion())
+            {
+                // TODO: Change to an assert or exception once we no longer support old version methods/properties
+                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
+                return;
+            }
+
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
