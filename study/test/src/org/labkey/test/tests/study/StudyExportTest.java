@@ -45,11 +45,10 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 25)
 public class StudyExportTest extends StudyManualTest
 {
-    private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
     private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";
 
-    private final String DATASET_DATA_FILE = TestFileUtils.getLabKeyRoot() + "/sampledata/dataLoading/excel/dataset_data.xls";
+    private static final File DATASET_DATA_FILE = TestFileUtils.getSampleData("dataLoading/excel/dataset_data.xls");
     private static final String HIDDEN_DATASET = "URS-1: Screening Urinalysis";
     private static final String MODIFIED_DATASET = "Quality Control Report"; // Empty dataset.
     private static final String REORDERED_DATASET1 = "LLS-1: Screening Local Lab Results (Page 1)";
@@ -76,7 +75,7 @@ public class StudyExportTest extends StudyManualTest
         createStudyManually();
 
         // import the specimens and wait for both datasets & specimens to load
-        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_A), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 2);
+        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_A, ARCHIVE_TEMP_DIR, getFolderName(), 2);
         specimenImporter.importAndWaitForComplete();
 
         // TODO: Call afterManualCreate()?
@@ -380,7 +379,7 @@ public class StudyExportTest extends StudyManualTest
         BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
-        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
+        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_B, ARCHIVE_TEMP_DIR, getFolderName(), 4);
         importer.importAndWaitForComplete();
 
         // verify that comments remain after second specimen load
@@ -634,8 +633,7 @@ public class StudyExportTest extends StudyManualTest
 
         waitForElement(Locator.xpath("//input[@name='uploadFormElement']"), WAIT_FOR_JAVASCRIPT);
 
-        File datasetFile = new File(DATASET_DATA_FILE);
-        setFormElement(Locator.name("uploadFormElement"), datasetFile);
+        setFormElement(Locator.name("uploadFormElement"), DATASET_DATA_FILE);
 
         waitForElement(Locator.xpath("//span[@id='button_Import']"), WAIT_FOR_JAVASCRIPT);
 

@@ -40,6 +40,7 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -8233,19 +8234,24 @@ public class AdminController extends SpringActionController
             if (feature == null)
                 throw new ApiUsageException("feature is required");
 
-            if (isPost())
-            {
-                ExperimentalFeatureService svc = ExperimentalFeatureService.get();
-                if (svc != null)
-                    svc.setFeatureEnabled(form.getFeature(), form.isEnabled(), getUser());
-            }
+            ExperimentalFeatureService svc = ExperimentalFeatureService.get();
+            if (svc == null)
+                throw new IllegalStateException();
 
             Map<String, Object> ret = new HashMap<>();
-            ret.put("feature", form.getFeature());
-            ret.put("enabled", AppProps.getInstance().isExperimentalFeatureEnabled(form.getFeature()));
+            ret.put("feature", feature);
+
+            if (isPost())
+            {
+                ret.put("previouslyEnabled", svc.isFeatureEnabled(feature));
+                svc.setFeatureEnabled(feature, form.isEnabled(), getUser());
+            }
+
+            ret.put("enabled", svc.isFeatureEnabled(feature));
             return new ApiSimpleResponse(ret);
         }
     }
+
 
     @AdminConsoleAction
     @RequiresPermission(AdminOperationsPermission.class)
