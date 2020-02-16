@@ -596,7 +596,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         // For now, delegate to getVersion() for modules that still override that method
         if (-1 != getVersion())
         {
-            _log.warn("The \"" + getName() + "\" module overrides the getVersion() methods, which is no longer supported. Please override getSchemaVersion() instead.");
+            _log.warn("The \"" + getName() + "\" module overrides the getVersion() method, which is no longer supported. Please override getSchemaVersion() instead.");
+
             return getVersion();
         }
         else
