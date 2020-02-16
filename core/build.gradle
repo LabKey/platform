@@ -6,4 +6,5 @@ dependencies {
    external 'radeox:radeox:1.0-b2'
 }
 
+project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))
 project.tasks.npmInstall.dependsOn(project.project(BuildUtils.getPlatformProjectPath(project.gradle)).tasks.npmInstall)
