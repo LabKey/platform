@@ -42,7 +42,8 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 
         if (null != getViewContext().getRequest().getHeader("template"))
             url.addParameter("_template", getViewContext().getRequest().getHeader("template"));
-        return HttpView.redirect(url);
+
+        return HttpView.redirect(url, url.isAllowableHost());
     }
 
     public final NavTree appendNavTrail(NavTree root)
