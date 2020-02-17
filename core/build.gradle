@@ -4,6 +4,8 @@ apply plugin: 'org.labkey.coreScripts'
 
 dependencies {
    external 'radeox:radeox:1.0-b2'
+   implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+   jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
 }
 
 project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))

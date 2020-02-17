@@ -1,3 +1,7 @@
+dependencies {
+    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+}
+
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
     main {
