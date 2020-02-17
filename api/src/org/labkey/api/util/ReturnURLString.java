@@ -136,55 +136,7 @@ public class ReturnURLString
     // Issue 35896 - Disallow external redirects to URLs not on the whitelist
     private static boolean isAllowableHost(@NotNull URLHelper h)
     {
-        // We have a returnURL that includes a server host name
-        if (h.getHost() != null)
-        {
-            // Check if it matches the current server's preferred host name, per the base server URL setting
-            String allowedHost = null;
-            try
-            {
-                allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
-            }
-            catch (MalformedURLException ignored) {}
-
-            if (!h.getHost().equalsIgnoreCase(allowedHost))
-            {
-                // Server host name that doesn't match, log and possibly reject based on config
-                // Allow 'localhost' for servers in dev mode
-                boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(h.getHost());
-
-                //look in the list of configured external redirect hosts
-                for (String externalRedirectHostURL : AppProps.getInstance().getExternalRedirectHosts())
-                {
-                    if (StringUtils.isNotBlank(externalRedirectHostURL) && externalRedirectHostURL.equalsIgnoreCase(h.getHost()))
-                        isConfigured = true;
-                }
-
-                if (!isConfigured)
-                {
-                    String logMessageDetails = "returnURL value: " + h.toString();
-                    HttpServletRequest request = HttpView.currentRequest();
-                    if (request != null)
-                    {
-                        logMessageDetails += " from URL: " + request.getRequestURL();
-                        if (request.getHeader("Referer") != null)
-                        {
-                            logMessageDetails += " with referrer: " + request.getHeader("Referer");
-                        }
-                    }
-
-                    LOG.warn("Rejected external host redirect " + logMessageDetails +
-                            "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
-                    return false;
-                }
-                else
-                {
-                    LOG.debug("Detected configured external host returnURL: " + h.toString());
-                }
-            }
-        }
-
-        return true;
+        return h.isAllowableHost();
     }
 
     public boolean isEmpty()
