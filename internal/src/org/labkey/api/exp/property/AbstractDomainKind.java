@@ -119,7 +119,8 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     /** @return Errors encountered during the save attempt */
     @Override
     @NotNull
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable T options, Container container, User user, boolean includeWarnings)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }

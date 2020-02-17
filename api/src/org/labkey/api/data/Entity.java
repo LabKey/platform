@@ -38,6 +38,15 @@ public class Entity implements java.io.Serializable, Ownable
     private long modified;
     private GUID containerId;
 
+    public Entity(Entity copyFrom)
+    {
+        this.entityId = copyFrom.entityId;
+        this.createdBy = copyFrom.createdBy;
+        this.created = copyFrom.created;
+        this.modifiedBy = copyFrom.modifiedBy;
+        this.modified = copyFrom.modified;
+        this.containerId = copyFrom.containerId;
+    }
 
     protected void copyTo(Entity to)
     {

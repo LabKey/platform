@@ -54,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind<JSONObject>
+public abstract class AbstractSpecimenDomainKind<T> extends AbstractDomainKind<JSONObject>
 {
     protected static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Specimen
     protected static final String COLUMN = "Column";                       // Reserved field name for Vial, Specimen and Event

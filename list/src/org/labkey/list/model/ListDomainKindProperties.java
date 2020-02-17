@@ -6,7 +6,8 @@ import org.labkey.api.exp.list.ListDefinition;
 
 import java.util.Date;
 
-public class ListDomainKindProperties extends Entity implements DomainKindProperties
+/* This is GWTList equivalent bean*/
+public class ListDomainKindProperties extends Entity implements DomainKindProperties, Cloneable
 {
     protected int listId;
     protected String name;
@@ -40,6 +41,37 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
     protected String eachItemBodyTemplate = null;
 
     protected boolean fileAttachmentIndex = false;
+
+    public ListDomainKindProperties()
+    {
+    }
+
+    public ListDomainKindProperties(ListDomainKindProperties copyFrom)
+    {
+        super(copyFrom);
+        listId = copyFrom.listId;
+        name = copyFrom.name;
+        domainId = copyFrom.domainId;
+        keyName = copyFrom.keyName;
+        keyType = copyFrom.keyType;
+        titleColumn = copyFrom.titleColumn;
+        description = copyFrom.description;
+        lastIndexed = copyFrom.lastIndexed;
+        discussionSetting = copyFrom.discussionSetting;
+        allowDelete = copyFrom.allowDelete;
+        allowUpload = copyFrom.allowUpload;
+        allowExport = copyFrom.allowExport;
+        entireListIndex = copyFrom.entireListIndex;
+        entireListIndexSetting = copyFrom.entireListIndexSetting;
+        entireListTitleTemplate = copyFrom.entireListTitleTemplate;
+        entireListBodySetting = copyFrom.entireListBodySetting;
+        entireListBodyTemplate = copyFrom.entireListBodyTemplate;
+        eachItemIndex = copyFrom.eachItemIndex;
+        eachItemTitleTemplate = copyFrom.eachItemTitleTemplate;
+        eachItemBodySetting = copyFrom.eachItemBodySetting;
+        eachItemBodyTemplate = copyFrom.eachItemBodyTemplate;
+        fileAttachmentIndex = copyFrom.fileAttachmentIndex;
+    }
 
     public int getListId()
     {

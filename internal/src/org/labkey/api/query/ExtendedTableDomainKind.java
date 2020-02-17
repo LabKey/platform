@@ -49,7 +49,7 @@ public abstract class ExtendedTableDomainKind<T> extends SimpleTableDomainKind<J
         return domain.getName();
     }
 
-    public Domain updateDomain(Container container, User user, GWTDomain<GWTPropertyDescriptor> gwtDomain)
+    public Domain updateDomain(Container container, User user, GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject options)
     {
         String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);
 
@@ -58,7 +58,7 @@ public abstract class ExtendedTableDomainKind<T> extends SimpleTableDomainKind<J
         updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
-        ValidationException errors = updateDomain(existingDomain, updatedDomain, container, user, false);
+        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false);
         if (errors.hasErrors())
         {
             throw new RuntimeException(errors);
@@ -79,7 +79,7 @@ public abstract class ExtendedTableDomainKind<T> extends SimpleTableDomainKind<J
         // First check if this should be an update
         if (null != domain)
         {
-            updateDomain(container, user, gwtDomain);
+            updateDomain(container, user, gwtDomain, arguments);
         }
         else
         {
