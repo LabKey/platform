@@ -25,6 +25,7 @@ import {
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
+    createListDesign,
     // AssayProtocolModel
 } from "@labkey/components"; //TODO: include List model and panel added in labkey-ui-components
 
@@ -61,8 +62,21 @@ export class App extends React.Component<any, State>
     }
 
     componentDidMount() {
+        const {listId} = this.state;
         // TODO: Query and set hasDesignListPermission based on whether user can save list designs
 
+
+
+        // this.loadExistingList();
+        // this.createNewListTemplate();
+        if (listId) {
+            this.loadExistingList();
+        } else {
+            this.createNewListTemplate();
+        }
+    }
+
+    loadExistingList = () => {
         Ajax.request({
             url: ActionURL.buildURL('list', 'GetListProperties'),
             method: 'GET',
@@ -76,16 +90,14 @@ export class App extends React.Component<any, State>
             },
             success: function(result) {
                 const response = JSON.parse(result.response);
-                this.setState({domainId: response.domainId});
-                console.log("componentDidMount", response.domainId);
 
-                fetchListDesign(response.domainId) // if domainId is not present, fetchListDesign generates template
+                fetchListDesign(response.domainId)
                     .then((model) => {
                         this.setState(() => ({
                                 model,
                                 isLoadingModel: false
                             })
-                            , () => {console.log("NewState", this.state)}
+                            , () => {console.log("loadExistingList", this.state)}
                         )
                     })
                     .catch((error) => {
@@ -96,33 +108,32 @@ export class App extends React.Component<any, State>
                     })
             },
         });
-    }
+    };
 
-    //TODO: revisit/uncomment once ListDesignerPanels is in place in labkey-ui-components
+    createNewListTemplate = () => {
+        createListDesign()
+            .then((model) => {
+                this.setState(() => ({
+                        model,
+                        isLoadingModel: false
+                    })
+                    , () => {console.log("createNewListTemplate", this.state)}
+                )
+            })
+            .catch((error) => {
+                this.setState(() => ({
+                    message: error.exception,
+                    isLoadingModel: false
+                }));
+            })
+    };
 
-    renderDesignerView() {
-        // const { model } = this.state;
-        //
-        // return (
-        //     <ListDesignerPanels
-        //         initModel={model}
-        //         onCancel={this.onCancel}
-        //         onComplete={this.onComplete}
-        //         onChange={this.onChange}
-        //         useTheme={true}
-        //     />
-        // )
-    }
-
-    renderReadOnlyView() {
-        //TODO: is this relevant for List?
-    }
 
     onCancel = () => {
         this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
     };
 
-    //TODO revisit/uncomment once List Model is in place in labkey-ui-components
+    //TODO
 
     // onComplete = (model: ListModel) => {
     //     this.navigate(ActionURL.buildURL('list', '??', LABKEY.container.path, {rowId: model.??}));
