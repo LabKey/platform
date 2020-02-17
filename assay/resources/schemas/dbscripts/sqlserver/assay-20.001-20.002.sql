@@ -2,12 +2,14 @@
 ALTER TABLE assay.plate ADD
     Modified DATETIME,
     ModifiedBy USERID;
+GO
 
 UPDATE assay.plate SET Modified = Created,
                        ModifiedBy = CreatedBy;
+GO
 
-ALTER TABLE assay.plate ALTER COLUMN Modified TIMESTAMP NOT NULL;
-ALTER TABLE assay.plate ALTER COLUMN ModifiedBy USERID SET NOT NULL;
+ALTER TABLE assay.plate ALTER COLUMN Modified DATETIME NOT NULL;
+ALTER TABLE assay.plate ALTER COLUMN ModifiedBy USERID NOT NULL;
 
 ALTER TABLE assay.plate
     ADD CONSTRAINT uq_plate_lsid UNIQUE (lsid);
