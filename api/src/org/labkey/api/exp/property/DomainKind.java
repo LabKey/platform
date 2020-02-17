@@ -114,22 +114,26 @@ abstract public class DomainKind<T>  implements Handler<String>
     /**
      * Create a Domain appropriate for this DomainKind.
      * @param domain The domain design.
-     * @param jSONObject Any domain kind specific properties/options.
+     * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, T jSONObject, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.
      * @param original The original domain definition.
      * @param update The updated domain definition.
+     * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
      * @return A list of errors collected during the update.
      */
-    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings);
+//    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings);
+
+    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable T options, Container container, User user, boolean includeWarnings);
 
     /**
      * Delete a Domain and its associated data.

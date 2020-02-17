@@ -301,6 +301,8 @@ LABKEY.Domain.create({
          *       If not supplied, the current container path will be used.
          * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
          *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
+         * @param {boolean} config.options Domain Kind specific properties.
+         *       If not supplied, will be ignored.
          */
         save : function(config)
         {
@@ -313,7 +315,8 @@ LABKEY.Domain.create({
                     schemaName: arguments[3],
                     queryName: arguments[4],
                     containerPath: arguments[5],
-                    includeWarnings: arguments[6]
+                    includeWarnings: arguments[6],
+                    options: arguments[7]
                 };
             }
 
@@ -321,7 +324,7 @@ LABKEY.Domain.create({
                 config.success,
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
-                    domainId: config.domainId, includeWarnings: config.includeWarnings},
+                    domainId: config.domainId, includeWarnings: config.includeWarnings, options: config.options},
                 config.containerPath);
         },
 

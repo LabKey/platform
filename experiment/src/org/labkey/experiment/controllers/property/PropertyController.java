@@ -476,7 +476,7 @@ public class PropertyController extends SpringActionController
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings);
 
             for (ValidationError ve : updateErrors.getErrors())
             {
@@ -1042,7 +1042,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                             Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1055,7 +1055,20 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        return kind.updateDomain(original, update, container, user, includeWarnings);
+        if (JSONObject.class == kind.getTypeClass())
+        {
+            return kind.updateDomain(original, update, options, container, user, includeWarnings);
+        }
+        else
+        {
+            Object domainKindProps = null;
+            if (null != options)
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                domainKindProps = mapper.convertValue(options, kind.getTypeClass());
+            }
+            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings);
+        }
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)

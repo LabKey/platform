@@ -256,25 +256,55 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
-            _listDefCache.remove(c.getId());
-            if (!old.getName().equals(ret.getName()))
-            {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                        QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(ret.getName()),
-                        QueryChangeListener.QueryProperty.Name,
-                        old.getName(),
-                        ret.getName()
-                );
-
-                QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
-                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
-            }
+            String oldName = old.getName();
+            String updatedName = ret.getName();
+            queryChangeUpdate(user, c, oldName, updatedName);
             transaction.commit();
         }
 
         return ret;
     }
 
+    //Note: this is sort of a dupe of above update() which returns ListDef
+    ListDomainKindProperties update(User user, final ListDomainKindProperties listProps)
+    {
+        Container c = listProps.lookupContainer();
+        if (null == c)
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
+
+        DbScope scope = getListMetadataSchema().getScope();
+        ListDomainKindProperties updated;
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            ListDomainKindProperties old = getListDomainKindProperties(c, listProps.getListId());
+            updated = Table.update(user, getListMetadataTable(), listProps, new Object[]{c, listProps.getListId()});
+            String oldName = old.getName();
+            String updatedName = updated.getName();
+
+            queryChangeUpdate(user, c, oldName, updatedName);
+            transaction.commit();
+        }
+
+        return updated;
+    }
+
+    private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
+    {
+        _listDefCache.remove(c.getId());
+        if (!oldName.equals(updatedName))
+        {
+            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(updatedName),
+                    QueryChangeListener.QueryProperty.Name,
+                    oldName,
+                    updatedName
+            );
+
+            QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
+                    QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
+        }
+    }
 
     // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency
     void deleteListDef(Container c, int listid)

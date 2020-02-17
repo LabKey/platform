@@ -177,7 +177,8 @@ public class TestDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         throw new UnsupportedOperationException();
     }

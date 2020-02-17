@@ -17,6 +17,7 @@ package org.labkey.study.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -44,7 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
+public final class SpecimenDomainKind extends AbstractSpecimenDomainKind<JSONObject>
 {
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";
@@ -165,7 +166,8 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     }
 
     @Override
-    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         ValidationException exception;
         try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
@@ -209,7 +211,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
             }
 
             exception = checkRollups(null, optionalSpecimenProps, container, user, exception, includeWarnings);
-            exception.addErrors(super.updateDomain(original, update, container, user, includeWarnings));
+            exception.addErrors(super.updateDomain(original, update, options, container, user, includeWarnings));
 
             if (!exception.hasErrors())
             {
