@@ -141,7 +141,7 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
     @Override
     public boolean exists()
     {
-        return _dir.exists();
+        return null != _dir && _dir.exists();
     }
 
     @Override

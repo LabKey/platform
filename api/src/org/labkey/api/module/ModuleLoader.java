@@ -333,12 +333,10 @@ public class ModuleLoader implements Filter
         }
     }
 
-    /* this is called if new archives are exploded (for existing or new modules) */
-    public void updateModuleDirectories(List<Map.Entry<File,File>> list)
+    /* this is called if new archive is exploded (for existing or new modules) */
+    public void updateModuleDirectory(File dir, File archive)
     {
-        // NOTE: I would like to put call to ContextListener.fireModuleChangeEvent() here
-        // but really the caller knows which modules have just been changed
-
+        // TODO move call to ContextListener.fireModuleChangeEvent() into this method
         synchronized (_modulesLock)
         {
             /* TODO if we add new elements to list of modules, we would need to synchronize something */
@@ -346,71 +344,59 @@ public class ModuleLoader implements Filter
             for (Module module : getModules())
                 map.put(module.getExplodedPath(), module);
 
-            List<Map.Entry<File,File>> newModules = new ArrayList<>();
+            List<Map.Entry<File, File>> newModules = new ArrayList<>();
 
-            for (var e : list)
+            var module = map.get(dir);
+
+            if (null != module)
             {
-                var dir = e.getKey();
-                var archive = e.getValue();
-                var module = map.get(dir);
-
-                if (null == module)
+                /* EXISTING MODULE */
+                if (null != archive && !archive.equals(module.getZippedPath()))
                 {
-                    newModules.add(e);
+                    module.setZippedPath(archive);
                 }
-                else
-                {
-                    if (null != archive && !archive.equals(module.getZippedPath()))
-                    {
-                        module.setZippedPath(archive);
-                    }
-                    // TODO @AdamR anything else
-                }
+                // TODO reload module.xml/module.properties
+                // TODO @AdamR anything else
             }
-
-            List<Module> moduleList = loadModules(newModules);
-
-            synchronized (_modulesLock)
+            else
             {
-                /* VERY IMPORTANT: we expect all these additions to file-based, non-schema modules! */
-                moduleList.forEach(module ->
-                {
-                    if (SimpleModule.class != module.getClass())
-                        throw new IllegalStateException("Can only add file-based module after startup");
-                    if (!module.getSchemaNames().isEmpty())
-                        throw new IllegalStateException("Can not add modules with schema after startup");
-                });
+                /* NEW MODULE */
+                List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry(dir,archive)));
+                module = moduleList.get(0);
 
-                moduleList.forEach(module ->
-                {
-                    // TODO @AdamR anything else
-                    ModuleContext context = new ModuleContext(module);
-                    saveModuleContext(context);
-                    _moduleContextMap.put(context.getName(), context);
-                    _moduleMap.put(module.getName(), module);
-                    _modules.add(module);
-                    _moduleClassMap.put(module.getClass(), module);
-                });
+                /* VERY IMPORTANT: we expect all these additions to file-based, non-schema modules! */
+                if (SimpleModule.class != module.getClass())
+                    throw new IllegalStateException("Can only add file-based module after startup");
+                if (!module.getSchemaNames().isEmpty())
+                    throw new IllegalStateException("Can not add modules with schema after startup");
+
+                // TODO @AdamR anything else
+                ModuleContext context = new ModuleContext(module);
+                saveModuleContext(context);
+                _moduleContextMap.put(context.getName(), context);
+                _moduleMap.put(module.getName(), module);
+                _modules.add(module);
+                _moduleClassMap.put(module.getClass(), module);
 
                 initializeAndPruneModules(moduleList);
 
                 // initializeAndPruneModules() might have vetoed some modules, check that they are still in the map
-                moduleList.stream().filter(module -> _moduleMap.containsKey(module.getName())).forEach(m ->
+                if (_moduleMap.containsKey(module.getName()))
                 {
                     // Module startup
                     try
                     {
-                        ModuleContext ctx = getModuleContext(m);
+                        ModuleContext ctx = getModuleContext(module);
                         ctx.setModuleState(ModuleState.Starting);
-                        m.startup(ctx);
+                        module.startup(ctx);
                         ctx.setModuleState(ModuleState.Started);
                     }
                     catch (Throwable x)
                     {
                         setStartupFailure(x);
-                        _log.error("Failure starting module: " + m.getName(), x);
+                        _log.error("Failure starting module: " + module.getName(), x);
                     }
-                });
+                }
             }
         }
     }
