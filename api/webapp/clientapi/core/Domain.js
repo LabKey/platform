@@ -357,7 +357,9 @@ LABKEY.Domain.create({
         },
 
         /**
-         * Saves the provided domain design
+         * Saves the provided domain design.
+         * Note: All of the domain properties are expected to be present before saving, and not just the diff - the easiest way
+         * is to get the existing domain via {@Link LABKEY.Domain.getDomainDetails} and update the resultant json with your changes before saving.
          * @param {Object} config An object which contains the following configuration properties.
          * @param {Function} config.success Required. Function called if this
                   function executes successfully. No parameters will be passed to the success callback.
@@ -451,7 +453,7 @@ LABKEY.Domain.create({
 /**
 * @name LABKEY.Domain.DomainDesign
 * @class  DomainDesign static class to describe the shape and fields of a domain.  The {@link LABKEY.Domain}
-*             'get' and 'set' methods employ DomainDesign.
+*             'getDomainDetails' and 'save' methods employ DomainDesign.
 */
 
 /**#@+
@@ -467,7 +469,7 @@ LABKEY.Domain.create({
 
 /**
 * @name domainId
-* @description The uinque ID of this domain.
+* @description The unique ID of this domain.
 * @type Integer
 */
 
@@ -486,7 +488,21 @@ LABKEY.Domain.create({
 /**
 * @name fields
 * @description An array of objects that each describe a domain field.  Each object has the following properties:
+    *       (Note: Not all properties below are expected to have values or will have values. See {@Link LABKEY.Domain} 'Create' to see minimally required properties when creating a Domain.)
     *      <ul>
+    *          <li><b>defaultDisplayValue:</b> Default value to display. (string)</li>
+    *          <li><b>defaultValue:</b> Default value for the field. (string)</li>
+    *          <li><b>defaultValueType:</b> Default value type for the field. (string)</li>
+    *          <li><b>hidden:</b> Indicates whether this field is to be hidden or shown in a view. (boolean)</li>
+    *          <li><b>isPrimaryKey:</b> Indicates whether this field is a Primary Key. (boolean)</li>
+    *          <li><b>lockType:</b> Set lock level on this field. Expected value should be one of: "NotLocked"
+    *              (can change all properties, this is default) or "PartiallyLocked" (can't change name and type property) or "FullyLocked" (can't change any of the properties). (string)</li>
+    *          <li><b>phi:</b> Set PHI level on this field. Expected value should be one of: "NotPhi" (default) or "Limited" or "PHI" or "Restricted". (string)</li>
+    *          <li><b>scale:</b> Scale for the field. (int)</li>
+    *          <li><b>shownInDetailsView:</b> Indicates whether this field is to be shown in Details view. (boolean)</li>
+    *          <li><b>shownInInsertView:</b> Indicates whether this field is to be shown in an Insert view. (boolean)</li>
+    *          <li><b>shownInUpdateView:</b> Indicates whether this field is to be shown in an Update view. (boolean)</li>
+    *          <li><b>url:</b> A url associated with this field. (string)</li>
     *          <li><b>propertyId:</b> The unique ID of this field. (integer)</li>
     *          <li><b>propertyURI:</b> The URI of this field. (string)</li>
     *          <li><b>ontologyURI:</b> The URI of the ontology this field belongs to. (string)</li>
