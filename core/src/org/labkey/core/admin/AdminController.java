@@ -217,6 +217,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -245,18 +246,8 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
-import static org.labkey.api.util.DOM.A;
-import static org.labkey.api.util.DOM.Attribute;
-import static org.labkey.api.util.DOM.BR;
-import static org.labkey.api.util.DOM.DIV;
-import static org.labkey.api.util.DOM.LI;
-import static org.labkey.api.util.DOM.TABLE;
-import static org.labkey.api.util.DOM.TD;
-import static org.labkey.api.util.DOM.TR;
-import static org.labkey.api.util.DOM.UL;
-import static org.labkey.api.util.DOM.at;
-import static org.labkey.api.util.DOM.cl;
-import static org.labkey.api.util.DOM.createHtmlFragment;
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.DOM.Attribute.*;
 import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
@@ -8053,11 +8044,13 @@ public class AdminController extends SpringActionController
             @Override
             protected void renderView(Object model, PrintWriter out)
             {
+                boolean isDevMode = AppProps.getInstance().isDevMode();
                 boolean hasAdminOpsPerm = getUser().hasRootPermission(AdminOperationsPermission.class);
                 boolean hasUploadModulePerm = getUser().hasRootPermission(UploadFileBasedModulePermission.class);
                 final AtomicInteger rowCount = new AtomicInteger();
                 ExplodedModuleService moduleService = !hasUploadModulePerm ? null : ServiceRegistry.get().getService(ExplodedModuleService.class);
                 final File externalModulesDir = moduleService==null ? null : moduleService.getExternalModulesDirectory();
+                final Path relativeRoot = ModuleLoader.getInstance().getCoreModule().getExplodedPath().getParentFile().getParentFile().toPath();
 
                 if (_contexts.isEmpty())
                 {
@@ -8073,7 +8066,7 @@ public class AdminController extends SpringActionController
                                 TD(cl("labkey-column-header"),"Release Version"),
                                 TD(cl("labkey-column-header"),"Schema Version"),
                                 TD(cl("labkey-column-header"),"Class"),
-                                TD(cl("labkey-column-header"),"Source"),
+                                TD(cl("labkey-column-header"),"Location"),
                                 TD(cl("labkey-column-header"),"Schemas"),
                                 null == externalModulesDir ? null : TD(cl("labkey-column-header"),""),    // update actions
                                 !hasAdminOpsPerm ? null : TD(cl("labkey-column-header"),"")     // delete actions
@@ -8096,14 +8089,31 @@ public class AdminController extends SpringActionController
                                             replaceableModule = true;
                                     }
                                     boolean deleteableModule = replaceableModule || null == module;
+                                    String className = StringUtils.trimToEmpty(moduleContext.getClassName());
+                                    String fullPathToModule = "";
+                                    String shortPathToModule = "";
+                                    if (null != module)
+                                    {
+                                        Path p = module.getExplodedPath().toPath();
+                                        if (null != module.getZippedPath())
+                                            p = module.getZippedPath().toPath();
+                                        if (isDevMode && module instanceof DefaultModule && ((DefaultModule)module).isSourcePathMatched())
+                                            if (!module.getExplodedPath().getPath().equals(module.getSourcePath()))
+                                                p = Paths.get(module.getSourcePath());
+                                        fullPathToModule = p.toString();
+                                        shortPathToModule = fullPathToModule;
+                                        Path rel = relativeRoot.relativize(p);
+                                        if (!rel.startsWith(".."))
+                                            shortPathToModule = rel.toString();
+                                    }
 
-                                    return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row"),
+                                    return TR(cl(rowCount.getAndIncrement()%2==0 ? "labkey-alternate-row" : "labkey-row").at(style,"vertical-align:top;"),
                                         TD(moduleContext.getName()),
-                                        TD(at(Attribute.style,"white-space:nowrap;"), null != module ? module.getReleaseVersion() : NBSP),
+                                        TD(at(style,"white-space:nowrap;"), null != module ? module.getReleaseVersion() : NBSP),
                                         TD(null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : NBSP),
-                                        TD(moduleContext.getClassName()),
-                                        TD(null != module ? module.getSourcePath() : NBSP),
-                                        TD(StringUtils.join(schemas, ", ")),
+                                        TD(SPAN(at(title,className), className.substring(className.lastIndexOf(".")+1))),
+                                        TD(SPAN(at(title,fullPathToModule),shortPathToModule)),
+                                        TD(schemas.stream().map(s -> createHtmlFragment(s, BR()))),
                                         null == externalModulesDir ? null : TD(!replaceableModule ? NBSP : PageFlowUtil.link("Update Module").href(getUpdateURL(moduleContext.getName()))),
                                         !hasAdminOpsPerm ? null : TD(!deleteableModule ? NBSP :  PageFlowUtil.link("Delete Module" + (schemas.isEmpty() ? "" : (" and Schema" + (schemas.size() > 1 ? "s" : "")))).href(getDeleteURL(moduleContext.getName())))
                                     );
@@ -9381,7 +9391,7 @@ public class AdminController extends SpringActionController
                 });
             }
 
-            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(Attribute.href,url)),BR()))));
+            return new HtmlView(DIV(urls.stream().map(url -> createHtmlFragment(A(at(href,url)),BR()))));
         }
     }
 
