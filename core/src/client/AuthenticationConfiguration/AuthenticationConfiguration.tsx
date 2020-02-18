@@ -261,7 +261,7 @@ export class App extends PureComponent<{}, State> {
                             onClick={this.onCancel}
                             >
                             Cancel
-                            </Button>
+                        </Button>
                     </>
                     :
                     < Button
