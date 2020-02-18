@@ -256,10 +256,10 @@ export class App extends PureComponent<{}, State> {
                             Save and Finish
                         </Button>
 
-                        < Button
+                        <Button
                             className="labkey-button parent-panel__cancel-button"
                             onClick={this.onCancel}
-                            >
+                        >
                             Cancel
                         </Button>
                     </>
