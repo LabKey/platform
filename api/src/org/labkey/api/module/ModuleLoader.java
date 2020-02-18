@@ -390,6 +390,15 @@ public class ModuleLoader implements Filter
                         ctx.setModuleState(ModuleState.Starting);
                         module.startup(ctx);
                         ctx.setModuleState(ModuleState.Started);
+
+                        if (module instanceof SimpleModule)
+                        {
+                            synchronized (_controllerNameToModule)
+                            {
+                                _controllerNameToModule.put(module.getName(), module);
+                                _controllerNameToModule.put(module.getName().toLowerCase(), module);
+                            }
+                        }
                     }
                     catch (Throwable x)
                     {
