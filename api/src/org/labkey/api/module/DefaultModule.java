@@ -979,7 +979,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public boolean shouldManageVersion()
     {
-        return _manageVersion;
+        return _manageVersion != Boolean.FALSE;
     }
 
     @Override
