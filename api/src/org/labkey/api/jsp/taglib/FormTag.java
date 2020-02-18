@@ -70,7 +70,7 @@ public class FormTag extends BodyTagSupport
     @RemoveIn20_1  // Remove -- unused and not needed
     public void setAction(Object action)
     {
-        setAction(String.valueOf(action));
+        setAction(null==action ? null : String.valueOf(action));
     }
 
     // Our JSP tag classes expect unencoded parameters (they encode everything at render time), but this method accepts
@@ -96,7 +96,7 @@ public class FormTag extends BodyTagSupport
 
     public void setAction(ActionURL action)
     {
-        this.action = action.getHtmlString();
+        this.action = null==action ? null : action.getHtmlString();
     }
 
     public String getEnctype()
