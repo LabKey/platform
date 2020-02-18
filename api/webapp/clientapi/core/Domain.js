@@ -60,6 +60,17 @@ LABKEY.Domain = new function()
         });
     }
 
+    function getDomainDetails(success, failure, parameters, containerPath)
+    {
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("property", "getDomainDetails.api", containerPath),
+            method : 'GET',
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
+            params : parameters
+        });
+    }
+
     function saveDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
@@ -194,7 +205,7 @@ LABKEY.Domain.create({
         },
 
 	/**
-	* Gets a domain design.
+	* This api is deprecated, use {@link LABKEY.Domain.getDomainDetails} instead.
      * @param {Object} config An object which contains the following configuration properties.
 	* @param {Function} config.success Required. Function called if the
 	*	"get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
@@ -250,6 +261,65 @@ LABKEY.Domain.create({
                 config.failure,
                 {schemaName: config.schemaName, queryName: config.queryName, domainId: config.domainId},
                 config.containerPath);
+        },
+
+    /**
+     * Gets a domain design along with domain kind specific properties.
+     * @param {Object} config An object which contains the following configuration properties.
+     * @param {Function} config.success Required. Function called if the
+     *    "get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
+     *    which describes the fields of a domain.
+     * @param {Function} [config.failure] Function called if execution of the "get" function fails.
+     * @param {String} config.schemaName Name of the schema
+     * @param {String} config.queryName Name of the query
+     * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain.
+     *       SchemaName and queryName will be ignored if this value is not undefined or null.
+     * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
+     *       If not supplied, the current container path will be used.
+     * @example Example:
+<pre name="code" class="xml">
+&lt;script type="text/javascript"&gt;
+     function successHandler(domainDesign)
+     {
+        var html = '';
+
+        html += '&lt;b&gt;' + domainDesign.name + ':&lt;/b&gt;&lt;br&gt; ';
+        for (var i in domainDesign.fields)
+        {
+            html += '   ' + domainDesign.fields[i].name + '&lt;br&gt;';
+        }
+        document.getElementById('testDiv').innerHTML = html;
+     }
+
+     function errorHandler(error)
+     {
+        alert('An error occurred retrieving data: ' + error);
+     }
+
+    LABKEY.Domain.get(successHandler, errorHandler, 'study', 'StudyProperties');
+&lt;/script&gt;
+&lt;div id='testDiv'&gt;Loading...&lt;/div&gt;
+</pre>
+     * @see LABKEY.Assay.AssayDesign
+     */
+        getDomainDetails : function(config)
+        {
+            if (arguments.length > 1)
+            {
+                config = {
+                    success: arguments[0],
+                    failure: arguments[1],
+                    schemaName: arguments[2],
+                    queryName: arguments[3],
+                    containerPath: arguments[4]
+                };
+            }
+
+            getDomainDetails(
+                    config.success,
+                    config.failure,
+                    {schemaName: config.schemaName, queryName: config.queryName, domainId: config.domainId},
+                    config.containerPath);
         },
 
         /**
