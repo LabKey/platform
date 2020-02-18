@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
@@ -287,7 +288,22 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             }
             factory.setUploadedData(Collections.emptyMap());
             factory.setRawData(dataRows);
-            factory.setRawPlateMetadata(rawPlateMetadata);
+
+            if (rawPlateMetadata != null)
+            {
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+                if (svc != null)
+                {
+                    try
+                    {
+                        factory.setRawPlateMetadata(svc.parsePlateMetadata(rawPlateMetadata));
+                    }
+                    catch(ExperimentException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);

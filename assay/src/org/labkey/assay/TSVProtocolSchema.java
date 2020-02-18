@@ -154,7 +154,6 @@ public class TSVProtocolSchema extends AssayProtocolSchema
                 }
             }
 
-            // placeholder : inject in plate metadata property columns until we can add them in a more structured way
             List<FieldKey> defaultColumns = new ArrayList<>(getDefaultVisibleColumns());
             Domain plateDataDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(getProtocol());
             if (plateDataDomain != null)
@@ -214,7 +213,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
         {
             super(StorageProvisioner.createTableInfo(domain), userSchema, containerFilter);
 
-            List<BaseColumnInfo> columns = new ArrayList<>();
+            setDescription("Represents the imported plate metadata and contains a row for each row in the Data table.");
+            setTitle("PlateData");
+
             for (ColumnInfo col : getRealTable().getColumns())
             {
                 BaseColumnInfo columnInfo = wrapColumn(col);

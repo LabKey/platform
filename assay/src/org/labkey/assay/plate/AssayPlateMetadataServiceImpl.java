@@ -36,7 +36,6 @@ import org.labkey.api.security.User;
 import org.labkey.assay.TSVProtocolSchema;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +49,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
     private boolean _domainDirty;
 
     @Override
-    public void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, JSONObject rawPlateMetadata, Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
+    public void addAssayPlateMetadata(ExpData resultData, Map<String, MetadataLayer> plateMetadata, Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
                                       List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
     {
         PlateTemplate template = getPlateTemplate(run, provider, protocol);
@@ -58,8 +57,7 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         {
             try
             {
-                Map<String, PlateLayer> layers = parseDataFile(plateMetadata.getFile(), rawPlateMetadata);
-                if (layers.isEmpty())
+                if (plateMetadata.isEmpty())
                 {
                     throw new ExperimentException("No plate information was parsed from the JSON metadata, please check the format of the metadata.");
                 }
@@ -77,20 +75,24 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
 
                         for (WellGroupTemplate group : template.getWellGroups(pos))
                         {
-                            PlateLayer plateLayer = layers.get(group.getType().name());
+                            MetadataLayer plateLayer = plateMetadata.get(group.getType().name());
                             if (plateLayer != null)
                             {
                                 // ensure the column for the plate layer that we will insert the well group name into
                                 String layerName = plateLayer.getName() + TSVProtocolSchema.PLATE_DATA_LAYER_SUFFIX;
                                 ensureDomainProperty(user, domain, layerName, JdbcType.VARCHAR);
 
-                                PlateLayer.WellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
+                                MetadataWellGroup wellGroup = plateLayer.getWellGroups().get(group.getName());
                                 if (wellGroup != null)
                                 {
                                     // insert the well group name into the layer
                                     wellProps.put(layerName, wellGroup.getName());
 
-                                    for (Map.Entry<String, Object> entry : wellGroup.getProperties().entrySet())
+                                    // combine both properties from the metadata as well as those explicitly set on the plate template
+                                    Map<String, Object> props = new HashMap<>(wellGroup.getProperties());
+                                    props.putAll(((WellGroupTemplateImpl)group).getProperties());
+
+                                    for (Map.Entry<String, Object> entry : props.entrySet())
                                     {
                                         DomainProperty domainProperty = ensureDomainProperty(user, domain, entry.getKey(), JdbcType.valueOf(entry.getValue().getClass()));
                                         if (!wellProps.containsKey(domainProperty.getName()))
@@ -199,59 +201,6 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return null;
     }
 
-    private Map<String, PlateLayer> parseDataFile(File dataFile, JSONObject rawPlateMetadata) throws ExperimentException
-    {
-        try
-        {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, PlateLayer> layers = new CaseInsensitiveHashMap<>();
-
-            if (dataFile == null && rawPlateMetadata == null)
-                throw new ExperimentException("No plate metadata was uploaded");
-
-            JsonNode rootNode;
-            if (dataFile != null)
-                rootNode = mapper.readTree(dataFile);
-            else
-                rootNode = mapper.readTree(rawPlateMetadata.toString());
-
-            rootNode.fields().forEachRemaining(layerEntry -> {
-
-                String layerName = layerEntry.getKey();
-                if (!layers.containsKey(layerName))
-                    layers.put(layerName, new PlateLayer(layerName));
-
-                PlateLayer currentLayer = layers.get(layerName);
-
-                layerEntry.getValue().fields().forEachRemaining(wellEntry -> {
-
-                    if (!currentLayer.getWellGroups().containsKey(wellEntry.getKey()))
-                        currentLayer.addWellGroup(new PlateLayer.WellGroup(wellEntry.getKey()));
-
-                    PlateLayer.WellGroup currentWellGroup = currentLayer.getWellGroups().get(wellEntry.getKey());
-                    wellEntry.getValue().fields().forEachRemaining(propEntry -> {
-                        if (propEntry.getValue().isTextual())
-                            currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().textValue());
-                        else if (propEntry.getValue().isNumber())
-                            currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().numberValue());
-                        else if (propEntry.getValue().isBoolean())
-                            currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().booleanValue());
-                        else
-                        {
-                            // log a warning
-                        }
-                    });
-                });
-            });
-
-            return layers;
-        }
-        catch (IOException e)
-        {
-            throw new ExperimentException(e);
-        }
-    }
-
     @Override
     public @Nullable Domain getPlateDataDomain(ExpProtocol protocol)
     {
@@ -293,12 +242,81 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
         return domainProperty;
     }
 
-    private static class PlateLayer
+    @Override
+    public Map<String, MetadataLayer> parsePlateMetadata(JSONObject json) throws ExperimentException
+    {
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            if (json == null)
+                throw new ExperimentException("No plate metadata was uploaded");
+
+            return _parsePlateMetadata(mapper.readTree(json.toString()));
+        }
+        catch (Exception e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    @Override
+    public Map<String, MetadataLayer> parsePlateMetadata(File jsonData) throws ExperimentException
+    {
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            if (jsonData == null)
+                throw new ExperimentException("No plate metadata was uploaded");
+
+            return _parsePlateMetadata(mapper.readTree(jsonData));
+        }
+        catch (Exception e)
+        {
+            throw new ExperimentException(e);
+        }
+    }
+
+    private Map<String, MetadataLayer> _parsePlateMetadata(JsonNode rootNode) throws ExperimentException
+    {
+        Map<String, MetadataLayer> layers = new CaseInsensitiveHashMap<>();
+
+        rootNode.fields().forEachRemaining(layerEntry -> {
+
+            String layerName = layerEntry.getKey();
+            if (!layers.containsKey(layerName))
+                layers.put(layerName, new MetadataLayerImpl(layerName));
+
+            MetadataLayerImpl currentLayer = (MetadataLayerImpl)layers.get(layerName);
+
+            layerEntry.getValue().fields().forEachRemaining(wellEntry -> {
+
+                if (!currentLayer.getWellGroups().containsKey(wellEntry.getKey()))
+                    currentLayer.addWellGroup(new MetadataWellGroupImpl(wellEntry.getKey()));
+
+                MetadataWellGroupImpl currentWellGroup = (MetadataWellGroupImpl)currentLayer.getWellGroups().get(wellEntry.getKey());
+                wellEntry.getValue().fields().forEachRemaining(propEntry -> {
+                    if (propEntry.getValue().isTextual())
+                        currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().textValue());
+                    else if (propEntry.getValue().isNumber())
+                        currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().numberValue());
+                    else if (propEntry.getValue().isBoolean())
+                        currentWellGroup.addProperty(propEntry.getKey(), propEntry.getValue().booleanValue());
+                    else
+                    {
+                        throw new RuntimeException("Only string, numeric and boolean properties can be added through plate metadata");
+                    }
+                });
+            });
+        });
+        return layers;
+    }
+
+    private static class MetadataLayerImpl implements MetadataLayer
     {
         private String _name;
-        private Map<String, WellGroup> _wellGroupMap = new CaseInsensitiveHashMap<>();
+        private Map<String, MetadataWellGroup> _wellGroupMap = new CaseInsensitiveHashMap<>();
 
-        public PlateLayer(String name)
+        public MetadataLayerImpl(String name)
         {
             _name = name;
         }
@@ -308,40 +326,40 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             return _name;
         }
 
-        public Map<String, WellGroup> getWellGroups()
+        public Map<String, MetadataWellGroup> getWellGroups()
         {
             return _wellGroupMap;
         }
 
-        public void addWellGroup(WellGroup wellGroup)
+        public void addWellGroup(MetadataWellGroup wellGroup)
         {
             _wellGroupMap.put(wellGroup.getName(), wellGroup);
         }
+    }
 
-        public static class WellGroup
+    private static class MetadataWellGroupImpl implements MetadataWellGroup
+    {
+        private String _name;
+        private Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
+
+        public MetadataWellGroupImpl(String name)
         {
-            private String _name;
-            private Map<String, Object> _properties = new CaseInsensitiveHashMap<>();
+            _name = name;
+        }
 
-            public WellGroup(String name)
-            {
-                _name = name;
-            }
+        public String getName()
+        {
+            return _name;
+        }
 
-            public String getName()
-            {
-                return _name;
-            }
+        public Map<String, Object> getProperties()
+        {
+            return _properties;
+        }
 
-            public Map<String, Object> getProperties()
-            {
-                return _properties;
-            }
-
-            public void addProperty(String name, Object value)
-            {
-                _properties.put(name, value);
-            }
+        public void addProperty(String name, Object value)
+        {
+            _properties.put(name, value);
         }
     }
 }

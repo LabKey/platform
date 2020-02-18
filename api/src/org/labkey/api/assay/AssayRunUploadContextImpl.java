@@ -18,7 +18,7 @@ package org.labkey.api.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
@@ -73,7 +73,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
     private final List<Map<String, Object>> _rawData;
-    private final JSONObject _rawPlateMetadata;
+    private final Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
     private final Map<?, String> _outputDatas;
@@ -310,7 +310,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     @Override
-    public @Nullable JSONObject getRawPlateMetadata()
+    public @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
     {
         return _rawPlateMetadata;
     }

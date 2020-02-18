@@ -12,6 +12,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,34 @@ public interface AssayPlateMetadataService
      * Adds plate metadata to the run, this is called as part of AssayRunCreator.saveExperimentRun and after the
      * result data has been imported
      *
-     * @param plateMetadata the uploaded plate metadata
-     * @param rawPlateMetadata the raw plate metadata JSON when no file upload has occured, this would be the case for API access
+     * @param plateMetadata the parsed plate metadata, use the parsePlateMetadata methods to convert from File or JSON objects.
      * @param inserted the inserted result data
      * @param rowIdToLsidMap a map of result data rowIds to result data lsids
      */
-    void addAssayPlateMetadata(ExpData resultData, ExpData plateMetadata, JSONObject rawPlateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
+    void addAssayPlateMetadata(ExpData resultData, Map<String, MetadataLayer> plateMetadata, Container container, User user, ExpRun run, AssayProvider provider,
                                ExpProtocol protocol, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException;
+
+    /**
+     * Methods to create the metadata model from either a JSON object or a file object
+     */
+    Map<String, MetadataLayer> parsePlateMetadata(JSONObject json) throws ExperimentException;
+    Map<String, MetadataLayer> parsePlateMetadata(File jsonData) throws ExperimentException;
+
+    interface MetadataLayer
+    {
+        // the name of this layer
+        String getName();
+
+        // returns the well groups for this layer
+        Map<String, MetadataWellGroup> getWellGroups();
+    }
+
+    interface MetadataWellGroup
+    {
+        // the name of this well group
+        String getName();
+
+        // returns the properties associated with this well group
+        Map<String, Object> getProperties();
+    }
 }

@@ -19,7 +19,7 @@ package org.labkey.api.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -90,11 +90,11 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
     }
 
     /**
-     * Plate metadata JSON, for assays that support metadata integration
+     * Plate metadata for assays that support metadata integration
      * @return
      */
     @Nullable
-    default JSONObject getRawPlateMetadata()
+    default Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
     {
         return null;
     }
@@ -179,7 +179,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<?, String> _inputMaterials;
         protected Map<?, String> _outputMaterials;
         protected List<Map<String, Object>> _rawData;
-        protected JSONObject _rawPlateMetadata;
+        protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
 
         public Factory(
@@ -309,7 +309,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-        public FACTORY setRawPlateMetadata(JSONObject rawPlateMetadata)
+        public FACTORY setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
         {
             _rawPlateMetadata = rawPlateMetadata;
             return self();

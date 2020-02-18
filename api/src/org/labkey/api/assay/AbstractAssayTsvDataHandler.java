@@ -20,7 +20,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -104,7 +103,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     };
 
     private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
-    private JSONObject _rawPlateMetadata;
+    private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
@@ -439,7 +438,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (provider.getResultRowLSIDPrefix() == null)
                 {
-                    LOG.info("Can't add provenance to run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    LOG.info("Import failed for run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
                     return;
                 }
                 rowIdToLsidMap = getRowIdtoLsidMap(user, container, provider, protocol, run, inserted);
@@ -470,7 +469,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     /**
      * The insertedData collection that is returned from insertRowData contains the actual rowId but the wrong lsid. This
-     * utiility will return a map of rowId to lsid that can be used during the construction of ontology objects attached
+     * utility will return a map of rowId to lsid that can be used during the construction of ontology objects attached
      * to the result data row.
      */
     private Map<Integer, String> getRowIdtoLsidMap(User user, Container container, AssayProvider provider, ExpProtocol protocol,
@@ -550,19 +549,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
             if (datas.size() == 1)
             {
-                ExpData plateMetadata = datas.get(0);
-                AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateMetadata.getDataType());
+                ExpData plateData = datas.get(0);
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
                 if (svc != null)
                 {
-                    if (plateMetadata.getFile() != null || getRawPlateMetadata() != null)
-                    {
-                        svc.addAssayPlateMetadata(resultData, plateMetadata, getRawPlateMetadata(), container, user, run, provider, protocol, inserted, rowIdToLsidMap);
-                    }
+                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
+
+                    if (plateData.getFile() != null)
+                        plateMetadata = svc.parsePlateMetadata(plateData.getFile());
+                    else if (getRawPlateMetadata() != null)
+                        plateMetadata = getRawPlateMetadata();
                     else
                         throw new ExperimentException("There was no plate metadata JSON available for this run");
+
+                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
                 }
                 else
-                    throw new ExperimentException("No PlateMetadataService registered for data type : " + plateMetadata.getDataType().toString());
+                    throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
             }
             else
                 throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
@@ -1132,14 +1135,14 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     @Nullable
-    public JSONObject getRawPlateMetadata()
+    public Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
     {
         return _rawPlateMetadata;
     }
 
-    public void setRawPlateMetadata(JSONObject metadataJson)
+    public void setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
     {
-        _rawPlateMetadata = metadataJson;
+        _rawPlateMetadata = rawPlateMetadata;
     }
 
     /** Wrapper around a row's key->value map that can find the values based on any of the DomainProperty's potential
