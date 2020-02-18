@@ -53,24 +53,24 @@ public class DOM
         a,
         abbr,
         address,
-        area,
+        area(true),
         article,
         aside,
         audio,
         b,
-        base,
+        base(true),
         bdi,
         bdo,
         big,
         blockquote,
         body,
-        br,
+        br(true),
         button,
         canvas,
         caption,
         cite,
         code,
-        col,
+        col(true),
         colgroup,
         data,
         datalist,
@@ -83,7 +83,7 @@ public class DOM
         dl,
         dt,
         em,
-        embed,
+        embed(true),
         fieldset,
         figcaption,
         figure,
@@ -98,32 +98,25 @@ public class DOM
         head,
         header,
         hgroup,
-        hr,
+        hr(true),
         html,
         i,
         iframe,
-        img,
-        input
-        {
-            @Override
-            protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
-            {
-                return appendElement(builder, name(), attrs);
-            }
-        },
+        img(true),
+        input(true),
         ins,
         kbd,
-        keygen,
+        keygen(true),
         label,
         legend,
         li,
-        link,
+        link(true),
         main,
         map,
         mark,
         menu,
-        menuitem,
-        meta,
+        menuitem(true),
+        meta(true),
         meter,
         nav,
         noindex,
@@ -134,7 +127,7 @@ public class DOM
         option,
         output,
         p,
-        param,
+        param(true),
         picture,
         pre,
         progress,
@@ -148,7 +141,7 @@ public class DOM
         section,
         select,
         small,
-        source,
+        source(true),
         span,
         strong,
         style,
@@ -165,17 +158,29 @@ public class DOM
         time,
         title,
         tr,
-        track,
+        track(true),
         u,
         ul,
         var,
         video,
-        wbr,
+        wbr(true),
         webview;
+
+        final boolean _selfClosing;
+
+        Element()
+        {
+            _selfClosing = false;
+        }
+
+        Element(boolean b)
+        {
+            _selfClosing = b;
+        }
 
         protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body) throws IOException
         {
-            return appendElement(builder, name(), attrs, body);
+            return appendElement(builder, name(), _selfClosing, attrs, body);
         }
 
         final Appendable render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body)
@@ -607,7 +612,7 @@ public class DOM
     {
         try
         {
-            return unsafe(appendElement(new StringBuilder(), null, null, body).toString());
+            return unsafe(appendElement(new StringBuilder(), null, false, null, body).toString());
         }
         catch (IOException x)
         {
@@ -619,7 +624,7 @@ public class DOM
     {
         try
         {
-            return appendElement(html, null, null, body);
+            return appendElement(html, null, false, null, body);
         }
         catch (IOException x)
         {
@@ -801,7 +806,7 @@ public class DOM
         return builder;
     }
 
-    private static Appendable appendElement(Appendable builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
+    private static Appendable appendElement(Appendable builder, String tagName, boolean selfClosing, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
     {
         if (null != tagName)
         {
@@ -813,10 +818,10 @@ public class DOM
                 {
                     Object key = entry.getKey();
                     if (key instanceof DOM.Attribute)
-                        ((DOM.Attribute)key).render(builder, entry.getValue());
+                        ((DOM.Attribute) key).render(builder, entry.getValue());
                     else if (key instanceof String)
                     {
-                        appendAttribute(builder, (String)key, entry.getValue());
+                        appendAttribute(builder, (String) key, entry.getValue());
                     }
                     else
                     {
@@ -824,11 +829,16 @@ public class DOM
                     }
                 }
                 // TODO again horrible hack, make this go away
-                if (attrs instanceof _Attributes && null != ((_Attributes)attrs).callback)
+                if (attrs instanceof _Attributes && null != ((_Attributes) attrs).callback)
                 {
                     builder.append(" ");
                     ((_Attributes) attrs).callback.accept(builder);
                 }
+            }
+            if (selfClosing)
+            {
+                builder.append(" />");
+                return builder;
             }
             builder.append(">");
         }
