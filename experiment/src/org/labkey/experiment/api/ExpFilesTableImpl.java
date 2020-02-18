@@ -52,7 +52,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
     {
         super(name, schema, null);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
-        _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
+        _svc.ensureFileData(this);
     }
 
     @Override
