@@ -46,6 +46,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -150,7 +151,6 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String[] PUB3_LISTS = {}; // none
     private final int PUB3_EXPECTED_SPECIMENS = 29;
 
-    private final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
     private final String[] SPECIMEN_PHI_FIELDS = {"Fr_Container", "Fr_Level1"};
 
     private int _pipelineJobs = 0;
@@ -231,7 +231,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         publishStudy(PUB3_NAME, PUB3_DESCRIPTION, PublishLocation.project, PUB3_GROUPS, PUB3_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, false, true, false, true);
 
         // load specimen set B to test the specimen refresh for the published studies
-        startSpecimenImport(++_pipelineJobs, SPECIMEN_ARCHIVE_B);
+        startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
     }
 
     @Override

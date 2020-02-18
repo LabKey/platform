@@ -101,6 +101,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -302,11 +303,12 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     ExpProtocol protocol = run.getProtocol();
                     AssayProvider provider = AssayService.get().getProvider(protocol);
+                    FieldKey assayResultLsidFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
 
                     SQLFragment assayResultLsidSql = null;
 
                     Domain domain;
-                    if (provider != null)
+                    if (provider != null && assayResultLsidFieldKey != null)
                     {
                         domain = provider.getResultsDomain(protocol);
 
@@ -314,10 +316,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
                         if (assayDataTable != null)
                         {
-                            ColumnInfo lsidCol = assayDataTable.getColumn("LSID");
+                            ColumnInfo lsidCol = assayDataTable.getColumn(assayResultLsidFieldKey);
                             ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
                             if (lsidCol == null || dataIdCol == null)
-                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and LSID column");
+                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
 
                             // select the assay results LSID column for all rows referenced by the data
                             assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
@@ -438,7 +440,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, protocol, provider, dataTable, dataDomain, rawData, settings, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -471,15 +473,28 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             User user, Container container,
             ExpProtocol protocol, ExpRun run,
             AssayProvider provider,
-            List<Map<String, Object>> insertedData)
+            List<Map<String, Object>> insertedData) throws ExperimentException
     {
         ProvenanceService pvs = ProvenanceService.get();
         if (pvs == null)
             return;
 
+        if (provider.getResultRowLSIDPrefix() == null)
+        {
+            LOG.info("Can't add provenance to run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+            return;
+        }
+
+        FieldKey assayResultFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
+        if (assayResultFieldKey == null)
+            throw new IllegalStateException("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
+
         // get the LSID for the newly inserted assay result data rows
-        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).getTable("Data", null);
-        ColumnInfo lsidCol = dataTable.getColumn("LSID");
+        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
+        if (dataTable == null)
+            throw new IllegalStateException("Assay results table required to attach provenance");
+
+        ColumnInfo lsidCol = dataTable.getColumn(assayResultFieldKey);
         if (lsidCol == null)
             throw new IllegalStateException("Assay results table LSID column required to attach provenance");
 
@@ -638,7 +653,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container, User user, ExpProtocol protocol, AssayProvider provider, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -1011,6 +1026,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     for (Object lsid: inputArr)
                     {
                         rowInputLSIDs.add(lsid.toString());
+                    }
+                }
+                else if (provenanceInputs instanceof Collection)
+                {
+                    for (Object obj : (Collection)provenanceInputs)
+                    {
+                        rowInputLSIDs.add(Objects.toString(obj));
                     }
                 }
                 else

@@ -50,6 +50,8 @@ public interface AssayPublishService
 
     String AUTO_COPY_TARGET_PROPERTY_URI = "terms.labkey.org#AutoCopyTargetContainer";
 
+    String STUDY_PUBLISH_PROTOCOL_NAME = "Study Publish Protocol";
+    String STUDY_PUBLISH_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:StudyPublishProtocol";
 
     static void setInstance(AssayPublishService serviceImpl)
     {

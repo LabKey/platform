@@ -140,25 +140,6 @@ public abstract class SqlScriptManager
     }
 
 
-    // Get the incremental scripts within a range from a given collection of scripts
-    public List<SqlScript> getIncrementalScripts(double from, double to)
-    {
-        List<SqlScript> scripts = new ArrayList<>();
-
-        for (SqlScript script : _provider.getScripts(_schema))
-        {
-            if (script.getFromVersion() >= from && script.getToVersion() <= to && (script.getFromVersion() != from || script.getToVersion() != to))
-            {
-                scripts.add(script);
-            }
-        }
-
-        scripts.sort(null);
-
-        return scripts;
-    }
-
-
     private static Pair<Double, List<SqlScript>> getNearestFrom(Map<Double, Pair<Double, List<SqlScript>>> m, double targetFrom)
     {
         Pair<Double, List<SqlScript>> nearest = m.get(targetFrom);
@@ -288,11 +269,12 @@ public abstract class SqlScriptManager
     {
         Object[] pk = new Object[]{script.getProvider().getProviderName(), script.getDescription()};
 
-        Table.update(user, getTableInfoSqlScripts(), new HashMap(), pk);  // Update user and modified date
+        Table.update(user, getTableInfoSqlScripts(), new HashMap<>(), pk);  // Update user and modified date
     }
 
-
-    public void updateSchemaVersion(double version)
+    // Allow null version for oddball cases like gel_reports, which claims to have schemas but no schema version. That
+    // case will fall through, since tinfo is null except for external datasource case.
+    public void updateSchemaVersion(Double version)
     {
         TableInfo tinfo = getTableInfoSchemas();
 
@@ -387,6 +369,7 @@ public abstract class SqlScriptManager
             super(provider, schema);
         }
 
+        @Override
         protected TableInfo getTableInfoSqlScripts()
         {
             return getLabKeySchema().getTable("SqlScripts");
@@ -404,6 +387,7 @@ public abstract class SqlScriptManager
             return ensureSchemaBean().getInstalledVersion();
         }
 
+        @Override
         public boolean requiresUpgrade()
         {
             if (!_schema.getSqlDialect().canExecuteUpgradeScripts())

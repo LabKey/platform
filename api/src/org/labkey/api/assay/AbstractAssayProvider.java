@@ -41,7 +41,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
@@ -110,6 +109,7 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -1505,7 +1505,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         if (getResultRowLSIDPrefix() == null)
             return null;
-        return "urn:lsid:" + encode(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + getResultRowLSIDPrefix();
+
+        // need to use same encoding as Lsid.encodePart
+        return "urn:lsid:" + Lsid.encodePart(AppProps.getInstance().getDefaultLsidAuthority()) + ":" + Lsid.encodePart(getResultRowLSIDPrefix());
     }
 
     @Override

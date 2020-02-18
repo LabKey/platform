@@ -60,7 +60,7 @@
 </script>
 
 <labkey:form method="POST" enctype="multipart/form-data" action="<%=h(insertUrl)%>" id="insertMessageForm" onsubmit="return onSubmit(this);">
-<labkey:input type="hidden" name="cancelUrl" value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>" />
+<labkey:input type="hidden" name="cancelUrl" value="<%=cancelURL%>" />
 <%=generateReturnUrlFormField(cancelURL)%>
 <labkey:input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>" />
 <labkey:input type="hidden" name="allowMultipleDiscussions" value="<%=bean.allowMultipleDiscussions%>" />
@@ -72,7 +72,7 @@
         %><tr><td colspan="3"><span class="labkey-message">Note: This <%=h(settings.getConversationName().toLowerCase())%> will not be posted immediately; it will appear after the content has been reviewed.</span><br><br></td></tr><%
     }
 %>
-  <tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type='text' size='60' maxLength="255" id="title" name='title' value="<%=h(form.get(\"title\"))%>" onChange="LABKEY.setDirty(true);" /></td></tr>
+  <tr><td class='labkey-form-label'>Title * <%= helpPopup("Title", "This field is required.") %></td><td colspan="2"><labkey:input type='text' size='60' maxLength="255" id="title" name='title' value="<%=form.get(\"title\")%>" onChange="LABKEY.setDirty(true);" /></td></tr>
 <%
     if (settings.hasStatus())
     {
@@ -100,7 +100,7 @@
     }
     if (settings.hasExpires())
     {
-        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=h(form.get(\"expires\"))%>' /></td><td><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+        %><tr><td class='labkey-form-label'>Expires</td><td><labkey:input type='text' size='23' name='expires' value='<%=form.get(\"expires\")%>' /></td><td><i>By default the Expires field is set to one month from today. <br>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
     }
 %>
 
@@ -168,7 +168,7 @@ else
     %><%= generateBackButton("Cancel") %><%
 }
 %>
-<labkey:input type="hidden" name="discussionSrcIdentifier" value="<%=h(form.get(\"discussionSrcIdentifier\"))%>"/><labkey:input type="hidden" name="discussionSrcURL" value="<%=h(form.get(\"discussionSrcURL\"))%>"/>
+<labkey:input type="hidden" name="discussionSrcIdentifier" value="<%=form.get(\"discussionSrcIdentifier\")%>"/><labkey:input type="hidden" name="discussionSrcURL" value="<%=form.get(\"discussionSrcURL\")%>"/>
 </labkey:form>
 <p/>
 <%

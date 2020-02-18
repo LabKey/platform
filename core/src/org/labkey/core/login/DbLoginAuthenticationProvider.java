@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -41,7 +41,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EmptyStackException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -59,12 +58,15 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @Override
     public List<DbLoginConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
     {
-        Map<String, String> props = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
-        Map<String, String> map = new HashMap<>(props);
-        map.put("Enabled", "true");
-        map.put("Name", getName());
+        Map<String, Object> properties = Map.of(
+            "RowId", 0,
+            "Enabled", true,
+            "Name", getName()
+        );
 
-        return Collections.singletonList(new DbLoginConfiguration(DATABASE_AUTHENTICATION_CATEGORY_KEY, this, map));
+        Map<String, String> stringProperties = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+
+        return Collections.singletonList(new DbLoginConfiguration(this, stringProperties, properties));
     }
 
     @Override
@@ -84,7 +86,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @NotNull
     public String getDescription()
     {
-        return "Stores user names and passwords in the LabKey database";
+        return "Stores user names and password hashes in the LabKey database";
     }
 
     @Override
@@ -130,7 +132,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     @Override
-    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
     {
         return null;  // We don't migrate the database login configuration
     }
@@ -190,11 +192,5 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         }
 
         return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
-    }
-
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
     }
 }

@@ -17,10 +17,13 @@ package org.labkey.api.module;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
 import org.labkey.api.data.SqlScriptRunner;
+import org.labkey.api.module.ModuleLoader.ModuleState;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -28,6 +31,7 @@ import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * User: migra
@@ -37,11 +41,11 @@ import java.util.List;
 public class ModuleContext implements Cloneable
 {
     // ModuleContext fields are written by the main upgrade thread and read by request threads to show current
-    // upgrade status.  Use volatile to ensure reads see the latest values.
+    // upgrade status. Use volatile to ensure reads see the latest values.
 
     // These three fields are effectively "final" -- they are set on construction (new module) or when loaded from DB,
     // then never changed.
-    private volatile double _originalVersion = -1.0;
+    private volatile Double _originalVersion = null;
     private volatile String _className;
     private volatile String _name;
 
@@ -49,8 +53,8 @@ public class ModuleContext implements Cloneable
     private volatile String _schemas;
 
     // These two are updated during the upgrade process.
-    private volatile double _installedVersion;
-    private volatile ModuleLoader.ModuleState _moduleState = ModuleLoader.ModuleState.Loading;
+    private volatile Double _installedSchemaVersion;
+    private volatile ModuleState _moduleState = ModuleState.Loading;
 
     private final boolean _newInstall;
 
@@ -63,27 +67,47 @@ public class ModuleContext implements Cloneable
     {
         _className = module.getClass().getName();
         setName(module.getName());
-        assert _installedVersion == 0.00;
+        assert _installedSchemaVersion == null;
         _newInstall = true;  // ModuleContext has not been seen before
     }
 
-
-    public double getInstalledVersion()
+    @SuppressWarnings({"UnusedDeclaration"})
+    public Double getSchemaVersion()
     {
-        return _installedVersion;
-    }
-
-    // InstalledVersion gets changed after upgrade... OriginalVersion keeps the version as it existed at server startup
-    public double getOriginalVersion()
-    {
-        return _originalVersion;
+        return _installedSchemaVersion;
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
+    public void setSchemaVersion(Double schemaVersion)
+    {
+        // IMPORTANT check for "upgrade from 20.2" case: at initial startup, before the InstalledVersion column is renamed
+        // to SchemaVersion, this setter will be called with BOTH the InstalledVersion value AND with SchemaVersion (NULL)
+        // because QueryServiceImpl selects "NULL AS SchemaVersion" based on core.xml mentioning the missing column
+        if (null == _installedSchemaVersion)
+        {
+            _installedSchemaVersion = schemaVersion;
+            _originalVersion = schemaVersion;
+        }
+    }
+
+    // For convenience and backwards compatibility, this method returns schema version as a double, returning 0.0 for null
+    public double getInstalledVersion()
+    {
+        return null != _installedSchemaVersion ? _installedSchemaVersion : 0.0;
+    }
+
+    // LEAVE THIS IN PLACE until we stop upgrading from 20.2. Before that upgrade happens, the server loads module contexts
+    // from the old table, which still had an InstalledVersion column.
+    @SuppressWarnings({"UnusedDeclaration"})
     public void setInstalledVersion(double installedVersion)
     {
-        _installedVersion = installedVersion;
-        _originalVersion = installedVersion;
+        setSchemaVersion(installedVersion);
+    }
+
+    // InstalledVersion gets changed after upgrade process... OriginalVersion keeps the version as it existed at server startup
+    public double getOriginalVersion()
+    {
+        return null != _originalVersion ? _originalVersion : 0.0;
     }
 
     public boolean isNewInstall()
@@ -102,22 +126,6 @@ public class ModuleContext implements Cloneable
         _className = name;
     }
 
-    public String getMessage()
-    {
-        Module module = ModuleLoader.getInstance().getModule(_name);
-
-        // This could happen if a module failed to initialize
-        if (null == module)
-        {
-            //noinspection ThrowableInstanceNeverThrown
-            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
-            return "Configuration problem with this module";
-        }
-
-        double targetVersion = module.getVersion();
-        return getModuleState().describeModuleState(this, _installedVersion, targetVersion);
-    }
-
     private static DecimalFormat df2 = new DecimalFormat("0.00#");
     private static DecimalFormat df3 = new DecimalFormat("0.000");
 
@@ -127,20 +135,20 @@ public class ModuleContext implements Cloneable
         return (version < 20 ? df2 : df3).format(version);
     }
 
-    public ModuleLoader.ModuleState getModuleState()
+    public ModuleState getModuleState()
     {
         return _moduleState;
     }
 
-    public void setModuleState(ModuleLoader.ModuleState moduleState)
+    public void setModuleState(ModuleState moduleState)
     {
         _moduleState = moduleState;
     }
 
     public void upgradeComplete(Module module)
     {
-        _installedVersion = module.getVersion();
-        setModuleState(ModuleLoader.ModuleState.ReadyToStart);
+        _installedSchemaVersion = module.getSchemaVersion();
+        setModuleState(ModuleState.ReadyToStart);
         ModuleLoader.getInstance().saveModuleContext(this);
 
         SqlScriptRunner.SqlScriptProvider provider = new FileSqlScriptProvider(module);
@@ -150,7 +158,7 @@ public class ModuleContext implements Cloneable
             if (schema.getSqlDialect().canExecuteUpgradeScripts())
             {
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                manager.updateSchemaVersion(_installedVersion);
+                manager.updateSchemaVersion(_installedSchemaVersion);
             }
         }
     }
@@ -203,6 +211,46 @@ public class ModuleContext implements Cloneable
         _schemas = schemas;
     }
 
+    public boolean needsUpgrade(Double newSchemaVersion)
+    {
+        return isNewInstall() || needsUpgrade(_installedSchemaVersion, newSchemaVersion);
+    }
+
+    private static boolean needsUpgrade(Double installedSchemaVersion, Double newSchemaVersion)
+    {
+        // Both null or same version
+        if (Objects.equals(installedSchemaVersion, newSchemaVersion))
+            return false;
+
+        // One is null... allow "upgrade" from or to null
+        if (null == installedSchemaVersion || null == newSchemaVersion)
+            return true;
+
+        return installedSchemaVersion < newSchemaVersion;
+    }
+
+    public boolean isDowngrade(Double newSchemaVersion)
+    {
+        return isDowngrade(_installedSchemaVersion, newSchemaVersion);
+    }
+
+    private static boolean isDowngrade(Double installedSchemaVersion, Double newSchemaVersion)
+    {
+        if (null == installedSchemaVersion || null == newSchemaVersion)
+            return false;
+
+        return newSchemaVersion < installedSchemaVersion;
+    }
+
+    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
+    {
+        Module module = ModuleLoader.getInstance().getModule(_name);
+        if (module != null)
+            module.addDeferredUpgradeRunnable(description, runnable);
+        else
+            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -225,12 +273,34 @@ public class ModuleContext implements Cloneable
         return result;
     }
 
-    public void addDeferredUpgradeRunnable(String description, Runnable runnable)
+    public static class TestCase extends Assert
     {
-        Module module = ModuleLoader.getInstance().getModule(_name);
-        if (module != null)
-            module.addDeferredUpgradeRunnable(description, runnable);
-        else
-            ExceptionUtil.logExceptionToMothership(null, new IllegalStateException("Module " + _name + " failed to initialize"));
+        @Test
+        public void testNeedsUpgrade()
+        {
+            assertFalse(needsUpgrade(null, null));
+            assertFalse(needsUpgrade(1.0, 1.0));
+            assertFalse(needsUpgrade(2.0, 1.0));
+
+            assertTrue(needsUpgrade(null, 1.0));
+            assertTrue(needsUpgrade(1.0, null));
+            assertTrue(needsUpgrade(1.0, 2.0));
+        }
+
+        @SuppressWarnings("ConstantConditions")
+        @Test
+        public void testIsDowngrade()
+        {
+            assertFalse(isDowngrade(null, null));
+            assertFalse(isDowngrade(1.0, 1.0));
+            assertFalse(isDowngrade(null, 1.0));
+            assertFalse(isDowngrade(1.0, null));
+            assertFalse(isDowngrade(1.0, 2.0));
+
+            assertTrue(isDowngrade(2.0, 1.0));
+            assertTrue(isDowngrade(20.000, 19.35));
+            assertTrue(isDowngrade(20.001, 20.000));
+            assertTrue(isDowngrade(21.000, 20.000));
+        }
     }
 }

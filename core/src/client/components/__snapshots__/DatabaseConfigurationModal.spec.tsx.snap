@@ -1,0 +1,358 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<DatabaseConfigurationModal/> Editable 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure Database Authentication
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="database-modal__field-row"
+    >
+      <span>
+        Password Strength:
+      </span>
+      <span
+        className="database-modal__field"
+      >
+        <ButtonGroup
+          block={false}
+          bsClass="btn-group"
+          justified={false}
+          onClick={[Function]}
+          vertical={false}
+        >
+          <Button
+            active={false}
+            block={false}
+            bsClass="btn"
+            bsStyle="default"
+            disabled={false}
+            name="strength"
+            value="Weak"
+          >
+            Weak
+          </Button>
+          <Button
+            active={false}
+            block={false}
+            bsClass="btn"
+            bsStyle="default"
+            disabled={false}
+            name="strength"
+            value="Strong"
+          >
+            Strong
+          </Button>
+        </ButtonGroup>
+      </span>
+    </div>
+    <div
+      className="bold-text"
+    >
+       Weak 
+    </div>
+    <div>
+      <div
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "",
+          }
+        }
+      />
+    </div>
+    <br />
+    <div
+      className="bold-text"
+    >
+       Strong 
+    </div>
+    <div>
+      <div
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "",
+          }
+        }
+      />
+    </div>
+    <br />
+    <div
+      className="database-modal__field-row"
+    >
+      <span>
+        Password Expiration:
+      </span>
+      <span
+        className="database-modal__field"
+      >
+        <FormControl
+          bsClass="form-control"
+          componentClass="select"
+          name="expiration"
+          onChange={[Function]}
+          placeholder="select"
+          value=""
+        >
+          <option
+            key="Never"
+            value="Never"
+          >
+            Never
+          </option>
+          <option
+            key="FiveSeconds"
+            value="FiveSeconds"
+          >
+            Every five seconds — for testing
+          </option>
+          <option
+            key="ThreeMonths"
+            value="ThreeMonths"
+          >
+            Every three months
+          </option>
+          <option
+            key="SixMonths"
+            value="SixMonths"
+          >
+            Every six months
+          </option>
+          <option
+            key="OneYear"
+            value="OneYear"
+          >
+            Every twelve months
+          </option>
+        </FormControl>
+      </span>
+    </div>
+    <div
+      className="database-modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href={null}
+          target="_blank"
+        >
+          More about authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DatabaseConfigurationModal/> View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure Database Authentication
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="database-modal__field-row"
+    >
+      <span>
+        Password Strength:
+      </span>
+      <span
+        className="database-modal__field"
+      >
+        <ButtonGroup
+          block={false}
+          bsClass="btn-group"
+          justified={false}
+          onClick={[Function]}
+          vertical={false}
+        >
+          <Button
+            active={false}
+            block={false}
+            bsClass="btn"
+            bsStyle="default"
+            disabled={true}
+            name="strength"
+            value="Weak"
+          >
+            Weak
+          </Button>
+          <Button
+            active={false}
+            block={false}
+            bsClass="btn"
+            bsStyle="default"
+            disabled={true}
+            name="strength"
+            value="Strong"
+          >
+            Strong
+          </Button>
+        </ButtonGroup>
+      </span>
+    </div>
+    <div
+      className="bold-text"
+    >
+       Weak 
+    </div>
+    <div>
+      <div
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "",
+          }
+        }
+      />
+    </div>
+    <br />
+    <div
+      className="bold-text"
+    >
+       Strong 
+    </div>
+    <div>
+      <div
+        dangerouslySetInnerHTML={
+          Object {
+            "__html": "",
+          }
+        }
+      />
+    </div>
+    <br />
+    <div
+      className="database-modal__field-row"
+    >
+      <span>
+        Password Expiration:
+      </span>
+      <span
+        className="database-modal__field"
+      />
+    </div>
+    <div
+      className="database-modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href={null}
+          target="_blank"
+        >
+          More about authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;

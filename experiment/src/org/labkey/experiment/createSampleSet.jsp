@@ -16,18 +16,18 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
+<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
+<%@ page import="org.labkey.api.exp.api.SampleSetService" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.exp.api.ExpSampleSet" %>
-<%@ page import="org.labkey.api.exp.api.ExpDataClass" %>
-<%@ page import="org.labkey.api.exp.api.SampleSetService" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.exp.api.ExperimentService" %>
 <%@ page import="java.util.ArrayList" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -80,11 +80,11 @@
 <labkey:errors />
 <labkey:form action="" method="POST" layout="horizontal" id="sampleSetForm">
     <labkey:input
-            id="name" name="name" label="Name" isReadOnly="<%=bean.isUpdate() || bean.isNameReadOnly()%>" value="<%=h(bean.getName())%>"
+            id="name" name="name" label="Name" isReadOnly="<%=bean.isUpdate() || bean.isNameReadOnly()%>" value="<%=bean.getName()%>"
             contextContent="Name of sample set (required)." size="60" isDisabled="<%=bean.isNameReadOnly()%>"
     />
     <labkey:input
-            id="nameExpression" name="nameExpression" label="Name Expression" value="<%=h(bean.getNameExpression())%>"
+            id="nameExpression" name="nameExpression" label="Name Expression" value="<%=bean.getNameExpression()%>"
             placeholder="S-\${now:date}-\${batchRandomId}-\${randomId}"
             contextContent="<%=helpText%>" size="60"
     />
@@ -111,9 +111,9 @@
     </div>
 
     <br/>
-    <labkey:input type="hidden" name="isUpdate" value="<%=h(bean.isUpdate())%>"/>
-    <labkey:input type="hidden" name="LSID" value="<%=h(bean.getLSID())%>"/>
-    <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
+    <labkey:input type="hidden" name="isUpdate" value="<%=bean.isUpdate()%>"/>
+    <labkey:input type="hidden" name="LSID" value="<%=bean.getLSID()%>"/>
+    <labkey:input type="hidden" name="rowId" value="<%=bean.getRowId()%>"/>
 
     <%=button(bean.isUpdate() ? "Update" : "Create").id("btnSubmit").submit(true)%>
     <%=button("Cancel").href(bean.getReturnURLHelper())%>

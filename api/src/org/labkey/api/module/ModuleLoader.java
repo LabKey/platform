@@ -175,44 +175,12 @@ public class ModuleLoader implements Filter
     {
         Disabled,
         Loading,
-        InstallRequired
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                if (installedVersion > 0.0)
-                    return "Upgrade Required: " + ModuleContext.formatVersion(installedVersion) + " -> " + ModuleContext.formatVersion(targetVersion);
-                else
-                    return "Not Installed.";
-            }
-        },
+        InstallRequired,
         Installing,
         InstallComplete,
-        ReadyToStart
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " ready to start.";
-            }
-        },
-        Starting
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " starting up.";
-            }
-        },
+        ReadyToStart,
+        Starting,
         Started
-        {
-            public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-            {
-                return "Version " + ModuleContext.formatVersion(installedVersion) + " started.";
-            }
-        };
-
-        public String describeModuleState(ModuleContext context, double installedVersion, double targetVersion)
-        {
-            return toString();
-        }
     }
 
     /** Stash these warnings as a member variable so they can be registered after the WarningService has been initialized */
@@ -239,6 +207,7 @@ public class ModuleLoader implements Filter
         return _instance;
     }
 
+    @Override
     public void init(FilterConfig filterConfig)
     {
         // terminateAfterStartup flag allows "headless" install/upgrade
@@ -392,52 +361,44 @@ public class ModuleLoader implements Filter
         for (ModuleContext context : getAllModuleContexts())
             _contextMap.put(context.getName(), context);
 
+        List<String> modulesRequiringUpgrade = new LinkedList<>();
+        List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
+        List<String> downgradedModules = new LinkedList<>();
+
         //Make sure we have a context for all modules, even ones we haven't seen before
         for (Module module : _modules)
         {
             ModuleContext context = _contextMap.get(module.getName());
+
             if (null == context)
             {
                 context = new ModuleContext(module);
-                _contextMap.put(context.getName(), context);
+                _contextMap.put(module.getName(), context);
             }
-            if (context.getInstalledVersion() < module.getVersion())
+
+            if (context.needsUpgrade(module.getSchemaVersion()))
+            {
                 context.setModuleState(ModuleState.InstallRequired);
+                modulesRequiringUpgrade.add(context.getName());
+            }
             else
+            {
                 context.setModuleState(ModuleState.ReadyToStart);
-            /*
-        else if (!context.isEnabled())
-            context.setModuleState(ModuleState.Disabled);
-            */
+
+                // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
+                // The scenario is a schema in an external data source that needs to be installed or upgraded.
+                List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(module);
+                additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
+
+                // Also check for module "downgrades" so we can warn admins, #30773
+                if (context.isDowngrade(module.getSchemaVersion()))
+                    downgradedModules.add(context.getName());
+            }
         }
 
         // Core module should be upgraded and ready-to-run
         ModuleContext coreCtx = _contextMap.get(DefaultModule.CORE_MODULE_NAME);
         assert (ModuleState.ReadyToStart == coreCtx.getModuleState());
-
-        List<String> modulesRequiringUpgrade = new LinkedList<>();
-        List<String> additionalSchemasRequiringUpgrade = new LinkedList<>();
-        List<String> downgradedModules = new LinkedList<>();
-
-        for (Module m : _modules)
-        {
-            ModuleContext ctx = getModuleContext(m);
-            if (ctx.isNewInstall() || ctx.getInstalledVersion() < m.getVersion())
-            {
-                modulesRequiringUpgrade.add(ctx.getName());
-            }
-            else
-            {
-                // Module doesn't require an upgrade, but we still need to check if schemas in this module require upgrade.
-                // The scenario is a schema in an external data source that needs to be installed or upgraded.
-                List<String> schemasInThisModule = additionalSchemasRequiringUpgrade(m);
-                additionalSchemasRequiringUpgrade.addAll(schemasInThisModule);
-
-                // Also check for module "downgrades" so we can warn admins, #30773
-                if (m.getVersion() < ctx.getInstalledVersion())
-                    downgradedModules.add(ctx.getName());
-            }
-        }
 
         if (WarningService.get().showAllWarnings() || !downgradedModules.isEmpty())
         {
@@ -1098,19 +1059,19 @@ public class ModuleLoader implements Filter
             coreContext = getModuleContext("Core");
 
         // Does the core module need to be upgraded?
-        if (coreContext.getInstalledVersion() >= coreModule.getVersion())
+        if (!coreContext.needsUpgrade(coreModule.getSchemaVersion()))
             return false;
 
         if (coreContext.isNewInstall())
         {
-            _log.debug("Initializing core module to " + coreModule.getFormattedVersion());
+            _log.debug("Initializing core module to " + coreModule.getFormattedSchemaVersion());
         }
         else
         {
             if (coreContext.getInstalledVersion() < Constants.getEarliestUpgradeVersion())
                 throw new ConfigurationException("Can't upgrade from LabKey Server version " + coreContext.getInstalledVersion() + "; installed version must be " + Constants.getEarliestUpgradeVersion() + " or greater.");
 
-            _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedVersion());
+            _log.debug("Upgrading core module from " + ModuleContext.formatVersion(coreContext.getInstalledVersion()) + " to " + coreModule.getFormattedSchemaVersion());
         }
 
         _contextMap.put(coreModule.getName(), coreContext);
@@ -1144,7 +1105,7 @@ public class ModuleLoader implements Filter
         // Look for "labkey" script files in the "core" module. Version the labkey schema in all scopes to current version of core.
         Module coreModule = ModuleLoader.getInstance().getCoreModule();
         FileSqlScriptProvider provider = new FileSqlScriptProvider(coreModule);
-        double to = coreModule.getVersion();
+        double to = coreModule.getSchemaVersion();
 
         for (String name : getAllModuleDataSourceNames())
         {
@@ -1215,6 +1176,7 @@ public class ModuleLoader implements Filter
         return _contextMap.get(module.getName());
     }
 
+    @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
         if (isUpgradeRequired())
@@ -1459,7 +1421,7 @@ public class ModuleLoader implements Filter
         ModuleContext stored = getModuleContext(context.getName());
         if (null == stored)
             Table.insert(null, getTableInfoModules(), context);
-        else if (context.getInstalledVersion() > stored.getInstalledVersion()) // Never "downgrade" a module version, #30773
+        else if (!stored.isDowngrade(context.getSchemaVersion())) // Never "downgrade" a module version, #30773
             Table.update(null, getTableInfoModules(), context, context.getName());
     }
 
