@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 import * as React from 'react'
-import {Panel} from "react-bootstrap";
-import {ActionURL, Security, Utils, Ajax} from "@labkey/api";
+import {ActionURL, Security, Ajax} from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
     PermissionTypes,
-    DomainFieldsDisplay,
-    fetchProtocol,
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
     createListDesign,
-    // AssayProtocolModel
-} from "@labkey/components"; //TODO: include List model and panel added in labkey-ui-components
+} from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
 
@@ -38,15 +34,11 @@ type State = {
     isLoadingModel: boolean,
     message?: string,
     dirty: boolean,
-    model?: any,
+    model?: ListModel,
     domainId?: number;
-
-    //TODO: Not sure if these are needed given hasDesignListPermission above, carried over from ListController.EditListDefinitionAction:
-    // hasInsertPermission: boolean,
-    // hasDeleteListPermission: boolean
 }
 
-export class App extends React.Component<any, State>
+export class App extends React.Component<{}, State>
 {
     constructor(props) {
         super(props);
@@ -63,12 +55,21 @@ export class App extends React.Component<any, State>
 
     componentDidMount() {
         const {listId} = this.state;
-        // TODO: Query and set hasDesignListPermission based on whether user can save list designs
+        Security.getUserPermissions({
+            containerPath: LABKEY.container.path,
+            success: (data) => {
+                this.setState(() => ({
+                    hasDesignListPermission: data.container.effectivePermissions.indexOf(PermissionTypes.DesignList) > -1
+                }));
+            },
+            failure: (error) => {
+                this.setState(() => ({
+                    message: error.exception,
+                    hasDesignListPermission: false
+                }));
+            }
+        });
 
-
-
-        // this.loadExistingList();
-        // this.createNewListTemplate();
         if (listId) {
             this.loadExistingList();
         } else {
@@ -77,6 +78,7 @@ export class App extends React.Component<any, State>
     }
 
     loadExistingList = () => {
+        // Retrieve domainId, given listId
         Ajax.request({
             url: ActionURL.buildURL('list', 'GetListProperties'),
             method: 'GET',
@@ -91,6 +93,7 @@ export class App extends React.Component<any, State>
             success: function(result) {
                 const response = JSON.parse(result.response);
 
+                // Retrieve model, given domainId
                 fetchListDesign(response.domainId)
                     .then((model) => {
                         this.setState(() => ({
@@ -112,7 +115,7 @@ export class App extends React.Component<any, State>
 
     createNewListTemplate = () => {
         createListDesign()
-            .then((model) => {
+            .then((model: ListModel) => {
                 this.setState(() => ({
                         model,
                         isLoadingModel: false
@@ -128,12 +131,9 @@ export class App extends React.Component<any, State>
             })
     };
 
-
     onCancel = () => {
         this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
     };
-
-    //TODO
 
     // onComplete = (model: ListModel) => {
     //     this.navigate(ActionURL.buildURL('list', '??', LABKEY.container.path, {rowId: model.??}));
@@ -159,30 +159,22 @@ export class App extends React.Component<any, State>
         }
 
         // set as loading until model is loaded and we know if the user has DesignListPerm
-        // toDo: use hasDesignListPermission
-        if (isLoadingModel || model === undefined) {
+        if (isLoadingModel || hasDesignListPermission === undefined) {
             return <LoadingSpinner/>
         }
 
-        // check if this is a create list case with a user that doesn't have permissions
-        // if (model.isNew() && !hasDesignListPermission) { //TODO: use this when ListModel is in place in labkey-ui-components
-        // if (!hasDesignListPermission) {
-        //     return <Alert>You do not have sufficient permissions to create a new list design.</Alert>
-        // }
-
+        if (!hasDesignListPermission) {
+            return <Alert>You do not have sufficient permissions to create or view a list design.</Alert>
+        }
 
         return (
             <>
-                {/*{hasDesignListPermission*/}
-                {/*    ? this.renderDesignerView()*/}
-                {/*    : this.renderReadOnlyView()*/}
-                {/*}*/}
-
-
-                <ListDesignerPanels
-                    model={model}
-                    onCancel={this.onCancel}
-                />
+                {hasDesignListPermission &&
+                    <ListDesignerPanels
+                        model={model}
+                        onCancel={this.onCancel}
+                    />
+                }
             </>
         );
     }
