@@ -326,7 +326,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
-            assert null != getSchemaVersion();
+            if (null == getSchemaVersion())
+            {
+                // TODO: Change to an assert or exception once we no longer support old version methods/properties
+                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
+                return;
+            }
+
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
@@ -588,7 +594,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public @Nullable Double getSchemaVersion()
     {
         // For now, delegate to getVersion() for modules that still override that method
-        return -1 != getVersion() ? (Double)getVersion() : _schemaVersion;
+        if (-1 != getVersion())
+        {
+            _log.warn("The \"" + getName() + "\" module overrides the getVersion() method, which is no longer supported. Please override getSchemaVersion() instead.");
+
+            return getVersion();
+        }
+        else
+        {
+            return _schemaVersion;
+        }
     }
 
     public final void setSchemaVersion(Double schemaVersion)
@@ -1617,6 +1632,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public final void setVersion(double version)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"version\" property; this module needs to be recompiled.");
         setSchemaVersion(version);
     }
 
@@ -1631,6 +1647,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings("unused")
     public void setConsolidateScripts(Boolean consolidate)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"consolidateScripts\" property; this module needs to be recompiled.");
     }
 
     @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
@@ -1642,6 +1659,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
     public void setLabkeyVersion(String labkeyVersion)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
     }
 }
