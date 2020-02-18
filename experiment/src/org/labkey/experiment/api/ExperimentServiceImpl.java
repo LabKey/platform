@@ -6293,7 +6293,7 @@ public class ExperimentServiceImpl implements ExperimentService
             @NotNull Container c, @NotNull User u, @NotNull String name, String description,
             List<GWTPropertyDescriptor> properties,
             List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
-            @Nullable TemplateInfo templateInfo)
+            @Nullable TemplateInfo templateInfo, @Nullable String category)
         throws ExperimentException
     {
         if (name == null)
@@ -6312,6 +6312,11 @@ public class ExperimentServiceImpl implements ExperimentService
         int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate category length
+        int categoryMax = dataClassTable.getColumn("Category").getScale();
+        if (category != null && category.length() > categoryMax)
+            throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
 
         if (sampleSetId != null)
         {

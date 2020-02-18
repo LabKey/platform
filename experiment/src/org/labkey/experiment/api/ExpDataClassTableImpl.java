@@ -81,6 +81,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             case Description:
             case NameExpression:
+            case Category:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
 
@@ -156,6 +157,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         addColumn(Column.ModifiedBy);
         addContainerColumn(Column.Folder, new ActionURL(ExperimentController.ListDataClassAction.class, getContainer()));
         addColumn(Column.NameExpression).setHidden(true);
+        addColumn(Column.Category).setHidden(true);
         addColumn(Column.SampleSet);
         addColumn(Column.DataCount);
 
@@ -221,12 +223,13 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             String description = (String)row.get("description");
             String nameExpression = (String)row.get("nameExpression");
             Integer materialSourceId = (Integer)row.get("sampleSet");
+            String category = (String)row.get("category");
 
             try
             {
                 ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, description,
                         Collections.emptyList(), Collections.emptyList(),
-                        materialSourceId, nameExpression, null);
+                        materialSourceId, nameExpression, null, category);
                 return new CaseInsensitiveHashMap((Map<String,Object>) BeanUtils.describe(dc));
             }
             catch (ExperimentException | ReflectiveOperationException e)

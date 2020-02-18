@@ -1,0 +1,1 @@
+ALTER TABLE exp.DataClass ADD COLUMN Category VARCHAR(500) NULL;

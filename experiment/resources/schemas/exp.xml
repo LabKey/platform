@@ -405,6 +405,7 @@
       <column columnName="Description"/>
       <column columnName="MaterialSourceId"/>
       <column columnName="NameExpression"/>
+      <column columnName="Category"/>
     </columns>
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">
