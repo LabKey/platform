@@ -16,6 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -54,6 +55,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -68,6 +70,7 @@ import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
 import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListItemAttachmentParent;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -438,9 +441,17 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         try (DbScope.Transaction transaction = ListManager.get().getListMetadataSchema().getScope().ensureTransaction())
         {
             exception = new ValidationException();
+            boolean changedName = false;
 
             Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
             ListDefinition listDefinition = ListService.get().getList(domain);
+            TableInfo table = listDefinition.getTable(user);
+
+            if (null == domain || null == table)
+                return exception.addGlobalError("Expected domain and table for list: " + listDefinition.getName());
+
+            // Check for legalName problems
+            exception.addErrors(checkLegalNameConflicts(update));
 
             // handle key column name change
             GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
@@ -450,21 +461,28 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 GWTPropertyDescriptor newKey = findField(id, update.getFields());
                 if (null != newKey && !key.getName().equalsIgnoreCase(newKey.getName()))
                 {
-                    exception.addError(new SimpleValidationError("Cannot change key field name"));
+                    exception.addError(new PropertyValidationError("Cannot change key field name", key.getName()));
                 }
             }
 
             //handle name change
             if (!original.getName().equals(update.getName()))
             {
+                changedName = true;
                 if (update.getName().length() > ListEditorService.MAX_NAME_LENGTH)
                 {
                     exception.addError(new SimpleValidationError("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters"));
                 }
             }
 
+            //return if there are errors before moving forward with the save
+            if (exception.hasErrors())
+            {
+                return exception;
+            }
+
             //update list properties
-            if (null != listProperties && !exception.hasErrors())
+            if (null != listProperties)
             {
                 try
                 {
@@ -481,6 +499,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 }
                 catch (RuntimeSQLException e)
                 {
+                    if (changedName && e.isConstraintException())
+                    {
+                        exception.addGlobalError("The name '" + listDefinition.getName() + "' is already in use.");
+                        return exception;
+                    }
                     throw e;
                 }
             }
@@ -490,7 +513,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             {
                 //handle attachment cols
                 Map<String, ColumnInfo> modifiedAttachmentColumns = new CaseInsensitiveHashMap<>();
-                TableInfo table = listDefinition.getTable(user);
 
                 for (DomainProperty oldProp : domain.getProperties())
                 {
@@ -530,9 +552,22 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 //update domain properties
                 exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
             }
-            catch(RuntimeSQLException e)
+            catch (RuntimeSQLException x)
             {
-                throw e;
+                // issue 19202 - check for null value exceptions in case provided file data not contain the column
+                // and return a better error message
+                String message = x.getMessage();
+                if (x.isNullValueException())
+                {
+                    message = "The provided data does not contain the specified '" + listDefinition.getKeyName() + "' field or contains null key values.";
+                }
+                exception.addGlobalError(message);
+                return exception;
+            }
+            catch (DataIntegrityViolationException x)
+            {
+                exception.addGlobalError("A data error occurred: " + x.getMessage());
+                return exception;
             }
 
             if (!exception.hasErrors())
@@ -541,6 +576,23 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             }
             return exception;
         }
+    }
+
+    @NotNull
+    private ValidationException checkLegalNameConflicts(GWTDomain dd)
+    {
+        ValidationException errors = new ValidationException();
+        Set<String> names = new HashSet<>();
+        for (Object obj : dd.getFields())
+        {
+            GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)obj;
+            String legalName = ColumnInfo.legalNameFromName(descriptor.getName()).toLowerCase();
+            if (names.contains(legalName))
+                errors.addError(new PropertyValidationError("Field's legal name '" + legalName + "' is not unique." , descriptor.getName()));
+            else
+                names.add(legalName);
+        }
+        return errors;
     }
 
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
