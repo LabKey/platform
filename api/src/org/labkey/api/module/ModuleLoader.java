@@ -362,6 +362,10 @@ public class ModuleLoader implements Filter
             {
                 /* NEW MODULE */
                 List<Module> moduleList = loadModules(List.of(new AbstractMap.SimpleEntry(dir,archive)));
+                if (moduleList.isEmpty())
+                {
+                    throw new IllegalStateException("Not a valid module: " + archive.getName());
+                }
                 module = moduleList.get(0);
 
                 /* VERY IMPORTANT: we expect all these additions to file-based, non-schema modules! */
