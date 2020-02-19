@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.ObjectError;
@@ -38,8 +39,8 @@ public class LabKeyError extends ObjectError
         super("main", new String[] { "Error" }, new Object[] { message }, message);
     }
 
-    public String renderToHTML(ViewContext context)
+    public HtmlString renderToHTML(ViewContext context)
     {
-        return PageFlowUtil.filter(context.getMessage(this), true);
+        return HtmlString.unsafe(PageFlowUtil.filter(context.getMessage(this), true));
     }
 }

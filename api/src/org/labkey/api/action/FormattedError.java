@@ -15,6 +15,7 @@
  */
 package org.labkey.api.action;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ViewContext;
 
 /**
@@ -32,8 +33,8 @@ public class FormattedError extends LabKeyError
 
     /** Don't need to HTML encode */
     @Override
-    public String renderToHTML(ViewContext context)
+    public HtmlString renderToHTML(ViewContext context)
     {
-        return context.getMessage(this);
+        return HtmlString.unsafe(context.getMessage(this));
     }
 }
