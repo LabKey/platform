@@ -491,16 +491,9 @@ public class DomainUtil
             throw new ValidationException(ve);
         }
         ObjectMapper mapper = new ObjectMapper();
-        Domain created;
-        if (JSONObject.class == kind.getTypeClass())
-        {
-            created = kind.createDomain(domain, arguments, container, user, templateInfo);
-        }
-        else
-        {
-            Object options = mapper.convertValue(arguments, kind.getTypeClass());
-            created = kind.createDomain(domain, options, container, user, templateInfo);
-        }
+
+        Object options = mapper.convertValue(arguments, kind.getTypeClass());
+        Domain created = kind.createDomain(domain, options, container, user, templateInfo);
 
         if (created == null)
             throw new RuntimeException("Failed to created domain for kind '" + kind.getKindName() + "' using domain name '" + domainName + "'");
