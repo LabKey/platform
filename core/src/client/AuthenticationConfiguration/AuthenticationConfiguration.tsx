@@ -250,16 +250,27 @@ export class App extends PureComponent<{}, State> {
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}
 
-                <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
-                    Save and Finish
-                </Button>
+                {this.state.canEdit ?
+                    <>
+                        <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
+                            Save and Finish
+                        </Button>
 
-                <Button
-                    className="labkey-button parent-panel__cancel-button"
-                    onClick={this.onCancel}
-                >
-                    Cancel
-                </Button>
+                        <Button
+                            className="labkey-button parent-panel__cancel-button"
+                            onClick={this.onCancel}
+                        >
+                            Cancel
+                        </Button>
+                    </>
+                    :
+                    < Button
+                        className="labkey-button"
+                        onClick={this.onCancel}
+                    >
+                        Done
+                    </Button>
+                }
             </div>
         );
     }

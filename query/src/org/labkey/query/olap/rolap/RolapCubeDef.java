@@ -691,6 +691,7 @@ public class RolapCubeDef
         protected String keyType="String";
         protected JdbcType jdbcType;
 
+
         protected String nameColumn;
         protected String nameExpression;
         protected String nameAlias;
@@ -713,6 +714,10 @@ public class RolapCubeDef
             return uniqueName;
         }
 
+        public String getKeyColumn()
+        {
+            return keyColumn;
+        }
 
         public String getSchemaName()
         {

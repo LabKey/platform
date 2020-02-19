@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -30,7 +31,9 @@
 %>
 <%
     OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
+    String configId = StringUtils.defaultString(form.getConfigId(), "");
 %>
+<h3><%=h(configId.substring(configId.indexOf("/")+1))%></h3>
 <labkey:errors/>
 <labkey:form action="#">
     query: <textarea cols=80 rows=25 id=query name=query style='font-size:10pt; font-family: Andale Monaco, monospace;'><%=h(request.getParameter("query"))%></textarea><br>
@@ -41,23 +44,6 @@
 <script type="text/javascript">
 
     var connection = null;
-    var cube = null;
-    var mdx = null;
-
-    Ext4.onReady(function()
-    {
-        //connection = new LABKEY.query.olap.OlapConnection({});
-        cube = LABKEY.query.olap.CubeManager.getCube(
-        {
-            name:<%=q(form.getCubeName())%>,
-            configId:<%=q(form.getConfigId())%>,
-            schemaName:<%=q(form.getSchemaName())%>
-        });
-        cube.on('onready',function(m)
-        {
-            mdx = m;
-        });
-    });
 
     var startTime;
 
