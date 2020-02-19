@@ -6371,6 +6371,8 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClass.setMaterialSourceId(sampleSetId);
         if (nameExpression != null)
             dataClass.setNameExpression(nameExpression);
+        if (category != null)
+            dataClass.setCategory(category);
         dataClass.setContainer(c);
 
         ExpDataClassImpl impl = new ExpDataClassImpl(dataClass);
