@@ -35,7 +35,7 @@ import java.util.Set;
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
  * Material version of {@link ExpDataClass}
  */
-public interface ExpSampleSet extends ExpObject
+public interface ExpSampleSet extends ExpObject, DomainKindProperties
 {
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
 
@@ -67,18 +67,22 @@ public interface ExpSampleSet extends ExpObject
 
     /** @return property that determines the first part of the sample set's sample's keys.  Will be null if using 'Name' as the Id column. */
     @Nullable
+    @Deprecated
     DomainProperty getIdCol1();
 
     /** @return property that determines the second part of the sample set's sample's keys */
     @Nullable
+    @Deprecated
     DomainProperty getIdCol2();
 
     /** @return property that determines the third part of the sample set's sample's keys */
     @Nullable
+    @Deprecated
     DomainProperty getIdCol3();
 
     /** @return column that contains parent sample names */
     @Nullable
+    @Deprecated //Please use lineage syntax or parent aliases materialSource/parentSampleType/columnName or
     DomainProperty getParentCol();
 
     /** @return name expression if set. */

@@ -254,6 +254,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getDomainProperty(_object.getIdCol3());
     }
 
+    //TODO remove
     @Override
     public DomainProperty getParentCol()
     {

@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +52,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -59,6 +61,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -66,6 +69,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
@@ -790,5 +794,40 @@ public class SampleSetServiceImpl implements SampleSetService
         counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
         counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
         return counts;
+    }
+
+    @Override
+    public ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        ExpSampleSetImpl ss = new ExpSampleSetImpl(getMaterialSource(update.getDomainURI()));
+
+        String newDescription = StringUtils.trimToNull(update.getDescription());
+        String description = ss.getDescription();
+        if (description == null || !description.equals(newDescription))
+        {
+            ss.setDescription(newDescription);
+        }
+
+        if (options != null)
+        {
+            String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
+            String oldPattern = ss.getNameExpression();
+            if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
+            {
+                ss.setNameExpression(sampleIdPattern);
+            }
+
+            ss.setImportAliasMap(options.getImportAliases());
+        }
+
+        ValidationException errors;
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            ss.save(user);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            transaction.commit();
+        }
+
+        return errors;
     }
 }

@@ -17,7 +17,9 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
@@ -33,11 +35,12 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
+import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
@@ -46,6 +49,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -55,7 +59,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
-import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -66,7 +69,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
+public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -112,9 +115,9 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     }
 
     @Override
-    public Class<JSONObject> getTypeClass()
+    public Class<? extends SampleTypeDomainKindProperties> getTypeClass()
     {
-        return JSONObject.class;
+        return SampleTypeDomainKindProperties.class;
     }
 
     @Override
@@ -139,7 +142,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     {
         Lsid lsid = new Lsid(domainURI);
         String prefix = lsid.getNamespacePrefix();
-        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix))
+        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix) || "SampleType".equals(prefix))
             return Priority.MEDIUM;
         return null;
     }
@@ -175,7 +178,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        return Objects.requireNonNull(PageFlowUtil.urlProvider(ExperimentUrls.class)).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override
@@ -264,7 +267,15 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, @Nullable JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    @NotNull
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        return SampleSetService.get().updateSampleSet(original, update, options, container, user, includeWarnings);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -274,14 +285,24 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? (Object[])arguments.get("idCols") : new Object[0];
-        int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
-        int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
-        int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
-        int parentCol = (arguments != null && arguments.get("parentCol") instanceof Number) ? ((Number)arguments.get("parentCol")).intValue() : -1;
+        int idCol1 = -1;
+        int idCol2 = -1;
+        int idCol3 = -1;
+        int parentCol = -1;
+        String nameExpression = null;
 
-        String nameExpression = (arguments != null && arguments.containsKey("nameExpression")) ? Objects.toString(arguments.get("nameExpression"), null) : null;
+        if (arguments != null)
+        {
+//              //TODO Make these work...
+//            Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? (Object[])arguments.get("idCols") : new Object[0];
+//            int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
+//            int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
+//            int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
+//            int parentCol = (arguments != null && arguments.get("parentCol") instanceof Number) ? ((Number)arguments.get("parentCol")).intValue() : -1;
 
+
+            nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+        }
         ExpSampleSet ss;
         try
         {
@@ -341,5 +362,11 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
     {
         return UpdateableTableInfo.ObjectUriType.schemaColumn;
+    }
+
+    @Override
+    public DomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    {
+            return new SampleTypeDomainKindProperties(SampleSetService.get().getSampleSet(domain.getDomainURI()));
     }
 }
