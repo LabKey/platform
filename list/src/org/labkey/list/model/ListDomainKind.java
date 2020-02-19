@@ -495,7 +495,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                         throw new IllegalArgumentException();
 
                     //update
-                    ListManager.get().update(user, updatedListProps);
+                    ListManager.get().update(user, container, updatedListProps);
                 }
                 catch (RuntimeSQLException e)
                 {

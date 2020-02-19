@@ -7,7 +7,7 @@ import org.labkey.api.exp.list.ListDefinition;
 import java.util.Date;
 
 /* This is GWTList equivalent bean*/
-public class ListDomainKindProperties extends Entity implements DomainKindProperties, Cloneable
+public class ListDomainKindProperties implements DomainKindProperties, Cloneable
 {
     protected int listId;
     protected String name;
@@ -48,7 +48,6 @@ public class ListDomainKindProperties extends Entity implements DomainKindProper
 
     public ListDomainKindProperties(ListDomainKindProperties copyFrom)
     {
-        super(copyFrom);
         listId = copyFrom.listId;
         name = copyFrom.name;
         domainId = copyFrom.domainId;
