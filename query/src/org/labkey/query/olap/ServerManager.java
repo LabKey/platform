@@ -906,7 +906,7 @@ public class ServerManager
             // Make sure the cache retrieves the test OLAP descriptor from this module
 
             Module module = ModuleLoader.getInstance().getModule("query");
-            assertEquals("OLAP descriptors from the query module", 1, MODULE_DESCRIPTOR_CACHE.getResourceMap(module).size());
+            assertEquals("OLAP descriptors from the query module", 4, MODULE_DESCRIPTOR_CACHE.getResourceMap(module).size());
         }
     }
 }

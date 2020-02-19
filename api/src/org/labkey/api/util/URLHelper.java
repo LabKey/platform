@@ -29,6 +29,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -37,8 +38,10 @@ import org.springframework.beans.PropertyValues;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -796,8 +799,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Enumeration<String> getParameterNames()
     {
         Hashtable<String,String> h = new Hashtable<>();
-        for (Pair<String,String> p : _parameters)
-            h.put(p.getKey(), p.getKey());
+        if (null != _parameters)
+            for (Pair<String,String> p : _parameters)
+                h.put(p.getKey(), p.getKey());
         return h.keys();
     }
 
@@ -901,6 +905,65 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public HtmlString getHtmlString()
     {
         return HtmlString.of(toString());
+    }
+
+    public boolean isConfiguredExternalHost()
+    {
+        String requestedHost = this.getHost();
+        if (StringUtils.trimToNull(requestedHost) != null )
+            return AppProps.getInstance().getExternalRedirectHosts().stream().anyMatch(requestedHost::equalsIgnoreCase);
+
+        return false;
+    }
+
+    // Issue 35896 - Disallow external redirects to URLs not on the whitelist
+    public boolean isAllowableHost()
+    {
+        String host = StringUtils.trimToNull(this.getHost());
+
+        // We have a returnURL that includes a server host name
+        if (host != null)
+        {
+            // Check if it matches the current server's preferred host name, per the base server URL setting
+            String allowedHost = null;
+            try
+            {
+                allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
+            }
+            catch (MalformedURLException ignored) {}
+
+            if (!host.equalsIgnoreCase(allowedHost))
+            {
+                // Server host name that doesn't match, log and possibly reject based on config
+                // Allow 'localhost' for servers in dev mode
+                boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(host);
+                isConfigured |= this.isConfiguredExternalHost();
+
+                if (!isConfigured)
+                {
+                    String logMessageDetails = "returnURL value: " + this.toString();
+                    HttpServletRequest request = HttpView.currentRequest();
+                    if (request != null)
+                    {
+                        logMessageDetails += " from URL: " + request.getRequestURL();
+                        if (request.getHeader("Referer") != null)
+                        {
+                            logMessageDetails += " with referrer: " + request.getHeader("Referer");
+                        }
+                    }
+
+                    LOG.warn("Rejected external host redirect " + logMessageDetails +
+                            "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
+                    return false;
+                }
+                else
+                {
+                    LOG.debug("Detected configured external host returnURL: " + this.toString());
+                }
+            }
+        }
+
+        return true;
     }
 
     public static class TestCase extends Assert
