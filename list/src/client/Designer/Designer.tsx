@@ -92,6 +92,7 @@ export class App extends React.Component<{}, State>
             },
             success: function(result) {
                 const response = JSON.parse(result.response);
+                console.log("loadexisting", result.response);
 
                 // Retrieve model, given domainId
                 fetchListDesign(response.domainId)
