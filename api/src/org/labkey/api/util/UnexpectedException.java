@@ -38,11 +38,18 @@ public class UnexpectedException extends RuntimeException
         return new UnexpectedException(cause);
     }
 
+    static public RuntimeException wrap(Throwable cause, String message)
+    {
+        return new UnexpectedException(cause, message);
+    }
+
+    @Deprecated // use wrap()
     public UnexpectedException(Throwable cause)
     {
         super(cause);
     }
 
+    @Deprecated // use wrap()
     public UnexpectedException(Throwable cause, String message)
     {
         super(message, cause);
