@@ -449,7 +449,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return createView(form.getViewContext(), form.getQuerySettings(), errors);
     }
 
-    @NotNull
     public final QueryView createView(ViewContext context, String dataRegionName, String queryName, BindException errors)
     {
         QuerySettings settings = getSettings(context, dataRegionName, queryName);

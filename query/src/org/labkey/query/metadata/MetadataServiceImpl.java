@@ -126,14 +126,7 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
             gwtColumnInfo.setPHI(columnInfo.getPHI().name());*/
             gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
             gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
-            try
-            {
-                gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
-            }
-            catch (IllegalArgumentException x)
-            {
-                /* java object does not map to a property type */
-            }
+            gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
             if (columnInfo.getFk() != null)
             {
                 ForeignKey fk = columnInfo.getFk();
