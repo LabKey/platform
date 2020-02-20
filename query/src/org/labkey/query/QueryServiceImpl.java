@@ -193,6 +193,8 @@ public class QueryServiceImpl implements QueryService
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
 
+    private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
+
     private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
     private final List<CompareType> COMPARE_TYPES = new CopyOnWriteArrayList<>(Arrays.asList(
@@ -2738,6 +2740,19 @@ public class QueryServiceImpl implements QueryService
             schemaLinks.put(new ActionURL(actionClass, c), actionInfo.second);
         }
         return schemaLinks;
+    }
+
+    @Override
+    public void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider)
+    {
+        _queryIconURLProviders.add(queryIconProvider);
+    }
+
+    @Override
+    @NotNull public List<QueryIconURLProvider> getQueryIconURLProvider()
+    {
+        ArrayList<QueryIconURLProvider> providers = new ArrayList<>(_queryIconURLProviders);
+        return Collections.unmodifiableList(providers);
     }
 
     private static class QAliasedColumn extends AliasedColumn

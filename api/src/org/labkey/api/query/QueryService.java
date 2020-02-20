@@ -292,6 +292,10 @@ public interface QueryService
      */
     Map<ActionURL, String> getSchemaLinks(@NotNull Container c);
 
+    void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider);
+
+    @NotNull List<QueryIconURLProvider> getQueryIconURLProvider();
+
     //
     // Thread local environment for executing a query
     //
