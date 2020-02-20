@@ -50,6 +50,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -164,6 +165,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected DefaultModule()
     {
+        assert MemTracker.getInstance().put(this);
     }
 
     @Override

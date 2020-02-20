@@ -68,6 +68,8 @@ import org.labkey.api.util.DebugInfoDumper;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.HttpView;
@@ -133,7 +135,7 @@ import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
  * User: migra
  * Date: Jul 13, 2005
  */
-public class ModuleLoader implements Filter
+public class ModuleLoader implements Filter, MemTrackerListener
 {
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
@@ -210,6 +212,8 @@ public class ModuleLoader implements Filter
             _log.error("More than one instance of module loader...");
 
         _instance = this;
+
+        MemTracker.getInstance().register(this);
     }
 
     public static ModuleLoader getInstance()
@@ -2321,5 +2325,12 @@ public class ModuleLoader implements Filter
         {
             return _type;
         }
+    }
+
+
+    @Override
+    public void beforeReport(Set<Object> set)
+    {
+        set.addAll(getModules());
     }
 }
