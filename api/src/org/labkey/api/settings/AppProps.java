@@ -95,7 +95,15 @@ public interface AppProps
     @NotNull
     UsageReportingLevel getUsageReportingLevel();
 
-    String getLabKeyVersionString();
+    /**
+     * Returns the core module's release version, a string such as 20.3-SNAPSHOT, 20.1.0, or 20.3.7
+     */
+    String getReleaseVersion();
+
+    /**
+     * Convenience method for getting the core schema version, returning 0.0 instead of null
+     */
+    double getSchemaVersion();
 
     String getContextPath();
 
@@ -218,5 +226,4 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
-
 }

@@ -251,7 +251,8 @@ public class ExperimentServiceImpl implements ExperimentService
         return run == null ? null : new ExpRunImpl(run);
     }
 
-    private List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
+    @Override
+    public List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
     {
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowids);
         TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
@@ -3805,19 +3806,25 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
-    /**
-     * Finds the subset of materialIds that are used as inputs to runs.
-     *
-     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     */
-    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedDeleteObjects(List<Integer> deleteRequest, List<Integer> cannotDelete, List<? extends ExpRunItem> allData)
     {
-        if (materialIds.isEmpty())
-            return emptyList();
-        final SqlDialect dialect = getExpSchema().getSqlDialect();
-        SQLFragment rowIdInFrag = new SQLFragment();
-        dialect.appendInClauseSql(rowIdInFrag, materialIds);
-        return new SqlSelector(getExpSchema(), getMaterialsUsedAsInputs(rowIdInFrag)).getArrayList(Integer.class);
+        // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from the deleteRequest set.
+        deleteRequest.removeAll(cannotDelete);
+        List<Map<String, Object>> canDeleteRows = new ArrayList<>();
+        List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
+        allData.forEach((dataObject) -> {
+            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
+            if (deleteRequest.contains(dataObject.getRowId()))
+                canDeleteRows.add(rowMap);
+            else
+                cannotDeleteRows.add(rowMap);
+        });
+
+
+        Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
+        partitionedIds.put("canDelete", canDeleteRows);
+        partitionedIds.put("cannotDelete", cannotDeleteRows);
+        return partitionedIds;
     }
 
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
@@ -4028,8 +4035,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SELECT DISTINCT m2.runId
                 FROM exp.material m2
                 WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.rowId != m2.rowId
                     AND m.runId = m2.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.material m3
+                        WHERE m3.rowId in (3592, 3593, 3594)
+                            AND m2.rowId = m3.rowId
+                    )
             );
          */
 
@@ -4043,8 +4056,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append("SELECT DISTINCT m2.runId\n")
                 .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
                 .append("WHERE m.rowId ").append(idInclause).append("\n")
-                .append("AND m.rowId != m2.rowId\n")
                 .append("AND m.runId = m2.runId\n")
+                .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
+                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("AND m2.rowId = m3.rowId\n")
+                .append(")\n")
                 .append(")");
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
@@ -4057,6 +4074,71 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
+    }
+
+    /**
+     * Finds the subset of materialIds that are used as inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
+     */
+    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, materialIds);
+
+        // ex SQL:
+        /*
+            SELECT DISTINCT m.materialId
+            FROM exp.MaterialInput m, exp.protocolapplication pa
+            WHERE m.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND m.materialId <materialIdRowSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT mi.materialID\n");
+        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
+                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+                .append("AND mi.materialID ").append(rowIdInFrag).append("\n");
+
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
+    }
+
+    /**
+     * Finds the subset of data that are used as inputs to runs.
+     */
+    public List<Integer> getDataUsedAsInput(Collection<Integer> dataIds)
+    {
+        if (dataIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, dataIds);
+
+        // ex SQL:
+        /*
+            SELECT DISTINCT d.dataId
+            FROM exp.DataInput d, exp.protocolapplication pa
+            WHERE d.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND d.dataId <dataRowIdSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT d.dataID\n");
+        sql.append("FROM ").append(getTinfoDataInput(), "d").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE d.TargetApplicationId = pa.rowId\n\t")
+                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+                .append("AND d.dataID ").append(rowIdInFrag).append("\n");
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
     }
 
 
@@ -4656,36 +4738,6 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("\n)");
 
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
-    }
-
-    /**
-     * Generate a query to get the subset of rowids from the supplied set material RowIds
-     * that are inputs to runs.
-     *
-     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     * @param materialRowIdSQL --  SQL clause generating material rowIds used to limit results
-     * @return Query to retrieve subset of materialIds
-     */
-    private SQLFragment getMaterialsUsedAsInputs(SQLFragment materialRowIdSQL)
-    {
-        // ex SQL:
-        /*
-            SELECT DISTINCT m.materialId
-            FROM exp.MaterialInput m, exp.protocolapplication pa
-            WHERE m.targetapplicationId = pa.rowId
-             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
-             AND m.materialId <materialIdRowSQL>;
-         */
-        SQLFragment sql = new SQLFragment();
-
-        sql.append("SELECT DISTINCT mi.materialID\n");
-        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
-        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
-            .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
-            .append("AND mi.materialID ").append(materialRowIdSQL).append("\n");
-
-        return sql;
     }
 
     /**

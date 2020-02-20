@@ -77,6 +77,11 @@ public abstract class OlapSchemaDescriptor
         return (boolean)JdbcType.BOOLEAN.convert(s);
     }
 
+    /* In the future we could support an annotation for this, for now return true if useMondrian is true */
+    public boolean allowExecuteMDX()
+    {
+        return usesMondrian();
+    }
 
     static String makeCatalogName(OlapSchemaDescriptor d, Container c)
     {
@@ -160,6 +165,7 @@ public abstract class OlapSchemaDescriptor
 
     private List<RolapCubeDef> rolapCubes = null;
     private Map<String,String> annotations = null;
+    private Boolean hasContainerColumn = null;
 
     private void _parse()
     {
@@ -174,6 +180,39 @@ public abstract class OlapSchemaDescriptor
             throw new RuntimeException(x);
         }
     }
+
+    private boolean isContainerLevel(RolapCubeDef.LevelDef l)
+    {
+        if (l.getName().equalsIgnoreCase("Container") || l.getName().equalsIgnoreCase("Folder"))
+            return true;
+        if (l.getKeyColumn().equalsIgnoreCase("Container") || l.getKeyColumn().equalsIgnoreCase("Folder"))
+            return true;
+        return false;
+    }
+
+    public synchronized boolean hasContainerColumn()
+    {
+        if (null == hasContainerColumn)
+        {
+            for (var def : getRolapCubeDefinitions())
+            {
+                for (var h : def.getHierarchies())
+                {
+                    for (var l : h.getLevels())
+                    {
+                        if (isContainerLevel(l))
+                        {
+                            hasContainerColumn = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+            hasContainerColumn = false;
+        }
+        return hasContainerColumn;
+    }
+
 
     public synchronized List<RolapCubeDef> getRolapCubeDefinitions()
     {

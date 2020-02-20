@@ -29,6 +29,7 @@ import org.labkey.test.components.CustomizeView;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -73,7 +74,7 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         setupEnvironment();
         setupPipeline(getProjectName());
         SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
-                new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"),
+                StudyHelper.SPECIMEN_ARCHIVE_A,
                 new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer.importAndWaitForComplete();
         defineAssay();

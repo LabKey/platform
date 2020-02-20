@@ -57,6 +57,7 @@ import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.data.views.DataViewService;
+import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.pipeline.PipeRoot;
@@ -3433,6 +3434,11 @@ public class ReportsController extends SpringActionController
                 response.put("success", true);
                 return response;
             }
+            catch (OptimisticConflictException oce)
+            {
+                errors.reject(ERROR_MSG, oce.getMessage());
+            }
+            return null;
         }
     }
 

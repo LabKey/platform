@@ -15,6 +15,8 @@
  */
 package org.labkey.bigiron.mssql;
 
+import org.labkey.api.data.dialect.TableResolver;
+
 /**
  * User: adam
  * Date: 4/10/2014
@@ -22,4 +24,8 @@ package org.labkey.bigiron.mssql;
  */
 public class MicrosoftSqlServer2014Dialect extends MicrosoftSqlServer2012Dialect
 {
+    public MicrosoftSqlServer2014Dialect(TableResolver tableResolver)
+    {
+        super(tableResolver);
+    }
 }
