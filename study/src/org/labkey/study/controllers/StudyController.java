@@ -1646,11 +1646,12 @@ public class StudyController extends BaseStudyController
             QueryUpdateService qus = studyProperties.getUpdateService();
             if (null == qus)
                 throw new UnauthorizedException();
-            try
+            try (DbScope.Transaction transaction = studyProperties.getSchema().getScope().ensureTransaction())
             {
                 qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null, null);
                 List<AttachmentFile> files = getAttachmentFileList();
                 getStudyThrowIfNull().attachProtocolDocument(files, getUser());
+                transaction.commit();
             }
             catch (BatchValidationException x)
             {
