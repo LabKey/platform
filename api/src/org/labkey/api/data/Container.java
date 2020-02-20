@@ -82,6 +82,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 
 /**
@@ -126,7 +127,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _searchable = searchable;
     }
 
-    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
+    /* public only for unit testing */
+    public Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
@@ -1028,7 +1030,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if(isWorkbook())
         {
-            if(init)
+            if (init)
                 appendWorkbookModulesToParent(new HashSet<>(), user);
 
             return getParent().getActiveModules(init, includeDependencies, user);
@@ -1107,7 +1109,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
             else
             {
-                //if this is a subfolder, set active modules to inherit from parent
+                // if this is a subfolder, set active modules to inherit from parent
                 Set<Module> parentModules = getParent().getActiveModules(false, false, user);
                 for (Module module : parentModules)
                 {
@@ -1135,7 +1137,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         for (String moduleName : props.keySet())
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
-            if (module != null)
+            if (module != null && module.canBeEnabled(this))
                 modules.add(module);
         }
 
@@ -1147,7 +1149,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 // check for null, since there's no guarantee that a third-party folder type has all its
                 // active modules installed on this system (so nulls may end up in the list- bug 6757):
                 // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
-                if (module != null)
+                if (module != null && module.canBeEnabled(this))
                     modules.add(module);
             }
         }
@@ -1159,7 +1161,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 modules.remove(module);
         }
 
-        Set<Module> activeModules;
         if (includeDependencies)
         {
             // Invoke the ModuleDependencyProviders first, so the code below will resolve dependencies
@@ -1177,14 +1178,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         withDependencies.add(dependent);
             }
 
-            activeModules = withDependencies;
-        }
-        else
-        {
-            activeModules = modules;
+            modules = withDependencies;
         }
 
-        return Collections.unmodifiableSet(new LinkedHashSet<>(ModuleLoader.getInstance().orderModules(activeModules)));
+        return Collections.unmodifiableSet(new LinkedHashSet<>(ModuleLoader.getInstance().orderModules(modules)));
     }
 
     public boolean isDescendant(Container container)

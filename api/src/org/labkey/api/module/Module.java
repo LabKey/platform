@@ -97,6 +97,15 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
+
+    /**
+     * Can this module be enabled in this container?
+     */
+    default boolean canBeEnabled(Container c)
+    {
+        return true;
+    }
+
     /**
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */

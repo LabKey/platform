@@ -233,6 +233,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         init();
     }
 
+    public void unregister()
+    {
+        synchronized(INSTANTIATED_MODULES)
+        {
+            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            INSTANTIATED_MODULES.remove(reg);
+        }
+    }
+
     protected abstract void init();
 
     /**
@@ -1676,5 +1685,32 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
+    }
+
+    public void copyPropertiesFrom(DefaultModule from)
+    {
+        this.setAuthor(from.getAuthor());
+        this.setBuildNumber(from.getBuildNumber());
+        this.setBuildOS(from.getBuildOS());
+        this.setBuildPath(from.getBuildPath());
+        this.setBuildTime(from.getBuildTime());
+        this.setBuildType(from.getBuildType());
+        this.setBuildUser(from.getBuildUser());
+        this.setDescription(from.getDescription());
+        this.setEnlistmentId(from.getEnlistmentId());
+        this.setLabel(from.getLabel());
+        this.setLabkeyVersion(from.getLabkeyVersion());
+        this.setLicense(from.getLicense());
+        this.setLicenseUrl(from.getLicenseUrl());
+        this.setMaintainer(from.getMaintainer());
+        this.setOrganization(from.getOrganization());
+        this.setOrganizationUrl(from.getOrganizationUrl());
+        this.setUrl(from.getUrl());
+        this.setVcsBranch(from.getVcsBranch());
+        this.setVcsRevision(from.getVcsRevision());
+        this.setVcsTag(from.getVcsTag());
+        this.setVcsUrl(from.getVcsUrl());
+        this.setVersion(from.getVersion());
+        this.setZippedPath(from.getZippedPath());
     }
 }
