@@ -688,7 +688,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     @Override
     public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        ListDefinition list = ListService.get().getList(container, domain.getName());
+        ListDefinition list = ListService.get().getList(PropertyService.get().getDomain(domain.getDomainId()));
         return ListManager.get().getListDomainKindProperties(container, list.getListId());
     }
 
