@@ -130,8 +130,6 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @param user User
      * @return A list of errors collected during the update.
      */
-//    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings);
-
     abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                      @Nullable T options, Container container, User user, boolean includeWarnings);
 

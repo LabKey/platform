@@ -49,7 +49,7 @@ assay/resources/views/assayDesignerDev.html
 assay/resources/views/assayDesignerDev.view.xml
 
 list/resources/web/list/gen
-list/resources/views/listDesigner.html
-list/resources/views/listDesigner.view.xml
-list/resources/views/listDesignerDev.html
-list/resources/views/listDesignerDev.view.xml
+list/resources/views/designer.html
+list/resources/views/designer.view.xml
+list/resources/views/designerDev.html
+list/resources/views/designerDev.view.xml
