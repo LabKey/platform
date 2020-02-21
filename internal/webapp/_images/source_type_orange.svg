@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>source_type_orange_64x64_svg</title>
+    <desc>Created with Sketch.</desc>
+    <g id="source_type_orange_64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon" transform="translate(4.000000, 5.000000)">
+            <g id="Folder-Body" stroke="#FFA500" stroke-width="2">
+                <path d="M0.5,6 L0.5,2 C0.5,0.8954305 1.3954305,2.02906125e-16 2.5,0 L19.6715729,0 C20.2020059,-9.74389576e-17 20.7107137,0.210713681 21.0857864,0.585786438 L28.5,8 L28.5,8 L2.5,8 C1.3954305,8 0.5,7.1045695 0.5,6 Z" id="Path-3" fill="#FFCC81"></path>
+                <path d="M0.5,10 L0.5,53 C0.5,54.1045695 1.3954305,55 2.5,55 L54.5,55 C55.6045695,55 56.5,54.1045695 56.5,53 L56.5,10 C56.5,8.8954305 55.6045695,8 54.5,8 L2.5,8 C1.3954305,8 0.5,8.8954305 0.5,10 Z" id="Path-4" fill="#FFCC81"></path>
+                <line x1="0.5" y1="5" x2="0.5" y2="13" id="Path-5"></line>
+                <path d="M22.5,8 L24.2573593,8 C25.2279221,8 26.0147186,7.21320344 26.0147186,6.24264069 C26.0147186,5.77656002 25.8295688,5.3295688 25.5,5 L25.5,5 L25.5,5" id="Path-6"></path>
+                <path d="M24.5,8 L29.6715729,8 C30.2020059,8 30.7107137,7.78928632 31.0857864,7.41421356 L34.5,4 L34.5,4" id="Path-6" transform="translate(29.500000, 6.000000) scale(-1, 1) translate(-29.500000, -6.000000) "></path>
+            </g>
+            <g id="Source" transform="translate(10.000000, 14.000000)">
+                <line x1="25.6218971" y1="34.3162576" x2="10.6493354" y2="33.9865996" id="Base" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" transform="translate(18.135616, 34.151429) rotate(178.738695) translate(-18.135616, -34.151429) "></line>
+                <g id="Left-Node" transform="translate(0.000000, 14.000000)">
+                    <line x1="18" y1="17" x2="10.4771429" y2="9.79120879" id="Path" stroke="#FFFFFF" stroke-width="2" transform="translate(14.477143, 13.791209) rotate(1.221311) translate(-14.477143, -13.791209) "></line>
+                    <circle id="Oval" fill="#FFFFFF" cx="6.59714286" cy="6.0989011" r="6"></circle>
+                </g>
+                <g id="Right-Node" transform="translate(27.000000, 19.000000) scale(-1, 1) translate(-27.000000, -19.000000) translate(18.000000, 10.000000)">
+                    <line x1="17.8434066" y1="17.3968254" x2="9.80494505" y2="9.65608466" id="Path" stroke="#FFFFFF" stroke-width="2" transform="translate(13.824176, 13.526455) rotate(1.080924) translate(-13.824176, -13.526455) "></line>
+                    <circle id="Oval" fill="#FFFFFF" cx="6.57417582" cy="6.1005291" r="6"></circle>
+                </g>
+                <line x1="18" y1="12" x2="18" y2="33" id="Main-Branch" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" transform="translate(18.000000, 22.500000) scale(-1, 1) translate(-18.000000, -22.500000) "></line>
+                <path d="M24,6 C24,9.28301887 21.3396226,12 18.0566038,12 L18,12 C14.6603774,12 12,9.33962264 12,6 C12,2.66037736 14.6603774,0 18,0 C21.2830189,0.0566037736 23.9433962,2.71698113 24,6" id="Top-Node" fill="#FFFFFF"></path>
+            </g>
+        </g>
+    </g>
+</svg>
