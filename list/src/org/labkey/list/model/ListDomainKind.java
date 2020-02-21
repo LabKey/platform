@@ -487,7 +487,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 try
                 {
                     //merge existing and new properties
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("listid"), listDefinition.getListId(), CompareType.EQUAL);
+                    SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+                    filter.addCondition(FieldKey.fromParts("ListId"), listDefinition.getListId());
                     ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
                     ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
 
