@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
@@ -316,13 +317,13 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public String getErrors(String paramName)
+    public HtmlString getErrors(String paramName)
     {
         return _ctx.getErrors(paramName);
     }
 
     @Override
-    public String getErrors(ColumnInfo column)
+    public HtmlString getErrors(ColumnInfo column)
     {
         return _ctx.getErrors(column);
     }
