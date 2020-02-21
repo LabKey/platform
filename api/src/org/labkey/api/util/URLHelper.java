@@ -320,22 +320,17 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     /**
      * The path argument is not URL encoded.
      */
-    public URLHelper setPath(Path path)
+    public URLHelper setPath(String path)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _path = path;
-        return this;
+        return setParsedPath(_parsePath(path, false));
     }
-
 
     /**
      * The path argument is not URL encoded.
      */
-    public URLHelper setPath(String path)
+    public URLHelper setPath(Path path)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _path = _parsePath(path, false);
-        return this;
+        return setParsedPath(path);
     }
 
 
@@ -411,6 +406,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Path getParsedPath()
     {
         return null == _path ? Path.rootPath : _path;
+    }
+
+    public URLHelper setParsedPath(Path path)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _path = path;
+        return this;
     }
 
 

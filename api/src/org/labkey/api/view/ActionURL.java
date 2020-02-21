@@ -455,16 +455,15 @@ public class ActionURL extends URLHelper implements Cloneable
 
     public ActionURL setContainer(Container c)
     {
-        _path = null == c ? Path.rootPath : c.getParsedPath();
+        setParsedPath(null == c ? Path.rootPath : c.getParsedPath());
         return this;
     }
 
 
     public ActionURL setExtraPath(String extraPath)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
         if (null == extraPath) extraPath = "";
-        _path = Path.parse(extraPath);
+        setParsedPath(Path.parse(extraPath));
         return this;
     }
 
@@ -479,15 +478,17 @@ public class ActionURL extends URLHelper implements Cloneable
 
     /**
      * The path argument is not URL encoded.
+     * The controller, action, and remaining path are extracted from the path.
      */
     @Override
     public ActionURL setPath(String pathStr)
     {
-        return this.setPath(Path.parse(pathStr));
+        return this.setPath(_parsePath(pathStr, false));
     }
 
     /**
      * The path argument is not URL encoded.
+     * The controller, action, and remaining path are extracted from the path.
      */
     @Override
     public ActionURL setPath(Path path)
