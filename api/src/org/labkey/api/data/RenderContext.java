@@ -21,7 +21,6 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabKeyError;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -30,7 +29,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
@@ -838,7 +836,7 @@ public class RenderContext implements Map<String, Object>, Serializable
             }
             else
             {
-                errStr = HtmlString.unsafe(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true));
+                errStr = HtmlString.of(getViewContext().getMessage((MessageSourceResolvable) m), true);
             }
 
             if (!uniqueErrorStrs.contains(errStr))

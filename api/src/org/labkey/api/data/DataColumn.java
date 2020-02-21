@@ -661,7 +661,7 @@ public class DataColumn extends DisplayColumn
         }
     }
 
-    protected HtmlString getErrors(RenderContext ctx)
+    protected @NotNull HtmlString getErrors(RenderContext ctx)
     {
         ColumnInfo col = null;
         if (isQueryColumn())
