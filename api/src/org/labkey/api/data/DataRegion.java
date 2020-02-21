@@ -2711,9 +2711,6 @@ public class DataRegion extends DisplayElement
                 int dotIndex = formatted.lastIndexOf('.');
                 if (dotIndex >= 0)
                     formatted = formatted.substring(dotIndex + 1);
-                int slashIndex = formatted.lastIndexOf('/');
-                if (slashIndex >= 0)
-                    formatted = formatted.substring(slashIndex);
                 return formatted;
             }
         });

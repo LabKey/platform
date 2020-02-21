@@ -260,7 +260,9 @@ Ext4.define('LABKEY.dataregion.panel.Facet', {
 
                 // Build what a filter might look like
                 if (filter.data.category) {
-                    filterPrefix = this.SUBJECT_PREFIX + filter.data.category.label;
+                    // issue : 39671 make sure we field key encode the column name
+                    const fk = LABKEY.FieldKey.fromParts(filter.data.category.label);
+                    filterPrefix = this.SUBJECT_PREFIX + fk.toString();
                 }
                 else {
                     // Assume it is a cohort
