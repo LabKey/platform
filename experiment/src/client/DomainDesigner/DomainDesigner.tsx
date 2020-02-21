@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
+import React from 'react'
 import {List} from "immutable";
-import * as React from 'react'
 import {Button, Panel} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"

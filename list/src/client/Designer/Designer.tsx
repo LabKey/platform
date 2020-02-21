@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import {ActionURL, Security, Ajax} from "@labkey/api";
+import { ActionURL, Security } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -22,7 +22,7 @@ import {
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
-    createListDesign,
+    getListProperties
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -34,8 +34,7 @@ type State = {
     isLoadingModel: boolean,
     message?: string,
     dirty: boolean,
-    model?: ListModel,
-    domainId?: number;
+    model?: ListModel
 }
 
 export class App extends React.Component<{}, State>
@@ -54,7 +53,8 @@ export class App extends React.Component<{}, State>
     }
 
     componentDidMount() {
-        const {listId} = this.state;
+        const { listId } = this.state;
+
         Security.getUserPermissions({
             containerPath: LABKEY.container.path,
             success: (data) => {
@@ -77,72 +77,37 @@ export class App extends React.Component<{}, State>
         }
     }
 
-    loadExistingList = () => {
-        // Retrieve domainId, given listId
-        Ajax.request({
-            url: ActionURL.buildURL('list', 'GetListProperties'),
-            method: 'GET',
-            params: { listId: this.state.listId },
-            scope: this,
-            failure: function(error) {
-                this.setState(() => ({
-                    message: error,
-                    isLoadingModel: false
-                }));
-            },
-            success: function(result) {
-                const response = JSON.parse(result.response);
-                console.log("loadexisting", result.response);
-
-                // Retrieve model, given domainId
-                fetchListDesign(response.domainId)
-                    .then((model) => {
-                        this.setState(() => ({
-                                model,
-                                isLoadingModel: false
-                            })
-                            , () => {console.log("loadExistingList", this.state)}
-                        )
-                    })
-                    .catch((error) => {
-                        this.setState(() => ({
-                            message: error.exception,
-                            isLoadingModel: false
-                        }));
-                    })
-            },
-        });
-    };
-
-    createNewListTemplate = () => {
-        createListDesign()
+    loadExistingList() {
+        fetchListDesign(this.state.listId)
             .then((model: ListModel) => {
-                this.setState(() => ({
-                        model,
-                        isLoadingModel: false
-                    })
-                    , () => {console.log("createNewListTemplate", this.state)}
-                )
+                this.setState(() => ({model, isLoadingModel: false}));
             })
             .catch((error) => {
-                this.setState(() => ({
-                    message: error.exception,
-                    isLoadingModel: false
-                }));
+                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            });
+    }
+
+    createNewListTemplate() {
+        getListProperties()
+            .then((model: ListModel) => {
+                this.setState(() => ({model, isLoadingModel: false}))
             })
-    };
+            .catch((error) => {
+                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            })
+    }
 
     onCancel = () => {
         this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
     };
 
-    // onComplete = (model: ListModel) => {
+    onComplete = (model: ListModel) => {
     //     this.navigate(ActionURL.buildURL('list', '??', LABKEY.container.path, {rowId: model.??}));
-    // };
-    //
-    // onChange = (model: ListModel) => {
-    //     this.setState(() => ({dirty: true}));
-    // };
+    };
+
+    onChange = (model: ListModel) => {
+        this.setState(() => ({dirty: true}));
+    };
 
     navigate(defaultUrl: string) {
         const { returnUrl } = this.state;
@@ -153,7 +118,7 @@ export class App extends React.Component<{}, State>
     }
 
     render() {
-        const { isLoadingModel, hasDesignListPermission, message, model } = this.state; //TODO: add model once its in labkey-ui-components
+        const { isLoadingModel, hasDesignListPermission, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
@@ -165,15 +130,17 @@ export class App extends React.Component<{}, State>
         }
 
         if (!hasDesignListPermission) {
-            return <Alert>You do not have sufficient permissions to create or view a list design.</Alert>
+            return <Alert>You do not have sufficient permissions to create or edit a list design.</Alert>
         }
 
         return (
             <>
                 {hasDesignListPermission &&
                     <ListDesignerPanels
-                        model={model}
+                        initModel={model}
                         onCancel={this.onCancel}
+                        onComplete={this.onComplete}
+                        onChange={this.onChange}
                     />
                 }
             </>

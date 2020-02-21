@@ -77,7 +77,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.25.0-fb-list-designer-6798.2",
+    "@labkey/components": "0.25.0-fb-list-designer-6798.6",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },

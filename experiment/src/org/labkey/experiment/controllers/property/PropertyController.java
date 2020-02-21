@@ -468,8 +468,11 @@ public class PropertyController extends SpringActionController
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
+            if (newDomain == null)
+                throw new NotFoundException("No domainDesign provided.");
+
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
-                throw new IllegalArgumentException("Domain id and URI are required");
+                throw new IllegalArgumentException("DomainId and domainURI are required in updated domainDesign.");
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
@@ -1104,7 +1107,7 @@ public class PropertyController extends SpringActionController
         {
             Domain dom = PropertyService.get().getDomain(domainId);
             if (dom == null)
-                throw new NotFoundException("Could not find domain for " + domainId);
+                throw new NotFoundException("Could not find domain for " + domainId + ".");
 
             if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
@@ -1117,7 +1120,7 @@ public class PropertyController extends SpringActionController
             domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
             if (domain == null)
-                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
+                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName + ".");
         }
 
         return domain;
