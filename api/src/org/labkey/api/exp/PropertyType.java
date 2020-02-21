@@ -577,7 +577,7 @@ public enum PropertyType
                     return t;
             }
         }
-        throw new IllegalArgumentException("No such class mapping: " + clazz.getName());
+        return PropertyType.STRING;
     }
 
     @NotNull

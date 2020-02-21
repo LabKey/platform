@@ -60,11 +60,14 @@
                 %><ul><%
                 for (RolapCubeDef c : sd.getRolapCubeDefinitions())
                 {
-                    ActionURL url = new ActionURL(OlapController.TestBrowserAction.class, getContainer());
-                    url.addParameter("configId",sd.getId());
-                    url.addParameter("schemaName",c.getOlapSchemaName());
-                    url.addParameter("cubeName",c.getName());
-                    %><li><%=link(c.getName(), url)%>&nbsp;<%=link("mdx", url.setAction(OlapController.TestMdxAction.class))%>&nbsp;<%=link("json", url.setAction(OlapController.TestJsonAction.class))%></li><%
+                    ActionURL mdx = new ActionURL(OlapController.TestMdxAction.class, getContainer());
+                    mdx.addParameter("configId",sd.getId());
+                    mdx.addParameter("schemaName",c.getOlapSchemaName());
+
+                    ActionURL test = mdx.clone().setAction(OlapController.TestBrowserAction.class).addParameter("cubeName",c.getName());
+                    ActionURL json = mdx.clone().setAction(OlapController.TestJsonAction.class).addParameter("cubeName",c.getName());
+
+                    %><li><%=link(c.getName(), test)%>&nbsp;<%=link("mdx", mdx)%>&nbsp;<%=link("json", json)%></li><%
                 }
                 %></ul><%
 //            }
