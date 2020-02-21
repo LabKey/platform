@@ -63,7 +63,7 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         {
             Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
 
-            if (_dir.isDirectory())
+            if (null != _dir & _dir.isDirectory())
             {
                 File[] files = _dir.listFiles();
                 if (files != null)
@@ -147,7 +147,7 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
     @Override
     public boolean isCollection()
     {
-        return exists() && _dir.isDirectory();
+        return null != _dir && _dir.isDirectory();
     }
 
     @Override
