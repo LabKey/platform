@@ -623,6 +623,20 @@ public class DbScope
         ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
     }
 
+    /* can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryException extends RuntimeException
+    {
+        public RetryException(@NotNull Exception x)
+        {
+            super(x);
+        }
+
+        public <T extends Throwable> void rethrow(Class<T> clazz) throws T
+        {
+            if (clazz.isAssignableFrom(getCause().getClass()))
+                throw (T)getCause();
+        }
+    }
 
     /** Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
@@ -2726,6 +2740,21 @@ public class DbScope
                 }
                 t.commit();
                 assertTrue(c.isClosed());
+            }
+        }
+
+        @Test
+        public void testRetryException()
+        {
+            var r = new RetryException(new IllegalArgumentException());
+            try
+            {
+                r.rethrow(IllegalArgumentException.class);
+                fail("should have thrown");
+            }
+            catch (IllegalArgumentException x)
+            {
+                // expected!
             }
         }
     }
