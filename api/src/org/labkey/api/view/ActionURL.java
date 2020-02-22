@@ -39,6 +39,8 @@ import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.containsString;
+
 /**
  * Encapsulates URL generation and parsing based on controller/container/action conventions.
  * This class has to be kept in sync with ViewServlet.
@@ -173,7 +175,8 @@ public class ActionURL extends URLHelper implements Cloneable
 
         try
         {
-            setPath(request.getServletPath());
+            // NOTE: request.getServletPath() is already decoded unlike request.getRequestURI()
+            setPath(_parsePath(request.getServletPath(), false));
         }
         catch (IllegalArgumentException x)
         {
@@ -434,7 +437,7 @@ public class ActionURL extends URLHelper implements Cloneable
             throw new IllegalArgumentException(use.getMessage(), use);
         }
 
-        String path = uri.getPath();
+        String path = uri.getRawPath();
         if (path == null)
         {
             throw new IllegalArgumentException("No path found in URI: " + p);
@@ -445,23 +448,22 @@ public class ActionURL extends URLHelper implements Cloneable
                 path = path.substring(context.length());
         }
 
-        setPath(path);
+        setPath(_parsePath(path, true));
         setRawQuery(q);
         setFragment(f);
     }
 
     public ActionURL setContainer(Container c)
     {
-        _path = null == c ? Path.rootPath : c.getParsedPath();
+        setParsedPath(null == c ? Path.rootPath : c.getParsedPath());
         return this;
     }
 
 
     public ActionURL setExtraPath(String extraPath)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
         if (null == extraPath) extraPath = "";
-        _path = Path.parse(extraPath);
+        setParsedPath(Path.parse(extraPath));
         return this;
     }
 
@@ -474,18 +476,30 @@ public class ActionURL extends URLHelper implements Cloneable
         return path;
     }
 
-
+    /**
+     * The path argument is not URL encoded.
+     * The controller, action, and remaining path are extracted from the path.
+     */
     @Override
     public ActionURL setPath(String pathStr)
+    {
+        return this.setPath(_parsePath(pathStr, false));
+    }
+
+    /**
+     * The path argument is not URL encoded.
+     * The controller, action, and remaining path are extracted from the path.
+     */
+    @Override
+    public ActionURL setPath(Path path)
     {
         if (_readOnly)
             throw new java.lang.IllegalStateException();
 
         String controller = null;
-        Path path = Path.parse(pathStr);
 
         if (path.size() < 1)
-            throw new IllegalArgumentException(pathStr);
+            throw new IllegalArgumentException(path.toString());
         String action = path.get(path.size()-1);
         path = path.getParent();
 
@@ -508,7 +522,7 @@ public class ActionURL extends URLHelper implements Cloneable
         if (null == controller)
         {
             if (path.size() < 1)
-                throw new IllegalArgumentException(pathStr);
+                throw new IllegalArgumentException(path.toString());
             controller = path.get(0);
             path = path.subpath(1, path.size());
         }
@@ -626,6 +640,19 @@ public class ActionURL extends URLHelper implements Cloneable
                 assertEquals(parse.getContextPath() + "/path/controller-action.view?foo=bar", toString);
             else
                 assertEquals(parse.getContextPath() + "/controller/path/action.view?foo=bar", toString);
+        }
+
+        @Test
+        public void testDecode() throws URISyntaxException
+        {
+            // The original fix for Issue 39354 changed returnUrl to be parsed using
+            // the URLHelper(String) constructor.  This revealed a subtle inconsistency
+            // between URLHelper and ActionURL decoding of '+' character.
+            String s = AppProps.getInstance().getContextPath() + "/path+space%2Bplus/controller-action.view";
+            URLHelper a = new URLHelper(s);
+            ActionURL b = new ActionURL(s);
+            assertThat(a.getLocalURIString(), containsString("/path%20space%2Bplus/controller-action.view"));
+            assertEquals(a.getLocalURIString(), b.getLocalURIString());
         }
     }
 }

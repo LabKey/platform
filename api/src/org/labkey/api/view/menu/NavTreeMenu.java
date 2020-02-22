@@ -154,7 +154,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         if (!c.isInFolderNav())
         {
             currentUrl = currentUrl.clone();
-            currentUrl.setPath(currentUrl.getParsedPath().getParent());
+            currentUrl.setParsedPath(currentUrl.getParsedPath().getParent());
         }
         if (!c.isInFolderNav())
             c = c.getParent();
