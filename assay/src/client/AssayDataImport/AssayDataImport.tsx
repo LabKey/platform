@@ -450,7 +450,7 @@ export class App extends React.Component<Props, State> {
                     <Panel.Body>
                         <ButtonToolbar>
                             <Button onClick={this.handleCancel} disabled={isSubmitting}>Cancel</Button>
-                            <Button bsStyle={'success'} onClick={this.handleSubmit} disabled={isSubmitting}>Save and Finish</Button>
+                            <Button bsStyle={'primary'} onClick={this.handleSubmit} disabled={isSubmitting}>Save and Finish</Button>
                         </ButtonToolbar>
                     </Panel.Body>
                 }
