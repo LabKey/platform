@@ -290,23 +290,25 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         int idCol3 = -1;
         int parentCol = -1;
         String nameExpression = null;
+        Map<String, String> aliases = null;
 
         if (arguments != null)
         {
-//              //TODO Make these work...
-//            Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? (Object[])arguments.get("idCols") : new Object[0];
-//            int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
-//            int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
-//            int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
-//            int parentCol = (arguments != null && arguments.get("parentCol") instanceof Number) ? ((Number)arguments.get("parentCol")).intValue() : -1;
+            //These are outdated but some clients still use them, or have existing sample sets that do.
+            List<Integer> idCols = (arguments.getIdCols() != null) ? arguments.getIdCols() : Collections.emptyList();
+            idCol1 = idCols.size() > 0 ? idCols.get(0) : -1;
+            idCol2 = idCols.size() > 1 ? idCols.get(1) : -1;
+            idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
+            parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
 
             nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            aliases = arguments.getImportAliases();
         }
         ExpSampleSet ss;
         try
         {
-            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
+            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
         }
         catch (SQLException e)
         {

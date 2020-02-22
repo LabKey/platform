@@ -77,7 +77,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.23.0",
+    "@labkey/components": "0.25.0-fb-mergeSTUI-6848.0",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },

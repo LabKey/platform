@@ -52,6 +52,7 @@ public class SampleTypeDomainKindProperties implements DomainKindProperties
     //Ignored on import/save, use Domain.description instead
     private String description;
     private List<Integer> idCols;
+    private Integer parentCol;
 
     public void setIdCols(List<Integer> idCols)
     {
@@ -139,5 +140,15 @@ public class SampleTypeDomainKindProperties implements DomainKindProperties
     {
         //TODO probably need to do more here... see MassSpecFractionsDomainKind.createDomain
         return new JSONObject(this);
+    }
+
+    public Integer getParentCol()
+    {
+        return parentCol;
+    }
+
+    public void setParentCol(Integer parentCol)
+    {
+        this.parentCol = parentCol;
     }
 }

@@ -124,6 +124,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
@@ -3627,13 +3629,14 @@ public class ExperimentController extends SpringActionController
             form.setName(source.getName());
             form.setNameExpression(source.getNameExpression());
             form.setImportAliasJSON(source.getImportAliasJson());
+            form.setDomainId(source.getDomain().getTypeId());
         }
 
         @Override
         public ModelAndView getView(BaseSampleSetForm form, boolean reshow, BindException errors) throws Exception
         {
             initForm(form);
-            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
         }
 
         @Override
@@ -3654,6 +3657,8 @@ public class ExperimentController extends SpringActionController
         private Boolean isUpdate = false;
         private Integer rowId;
         private String lsid;
+
+        private Integer domainId;
 
         public static final String NEW_SAMPLE_SET_VALUE = "{{this_sample_set}}";
 
@@ -3841,6 +3846,16 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ExperimentException("Couldn't create sample set: ", e);
             }
+        }
+
+        public void setDomainId(Integer domainId)
+        {
+            this.domainId = domainId;
+        }
+
+        public Integer getDomainId()
+        {
+            return this.domainId;
         }
     }
 

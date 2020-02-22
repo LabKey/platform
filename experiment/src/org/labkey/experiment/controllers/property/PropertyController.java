@@ -433,6 +433,52 @@ public class PropertyController extends SpringActionController
 
             GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+
+            if (null != domain && null != domain.getDomainKind())
+            {
+                DomainKindDesign domainKindDesign = new DomainKindDesign();
+                domainKindDesign.setDomainDesign(gwtDomain);
+                domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
+                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
+                return domainKindDesign;
+            }
+            return gwtDomain;
+        }
+    }
+
+    /**
+     * If DomainKind specific properties are available, then json response is of this format:
+     *  {
+     *      "domainKindName":
+     *      "options": {}
+     *      "domainDesign": {}
+     *  }
+     *  Otherwise, json response is of this format:
+     *  {
+     *      "domainDesign": {}
+     *  }
+     */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDomainDetailsByKindAction  extends ReadOnlyApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            String queryName = form.getQueryName();
+            String schemaName = form.getSchemaName();
+            Integer domainId = form.getDomainId();
+
+            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+
             if (null != domain && null != domain.getDomainKind())
             {
                 DomainKindDesign domainKindDesign = new DomainKindDesign();

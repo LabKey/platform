@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.22.0-fb-list-designer-6798.7"
+    "@labkey/components": "0.25.0-fb-mergeSTUI-6848.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
