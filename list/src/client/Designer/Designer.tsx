@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, Security } from "@labkey/api";
+import { ActionURL, Security, Domain } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -48,7 +48,7 @@ export class App extends React.Component<{}, State>
             listId,
             returnUrl,
             isLoadingModel: true,
-            dirty: false, //TODO : handle this correctly,
+            dirty: false
         };
     }
 
@@ -75,7 +75,19 @@ export class App extends React.Component<{}, State>
         } else {
             this.createNewListTemplate();
         }
+
+        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
+
+    componentWillUnmount() {
+        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
+    }
+
+    handleWindowBeforeUnload = (event) => {
+        if (this.state.dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    };
 
     loadExistingList() {
         fetchListDesign(this.state.listId)
@@ -98,11 +110,28 @@ export class App extends React.Component<{}, State>
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
+        this.navigate(ActionURL.buildURL('list', 'begin', LABKEY.container.path));
     };
 
     onComplete = (model: ListModel) => {
-    //     this.navigate(ActionURL.buildURL('list', '??', LABKEY.container.path, {rowId: model.??}));
+        // if the model comes back to here without the newly saved listId, query to get it
+        if (model.listId && model.listId > 0) {
+            this.navigate(ActionURL.buildURL('list', 'grid', LABKEY.container.path, {listId: model.listId}));
+        }
+        else {
+            Domain.getDomainDetails({
+                containerPath: LABKEY.container.path,
+                domainId: model.domain.domainId,
+                success: (data) => {
+                    const newModel = ListModel.create(data);
+                    this.navigate(ActionURL.buildURL('list', 'grid', LABKEY.container.path, {listId: newModel.listId}));
+                },
+                failure: (error) => {
+                    // bail out and go to the list-begin page
+                    this.navigate(ActionURL.buildURL('list', 'begin', LABKEY.container.path));
+                }
+            });
+        }
     };
 
     onChange = (model: ListModel) => {
@@ -141,6 +170,7 @@ export class App extends React.Component<{}, State>
                         onCancel={this.onCancel}
                         onComplete={this.onComplete}
                         onChange={this.onChange}
+                        successBsStyle={'primary'}
                     />
                 }
             </>
