@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -66,11 +67,7 @@ public class TableUpdaterFileListener implements FileListener
         String get(File f);
         String get(Path f);
         /** @return the file path separator (typically '/' or '\') */
-        String getSeparatorSuffix();
-        default boolean matchParentAndFileName()
-        {
-            return Type.fileRootPath.equals(this);
-        }
+        String getSeparatorSuffix(Path path);
     }
 
     public enum Type implements PathGetter
@@ -91,7 +88,7 @@ public class TableUpdaterFileListener implements FileListener
             }
 
             @Override
-            public String getSeparatorSuffix()
+            public String getSeparatorSuffix(Path path)
             {
                 return "/";
             }
@@ -116,9 +113,9 @@ public class TableUpdaterFileListener implements FileListener
             }
 
             @Override
-            public String getSeparatorSuffix()
+            public String getSeparatorSuffix(Path path)
             {
-                return File.separator;
+                return FileUtil.hasCloudScheme(path) ? "/" : File.separator;
             }
         },
 
@@ -138,9 +135,9 @@ public class TableUpdaterFileListener implements FileListener
             }
 
             @Override
-            public String getSeparatorSuffix()
+            public String getSeparatorSuffix(Path path)
             {
-                return File.separator;
+                return FileUtil.hasCloudScheme(path) ? "/" : File.separator;
             }
         },
 
@@ -163,7 +160,7 @@ public class TableUpdaterFileListener implements FileListener
             }
 
             @Override
-            public String getSeparatorSuffix()
+            public String getSeparatorSuffix(Path path)
             {
                 return "/";
             }
@@ -192,11 +189,7 @@ public class TableUpdaterFileListener implements FileListener
     @Override
     public String getSourceName()
     {
-        StringBuilder name = new StringBuilder();
-        name.append(_table.getSchema().getName()).append(".");
-        name.append(_table.getName()).append(".");
-        name.append(_pathColumn);
-        return name.toString();
+        return _table.getSchema().getName() + "." + _table.getName() + "." + _pathColumn;
     }
 
     @Override
@@ -242,129 +235,94 @@ public class TableUpdaterFileListener implements FileListener
 
         String srcPath = getSourcePath(src, container);
         String destPath = _pathGetter.get(dest);
+        String srcPathWithout = null;
 
-        if (!_pathGetter.matchParentAndFileName() || !Files.isDirectory(src))
+        // If it's a directory, prep versions with and without a trailing slash. Check the dest because it's already moved by the time this fires
+        if (srcPath.endsWith("/") || srcPath.endsWith("\\") || Files.isDirectory(dest))
         {
-            // For fileRootPath, we need the parent of the files
-            String srcPathWithout = null;
-            if (_pathGetter.matchParentAndFileName())
-            {
-                srcPath = getParentWithSeparator(src);
-                srcPathWithout = getParentWithoutSeparator(src);
-                destPath = getParentWithoutSeparator(dest);
-                if (null == srcPath || null == destPath)
-                    return;     // Nothing to do
-            }
-
-            // Now build up the SQL to handle this specific path
-            SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
-            singleEntrySQL.append("? WHERE ");
-            singleEntrySQL.append(dbColumnName);
-            singleEntrySQL.append(" = ?");
-            singleEntrySQL.add(destPath);
-            singleEntrySQL.add(srcPath);
-            if (null != srcPathWithout)
-            {
-                singleEntrySQL.append(" OR ");
-                singleEntrySQL.append(dbColumnName);
-                singleEntrySQL.append(" = ?");
-                singleEntrySQL.add(srcPathWithout);
-            }
-
-            if (_pathGetter.matchParentAndFileName())
-            {
-                String fileName = FileUtil.getFileName(src);
-                if (null != fileName)
-                    singleEntrySQL.append(" AND Name = ?").add(fileName);
-            }
-
-            int rows = -1;
-            for (int retry = 0; retry < 2; retry++)
-            {
-                try
-                {
-                    rows = new SqlExecutor(schema).execute(singleEntrySQL);
-                    break;
-                }
-                catch (RuntimeException x)
-                {
-                    if (retry > 0 || _table.getSchema().getScope().isTransactionActive() || !SqlDialect.isTransactionException(x))
-                        throw x;
-                }
-            }
-            LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
+            srcPath = getWithSeparator(srcPath, FileUtil.hasCloudScheme(src));
+            srcPathWithout = getWithoutSeparator(srcPath);
+            destPath = getWithoutSeparator(destPath);
         }
 
-        // Skip attempting to fix up child paths if we know that the entry is a file. If it's not (either it's a
+        // Now build up the SQL to handle this specific path
+        SQLFragment singleEntrySQL = new SQLFragment(sharedSQL);
+        singleEntrySQL.append("? WHERE (");
+        singleEntrySQL.append(dbColumnName);
+        singleEntrySQL.append(" = ?");
+        singleEntrySQL.add(destPath);
+        singleEntrySQL.add(srcPath);
+        if (null != srcPathWithout)
+        {
+            singleEntrySQL.append(" OR ");
+            singleEntrySQL.append(dbColumnName);
+            singleEntrySQL.append(" = ?");
+            singleEntrySQL.add(srcPathWithout);
+        }
+        singleEntrySQL.append(")");
+
+        int rows;
+        try
+        {
+            rows = new SqlExecutor(schema).execute(singleEntrySQL);
+        }
+        catch (RuntimeSQLException x)
+        {
+            // Retry once if it's a deadlock-related exception and we're not inside a transaction
+            if (!_table.getSchema().getScope().isTransactionActive() && SqlDialect.isTransactionException(x))
+                rows = new SqlExecutor(schema).execute(singleEntrySQL);
+            else
+                throw x;
+        }
+        LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
+
+        // Handle updating child paths, unless we know that the entry is a file. If it's not (either it's a
         // directory or it doesn't exist), then try to fix up child records
         if ((!Files.exists(dest) || Files.isDirectory(dest)))
         {
-            if (!srcPath.endsWith(_pathGetter.getSeparatorSuffix()))
+            String separatorSuffix = _pathGetter.getSeparatorSuffix(dest);
+            if (!srcPath.endsWith(separatorSuffix))
             {
-                srcPath = srcPath + _pathGetter.getSeparatorSuffix();
+                srcPath = srcPath + separatorSuffix;
             }
-            if (!destPath.endsWith(_pathGetter.getSeparatorSuffix()))
+            if (!destPath.endsWith(separatorSuffix))
             {
-                destPath = destPath + _pathGetter.getSeparatorSuffix();
+                destPath = destPath + separatorSuffix;
             }
 
             int childRowsUpdated = 0;
 
+            // Consider paths with file:///...
             if (srcPath.startsWith("file:"))
             {
-                // Consider paths with file:///...
-                String srcPath2 = "file://" + srcPath.replaceFirst("^file:/+", "/");;
-                SQLFragment whereClause2 = new SQLFragment(" WHERE ");
-                whereClause2.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath2), new SQLFragment(dbColumnName))).append(" = 1");
-                SQLFragment childPathsSQL2 = new SQLFragment(sharedSQL);
-                childPathsSQL2.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath2.length() + 1), "5000"))));
-                childPathsSQL2.append(whereClause2);
-
-                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL2);
+                srcPath = "file://" + srcPath.replaceFirst("^file:/+", "/");
             }
-            else
-            {
-                SQLFragment whereClause = new SQLFragment(" WHERE ");
-                whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(dbColumnName))).append(" = 1");
+            SQLFragment whereClause = new SQLFragment(" WHERE ");
+            whereClause.append(dialect.getStringIndexOfFunction(new SQLFragment("?", srcPath), new SQLFragment(dbColumnName))).append(" = 1");
 
-                // Make the SQL to handle children
-                SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
-                childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
-                childPathsSQL.append(whereClause);
-
-                childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
-            }
+            // Make the SQL to handle children
+            SQLFragment childPathsSQL = new SQLFragment(sharedSQL);
+            childPathsSQL.append(dialect.concatenate(new SQLFragment("?", destPath), new SQLFragment(dialect.getSubstringFunction(dbColumnName, Integer.toString(srcPath.length() + 1), "5000"))));
+            childPathsSQL.append(whereClause);
+            childRowsUpdated += new SqlExecutor(schema).execute(childPathsSQL);
 
             LOG.info("Updated " + childRowsUpdated + " child paths in " + _table + " rows for move from " + src + " to " + dest);
         }
     }
 
-    @Nullable
-    private String getParentWithSeparator(Path path)
+    @NotNull
+    private String getWithSeparator(String path, boolean cloud)
     {
-        Path parent = path.getParent();
-        if (null != parent)
-        {
-            if (FileUtil.hasCloudScheme(parent))
-                return FileUtil.pathToString(parent) + File.separator;
-            else
-                return parent.toFile().getPath() + File.separator;
-        }
-        return null;
+        if (cloud)
+            return path + (path.endsWith("/") ? "" : "/");
+        else
+            return path + (path.endsWith(File.separator) ? "" : File.separator);
     }
 
-    @Nullable
-    private String getParentWithoutSeparator(Path path)
+    @NotNull
+    private String getWithoutSeparator(String path)
     {
-        Path parent = path.getParent();
-        if (null != parent)
-        {
-            if (FileUtil.hasCloudScheme(parent))
-                return FileUtil.pathToString(parent);
-            else
-                return parent.toFile().getPath();
-        }
-        return null;
+        return (path.endsWith("/") || path.endsWith("\\")) ? path.substring(0, path.length() - 1): path;
     }
 
     @Override
@@ -372,7 +330,7 @@ public class TableUpdaterFileListener implements FileListener
     {
         Set<String> columns = Collections.singleton(_pathColumn);
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(_pathColumn, null, CompareType.NONBLANK);
+        filter.addCondition(FieldKey.fromParts(_pathColumn), null, CompareType.NONBLANK);
         if (container != null)
         {
             ColumnInfo containerColumn = _table.getColumn("container");
