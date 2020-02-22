@@ -16,19 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.CoreController" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -100,8 +99,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=link("view CSS", CoreController.CustomStylesheetAction.class)%> <%=isTroubleshooter ? HtmlString.EMPTY_STRING : link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
-            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
+            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=isTroubleshooter ? HtmlString.EMPTY_STRING : link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
         <% } else { %>
             No custom stylesheet.
         <% } %>
