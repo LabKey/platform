@@ -37,7 +37,19 @@ public final class HtmlString implements DOM.Renderable
      */
     public static @NotNull HtmlString of(@Nullable String s)
     {
-        return new HtmlString(h(s));
+        return new HtmlString(PageFlowUtil.filter(s));
+    }
+
+    /**
+     * Returns an HtmlString that wraps an HTML encoded version of the passed in String, with the option to preserve
+     * whitespace.
+     * @param s A String. A null value results in an empty HtmlString (equivalent of HtmlString.of("")).
+     * @param translateWhiteSpace A flag that determines whether whitespace should be encoded or not
+     * @return An HtmlString that encodes and wraps the String, respecting the translateWhiteSpace flag.
+     */
+    public static @NotNull HtmlString of(@Nullable String s, boolean translateWhiteSpace)
+    {
+        return new HtmlString(PageFlowUtil.filter(s, translateWhiteSpace));
     }
 
     /**
@@ -52,12 +64,7 @@ public final class HtmlString implements DOM.Renderable
         return new HtmlString(null == s ? "" : s);
     }
 
-    private static @NotNull String h(@Nullable String s)
-    {
-        return PageFlowUtil.filter(s);
-    }
-
-    // Callers should use factory methods of() and unsafe() instead
+    // Callers use factory methods of() and unsafe() instead
     private HtmlString(String s)
     {
         _s = s;

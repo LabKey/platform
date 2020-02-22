@@ -21,15 +21,12 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConvertHelper;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 
-import javax.servlet.http.HttpServletRequest;
-import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -129,6 +126,13 @@ public class ReturnURLString
         }
         catch (URISyntaxException e)
         {
+            StringBuilder sb = new StringBuilder("Bad returnUrl");
+            if (e.getIndex() >= 0)
+            {
+                char c = s.charAt(e.getIndex());
+                sb.append(" at char '" + c + "'");
+            }
+            LOG.error(sb.append(": ").append(e.getMessage().toString()));
             return null;
         }
     }

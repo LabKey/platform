@@ -1556,7 +1556,7 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                if (canManageDetailsUser)
+                if (canManageDetailsUser && !isLoginAutoRedirect) // Issue 33393
                     bb.add(makeChangeEmailButton(c, detailsUser));
 
                 if (!isOwnRecord && canManageDetailsUser)
@@ -1584,7 +1584,8 @@ public class UserController extends SpringActionController
             {
                 if (!isUserManager  // site/app admin already had this link added above
                         && loginExists  // only show link to users where LabKey manages the password
-                        && AuthenticationManager.isSelfServiceEmailChangesEnabled())
+                        && AuthenticationManager.isSelfServiceEmailChangesEnabled()
+                        && !isLoginAutoRedirect) // Issue 33393
                 {
                     bb.add(makeChangeEmailButton(c, detailsUser));
                 }
