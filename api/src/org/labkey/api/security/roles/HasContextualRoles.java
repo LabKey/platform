@@ -16,8 +16,8 @@
 package org.labkey.api.security.roles;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.ContextualRoles;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.security.RequiresPermission;
 
 import java.util.Set;
 
@@ -26,13 +26,12 @@ import java.util.Set;
  * Date: Jun 1, 2009 11:35:01 AM
  *
  * Get any contextual {@link Role}s for a given {@link ViewContext}.
- * You may annotate an action with {@link RequiresPermissionClass#contextual()}
+ * You may annotate an action with {@link ContextualRoles}
  * and have contextual roles added during permissions checking.
  *
- * @see RequiresPermissionClass
+ * @see ContextualRoles
  */
 public interface HasContextualRoles
 {
-    @Nullable
-    public Set<Role> getContextualRoles(ViewContext context);
+    @Nullable Set<Role> getContextualRoles(ViewContext context);
 }
