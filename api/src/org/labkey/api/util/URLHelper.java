@@ -231,7 +231,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.insert(0, '/');
         }
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (!isDirectory() || hasParams)
+        if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
             uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
             uriString.append(getQueryString(allowSubstSyntax));
@@ -239,6 +239,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.append("#").append(_fragment);
 
         return uriString.toString();
+    }
+
+    // when true, don't include '?' unless there are query parameters
+    private boolean isExperimentalNoQuestionMark()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL);
     }
 
 
@@ -1012,13 +1018,15 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         @Test
         public void testParseWithHash() throws URISyntaxException
         {
-            URLHelper h;
-            String url = "/ehr-animalHistory" +
-                    ".view?#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
-
-            h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
+            URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
                     ":1&activeReport:virusTesting");
-            assertEquals(url,h.toString());
+
+            String url = "/ehr-animalHistory.view";
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+                url += "?";
+            url += "#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+
+            assertEquals(url, h.toString());
         }
     }
 
