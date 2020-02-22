@@ -817,6 +817,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         rowToInsert.put(colorPropertyURI, null);
         rowToInsert.put(agePropertyURI, dataClassAge);
         rowToInsert.put(typePropertyURI, dataClassType);
+        rowToInsert.put("Name", "WithOtherProp");
         List<Map<String, Object>> rowsToInsert = buildRows(rowToInsert);
 
         var insertedDataClassRows = insertRows(c, rowsToInsert, dataClassName);
