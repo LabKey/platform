@@ -717,16 +717,14 @@ public class SampleSetServiceImpl implements SampleSetService
                 }
                 catch (ExperimentException eex)
                 {
-                    throw new RuntimeException(eex);
+                    throw new DbScope.RetryException(eex);
                 }
             });
         }
-        catch (RuntimeException x)
+        catch (DbScope.RetryException x)
         {
-            if (x.getCause() instanceof ExperimentException)
-                throw (ExperimentException)x.getCause();
-            else
-                throw x;
+            x.rethrow(ExperimentException.class);
+            throw x;
         }
 
         return ss;

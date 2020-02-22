@@ -24,6 +24,8 @@
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -79,7 +81,7 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=link("view CSS", CoreController.CustomStylesheetAction.class)%> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
+            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
         <% } else { %>
             No custom stylesheet.
         <% } %>
