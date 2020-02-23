@@ -136,12 +136,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 
 public class PageFlowUtil
@@ -2724,29 +2730,25 @@ public class PageFlowUtil
         }
     }
 
-    public static String getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
+    public static HtmlString getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
     {
         Map<String, String> stringValMap = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : propValueMap.entrySet())
-            stringValMap.put(entry.getKey(), entry.getValue().toString());
+            stringValMap.put(entry.getKey(), null==entry.getValue() ? "" : entry.getValue().toString());
         return getDataRegionHtmlForPropertyValues(stringValMap);
     }
 
-    public static String getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
+    public static HtmlString getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
-        sb.append("<tr><td class=\"labkey-column-header\">Property</td><td class=\"labkey-column-header\">Value</td></tr>\n");
-        int rowCount = 0;
-        for (Map.Entry<String, String> entry : propValueMap.entrySet())
-        {
-            sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
-            sb.append("<td valign=\"top\">").append(entry.getKey()).append("</td>");
-            sb.append("<td valign=\"top\">").append(entry.getValue()).append("</td>");
-            sb.append("</tr>\n");
-            rowCount++;
-        }
-        sb.append("</table>\n");
-        return sb.toString();
+        final AtomicInteger rowCount = new AtomicInteger();
+        DOM.TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
+                TR(TD(cl("labkey-column-header"),"Property"),TD(cl("labkey-column-header"),"Value")),
+                propValueMap.entrySet().stream().map(entry ->
+                    TR(cl(rowCount.getAndIncrement() % 2 == 0, "labkey-alternate-row", "labkey-row"),
+                        TD(at(valign,"top"),entry.getKey()),
+                        TD(at(valign,"top"),entry.getValue())))
+        ).appendTo(sb);
+        return HtmlString.unsafe(sb.toString());
     }
 }

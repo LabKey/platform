@@ -2375,33 +2375,33 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            try (DbScope.Transaction tx = dbSchema.getScope().ensureTransaction())
+            dbSchema.getScope().executeWithRetry(tx ->
             {
-                updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
-                tx.commit();
-            }
-            catch (SQLException x)
-            {
-                if (!RuntimeSQLException.isConstraintException(x))
-                    throw x;
-                errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
-                return false;
-            }
-            catch (DataIntegrityViolationException | OptimisticConflictException e)
-            {
-                errors.reject(ERROR_MSG, e.getMessage());
-                return false;
-            }
-            catch (BatchValidationException x)
-            {
-                x.addToErrors(errors);
-            }
-            catch (Exception x)
-            {
-                errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
-                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-            }
-
+                try
+                {
+                    updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
+                }
+                catch (SQLException x)
+                {
+                    if (!RuntimeSQLException.isConstraintException(x))
+                        throw new RuntimeSQLException(x);
+                    errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
+                }
+                catch (DataIntegrityViolationException | OptimisticConflictException e)
+                {
+                    errors.reject(ERROR_MSG, e.getMessage());
+                }
+                catch (BatchValidationException x)
+                {
+                    x.addToErrors(errors);
+                }
+                catch (Exception x)
+                {
+                    errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                    ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+                }
+                return !errors.hasErrors();
+            });
             return !errors.hasErrors();
         }
 

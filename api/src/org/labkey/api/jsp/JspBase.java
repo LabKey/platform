@@ -211,7 +211,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public HtmlString h(String str, boolean encodeSpace)
     {
-        return HtmlString.unsafe(PageFlowUtil.filter(str, encodeSpace));
+        return HtmlString.of(str, encodeSpace);
     }
 
     public HtmlString h(URLHelper url)
