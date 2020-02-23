@@ -947,7 +947,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     protected @Nullable String getDatabaseMaintenanceSql()
     {
-        return null; // "VACUUM ANALYZE;";
+        return "VACUUM ANALYZE;";
     }
 
     @Override
