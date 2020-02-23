@@ -112,7 +112,7 @@ public class ExceptionUtil
 
         for (int i = 2; i < stackTrace.length; i++)
         {
-            String line = stackTrace[i].toString();
+            String line = String.valueOf(stackTrace[i]);
             if (line.startsWith("javax.servlet.http.HttpServlet.service("))
                 break;
             trace.append("\n\tat ");
@@ -328,7 +328,8 @@ public class ExceptionUtil
                     {
                         logMessage += "\n" + decorations;
                     }
-                    if (HttpView.hasCurrentView()) {
+                    if (HttpView.hasCurrentView())
+                    {
                         ViewContext viewContext = HttpView.currentContext();
                         logMessage += "\nCurrent URL: " + viewContext.getActionURL();
                         logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
@@ -824,8 +825,8 @@ public class ExceptionUtil
 
                 ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
 
-                if (responseStatusMessage != null)
-                    errorResponse.put("exception", responseStatusMessage);
+                if (responseStatusMessage != null || message != null)
+                    errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
 
                 ApiResponseWriter writer;
                 if (isJSON)

@@ -25,6 +25,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
@@ -115,7 +116,7 @@ public class ExpDataFileConverter implements Converter
             }
             return data;
         }
-        // Try as a full URL on the server's file system - "file://"...
+        // Try as a full URL on the server's file system - "file://"... or path to the file relative to the file root
         else if (dataObject.has(ExperimentJSONConverter.DATA_FILE_URL) && dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL) != null)
         {
             String dataFileURL = dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL);
@@ -124,7 +125,17 @@ public class ExpDataFileConverter implements Converter
 
             if (null == data)
             {
-                throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+                if (null != container)
+                {
+                    // Check for file at file root
+                    String root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files).toString();
+                    data = expSvc.getExpDataByURL(FileUtil.createUri("/" + root + dataFileURL).toString(), container);
+
+                    if (null == data)
+                    {
+                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+                    }
+                }
             }
             return data;
         }

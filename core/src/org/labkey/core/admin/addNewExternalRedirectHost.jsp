@@ -1,3 +1,6 @@
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%
 /*
  * Copyright (c) 2019 LabKey Corporation
@@ -17,6 +20,10 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%
+    Container c = getContainer();
+    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
+%>
 <labkey:errors/>
 <div style="width: 700px">
     <p>
@@ -27,11 +34,21 @@
         <a href="https://cheatsheetseries.owasp.org/cheatsheets/Unvalidated_Redirects_and_Forwards_Cheat_Sheet.html">OWASP cheat sheet</a>.
     </p>
     <p>
-        Add allowed hosts based the server name or IP address, based on how it will be referenced in the returnUrl values.
+        Add allowed hosts based on the server name or IP address, as they will be referenced in returnUrl values.
         For example: www.myexternalhost.com or 1.2.3.4
     </p>
 </div>
 
+<%
+    if (isTroubleshooter)
+    {
+%>
+<%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%>
+<%
+    }
+    else
+    {
+%>
 <labkey:form method="post">
     <table>
         <tr>
@@ -43,3 +60,6 @@
         </tr>
     </table>
 </labkey:form>
+<%
+    }
+%>

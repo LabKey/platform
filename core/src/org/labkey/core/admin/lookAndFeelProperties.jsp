@@ -15,7 +15,8 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
@@ -43,6 +44,7 @@
     if (!c.isRoot())
         siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
+    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
@@ -278,12 +280,26 @@
 </tr>
 <%
     }
+
+    if (!isTroubleshooter)
+    {
 %>
 <tr>
     <td><%=button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;
         <%=button("Reset").onClick("return confirmReset();") %>
     </td>
 </tr>
+<%
+    }
+    else
+    {
+%>
+<tr>
+    <td><%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%></td>
+</tr>
+<%
+    }
+%>
 <tr>
     <td>&nbsp;</td>
 </tr>

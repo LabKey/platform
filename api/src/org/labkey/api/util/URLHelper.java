@@ -142,7 +142,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         setPort(req.getServerPort());
         setScheme(req.getScheme());
 
-        _parsePath(req.getRequestURI());
+        // NOTE: request.getRequestURI() is encoded unlike request.getServletPath()
+        setPath(_parsePath(req.getRequestURI(), true));
         _parseQuery(req.getQueryString(), req.getCharacterEncoding());
     }
 
@@ -230,7 +231,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.insert(0, '/');
         }
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (!isDirectory() || hasParams)
+        if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
             uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
             uriString.append(getQueryString(allowSubstSyntax));
@@ -238,6 +239,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.append("#").append(_fragment);
 
         return uriString.toString();
+    }
+
+    // when true, don't include '?' unless there are query parameters
+    private boolean isExperimentalNoQuestionMark()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL);
     }
 
 
@@ -252,19 +259,19 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     {
         setHost(uri.getHost());
         setPort(uri.getPort());       // TODO: Don't store -1 if port is not specified -- use scheme to save default ports
-        _parsePath(uri.getRawPath());
+        setPath(_parsePath(uri.getRawPath(), true));
         _parseQuery(uri.getRawQuery());
         setScheme(uri.getScheme());
         _fragment = uri.getFragment();
     }
 
 
-    protected void _parsePath(String path)
+    protected Path _parsePath(String path, boolean decode)
     {
         if (null == path || 0 == path.length() || "/".equals(path))
-            _path = Path.rootPath;
+            return Path.rootPath;
         else
-            _path = Path.decode(path);
+            return decode ? Path.decode(path) : Path.parse(path);
     }
 
 
@@ -316,19 +323,20 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     }
 
 
-    public URLHelper setPath(Path path)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _path = path;
-        return this;
-    }
-
-
+    /**
+     * The path argument is not URL encoded.
+     */
     public URLHelper setPath(String path)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _parsePath(path);
-        return this;
+        return setParsedPath(_parsePath(path, false));
+    }
+
+    /**
+     * The path argument is not URL encoded.
+     */
+    public URLHelper setPath(Path path)
+    {
+        return setParsedPath(path);
     }
 
 
@@ -342,7 +350,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
 
     public URLHelper setRawQuery(String query)
     {
-        //_query = query;
         _parseQuery(query);
         return this;
     }
@@ -405,6 +412,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Path getParsedPath()
     {
         return null == _path ? Path.rootPath : _path;
+    }
+
+    public URLHelper setParsedPath(Path path)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _path = path;
+        return this;
     }
 
 
@@ -799,8 +813,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Enumeration<String> getParameterNames()
     {
         Hashtable<String,String> h = new Hashtable<>();
-        for (Pair<String,String> p : _parameters)
-            h.put(p.getKey(), p.getKey());
+        if (null != _parameters)
+            for (Pair<String,String> p : _parameters)
+                h.put(p.getKey(), p.getKey());
         return h.keys();
     }
 
@@ -1003,13 +1018,15 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         @Test
         public void testParseWithHash() throws URISyntaxException
         {
-            URLHelper h;
-            String url = "/ehr-animalHistory" +
-                    ".view?#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
-
-            h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
+            URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
                     ":1&activeReport:virusTesting");
-            assertEquals(url,h.toString());
+
+            String url = "/ehr-animalHistory.view";
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+                url += "?";
+            url += "#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+
+            assertEquals(url, h.toString());
         }
     }
 
