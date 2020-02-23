@@ -1257,8 +1257,11 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             success : function(d) {
                 if (d && d.values) {
                     var recs = [], v, i=0, hasBlank = false, isString, formattedValue;
+
+                    // Issue 39727. Do this here instead of onViewReady() so we know if we actually exceeded the max or not
                     Ext.getCmp(this.gridID + 'OverflowLabel').setVisible(d.values.length > this.MAX_FILTER_CHOICES);
-                    for (; i < Math.max(d.values.length, this.MAX_FILTER_CHOICES); i++) {
+
+                    for (; i < Math.min(d.values.length, this.MAX_FILTER_CHOICES); i++) {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
                         isString = Ext.isString(formattedValue);
