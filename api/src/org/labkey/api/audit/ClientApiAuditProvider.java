@@ -57,9 +57,10 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     public static final String COLUMN_NAME_INT2 = "Int2";
     public static final String COLUMN_NAME_INT3 = "Int3";
 
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
@@ -263,7 +264,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     public static class ClientApiAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "ClientApiAuditDomain";
-        public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        public static final String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 

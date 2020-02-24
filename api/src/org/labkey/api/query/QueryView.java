@@ -946,7 +946,6 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-
         if ((canInsert() || allowQueryTableInsertURLOverride()) && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
@@ -976,6 +975,10 @@ public class QueryView extends WebPartView<Object>
             if (null != rs)
                 bar.add(rs);
         }
+
+        // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
+        bar.add(createPrintButton());
+//        bar.add(populateMoreMenu());
     }
 
     @Nullable ActionButton createExportToRStudioButton()
@@ -2220,9 +2223,6 @@ public class QueryView extends WebPartView<Object>
         if (!(isApiResponseView() || isPrintView() || isExportView()))
         {
             populateButtonBar(ret, bb);
-            // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
-            bb.add(createPrintButton());
-//            bb.add(populateMoreMenu(ret));
         }
         rgn.setButtonBar(bb);
 

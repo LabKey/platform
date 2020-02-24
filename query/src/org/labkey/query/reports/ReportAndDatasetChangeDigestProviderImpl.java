@@ -128,7 +128,7 @@ public final class ReportAndDatasetChangeDigestProviderImpl implements ReportAnd
                 for (Map.Entry<Integer, SortedSet<Integer>> userEntry : categoriesByUser.entrySet())
                 {
                     User user = UserManager.getUser(userEntry.getKey());
-                    if (null != user)
+                    if (null != user && user.isActive())
                     {
                         SortedSet<Integer> categories = userEntry.getValue();       // Set has a NotifyOption in it
                         NotifyOption notifyOption = ReportContentEmailManager.removeNotifyOption(categories);

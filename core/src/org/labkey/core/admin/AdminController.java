@@ -40,7 +40,6 @@ import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormHandlerAction;
@@ -246,7 +245,7 @@ import static org.labkey.api.view.FolderManagement.FOLDERS_AND_PROJECTS;
 import static org.labkey.api.view.FolderManagement.FOLDERS_ONLY;
 import static org.labkey.api.view.FolderManagement.NOT_ROOT;
 import static org.labkey.api.view.FolderManagement.PROJECTS_ONLY;
-import static org.labkey.api.view.FolderManagement.ROOT_AND_PROJECTS;
+import static org.labkey.api.view.FolderManagement.ROOT;
 import static org.labkey.api.view.FolderManagement.addTab;
 
 /**
@@ -280,7 +279,7 @@ public class AdminController extends SpringActionController
         if (ModuleLoader.getInstance().hasModule("FileContent"))
             AdminConsole.addLink(Configuration, "files", new ActionURL(FilesSiteSettingsAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Configuration, "folder types", new ActionURL(FolderTypesAction.class, root), AdminPermission.class);
-        AdminConsole.addLink(Configuration, "look and feel settings", new AdminUrlsImpl().getProjectSettingsURL(root), AdminPermission.class);
+        AdminConsole.addLink(Configuration, "look and feel settings", new ActionURL(LookAndFeelSettingsAction.class, root));
         AdminConsole.addLink(Configuration, "missing value indicators", new AdminUrlsImpl().getMissingValuesURL(root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "project display order", new ActionURL(ReorderFoldersAction.class, root), AdminPermission.class);
         AdminConsole.addLink(Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root), AdminPermission.class);
@@ -305,8 +304,6 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(Diagnostics, "check database", new ActionURL(DbCheckerAction.class, root), AdminOperationsPermission.class);
         AdminConsole.addLink(Diagnostics, "credits", new ActionURL(CreditsAction.class, root));
         AdminConsole.addLink(Diagnostics, "dump heap", new ActionURL(DumpHeapAction.class, root));
-        if (AppProps.getInstance().isDevMode())
-            AdminConsole.addLink(Diagnostics, "Dump PipeJob Serialize Info", new ActionURL(DumpPipelineJobClassesSerializationAction.class, root));
         AdminConsole.addLink(Diagnostics, "environment variables", new ActionURL(EnvironmentVariablesAction.class, root));
         AdminConsole.addLink(Diagnostics, "memory usage", new ActionURL(MemTrackerAction.class, root));
         AdminConsole.addLink(Diagnostics, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root), AdminPermission.class);
@@ -352,10 +349,13 @@ public class AdminController extends SpringActionController
         addTab(TYPE.FolderManagement,"Information", "info", NOT_ROOT, FolderInformationAction.class);
         addTab(TYPE.FolderManagement,"R Config", "rConfig", NOT_ROOT, RConfigurationAction.class);
 
-        addTab(TYPE.ProjectSettings, "Properties", "properties", ROOT_AND_PROJECTS, ProjectSettingsAction.class);
-        addTab(TYPE.ProjectSettings, "Resources", "resources", ROOT_AND_PROJECTS, ResourcesAction.class);
+        addTab(TYPE.ProjectSettings, "Properties", "properties", PROJECTS_ONLY, ProjectSettingsAction.class);
+        addTab(TYPE.ProjectSettings, "Resources", "resources", PROJECTS_ONLY, ResourcesAction.class);
         addTab(TYPE.ProjectSettings, "Menu Bar", "menubar", PROJECTS_ONLY, MenuBarAction.class);
         addTab(TYPE.ProjectSettings, "Files", "files", PROJECTS_ONLY, FilesAction.class);
+
+        addTab(TYPE.LookAndFeelSettings, "Properties", "properties", ROOT, LookAndFeelSettingsAction.class);
+        addTab(TYPE.LookAndFeelSettings, "Resources", "resources", ROOT, AdminConsoleResourcesAction.class);
     }
 
     public AdminController()
@@ -488,7 +488,7 @@ public class AdminController extends SpringActionController
 
         ActionURL getLookAndFeelResourcesURL(Container c)
         {
-            return new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
+            return c.isRoot() ? new ActionURL(AdminConsoleResourcesAction.class, c) : new ActionURL(ResourcesAction.class, LookAndFeelProperties.getSettingsContainer(c));
         }
 
         @Override
@@ -9418,25 +9418,6 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
-    public class DumpPipelineJobClassesSerializationAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            SerializeDumper.dumpPipelineJobClasses();
-            return new HtmlView(PageFlowUtil.filter("Serialization info dumped to labkey.log."));
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Serialization dumped", null);
-            return root;
-        }
-
-    }
-
     /** This is a very crude API right now, mostly using default serialization of pre-existing objects
      * NOTE: callers should expect that the return shape of this method may and will change in non-backward-compatible ways
      */
@@ -9461,8 +9442,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
+    @AdminConsoleAction()
     public class ExternalRedirectAdminAction extends FormViewAction<ExternalRedirectForm>
     {
         @Override
@@ -9682,7 +9662,7 @@ public class AdminController extends SpringActionController
     }
 
     /* returns a jackson serializable object that reports superset of information returned in admin console */
-    Map<String,Object> getConfigurationJson()
+    Map<String, Object> getConfigurationJson()
     {
         JSONObject res = new JSONObject();
 
@@ -9713,8 +9693,6 @@ public class AdminController extends SpringActionController
         return res;
     }
 
-
-    @ActionNames("projectSettings, lookAndFeelSettings")
     @RequiresPermission(AdminPermission.class)
     public class ProjectSettingsAction extends ProjectSettingsViewPostAction<ProjectSettingsForm>
     {
@@ -9833,6 +9811,16 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // Same as ProjectSettingsAction, but provides special admin console permissions handling
+    @AdminConsoleAction
+    public class LookAndFeelSettingsAction extends ProjectSettingsAction
+    {
+        @Override
+        protected TYPE getType()
+        {
+            return TYPE.LookAndFeelSettings;
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     public class ResourcesAction extends ProjectSettingsViewPostAction
@@ -9906,6 +9894,16 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // Same as ResourcesAction, but provides special admin console permissions handling
+    @AdminConsoleAction
+    public class AdminConsoleResourcesAction extends ResourcesAction
+    {
+        @Override
+        protected TYPE getType()
+        {
+            return TYPE.LookAndFeelSettings;
+        }
+    }
 
     @RequiresPermission(AdminPermission.class)
     public class MenuBarAction extends ProjectSettingsViewAction
