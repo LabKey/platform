@@ -16,7 +16,6 @@
 
 package org.labkey.assay.actions;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -31,11 +30,14 @@ import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayRunUploadContext;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.DefaultAssayRunCreator;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
-import org.labkey.api.data.TSVWriter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
@@ -58,15 +60,11 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static org.labkey.api.assay.AssayDataCollector.PRIMARY_FILE;
 import static org.labkey.api.assay.AssayFileWriter.createFile;
@@ -251,6 +249,19 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
             }
         }
 
+        if (form.getPlateMetadata() != null)
+        {
+            AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+            if (svc != null)
+            {
+                ExpData plateData = DefaultAssayRunCreator.createData(getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+                plateData.save(getUser());
+                outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
+
+                factory.setRawPlateMetadata(svc.parsePlateMetadata(form.getPlateMetadata()));
+            }
+        }
+
         factory.setInputDatas(inputData)
                 .setOutputDatas(outputData)
                 .setInputMaterials(inputMaterial)
@@ -307,6 +318,7 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         private String _runFilePath;
         private String _module;
         private boolean _saveDataAsFile;
+        private JSONObject _plateMetadata;
 
         public JSONObject getJson()
         {
@@ -406,6 +418,16 @@ public class ImportRunApiAction extends MutatingApiAction<ImportRunApiAction.Imp
         public void setDataRows(JSONArray dataRows)
         {
             _dataRows = dataRows;
+        }
+
+        public JSONObject getPlateMetadata()
+        {
+            return _plateMetadata;
+        }
+
+        public void setPlateMetadata(JSONObject plateMetadata)
+        {
+            _plateMetadata = plateMetadata;
         }
 
         public String getRunFilePath()

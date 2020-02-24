@@ -131,8 +131,17 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind<JSONObject>
         return new SQLFragment("NULL");
     }
 
+    protected ExpProtocol findProtocol(Domain domain)
+    {
+        Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
+        if (pair == null)
+            return null;
+
+        return pair.second;
+    }
+
     @Nullable
-    private ExpProtocol findProtocol(Domain domain)
+    protected Pair<AssayProvider, ExpProtocol> findProviderAndProtocol(Domain domain)
     {
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(domain.getContainer());
         for (ExpProtocol protocol : protocols)
@@ -144,7 +153,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind<JSONObject>
                 {
                     if (protocolDomain.getKey().getTypeURI().equals(domain.getTypeURI()))
                     {
-                        return protocol;
+                        return Pair.of(provider, protocol);
                     }
                 }
             }

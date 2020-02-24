@@ -1,4 +1,4 @@
-package org.labkey.experiment.api;
+package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;

@@ -30,10 +30,13 @@ public interface Plate extends PlateTemplate
 
     WellGroup getWellGroup(WellGroup.Type type, String wellGroupName);
 
+    @Override
     List<? extends WellGroup> getWellGroups(WellGroup.Type type);
 
+    @Override
     List<? extends WellGroup> getWellGroups(Position position);
 
+    @Override
     List<? extends WellGroup> getWellGroups();
 
     int getPlateNumber();

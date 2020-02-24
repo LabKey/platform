@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataCollectorDisplayColumn;
@@ -42,6 +43,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -630,6 +632,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addSampleInputColumns(newRunForm, insertView);
         if (shouldShowDataCollectorUI(newRunForm))
         {
+            if (_provider.getPlateMetadataDataCollector(newRunForm) != null)
+                insertView.getDataRegion().addDisplayColumn(new PlateMetadataDisplayColumn(newRunForm));
+
             insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
         }
 
@@ -1161,6 +1166,53 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else
             {
                 return super.getErrors(paramName);
+            }
+        }
+    }
+
+    private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
+    {
+        private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
+        private ColumnInfo _col;
+
+        public PlateMetadataDisplayColumn(AssayRunUploadForm form)
+        {
+            _form = form;
+            setCaption("Plate Metadata");
+            _col = new BaseColumnInfo("Plate Metadata", JdbcType.NULL);
+            ((BaseColumnInfo)_col).setInputType("file");
+        }
+
+        @Override
+        public void renderTitle(RenderContext ctx, Writer out) throws IOException
+        {
+            super.renderTitle(ctx, out);
+            out.write(" *");
+        }
+
+        public boolean isEditable()
+        {
+            return true;
+        }
+
+        public ColumnInfo getColumnInfo()
+        {
+            return _col;
+        }
+
+        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+        {
+            AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
+            if (collector != null)
+            {
+                try
+                {
+                    collector.getView(_form).render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                }
+                catch (Exception e)
+                {
+                    throw (IOException)new IOException().initCause(e);
+                }
             }
         }
     }
