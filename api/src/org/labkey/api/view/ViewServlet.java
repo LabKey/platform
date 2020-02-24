@@ -419,7 +419,7 @@ public class ViewServlet extends HttpServlet
                 {
                     c = cFixUp;
                     path = pathFixUp;
-                    url.setPath(path);
+                    url.setParsedPath(path);
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(url);
                 }
