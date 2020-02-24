@@ -18,19 +18,18 @@
 <%@ page import="org.labkey.api.attachments.Attachment" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        //Need to include the Util for a use of the form panel configuration.
-        dependencies.add("clientapi/ext4");
+        dependencies.add("Ext4ClientApi");
     }
 %>
 <%
@@ -43,7 +42,6 @@
 %>
 
 <%!
-
     public String shortenFileName(String fileName)
     {
         if (fileName.length() > 55)
@@ -156,7 +154,6 @@ function showSuccessMessage(message, after)
     el.pause(3).fadeOut({callback:function(){el.update("");}});
 }
 
-
 function onSaveSuccess_updateRows()
 {
     // if you want to stay on page, you need to refresh anyway to update attachments
@@ -184,14 +181,12 @@ function onSaveSuccess_formSubmit()
     el.pause(1).fadeOut({callback:cancelButtonHandler});
 }
 
-
 function onSaveFailure_updateRows(error)
 {
     unmask();
     Ext4.get("formSuccess").update("");
     Ext4.get("formError").update(error.exception);
 }
-
 
 function onSaveFailure_formSubmit(form, action)
 {
@@ -238,7 +233,6 @@ function submitButtonHandler()
     }
 }
 
-
 function editButtonHandler()
 {
     editableFormPanel = true;
@@ -246,20 +240,17 @@ function editButtonHandler()
     createPage();
 }
 
-
 function cancelButtonHandler()
 {
     LABKEY.setSubmit(true);
     window.location = <%=q(cancelLink.getLocalURIString())%>;
 }
 
-
 function doneButtonHandler()
 {
     LABKEY.setSubmit(true);
     window.location = <%=q(cancelLink.getLocalURIString())%>;
 }
-
 
 function destroyFormPanel()
 {
@@ -270,7 +261,6 @@ function destroyFormPanel()
     }
 }
 
-
 var renderTypes = {<%
 String comma = "";
 for (WikiRendererType type : getRendererTypes())
@@ -278,8 +268,7 @@ for (WikiRendererType type : getRendererTypes())
     %><%=text(comma)%><%=q(type.name())%>:<%=q(type.getDisplayName())%><%
     comma = ",";
 }
-%>};
-
+%>}
 
 function renderFormPanel(data, editable){
     var protocolDocs = [];
@@ -342,20 +331,21 @@ function renderFormPanel(data, editable){
         buttons.push({text:"Done", handler: doneButtonHandler});
     }
 
-    var getConfig = function(searchString){
+    var getConfig = function(searchString)
+    {
         var fields = data.metaData.fields;
-        for(var i = 0; i < fields.length; i++){
-            if(fields[i].caption == searchString && !fields[i].lookup)
+        for (var i = 0; i < fields.length; i++)
+        {
+            if (fields[i].caption === searchString)
             {
                 var config = LABKEY.ext4.Util.getFormEditorConfig(data.metaData.fields[i]);
 
                 // textarea size doesn't reflect the form defaults
-                if (config.xtype == 'textarea')
+                if (config.xtype === 'textarea')
                 {
                     config.height = 150;
                     config.width = 500;
                 }
-
                 return config;
             }
         }
@@ -393,7 +383,6 @@ function renderFormPanel(data, editable){
             fieldLabel : 'Render Type: <%=helpPopup(null, "The render type format for the description when displayed on the Overview tab.")%>',
             labelSeparator: '',
             labelWidth : 160,
-            height : 30,
             padding : 5,
             hiddenName : 'DescriptionRendererType',
             name : 'DescriptionRendererType',
@@ -550,34 +539,36 @@ function renderFormPanel(data, editable){
             labelWidth: 160,
             labelStyle: 'text-align: right;',
             width: 500,
-            height : 30,
-            padding : '5px',
+            padding : 5,
             disabled : !editableFormPanel
         },
         items: items,
         dockedItems: [{
+            margin: '15px,0',
             xtype: 'toolbar',
             dock: 'bottom',
             ui: 'footer',
             style : 'background-color: transparent;',
             items: buttons
         }],
-        renderTo : 'testZone'
+        renderTo : 'formDiv',
+        listeners : {
+            render : function(cmp){
+                cmp.doLayout();
+            }
+        }
     });
 }
-
 
 function onQuerySuccess(data) // e.g. callback from Query.selectRows
 {
     renderFormPanel(data, editableFormPanel);
 }
 
-
 function onQueryFailure(a)
 {
     alert(a);
 }
-
 
 function createPage()
 {
@@ -605,4 +596,3 @@ Ext4.onReady(createPage);
 
 <span id=formSuccess class=labkey-message-strong></span><span id=formError class=labkey-error></span>&nbsp;</br>
 <div id='formDiv'></div>
-<div id='testZone'></div>

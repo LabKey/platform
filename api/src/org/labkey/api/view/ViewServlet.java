@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.Compress;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemoryUsageLogger;
@@ -57,6 +58,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -417,7 +419,7 @@ public class ViewServlet extends HttpServlet
                 {
                     c = cFixUp;
                     path = pathFixUp;
-                    url.setPath(path);
+                    url.setParsedPath(path);
                     if ("GET".equals(request.getMethod()))
                         throw new RedirectException(url);
                 }
@@ -576,12 +578,25 @@ public class ViewServlet extends HttpServlet
 
         MockHttpServletResponse mockResponse = new MockHttpServletResponse()
         {
+            {
+                setCharacterEncoding(StringUtilsLabKey.DEFAULT_CHARSET.name());
+            }
+
             @Override
             public void setContentType(String s)
             {
                 if (null != requiredContentType && !s.startsWith(requiredContentType))
                     throw new IllegalStateException(s);
                 super.setContentType(s);
+            }
+
+            @Override
+            public String getContentAsString() throws UnsupportedEncodingException
+            {
+                if (StringUtils.equals(getHeader("Content-Encoding"),"gzip"))
+                    return Compress.decompressGzip(getContentAsByteArray());
+                else
+                    return super.getContentAsString();
             }
         };
 
