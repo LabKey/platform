@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -65,7 +66,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
-        if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")))
+        if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")) && !HttpUtil.isBrowser(getViewContext().getRequest()))
             setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         super.checkPermissions();
     }

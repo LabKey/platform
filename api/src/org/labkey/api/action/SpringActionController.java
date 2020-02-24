@@ -40,6 +40,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
@@ -578,7 +579,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 if (!user.hasSiteAdminPermission())
                 {
-                    if (isApiLike(request,action))
+                    if (isApiLike(request, action))
                     {
                         UnauthorizedException uae = new UnauthorizedException(upgradeRequired || !startupComplete ?
                                 "server is not ready" :
@@ -1119,7 +1120,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
         boolean apiClass = action instanceof BaseApiAction;
         boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
-        return throwUnauthorized || xmlhttp || json || apiClass || r;
+        return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || r);
     }
 
     // helpers for debug checks related to Action
