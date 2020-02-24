@@ -166,7 +166,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), _dataClass.getNameExpression());
+                String nameExpression = _dataClass.getNameExpression();
+                c.setNullable(nameExpression != null);
+                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
                 c.setDescription(desc);
                 return c;
             }
@@ -274,6 +276,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);

@@ -3350,6 +3350,7 @@ public class QueryController extends SpringActionController
         {
             _form = form;
 
+            _insertOption = form.getInsertOption();
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
