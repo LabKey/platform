@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -56,7 +55,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -362,7 +360,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new IllegalArgumentException("List name must not be null");
         if (name.length() > ListEditorService.MAX_NAME_LENGTH)
             throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
-
+        if (ListService.get().getList(container, name) != null)
+            throw new IllegalArgumentException("The name '" + name + "' is already in use.");
         if (keyName == null)
             throw new IllegalArgumentException("List keyName must not be null");
 
@@ -443,14 +442,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         try (DbScope.Transaction transaction = ListManager.get().getListMetadataSchema().getScope().ensureTransaction())
         {
             exception = new ValidationException();
-            boolean changedName = false;
 
             Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
             ListDefinition listDefinition = ListService.get().getList(domain);
             TableInfo table = listDefinition.getTable(user);
 
             if (null == domain || null == table)
-                return exception.addGlobalError("Expected domain and table for list: " + listDefinition.getName());
+                return exception.addGlobalError("Expected domain and table for list: " + listDefinition.getName() + ".");
 
             // Check for legalName problems
             exception.addErrors(checkLegalNameConflicts(update));
@@ -470,10 +468,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //handle name change
             if (!original.getName().equals(update.getName()))
             {
-                changedName = true;
                 if (update.getName().length() > ListEditorService.MAX_NAME_LENGTH)
                 {
-                    exception.addError(new SimpleValidationError("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters"));
+                    throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters.");
+                }
+                else if (ListService.get().getList(container, update.getName()) != null)
+                {
+                    throw new IllegalArgumentException("The name '" + update.getName() + "' is already in use.");
                 }
             }
 
@@ -486,22 +487,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //update list properties
             if (null != listProperties)
             {
-                try
-                {
-                    if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
-                        throw new IllegalArgumentException();
+                if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
+                    throw new IllegalArgumentException();
 
-                    updateListProperties(container, user, listDefinition.getListId(), listProperties);
-                }
-                catch (RuntimeSQLException e)
-                {
-                    if (changedName && e.isConstraintException())
-                    {
-                        exception.addGlobalError("The name '" + listDefinition.getName() + "' is already in use.");
-                        return exception;
-                    }
-                    throw e;
-                }
+                updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
 
             //update domain design properties
