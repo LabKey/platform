@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -25,8 +26,6 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.ValidationException;
@@ -38,7 +37,6 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -165,7 +163,7 @@ public class TestDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable JSONObject getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         throw new UnsupportedOperationException();
     }

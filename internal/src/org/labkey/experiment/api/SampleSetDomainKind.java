@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -33,12 +34,11 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -66,7 +66,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
+public class SampleSetDomainKind extends BaseAbstractDomainKind<JSONObject>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -109,12 +109,6 @@ public class SampleSetDomainKind extends AbstractDomainKind<JSONObject>
     public String getKindName()
     {
         return NAME;
-    }
-
-    @Override
-    public Class<JSONObject> getTypeClass()
-    {
-        return JSONObject.class;
     }
 
     @Override

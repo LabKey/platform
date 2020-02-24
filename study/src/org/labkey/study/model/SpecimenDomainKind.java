@@ -45,7 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class SpecimenDomainKind extends AbstractSpecimenDomainKind<JSONObject>
+public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";

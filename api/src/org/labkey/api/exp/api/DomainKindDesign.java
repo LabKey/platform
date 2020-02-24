@@ -5,11 +5,11 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 
 import java.util.Map;
 
-public class DomainKindDesign
+public class DomainKindDesign<T>
 {
     private String _domainKindName;
     private GWTDomain _domainDesign;
-    private DomainKindProperties _options; //domain kind specific properties
+    private T _options; //domain kind specific properties, this should be the same <T> object as DomainKind<T> implementations.
 
     public GWTDomain getDomainDesign()
     {
@@ -27,7 +27,7 @@ public class DomainKindDesign
         return mapper.convertValue(_options, Map.class);
     }
 
-    public void setOptions(DomainKindProperties options)
+    public void setOptions(T options)
     {
         _options = options;
     }

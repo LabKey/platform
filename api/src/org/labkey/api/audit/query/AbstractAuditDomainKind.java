@@ -35,7 +35,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -228,7 +227,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public JSONObject getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         throw new UnsupportedOperationException();
     }

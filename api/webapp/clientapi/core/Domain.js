@@ -267,9 +267,9 @@ LABKEY.Domain.create({
      * Gets a domain design along with domain kind specific properties.
      * @param {Object} config An object which contains the following configuration properties.
      * @param {Function} config.success Required. Function called if the
-     *    "get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
+     *    "getDomainDetails" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
      *    which describes the fields of a domain.
-     * @param {Function} [config.failure] Function called if execution of the "get" function fails.
+     * @param {Function} [config.failure] Function called if execution of the "getDomainDetails" function fails.
      * @param {String} config.schemaName Name of the schema
      * @param {String} config.queryName Name of the query
      * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain.
@@ -373,7 +373,7 @@ LABKEY.Domain.create({
          *       If not supplied, the current container path will be used.
          * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
          *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
-         * @param {boolean} config.options Domain Kind specific properties.
+         * @param {Object} config.options Domain Kind specific properties.
          *       If not supplied, will be ignored.
          */
         save : function(config)
@@ -490,19 +490,6 @@ LABKEY.Domain.create({
 * @description An array of objects that each describe a domain field.  Each object has the following properties:
     *       (Note: Not all properties below are expected to have values or will have values. See {@Link LABKEY.Domain} 'Create' to see minimally required properties when creating a Domain.)
     *      <ul>
-    *          <li><b>defaultDisplayValue:</b> Default value to display. (string)</li>
-    *          <li><b>defaultValue:</b> Default value for the field. (string)</li>
-    *          <li><b>defaultValueType:</b> Default value type for the field. (string)</li>
-    *          <li><b>hidden:</b> Indicates whether this field is to be hidden or shown in a view. (boolean)</li>
-    *          <li><b>isPrimaryKey:</b> Indicates whether this field is a Primary Key. (boolean)</li>
-    *          <li><b>lockType:</b> Set lock level on this field. Expected value should be one of: "NotLocked"
-    *              (can change all properties, this is default) or "PartiallyLocked" (can't change name and type property) or "FullyLocked" (can't change any of the properties). (string)</li>
-    *          <li><b>phi:</b> Set PHI level on this field. Expected value should be one of: "NotPhi" (default) or "Limited" or "PHI" or "Restricted". (string)</li>
-    *          <li><b>scale:</b> Scale for the field. (int)</li>
-    *          <li><b>shownInDetailsView:</b> Indicates whether this field is to be shown in Details view. (boolean)</li>
-    *          <li><b>shownInInsertView:</b> Indicates whether this field is to be shown in an Insert view. (boolean)</li>
-    *          <li><b>shownInUpdateView:</b> Indicates whether this field is to be shown in an Update view. (boolean)</li>
-    *          <li><b>url:</b> A url associated with this field. (string)</li>
     *          <li><b>propertyId:</b> The unique ID of this field. (integer)</li>
     *          <li><b>propertyURI:</b> The URI of this field. (string)</li>
     *          <li><b>ontologyURI:</b> The URI of the ontology this field belongs to. (string)</li>
@@ -518,6 +505,19 @@ LABKEY.Domain.create({
     *          <li><b>lookupContainer:</b> If this domain field is a lookup, this holds the container in which to look. (string)</li>
     *          <li><b>lookupSchema:</b> If this domain field is a lookup, this holds the schema in which to look. (string)</li>
     *          <li><b>lookupQuery:</b> if this domain field is a lookup, this holds the query in which to look. (string)</li>
+    *          <li><b>defaultDisplayValue:</b> Default value to display. (string)</li>
+    *          <li><b>defaultValue:</b> Default value for the field. (string)</li>
+    *          <li><b>defaultValueType:</b> Default value type for the field. (string)</li>
+    *          <li><b>hidden:</b> Indicates whether this field is to be hidden or shown in a view. (boolean)</li>
+    *          <li><b>isPrimaryKey:</b> Indicates whether this field is a Primary Key. (boolean)</li>
+    *          <li><b>lockType:</b> Set lock level on this field. Expected value should be one of: "NotLocked"
+    *              (can change all properties, this is default) or "PartiallyLocked" (can't change name and type property) or "FullyLocked" (can't change any of the properties). (string)</li>
+    *          <li><b>phi:</b> Set PHI level on this field. Expected value should be one of: "NotPhi" (default) or "Limited" or "PHI" or "Restricted". (string)</li>
+    *          <li><b>scale:</b> Scale for the field. (int)</li>
+    *          <li><b>shownInDetailsView:</b> Indicates whether this field is to be shown in Details view. (boolean)</li>
+    *          <li><b>shownInInsertView:</b> Indicates whether this field is to be shown in an Insert view. (boolean)</li>
+    *          <li><b>shownInUpdateView:</b> Indicates whether this field is to be shown in an Update view. (boolean)</li>
+    *          <li><b>url:</b> A url associated with this field. (string)</li>
     *      </ul>
     * @type Object
 */

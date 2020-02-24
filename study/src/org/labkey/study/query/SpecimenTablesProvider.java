@@ -85,7 +85,7 @@ public class SpecimenTablesProvider
     public final Domain getDomain(String tableName, boolean create)
     {
         // if the domain doesn't exist and we're asked to create, create it
-        AbstractSpecimenDomainKind<?> domainKind = getDomainKind(tableName);
+        AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
 
         // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
