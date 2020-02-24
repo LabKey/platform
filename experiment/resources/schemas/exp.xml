@@ -405,7 +405,13 @@
       <column columnName="Description"/>
       <column columnName="MaterialSourceId"/>
       <column columnName="NameExpression"/>
-      <column columnName="Category"/>
+      <column columnName="Category">
+        <fk>
+            <fkDbSchema>exp</fkDbSchema>
+            <fkTable>DataClassCategory</fkTable>
+            <fkColumnName>category</fkColumnName>
+        </fk>
+      </column>
     </columns>
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">

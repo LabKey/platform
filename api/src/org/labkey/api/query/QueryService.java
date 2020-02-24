@@ -294,7 +294,7 @@ public interface QueryService
 
     void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider);
 
-    @NotNull List<QueryIconURLProvider> getQueryIconURLProvider();
+    @NotNull List<QueryIconURLProvider> getQueryIconURLProviders();
 
     //
     // Thread local environment for executing a query

@@ -198,7 +198,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         QueryService qs = QueryService.get();
         if (qs != null)
         {
-            for (QueryIconURLProvider provider : qs.getQueryIconURLProvider())
+            for (QueryIconURLProvider provider : qs.getQueryIconURLProviders())
             {
                 String iconURL = provider.getIconURL(form.getSchemaName(), form.getQueryName(), container, user);
                 if (null != iconURL)

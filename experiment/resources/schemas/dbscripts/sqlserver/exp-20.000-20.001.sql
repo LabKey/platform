@@ -1,1 +1,1 @@
-ALTER TABLE exp.DataClass ADD Category NVARCHAR(500) NULL;
+ALTER TABLE exp.DataClass ADD Category NVARCHAR(20) NULL;

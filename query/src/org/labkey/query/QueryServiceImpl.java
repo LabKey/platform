@@ -2749,7 +2749,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    @NotNull public List<QueryIconURLProvider> getQueryIconURLProvider()
+    @NotNull public List<QueryIconURLProvider> getQueryIconURLProviders()
     {
         ArrayList<QueryIconURLProvider> providers = new ArrayList<>(_queryIconURLProviders);
         return Collections.unmodifiableList(providers);

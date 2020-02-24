@@ -54,6 +54,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.exp.query.ExpSchema.DATA_CLASS_CATEGORY_TABLE;
 import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
 
 /**
@@ -81,7 +82,6 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
 
             case Description:
             case NameExpression:
-            case Category:
             case RowId:
                 return wrapColumn(alias, _rootTable.getColumn(column.toString()));
 
@@ -138,6 +138,15 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "DataCount", sql, JdbcType.INTEGER);
                 sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
                 return sampleCountColumnInfo;
+            }
+            case Category:
+            {
+                var col = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(DATA_CLASS_CATEGORY_TABLE, "Value", null);
+                col.setFk( fk );
+                return col;
             }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
