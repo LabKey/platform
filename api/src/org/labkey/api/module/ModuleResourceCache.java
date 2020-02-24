@@ -30,6 +30,8 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -63,7 +65,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: adam
  * Date: 12/26/13
  */
-public final class ModuleResourceCache<V>
+public final class ModuleResourceCache<V> implements ModuleChangeListener
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);
 
@@ -71,6 +73,12 @@ public final class ModuleResourceCache<V>
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
+
+    @Override
+    public void onModuleChanged(String name)
+    {
+        _cache.clear();
+    }
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
@@ -111,6 +119,8 @@ public final class ModuleResourceCache<V>
 
         _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
         _handler = handler;
+
+        ContextListener.addModuleChangeListener(this);
     }
 
     public @NotNull V getResourceMap(Module module)
