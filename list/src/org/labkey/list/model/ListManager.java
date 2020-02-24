@@ -186,7 +186,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     public ListDomainKindProperties getListDomainKindProperties(Container container, Integer listId)
     {
-
         if (null == listId)
         {
             return new ListDomainKindProperties();

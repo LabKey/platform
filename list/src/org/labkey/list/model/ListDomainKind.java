@@ -382,9 +382,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
         list.setKeyName(keyName);
-        list.setDescription(domain.getDescription());
 
-        // TODO: lots of optional stuff we could set: discussionSetting, allowDelete, allowUpload, ...
+        String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
+        list.setDescription(description);
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -408,7 +408,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                     pd.setName("_" + pd.getName());
                 }
 
-                DomainProperty dp = DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
+                DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
             }
 
             Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
@@ -420,6 +420,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             d.setPropertyIndices(propertyIndices);
 
             list.save(user);
+            updateListProperties(container, user, list.getListId(), listProperties);
+
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
             tx.commit();
@@ -486,17 +488,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             {
                 try
                 {
-                    //merge existing and new properties
-                    SimpleFilter filter = SimpleFilter.createContainerFilter(container);
-                    filter.addCondition(FieldKey.fromParts("ListId"), listDefinition.getListId());
-                    ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
-                    ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
-
-                    if (updatedListProps.getDomainId() != original.getDomainId() || updatedListProps.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
+                    if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
                         throw new IllegalArgumentException();
 
-                    //update
-                    ListManager.get().update(user, container, updatedListProps);
+                    updateListProperties(container, user, listDefinition.getListId(), listProperties);
                 }
                 catch (RuntimeSQLException e)
                 {
@@ -594,6 +589,18 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 names.add(legalName);
         }
         return errors;
+    }
+
+    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ListId"), listId);
+        ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+
+        //merge existing and new properties
+        ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
+
+        ListManager.get().update(user, container, updatedListProps);
     }
 
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
