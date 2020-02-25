@@ -179,6 +179,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getContainer();
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
@@ -198,12 +199,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return "The study " + _label;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
     }
 
 
+    @Override
     public void setLabel(String label)
     {
         verifyMutability();
@@ -220,6 +223,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
+    @Override
     public List<VisitImpl> getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
@@ -233,6 +237,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
                 .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
     }
 
+    @Override
     public DatasetDefinition getDataset(int id)
     {
         return StudyManager.getInstance().getDatasetDefinition(this, id);
@@ -250,6 +255,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getDatasetDefinitionByLabel(this, label);
     }
 
+    @Override
     public List<DatasetDefinition> getDatasets()
     {
         return StudyManager.getInstance().getDatasetDefinitions(this);
@@ -280,11 +286,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ids;
     }
 
+    @Override
     public List<LocationImpl> getLocations()
     {
-        return StudyManager.getInstance().getSites(getContainer());
+        return StudyManager.getInstance().getLocations(getContainer());
     }
 
+    @Override
     public List<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
@@ -366,6 +374,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return SpecimenManager.getInstance().getRepositorySettings(getContainer());
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getContainer();
@@ -396,6 +405,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return true;
     }
 
+    @Override
     public TimepointType getTimepointType()
     {
         return _timepointType;

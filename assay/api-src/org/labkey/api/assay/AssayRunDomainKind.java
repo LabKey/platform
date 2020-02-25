@@ -18,6 +18,7 @@ package org.labkey.api.assay;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.util.Pair;
 
 import java.util.Set;
 
@@ -27,6 +28,8 @@ import java.util.Set;
  */
 public class AssayRunDomainKind extends AssayDomainKind
 {
+    public static final String PLATE_TEMPLATE_COLUMN_NAME = "PlateTemplate";
+
     public AssayRunDomainKind()
     {
         super(ExpProtocol.ASSAY_DOMAIN_RUN);
@@ -49,5 +52,27 @@ public class AssayRunDomainKind extends AssayDomainKind
         result.add("AssayId");
         result.add("Assay Id");
         return result;
+    }
+
+    @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        Set<String> mandatoryNames = super.getMandatoryPropertyNames(domain);
+
+        Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
+        if (pair != null)
+        {
+            AssayProvider provider = pair.first;
+            ExpProtocol protocol = pair.second;
+            if (provider != null && protocol != null)
+            {
+                if (provider.isPlateMetadataEnabled(protocol))
+                {
+                    mandatoryNames.add(PLATE_TEMPLATE_COLUMN_NAME);
+                }
+            }
+        }
+
+        return mandatoryNames;
     }
 }

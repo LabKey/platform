@@ -16,26 +16,43 @@
 
 package gwt.client.org.labkey.plate.designer.client;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.MouseDownEvent;
 import com.google.gwt.event.dom.client.MouseDownHandler;
 import com.google.gwt.event.dom.client.MouseUpEvent;
 import com.google.gwt.event.dom.client.MouseUpHandler;
-import com.google.gwt.user.client.ui.*;
-import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.http.client.UrlBuilder;
+import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.WindowResizeListener;
 import com.google.gwt.user.client.WindowCloseListener;
-import com.google.gwt.user.client.DOM;
-import com.google.gwt.core.client.GWT;
+import com.google.gwt.user.client.WindowResizeListener;
+import com.google.gwt.user.client.rpc.AsyncCallback;
+import com.google.gwt.user.client.ui.ChangeListener;
+import com.google.gwt.user.client.ui.FocusPanel;
+import com.google.gwt.user.client.ui.HasVerticalAlignment;
+import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.KeyboardListenerAdapter;
+import com.google.gwt.user.client.ui.Label;
+import com.google.gwt.user.client.ui.RootPanel;
+import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.TabPanel;
+import com.google.gwt.user.client.ui.TextBox;
+import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwt.user.client.ui.Widget;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPlate;
-import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import gwt.client.org.labkey.plate.designer.client.model.GWTPosition;
-import org.labkey.api.gwt.client.util.ServiceUtil;
+import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
 import org.labkey.api.gwt.client.util.ColorGenerator;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -107,7 +124,7 @@ public class TemplateView extends HorizontalPanel
     {
         _rootPanel.clear();
         _rootPanel.add(new Label("Loading..."));
-        getService().getTemplateDefinition(_templateName, _plateId, _assayTypeName, _templateTypeName, _rowCount, _columnCount, new AsyncCallback<GWTPlate>()
+        getService().getTemplateDefinition(_templateName, _plateId, _assayTypeName, _templateTypeName, _rowCount, _columnCount, _copyMode, new AsyncCallback<GWTPlate>()
         {
             public void onFailure(Throwable throwable)
             {
@@ -309,7 +326,7 @@ public class TemplateView extends HorizontalPanel
         setDirty(true);
     }
 
-    public void saveChanges(final AsyncCallback callback)
+    public void saveChanges(final AsyncCallback<Integer> callback)
     {
         String templateName = _nameBox.getText().trim();
         if (templateName == null || templateName.length() == 0)
@@ -332,7 +349,7 @@ public class TemplateView extends HorizontalPanel
             _activeGroup.setProperties(_wellGroupPropertyPanel.getProperties());
         }
         setStatus("Saving...");
-        getService().saveChanges(_plate, !_copyMode, new AsyncCallback()
+        getService().saveChanges(_plate, !_copyMode, new AsyncCallback<Integer>()
         {
             public void onFailure(Throwable throwable)
             {
@@ -341,15 +358,40 @@ public class TemplateView extends HorizontalPanel
                 callback.onFailure(throwable);
             }
 
-            public void onSuccess(Object object)
+            public void onSuccess(Integer newPlateId)
             {
+                UrlBuilder urlBuilder = Window.Location.createUrlBuilder();
+                String oldUrl = urlBuilder.buildString();
+
+                // remove all parameters (e.g, copy, rows, cols, ...)
+                for (String param : Window.Location.getParameterMap().keySet())
+                {
+                    urlBuilder.removeParameter(param);
+                }
+
+                // add the necessary parameters for loading the template again if the user refreshes the page
+                urlBuilder.setParameter("templateName", _plate.getName());
+                urlBuilder.setParameter("plateId", String.valueOf(newPlateId));
+
+                // if the URL has changed, replace it in history
+                String newUrl = urlBuilder.buildString();
+                if (!newUrl.equals(oldUrl))
+                {
+                    replaceState(newUrl);
+                }
+
                 _copyMode = false;
                 setStatus("Saved.");
                 setDirty(false);
-                callback.onSuccess(object);
+                callback.onSuccess(newPlateId);
             }
         });
     }
+
+    // https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState
+    public static native void replaceState(String newURL) /*-{
+      $wnd.history.replaceState(null, '', newURL);
+    }-*/;
 
     public void setStatus(String status)
     {
@@ -518,9 +560,9 @@ public class TemplateView extends HorizontalPanel
     public void createWellGroup(String groupName, String type)
     {
         Map<String, Object> properties = getPropertiesForType(type);
-        properties.put("Type", type);
-        properties.put("Name", groupName);
-        GWTWellGroup group = new GWTWellGroup(type, groupName, new ArrayList<GWTPosition>(), properties);
+
+        int wellGroupCount = _plate.getWellGroupCount() + 1;
+        GWTWellGroup group = new GWTWellGroup(-1 * wellGroupCount, type, groupName, new ArrayList<GWTPosition>(), properties);
         if (_plate.addGroup(group))
         {
             setDirty(true);
@@ -576,7 +618,7 @@ public class TemplateView extends HorizontalPanel
 
     private Map<String, Object> getPropertiesForType(String type)
     {
-        Set<GWTWellGroup> groups = _plate.getTypeToGroupsMap().get(type);
+        List<GWTWellGroup> groups = _plate.getTypeToGroupsMap().get(type);
         if (groups != null && !groups.isEmpty())
             return groups.iterator().next().getProperties();
         else

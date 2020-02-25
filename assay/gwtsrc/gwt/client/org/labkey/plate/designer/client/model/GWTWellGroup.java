@@ -28,6 +28,7 @@ import java.util.Map;
  */
 public class GWTWellGroup implements IsSerializable
 {
+    private int _rowId;
     private String _type;
     private String _name;
     private List<GWTPosition> _positions;
@@ -42,12 +43,18 @@ public class GWTWellGroup implements IsSerializable
         // no-arg constructor for deserialization
     }
 
-    public GWTWellGroup(String type, String name, List<GWTPosition> positions, Map<String, Object> properties)
+    public GWTWellGroup(int rowId, String type, String name, List<GWTPosition> positions, Map<String, Object> properties)
     {
+        _rowId = rowId;
         _type = type;
         _name = name;
         _positions = positions;
         _properties = properties;
+    }
+
+    public int getRowId()
+    {
+        return _rowId;
     }
 
     public void removePosition(GWTPosition position)
@@ -94,7 +101,7 @@ public class GWTWellGroup implements IsSerializable
     @Override
     public int hashCode()
     {
-        return _name.hashCode() + (_type.hashCode() * 31);
+        return Integer.hashCode(_rowId);
     }
 
     @Override
@@ -105,9 +112,6 @@ public class GWTWellGroup implements IsSerializable
 
         GWTWellGroup that = (GWTWellGroup) o;
 
-        if (!_name.equals(that._name)) return false;
-        if (!_type.equals(that._type)) return false;
-
-        return true;
+        return this._rowId == that._rowId;
     }
 }

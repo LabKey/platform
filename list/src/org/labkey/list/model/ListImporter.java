@@ -139,10 +139,17 @@ public class ListImporter
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
                     DataLoader loader = DataLoader.get().createLoader(fileName, null, stream, true, null, null);
+                    TableInfo ti = def.getTable(user);
+                    String tableName =  ListManager.get().getListTableName(ti);
 
                     //Don't infer types if xmlmetadata is available. Fix for Issue 35760: List Archive Imports change numbers into scientific notation on text fields
                     if(hasXmlMetadata)
                         loader.setInferTypes(false);
+                    else if (ti != null)
+                    {
+                        // if the target table exists add the known columns to do a better job of data type conversion : issue 39675
+                        loader.setKnownColumns(ti.getColumns());
+                    }
 
                     if (!hasXmlMetadata && !resolveDomainChanges(c, user, loader, def, log, errors))
                     {
@@ -166,9 +173,6 @@ public class ListImporter
                             }
                         }
                     }
-
-                    TableInfo ti = def.getTable(user);
-                    String tableName =  ListManager.get().getListTableName(ti);
 
                     if (null != ti && null != tableName)
                     {

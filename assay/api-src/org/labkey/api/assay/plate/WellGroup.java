@@ -33,20 +33,15 @@ public interface WellGroup extends WellData, WellGroupTemplate
         REPLICATE,
         ANTIGEN,
         OTHER,
-        VIRUS
+        VIRUS,
+        SAMPLE
     }
 
     List<? extends WellData> getWellData(boolean combineReplicates);
 
-    Type getType();
-
-    boolean contains(Position position);
-
     Set<WellGroup> getOverlappingGroups();
 
     Set<WellGroup> getOverlappingGroups(Type type);
-
-    List<Position> getPositions();
 
     Double getMinDilution();
 
