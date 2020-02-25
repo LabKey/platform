@@ -16,7 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
-import org.jetbrains.annotations.NotNull;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -452,9 +452,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             if (null == table)
                 return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
 
-            // Check for legalName problems
-            exception.addErrors(checkLegalNameConflicts(update));
-
             // handle key column name change
             GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
             if (null != key)
@@ -565,23 +562,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
     }
 
-    @NotNull
-    private ValidationException checkLegalNameConflicts(GWTDomain dd)
-    {
-        ValidationException errors = new ValidationException();
-        Set<String> names = new HashSet<>();
-        for (Object obj : dd.getFields())
-        {
-            GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)obj;
-            String legalName = ColumnInfo.legalNameFromName(descriptor.getName()).toLowerCase();
-            if (names.contains(legalName))
-                errors.addError(new PropertyValidationError("Field's legal name '" + legalName + "' is not unique." , descriptor.getName()));
-            else
-                names.add(legalName);
-        }
-        return errors;
-    }
-
     private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -594,18 +574,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListManager.get().update(user, container, updatedListProps);
     }
 
+    //updates list properties except listId, domainId, keyName and keyType
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
 
         if (null != newListProps.getName())
             updatedListProps.setName(newListProps.getName());
-
-        if (null != newListProps.getKeyName())
-            updatedListProps.setKeyName(newListProps.getKeyName());
-
-        if (null != newListProps.getKeyType())
-            updatedListProps.setKeyType(newListProps.getKeyType());
 
         if (null != newListProps.getTitleColumn())
             updatedListProps.setTitleColumn(newListProps.getTitleColumn());
