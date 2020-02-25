@@ -18,7 +18,7 @@ package org.labkey.api.study;
 
 import org.labkey.api.data.Container;
 
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,6 +33,11 @@ public interface PropertySet
     void setProperty(String name, Object value);
 
     Object getProperty(String name);
+
+    default void setProperties(Map<String, Object> properties)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     Container getContainer();
     

@@ -1,4 +1,4 @@
-package org.labkey.experiment.api;
+package org.labkey.api.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.RenderContext;
@@ -26,7 +26,7 @@ public class ReexecutableRenderContext extends RenderContext
 {
     Map<Set<FieldKey>, Pair<List<ColumnInfo>, SQLFragment>> fragments;
 
-    ReexecutableRenderContext(RenderContext ctx)
+    public ReexecutableRenderContext(RenderContext ctx)
     {
         super(ctx.getViewContext(), ctx.getErrors());
 
