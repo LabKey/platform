@@ -45,6 +45,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -635,6 +636,11 @@ public class DbScope
         {
             if (clazz.isAssignableFrom(getCause().getClass()))
                 throw (T)getCause();
+        }
+
+        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        {
+            throw UnexpectedException.wrap(getCause());
         }
     }
 
