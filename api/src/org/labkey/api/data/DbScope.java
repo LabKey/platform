@@ -842,7 +842,7 @@ public class DbScope
     public Connection getReadOnlyConnection() throws SQLException
     {
         ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
-        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FROM"));
+        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
 
         return conn;
     }
