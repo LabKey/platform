@@ -37,6 +37,10 @@ experiment/resources/views/domainDesigner.html
 experiment/resources/views/domainDesigner.view.xml
 experiment/resources/views/domainDesignerDev.html
 experiment/resources/views/domainDesignerDev.view.xml
+experiment/resources/views/sampleTypeDesigner.html
+experiment/resources/views/sampleTypeDesigner.view.xml
+experiment/resources/views/sampleTypeDesignerDev.html
+experiment/resources/views/sampleTypeDesignerDev.view.xml
 
 assay/resources/web/assay/gen
 assay/resources/views/assayDataImport.html
