@@ -452,16 +452,24 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             if (null == table)
                 return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
 
-            // handle key column name change
+            // Handle cases when existing key field is null or is not provided in the updated domainDesign
             GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
             if (null != key)
             {
                 int id = key.getPropertyId();
                 GWTPropertyDescriptor newKey = findField(id, update.getFields());
-                if (null != newKey && !key.getName().equalsIgnoreCase(newKey.getName()))
+                if (null == newKey)
                 {
-                    exception.addError(new PropertyValidationError("Cannot change key field name", key.getName()));
+                    throw new IllegalArgumentException("Key field not provided, expecting key field '" + key.getName() + "'");
                 }
+                else if (!key.getName().equalsIgnoreCase(newKey.getName()))
+                {
+                    throw new IllegalArgumentException ("Cannot change key field name");
+                }
+            }
+            else
+            {
+                throw new IllegalArgumentException ("Key field not found for list '" + listDefinition.getName() + "'");
             }
 
             //handle name change
@@ -574,7 +582,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListManager.get().update(user, container, updatedListProps);
     }
 
-    //updates list properties except listId, domainId, keyName and keyType
+    //updates list properties except listId, domainId, keyName, keyType, and lastIndexed
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
@@ -587,9 +595,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         if (null != newListProps.getDescription())
             updatedListProps.setDescription(newListProps.getDescription());
-
-        if (newListProps.getLastIndexed() != updatedListProps.getLastIndexed())
-            updatedListProps.setLastIndexed(newListProps.getLastIndexed());
 
         if (newListProps.isAllowDelete() != updatedListProps.isAllowDelete())
             updatedListProps.setAllowDelete(newListProps.isAllowDelete());

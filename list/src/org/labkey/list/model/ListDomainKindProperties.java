@@ -24,12 +24,12 @@ public class ListDomainKindProperties implements Cloneable
     protected int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
 
     //Index Entire List as a Single Document
-    protected String entireListTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
+    protected String entireListTitleTemplate = "";
     protected int entireListIndexSetting = ListDefinition.IndexSetting.MetaData.getValue();
     protected int entireListBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
     //Index Each Item as a Separate Document
-    protected String eachItemTitleTemplate = String.valueOf(ListDefinition.TitleSetting.Standard.getValue());
+    protected String eachItemTitleTemplate = "";
     protected int eachItemBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
     protected boolean entireListIndex = false;
