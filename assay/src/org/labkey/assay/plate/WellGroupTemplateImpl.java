@@ -16,11 +16,14 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.Position;
+import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 /**
  * User: brittp
@@ -32,6 +35,8 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     private Integer _rowId;
     private String _name;
     private WellGroup.Type _type;
+    boolean _deleted;
+
     protected Integer _plateId;
     protected List<? extends Position> _positions;
 
@@ -52,26 +57,29 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {
         List<? extends Position> sortedPositions = new ArrayList<>(positions);
-        sortedPositions.sort((Comparator<Position>) (first, second) ->
-        {
-            int comp = first.getColumn() - second.getColumn();
-            if (comp == 0)
-                comp = first.getRow() - second.getRow();
-            return comp;
-        });
+        sortedPositions.sort((Comparator<Position>) Comparator.comparingInt(Position::getColumn).thenComparingInt(Position::getRow));
         return sortedPositions;
     }
 
+    @Override
     public List<Position> getPositions()
     {
         return Collections.unmodifiableList(_positions);
     }
 
+    @Override
+    public void setPositions(List<? extends Position> positions)
+    {
+        _positions = sortPositions(positions);
+    }
+
+    @Override
     public WellGroup.Type getType()
     {
         return _type;
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -82,6 +90,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         _name = name;
     }
 
+    @Override
     public boolean contains(Position position)
     {
         return _positions.contains(position);
@@ -97,11 +106,7 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         return _positions.get(0).getDescription() + "-" + _positions.get(_positions.size() - 1).getDescription();
     }
 
-    public void setPositions(List<? extends Position> positions)
-    {
-        _positions = sortPositions(positions);
-    }
-
+    @Override
     public Integer getRowId()
     {
         return _rowId;
@@ -142,5 +147,14 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         if (_positions.isEmpty())
             return null;
         return _positions.get(0);
+    }
+
+    /**
+     * Mark the well group as deleted.
+     * @see PlateTemplateImpl#markWellGroupForDeletion(WellGroupTemplateImpl)
+     */
+    public void delete()
+    {
+        _deleted = true;
     }
 }
