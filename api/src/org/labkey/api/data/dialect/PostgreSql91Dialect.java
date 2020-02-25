@@ -1752,13 +1752,17 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             try
             {
-                // Used in conjunction with stmt.setFetchSize() to force uncached ResultSets
+                // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
+                int previousTransactionIsolation = connection.getTransactionIsolation();
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
                 connection.setAutoCommit(false);
+
                 Closer previous = ret;
 
                 ret = () -> {
                     previous.close();
                     connection.setAutoCommit(true);
+                    connection.setTransactionIsolation(previousTransactionIsolation);
                 };
             }
             catch (SQLException e)
@@ -1770,14 +1774,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
 
         return ret;
-    }
-
-
-    @Override
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
-        super.configureToDisableJdbcCaching(stmt);
-        stmt.setFetchSize(1000);
     }
 
     @Override

@@ -834,6 +834,19 @@ public class DbScope
         return getPooledConnection(ConnectionType.Pooled, null);
     }
 
+    /**
+     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
+     *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
+     **/
+    @JsonIgnore
+    public Connection getReadOnlyConnection() throws SQLException
+    {
+        ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
+        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FROM"));
+
+        return conn;
+    }
+
     /** Create a new connection that completely bypasses the connection pool. */
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
