@@ -132,7 +132,7 @@ public class ReturnURLString
                 char c = s.charAt(e.getIndex());
                 sb.append(" at char '" + c + "'");
             }
-            LOG.error(sb.append(": ").append(e.getMessage().toString()));
+            LOG.debug(sb.append(": ").append(e.getMessage().toString()));
             return null;
         }
     }

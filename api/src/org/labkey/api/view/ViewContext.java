@@ -240,6 +240,10 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         _contextualRoles.add(RoleManager.getRole(role));
     }
 
+    public Set<Role> getContextualRoles()
+    {
+        return _contextualRoles;
+    }
 
     public boolean hasPermission(String logMsg, @NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {

@@ -33,6 +33,7 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.requirements.RequirementType;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
+import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.specimen.settings.DisplaySettings;
 import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.specimen.settings.RequestNotificationSettings;
@@ -285,9 +286,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                                 LocationImpl location = null;
                                 if (actor.isPerSite())
                                 {
-                                    List<LocationImpl> matchingLocs = StudyManager.getInstance().getLocationsByLabel(ctx.getContainer(), newActorGroup.getName());
-                                    if (matchingLocs.size() > 0)
-                                        location = matchingLocs.get(0);
+                                    location = LocationCache.getForLabel(ctx.getContainer(), newActorGroup.getName());
 
                                     if (location == null)
                                     {

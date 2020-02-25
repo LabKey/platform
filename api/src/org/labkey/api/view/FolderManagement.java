@@ -73,22 +73,31 @@ public class FolderManagement
                 return !container.isRoot();
             }
         },
-        ProjectSettings
+        ProjectSettings // Used for project settings
         {
             @Override
             NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
+                root.addChild("Project Settings");
 
-                if (c.isRoot())
-                {
-                    root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-                    root.addChild("Look and Feel Settings");
-                }
-                else
-                {
-                    root.addChild("Project Settings");
-                }
+                return root;
+            }
+
+            @Override
+            boolean shouldRenderTabStrip(Container container)
+            {
+                return true;
+            }
+        },
+        LookAndFeelSettings // Used for the admin console actions -- allows for troubleshooter permissions
+        {
+            @Override
+            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            {
+                action.setHelpTopic(new HelpTopic("customizeLook"));
+                root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+                root.addChild("Look and Feel Settings");
 
                 return root;
             }
@@ -136,6 +145,7 @@ public class FolderManagement
     }
 
     public static final Predicate<Container> EVERY_CONTAINER = container -> true;
+    public static final Predicate<Container> ROOT = Container::isRoot;
     public static final Predicate<Container> NOT_ROOT = container -> !container.isRoot();
     public static final Predicate<Container> ROOT_AND_PROJECTS = container -> container.isRoot() || container.isProject();
     // Choosing "isInFolderNav" does not include Tabs, which is a slight change in functionality (previously excluded just workbooks), but that seems proper.
@@ -330,7 +340,7 @@ public class FolderManagement
     public static abstract class ProjectSettingsViewPostAction<FORM> extends ManagementViewPostAction<FORM>
     {
         @Override
-        final protected TYPE getType()
+        protected TYPE getType()
         {
             return TYPE.ProjectSettings;
         }
