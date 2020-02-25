@@ -376,7 +376,7 @@ LABKEY.Domain.create({
          * @param {Object} [config.options] Domain Kind specific properties.
          *       If not supplied, will be ignored.
          *       Note: Certain domain kind specific properties are read-only and cannot be updated.
-         *       (Example: listId, domainId, keyName, keyType, and lastIndexed are read-only for 'IntList' & 'VarList' domain kinds.)
+         *       Read-only properties for 'IntList' & 'VarList' domain kinds: listId, domainId, keyName, keyType, and lastIndexed.
          */
         save : function(config)
         {
