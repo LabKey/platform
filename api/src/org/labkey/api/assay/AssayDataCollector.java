@@ -39,6 +39,7 @@ import java.util.Map;
 public interface AssayDataCollector<ContextType extends AssayRunUploadContext>
 {
     String PRIMARY_FILE = "__primaryFile__";
+    String PLATE_METADATA_FILE = "__plateMetadataFile__";
 
     /** Indicates if there are (or might be) additional files that queued up to be consumed by more runs */
     enum AdditionalUploadType

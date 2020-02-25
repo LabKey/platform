@@ -16,6 +16,7 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.study.PropertySet;
 
 import java.util.List;
@@ -36,9 +37,13 @@ public interface PlateTemplate extends PropertySet
 
     int getColumns();
 
+    @Nullable WellGroupTemplate getWellGroup(int rowId);
+
     List<? extends WellGroupTemplate> getWellGroups();
 
     List<? extends WellGroupTemplate> getWellGroups(Position position);
+
+    List<? extends WellGroupTemplate> getWellGroups(WellGroup.Type type);
 
     Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap();
 

@@ -63,6 +63,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _allowQCStates;
     private boolean _allowSpacesInPath;
     private boolean _allowTransformationScript;
+    private boolean _allowPlateMetadata;
 
     private GWTContainer _autoCopyTargetContainer;
     private String _autoCopyTargetContainerId;
@@ -71,6 +72,7 @@ public class GWTProtocol implements IsSerializable
     private boolean _editableResults;
     private boolean _backgroundUpload;
     private boolean _qcEnabled;
+    private boolean _plateMetadata;
 
     public GWTProtocol()
     {
@@ -349,5 +351,25 @@ public class GWTProtocol implements IsSerializable
     public void setAllowBackgroundUpload(boolean allowBackgroundUpload)
     {
         _allowBackgroundUpload = allowBackgroundUpload;
+    }
+
+    public boolean isAllowPlateMetadata()
+    {
+        return _allowPlateMetadata;
+    }
+
+    public void setAllowPlateMetadata(boolean allowPlateMetadata)
+    {
+        _allowPlateMetadata = allowPlateMetadata;
+    }
+
+    public boolean isPlateMetadata()
+    {
+        return _plateMetadata;
+    }
+
+    public void setPlateMetadata(boolean plateMetadata)
+    {
+        _plateMetadata = plateMetadata;
     }
 }

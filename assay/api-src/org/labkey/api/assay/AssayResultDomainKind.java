@@ -24,7 +24,9 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -34,6 +36,8 @@ import java.util.Set;
  */
 public class AssayResultDomainKind extends AssayDomainKind
 {
+    public static final String WELL_LOCATION_COLUMN_NAME = "WellLocation";
+
     public AssayResultDomainKind()
     {
         super(ExpProtocol.ASSAY_DOMAIN_DATA);
@@ -94,5 +98,27 @@ public class AssayResultDomainKind extends AssayDomainKind
         result.add("Run");
         result.add("DataId");
         return result;
+    }
+
+    @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        Set<String> mandatoryNames = super.getMandatoryPropertyNames(domain);
+
+        Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
+        if (pair != null)
+        {
+            AssayProvider provider = pair.first;
+            ExpProtocol protocol = pair.second;
+            if (provider != null && protocol != null)
+            {
+                if (provider.isPlateMetadataEnabled(protocol))
+                {
+                    mandatoryNames.add(WELL_LOCATION_COLUMN_NAME);
+                }
+            }
+        }
+
+        return mandatoryNames;
     }
 }

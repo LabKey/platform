@@ -3945,15 +3945,15 @@ public class AdminController extends SpringActionController
 
             User createdBy = UserManager.getUser(c.getCreatedBy());
             Map<String, Object> propValueMap = new LinkedHashMap<>();
-            propValueMap.put("Path", PageFlowUtil.filter(c.getPath()));
-            propValueMap.put("Name", PageFlowUtil.filter(c.getName()));
-            propValueMap.put("Displayed Title", PageFlowUtil.filter(c.getTitle()));
+            propValueMap.put("Path", c.getPath());
+            propValueMap.put("Name", c.getName());
+            propValueMap.put("Displayed Title", c.getTitle());
             propValueMap.put("EntityId", c.getId());
             propValueMap.put("RowId", c.getRowId());
-            propValueMap.put("Created", PageFlowUtil.filter(DateUtil.formatDateTime(c, c.getCreated())));
-            propValueMap.put("Created By", (createdBy != null ? PageFlowUtil.filter(createdBy.getDisplayName(currentUser)) : "<" + c.getCreatedBy() + ">"));
-            propValueMap.put("Folder Type", PageFlowUtil.filter(c.getFolderType().getName()));
-            propValueMap.put("Description", PageFlowUtil.filter(c.getDescription()));
+            propValueMap.put("Created", DateUtil.formatDateTime(c, c.getCreated()));
+            propValueMap.put("Created By", (createdBy != null ? createdBy.getDisplayName(currentUser) : "<" + c.getCreatedBy() + ">"));
+            propValueMap.put("Folder Type", c.getFolderType().getName());
+            propValueMap.put("Description", c.getDescription());
 
             return new HtmlView(PageFlowUtil.getDataRegionHtmlForPropertyObjects(propValueMap));
         }

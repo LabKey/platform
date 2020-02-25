@@ -192,12 +192,13 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
                 }
             }
 
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainVial);
             List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
             for (GWTPropertyDescriptor prop : update.getFields())
             {
                 if (null != prop.getName())
                 {
-                    if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
+                    if (!mandatoryPropertyNames.contains(prop.getName()))
                     {
                         if (specimenFields.contains(prop.getName().toLowerCase()))
                         {

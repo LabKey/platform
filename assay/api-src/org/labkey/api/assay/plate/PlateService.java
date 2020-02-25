@@ -22,6 +22,8 @@ import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.view.ActionURL;
@@ -97,6 +99,14 @@ public interface PlateService
     /**
      * Gets an existing plate template.
      * @param container The template's container.
+     * @param lsid The template's lsid.
+     * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
+     */
+    PlateTemplate getPlateTemplateFromLsid(Container container, String lsid);
+
+    /**
+     * Gets an existing plate template.
+     * @param container The template's container.
      * @param plateId The template's id.
      * @return  The requested plate template, or null if no template exists with the specified name in the specified container.
      */
@@ -109,6 +119,10 @@ public interface PlateService
      */
     @NotNull
     List<? extends PlateTemplate> getPlateTemplates(Container container);
+
+    int getRunCountUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
+
+    List<? extends ExpRun> getRunsUsingPlateTemplate(@NotNull Container c, @NotNull PlateTemplate plateTemplate);
 
     /**
      * Creates a new plate template.

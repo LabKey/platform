@@ -42,27 +42,37 @@ public class PropertySetImpl implements PropertySet
         _container = container;
     }
 
+    @Override
     public Set<String> getPropertyNames()
     {
         return _properties.keySet();
     }
 
 
+    @Override
     public Object getProperty(String name)
     {
         return _properties.get(name);
     }
 
+    @Override
     public void setProperty(String name, Object value)
     {
         _properties.put(name, value);
+    }
+
+    @Override
+    public void setProperties(Map<String, Object> properties)
+    {
+        _properties = new HashMap<>(properties);
     }
 
     public Map<String, Object> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
     }
-    
+
+    @Override
     public String getLSID()
     {
         return _lsid;
@@ -73,6 +83,7 @@ public class PropertySetImpl implements PropertySet
         _lsid = lsid;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;

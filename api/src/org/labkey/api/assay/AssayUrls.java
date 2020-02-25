@@ -95,4 +95,5 @@ public interface AssayUrls extends UrlProvider
     ActionURL getShowSelectedRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter);
     ActionURL getSetDefaultValuesAssayURL(Container container, String providerName, Domain domain, ActionURL returnUrl);
     String getBatchIdFilterParam();
+    ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider);
 }
