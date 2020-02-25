@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -34,6 +35,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -261,19 +263,7 @@ public class TableUpdaterFileListener implements FileListener
         }
         singleEntrySQL.append(")");
 
-        int rows;
-        try
-        {
-            rows = new SqlExecutor(schema).execute(singleEntrySQL);
-        }
-        catch (RuntimeSQLException x)
-        {
-            // Retry once if it's a deadlock-related exception and we're not inside a transaction
-            if (!_table.getSchema().getScope().isTransactionActive() && SqlDialect.isTransactionException(x))
-                rows = new SqlExecutor(schema).execute(singleEntrySQL);
-            else
-                throw x;
-        }
+        int rows = schema.getScope().executeWithRetry(tx -> new SqlExecutor(schema).execute(singleEntrySQL));
         LOG.info("Updated " + rows + " row in " + _table + " for move from " + src + " to " + dest);
 
         // Handle updating child paths, unless we know that the entry is a file. If it's not (either it's a

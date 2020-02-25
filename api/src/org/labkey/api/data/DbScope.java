@@ -620,13 +620,13 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
+        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
     }
 
-    /* can be used to conveniently throw a typed exception out of executeWithRetry */
-    public static class RetryException extends RuntimeException
+    /** Can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryPassthroughException extends RuntimeException
     {
-        public RetryException(@NotNull Exception x)
+        public RetryPassthroughException(@NotNull Exception x)
         {
             super(x);
         }
@@ -638,8 +638,9 @@ public class DbScope
         }
     }
 
-    /** Won't retry if we're already in a transaction
-     * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
+    /**
+     * If there's a deadlock exception, retry two more times after a delay. Won't retry if we're already in a transaction
+     * fn() should throw DeadlockLoserDataAccessException or RuntimeSQLException to get the retry behavior
      */
     public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
@@ -647,7 +648,7 @@ public class DbScope
         ReturnType ret = null;
         int tries = isTransactionActive() ? 1 : 3;
         long delay = 100;
-        DeadlockLoserDataAccessException lastException = null;
+        RuntimeException lastException = null;
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
@@ -660,7 +661,17 @@ public class DbScope
             catch (DeadlockLoserDataAccessException dldae)
             {
                 lastException = dldae;
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+            catch (RuntimeSQLException e)
+            {
+                lastException = e;
+                if (!SqlDialect.isTransactionException(e))
+                {
+                    break;
+                }
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
                 LOG.info("Retrying operation after deadlock", new Throwable());
             }
         }
@@ -2746,7 +2757,7 @@ public class DbScope
         @Test
         public void testRetryException()
         {
-            var r = new RetryException(new IllegalArgumentException());
+            var r = new RetryPassthroughException(new IllegalArgumentException());
             try
             {
                 r.rethrow(IllegalArgumentException.class);
