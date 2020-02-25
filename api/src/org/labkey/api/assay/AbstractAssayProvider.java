@@ -22,6 +22,8 @@ import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.actions.DesignerAction;
 import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
@@ -109,7 +111,6 @@ import javax.script.ScriptEngine;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -126,8 +127,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-
-import static org.labkey.api.util.PageFlowUtil.encode;
 
 /**
  * User: jeckels
@@ -165,6 +164,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public static final String EDITABLE_RESULTS_PROPERTY_SUFFIX = "EditableResults";
     public static final String BACKGROUND_UPLOAD_PROPERTY_SUFFIX = "BackgroundUpload";
     public static final String QC_ENABLED_PROPERTY_SUFFIX = "QCEnabled";
+    public static final String PLATE_METADATA_PROPERTY_SUFFIX = "PlateMetadata";
 
     // The result row LSID namespace prefix <code>_resultRowLSIDPrefix</code> should end with this constant.
     public static final String RESULT_LSID_PREFIX_PART = "AssayResultRow";
@@ -411,7 +411,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
     }
 
-    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
     {
         // NOTE: this will only be needed in HaplotypeAssayProvider; thus this is no-op.
     }
@@ -683,6 +683,18 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
+    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
+    {
+        return null;
+    }
+
+    @Override
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    {
+        return null;
+    }
+
+    @Override
     public AssayRunCreator getRunCreator()
     {
         return new DefaultAssayRunCreator<>(this);
@@ -825,6 +837,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
             }
         }
         sortDomainList(domains);
+
+        // see if there is a plate metadata domain associated with this protocol
+        if (AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE) != null)
+        {
+            Domain plateDomain = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE).getPlateDataDomain(protocol);
+            if (plateDomain != null)
+            {
+                Map<DomainProperty, Object> values = DefaultValueService.get().getDefaultValues(plateDomain.getContainer(), plateDomain);
+                domains.add(new Pair<>(plateDomain, values));
+            }
+        }
         return domains;
     }
 
@@ -1550,5 +1573,24 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public boolean isQCEnabled(ExpProtocol protocol)
     {
         return supportsQC() && Boolean.TRUE.equals(getBooleanProperty(protocol, QC_ENABLED_PROPERTY_SUFFIX));
+    }
+
+    @Override
+    public boolean supportsPlateMetadata()
+    {
+        return false;
+    }
+
+    @Override
+    public void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled)
+    {
+        if (supportsPlateMetadata())
+            setBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX, metadataEnabled);
+    }
+
+    @Override
+    public boolean isPlateMetadataEnabled(ExpProtocol protocol)
+    {
+        return supportsPlateMetadata() && Boolean.TRUE.equals(getBooleanProperty(protocol, PLATE_METADATA_PROPERTY_SUFFIX));
     }
 }

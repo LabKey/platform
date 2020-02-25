@@ -28,7 +28,6 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -103,13 +102,13 @@ abstract public class DomainKind<T>  implements Handler<String>
     // so that it can hold instance data (e.g. a DatasetDefinition)
 
     /**
-     * Create a Domain appropriate for this DomainKind.
+     * Get DomainKind specific properties.
      * @param domain The domain design.
      * @param container Container
      * @param user User
-     * @return Return DomainKindProperties.
+     * @return Return object that holds DomainKind specific properties.
      */
-    abstract public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user);
+    abstract public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user);
 
     /**
      * Create a Domain appropriate for this DomainKind.
@@ -130,8 +129,6 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @param user User
      * @return A list of errors collected during the update.
      */
-//    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings);
-
     abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                      @Nullable T options, Container container, User user, boolean includeWarnings);
 

@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -39,7 +38,6 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListDefinition.KeyType;
@@ -56,7 +54,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
-import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -362,7 +359,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             throw new IllegalArgumentException("List name must not be null");
         if (name.length() > ListEditorService.MAX_NAME_LENGTH)
             throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
-
+        if (ListService.get().getList(container, name) != null)
+            throw new IllegalArgumentException("The name '" + name + "' is already in use.");
         if (keyName == null)
             throw new IllegalArgumentException("List keyName must not be null");
 
@@ -382,9 +380,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
         list.setKeyName(keyName);
-        list.setDescription(domain.getDescription());
 
-        // TODO: lots of optional stuff we could set: discussionSetting, allowDelete, allowUpload, ...
+        String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
+        list.setDescription(description);
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -408,7 +406,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                     pd.setName("_" + pd.getName());
                 }
 
-                DomainProperty dp = DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
+                DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
             }
 
             Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
@@ -420,6 +418,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             d.setPropertyIndices(propertyIndices);
 
             list.save(user);
+            updateListProperties(container, user, list.getListId(), listProperties);
+
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
             tx.commit();
@@ -441,14 +441,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         try (DbScope.Transaction transaction = ListManager.get().getListMetadataSchema().getScope().ensureTransaction())
         {
             exception = new ValidationException();
-            boolean changedName = false;
 
             Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
+            if (null == domain)
+                return exception.addGlobalError("Expected domain for list: " + original.getName());
+
             ListDefinition listDefinition = ListService.get().getList(domain);
             TableInfo table = listDefinition.getTable(user);
 
-            if (null == domain || null == table)
-                return exception.addGlobalError("Expected domain and table for list: " + listDefinition.getName());
+            if (null == table)
+                return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
 
             // Check for legalName problems
             exception.addErrors(checkLegalNameConflicts(update));
@@ -468,10 +470,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //handle name change
             if (!original.getName().equals(update.getName()))
             {
-                changedName = true;
                 if (update.getName().length() > ListEditorService.MAX_NAME_LENGTH)
                 {
-                    exception.addError(new SimpleValidationError("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters"));
+                    throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters.");
+                }
+                else if (ListService.get().getList(container, update.getName()) != null)
+                {
+                    throw new IllegalArgumentException("The name '" + update.getName() + "' is already in use.");
                 }
             }
 
@@ -484,28 +489,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //update list properties
             if (null != listProperties)
             {
-                try
-                {
-                    //merge existing and new properties
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("listid"), listDefinition.getListId(), CompareType.EQUAL);
-                    ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
-                    ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
+                if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
+                    throw new IllegalArgumentException();
 
-                    if (updatedListProps.getDomainId() != original.getDomainId() || updatedListProps.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
-                        throw new IllegalArgumentException();
-
-                    //update
-                    ListManager.get().update(user, updatedListProps);
-                }
-                catch (RuntimeSQLException e)
-                {
-                    if (changedName && e.isConstraintException())
-                    {
-                        exception.addGlobalError("The name '" + listDefinition.getName() + "' is already in use.");
-                        return exception;
-                    }
-                    throw e;
-                }
+                updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
 
             //update domain design properties
@@ -595,23 +582,35 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         return errors;
     }
 
+    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ListId"), listId);
+        ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+
+        //merge existing and new properties
+        ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
+
+        ListManager.get().update(user, container, updatedListProps);
+    }
+
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
 
-        if (null != newListProps.getName() && !newListProps.getName().equals(updatedListProps.getName()))
+        if (null != newListProps.getName())
             updatedListProps.setName(newListProps.getName());
 
-        if (null != newListProps.getKeyName() && !newListProps.getKeyName().equals(updatedListProps.getKeyName()))
+        if (null != newListProps.getKeyName())
             updatedListProps.setKeyName(newListProps.getKeyName());
 
-        if (null != newListProps.getKeyType() && !newListProps.getKeyType().equals(updatedListProps.getKeyType()))
+        if (null != newListProps.getKeyType())
             updatedListProps.setKeyType(newListProps.getKeyType());
 
-        if (null != newListProps.getTitleColumn() && !newListProps.getTitleColumn().equals(updatedListProps.getTitleColumn()))
+        if (null != newListProps.getTitleColumn())
             updatedListProps.setTitleColumn(newListProps.getTitleColumn());
 
-        if (null != newListProps.getDescription() && !newListProps.getDescription().equals(updatedListProps.getDescription()))
+        if (null != newListProps.getDescription())
             updatedListProps.setDescription(newListProps.getDescription());
 
         if (newListProps.getLastIndexed() != updatedListProps.getLastIndexed())
@@ -629,7 +628,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (newListProps.getDiscussionSetting() != updatedListProps.getDiscussionSetting())
             updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
 
-        if (null != newListProps.getEntireListTitleTemplate() && !newListProps.getEntireListTitleTemplate().equals(updatedListProps.getEntireListTitleTemplate()))
+        if (null != newListProps.getEntireListTitleTemplate())
             updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
 
         if (newListProps.getEntireListIndexSetting() != updatedListProps.getEntireListIndexSetting())
@@ -638,7 +637,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (newListProps.getEntireListBodySetting() != updatedListProps.getEntireListBodySetting())
             updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
 
-        if (null != newListProps.getEachItemTitleTemplate() && !newListProps.getEachItemTitleTemplate().equals(updatedListProps.getEachItemTitleTemplate()))
+        if (null != newListProps.getEachItemTitleTemplate())
             updatedListProps.setEachItemTitleTemplate(newListProps.getEachItemTitleTemplate());
 
         if (newListProps.getEachItemBodySetting() != updatedListProps.getEachItemBodySetting())
@@ -647,13 +646,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (newListProps.isEntireListIndex() != updatedListProps.isEntireListIndex())
             updatedListProps.setEntireListIndex(newListProps.isEntireListIndex());
 
-        if (null != newListProps.getEntireListBodyTemplate() && !newListProps.getEntireListBodyTemplate().equals(updatedListProps.getEntireListBodyTemplate()))
+        if (null != newListProps.getEntireListBodyTemplate())
             updatedListProps.setEntireListBodyTemplate(newListProps.getEntireListBodyTemplate());
 
         if (newListProps.isEachItemIndex() != updatedListProps.isEachItemIndex())
             updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
 
-        if (null != newListProps.getEachItemBodyTemplate() && !newListProps.getEachItemBodyTemplate().equals(updatedListProps.getEachItemBodyTemplate()))
+        if (null != newListProps.getEachItemBodyTemplate())
             updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
 
         if (newListProps.isFileAttachmentIndex() != updatedListProps.isFileAttachmentIndex())
@@ -686,9 +685,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable ListDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        ListDefinition list = ListService.get().getList(container, domain.getName());
+        ListDefinition list = ListService.get().getList(PropertyService.get().getDomain(domain.getDomainId()));
         return ListManager.get().getListDomainKindProperties(container, list.getListId());
     }
 

@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -29,12 +30,11 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.json.JSONObject;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -55,7 +55,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -64,7 +63,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/15/15
  */
-public class DataClassDomainKind extends AbstractDomainKind<JSONObject>
+public class DataClassDomainKind extends BaseAbstractDomainKind<JSONObject>
 {
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
@@ -102,12 +101,6 @@ public class DataClassDomainKind extends AbstractDomainKind<JSONObject>
     public String getKindName()
     {
         return "DataClass";
-    }
-
-    @Override
-    public Class<JSONObject> getTypeClass()
-    {
-        return JSONObject.class;
     }
 
     @Override

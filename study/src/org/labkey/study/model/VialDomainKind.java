@@ -46,7 +46,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class VialDomainKind extends AbstractSpecimenDomainKind<JSONObject>
+public final class VialDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "Vial";
     private static final String NAMESPACE_PREFIX = "Vial";
@@ -193,12 +193,13 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind<JSONObject>
                 }
             }
 
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainVial);
             List<PropertyDescriptor> optionalVialFields = new ArrayList<>();
             for (GWTPropertyDescriptor prop : update.getFields())
             {
                 if (null != prop.getName())
                 {
-                    if (!getMandatoryPropertyNames(domainVial).contains(prop.getName()))
+                    if (!mandatoryPropertyNames.contains(prop.getName()))
                     {
                         if (specimenFields.contains(prop.getName().toLowerCase()))
                         {

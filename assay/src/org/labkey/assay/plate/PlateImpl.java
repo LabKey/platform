@@ -68,17 +68,19 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
 
-        for (WellGroupTemplateImpl groupTemplate : template.getWellGroupTemplates())
+        for (WellGroupTemplateImpl groupTemplate : template.getWellGroupTemplates(null))
             addWellGroup(new WellGroupImpl(this, groupTemplate));
         setContainer(template.getContainer());
     }
 
 
+    @Override
     public WellImpl getWell(int row, int col)
     {
         return _wells[row][col];
     }
 
+    @Override
     public WellGroup getWellGroup(WellGroup.Type type, String wellGroupName)
     {
         WellGroupTemplate groupTemplate = getWellGroupTemplate(type, wellGroupName);
@@ -87,37 +89,41 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return (WellGroupImpl) groupTemplate;
     }
 
-    public List<WellGroup> getWellGroups(WellGroup.Type type)
+    @Override
+    public List<? extends WellGroupImpl> getWellGroups(WellGroup.Type type)
     {
-        List<WellGroup> groups = new ArrayList<>();
-        for (WellGroupTemplate entry : getWellGroupTemplates())
-        {
-            if (entry.getType() == type)
-                groups.add((WellGroupImpl) entry);
-        }
-        return groups;
+        return (List<? extends WellGroupImpl>)getWellGroupTemplates(type);
     }
 
+    @Override
     public List<WellGroupImpl> getWellGroups(Position position)
     {
         return (List<WellGroupImpl>) super.getWellGroups(position);
     }
 
+    @Override
     public List<WellGroupImpl> getWellGroups()
     {
         return (List<WellGroupImpl>) super.getWellGroups();
     }
 
+    @Override
+    public @Nullable WellGroupImpl getWellGroup(int rowId)
+    {
+        return (WellGroupImpl)super.getWellGroup(rowId);
+    }
+
+    @Override
     protected WellGroupTemplateImpl createWellGroup(String name, WellGroup.Type type, List<Position> positions)
     {
         return new WellGroupImpl(this, name, type, positions);
     }
 
     @Override
-    protected WellGroupTemplate storeWellGroup(WellGroupTemplateImpl template)
+    protected WellGroupImpl storeWellGroup(WellGroupTemplateImpl template)
     {
         ((WellGroupImpl) template).setPlate(this);
-        return super.storeWellGroup(template);
+        return (WellGroupImpl)super.storeWellGroup(template);
     }
 
     @Override
@@ -152,6 +158,7 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         return _runId == PlateService.NO_RUNID;
     }
 
+    @Override
     public int getPlateNumber()
     {
         return _plateNumber;

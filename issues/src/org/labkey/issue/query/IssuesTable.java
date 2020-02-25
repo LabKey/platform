@@ -374,9 +374,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
 
     @Nullable
     @Override
-    public AbstractIssuesListDefDomainKind<JSONObject> getDomainKind()
+    public AbstractIssuesListDefDomainKind getDomainKind()
     {
-        return (AbstractIssuesListDefDomainKind<JSONObject>)super.getDomainKind();
+        return (AbstractIssuesListDefDomainKind) super.getDomainKind();
     }
 
     @Nullable

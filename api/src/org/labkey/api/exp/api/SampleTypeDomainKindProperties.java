@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * Small class with only the properties and fields (de)serialized to the DomainKindProperties (avoids hassle of pasting @JsonIgnores all over three classes.
  */
-public class SampleTypeDomainKindProperties implements DomainKindProperties
+public class SampleTypeDomainKindProperties implements Cloneable
 {
     public SampleTypeDomainKindProperties()
     {

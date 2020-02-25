@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -42,6 +43,7 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -61,6 +63,7 @@ import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -70,6 +73,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
+//TODO Remove or use?
+//public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -114,6 +119,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         return NAME;
     }
 
+//TODO Remove or use?
     @Override
     public Class<? extends SampleTypeDomainKindProperties> getTypeClass()
     {
@@ -266,6 +272,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
+    //TODO Remove or use?
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
@@ -367,7 +374,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     }
 
     @Override
-    public DomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public SampleTypeDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
             return new SampleTypeDomainKindProperties(SampleSetService.get().getSampleSet(domain.getDomainURI()));
     }

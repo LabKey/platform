@@ -110,6 +110,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
+import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
@@ -255,9 +256,13 @@ public class ListController extends SpringActionController
     public class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
     {
         @Override
-        public Object execute(ListDefinitionForm listDefinitionForm, BindException errors) throws Exception
+        public Object execute(ListDefinitionForm form, BindException errors) throws Exception
         {
-            return ListManager.get().getListDomainKindProperties(getContainer(), listDefinitionForm.getListId());
+            ListDomainKindProperties properties = ListManager.get().getListDomainKindProperties(getContainer(), form.getListId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("List does not exist in this container for listId " + form.getListId() + ".");
         }
     }
 
@@ -278,9 +283,7 @@ public class ListController extends SpringActionController
 
             if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
             {
-                VBox listDesigner = new VBox();
-                listDesigner.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer"));
-                return listDesigner;
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
             }
             else
              {

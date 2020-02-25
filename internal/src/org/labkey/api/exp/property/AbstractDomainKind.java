@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -31,7 +32,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -111,7 +111,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public DomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         return null;
     }

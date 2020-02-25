@@ -43,7 +43,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind<JSONObject>
+public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "SpecimenEvent";
     private static final String NAMESPACE_PREFIX = "SpecimenEvent";
@@ -243,9 +243,10 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind<JS
             SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
             Domain domainEvent = stp.getDomain("specimenevent", false);
 
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainEvent);
             for (GWTPropertyDescriptor prop : update.getFields())
             {
-                if (prop.getName() != null && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
+                if (prop.getName() != null && !mandatoryPropertyNames.contains(prop.getName()))
                 {
                     if (prop.getName().contains(" "))
                         validationException.addError(new PropertyValidationError("Name '" + prop.getName() + "' should not contain spaces.", prop.getName(), prop.getPropertyId()));

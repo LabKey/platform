@@ -45,7 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public final class SpecimenDomainKind extends AbstractSpecimenDomainKind<JSONObject>
+public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {
     private static final String NAME = "Specimen";
     private static final String NAMESPACE_PREFIX = "Specimen";
@@ -189,12 +189,13 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind<JSONObj
                 });
             }
 
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainSpecimen);
             List<PropertyDescriptor> optionalSpecimenProps = new ArrayList<>();
             for (GWTPropertyDescriptor prop : update.getFields())
             {
                 if (null != prop.getName())
                 {
-                    if (!getMandatoryPropertyNames(domainSpecimen).contains(prop.getName()))
+                    if (!mandatoryPropertyNames.contains(prop.getName()))
                     {
                         if (vialFields.contains(prop.getName().toLowerCase()))
                         {

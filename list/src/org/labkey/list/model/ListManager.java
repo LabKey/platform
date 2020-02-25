@@ -186,7 +186,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     public ListDomainKindProperties getListDomainKindProperties(Container container, Integer listId)
     {
-
         if (null == listId)
         {
             return new ListDomainKindProperties();
@@ -266,9 +265,8 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
     //Note: this is sort of a dupe of above update() which returns ListDef
-    ListDomainKindProperties update(User user, final ListDomainKindProperties listProps)
+    ListDomainKindProperties update(User user, Container c, final ListDomainKindProperties listProps)
     {
-        Container c = listProps.lookupContainer();
         if (null == c)
             throw OptimisticConflictException.create(Table.ERROR_DELETED);
 

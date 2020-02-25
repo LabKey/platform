@@ -433,52 +433,6 @@ public class PropertyController extends SpringActionController
 
             GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
-
-            if (null != domain && null != domain.getDomainKind())
-            {
-                DomainKindDesign domainKindDesign = new DomainKindDesign();
-                domainKindDesign.setDomainDesign(gwtDomain);
-                domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
-                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
-                return domainKindDesign;
-            }
-            return gwtDomain;
-        }
-    }
-
-    /**
-     * If DomainKind specific properties are available, then json response is of this format:
-     *  {
-     *      "domainKindName":
-     *      "options": {}
-     *      "domainDesign": {}
-     *  }
-     *  Otherwise, json response is of this format:
-     *  {
-     *      "domainDesign": {}
-     *  }
-     */
-    @Marshal(Marshaller.Jackson)
-    @RequiresPermission(ReadPermission.class)
-    public class GetDomainDetailsByKindAction  extends ReadOnlyApiAction<DomainApiForm>
-    {
-        @Override
-        protected ObjectMapper createResponseObjectMapper()
-        {
-            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
-            return mapper;
-        }
-
-        public Object execute(DomainApiForm form, BindException errors)
-        {
-            String queryName = form.getQueryName();
-            String schemaName = form.getSchemaName();
-            Integer domainId = form.getDomainId();
-
-            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
-            Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
-
             if (null != domain && null != domain.getDomainKind())
             {
                 DomainKindDesign domainKindDesign = new DomainKindDesign();
@@ -514,8 +468,11 @@ public class PropertyController extends SpringActionController
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
+            if (newDomain == null)
+                throw new NotFoundException("No domainDesign provided.");
+
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
-                throw new IllegalArgumentException("Domain id and URI are required");
+                throw new IllegalArgumentException("DomainId and domainURI are required in updated domainDesign.");
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
@@ -1150,7 +1107,7 @@ public class PropertyController extends SpringActionController
         {
             Domain dom = PropertyService.get().getDomain(domainId);
             if (dom == null)
-                throw new NotFoundException("Could not find domain for " + domainId);
+                throw new NotFoundException("Could not find domain for " + domainId + ".");
 
             if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
@@ -1163,7 +1120,7 @@ public class PropertyController extends SpringActionController
             domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
             if (domain == null)
-                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
+                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName + ".");
         }
 
         return domain;

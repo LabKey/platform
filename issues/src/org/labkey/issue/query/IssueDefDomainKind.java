@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 /**
  * Created by klum on 4/6/2016.
  */
-public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind<JSONObject>
+public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
 {
     public static final String NAME = "IssueDefinition";
     private static final Set<PropertyStorageSpec> REQUIRED_PROPERTIES;

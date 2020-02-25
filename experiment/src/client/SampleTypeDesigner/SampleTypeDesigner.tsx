@@ -28,7 +28,7 @@ import {
     saveDomain,
     IBannerMessage,
     getActionErrorMessage,
-    SampleSetDetailsPanel,
+    SampleTypeDesigner,
     getHelpLink,
     LoadingPage,
     NotFound,
@@ -39,7 +39,7 @@ import {
 
 import "@labkey/components/dist/components.css"
 import "./sampleTypeDesigner.scss";
-import {ISampleSetDetails} from "@labkey/components/dist/components/samples/models";
+import {SampleTypeModel} from "@labkey/components/dist/components/domainproperties/samples/models";
 
 interface IAppState {
     dirty: boolean
@@ -372,8 +372,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 {/*<Alert>{getActionErrorMessage("There was a problem loading the sample type details.", 'sample type')}</Alert>*/}
                 {/*}*/}
                 {sampleType &&
-                <SampleSetDetailsPanel
-                        data={sampleType}
+                <SampleTypeDesigner
+                        initModel={sampleType}
                         nameExpressionInfoUrl={getHelpLink(NAME_EXPRESSION_TOPIC)}
                         beforeFinish={this.beforeFinish}
                         onComplete={this.submitAndNavigate}
