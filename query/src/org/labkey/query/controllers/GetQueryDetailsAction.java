@@ -42,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryIconURLProvider;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -192,6 +193,20 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 resp.put("insertUrlDisabled", true);
             else
                 resp.put("insertUrl", insertDataUrl);
+        }
+
+        QueryService qs = QueryService.get();
+        if (qs != null)
+        {
+            for (QueryIconURLProvider provider : qs.getQueryIconURLProviders())
+            {
+                String iconURL = provider.getIconURL(form.getSchemaName(), form.getQueryName(), container, user);
+                if (null != iconURL)
+                {
+                    resp.put("iconURL", iconURL);
+                    break;
+                }
+            }
         }
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
