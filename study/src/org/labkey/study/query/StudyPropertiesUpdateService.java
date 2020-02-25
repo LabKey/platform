@@ -93,7 +93,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
                 {
                     if (entry.getValue() != null)
                     {
-                        // Brand new studies can ben set to whatever type the user likes
+                        // Brand new studies can be set to whatever type the user likes
                         if (study.isEmptyStudy())
                         {
                             updateRow.put(entry.getKey(), entry.getValue());
