@@ -80,6 +80,7 @@ public class ExperimentJSONConverter
 
     // Data properties
     public static final String DATA_CLASS = "dataClass";
+    public static final String DATA_CLASS_CATEGORY = "category";
 
     // Domain kinds
     public static final String VOCABULARY_DOMAIN = "Vocabulary";
@@ -260,7 +261,10 @@ public class ExperimentJSONConverter
         ExpDataClass dc = data.getDataClass(user);
         if (dc != null)
         {
-            jsonObject.put(DATA_CLASS, serializeStandardProperties(dc, null));
+            JSONObject dataClassJsonObject = serializeStandardProperties(dc, null);
+            if (dc.getCategory() != null)
+                dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
+            jsonObject.put(DATA_CLASS, dataClassJsonObject);
         }
         return jsonObject;
     }

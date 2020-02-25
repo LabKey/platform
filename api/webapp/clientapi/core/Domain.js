@@ -373,8 +373,10 @@ LABKEY.Domain.create({
          *       If not supplied, the current container path will be used.
          * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
          *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
-         * @param {Object} config.options Domain Kind specific properties.
+         * @param {Object} [config.options] Domain Kind specific properties.
          *       If not supplied, will be ignored.
+         *       Note: Certain domain kind specific properties are read-only and cannot be updated.
+         *       Read-only properties for 'IntList' & 'VarList' domain kinds: listId, domainId, keyName, keyType, and lastIndexed.
          */
         save : function(config)
         {

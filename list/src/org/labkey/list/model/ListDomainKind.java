@@ -16,7 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
-import org.jetbrains.annotations.NotNull;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -452,19 +452,24 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             if (null == table)
                 return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
 
-            // Check for legalName problems
-            exception.addErrors(checkLegalNameConflicts(update));
-
-            // handle key column name change
+            // Handle cases when existing key field is null or is not provided in the updated domainDesign
             GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
             if (null != key)
             {
                 int id = key.getPropertyId();
                 GWTPropertyDescriptor newKey = findField(id, update.getFields());
-                if (null != newKey && !key.getName().equalsIgnoreCase(newKey.getName()))
+                if (null == newKey)
                 {
-                    exception.addError(new PropertyValidationError("Cannot change key field name", key.getName()));
+                    throw new IllegalArgumentException("Key field not provided, expecting key field '" + key.getName() + "'");
                 }
+                else if (!key.getName().equalsIgnoreCase(newKey.getName()))
+                {
+                    throw new IllegalArgumentException ("Cannot change key field name");
+                }
+            }
+            else
+            {
+                throw new IllegalArgumentException ("Key field not found for list '" + listDefinition.getName() + "'");
             }
 
             //handle name change
@@ -565,23 +570,6 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         }
     }
 
-    @NotNull
-    private ValidationException checkLegalNameConflicts(GWTDomain dd)
-    {
-        ValidationException errors = new ValidationException();
-        Set<String> names = new HashSet<>();
-        for (Object obj : dd.getFields())
-        {
-            GWTPropertyDescriptor descriptor = (GWTPropertyDescriptor)obj;
-            String legalName = ColumnInfo.legalNameFromName(descriptor.getName()).toLowerCase();
-            if (names.contains(legalName))
-                errors.addError(new PropertyValidationError("Field's legal name '" + legalName + "' is not unique." , descriptor.getName()));
-            else
-                names.add(legalName);
-        }
-        return errors;
-    }
-
     private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
@@ -594,6 +582,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         ListManager.get().update(user, container, updatedListProps);
     }
 
+    //updates list properties except listId, domainId, keyName, keyType, and lastIndexed
     private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
     {
         ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
@@ -601,20 +590,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (null != newListProps.getName())
             updatedListProps.setName(newListProps.getName());
 
-        if (null != newListProps.getKeyName())
-            updatedListProps.setKeyName(newListProps.getKeyName());
-
-        if (null != newListProps.getKeyType())
-            updatedListProps.setKeyType(newListProps.getKeyType());
-
         if (null != newListProps.getTitleColumn())
             updatedListProps.setTitleColumn(newListProps.getTitleColumn());
 
         if (null != newListProps.getDescription())
             updatedListProps.setDescription(newListProps.getDescription());
-
-        if (newListProps.getLastIndexed() != updatedListProps.getLastIndexed())
-            updatedListProps.setLastIndexed(newListProps.getLastIndexed());
 
         if (newListProps.isAllowDelete() != updatedListProps.isAllowDelete())
             updatedListProps.setAllowDelete(newListProps.isAllowDelete());
