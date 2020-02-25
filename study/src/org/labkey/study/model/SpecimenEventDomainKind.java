@@ -241,9 +241,10 @@ public final class SpecimenEventDomainKind extends AbstractSpecimenDomainKind
             SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
             Domain domainEvent = stp.getDomain("specimenevent", false);
 
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainEvent);
             for (GWTPropertyDescriptor prop : update.getFields())
             {
-                if (prop.getName() != null && !getMandatoryPropertyNames(domainEvent).contains(prop.getName()))
+                if (prop.getName() != null && !mandatoryPropertyNames.contains(prop.getName()))
                 {
                     if (prop.getName().contains(" "))
                         validationException.addError(new PropertyValidationError("Name '" + prop.getName() + "' should not contain spaces.", prop.getName(), prop.getPropertyId()));

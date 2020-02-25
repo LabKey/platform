@@ -68,7 +68,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
     public void redraw()
     {
         clear();
-        Set<GWTWellGroup> wellgroups = _view.getPlate().getTypeToGroupsMap().get(_type);
+        List<GWTWellGroup> wellgroups = _view.getPlate().getTypeToGroupsMap().get(_type);
         FlexTable groupList = new FlexTable();
         groupList.setCellPadding(5);
         if (wellgroups != null)

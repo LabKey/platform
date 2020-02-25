@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
@@ -44,10 +46,8 @@ import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -187,6 +187,17 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
         ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData);
 
+        // add plate metadata
+        JSONObject rawPlateMetadata = null;
+        if (runJson.has(AssayJSONConverter.PLATE_METADATA))
+        {
+            rawPlateMetadata = runJson.getJSONObject(AssayJSONConverter.PLATE_METADATA);
+
+            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+            plateData.save(context.getUser());
+            outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
+        }
+
         // CONSIDER: Is this block still needed?
         // Try to find a data object to attach our data rows to
         if (tsvData == null && !outputData.isEmpty())
@@ -205,7 +216,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
         if (tsvData != null && dataRows != null)
         {
-            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
+            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows, rawPlateMetadata,
                     inputData, outputData, inputMaterial, outputMaterial);
 
             return saveAssayRun(uploadContext, batch, run);
@@ -261,7 +272,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
     @Nullable
     protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
-                                                           Map<ExpData, String> inputData, Map<ExpData, String> outputData,
+                                                           JSONObject rawPlateMetadata, Map<ExpData, String> inputData, Map<ExpData, String> outputData,
                                                            Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
     {
         if (dataRows != null)
@@ -277,6 +288,22 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             }
             factory.setUploadedData(Collections.emptyMap());
             factory.setRawData(dataRows);
+
+            if (rawPlateMetadata != null)
+            {
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+                if (svc != null)
+                {
+                    try
+                    {
+                        factory.setRawPlateMetadata(svc.parsePlateMetadata(rawPlateMetadata));
+                    }
+                    catch(ExperimentException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);

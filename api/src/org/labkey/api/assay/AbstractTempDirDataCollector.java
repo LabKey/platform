@@ -114,7 +114,8 @@ public abstract class AbstractTempDirDataCollector<ContextType extends AssayRunU
                         // Loop through primary files to ensure we don't delete
                         for (Map.Entry<String,File> entry : context.getUploadedData().entrySet())
                         {
-                            if(entry.getValue().equals(file) && entry.getKey().startsWith(AssayDataCollector.PRIMARY_FILE))
+                            if (entry.getValue().equals(file) && entry.getKey().startsWith(AssayDataCollector.PRIMARY_FILE) ||
+                                    entry.getValue().equals(file) && entry.getKey().startsWith(AssayDataCollector.PLATE_METADATA_FILE))
                             {
                                 save = true;
                                 break;

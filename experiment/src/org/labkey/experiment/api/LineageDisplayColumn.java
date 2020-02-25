@@ -20,6 +20,8 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ReexecutableDataregion;
+import org.labkey.api.query.ReexecutableRenderContext;
 import org.labkey.api.query.UserSchema;
 
 import java.io.IOException;

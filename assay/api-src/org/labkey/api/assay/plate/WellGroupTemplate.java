@@ -31,6 +31,11 @@ public interface WellGroupTemplate extends PropertySet
 
     List<Position> getPositions();
 
+    default void setPositions(List<? extends Position> positions)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     WellGroup.Type getType();
 
     String getName();
