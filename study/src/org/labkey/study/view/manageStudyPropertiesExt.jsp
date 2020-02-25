@@ -62,7 +62,7 @@ Ext4.QuickTips.init();
 var canEdit = <%=canEdit%>;
 var editableFormPanel = canEdit;
 var studyPropertiesFormPanel = null;
-var timepointType = "<%=h(timepointType.toString())%>";
+var timepointType = "<%=h(timepointType)%>";
 
 function removeProtocolDocument(name, xid)
 {
