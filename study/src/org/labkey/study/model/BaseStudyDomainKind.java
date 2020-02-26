@@ -31,7 +31,7 @@ import java.util.Set;
  * Date: Jul 30, 2008
  * Time: 2:31:04 PM
  */
-public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind<JSONObject>
+public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
 {
     public String getKindName()
     {

@@ -49,7 +49,7 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
-public abstract class AssayDomainKind extends BaseAbstractDomainKind<JSONObject>
+public abstract class AssayDomainKind extends BaseAbstractDomainKind
 {
     private final String _namespacePrefix;
     private final Priority _priority;

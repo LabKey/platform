@@ -69,7 +69,7 @@ import java.util.stream.Collectors;
  * Date: May 4, 2007
  * Time: 1:01:43 PM
  */
-public abstract class DatasetDomainKind extends BaseAbstractDomainKind<JSONObject>
+public abstract class DatasetDomainKind extends BaseAbstractDomainKind
 {
     public final static String LSID_PREFIX = "StudyDataset";
 

@@ -53,7 +53,7 @@ import java.util.Set;
  *
  * A domain kind for {@link SimpleUserSchema.SimpleTable}s.
  */
-public class SimpleTableDomainKind<T> extends BaseAbstractDomainKind<JSONObject>
+public class SimpleTableDomainKind extends BaseAbstractDomainKind
 {
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";

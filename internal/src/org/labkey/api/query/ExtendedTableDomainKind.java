@@ -38,7 +38,7 @@ import java.util.Set;
 /**
  * Created by marty on 8/2/2017.
  */
-public abstract class ExtendedTableDomainKind<T> extends SimpleTableDomainKind<JSONObject>
+public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
 {
     protected abstract String getSchemaName();
     protected abstract String getNamespacePrefix();
