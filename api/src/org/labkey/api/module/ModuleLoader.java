@@ -72,6 +72,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.WarningProvider;
@@ -385,27 +386,35 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 _controllerNameToModule.put(moduleCreated.getName().toLowerCase(), moduleCreated);
             }
 
-            initializeAndPruneModules(moduleList);
+            if (null != moduleExisting)
+                ContextListener.fireModuleChangeEvent(moduleExisting);
 
-            // initializeAndPruneModules() might have vetoed some modules, check that they are still in the map
-            if (_moduleMap.containsKey(moduleCreated.getName()))
+            try
             {
-                // Module startup
-                try
+                // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
+                ((DefaultModule)moduleCreated).unregister();
+                _moduleFailures.remove(moduleCreated.getName());
+                initializeAndPruneModules(moduleList);
+
+                Throwable t = _moduleFailures.get(moduleCreated.getName());
+                if (null != t)
+                    throw t;
+
+                if (_moduleMap.containsKey(moduleCreated.getName()))
                 {
-                    // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
-                    ((DefaultModule)moduleCreated).unregister();
+                    // Module startup
                     ModuleContext ctx = getModuleContext(moduleCreated);
                     ctx.setModuleState(ModuleState.Starting);
                     moduleCreated.startup(ctx);
                     ctx.setModuleState(ModuleState.Started);
+
+                    ContextListener.fireModuleChangeEvent(moduleCreated);
                 }
-                catch (Throwable x)
-                {
-                    setStartupFailure(x);
-                    _log.error("Failure starting module: " + moduleCreated.getName(), x);
-                    throw x;
-                }
+            }
+            catch (Throwable x)
+            {
+                _log.error("Failure starting module: " + moduleCreated.getName(), x);
+                throw UnexpectedException.wrap(x);
             }
         }
     }
@@ -1635,7 +1644,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (m instanceof DefaultModule)
             ((DefaultModule)m).unregister();
 
-        ContextListener.fireModuleChangeEvent(context.getName());
+        ContextListener.fireModuleChangeEvent(m);
     }
 
 

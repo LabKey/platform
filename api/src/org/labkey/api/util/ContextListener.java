@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.web.context.ContextLoaderListener;
@@ -166,13 +167,13 @@ public class ContextListener implements ServletContextListener
         _moduleChangeListeners.add(l);
     }
 
-    public static void fireModuleChangeEvent(String moduleName)
+    public static void fireModuleChangeEvent(Module m)
     {
         for (var l : _moduleChangeListeners.toArray(new ModuleChangeListener[0]))
         {
             try
             {
-                l.onModuleChanged(moduleName);
+                l.onModuleChanged(m);
             }
             catch (Throwable t)
             {

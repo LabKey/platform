@@ -74,13 +74,10 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
 
     @Override
-    public void onModuleChanged(String name)
+    public void onModuleChanged(Module module)
     {
-        Module module = ModuleLoader.getInstance().getModule(name);
         if (null != module)
             getListener(module).moduleChanged(module);
-        else
-            LOG.warn("Module \"" + name + "\" was not found");
     }
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
