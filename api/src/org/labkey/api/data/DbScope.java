@@ -835,7 +835,7 @@ public class DbScope
     }
 
     /**
-     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
+     *  Get a fresh, read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
      *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
      **/
     @JsonIgnore
