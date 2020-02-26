@@ -212,6 +212,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
+        String category = arguments.containsKey("category") ? String.valueOf(arguments.get("category")) : null;
 
         Integer sampleSetId = null;
         String sampleSet = arguments.containsKey("sampleSet") ? String.valueOf(arguments.get("sampleSet")) : null;
@@ -230,7 +231,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo);
+            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo, category);
         }
         catch (SQLException e)
         {
