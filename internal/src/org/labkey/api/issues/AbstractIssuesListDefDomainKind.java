@@ -68,7 +68,7 @@ import java.util.stream.Collectors;
 /**
  * Created by davebradlee on 8/3/16.
  */
-public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomainKind<JSONObject>
+public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomainKind
 {
     protected static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     protected static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";

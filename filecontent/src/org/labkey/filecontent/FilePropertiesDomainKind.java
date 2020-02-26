@@ -38,7 +38,7 @@ import java.util.Set;
  * Date: May 4, 2010
  * Time: 4:24:36 PM
  */
-public class FilePropertiesDomainKind extends BaseAbstractDomainKind<JSONObject>
+public class FilePropertiesDomainKind extends BaseAbstractDomainKind
 {
     private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
             "name",

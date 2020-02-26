@@ -32,7 +32,7 @@ import java.util.Set;
 /**
 * VocabularyDomainKind can be used to hold ad hoc properties.
 * */
-public class VocabularyDomainKind extends BaseAbstractDomainKind<JSONObject>
+public class VocabularyDomainKind extends BaseAbstractDomainKind
 {
     public static final String KIND_NAME = "Vocabulary";
 

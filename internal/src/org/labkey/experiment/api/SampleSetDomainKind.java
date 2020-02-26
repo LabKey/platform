@@ -66,7 +66,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends BaseAbstractDomainKind<JSONObject>
+public class SampleSetDomainKind extends BaseAbstractDomainKind
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";

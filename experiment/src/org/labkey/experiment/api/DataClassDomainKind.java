@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/15/15
  */
-public class DataClassDomainKind extends BaseAbstractDomainKind<JSONObject>
+public class DataClassDomainKind extends BaseAbstractDomainKind
 {
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 

@@ -49,7 +49,7 @@ import java.util.Set;
 /**
  * Created by klum on 12/10/13.
  */
-public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKind<JSONObject>
+public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKind
 {
     private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
