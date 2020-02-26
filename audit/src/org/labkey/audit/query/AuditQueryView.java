@@ -15,6 +15,8 @@
  */
 package org.labkey.audit.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.query.QuerySettings;
@@ -100,5 +102,19 @@ public class AuditQueryView extends QueryView
             bar.addContextualRole(clazz);
             bar.getList().forEach(button->button.addContextualRole(clazz));
         });
+    }
+
+    // And the Print button wants to be special
+    @Override
+    protected @Nullable ActionButton createPrintButton()
+    {
+        ActionButton print = super.createPrintButton();
+
+        if (null != print)
+        {
+            _contextualRoles.stream().map(Role::getClass).forEach(print::addContextualRole);
+        }
+
+        return print;
     }
 }
