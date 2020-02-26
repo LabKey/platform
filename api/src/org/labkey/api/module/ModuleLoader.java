@@ -385,30 +385,26 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 _controllerNameToModule.put(moduleCreated.getName().toLowerCase(), moduleCreated);
             }
 
-            if (null == moduleExisting)
-            {
-                /* NEW MODULE */
-                initializeAndPruneModules(moduleList);
+            initializeAndPruneModules(moduleList);
 
-                // initializeAndPruneModules() might have vetoed some modules, check that they are still in the map
-                if (_moduleMap.containsKey(moduleCreated.getName()))
+            // initializeAndPruneModules() might have vetoed some modules, check that they are still in the map
+            if (_moduleMap.containsKey(moduleCreated.getName()))
+            {
+                // Module startup
+                try
                 {
-                    // Module startup
-                    try
-                    {
-                        // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
-                        ((DefaultModule)moduleCreated).unregister();
-                        ModuleContext ctx = getModuleContext(moduleCreated);
-                        ctx.setModuleState(ModuleState.Starting);
-                        moduleCreated.startup(ctx);
-                        ctx.setModuleState(ModuleState.Started);
-                    }
-                    catch (Throwable x)
-                    {
-                        setStartupFailure(x);
-                        _log.error("Failure starting module: " + moduleCreated.getName(), x);
-                        throw x;
-                    }
+                    // avoid error in startup, DefaultModule does not expect to see module with same name initialized again
+                    ((DefaultModule)moduleCreated).unregister();
+                    ModuleContext ctx = getModuleContext(moduleCreated);
+                    ctx.setModuleState(ModuleState.Starting);
+                    moduleCreated.startup(ctx);
+                    ctx.setModuleState(ModuleState.Started);
+                }
+                catch (Throwable x)
+                {
+                    setStartupFailure(x);
+                    _log.error("Failure starting module: " + moduleCreated.getName(), x);
+                    throw x;
                 }
             }
         }
