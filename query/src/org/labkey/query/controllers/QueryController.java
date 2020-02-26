@@ -4177,12 +4177,17 @@ public class QueryController extends SpringActionController
             if (getPageConfig().getTitle() == null)
                 setTitle("Delete Schema");
 
+            form.refreshFromDb();
+            String confirmMsg;
             if (isBlank(form.getBean().getUserSchemaName()))
             {
-                throw new NotFoundException("Schema not specified");
+                confirmMsg = "Schema not found.";
             }
-            form.refreshFromDb();
-            return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
+            else
+            {
+                confirmMsg = "Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.";
+            }
+            return new HtmlView(confirmMsg);
         }
 
         public boolean handlePost(F form, BindException errors)
