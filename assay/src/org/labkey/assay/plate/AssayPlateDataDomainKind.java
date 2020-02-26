@@ -14,6 +14,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collections;
 import java.util.Set;
@@ -90,7 +91,7 @@ public class AssayPlateDataDomainKind extends AssayDomainKind
         {
             XarContext xc = new XarContext("Domains", c, u);
             xc.addSubstitution(XAR_SUBSTITUTION_SCHEMA_NAME, schemaName);
-            xc.addSubstitution(XAR_SUBSTITUTION_TABLE_NAME, tableName);
+            xc.addSubstitution(XAR_SUBSTITUTION_TABLE_NAME, PageFlowUtil.encode(tableName));
 
             String template = String.format(DOMAIN_NAMESPACE_PREFIX_TEMPLATE, namespacePrefix);
             return LsidUtils.resolveLsidFromTemplate(DOMAIN_LSID_TEMPLATE, xc, template);

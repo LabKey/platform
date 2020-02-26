@@ -1216,7 +1216,7 @@ public class ExperimentController extends SpringActionController
                 ExpDataClass dataClass = ExperimentService.get().createDataClass(
                         getContainer(), getUser(), form.getName(), form.getDescription(),
                         Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression(),
-                        null
+                        null, form.getCategory()
                 );
 
                 Domain domain = dataClass.getDomain();
