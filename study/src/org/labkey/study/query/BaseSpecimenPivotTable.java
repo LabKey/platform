@@ -312,7 +312,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container, null, new Sort(FieldKey.fromParts("Label")));
+        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container);
 
         for (LocationImpl location : locations)
         {

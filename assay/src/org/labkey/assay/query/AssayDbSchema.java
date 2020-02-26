@@ -48,4 +48,10 @@ public class AssayDbSchema
     {
         return getSchema().getTable("Well");
     }
+
+    public TableInfo getTableInfoWellGroupPositions()
+    {
+        return getSchema().getTable("WellGroupPositions");
+    }
+
 }

@@ -135,17 +135,22 @@ public class TestSecondaryController extends SpringActionController
         {
             if (form.isValid())
             {
-                User user = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession()).getUser();
+                PrimaryAuthenticationResult result = AuthenticationManager.getPrimaryAuthenticationResult(getViewContext().getSession());
 
-                if (null != user)
+                if (null != result)
                 {
-                    TestSecondaryConfiguration configuration = AuthenticationConfigurationCache.getActiveConfiguration(TestSecondaryConfiguration.class, form.getConfiguration());
+                    User user = result.getUser();
 
-                    if (null != configuration)
-                        AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), configuration.getRowId(), user);
+                    if (null != user)
+                    {
+                        TestSecondaryConfiguration configuration = AuthenticationConfigurationCache.getActiveConfiguration(TestSecondaryConfiguration.class, form.getConfiguration());
+
+                        if (null != configuration)
+                            AuthenticationManager.setSecondaryAuthenticationUser(getViewContext().getSession(), configuration.getRowId(), user);
+                    }
+
+                    return true;
                 }
-
-                return true;
             }
 
             return false;

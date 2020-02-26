@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,6 +34,7 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -471,6 +473,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
+                dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
                 dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
             }
         }
@@ -784,9 +787,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         Map<String, File> files = context.getUploadedData();
 
-        AssayDataType dataType = context.getProvider().getDataType();
+        AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
+            if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
+                dataType = PlateMetadataDataHandler.DATA_TYPE;
+            else
+                dataType = context.getProvider().getDataType();
+
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(entry.getValue()))

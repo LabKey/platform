@@ -778,9 +778,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         if (ret != null && !ret.equals(c))
         {
+            // Issue 39413: If incoming container is not a workbook container or a sub-container of the current container
+            // then ignore the incoming container. This was an issue when queries for ETLs contained a different container
+            // than the current container, verify permissions was looking for destination target in incoming container
+            if (!ret.isWorkbook() || !ret.hasAncestor(c))
+            {
+                return null;
+            }
+
             verifyPermissionsForContainer(ret, c, u, ti, clazz);
         }
-
         return ret;
     }
 

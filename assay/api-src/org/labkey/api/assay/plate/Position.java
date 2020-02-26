@@ -23,6 +23,8 @@ package org.labkey.api.assay.plate;
  */
 public interface Position
 {
+    Integer getRowId();
+
     int getColumn();
 
     int getRow();

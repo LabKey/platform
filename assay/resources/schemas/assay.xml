@@ -46,6 +46,25 @@
         <inputLength>23</inputLength>
         <isReadOnly>true</isReadOnly>
       </column>
+      <column columnName="ModifiedBy">
+        <datatype>int</datatype>
+        <columnTitle>Modified By</columnTitle>
+        <inputType>text</inputType>
+        <inputLength>10</inputLength>
+        <isReadOnly>true</isReadOnly>
+        <fk>
+          <fkColumnName>UserId</fkColumnName>
+          <fkTable>Users</fkTable>
+          <fkDbSchema>core</fkDbSchema>
+        </fk>
+      </column>
+      <column columnName="Modified">
+        <columnTitle>Modified</columnTitle>
+        <inputType>text</inputType>
+        <formatString>DateTime</formatString>
+        <inputLength>23</inputLength>
+        <isReadOnly>true</isReadOnly>
+      </column>
       <column columnName="Template">
         <description>Boolean indicating whether each plate is a template versus an uploaded instance of a plate template.</description>
       </column>
@@ -104,6 +123,14 @@
       <column columnName="Template">
         <description>Boolean indicating whether each well group is part of a plate template (versus a plate instance).</description>
       </column>
+    </columns>
+  </table>
+  <table tableName="wellGroupPositions" tableDbType="TABLE">
+    <description>Contains well to well group association.</description>
+    <columns>
+      <column columnName="RowId"/>
+      <column columnName="WellId"/>
+      <column columnName="WellGroupId"/>
     </columns>
   </table>
 </tables>
