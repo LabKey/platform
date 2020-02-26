@@ -75,6 +75,8 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -273,6 +275,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     // Index all lists in this container
+    @Override
     public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
         final IndexTask task;
@@ -539,7 +542,13 @@ public class ListManager implements SearchService.DocumentProvider
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
-        new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
+        new TableSelector(listTable, filter, null){
+            @Override
+            public Connection getConnection() throws SQLException
+            {
+                return getScope().getReadOnlyConnection();
+            }
+        }.setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
             String entityId = (String)map.get(entityIdKey);
@@ -640,7 +649,13 @@ public class ListManager implements SearchService.DocumentProvider
         String lastIndexedClause = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 
-        new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results ->
+        new TableSelector(listTable, filter, null){
+            @Override
+            public Connection getConnection() throws SQLException
+            {
+                return getScope().getReadOnlyConnection();
+            }
+        }.setForDisplay(true).forEachResults(results ->
         {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             String title = titleTemplate.eval(map);
@@ -733,26 +748,34 @@ public class ListManager implements SearchService.DocumentProvider
         if (setting.indexItemData())
         {
             TableInfo ti = list.getTable(User.getSearchUser());
+            int fileSizeLimit = (int)(SearchService.get().getFileSizeLimit()*.99);
 
             if (ti != null)
             {
+                body.append(sep);
                 FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
-                StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
-                new TableSelector(ti).setForDisplay(true).forEachResults(new ForEachBlock<Results>()
+                new TableSelector(ti) {
+                    @Override
+                    public Connection getConnection() throws SQLException
+                    {
+                        return getScope().getReadOnlyConnection();
+                    }
+                }.setForDisplay(true).forEachResults(new ForEachBlock<>()
                 {
                     @Override
                     public void exec(Results results) throws StopIteratingException
                     {
-                        data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        if (data.length() > SearchService.get().getFileSizeLimit())
-                            stopIterating();  // Short circuit for very large list, #25366
+                        body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                        // Short circuit for very large list, #25366
+                        if (body.length() > fileSizeLimit)
+                        {
+                            body.setLength(fileSizeLimit); // indexer also checks size... make sure we're under the limit
+                            stopIterating();
+                        }
                     }
                 });
-
-                body.append(sep);
-                body.append(data);
             }
         }
 
@@ -796,7 +819,13 @@ public class ListManager implements SearchService.DocumentProvider
 
         List<String> parentIds = new ArrayList<>();
         Set<String> cols = new HashSet<>(Arrays.asList("EntityId"));
-        new TableSelector(listTable, cols).forEachMap(row -> {
+        new TableSelector(listTable, cols){
+            @Override
+            public Connection getConnection() throws SQLException
+            {
+                return getScope().getReadOnlyConnection();
+            }
+        }.forEachMap(row -> {
             parentIds.add((String)row.get(entityIdKey.getName()));
 
             // Delete in batches to minimize db queries
