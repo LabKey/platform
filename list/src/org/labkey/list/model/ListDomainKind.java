@@ -18,6 +18,7 @@ package org.labkey.list.model;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -356,13 +357,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String keyName = listProperties.getKeyName();
 
         if (StringUtils.isEmpty(name))
-            throw new IllegalArgumentException("List name must not be null");
+            throw new ApiUsageException("List name must not be null");
         if (name.length() > ListEditorService.MAX_NAME_LENGTH)
-            throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
+            throw new ApiUsageException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
         if (ListService.get().getList(container, name) != null)
-            throw new IllegalArgumentException("The name '" + name + "' is already in use.");
+            throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
-            throw new IllegalArgumentException("List keyName must not be null");
+            throw new ApiUsageException("List keyName must not be null");
 
         KeyType keyType = getDefaultKeyType();
 
@@ -372,11 +373,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             if (EnumUtils.isValidEnum(KeyType.class, rawKeyType))
                 keyType = KeyType.valueOf(rawKeyType);
             else
-                throw new IllegalArgumentException("List keyType provided does not exist.");
+                throw new ApiUsageException("List keyType provided does not exist.");
         }
 
         if (!getSupportedKeyTypes().contains(keyType))
-            throw new IllegalArgumentException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
+            throw new ApiUsageException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
 
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
         list.setKeyName(keyName);
@@ -460,16 +461,16 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 GWTPropertyDescriptor newKey = findField(id, update.getFields());
                 if (null == newKey)
                 {
-                    throw new IllegalArgumentException("Key field not provided, expecting key field '" + key.getName() + "'");
+                    return exception.addGlobalError("Key field not provided, expecting key field '" + key.getName() + "'");
                 }
                 else if (!key.getName().equalsIgnoreCase(newKey.getName()))
                 {
-                    throw new IllegalArgumentException ("Cannot change key field name");
+                    return exception.addGlobalError("Cannot change key field name");
                 }
             }
             else
             {
-                throw new IllegalArgumentException ("Key field not found for list '" + listDefinition.getName() + "'");
+                return exception.addGlobalError("Key field not found for list '" + listDefinition.getName() + "'");
             }
 
             //handle name change
@@ -477,11 +478,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             {
                 if (update.getName().length() > ListEditorService.MAX_NAME_LENGTH)
                 {
-                    throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters.");
+                    return exception.addGlobalError("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters.");
                 }
                 else if (ListService.get().getList(container, update.getName()) != null)
                 {
-                    throw new IllegalArgumentException("The name '" + update.getName() + "' is already in use.");
+                    return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
                 }
             }
 
@@ -494,8 +495,10 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //update list properties
             if (null != listProperties)
             {
-                if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId() || !original.getDomainURI().equals(update.getDomainURI()))
-                    throw new IllegalArgumentException();
+                if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId())
+                    return exception.addGlobalError("domainId for the list does not match old or the new domain");
+                if (!original.getDomainURI().equals(update.getDomainURI()))
+                    return exception.addGlobalError("domainURI mismatch between old and new domain");
 
                 updateListProperties(container, user, listDefinition.getListId(), listProperties);
             }
@@ -553,13 +556,11 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
                 {
                     message = "The provided data does not contain the specified '" + listDefinition.getKeyName() + "' field or contains null key values.";
                 }
-                exception.addGlobalError(message);
-                return exception;
+                return exception.addGlobalError(message);
             }
             catch (DataIntegrityViolationException x)
             {
-                exception.addGlobalError("A data error occurred: " + x.getMessage());
-                return exception;
+                return exception.addGlobalError("A data error occurred: " + x.getMessage());
             }
 
             if (!exception.hasErrors())
@@ -590,53 +591,22 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         if (null != newListProps.getName())
             updatedListProps.setName(newListProps.getName());
 
-        if (null != newListProps.getTitleColumn())
-            updatedListProps.setTitleColumn(newListProps.getTitleColumn());
-
-        if (null != newListProps.getDescription())
-            updatedListProps.setDescription(newListProps.getDescription());
-
-        if (newListProps.isAllowDelete() != updatedListProps.isAllowDelete())
-            updatedListProps.setAllowDelete(newListProps.isAllowDelete());
-
-        if (newListProps.isAllowUpload() != updatedListProps.isAllowUpload())
-            updatedListProps.setAllowUpload(newListProps.isAllowUpload());
-
-        if (newListProps.isAllowExport() != updatedListProps.isAllowExport())
-            updatedListProps.setAllowExport(newListProps.isAllowExport());
-
-        if (newListProps.getDiscussionSetting() != updatedListProps.getDiscussionSetting())
-            updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
-
-        if (null != newListProps.getEntireListTitleTemplate())
-            updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
-
-        if (newListProps.getEntireListIndexSetting() != updatedListProps.getEntireListIndexSetting())
-            updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
-
-        if (newListProps.getEntireListBodySetting() != updatedListProps.getEntireListBodySetting())
-            updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
-
-        if (null != newListProps.getEachItemTitleTemplate())
-            updatedListProps.setEachItemTitleTemplate(newListProps.getEachItemTitleTemplate());
-
-        if (newListProps.getEachItemBodySetting() != updatedListProps.getEachItemBodySetting())
-            updatedListProps.setEachItemBodySetting(newListProps.getEachItemBodySetting());
-
-        if (newListProps.isEntireListIndex() != updatedListProps.isEntireListIndex())
-            updatedListProps.setEntireListIndex(newListProps.isEntireListIndex());
-
-        if (null != newListProps.getEntireListBodyTemplate())
-            updatedListProps.setEntireListBodyTemplate(newListProps.getEntireListBodyTemplate());
-
-        if (newListProps.isEachItemIndex() != updatedListProps.isEachItemIndex())
-            updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
-
-        if (null != newListProps.getEachItemBodyTemplate())
-            updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
-
-        if (newListProps.isFileAttachmentIndex() != updatedListProps.isFileAttachmentIndex())
-            updatedListProps.setFileAttachmentIndex(newListProps.isFileAttachmentIndex());
+        updatedListProps.setTitleColumn(newListProps.getTitleColumn());
+        updatedListProps.setDescription(newListProps.getDescription());
+        updatedListProps.setAllowDelete(newListProps.isAllowDelete());
+        updatedListProps.setAllowUpload(newListProps.isAllowUpload());
+        updatedListProps.setAllowExport(newListProps.isAllowExport());
+        updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
+        updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
+        updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
+        updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
+        updatedListProps.setEachItemTitleTemplate(newListProps.getEachItemTitleTemplate());
+        updatedListProps.setEachItemBodySetting(newListProps.getEachItemBodySetting());
+        updatedListProps.setEntireListIndex(newListProps.isEntireListIndex());
+        updatedListProps.setEntireListBodyTemplate(newListProps.getEntireListBodyTemplate());
+        updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
+        updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
+        updatedListProps.setFileAttachmentIndex(newListProps.isFileAttachmentIndex());
 
         return updatedListProps;
     }
