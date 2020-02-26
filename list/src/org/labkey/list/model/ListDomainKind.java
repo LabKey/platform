@@ -16,7 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -355,13 +355,13 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
         String name = domain.getName();
         String keyName = listProperties.getKeyName();
 
-        if (name == null)
+        if (StringUtils.isEmpty(name))
             throw new IllegalArgumentException("List name must not be null");
         if (name.length() > ListEditorService.MAX_NAME_LENGTH)
             throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
         if (ListService.get().getList(container, name) != null)
             throw new IllegalArgumentException("The name '" + name + "' is already in use.");
-        if (keyName == null)
+        if (StringUtils.isEmpty(keyName))
             throw new IllegalArgumentException("List keyName must not be null");
 
         KeyType keyType = getDefaultKeyType();
