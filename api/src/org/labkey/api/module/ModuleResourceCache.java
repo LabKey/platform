@@ -24,7 +24,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.DirectoryResource;
@@ -77,7 +76,11 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     @Override
     public void onModuleChanged(String name)
     {
-        _cache.clear();
+        Module module = ModuleLoader.getInstance().getModule(name);
+        if (null != module)
+            getListener(module).moduleChanged(module);
+        else
+            LOG.warn("Module \"" + name + "\" was not found");
     }
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
@@ -165,9 +168,9 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         _cache.clear();
     }
 
-    FileSystemDirectoryListener getListener(Module module)
+    ModuleResourceCacheListener getListener(Module module)
     {
-        return new StandardListener(module, _handler.createChainedDirectoryListener(module));
+        return new StandardListener(module, _handler.createChainedListener(module));
     }
 
     public void ensureListener(Resource resource, Module module)
@@ -247,12 +250,12 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     }
 
 
-    private class StandardListener implements FileSystemDirectoryListener
+    private class StandardListener implements ModuleResourceCacheListener
     {
         private final Module _module;
-        private final @Nullable FileSystemDirectoryListener _chainedListener;
+        private final @Nullable ModuleResourceCacheListener _chainedListener;
 
-        public StandardListener(Module module, @Nullable FileSystemDirectoryListener chainedListener)
+        public StandardListener(Module module, @Nullable ModuleResourceCacheListener chainedListener)
         {
             _module = module;
             _chainedListener = chainedListener;
@@ -295,6 +298,15 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
             if (null != _chainedListener)
                 _chainedListener.overflow();
+        }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            removeResourceMap(module);
+
+            if (null != _chainedListener)
+                _chainedListener.moduleChanged(module);
         }
     }
 }
