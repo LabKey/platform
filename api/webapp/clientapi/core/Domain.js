@@ -296,7 +296,7 @@ LABKEY.Domain.create({
         alert('An error occurred retrieving data: ' + error);
      }
 
-    LABKEY.Domain.get(successHandler, errorHandler, 'study', 'StudyProperties');
+    LABKEY.Domain.getDomainDetails(successHandler, errorHandler, 'study', 'StudyProperties');
 &lt;/script&gt;
 &lt;div id='testDiv'&gt;Loading...&lt;/div&gt;
 </pre>
