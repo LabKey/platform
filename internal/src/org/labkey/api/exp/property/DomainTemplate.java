@@ -284,6 +284,8 @@ public class DomainTemplate
                 optionsMap.put("nameExpression", options.getNameExpression());
                 if (options.isSetSampleSet())
                     optionsMap.put("sampleSet", options.getSampleSet());
+                if (options.isSetCategory())
+                    optionsMap.put("category", options.getCategory());
             }
         }
         else if (template instanceof SampleSetTemplateType)

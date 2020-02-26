@@ -16,6 +16,7 @@
 
 package org.labkey.audit.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.data.Container;
@@ -68,6 +69,7 @@ public class AuditQuerySchema extends UserSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, AuditSchema.getInstance().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         LinkedHashSet<String> tables = new LinkedHashSet<>();
@@ -81,6 +83,7 @@ public class AuditQuerySchema extends UserSchema
         return Collections.unmodifiableSet(tables);
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         // event specific audit views are implemented as queries on the audit schema
@@ -94,13 +97,14 @@ public class AuditQuerySchema extends UserSchema
         return null;
     }
 
+    @NotNull
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
         String queryName = settings.getQueryName();
         AuditTypeProvider provider = AuditLogService.get().getAuditProvider(queryName);
         if (provider != null)
-            return new AuditQueryView(this, settings, errors);
+            return new AuditQueryView(this, settings, errors, context);
 
         return super.createView(context, settings, errors);
     }

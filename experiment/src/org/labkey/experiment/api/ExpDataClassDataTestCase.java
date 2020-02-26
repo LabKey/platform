@@ -140,7 +140,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("foo", "string"));
 
-            ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null, null);
+            ExperimentServiceImpl.get().createDataClass(c, user, null, null, props, emptyList(), null, null, null, null);
         }
         catch (IllegalArgumentException e)
         {
@@ -160,7 +160,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             props.add(new GWTPropertyDescriptor("foo", "string"));
 
             String name = StringUtils.repeat("a", 1000);
-            ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null, null);
+            ExperimentServiceImpl.get().createDataClass(c, user, name, null, props, emptyList(), null, null, null, null);
         }
         catch (IllegalArgumentException e)
         {
@@ -180,7 +180,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
             props.add(new GWTPropertyDescriptor("foo", "string"));
 
             String nameExpr = StringUtils.repeat("a", 1000);
-            ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, nameExpr, null);
+            ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, nameExpr, null, null);
         }
         catch (IllegalArgumentException e)
         {
@@ -204,7 +204,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         String nameExpr = "JUNIT-${genId}-${aa}";
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, indices, null, nameExpr, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, indices, null, nameExpr, null, null);
         Assert.assertNotNull(dataClass);
 
         final Domain domain = dataClass.getDomain();
@@ -623,7 +623,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> props = new ArrayList<>();
         props.add(new GWTPropertyDescriptor("aa", "int"));
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, null, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "testing", null, props, emptyList(), null, null, null, null);
         final int dataClassId = dataClass.getRowId();
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
@@ -710,7 +710,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         boolean sqlServer = ExperimentService.get().getSchema().getSqlDialect().isSqlServer();
         try
         {
-            final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null, null);
+            final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique", null, props, indices, null, null, null, null);
             if (sqlServer)
                 Assert.fail("Expected exception creating large index over two columns");
         }
@@ -743,7 +743,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         String nameExpr = "JUNIT-${genId}-${aa}";
 
-        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr, null);
+        final ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user, "largeUnique2", null, props, indices, null, nameExpr, null, null);
         final int dataClassId = dataClass.getRowId();
 
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -807,7 +807,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
                 dataClassName, null, List.of(new GWTPropertyDescriptor("OtherProp", "string")), Collections.emptyList(),
-                null, null, null);
+                null, null, null, null);
         assertNotNull(dataClass);
 
         // insert a data class
@@ -817,6 +817,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         rowToInsert.put(colorPropertyURI, null);
         rowToInsert.put(agePropertyURI, dataClassAge);
         rowToInsert.put(typePropertyURI, dataClassType);
+        rowToInsert.put("Name", "WithOtherProp");
         List<Map<String, Object>> rowsToInsert = buildRows(rowToInsert);
 
         var insertedDataClassRows = insertRows(c, rowsToInsert, dataClassName);
@@ -916,7 +917,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
 
         ExpDataClassImpl dataClass = ExperimentServiceImpl.get().createDataClass(c, user,
                 dataClassName, null, List.of(new GWTPropertyDescriptor("OtherProp", "string")), Collections.emptyList(),
-                null, null, null);
+                null, null, null, null);
 
         UserSchema userSchema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
 

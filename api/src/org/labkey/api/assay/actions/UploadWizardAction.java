@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
 import org.labkey.api.assay.AssayColumnInfoRenderer;
 import org.labkey.api.assay.AssayDataCollector;
 import org.labkey.api.assay.AssayDataCollectorDisplayColumn;
@@ -42,6 +43,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -72,6 +74,8 @@ import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
@@ -101,11 +105,13 @@ import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
@@ -626,6 +632,9 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         addSampleInputColumns(newRunForm, insertView);
         if (shouldShowDataCollectorUI(newRunForm))
         {
+            if (_provider.getPlateMetadataDataCollector(newRunForm) != null)
+                insertView.getDataRegion().addDisplayColumn(new PlateMetadataDisplayColumn(newRunForm));
+
             insertView.getDataRegion().addDisplayColumn(new AssayDataCollectorDisplayColumn(newRunForm));
         }
 
@@ -1109,54 +1118,101 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         @Override
-        public String getErrors(String paramName)
+        public HtmlString getErrors(String paramName)
         {
             Errors errors = getErrors();
             if (errors != null && errors.getErrorCount() > MAX_ERRORS)
             {
-                List list;
+                List<? extends ObjectError> list;
                 if ("main".equals(paramName))
                     list = errors.getGlobalErrors();
                 else
                     list = errors.getFieldErrors(paramName);
                 if (list == null || list.size() == 0)
-                    return "";
+                    return HtmlString.EMPTY_STRING;
 
-                Set<String> uniqueErrorStrs = new CaseInsensitiveHashSet();
-                StringBuilder sb = new StringBuilder();
+                Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+                HtmlStringBuilder sb = HtmlStringBuilder.of("");
                 StringBuilder msgBox = new StringBuilder();
-                String br = "<font class=\"labkey-error\">";
+                HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
                 int cnt = 0;
                 for (Object m : list)
                 {
-                    String errStr = getViewContext().getMessage((MessageSourceResolvable)m);
+                    HtmlString errStr = HtmlString.of(getViewContext().getMessage((MessageSourceResolvable)m));
                     if (!uniqueErrorStrs.contains(errStr))
                     {
                         if (cnt++ < MAX_ERRORS)
                         {
                             sb.append(br);
                             sb.append(errStr);
-                            br = "<br>";
+                            br = HtmlString.unsafe("<br>");
                         }
                         msgBox.append(errStr);
                         msgBox.append("<br>");
                     }
                     uniqueErrorStrs.add(errStr);
                 }
-                if (sb.length() > 0)
-                    sb.append("</font>");
+                if (sb.toString().length() > 0)
+                    sb.append(HtmlString.unsafe("</font>"));
 
                 if (uniqueErrorStrs.size() > MAX_ERRORS)
                 {
-                    sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', ");
-                    sb.append(PageFlowUtil.jsString(msgBox.toString()));
-                    sb.append(");return false;\">Too many errors to display (click to show all).<a><br>");
+                    sb.append(HtmlString.unsafe("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', "));
+                    sb.append(HtmlString.unsafe(PageFlowUtil.jsString(msgBox.toString())));
+                    sb.append(HtmlString.unsafe(");return false;\">Too many errors to display (click to show all).<a><br>"));
                 }
-                return sb.toString();
+                return sb.getHtmlString();
             }
             else
             {
                 return super.getErrors(paramName);
+            }
+        }
+    }
+
+    private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
+    {
+        private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
+        private ColumnInfo _col;
+
+        public PlateMetadataDisplayColumn(AssayRunUploadForm form)
+        {
+            _form = form;
+            setCaption("Plate Metadata");
+            _col = new BaseColumnInfo("Plate Metadata", JdbcType.NULL);
+            ((BaseColumnInfo)_col).setInputType("file");
+        }
+
+        @Override
+        public void renderTitle(RenderContext ctx, Writer out) throws IOException
+        {
+            super.renderTitle(ctx, out);
+            out.write(" *");
+        }
+
+        public boolean isEditable()
+        {
+            return true;
+        }
+
+        public ColumnInfo getColumnInfo()
+        {
+            return _col;
+        }
+
+        public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
+        {
+            AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
+            if (collector != null)
+            {
+                try
+                {
+                    collector.getView(_form).render(ctx.getRequest(), ctx.getViewContext().getResponse());
+                }
+                catch (Exception e)
+                {
+                    throw (IOException)new IOException().initCause(e);
+                }
             }
         }
     }

@@ -66,6 +66,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
             setProperty(entry.getKey(), entry.getValue());
     }
 
+    @Override
     public synchronized Set<WellGroup> getOverlappingGroups()
     {
         if (_overlappingGroups == null)
@@ -84,6 +85,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return _overlappingGroups;
     }
 
+    @Override
     public Set<WellGroup> getOverlappingGroups(Type type)
     {
         Set<WellGroup> typedGroups = new LinkedHashSet<>();
@@ -95,6 +97,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return typedGroups;
     }
 
+    @Override
     public synchronized List<? extends WellData> getWellData(boolean combineReplicates)
     {
         if (!combineReplicates)
@@ -142,35 +145,41 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         }
     }
 
+    @Override
     public double getStdDev()
     {
         computeStats();
         return _stdDev;
     }
 
+    @Override
     public double getMax()
     {
         computeStats();
         return _max;
     }
 
+    @Override
     public double getMin()
     {
         computeStats();
         return _min;
     }
 
+    @Override
     public double getMean()
     {
         computeStats();
         return _mean;
     }
 
+    @Override
     public Plate getPlate()
     {
         return _plate;
     }
 
+    @Override
     public Double getDilution()
     {
         if (null != _dilutionDataRow)
@@ -188,6 +197,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return dilution;
     }
 
+    @Override
     public void setDilution(Double dilution)
     {
         for (Position position : _positions)
@@ -199,6 +209,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return CurveFitFactory.getCurveImpl(this, expectedDecreasing, calculator, fitType);
     }
 
+    @Override
     public Double getMaxDilution()
     {
         if (null != _dilutionDataRow)
@@ -215,6 +226,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         return max;
     }
 
+    @Override
     public Double getMinDilution()
     {
         if (null != _dilutionDataRow)
@@ -236,6 +248,7 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         _plate = plate;
     }
 
+    @Override
     public boolean isTemplate()
     {
         return false;

@@ -124,6 +124,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -1881,7 +1882,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
@@ -1906,7 +1907,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {

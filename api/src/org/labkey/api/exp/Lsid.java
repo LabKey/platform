@@ -320,6 +320,11 @@ public class Lsid
         return uri;
     }
 
+    public LsidBuilder edit()
+    {
+        return new LsidBuilder(this);
+    }
+
 
     public static class LsidBuilder implements Builder
     {
