@@ -157,7 +157,7 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public synchronized DomainKind getDomainKind()
+    public synchronized DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
     }
@@ -540,7 +540,7 @@ public class DomainImpl implements Domain
             List<DomainProperty> propsDropped = new ArrayList<>();
             List<DomainProperty> propsAdded = new ArrayList<>();
 
-            DomainKind kind = getDomainKind();
+            DomainKind<?> kind = getDomainKind();
             boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
             // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
@@ -1224,7 +1224,7 @@ public class DomainImpl implements Domain
         if (null == _aliasManager)
         {
             _aliasManager = new AliasManager(ExperimentService.get().getSchema());
-            DomainKind k = getDomainKind();
+            DomainKind<?> k = getDomainKind();
             if (null != k)
             {
                 for (PropertyStorageSpec s : k.getBaseProperties(this))
