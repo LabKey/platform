@@ -36,6 +36,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
@@ -141,6 +142,10 @@ public class ListModule extends SpringModule
             ss.addDocumentProvider(ListManager.get());
             ss.addSearchCategory(ListManager.listCategory);
         }
+
+        //TODO: Remove once automated test conversion of new list designer is complete
+        AdminConsole.addExperimentalFeatureFlag(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER, "List Create/Edit",
+                "Uses new List Designer to create and edit lists.", false);
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->
         {

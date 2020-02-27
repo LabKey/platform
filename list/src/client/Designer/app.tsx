@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 LabKey Corporation
+ * Copyright (c) 2020 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,9 @@
  */
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { AppContainer } from 'react-hot-loader'
-import { App } from './DomainDesigner'
+import {App} from './Designer'
 
-const render = () => {
-    ReactDOM.render(
-        <AppContainer>
-            <App/>
-        </AppContainer>,
-        document.getElementById('app')
-    )
-};
-
-declare const module: any;
-
-if (module.hot) {
-    module.hot.accept();
-}
-
-render();
+// Need to wait for container element to be available in labkey wrapper before render
+window.addEventListener('DOMContentLoaded', (event) => {
+    ReactDOM.render(<App/>, document.getElementById('app'));
+});

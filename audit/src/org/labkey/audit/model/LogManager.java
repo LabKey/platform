@@ -164,7 +164,7 @@ public class LogManager
         boolean changed = false;
         Domain domain = provider.getDomain();
 
-        DomainKind domainKind = domain.getDomainKind();
+        DomainKind<?> domainKind = domain.getDomainKind();
         for (PropertyStorageSpec prop : domainKind.getBaseProperties(domain))
         {
             Object value = values.get(prop.getName());
