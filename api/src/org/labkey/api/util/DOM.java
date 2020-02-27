@@ -12,12 +12,9 @@ import org.labkey.api.jsp.taglib.ErrorsTag;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.NoSuchMessageException;
-import org.springframework.validation.BindException;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -717,7 +714,7 @@ public class DOM
                     try
                     {
                         if (error instanceof LabKeyError)
-                            return createHtmlFragment(HtmlString.unsafe((((LabKeyError)error).renderToHTML(context))),BR());
+                            return createHtmlFragment((((LabKeyError)error).renderToHTML(context)),BR());
                         else
                             return createHtmlFragment(HtmlString.unsafe(PageFlowUtil.filter(context.getMessage(error), true)),BR());
                     }
