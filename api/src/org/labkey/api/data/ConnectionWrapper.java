@@ -24,7 +24,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.miniprofiler.MiniProfiler;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
@@ -876,11 +875,6 @@ public class ConnectionWrapper implements java.sql.Connection
     public void configureToDisableJdbcCaching(SQLFragment sql) throws SQLException
     {
         _runOnClose = _scope.getSqlDialect().configureToDisableJdbcCaching(this, _scope, sql);
-    }
-
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
-        _scope.getSqlDialect().configureToDisableJdbcCaching(stmt);
     }
 
     @Override

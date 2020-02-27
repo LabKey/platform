@@ -22,7 +22,8 @@ import {
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
-    getListProperties
+    getListProperties,
+    ConfirmModal
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -35,6 +36,7 @@ type State = {
     message?: string,
     dirty: boolean,
     model?: ListModel
+    fileImportError: string
 }
 
 export class App extends React.Component<{}, State>
@@ -48,7 +50,8 @@ export class App extends React.Component<{}, State>
             listId,
             returnUrl,
             isLoadingModel: true,
-            dirty: false
+            dirty: false,
+            fileImportError: undefined
         };
     }
 
@@ -113,7 +116,16 @@ export class App extends React.Component<{}, State>
         this.navigate(ActionURL.buildURL('list', 'begin', LABKEY.container.path));
     };
 
-    onComplete = (model: ListModel) => {
+    onComplete = (model: ListModel, fileImportError?: string) => {
+        if (fileImportError) {
+            this.setState(() => ({fileImportError, model}));
+        }
+        else {
+            this.navigateOnComplete(model);
+        }
+    };
+
+    navigateOnComplete(model: ListModel) {
         // if the model comes back to here without the newly saved listId, query to get it
         if (model.listId && model.listId > 0) {
             this.navigate(ActionURL.buildURL('list', 'grid', LABKEY.container.path, {listId: model.listId}));
@@ -132,7 +144,7 @@ export class App extends React.Component<{}, State>
                 }
             });
         }
-    };
+    }
 
     onChange = (model: ListModel) => {
         this.setState(() => ({dirty: true}));
@@ -146,8 +158,23 @@ export class App extends React.Component<{}, State>
         });
     }
 
+    renderFileImportErrorConfirm() {
+        return (
+            <ConfirmModal
+                title='Error Importing File'
+                msg={<>
+                    <p>There was an error while trying to import the selected file. Please review the error below and go to the newly created list's import data page to try again.</p>
+                    <ul><li>{this.state.fileImportError}</li></ul>
+                </>}
+                confirmVariant='primary'
+                onConfirm={() => this.navigateOnComplete(this.state.model)}
+                confirmButtonText='OK'
+            />
+        )
+    }
+
     render() {
-        const { isLoadingModel, hasDesignListPermission, message, model } = this.state;
+        const { isLoadingModel, hasDesignListPermission, message, model, fileImportError } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
@@ -164,12 +191,14 @@ export class App extends React.Component<{}, State>
 
         return (
             <>
+                {fileImportError && this.renderFileImportErrorConfirm()}
                 {hasDesignListPermission &&
                     <ListDesignerPanels
                         initModel={model}
                         onCancel={this.onCancel}
                         onComplete={this.onComplete}
                         onChange={this.onChange}
+                        useTheme={true}
                         successBsStyle={'primary'}
                     />
                 }
