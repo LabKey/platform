@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -30,8 +32,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
@@ -129,11 +129,12 @@ public class ExpDataFileConverter implements Converter
                 {
                     // Check for file at file root
                     String root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files).toString();
-                    data = expSvc.getExpDataByURL(FileUtil.createUri("/" + root + dataFileURL).toString(), container);
+                    String path = FileUtil.createUri("/" + root + dataFileURL).toString();
+                    data = expSvc.getExpDataByURL(path, container);
 
                     if (null == data)
                     {
-                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL + ". Full path: " + path);
                     }
                 }
             }
