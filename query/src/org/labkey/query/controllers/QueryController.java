@@ -49,6 +49,8 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -82,6 +84,7 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
@@ -6647,6 +6650,42 @@ public class QueryController extends SpringActionController
                 ret.put("success", false);
             }
             return ret;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetQueryEditorMetadataAction extends ReadOnlyApiAction<QueryForm>
+    {
+        @Override
+        public Object execute(QueryForm queryForm, BindException errors) throws Exception
+        {
+            QueryDefinition queryDef = queryForm.getQueryDef();
+
+            GWTDomain queryDefDomain = new GWTDomain();
+            queryDefDomain.setName(queryDef.getName());
+            queryDefDomain.setDescription(queryDef.getDescription());
+            queryDefDomain.setSchemaName(queryDef.getSchema().getSchemaName());
+            queryDefDomain.setQueryName(queryDef.getName());
+
+            List<GWTPropertyDescriptor> fields = new ArrayList<>();
+
+            TableInfo queryTable = queryDef.getTable(new ArrayList<>(), true);
+            if (null != queryTable)
+            {
+                for (ColumnInfo col : queryTable.getColumns())
+                {
+                    GWTPropertyDescriptor p = new GWTPropertyDescriptor();
+                    p.setRangeURI(col.getRangeURI());
+                    p.setPropertyURI(col.getPropertyURI());
+                    p.setName(col.getName());
+
+                    fields.add(p);
+                }
+            }
+            queryDefDomain.setFields(fields);
+
+            return queryDefDomain;
         }
     }
 
