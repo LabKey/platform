@@ -956,7 +956,7 @@ public class DomainUtil
 
             String name = field.getName();
 
-            if (null == name || name.length() == 0)
+            if (null == name || name.trim().length() == 0)
             {
                 exception.addError(new SimpleValidationError(getDomainErrorMessage(updates,"Please provide a name for each field.")));
                 continue;
