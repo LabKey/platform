@@ -814,9 +814,12 @@ public class PageFlowUtil
                     throw new IOException("Unexpected class: " + clsName);
                 cls = (Class<T>) Class.forName(clsName);
             }
+
+            if (cls == Map.class)
+                return (T)json;
+
             if (!cls.getName().equals(clsName))
                 throw new IOException("class did not match");
-
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
             Object o = f.fromMap(json);
             if (cls.isAssignableFrom(o.getClass()))
@@ -2605,6 +2608,12 @@ public class PageFlowUtil
             assertEquals(bean.i, copy.i);
             assertEquals(bean.s, copy.s);
             assertEquals(bean.d, copy.d);
+
+            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
+            assertNotNull(map);
+            assertEquals(bean.i, map.get("i"));
+            assertEquals(bean.s, map.get("s"));
+            assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
         }
 
         private void testMakeHtmlId(@Nullable String id)
