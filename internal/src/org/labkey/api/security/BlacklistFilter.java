@@ -19,7 +19,6 @@ package org.labkey.api.security;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.log4j.Priority;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.util.FileUtil;
@@ -36,6 +35,8 @@ import java.util.regex.Pattern;
 /**
  * This is not a defense against any particular vulnerability
  * however, this can help protect against wasting resources being consumed by scanners
+ *
+ * Note that this code is not particularly concerned about speed since this only happens on already failed requests
  */
 public class BlacklistFilter
 {
@@ -68,7 +69,7 @@ public class BlacklistFilter
 
     static void handleNotFound(HttpServletRequest req)
     {
-        if (isSuspicious(req.getRequestURI(),req.getQueryString()))
+        if (isSuspicious(req.getRequestURI(),req.getQueryString(),req.getHeader("User-Agent")))
         {
             handleBadRequest(req);
         }
@@ -83,20 +84,75 @@ public class BlacklistFilter
     }
 
 
-    private static boolean isSuspicious(String request_path, String query)
+    final static Pattern[] sql1_patterns =
+    {
+            Pattern.compile("select\\s"),
+            Pattern.compile("\\s((and)|(or)|(in))\\s"),
+            Pattern.compile("[;<=>'\"]"),
+            Pattern.compile("--\\s")
+    };
+    final static Pattern[] sql2_patterns =
+    {
+            Pattern.compile("\\(select\\s"),
+            Pattern.compile("\\sunion\\s"),
+            Pattern.compile("\\sorder\\s+by\\s"),
+            Pattern.compile("['\"\\s]=['\"\\s]"),
+            Pattern.compile("ctxsys\\.drithsx\\.sn"),
+            Pattern.compile("\\s((dbo)|(master)|(sys))\\."),
+            Pattern.compile("((information_schema)|(waitfor)|(pg_sleep)|(;)|(cha?r\\())")
+    };
+    private final static Pattern pipe_pattern = Pattern.compile("\\|\\s*(ls|id|echo|vol|curl|wget)");
+
+
+    private static boolean isSqlInjectiony(String sql)
+    {
+        int count = 0;
+        for (var p : sql2_patterns)
+        {
+            count += p.matcher(sql).find() ? 2 : 0;
+            if (count > 1)
+                return true;
+        }
+        for (var p : sql1_patterns)
+        {
+            count += p.matcher(sql).find() ? 1 : 0;
+            if (count > 1)
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean isScriptInjectiony(String js)
+    {
+        if (js.contains("<script"))
+            return true;
+        if (js.contains("javascript:"))
+            return true;
+        if (js.contains("onerror="))
+            return true;
+        return false;
+    }
+
+    // make public for testing
+    public static boolean isSuspicious(String request_path, String query, String userAgent)
     {
         final char REPLACEMENT_CHAR = '\uFFFD';
-        final Set<String> suspectExtensions = PageFlowUtil.set("ini","dll","jsp","asp","aspx","php","pl","vbs");
-        final Pattern sql = Pattern.compile(";.*select.*from.*(dbo|master|sys)\\.");
-        final Pattern pipe = Pattern.compile("\\|\\s*(ls|id|echo|vol|curl|wget)");
+        final Set<String> suspectExtensions = PageFlowUtil.set("ini","dll","do","jsp","asp","aspx","php","pl","vbs");
 
         try
         {
             // CHARS
             // contains %2E %2F
             String raw_path = request_path.toLowerCase();
+            query = StringUtils.trimToNull(query);
+            if (raw_path.endsWith("/favicon.ico") && null==query)
+                return false;
+            boolean isActionURL = raw_path.endsWith(".post") || raw_path.endsWith(".view") || raw_path.endsWith(".api");
+
             // why encode '.' or '/'???
             if (raw_path.contains("%252e") || raw_path.contains("%252f") || raw_path.contains("%2e") || raw_path.contains("%2f") || raw_path.indexOf(REPLACEMENT_CHAR) != -1)
+                return true;
+            if (raw_path.startsWith("//"))
                 return true;
             String decode_path = PageFlowUtil.decode(raw_path);
             if (decode_path.indexOf(REPLACEMENT_CHAR) != -1)
@@ -108,7 +164,11 @@ public class BlacklistFilter
                 return true;
             for (String part : path)
             {
-                if (part.startsWith("wp-") || part.endsWith("-inf") || part.equals("etc"))
+                if (part.startsWith(".") || part.startsWith("\">") || part.startsWith("wp-") || (part.startsWith("admin")&&!isActionURL))
+                    return true;
+                if (part.endsWith("-inf"))
+                    return true;
+                if (part.equals("") || part.equals("etc") || part.equals("data") || part.equals("phpunit"))
                     return true;
             }
             // EXTENSIONS
@@ -117,19 +177,28 @@ public class BlacklistFilter
                 if (suspectExtensions.contains(ext))
                     return true;
             // QUERY STRING
-            if (!StringUtils.isBlank(query))
+            if (null != query)
             {
-                for (Pair<String, String> p : PageFlowUtil.fromQueryString(query.toLowerCase()))
+                for (Pair<String, String> p : PageFlowUtil.fromQueryString(query))
                 {
-                    String key = p.first;
+                    String key = p.first.toLowerCase();
                     String value = p.second;
                     if (key.indexOf(REPLACEMENT_CHAR)!=-1 || value.indexOf(REPLACEMENT_CHAR)!=-1)
                         return true;
-                    if (sql.matcher(value).find() || pipe.matcher(value).find())
+                    try {
+                        value = PageFlowUtil.decode(value);
+                        value = PageFlowUtil.decode(value);
+                    } catch (Exception x) {/*pass*/}
+                    value = value.toLowerCase();
+                    if (pipe_pattern.matcher(value).find())
                         return true;
-                    if (value.contains("/../../") || value.contains("/etc/") || value.endsWith("win.ini") || value.endsWith("boot.ini"))
+                    if (value.contains("/../../") || value.contains("/etc/") || value.endsWith(".ini"))
                         return true;
-                    if (!"returnurl".equals(key) && value.startsWith("http://") || value.startsWith("https://"))
+                    if (!"returnurl".equals(key) && !"service".equals(key) && (value.startsWith("http://") || value.startsWith("https://")))
+                        return true;
+                    if (isScriptInjectiony(value))
+                        return true;
+                    if (isSqlInjectiony(value))
                         return true;
                 }
             }
