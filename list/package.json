@@ -1,6 +1,6 @@
 {
-  "name": "assay",
-  "version": "0.1.0",
+  "name": "list",
+  "version": "0.0.1",
   "private": true,
   "scripts": {
     "setup": "npm install",
@@ -13,19 +13,19 @@
     "build:watch": {
       "command": "webpack-dev-server --config ../webpack/dev.config.js",
       "env": {
-        "LK_MODULE": "assay",
+        "LK_MODULE": "list",
         "NODE_ENV": "development"
       }
     },
     "build:prod": {
       "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
-        "LK_MODULE": "assay",
+        "LK_MODULE": "list",
         "NODE_ENV": "production"
       }
     },
     "clean": {
-      "command": "rimraf resources/web/assay/gen && rimraf resources/views/*.*"
+      "command": "rimraf resources/web/list/gen && rimraf resources/views/*.*"
     }
   },
   "dependencies": {

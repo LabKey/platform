@@ -16,6 +16,7 @@
 package org.labkey.issue.query;
 
 import com.google.common.collect.Sets;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;

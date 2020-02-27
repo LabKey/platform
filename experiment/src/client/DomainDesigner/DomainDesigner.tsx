@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
+import React from 'react'
 import {List} from "immutable";
-import * as React from 'react'
 import {Button, Panel} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
@@ -197,7 +197,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             <ConfirmModal
                 title='Keep unsaved changes?'
                 msg='You have made changes to this domain that have not yet been saved. Do you want to save these changes before leaving?'
-                confirmVariant='success'
+                confirmVariant='primary'
                 onConfirm={this.submitAndNavigate}
                 onCancel={this.navigate}
                 cancelButtonText='No, Discard Changes'
@@ -233,7 +233,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         {suggestion}
                     </>
                 }
-                confirmVariant='success'
+                confirmVariant='primary'
                 onConfirm={this.confirmWarningAndNavigate}
                 onCancel={this.onSubmitWarningsCancel}
                 cancelButtonText='No, edit and resolve issues'
@@ -248,7 +248,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         return (
             <div className={'domain-form-panel domain-designer-buttons'}>
                 <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                <Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
+                <Button className='pull-right' bsStyle='primary' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>
             </div>
         )
     }
@@ -281,6 +281,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         domain={domain}
                         onChange={this.onChangeHandler}
                         useTheme={true}
+                        successBsStyle={'primary'}
                     />
                 }
                 { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {

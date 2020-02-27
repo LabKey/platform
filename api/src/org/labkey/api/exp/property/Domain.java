@@ -41,7 +41,7 @@ public interface Domain extends IPropertyType
 {
     Object get_Ts();
     Container getContainer();
-    DomainKind getDomainKind();
+    DomainKind<?> getDomainKind();
     String getName();
     String getDescription();
     int getTypeId();
