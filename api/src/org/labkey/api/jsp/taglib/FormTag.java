@@ -88,7 +88,7 @@ public class FormTag extends BodyTagSupport
 
     public void setAction(ActionURL action)
     {
-        this.action = action.getHtmlString();
+        this.action = null==action ? null : action.getHtmlString();
     }
 
     public String getEnctype()

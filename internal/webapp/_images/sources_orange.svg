@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>source_icon_orange_64x64_svg</title>
+    <desc>Created with Sketch.</desc>
+    <g id="source_icon_orange_64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Icon" transform="translate(7.000000, 6.000000)">
+            <line x1="35.316669" y1="49.0486253" x2="14.6788137" y2="48.5942318" id="Base" stroke="#FFA500" stroke-width="2" stroke-linecap="round" transform="translate(24.997741, 48.821429) rotate(178.738695) translate(-24.997741, -48.821429) "></line>
+            <g id="Left-Node" transform="translate(0.214286, 20.857143)">
+                <line x1="24.7857143" y1="25.1428571" x2="13.7857143" y2="14.1428571" id="Path" stroke="#FFCC81" stroke-width="2"></line>
+                <circle id="Oval" fill="#FFCC81" cx="9.78571429" cy="9.14285714" r="9"></circle>
+            </g>
+            <g id="Right-Node" transform="translate(38.000000, 27.500000) scale(-1, 1) translate(-38.000000, -27.500000) translate(25.000000, 14.000000)" stroke="#FFCC81" stroke-width="2">
+                <line x1="25.7857143" y1="26.1428571" x2="14.7857143" y2="15.1428571" id="Path"></line>
+                <circle id="Oval" fill="#FFFFFF" cx="9.78571429" cy="9.14285714" r="8"></circle>
+            </g>
+            <line x1="25" y1="18" x2="25" y2="48" id="Main-Branch" stroke="#FFA500" stroke-width="2" stroke-linecap="round" transform="translate(25.000000, 33.000000) scale(-1, 1) translate(-25.000000, -33.000000) "></line>
+            <path d="M34,9 C34,13.9245283 30.009434,18 25.0849057,18 L25,18 C19.990566,18 16,14.009434 16,9 C16,3.99056604 19.990566,0 25,0 C29.9245283,0.0849056604 33.9150943,4.0754717 34,9" id="Top-Node" fill="#FFA500"></path>
+        </g>
+    </g>
+</svg>

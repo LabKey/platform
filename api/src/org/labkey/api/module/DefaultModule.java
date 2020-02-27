@@ -111,7 +111,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class, String>> INSTANTIATED_MODULES = new HashSet<>();
+    private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
     private static final String XML_FILENAME = "module.xml";
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
@@ -218,7 +218,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class<? extends DefaultModule>, String> reg = new Pair<>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
@@ -326,7 +326,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
-            assert null != getSchemaVersion();
+            if (null == getSchemaVersion())
+            {
+                // TODO: Change to an assert or exception once we no longer support old version methods/properties
+                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
+                return;
+            }
+
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
@@ -588,7 +594,16 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public @Nullable Double getSchemaVersion()
     {
         // For now, delegate to getVersion() for modules that still override that method
-        return -1 != getVersion() ? (Double)getVersion() : _schemaVersion;
+        if (-1 != getVersion())
+        {
+            _log.warn("The \"" + getName() + "\" module overrides the getVersion() method, which is no longer supported. Please override getSchemaVersion() instead.");
+
+            return getVersion();
+        }
+        else
+        {
+            return _schemaVersion;
+        }
     }
 
     public final void setSchemaVersion(Double schemaVersion)
@@ -1617,6 +1632,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public final void setVersion(double version)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"version\" property; this module needs to be recompiled.");
         setSchemaVersion(version);
     }
 
@@ -1631,6 +1647,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings("unused")
     public void setConsolidateScripts(Boolean consolidate)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"consolidateScripts\" property; this module needs to be recompiled.");
     }
 
     @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
@@ -1642,6 +1659,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
     public void setLabkeyVersion(String labkeyVersion)
     {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
     }
 }

@@ -49,6 +49,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.files.DirectoryPattern;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileListener;
@@ -1307,10 +1308,15 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     @Override
-    public void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container)
+    public void ensureFileData(@NotNull ExpDataTable table)
     {
+        Container container = table.getUserSchema().getContainer();
+        User user = table.getUserSchema().getUser();
+        QueryUpdateService qus = table.getUpdateService();
         if (qus == null)
-            return;
+        {
+            throw new IllegalArgumentException("getUpdateServer() returned null from " + table);
+        }
 
         synchronized (_fileDataUpToDateCache)
         {

@@ -15,26 +15,45 @@
  */
 package org.labkey.audit.query;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.view.DataView;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
+
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: kevink
  * Date: 8/29/13
  *
  * Most audit tables don't allow inserting, but the ClientApiAuditProvider's table allows
- * inserts from the client api.  This query view disables the insert buttons in the html UI
+ * inserts from the client api. This query view disables the insert buttons in the html UI
  * while still allowing the LABKEY.Query.insertRows() api to still work.
  *
- * @see org.labkey.api.audit.ClientApiAuditProvider#createTableInfo(org.labkey.api.query.UserSchema)
+ * This query also lets Troubleshooters interact with the audit log, #39638. It ensures
+ * that the DataRegion, ButtonBar, and Button read permissions checks succeed and it hides
+ * the Chart/Reports and Manage Views options, since these don't work for Troubleshooters.
+ *
+ * @see org.labkey.api.audit.ClientApiAuditProvider#createTableInfo(org.labkey.api.query.UserSchema, org.labkey.api.data.ContainerFilter)
  */
 public class AuditQueryView extends QueryView
 {
-    public AuditQueryView(AuditQuerySchema schema, QuerySettings settings, Errors errors)
+    private final Set<Role> _contextualRoles;
+    private final boolean _hasInsert;
+
+    public AuditQueryView(AuditQuerySchema schema, QuerySettings settings, Errors errors, ViewContext context)
     {
         super(schema, settings, errors);
-
+        _contextualRoles = context.getContextualRoles();
+        _hasInsert = context.hasPermission(InsertPermission.class);
     }
 
     @Override
@@ -49,4 +68,53 @@ public class AuditQueryView extends QueryView
         return false;
     }
 
+    @Override
+    public boolean isShowReports()
+    {
+        return _hasInsert;
+    }
+
+    // Need at least insert permissions to use Manage Views -- don't show it to Troubleshooters
+    @Override
+    public void addManageViewItems(MenuButton button, Map<String, String> params)
+    {
+        if (_hasInsert)
+            super.addManageViewItems(button, params);
+    }
+
+    // This is terrible, but DataView conjures up a ViewContext that doesn't include the contextual roles we need for
+    // the Troubleshooter scenario. Copy any contextual roles into DataView's context.
+    @Override
+    public DataView createDataView()
+    {
+        DataView view = super.createDataView();
+        _contextualRoles.forEach(r->view.getViewContext().addContextualRole(r.getClass()));
+
+        return view;
+    }
+
+    // ButtonBar and the individual buttons also need the contextual roles
+    @Override
+    protected void populateButtonBar(DataView view, ButtonBar bar)
+    {
+        super.populateButtonBar(view, bar);
+        _contextualRoles.stream().map(Role::getClass).forEach(clazz->{
+            bar.addContextualRole(clazz);
+            bar.getList().forEach(button->button.addContextualRole(clazz));
+        });
+    }
+
+    // And the Print button wants to be special
+    @Override
+    protected @Nullable ActionButton createPrintButton()
+    {
+        ActionButton print = super.createPrintButton();
+
+        if (null != print)
+        {
+            _contextualRoles.stream().map(Role::getClass).forEach(print::addContextualRole);
+        }
+
+        return print;
+    }
 }

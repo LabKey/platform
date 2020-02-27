@@ -203,7 +203,7 @@ public class SpecimenApiController extends BaseStudyController
         public ApiResponse execute(SpecimenApiForm form, BindException errors)
         {
             final List<Map<String, Object>> repositories = new ArrayList<>();
-            for (LocationImpl location : StudyManager.getInstance().getSites(getContainer()))
+            for (LocationImpl location : StudyManager.getInstance().getLocations(getContainer()))
             {
                 if (location.isRepository())
                     repositories.add(getLocation(location));

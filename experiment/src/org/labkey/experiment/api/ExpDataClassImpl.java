@@ -100,6 +100,19 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         return _object.getNameExpression();
     }
 
+    @Override
+    public String getCategory()
+    {
+        return _object.getCategory();
+    }
+
+    @Override
+    public void setCategory(String category)
+    {
+        ensureUnlocked();
+        _object.setCategory(category);
+    }
+
     @Nullable
     @Override
     public ExpSampleSet getSampleSet()

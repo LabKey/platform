@@ -155,6 +155,12 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
     }
 
     @Override
+    public Class getDisplayValueClass()
+    {
+        return String.class;
+    }
+
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         return getDisplayValues(ctx).stream().map(o -> o == null ? " " : o.toString()).collect(Collectors.joining(", "));

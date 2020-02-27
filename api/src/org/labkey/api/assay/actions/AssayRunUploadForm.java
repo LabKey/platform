@@ -23,6 +23,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataCollector;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayRunUploadContext;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -50,13 +56,7 @@ import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayDataCollector;
-import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayRunUploadContext;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
@@ -269,7 +269,17 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
             {
                 try
                 {
-                    _uploadedData = collector.createData(this);
+                    _uploadedData = new HashMap<>();
+                    _uploadedData.putAll(collector.createData(this));
+                    AssayDataCollector plateMetadataCollector = getProvider().getPlateMetadataDataCollector(this);
+                    if (plateMetadataCollector != null)
+                    {
+                        Map<String, File> metadataFiles = plateMetadataCollector.createData(this);
+                        if (metadataFiles.containsKey(AssayDataCollector.PLATE_METADATA_FILE))
+                        {
+                            _uploadedData.put(AssayDataCollector.PLATE_METADATA_FILE, metadataFiles.get(AssayDataCollector.PLATE_METADATA_FILE));
+                        }
+                    }
                 }
                 catch (IOException e)
                 {

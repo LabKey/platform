@@ -623,6 +623,20 @@ public class DbScope
         ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
     }
 
+    /* can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryException extends RuntimeException
+    {
+        public RetryException(@NotNull Exception x)
+        {
+            super(x);
+        }
+
+        public <T extends Throwable> void rethrow(Class<T> clazz) throws T
+        {
+            if (clazz.isAssignableFrom(getCause().getClass()))
+                throw (T)getCause();
+        }
+    }
 
     /** Won't retry if we're already in a transaction
      * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
@@ -820,6 +834,19 @@ public class DbScope
     public Connection getPooledConnection() throws SQLException
     {
         return getPooledConnection(ConnectionType.Pooled, null);
+    }
+
+    /**
+     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
+     *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
+     **/
+    @JsonIgnore
+    public Connection getReadOnlyConnection() throws SQLException
+    {
+        ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
+        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
+
+        return conn;
     }
 
     /** Create a new connection that completely bypasses the connection pool. */
@@ -2726,6 +2753,21 @@ public class DbScope
                 }
                 t.commit();
                 assertTrue(c.isClosed());
+            }
+        }
+
+        @Test
+        public void testRetryException()
+        {
+            var r = new RetryException(new IllegalArgumentException());
+            try
+            {
+                r.rethrow(IllegalArgumentException.class);
+                fail("should have thrown");
+            }
+            catch (IllegalArgumentException x)
+            {
+                // expected!
             }
         }
     }

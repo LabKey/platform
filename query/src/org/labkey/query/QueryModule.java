@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -75,6 +76,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -128,6 +130,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -350,6 +353,15 @@ public class QueryModule extends DefaultModule
             ServerManager.TestCase.class
         );
     }
+
+    @Override
+    public @NotNull List<Factory<Class>> getIntegrationTestFactories()
+    {
+        List<Factory<Class>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
+        return ret;
+    }
+
 
     @Override
     @NotNull

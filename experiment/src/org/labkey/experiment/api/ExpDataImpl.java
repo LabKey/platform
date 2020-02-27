@@ -134,10 +134,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public URLHelper detailsURL()
     {
         DataType dataType = getDataType();
-        if (dataType == null)
-            return null;
-
-        return dataType.getDetailsURL(this);
+        if (dataType != null)
+        {
+            return dataType.getDetailsURL(this);
+        }
+        ActionURL ret = new ActionURL(ExperimentController.ShowDataAction.class, getContainer());
+        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return ret;
     }
 
     @Override
