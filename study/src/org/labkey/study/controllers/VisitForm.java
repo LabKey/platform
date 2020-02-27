@@ -72,7 +72,7 @@ public class VisitForm extends ViewForm
         {
             try
             {
-                _visit = (VisitImpl) PageFlowUtil.decodeObject(oldValues);
+                _visit = PageFlowUtil.decodeObject(VisitImpl.class, oldValues);
             }
             catch (IOException x)
             {

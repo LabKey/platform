@@ -789,7 +789,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
             if (null != StringUtils.trimToNull(oldVals))
             {
-                _oldValues = PageFlowUtil.decodeObject(oldVals);
+                String className = getDynaClass().getName();
+                Class beanClass = Class.forName(className);
+                _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
                 _isDataLoaded = true;
             }
         }
