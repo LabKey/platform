@@ -22,8 +22,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -35,7 +33,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
-import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -242,7 +239,7 @@ public class TableUpdaterFileListener implements FileListener
         // If it's a directory, prep versions with and without a trailing slash. Check the dest because it's already moved by the time this fires
         if (srcPath.endsWith("/") || srcPath.endsWith("\\") || Files.isDirectory(dest))
         {
-            srcPath = getWithSeparator(srcPath, FileUtil.hasCloudScheme(src));
+            srcPath = getWithSeparator(src, container);
             srcPathWithout = getWithoutSeparator(srcPath);
             destPath = getWithoutSeparator(destPath);
         }
@@ -301,12 +298,11 @@ public class TableUpdaterFileListener implements FileListener
     }
 
     @NotNull
-    private String getWithSeparator(String path, boolean cloud)
+    private String getWithSeparator(Path path, Container container)
     {
-        if (cloud)
-            return path + (path.endsWith("/") ? "" : "/");
-        else
-            return path + (path.endsWith(File.separator) ? "" : File.separator);
+        String result = getSourcePath(path, container);
+        String separator = _pathGetter.getSeparatorSuffix(path);
+        return result + (result.endsWith(separator) ? "" : separator);
     }
 
     @NotNull
