@@ -43,6 +43,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Project;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -110,13 +111,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -125,6 +128,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -765,41 +769,70 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
-        ObjectOutputStream oos = new ObjectOutputStream(osCompressed);
-        oos.writeObject(o);
-        oos.close();
+        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os))
+        {
+            Class cls = o.getClass();
+            ObjectFactory f = ObjectFactory.Registry.getFactory(o.getClass());
+            JSONObject json = new JSONObject();
+            f.toMap(o, json);
+            // TODO remove class prefixing when we remove decodeObject(String s)
+            w.write(cls.getName() + ":" + json.toString());
+        }
         osCompressed.close();
         return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true));
     }
 
-
-    public static Object decodeObject(String s) throws IOException
+    public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
     {
-        s = StringUtils.trimToNull(s);
-        if (null == s)
+        encoded = StringUtils.trimToNull(encoded);
+        if (null == encoded)
             return null;
 
-        try
-        {
-            byte[] buf = Base64.decodeBase64(s.getBytes());
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-            InputStream isCompressed;
+        byte[] buf = Base64.decodeBase64(encoded.getBytes());
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
+        InputStream isCompressed;
 
-            if (COMPRESS_OBJECT_STREAMS)
+        if (COMPRESS_OBJECT_STREAMS)
+        {
+            isCompressed = new InflaterInputStream(byteArrayInputStream);
+        }
+        else
+        {
+            isCompressed = byteArrayInputStream;
+        }
+        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is))
+        {
+            // TODO remove class prefixing when we remove decodeObject(String s)
+            String s = IOUtils.toString(r);
+            int i = s.indexOf(":");
+            String clsName = s.substring(0,i);
+            s = s.substring(i+1);
+            JSONObject json = new JSONObject(s);
+            if (Object.class == cls)
             {
-                isCompressed = new InflaterInputStream(byteArrayInputStream);
+                if (!clsName.startsWith("org.labkey."))
+                    throw new IOException("Unexpected class: " + clsName);
+                cls = (Class<T>) Class.forName(clsName);
             }
-            else
-            {
-                isCompressed = byteArrayInputStream;
-            }
-            ObjectInputStream ois = new ObjectInputStream(isCompressed);
-            return ois.readObject();
+            if (!cls.getName().equals(clsName))
+                throw new IOException("class did not match");
+
+            ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
+            Object o = f.fromMap(json);
+            if (cls.isAssignableFrom(o.getClass()))
+                return (T)o;
+            throw new ClassCastException("Could not create class: " + cls.getName());
         }
         catch (ClassNotFoundException x)
         {
-            throw new IOException(x.getMessage());
+            throw new IOException(x);
         }
+    }
+
+    @Deprecated
+    public static Object decodeObject(String s) throws IOException
+    {
+        return decodeObject(Object.class, s);
     }
 
 
@@ -2412,6 +2445,52 @@ public class PageFlowUtil
     //
     // TestCase
     //
+    public static class TestBean
+    {
+        private int i;
+        private String s;
+        private Date d;
+
+        public TestBean(){}
+
+        public TestBean(int i, String s, Date d)
+        {
+            this.i = i;
+            this.s = s;
+            this.d = d;
+        }
+
+        public int getI()
+        {
+            return i;
+        }
+
+        public void setI(int i)
+        {
+            this.i = i;
+        }
+
+        public String getS()
+        {
+            return s;
+        }
+
+        public void setS(String s)
+        {
+            this.s = s;
+        }
+
+        public Date getD()
+        {
+            return d;
+        }
+
+        public void setD(Date d)
+        {
+            this.d = d;
+        }
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -2507,6 +2586,25 @@ public class PageFlowUtil
             testMakeHtmlId("ABC");
             testMakeHtmlId("!BC234");
             testMakeHtmlId("1A-34-FB-44");
+        }
+
+        @Test
+        public void testEncodeObject() throws Exception
+        {
+            TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
+            String s = encodeObject(bean);
+
+            TestBean copy = decodeObject(TestBean.class, s);
+            assertNotNull(copy);
+            assertEquals(bean.i, copy.i);
+            assertEquals(bean.s, copy.s);
+            assertEquals(bean.d, copy.d);
+
+            copy = (TestBean)decodeObject(s);
+            assertNotNull(copy);
+            assertEquals(bean.i, copy.i);
+            assertEquals(bean.s, copy.s);
+            assertEquals(bean.d, copy.d);
         }
 
         private void testMakeHtmlId(@Nullable String id)
