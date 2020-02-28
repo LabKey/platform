@@ -40,6 +40,7 @@
 <labkey:form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0 class="lk-fields-table">
+<%=getTroubleshooterWarning(HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
