@@ -790,7 +790,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             if (null != StringUtils.trimToNull(oldVals))
             {
                 String className = getDynaClass().getName();
-                Class beanClass = Class.forName(className);
+                Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
                 _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
                 _isDataLoaded = true;
             }
