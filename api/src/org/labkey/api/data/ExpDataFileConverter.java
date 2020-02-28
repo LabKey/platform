@@ -18,7 +18,6 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.Converter;
 import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -52,7 +51,6 @@ import java.util.Collections;
 public class ExpDataFileConverter implements Converter
 {
     private static final Converter FILE_CONVERTER = new FileConverter();
-    private static Logger _log = Logger.getLogger(SchemaColumnMetaData.class);
 
     public static ExpData resolveExpData(JSONObject dataObject, Container container, User user, @NotNull Collection<AssayDataType> knownTypes)
     {
@@ -140,11 +138,10 @@ public class ExpDataFileConverter implements Converter
 
                     String path = FileUtil.createUri(root + dataFileURL).toString();
                     data = expSvc.getExpDataByURL(path, container);
-                    _log.warn("Data File URL Full Path: " + path);
 
                     if (null == data)
                     {
-                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL + ". Full path: " + path);
+                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
                     }
                 }
             }
