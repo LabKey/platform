@@ -840,13 +840,6 @@ public class PageFlowUtil
         }
     }
 
-    @Deprecated
-    public static Object decodeObject(String s) throws IOException
-    {
-        return decodeObject(Object.class, s);
-    }
-
-
     public static int[] toInts(Collection<String> strings)
     {
         return toInts(strings.toArray(new String[strings.size()]));
@@ -2606,12 +2599,6 @@ public class PageFlowUtil
             String s = encodeObject(bean);
 
             TestBean copy = decodeObject(TestBean.class, s);
-            assertNotNull(copy);
-            assertEquals(bean.i, copy.i);
-            assertEquals(bean.s, copy.s);
-            assertEquals(bean.d, copy.d);
-
-            copy = (TestBean)decodeObject(s);
             assertNotNull(copy);
             assertEquals(bean.i, copy.i);
             assertEquals(bean.s, copy.s);
