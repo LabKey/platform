@@ -817,17 +817,11 @@ public class PageFlowUtil
             s = s.substring(i+1);
             JSONObject json = new JSONObject(s);
             if (Object.class == cls)
-            {
-                if (!clsName.startsWith("org.labkey."))
-                    throw new IOException("Unexpected class: " + clsName);
                 cls = (Class<T>) Class.forName(clsName);
-            }
 
-            if (cls == Map.class)
+            if (cls == Map.class || cls == HashMap.class)
                 return (T)json;
 
-            if (!cls.getName().equals(clsName))
-                throw new IOException("class did not match");
             ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
             Object o = f.fromMap(json);
             if (cls.isAssignableFrom(o.getClass()))
