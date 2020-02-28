@@ -40,7 +40,9 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -128,16 +130,14 @@ public class ExpDataFileConverter implements Converter
                 if (null != container)
                 {
                     // Check for file at file root
-                    String root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files).toString();
-
-                    // non-unix needs to prepend with a slash
-                    if (!root.startsWith("/") && !root.startsWith("\\"))
+                    java.nio.file.Path root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files);
+                    if (root == null)
                     {
-                        root = "/" + root;
+                        throw new IllegalArgumentException("Could not find file root for exp.data assignment.");
                     }
 
-                    String path = FileUtil.createUri(root + dataFileURL).toString();
-                    data = expSvc.getExpDataByURL(path, container);
+                    URI dataFileUri = Paths.get(root.toString(), dataFileURL).toUri();
+                    data = expSvc.getExpDataByURL(dataFileUri.toString(), container);
 
                     if (null == data)
                     {
