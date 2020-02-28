@@ -834,7 +834,7 @@ public class PageFlowUtil
                 return (T)o;
             throw new ClassCastException("Could not create class: " + cls.getName());
         }
-        catch (ClassNotFoundException x)
+        catch (ClassNotFoundException|IllegalArgumentException x)
         {
             throw new IOException(x);
         }
