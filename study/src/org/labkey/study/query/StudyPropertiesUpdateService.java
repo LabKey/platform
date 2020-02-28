@@ -122,7 +122,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
                 {
                     updateRow.put(entry.getKey(), entry.getValue());
 
-                    if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate") && study.getTimepointType() == TimepointType.DATE)
+                    if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate"))
                     {
                         Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
                         recomputeStartDates = !study.getStartDate().equals(newDate);
@@ -154,7 +154,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
             manager.updateParticipantVisits(user, study.getDatasets());
         }
-        else if (recomputeStartDates)
+        else if (recomputeStartDates && study.getTimepointType() == TimepointType.DATE)
         {
             // Only recalculate relative to the start date
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) StudyManager.getInstance().getVisitManager(study);
