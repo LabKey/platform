@@ -131,7 +131,14 @@ public class ExpDataFileConverter implements Converter
                 {
                     // Check for file at file root
                     String root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files).toString();
-                    String path = FileUtil.createUri("/" + root + dataFileURL).toString();
+
+                    // non-unix needs to prepend with a slash
+                    if (!root.startsWith("/") && !root.startsWith("\\"))
+                    {
+                        root = "/" + root;
+                    }
+
+                    String path = FileUtil.createUri(root + dataFileURL).toString();
                     data = expSvc.getExpDataByURL(path, container);
                     _log.warn("Data File URL Full Path: " + path);
 
