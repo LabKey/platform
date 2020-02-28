@@ -682,15 +682,6 @@ public class ExperimentController extends SpringActionController
             DomainKind domainKind = _source.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getDomain()))
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
-                if (editURL != null)
-                {
-                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
-                    editTypeButton.setDisplayPermission(UpdatePermission.class);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
-                }
-
                 if (domainKind instanceof SampleSetDomainKind)
                 {
                     ActionURL updateURL = new ActionURL(UpdateMaterialSourceAction.class, _source.getContainer());
@@ -709,6 +700,17 @@ public class ExperimentController extends SpringActionController
                     deleteButton.setURL(deleteURL);
                     deleteButton.setActionType(ActionButton.Action.LINK);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                }
+                else
+                {
+                    ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                    if (editURL != null)
+                    {
+                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
+                        editTypeButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                    }
                 }
             }
 
