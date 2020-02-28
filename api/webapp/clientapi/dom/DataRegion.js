@@ -3810,6 +3810,11 @@ if (!LABKEY.DataRegions) {
         region._requiresSelectionButtons.each(function() {
             var el = $(this);
 
+            var isDropdown = false;
+            var dropdownBtn = el.parent();
+            if (dropdownBtn && dropdownBtn.hasClass('lk-menu-drop') && dropdownBtn.hasClass('dropdown'))
+                isDropdown = true;
+
             // handle min-count
             var minCount = el.attr('data-labkey-requires-selection-min-count');
             if (minCount) {
@@ -3827,9 +3832,13 @@ if (!LABKEY.DataRegions) {
 
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
                 el.removeClass('labkey-disabled-button');
+                if (isDropdown)
+                    dropdownBtn.removeClass('labkey-disabled-button');
             }
             else {
                 el.addClass('labkey-disabled-button');
+                if (isDropdown)
+                    dropdownBtn.addClass('labkey-disabled-button');
             }
         });
     };
