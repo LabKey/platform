@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.util.ResultSetUtil;
@@ -37,6 +38,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -48,7 +51,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     private Class<K> _class;
 
     // for performance pre-calculate readable/writeable properties
-    protected HashSet<String> _writeableProperties = null;
+    protected HashMap<String,PropertyDescriptor> _writeableProperties = null;
     protected HashSet<String> _readableProperties = null;
 
 
@@ -60,21 +63,21 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     public BeanObjectFactory(Class<K> clss)
     {
         _class = clss;
-        _writeableProperties = new HashSet<>();
+        _writeableProperties = new HashMap<>();
         _readableProperties = new HashSet<>();
 
         K bean;
         try
         {
-            bean = _class.newInstance();
+            bean = _class.getDeclaredConstructor().newInstance();
         }
-        catch (InstantiationException | IllegalAccessException x)
+        catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException x)
         {
             throw new RuntimeException(x);
         }
 
-        PropertyDescriptor origDescriptors[] = PropertyUtils.getPropertyDescriptors(bean);
-        _writeableProperties = new HashSet<>(origDescriptors.length * 2);
+        PropertyDescriptor[] origDescriptors = PropertyUtils.getPropertyDescriptors(bean);
+        _writeableProperties = new HashMap<>(origDescriptors.length * 2);
         _readableProperties = new HashSet<>(origDescriptors.length * 2);
 
         for (PropertyDescriptor origDescriptor : origDescriptors)
@@ -92,7 +95,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 }
             }
             if (PropertyUtils.isWriteable(bean, name))
-                _writeableProperties.add(name);
+                _writeableProperties.put(name,origDescriptor);
         }
     }
 
@@ -114,11 +117,11 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     {
         try
         {
-            K bean = _class.newInstance();
+            K bean = _class.getDeclaredConstructor().newInstance();
             fromMap(bean, m);
             return bean;
         }
-        catch (IllegalAccessException | InstantiationException x)
+        catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException x)
         {
             _log.error("unexpected error", x);
             throw new RuntimeException(x);
@@ -132,17 +135,35 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         if (!(m instanceof CaseInsensitiveHashMap))
             m = new CaseInsensitiveHashMap<>(m);
 
-        for (String prop : _writeableProperties)
+        for (var entry : _writeableProperties.entrySet())
         {
+            String prop = entry.getKey();
+            PropertyDescriptor d = entry.getValue();
+
             // If the map contains the key, assuming that we should use the map's value, even if it's null.
             // Otherwise, don't set a value on the bean.
             if (m.containsKey(prop))
             {
                 Object value = m.get(prop);
+                // TODO (JSONArray should implement List, but not for this branch)
+                if (value instanceof JSONArray)
+                    value = Arrays.asList(((JSONArray)value).toArray());
                 try
                 {
                     try
                     {
+                        if (null != d && null != value && value.getClass() == String.class && d.getPropertyType() != String.class)
+                        {
+                            try
+                            {
+                                value = ConvertUtils.convert((String)value, d.getPropertyType());
+                            }
+                            catch (ConversionException x)
+                            {
+                                /* pass */
+                            }
+                        }
+
                         BeanUtils.copyProperty(bean, prop, value);
                     }
                     catch (InvocationTargetException x)
@@ -241,7 +262,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         ResultSetMetaData md = rs.getMetaData();
         int count = md.getColumnCount();
         CaseInsensitiveHashMap<String> propMap = new CaseInsensitiveHashMap<>(count * 2);
-        for (String prop : _writeableProperties)
+        for (String prop : _writeableProperties.keySet())
             propMap.put(prop, prop);
 
         String[] properties = new String[count + 1];
@@ -259,7 +280,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         {
             while (rs.next())
             {
-                K bean = _class.newInstance();
+                K bean = _class.getDeclaredConstructor().newInstance();
 
                 for (int i = 1; i <= count; i++)
                 {
@@ -294,7 +315,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 list.add(bean);
             }
         }
-        catch (InstantiationException | IllegalAccessException x)
+        catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException x)
         {
             assert false : "unexpected exception";
         }
