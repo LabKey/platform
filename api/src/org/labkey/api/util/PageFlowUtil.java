@@ -772,9 +772,17 @@ public class PageFlowUtil
         try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os))
         {
             Class cls = o.getClass();
-            ObjectFactory f = ObjectFactory.Registry.getFactory(o.getClass());
-            JSONObject json = new JSONObject();
-            f.toMap(o, json);
+            final JSONObject json;
+            if (o instanceof Map)
+            {
+                json = new JSONObject((Map)o);
+            }
+            else
+            {
+                ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
+                json = new JSONObject();
+                f.toMap(o, json);
+            }
             // TODO remove class prefixing when we remove decodeObject(String s)
             w.write(cls.getName() + ":" + json.toString());
         }
