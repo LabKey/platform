@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "setup": "npm install"
+    "setup": "npm install",
+    "clean": ""
   },
   "devDependencies": {
     "@babel/core": "7.4.5",

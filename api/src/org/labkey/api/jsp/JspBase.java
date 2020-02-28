@@ -27,6 +27,7 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button.ButtonBuilder;
 import org.labkey.api.util.DateUtil;
@@ -34,6 +35,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -742,5 +744,26 @@ public abstract class JspBase extends JspContext implements HasViewContext
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(ClientDependencies dependencies)
     {
+    }
+
+    // Returns the standard Troubleshooter warning if the current user is not a site administrator
+    protected HtmlString getTroubleshooterWarning()
+    {
+        return getTroubleshooterWarning(EMPTY_STRING, EMPTY_STRING);
+    }
+
+    // Returns the standard Troubleshooter warning plus the provided suffix if the current user is not a site administrator
+    protected HtmlString getTroubleshooterWarning(HtmlString suffix)
+    {
+        return getTroubleshooterWarning(EMPTY_STRING, suffix);
+    }
+
+    // Returns the standard Troubleshooter warning plus the provided prefix & suffix if the current user is not a site administrator
+    protected HtmlString getTroubleshooterWarning(HtmlString prefix, HtmlString suffix)
+    {
+        if (getContainer().hasPermission(getUser(), AdminOperationsPermission.class))
+            return EMPTY_STRING;
+        else
+            return HtmlStringBuilder.of(prefix).append(HtmlString.unsafe("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")).append(suffix).getHtmlString();
     }
 }

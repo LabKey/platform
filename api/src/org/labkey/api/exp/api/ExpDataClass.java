@@ -58,6 +58,10 @@ public interface ExpDataClass extends ExpObject
 
     String getNameExpression();
 
+    String getCategory();
+
+    void setCategory(String category);
+
     //
     // URLS
     //

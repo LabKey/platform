@@ -50,6 +50,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DomainKindDesign;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -372,6 +373,12 @@ public class PropertyController extends SpringActionController
         }
     }
 
+    /**
+     * DO NOT USE. This action has been deprecated in 20.3 in favor of GetDomainKindAction.
+     * Only here for backwards compatibility to resolve requests and redirect.
+     * //TODO: Deprecate/update docs
+     */
+    @Deprecated
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(ReadPermission.class)
     public class GetDomainAction extends ReadOnlyApiAction<DomainApiForm>
@@ -391,6 +398,50 @@ public class PropertyController extends SpringActionController
             Integer domainId = form.getDomainId();
 
             return getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+        }
+    }
+
+    /**
+     * If DomainKind specific properties are available, then json response is of this format:
+     *  {
+     *      "domainKindName":
+     *      "options": {}
+     *      "domainDesign": {}
+     *  }
+     *  Otherwise, json response is of this format:
+     *  {
+     *      "domainDesign": {}
+     *  }
+     */
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDomainDetailsAction  extends ReadOnlyApiAction<DomainApiForm>
+    {
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        public Object execute(DomainApiForm form, BindException errors)
+        {
+            String queryName = form.getQueryName();
+            String schemaName = form.getSchemaName();
+            Integer domainId = form.getDomainId();
+
+            GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
+            Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
+            if (null != domain && null != domain.getDomainKind())
+            {
+                DomainKindDesign domainKindDesign = new DomainKindDesign();
+                domainKindDesign.setDomainDesign(gwtDomain);
+                domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
+                domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
+                return domainKindDesign;
+            }
+            return gwtDomain;
         }
     }
 
@@ -417,15 +468,18 @@ public class PropertyController extends SpringActionController
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
+            if (newDomain == null)
+                throw new NotFoundException("No domainDesign provided.");
+
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
-                throw new IllegalArgumentException("Domain id and URI are required");
+                throw new IllegalArgumentException("DomainId and domainURI are required in updated domainDesign.");
 
             GWTDomain originalDomain = getDomain(form.getSchemaName(), form.getQueryName(), form.getDomainId(), getContainer(), getUser());
 
             boolean includeWarnings = form.includeWarnings();
             boolean hasErrors = false;
 
-            ValidationException updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser(), includeWarnings);
+            ValidationException updateErrors = updateDomain(originalDomain, newDomain, form.getOptions(), getContainer(), getUser(), includeWarnings);
 
             for (ValidationError ve : updateErrors.getErrors())
             {
@@ -991,7 +1045,7 @@ public class PropertyController extends SpringActionController
     /** @return Errors encountered during the save attempt */
     @NotNull
     private static ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                             Container container, User user, boolean includeWarnings)
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)
@@ -1004,7 +1058,20 @@ public class PropertyController extends SpringActionController
         if (!kind.canEditDefinition(user, domain))
             throw new UnauthorizedException("You don't have permission to edit this domain.");
 
-        return kind.updateDomain(original, update, container, user, includeWarnings);
+        if (JSONObject.class == kind.getTypeClass())
+        {
+            return kind.updateDomain(original, update, options, container, user, includeWarnings);
+        }
+        else
+        {
+            Object domainKindProps = null;
+            if (null != options)
+            {
+                ObjectMapper mapper = new ObjectMapper();
+                domainKindProps = mapper.convertValue(options, kind.getTypeClass());
+            }
+            return kind.updateDomain(original, update, domainKindProps, container, user, includeWarnings);
+        }
     }
 
     private static void deleteDomain(String schemaName, String queryName, Container container, User user)
@@ -1040,7 +1107,7 @@ public class PropertyController extends SpringActionController
         {
             Domain dom = PropertyService.get().getDomain(domainId);
             if (dom == null)
-                throw new NotFoundException("Could not find domain for " + domainId);
+                throw new NotFoundException("Could not find domain for " + domainId + ".");
 
             if (!container.equals(dom.getContainer())) // issue 38502
                 throw new NotFoundException("Could not find domain for " + domainId + " in container '" + container.getPath() + "'.");
@@ -1053,7 +1120,7 @@ public class PropertyController extends SpringActionController
             domain = DomainUtil.getDomainDescriptor(user, domainURI, container);
 
             if (domain == null)
-                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName);
+                throw new NotFoundException("Could not find domain for schemaName=" + schemaName + ", queryName=" + queryName + ".");
         }
 
         return domain;

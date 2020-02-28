@@ -473,11 +473,6 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 stmt.setMaxRows(statementMaxRows == Table.NO_ROWS ? 1 : statementMaxRows);
             }
 
-            if (conn instanceof ConnectionWrapper)
-            {
-                ((ConnectionWrapper) conn).configureToDisableJdbcCaching(stmt);
-            }
-
             if (asyncRequest != null)
             {
                 asyncRequest.setStatement(stmt);

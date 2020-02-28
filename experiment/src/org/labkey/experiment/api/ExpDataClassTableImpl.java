@@ -54,6 +54,7 @@ import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.labkey.api.exp.query.ExpSchema.DATA_CLASS_CATEGORY_TABLE;
 import static org.labkey.api.exp.query.ExpSchema.TableType.SampleSets;
 
 /**
@@ -138,6 +139,15 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 sampleCountColumnInfo.setDescription("Contains the number of data currently stored in this data class");
                 return sampleCountColumnInfo;
             }
+            case Category:
+            {
+                var col = wrapColumn(alias, _rootTable.getColumn(column.toString()));
+                var fk = QueryForeignKey.from(this.getUserSchema(), getContainerFilter())
+                        .schema(ExpSchema.SCHEMA_NAME, getContainer())
+                        .to(DATA_CLASS_CATEGORY_TABLE, "Value", null);
+                col.setFk( fk );
+                return col;
+            }
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -156,6 +166,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         addColumn(Column.ModifiedBy);
         addContainerColumn(Column.Folder, new ActionURL(ExperimentController.ListDataClassAction.class, getContainer()));
         addColumn(Column.NameExpression).setHidden(true);
+        addColumn(Column.Category).setHidden(true);
         addColumn(Column.SampleSet);
         addColumn(Column.DataCount);
 
@@ -221,12 +232,13 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
             String description = (String)row.get("description");
             String nameExpression = (String)row.get("nameExpression");
             Integer materialSourceId = (Integer)row.get("sampleSet");
+            String category = (String)row.get("category");
 
             try
             {
                 ExpDataClass dc = ExperimentService.get().createDataClass(c, user, name, description,
                         Collections.emptyList(), Collections.emptyList(),
-                        materialSourceId, nameExpression, null);
+                        materialSourceId, nameExpression, null, category);
                 return new CaseInsensitiveHashMap((Map<String,Object>) BeanUtils.describe(dc));
             }
             catch (ExperimentException | ReflectiveOperationException e)
