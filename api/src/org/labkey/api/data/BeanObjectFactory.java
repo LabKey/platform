@@ -138,7 +138,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         for (var entry : _writeableProperties.entrySet())
         {
             String prop = entry.getKey();
-            PropertyDescriptor d = entry.getValue();
 
             // If the map contains the key, assuming that we should use the map's value, even if it's null.
             // Otherwise, don't set a value on the bean.
@@ -152,18 +151,6 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 {
                     try
                     {
-                        if (null != d && null != value && value.getClass() == String.class && d.getPropertyType() != String.class)
-                        {
-                            try
-                            {
-                                value = ConvertUtils.convert((String)value, d.getPropertyType());
-                            }
-                            catch (ConversionException x)
-                            {
-                                /* pass */
-                            }
-                        }
-
                         BeanUtils.copyProperty(bean, prop, value);
                     }
                     catch (InvocationTargetException x)
