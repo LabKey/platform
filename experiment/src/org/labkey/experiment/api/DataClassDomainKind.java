@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -33,7 +34,7 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
@@ -54,7 +55,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -63,7 +63,7 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/15/15
  */
-public class DataClassDomainKind extends AbstractDomainKind
+public class DataClassDomainKind extends BaseAbstractDomainKind
 {
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
@@ -201,7 +201,7 @@ public class DataClassDomainKind extends AbstractDomainKind
 
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -212,6 +212,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
         String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
+        String category = arguments.containsKey("category") ? String.valueOf(arguments.get("category")) : null;
 
         Integer sampleSetId = null;
         String sampleSet = arguments.containsKey("sampleSet") ? String.valueOf(arguments.get("sampleSet")) : null;
@@ -230,7 +231,7 @@ public class DataClassDomainKind extends AbstractDomainKind
         ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo);
+            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo, category);
         }
         catch (SQLException e)
         {

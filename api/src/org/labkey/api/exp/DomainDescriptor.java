@@ -60,7 +60,7 @@ public final class DomainDescriptor
     private final TemplateInfo _templateInfo;
 
     /* DomainDescriptors are cached, but DomainImpl is not, so cache DomainKind here on DomainDescriptor */
-    private DomainKind _domainKind;
+    private DomainKind<?> _domainKind;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String _storageTableName;
@@ -149,7 +149,7 @@ public final class DomainDescriptor
         _templateInfo = null;
     }
 
-    public synchronized DomainKind getDomainKind()
+    public synchronized DomainKind<?> getDomainKind()
     {
         if (null == _domainKind)
             _domainKind = PropertyService.get().getDomainKind(_domainURI);
