@@ -53,6 +53,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
@@ -173,20 +174,28 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
     /**
-     * Create a new DataClass with the provided properties.
+     * Create a new DataClass with the provided domain properties and top level options.
      */
-    default ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
-                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
-                                 @Nullable TemplateInfo templateInfo)
-            throws ExperimentException, SQLException
-    {
-        return createDataClass(c, u, name, description, properties, indices, sampleSetId, nameExpression, templateInfo, null);
-    }
-
+    @Deprecated
     ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
                                  @Nullable TemplateInfo templateInfo, @Nullable String category)
-            throws ExperimentException, SQLException;
+            throws ExperimentException;
+
+    /**
+     * Create a new DataClass with the provided domain properties and top level options.
+     */
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException;
+
+    /**
+     * Update a DataClass with the provided domain properties and top level options.
+     */
+    ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+                                        @Nullable DataClassDomainKindProperties options,
+                                        GWTDomain<? extends GWTPropertyDescriptor> original,
+                                        GWTDomain<? extends GWTPropertyDescriptor> update);
 
     /**
      * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,

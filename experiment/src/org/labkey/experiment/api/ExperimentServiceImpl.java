@@ -84,7 +84,6 @@ import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
@@ -92,6 +91,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.exp.xar.XarConstants;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.CustomTiming;
@@ -6296,8 +6296,21 @@ public class ExperimentServiceImpl implements ExperimentService
             @Nullable TemplateInfo templateInfo, @Nullable String category)
         throws ExperimentException
     {
+        DataClassDomainKindProperties options = new DataClassDomainKindProperties();
+        options.setDescription(description);
+        options.setNameExpression(nameExpression);
+        options.setSampleSet(sampleSetId);
+        options.setCategory(category);
+        return createDataClass(c, u, name, options, properties, indices, templateInfo);
+    }
+
+    @Override
+    public ExpDataClassImpl createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                        List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException
+    {
         if (name == null)
-            throw new IllegalArgumentException("DataClass name is required");
+            throw new IllegalArgumentException("DataClass name is required.");
 
         TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
         int nameMax = dataClassTable.getColumn("Name").getScale();
@@ -6306,32 +6319,15 @@ public class ExperimentServiceImpl implements ExperimentService
 
         ExpDataClass existing = getDataClass(c, u, name);
         if (existing != null)
-            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists");
+            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists.");
 
-        // Validate the name expression length
-        int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
-        if (nameExpression != null && nameExpression.length() > nameExpMax)
-            throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
-
-        // Validate category length
-        int categoryMax = dataClassTable.getColumn("Category").getScale();
-        if (category != null && category.length() > categoryMax)
-            throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
-
-        if (sampleSetId != null)
-        {
-            ExpSampleSet ss = SampleSetService.get().getSampleSet(c, u, sampleSetId);
-            if (ss == null)
-                throw new IllegalArgumentException("SampleSet '" + sampleSetId + "' not found");
-
-            if (!ss.getContainer().equals(c))
-                throw new IllegalArgumentException("Associated SampleSet must be defined in the same container as this DataClass");
-        }
+        validateDataClassOptions(c, u, options);
 
         Lsid lsid = getDataClassLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
+        // TODO can't these be checked a different way?
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
@@ -6341,11 +6337,11 @@ public class ExperimentServiceImpl implements ExperimentService
         {
             String propertyName = pd.getName().toLowerCase();
             if (lowerReservedNames.contains(propertyName))
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name");
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
             else if (domain.getPropertyByName(propertyName) != null) // issue 25275
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain");
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain.");
 
-            DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
+            DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
 
         Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
@@ -6355,7 +6351,7 @@ public class ExperimentServiceImpl implements ExperimentService
             for (String indexColName : index.getColumnNames())
             {
                 if (!lowerReservedNames.contains(indexColName.toLowerCase()) && domain.getPropertyByName(indexColName) == null)
-                    throw new IllegalArgumentException("Index column name '" + indexColName + "' does not exist");
+                    throw new IllegalArgumentException("Index column name '" + indexColName + "' does not exist.");
             }
 
             PropertyStorageSpec.Index propIndex = new PropertyStorageSpec.Index(index.isUnique(), index.getColumnNames());
@@ -6363,19 +6359,8 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         domain.setPropertyIndices(propertyIndices);
 
-        DataClass dataClass = new DataClass();
-        dataClass.setLSID(lsid.toString());
-        dataClass.setName(name);
-        dataClass.setDescription(description);
-        if (sampleSetId != null)
-            dataClass.setMaterialSourceId(sampleSetId);
-        if (nameExpression != null)
-            dataClass.setNameExpression(nameExpression);
-        if (category != null)
-            dataClass.setCategory(category);
-        dataClass.setContainer(c);
-
-        ExpDataClassImpl impl = new ExpDataClassImpl(dataClass);
+        DataClass bean = getDataClassBean(c, name, lsid.toString(), options);
+        ExpDataClassImpl impl = new ExpDataClassImpl(bean);
         try (DbScope.Transaction tx = ensureTransaction())
         {
             OntologyManager.ensureObject(c, lsid.toString());
@@ -6383,13 +6368,80 @@ public class ExperimentServiceImpl implements ExperimentService
             domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
             domain.save(u);
             impl.save(u);
-            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues); // TODO do Data Classes actually support default values?
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
         }
 
         return impl;
+    }
+
+    @Override
+    public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+                                        @Nullable DataClassDomainKindProperties options,
+                                        GWTDomain<? extends GWTPropertyDescriptor> original,
+                                        GWTDomain<? extends GWTPropertyDescriptor> update)
+    {
+        validateDataClassOptions(c, u, options); // TODO any other validation to do here for the update case?
+
+        DataClass bean = getDataClassBean(c, dataClass.getName(), dataClass.getLSID(), options);
+        bean.setRowId(dataClass.getRowId());
+
+        ExpDataClassImpl impl = new ExpDataClassImpl(bean);
+        ValidationException errors;
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            impl.save(u);
+            errors = DomainUtil.updateDomainDescriptor(original, update, c, u);
+
+            transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+            transaction.commit();
+        }
+        return errors;
+    }
+
+    private DataClass getDataClassBean(Container c, String name, String lsid, @Nullable DataClassDomainKindProperties options)
+    {
+        DataClass dataClass = new DataClass();
+        dataClass.setContainer(c);
+        dataClass.setName(name);
+        dataClass.setLSID(lsid);
+        if (options != null)
+        {
+            dataClass.setDescription(options.getDescription());
+            dataClass.setNameExpression(options.getNameExpression());
+            dataClass.setMaterialSourceId(options.getSampleSet());
+            dataClass.setCategory(options.getCategory());
+        }
+        return dataClass;
+    }
+
+    private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
+            throws IllegalArgumentException
+    {
+        if (options == null)
+            return;
+
+        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
+        int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
+        if (options.getNameExpression() != null && options.getNameExpression().length() > nameExpMax)
+            throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate category length
+        int categoryMax = dataClassTable.getColumn("Category").getScale();
+        if (options.getCategory() != null && options.getCategory().length() > categoryMax)
+            throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
+
+        if (options.getSampleSet() != null)
+        {
+            ExpSampleSet ss = SampleSetService.get().getSampleSet(c, u, options.getSampleSet());
+            if (ss == null)
+                throw new IllegalArgumentException("SampleSet '" + options.getSampleSet() + "' not found.");
+
+            if (!ss.getContainer().equals(c))
+                throw new IllegalArgumentException("Associated SampleSet must be defined in the same container as this DataClass.");
+        }
     }
 
     @Override

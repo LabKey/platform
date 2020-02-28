@@ -241,7 +241,7 @@ public class UniqueValueCounterTestCase
 
         final String nameExpression = "DC-${one}.${two}.${three}";
 
-        final ExpDataClass dc = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, nameExpression, null);
+        final ExpDataClass dc = ExperimentServiceImpl.get().createDataClass(c, user, dataClassName, null, props, emptyList(), null, nameExpression, null, null);
         assertNotNull(dc);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("exp", "data"));

@@ -124,6 +124,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
@@ -1151,6 +1153,23 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    public class DataClassDesignerAction extends SimpleViewAction<DataClassForm>
+    {
+        public ModelAndView getView(DataClassForm form, BindException errors)
+        {
+            //TODO any checks to do here for the edit DataClass case?
+
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "dataClassDesigner");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("dataClass");
+            return root.addChild("Data Class Designer");
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
     public class InsertDataClassAction extends FormViewAction<InsertDataClassForm>
     {
         private ActionURL _successUrl;
@@ -1236,6 +1255,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("dataClass");
             return root.addChild("Create Data Class");
         }
     }
