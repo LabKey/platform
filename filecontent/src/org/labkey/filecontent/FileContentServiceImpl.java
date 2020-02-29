@@ -88,6 +88,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,8 +103,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
-
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
 
 /**
  * User: klum
@@ -219,6 +218,19 @@ public class FileContentServiceImpl implements FileContentService
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 return root != null ? root.getRootNioPath() : null;
         }
+        return null;
+    }
+
+    // Returns full path of the relative path at the file root of this container
+    @Override
+    public @Nullable java.nio.file.Path getFilePathRelativeToRoot(@NotNull Container c, @NotNull ContentType type, @NotNull String relative)
+    {
+        java.nio.file.Path root = FileContentService.get().getFileRootPath(c, FileContentService.ContentType.files);
+        if (root != null)
+        {
+            return Paths.get(root.toString(), relative);
+        }
+
         return null;
     }
 

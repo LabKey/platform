@@ -81,6 +81,8 @@ public interface FileContentService
     File getFileRoot(@NotNull Container c, @NotNull ContentType type);
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type);
+    @Nullable
+    java.nio.file.Path getFilePathRelativeToRoot(@NotNull Container c, @NotNull ContentType type, @NotNull String relative);
 
     void setFileRoot(@NotNull Container c, @Nullable File root);
     void setFileRootPath(@NotNull Container c, @Nullable String root);
