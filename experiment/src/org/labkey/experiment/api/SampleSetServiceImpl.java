@@ -75,6 +75,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -678,7 +679,7 @@ public class SampleSetServiceImpl implements SampleSetService
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
-        String importAliasJson = getAliasJson(importAliases);
+        String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
@@ -734,21 +735,47 @@ public class SampleSetServiceImpl implements SampleSetService
         return ss;
     }
 
-    public String getAliasJson(Map<String, String> importAliases)
+    public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
     {
         if (importAliases == null || importAliases.size() == 0)
             return null;
 
+        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
+
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(importAliases);
+            return mapper.writeValueAsString(aliases);
         }
         catch (JsonProcessingException e)
         {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
+    {
+        Map<String, String> cleanAliases = new HashMap<>();
+        importAliases.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedVal = StringUtils.trimToNull(value);
+
+            //Sanity check this should be caught earlier
+            if (trimmedKey == null || trimmedVal == null)
+                throw new IllegalArgumentException("Parent aliases contain blanks");
+
+            //Substitute the currentAliasName for the placeholder value
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_SET_ALIAS_VALUE) ||
+                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_SET_ALIAS_VALUE))
+            {
+                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+            }
+
+            cleanAliases.put(trimmedKey, trimmedVal);
+        });
+
+        return cleanAliases;
     }
 
 
@@ -829,5 +856,15 @@ public class SampleSetServiceImpl implements SampleSetService
         }
 
         return errors;
+    }
+
+    @Override
+    public boolean parentAliasHasCorrectFormat(String parentAlias)
+    {
+        //check if it is of the expected format or targeting the to be created sampleset
+        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_SET_ALIAS_VALUE.equals(parentAlias)))
+            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
+
+        return true;
     }
 }

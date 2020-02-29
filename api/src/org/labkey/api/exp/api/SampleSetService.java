@@ -37,6 +37,8 @@ import java.util.Map;
 
 public interface SampleSetService
 {
+    String NEW_SAMPLE_SET_ALIAS_VALUE = "{{this_sample_set}}";
+    String MATERIAL_INPUTS_PREFIX = "materialInputs/";
     String MODULE_NAME = "Experiment";
 
     static SampleSetService get()
@@ -132,4 +134,6 @@ public interface SampleSetService
     void indexSampleSet(ExpSampleSet sampleSet);
 
     ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
+
+    boolean parentAliasHasCorrectFormat(String parentAlias);
 }

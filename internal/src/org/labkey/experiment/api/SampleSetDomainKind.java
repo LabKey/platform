@@ -21,7 +21,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -36,14 +35,12 @@ import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.api.DomainKindProperties;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.AbstractDomainKind;
-import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -63,7 +60,6 @@ import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -119,7 +115,6 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         return NAME;
     }
 
-//TODO Remove or use?
     @Override
     public Class<? extends SampleTypeDomainKindProperties> getTypeClass()
     {
@@ -279,6 +274,100 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                                             @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
         return SampleSetService.get().updateSampleSet(original, update, options, container, user, includeWarnings);
+    }
+
+    @Override
+    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, boolean isUpdate)
+    {
+        if (options == null)
+        {
+            return;  //TODO verify this is correct...
+        }
+
+        super.validateOptions(container, user, options, isUpdate);
+
+        //TODO these are supplied within the domainDesign fields
+//        String name = StringUtils.trimToNull(options.getName());
+//        if (!isUpdate)
+//        {
+//            if (name == null)
+//            {
+//                throw new IllegalArgumentException("You must supply a name for the sample type.");
+//            }
+//            else
+//            {
+//                ExpSampleSet ss = SampleSetService.get().getSampleSet(container, user, name);
+//                if (ss != null)
+//                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
+//            }
+//        }
+
+        // verify the length of the Name and NameExpression values
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
+
+        //TODO this supplied within the domainDesign fields
+//        int nameMax = materialSourceTI.getColumn("Name").getScale();
+//        if (name != null && name.length() >= nameMax)
+//            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+
+        int nameExpMax = materialSourceTI.getColumn("NameExpression").getScale();
+        if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
+            throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+
+        Map<String, String> aliasMap = options.getImportAliases();
+        if (aliasMap == null || aliasMap.size() == 0)
+            return;
+
+        //TODO verify rowId value for create
+        SampleSetService ss = SampleSetService.get();
+        ExpSampleSet sampleSet = options.getRowId() != -1 ? ss.getSampleSet(options.getRowId()) : null;
+        Domain domain = sampleSet != null ? sampleSet.getDomain() : null;
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(domain));
+        Set<String> existingAliases = new CaseInsensitiveHashSet();
+        Set<String> dupes = new CaseInsensitiveHashSet();
+
+        try
+        {
+            if (sampleSet != null)
+                existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
+        final Set<String> finalExistingAliases = existingAliases;
+        aliasMap.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedValue = StringUtils.trimToNull(value);
+            if (trimmedKey == null)
+                throw new IllegalArgumentException("Import alias heading cannot be blank");
+
+            if (trimmedValue == null)
+            {
+                throw new IllegalArgumentException("Import parent alias cannot be blank, targeted parent may have been deleted.");
+            }
+
+            if (reservedNames.contains(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
+            }
+
+            if (domain != null && !finalExistingAliases.contains(trimmedKey) && domain.getPropertyByName(trimmedKey) != null)
+            {
+                throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
+            }
+
+            if (!dupes.add(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
+            }
+
+            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_SET_ALIAS_VALUE
+            if (!ss.parentAliasHasCorrectFormat(trimmedValue))
+                throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
+        });
     }
 
     @Override

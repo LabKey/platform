@@ -42,17 +42,17 @@ public class SampleTypeDomainKindProperties implements Cloneable
         }
     }
 
-    private String name;
     private String nameExpression;
     private Map<String, String> importAliases;
     private int rowId;
     private int domainId;
     private String lsid;
-
-    //Ignored on import/save, use Domain.description instead
-    private String description;
     private List<Integer> idCols;
     private Integer parentCol;
+
+    //Ignored on import/save, use Domain.name & Domain.description instead
+    private String name;
+    private String description;
 
     public void setIdCols(List<Integer> idCols)
     {

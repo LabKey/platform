@@ -290,6 +290,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.exp.api.SampleSetService.MATERIAL_INPUTS_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
@@ -3482,6 +3483,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
+    @Deprecated //Use PropertyController.SaveDomainAction
     public class UpdateMaterialSourceAction extends BaseSampleSetAction
     {
         @Override
@@ -3512,24 +3514,7 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
-    public class UpdateMaterialSourceApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
-            form.updateSampleSet(getContainer(), getUser(), sampleSet);
-            return getSampleSetApiResponse(sampleSet);
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
+    @Deprecated //Use PropertyController.CreateDomainAction
     public class CreateSampleSetAction extends BaseSampleSetAction
     {
         @Override
@@ -3550,23 +3535,6 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Sample Set");
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
-    public class CreateSampleSetApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3659,8 +3627,6 @@ public class ExperimentController extends SpringActionController
         private String lsid;
 
         private Integer domainId;
-
-        public static final String NEW_SAMPLE_SET_VALUE = "{{this_sample_set}}";
 
         //Parameter used by the Flow module
         private Boolean nameReadOnly = false;
@@ -3769,8 +3735,8 @@ public class ExperimentController extends SpringActionController
                 {
                     String key = getImportAliasKeys().get(i);
                     String val = getImportAliasValues().get(i);
-                    if (NEW_SAMPLE_SET_VALUE.equals(val))
-                        val = "materialInputs/" + this.getName();
+                    if (SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(val))
+                        val = MATERIAL_INPUTS_PREFIX + this.getName();
 
                     aliases.put(key, val);
                 }
@@ -3943,7 +3909,7 @@ public class ExperimentController extends SpringActionController
             for (String parent : importParents)
             {
                 //check if it is of the expected format or targeting the to be created sampleset
-                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || BaseSampleSetForm.NEW_SAMPLE_SET_VALUE.equals(parent)))
+                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(parent)))
                     errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }
