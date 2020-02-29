@@ -228,7 +228,12 @@ public class FileContentServiceImpl implements FileContentService
         java.nio.file.Path root = FileContentService.get().getFileRootPath(c, FileContentService.ContentType.files);
         if (root != null)
         {
-            return FileUtil.createUri(Paths.get(root.toString(), relative).toString());
+            String path = Paths.get(root.toString(), relative).toString();
+            if (!path.startsWith("/") && !path.startsWith("\\"))
+            {
+                path = "/" + path;
+            }
+            return FileUtil.createUri(path);
         }
 
         return null;
