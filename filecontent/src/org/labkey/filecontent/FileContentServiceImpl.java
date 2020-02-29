@@ -223,12 +223,12 @@ public class FileContentServiceImpl implements FileContentService
 
     // Returns full path of the relative path at the file root of this container
     @Override
-    public @Nullable java.nio.file.Path getFilePathRelativeToRoot(@NotNull Container c, @NotNull ContentType type, @NotNull String relative)
+    public @Nullable URI getFilePathRelativeToRoot(@NotNull Container c, @NotNull ContentType type, @NotNull String relative)
     {
         java.nio.file.Path root = FileContentService.get().getFileRootPath(c, FileContentService.ContentType.files);
         if (root != null)
         {
-            return Paths.get(root.toString(), relative);
+            return FileUtil.createUri(Paths.get(root.toString(), relative).toString());
         }
 
         return null;
