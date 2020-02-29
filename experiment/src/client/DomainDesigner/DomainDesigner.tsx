@@ -103,7 +103,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         this.setState(() => ({submitting: true}));
 
-        saveDomain(domain, undefined, undefined, undefined,  includeWarnings)
+        saveDomain(domain, undefined, {domainId: domain.domainId}, undefined,  includeWarnings)
             .then((savedDomain) => {
                 this.setState(() => ({
                     domain: savedDomain,
