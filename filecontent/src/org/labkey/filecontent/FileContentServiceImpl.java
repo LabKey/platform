@@ -88,7 +88,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -221,14 +220,19 @@ public class FileContentServiceImpl implements FileContentService
         return null;
     }
 
-    // Returns full path of the relative path at the file root of this container
+    // Returns full uri to file root for this container.  filePath is optional relative path to a file under the file root
     @Override
-    public @Nullable URI getFilePathRelativeToRoot(@NotNull Container c, @NotNull ContentType type, @NotNull String relative)
+    public @Nullable URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath)
     {
         java.nio.file.Path root = FileContentService.get().getFileRootPath(c, FileContentService.ContentType.files);
         if (root != null)
         {
-            String path = Paths.get(root.toString(), relative).toString();
+            String path = root.toString();
+            if (filePath != null) {
+                path += filePath;
+            }
+
+            // non-unix needs a leading slash
             if (!path.startsWith("/") && !path.startsWith("\\"))
             {
                 path = "/" + path;

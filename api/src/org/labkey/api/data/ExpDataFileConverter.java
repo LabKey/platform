@@ -129,7 +129,7 @@ public class ExpDataFileConverter implements Converter
                 if (null != container)
                 {
                     // Check for file at file root
-                    URI dataFileUri = FileContentService.get().getFilePathRelativeToRoot(container, FileContentService.ContentType.files, dataFileURL);
+                    URI dataFileUri = FileContentService.get().getFileRootUri(container, FileContentService.ContentType.files, dataFileURL);
                     if (dataFileUri == null) {
                         throw new IllegalArgumentException("Could not resolve file at file root: " + dataFileURL);
                     }
