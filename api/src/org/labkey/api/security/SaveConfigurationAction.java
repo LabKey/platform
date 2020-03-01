@@ -4,8 +4,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Table;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -72,10 +74,16 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
+            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" was created");
+            event.setChanges("created");
+            AuditLogService.get().addEvent(user, event);
         }
         else
         {
             Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
+            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" (" + form.getRowId() + ") was updated");
+            event.setChanges("updated");
+            AuditLogService.get().addEvent(user, event);
         }
 
         AuthenticationConfigurationCache.clear();
