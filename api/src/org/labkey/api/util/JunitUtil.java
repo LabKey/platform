@@ -53,25 +53,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class JunitUtil
 {
-    /**
-     * Copy an object, much as if it were round-tripped to/from a browser
-     */
-    public static Object copyObject(Object o)
-    {
-        try
-        {
-            String s = PageFlowUtil.encodeObject(o);
-            Object copy = PageFlowUtil.decodeObject(s);
-            return copy;
-        }
-        catch (IOException x)
-        {
-            assert null == "couldn't clone object " + o.toString();
-            return null;
-        }
-    }
-
-
     public static String getAttributeValue(Node elem, String attr)
     {
         Node node = elem.getAttributes().getNamedItem(attr);

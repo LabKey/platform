@@ -20,6 +20,8 @@ import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -30,8 +32,6 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
@@ -40,6 +40,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
@@ -128,8 +129,12 @@ public class ExpDataFileConverter implements Converter
                 if (null != container)
                 {
                     // Check for file at file root
-                    String root = FileContentService.get().getFileRootPath(container, FileContentService.ContentType.files).toString();
-                    data = expSvc.getExpDataByURL(FileUtil.createUri("/" + root + dataFileURL).toString(), container);
+                    URI dataFileUri = FileContentService.get().getFileRootUri(container, FileContentService.ContentType.files, dataFileURL);
+                    if (dataFileUri == null) {
+                        throw new IllegalArgumentException("Could not resolve file at file root: " + dataFileURL);
+                    }
+
+                    data = expSvc.getExpDataByURL(dataFileUri.toString(), container);
 
                     if (null == data)
                     {
