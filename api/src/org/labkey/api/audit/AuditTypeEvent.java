@@ -218,6 +218,8 @@ public class AuditTypeEvent
         return elements;
     }
 
+    
+    
     public String getAuditLogMessage()
     {
         StringBuilder builder = new StringBuilder();
