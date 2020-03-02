@@ -4,6 +4,7 @@ public class DataClassDomainKindProperties
 {
     private int rowId;
     private String lsid;
+    private int domainId;
     private String name;
     private String description;
     private String nameExpression;
@@ -97,5 +98,15 @@ public class DataClassDomainKindProperties
     public void setCategory(String category)
     {
         this.category = category;
+    }
+
+    public int getDomainId()
+    {
+        return domainId;
+    }
+
+    public void setDomainId(int domainId)
+    {
+        this.domainId = domainId;
     }
 }

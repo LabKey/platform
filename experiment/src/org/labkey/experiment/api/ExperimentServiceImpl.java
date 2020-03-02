@@ -6327,7 +6327,7 @@ public class ExperimentServiceImpl implements ExperimentService
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
-        // TODO can't these be checked a different way?
+        // TODO can't these be checked a different way? see what Ian is doing for the SampleType story
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
@@ -6359,7 +6359,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         domain.setPropertyIndices(propertyIndices);
 
-        DataClass bean = getDataClassBean(c, name, lsid.toString(), options);
+        DataClass bean = getDataClassBean(c, name, lsid.toString(), options, null);
         ExpDataClassImpl impl = new ExpDataClassImpl(bean);
         try (DbScope.Transaction tx = ensureTransaction())
         {
@@ -6368,7 +6368,9 @@ public class ExperimentServiceImpl implements ExperimentService
             domain.setPropertyForeignKeys(kind.getPropertyForeignKeys(c));
             domain.save(u);
             impl.save(u);
-            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues); // TODO do Data Classes actually support default values?
+
+            // TODO do DataClasses actually support default values? see what Ian is doing for the SampleType story
+            DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             tx.commit();
@@ -6379,13 +6381,17 @@ public class ExperimentServiceImpl implements ExperimentService
 
     @Override
     public ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
-                                        @Nullable DataClassDomainKindProperties options,
+                                        @Nullable DataClassDomainKindProperties properties,
                                         GWTDomain<? extends GWTPropertyDescriptor> original,
                                         GWTDomain<? extends GWTPropertyDescriptor> update)
     {
-        validateDataClassOptions(c, u, options); // TODO any other validation to do here for the update case?
+        // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
+        DataClassDomainKindProperties options = properties != null && properties.getRowId() > 0 ? properties : null;
 
-        DataClass bean = getDataClassBean(c, dataClass.getName(), dataClass.getLSID(), options);
+        // TODO any other validation to do here for the update case? see what Ian is doing for the SampleType story
+        validateDataClassOptions(c, u, options);
+
+        DataClass bean = getDataClassBean(c, dataClass.getName(), dataClass.getLSID(), options, dataClass);
         bean.setRowId(dataClass.getRowId());
 
         ExpDataClassImpl impl = new ExpDataClassImpl(bean);
@@ -6401,19 +6407,19 @@ public class ExperimentServiceImpl implements ExperimentService
         return errors;
     }
 
-    private DataClass getDataClassBean(Container c, String name, String lsid, @Nullable DataClassDomainKindProperties options)
+    private DataClass getDataClassBean(Container c, String name, String lsid, DataClassDomainKindProperties options, ExpDataClass original)
     {
         DataClass dataClass = new DataClass();
         dataClass.setContainer(c);
         dataClass.setName(name);
         dataClass.setLSID(lsid);
-        if (options != null)
-        {
-            dataClass.setDescription(options.getDescription());
-            dataClass.setNameExpression(options.getNameExpression());
-            dataClass.setMaterialSourceId(options.getSampleSet());
-            dataClass.setCategory(options.getCategory());
-        }
+
+        // the editable options for an existing data class
+        dataClass.setDescription(options != null ? options.getDescription() : original.getDescription());
+        dataClass.setNameExpression(options != null ? options.getNameExpression() : original.getNameExpression());
+        dataClass.setMaterialSourceId(options != null ? options.getSampleSet() : original.getSampleSet() != null ? original.getSampleSet().getRowId() : null);
+        dataClass.setCategory(options != null ? options.getCategory() : original.getCategory());
+
         return dataClass;
     }
 

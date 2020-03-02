@@ -210,31 +210,18 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public Domain createDomain(GWTDomain domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        if (name == null)
-            throw new IllegalArgumentException("DataClass name required");
-
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        // TODO is this a duplicate check? doesn't this also happen in createDataClass? same as the name == null above
-        Integer sampleSetId = options.getSampleSet();
-        if (sampleSetId != null)
-        {
-            ExpSampleSet ss = SampleSetService.get().getSampleSet(container, sampleSetId);
-            if (ss == null)
-                throw new NotFoundException("Unable to find sample set for rowId " + sampleSetId + ".");
-        }
-
-        ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);
+            return dataClass.getDomain();
         }
         catch (ExperimentException e)
         {
             throw new RuntimeException(e);
         }
-        return dataClass.getDomain();
     }
 
     @Override
