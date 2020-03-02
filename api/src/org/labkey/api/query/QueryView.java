@@ -946,7 +946,6 @@ public class QueryView extends WebPartView<Object>
 
         populateChartsReports(bar);
 
-
         if ((canInsert() || allowQueryTableInsertURLOverride()) && (showInsertNewButton() || showImportDataButton()))
         {
             bar.add(createInsertMenuButton());
@@ -2220,9 +2219,12 @@ public class QueryView extends WebPartView<Object>
         if (!(isApiResponseView() || isPrintView() || isExportView()))
         {
             populateButtonBar(ret, bb);
+
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
+            // Print button is rendered separately to respect ordering -- we want it rendering after all custom buttons
+            // added by overrides of populateButtonBar().
             bb.add(createPrintButton());
-//            bb.add(populateMoreMenu(ret));
+//        bar.add(populateMoreMenu());
         }
         rgn.setButtonBar(bb);
 

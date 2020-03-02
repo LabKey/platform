@@ -15,20 +15,24 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.assay.plate.PlateService" %>
+<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
+<%@ page import="org.labkey.api.assay.plate.PlateTypeHandler" %>
+<%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.security.permissions.DeletePermission" %>
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.security.permissions.UpdatePermission" %>
-<%@ page import="org.labkey.api.assay.plate.PlateTemplate" %>
-<%@ page import="org.labkey.api.assay.plate.PlateTypeHandler" %>
-<%@ page import="org.labkey.api.assay.security.DesignAssayPermission" %>
+<%@ page import="org.labkey.api.util.Link" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.assay.PlateController" %>
 <%@ page import="org.labkey.assay.plate.PlateManager" %>
+<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -36,6 +40,12 @@
     JspView<PlateController.PlateTemplateListBean> me = (JspView<PlateController.PlateTemplateListBean>) HttpView.currentView();
     Container c = getContainer();
     List<? extends PlateTemplate> plateTemplates = me.getModelBean().getTemplates();
+    Map<PlateTemplate, Integer> plateTemplateRunCount = new HashMap<>();
+    for (PlateTemplate template : plateTemplates)
+    {
+        int count = PlateService.get().getRunCountUsingPlateTemplate(c, template);
+        plateTemplateRunCount.put(template, count);
+    }
 %>
 
 <script type="application/javascript">
@@ -87,6 +97,8 @@
 <table class="labkey-data-region-legacy labkey-show-borders">
     <tr>
         <td class="labkey-column-header">Name</td>
+        <td class="labkey-column-header">Type</td>
+        <td class="labkey-column-header">Usage Count</td>
         <td class="labkey-column-header">&nbsp;</td>
     </tr>
 <%
@@ -94,17 +106,34 @@
     boolean isAssayDesigner = c.hasPermission(getUser(), DesignAssayPermission.class);
     for (PlateTemplate template : plateTemplates)
     {
+        Integer runCount = plateTemplateRunCount.get(template);
+
+        ActionURL editUrl = new ActionURL(PlateController.DesignerAction.class, getContainer())
+                .addParameter("templateName", template.getName())
+                .addParameter("plateId", template.getRowId());
+
+        Link.LinkBuilder editLink = new Link.LinkBuilder("edit");
+        if (runCount > 0)
+        {
+            editLink.tooltip("Plate template is used by " + runCount + " runs and can't be edited")
+                    .clearClasses()
+                    .addClass("labkey-disabled-text-link");
+        }
+        else
+        {
+            editLink.href(editUrl);
+        }
 %>
     <tr class="<%=getShadeRowClass(index)%>">
         <td><%= h(template.getName()) %></td>
+        <td><%= h(template.getType()) %></td>
+        <td><%= h(runCount) %></td>
         <td>
         <%
             if (isAssayDesigner || c.hasPermission(getUser(), UpdatePermission.class))
             {
         %>
-            <%= link("edit", new ActionURL(PlateController.DesignerAction.class, getContainer()).
-                addParameter("templateName", template.getName()).
-                addParameter("plateId", template.getRowId())) %>
+            <%= editLink %>
         <%
             }
             if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
@@ -128,8 +157,19 @@
             {
                 if (plateTemplates.size() > 1)
                 {
+                    Link.LinkBuilder deleteLink = new Link.LinkBuilder("delete");
+                    if (runCount > 0)
+                    {
+                        deleteLink.tooltip("Plate template is used by " + runCount + " runs and can't be deleted")
+                                .clearClasses()
+                                .addClass("labkey-disabled-text-link");
+                    }
+                    else
+                    {
+                        deleteLink.onClick("deletePlate(" + q(template.getName()) + "," + template.getRowId() + ")");
+                    }
         %>
-                    <a href="javascript:{}" onclick="deletePlate(<%=q(template.getName())%>, <%=template.getRowId()%>);" class="labkey-text-link">delete</a>
+                    <%= deleteLink %>
         <%
                 }
                 else

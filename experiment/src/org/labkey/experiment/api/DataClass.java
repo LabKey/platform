@@ -30,6 +30,7 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     private String _description;
     private String _nameExpression;
     private Integer _materialSourceId;
+    private String _category;
 
     public String getDescription()
     {
@@ -62,6 +63,16 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
         _materialSourceId = materialSourceId;
     }
 
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    public void setCategory(String category)
+    {
+        _category = category;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -82,5 +93,4 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     {
         return getName().compareToIgnoreCase(o.getName());
     }
-
 }

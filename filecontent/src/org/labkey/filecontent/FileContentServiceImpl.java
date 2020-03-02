@@ -103,8 +103,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
-
 /**
  * User: klum
  * Date: Dec 9, 2009
@@ -219,6 +217,29 @@ public class FileContentServiceImpl implements FileContentService
                 PipeRoot root = PipelineService.get().findPipelineRoot(c);
                 return root != null ? root.getRootNioPath() : null;
         }
+        return null;
+    }
+
+    // Returns full uri to file root for this container.  filePath is optional relative path to a file under the file root
+    @Override
+    public @Nullable URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath)
+    {
+        java.nio.file.Path root = FileContentService.get().getFileRootPath(c, FileContentService.ContentType.files);
+        if (root != null)
+        {
+            String path = root.toString();
+            if (filePath != null) {
+                path += filePath;
+            }
+
+            // non-unix needs a leading slash
+            if (!path.startsWith("/") && !path.startsWith("\\"))
+            {
+                path = "/" + path;
+            }
+            return FileUtil.createUri(path);
+        }
+
         return null;
     }
 

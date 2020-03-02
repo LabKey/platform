@@ -15,11 +15,18 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
+<%
+    Container c = getContainer();
+    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
+%>
 <script type="text/javascript">
 
     function deleteExisting(hostToDelete) {
@@ -73,7 +80,7 @@
 
             <td><input type="text" id="<%=h(inputNameExisting)%>" name="<%=h(inputNameExisting)%>" value="<%= h(externalRedirectHost)%>" size="80"/></td>
 
-            <td><%= button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalRedirectHost) + "\");") %>
+            <td><%=isTroubleshooter ? HtmlString.EMPTY_STRING : button("Delete").primary(true).onClick("return deleteExisting(\"" + h(externalRedirectHost) + "\");") %>
 
             </td>
         </tr>
@@ -88,7 +95,7 @@
             <input type="hidden" id="existingExternalRedirectHosts" name="existingExternalRedirectHosts" value="" />
             <tr>
                 <td></td>
-                <td><br/><input type="hidden" id="saveAll" name="saveAll"><%= button("Save").primary(true).onClick("return saveAll();")%>
+                <td><br/><input type="hidden" id="saveAll" name="saveAll"><%=isTroubleshooter ? button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) : button("Save").primary(true).onClick("return saveAll();")%>
             </tr>
         <% } %>
 </labkey:form>

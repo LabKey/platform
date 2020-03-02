@@ -43,6 +43,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.Project;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
@@ -110,13 +111,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -125,6 +128,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -136,12 +140,18 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
+import static org.labkey.api.util.DOM.Attribute.valign;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 
 public class PageFlowUtil
@@ -759,43 +769,70 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
-        ObjectOutputStream oos = new ObjectOutputStream(osCompressed);
-        oos.writeObject(o);
-        oos.close();
+        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os))
+        {
+            Class cls = o.getClass();
+            final JSONObject json;
+            if (o instanceof Map)
+            {
+                json = new JSONObject((Map)o);
+            }
+            else
+            {
+                ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
+                json = new JSONObject();
+                f.toMap(o, json);
+            }
+            // TODO remove class prefixing when we remove decodeObject(String s)
+            w.write(cls.getName() + ":" + json.toString());
+        }
         osCompressed.close();
         return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true));
     }
 
-
-    public static Object decodeObject(String s) throws IOException
+    public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
     {
-        s = StringUtils.trimToNull(s);
-        if (null == s)
+        encoded = StringUtils.trimToNull(encoded);
+        if (null == encoded)
             return null;
 
-        try
-        {
-            byte[] buf = Base64.decodeBase64(s.getBytes());
-            ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
-            InputStream isCompressed;
+        byte[] buf = Base64.decodeBase64(encoded.getBytes());
+        ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
+        InputStream isCompressed;
 
-            if (COMPRESS_OBJECT_STREAMS)
-            {
-                isCompressed = new InflaterInputStream(byteArrayInputStream);
-            }
-            else
-            {
-                isCompressed = byteArrayInputStream;
-            }
-            ObjectInputStream ois = new ObjectInputStream(isCompressed);
-            return ois.readObject();
-        }
-        catch (ClassNotFoundException x)
+        if (COMPRESS_OBJECT_STREAMS)
         {
-            throw new IOException(x.getMessage());
+            isCompressed = new InflaterInputStream(byteArrayInputStream);
+        }
+        else
+        {
+            isCompressed = byteArrayInputStream;
+        }
+        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is))
+        {
+            // TODO remove class prefixing when we remove decodeObject(String s)
+            String s = IOUtils.toString(r);
+            int i = s.indexOf(":");
+            String clsName = s.substring(0,i);
+            s = s.substring(i+1);
+            JSONObject json = new JSONObject(s);
+            if (Object.class == cls)
+                cls = (Class<T>) Class.forName(clsName);
+
+            if (cls == Map.class || cls == HashMap.class)
+                return (T)json;
+
+            ObjectFactory f = ObjectFactory.Registry.getFactory(cls);
+            Object o = f.fromMap(json);
+            if (cls.isAssignableFrom(o.getClass()))
+                return (T)o;
+            throw new ClassCastException("Could not create class: " + cls.getName());
+        }
+        catch (ClassNotFoundException|IllegalArgumentException x)
+        {
+            throw new IOException(x);
         }
     }
-
 
     public static int[] toInts(Collection<String> strings)
     {
@@ -2406,6 +2443,52 @@ public class PageFlowUtil
     //
     // TestCase
     //
+    public static class TestBean
+    {
+        private int i;
+        private String s;
+        private Date d;
+
+        public TestBean(){}
+
+        public TestBean(int i, String s, Date d)
+        {
+            this.i = i;
+            this.s = s;
+            this.d = d;
+        }
+
+        public int getI()
+        {
+            return i;
+        }
+
+        public void setI(int i)
+        {
+            this.i = i;
+        }
+
+        public String getS()
+        {
+            return s;
+        }
+
+        public void setS(String s)
+        {
+            this.s = s;
+        }
+
+        public Date getD()
+        {
+            return d;
+        }
+
+        public void setD(Date d)
+        {
+            this.d = d;
+        }
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -2501,6 +2584,25 @@ public class PageFlowUtil
             testMakeHtmlId("ABC");
             testMakeHtmlId("!BC234");
             testMakeHtmlId("1A-34-FB-44");
+        }
+
+        @Test
+        public void testEncodeObject() throws Exception
+        {
+            TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
+            String s = encodeObject(bean);
+
+            TestBean copy = decodeObject(TestBean.class, s);
+            assertNotNull(copy);
+            assertEquals(bean.i, copy.i);
+            assertEquals(bean.s, copy.s);
+            assertEquals(bean.d, copy.d);
+
+            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
+            assertNotNull(map);
+            assertEquals(bean.i, map.get("i"));
+            assertEquals(bean.s, map.get("s"));
+            assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
         }
 
         private void testMakeHtmlId(@Nullable String id)
@@ -2724,29 +2826,25 @@ public class PageFlowUtil
         }
     }
 
-    public static String getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
+    public static HtmlString getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
     {
         Map<String, String> stringValMap = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : propValueMap.entrySet())
-            stringValMap.put(entry.getKey(), entry.getValue().toString());
+            stringValMap.put(entry.getKey(), null==entry.getValue() ? "" : entry.getValue().toString());
         return getDataRegionHtmlForPropertyValues(stringValMap);
     }
 
-    public static String getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
+    public static HtmlString getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
-        sb.append("<tr><td class=\"labkey-column-header\">Property</td><td class=\"labkey-column-header\">Value</td></tr>\n");
-        int rowCount = 0;
-        for (Map.Entry<String, String> entry : propValueMap.entrySet())
-        {
-            sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
-            sb.append("<td valign=\"top\">").append(entry.getKey()).append("</td>");
-            sb.append("<td valign=\"top\">").append(entry.getValue()).append("</td>");
-            sb.append("</tr>\n");
-            rowCount++;
-        }
-        sb.append("</table>\n");
-        return sb.toString();
+        final AtomicInteger rowCount = new AtomicInteger();
+        DOM.TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
+                TR(TD(cl("labkey-column-header"),"Property"),TD(cl("labkey-column-header"),"Value")),
+                propValueMap.entrySet().stream().map(entry ->
+                    TR(cl(rowCount.getAndIncrement() % 2 == 0, "labkey-alternate-row", "labkey-row"),
+                        TD(at(valign,"top"),entry.getKey()),
+                        TD(at(valign,"top"),entry.getValue())))
+        ).appendTo(sb);
+        return HtmlString.unsafe(sb.toString());
     }
 }

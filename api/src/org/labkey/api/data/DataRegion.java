@@ -45,6 +45,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -2110,9 +2111,9 @@ public class DataRegion extends DisplayElement
 
     protected void renderMainErrors(RenderContext ctx, Writer out) throws IOException
     {
-        String error = ctx.getErrors("main");
+        HtmlString error = ctx.getErrors("main");
         if (null != error)
-            out.write(error);
+            out.write(error.toString());
     }
 
     protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
@@ -2147,7 +2148,7 @@ public class DataRegion extends DisplayElement
             if (renderer.isQueryColumn())
                 col = renderer.getColumnInfo();
 
-            String error = viewForm == null || col == null ? "" : ctx.getErrors(col);
+            String error = viewForm == null || col == null ? "" : ctx.getErrors(col).toString();
             if (error != null && error.length() > 0)
             {
                 errors.add(error);
@@ -2711,9 +2712,6 @@ public class DataRegion extends DisplayElement
                 int dotIndex = formatted.lastIndexOf('.');
                 if (dotIndex >= 0)
                     formatted = formatted.substring(dotIndex + 1);
-                int slashIndex = formatted.lastIndexOf('/');
-                if (slashIndex >= 0)
-                    formatted = formatted.substring(slashIndex);
                 return formatted;
             }
         });

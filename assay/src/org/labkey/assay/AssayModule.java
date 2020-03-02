@@ -26,6 +26,8 @@ import org.labkey.api.assay.AssayRunType;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -53,7 +55,10 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.assay.pipeline.AssayImportRunTask;
+import org.labkey.assay.plate.AssayPlateDataDomainKind;
 import org.labkey.assay.plate.PlateManager;
+import org.labkey.assay.plate.AssayPlateMetadataServiceImpl;
+import org.labkey.assay.plate.TsvPlateTypeHandler;
 import org.labkey.assay.plate.query.PlateSchema;
 import org.labkey.assay.query.AssayDbSchema;
 import org.labkey.assay.query.AssaySchemaImpl;
@@ -87,7 +92,7 @@ public class AssayModule extends SpringModule
     @Override
     public Double getSchemaVersion()
     {
-        return 20.000;
+        return 20.003;
     }
 
     @Override
@@ -127,6 +132,10 @@ public class AssayModule extends SpringModule
         // Register early so file-based assays are available to Java code at upgrade time
         ExperimentService.get().registerExperimentDataHandler(new TsvDataHandler());
         ExperimentService.get().registerExperimentDataHandler(new FileBasedModuleDataHandler());
+        ExperimentService.get().registerExperimentDataHandler(new PlateMetadataDataHandler());
+        AssayPlateMetadataService.registerService(PlateMetadataDataHandler.DATA_TYPE, new AssayPlateMetadataServiceImpl());
+        PropertyService.get().registerDomainKind(new AssayPlateDataDomainKind());
+        PlateService.get().registerPlateTypeHandler(new TsvPlateTypeHandler());
 
         PropertyService.get().registerDomainKind(new DefaultAssayDomainKind());
         PropertyService.get().registerDomainKind(new AssayBatchDomainKind());
@@ -251,7 +260,8 @@ public class AssayModule extends SpringModule
         return Set.of(
             TsvAssayProvider.TestCase.class,
             AssaySchemaImpl.TestCase.class,
-            AssayProviderSchema.TestCase.class
+            AssayProviderSchema.TestCase.class,
+            PlateManager.TestCase.class
         );
     }
 }

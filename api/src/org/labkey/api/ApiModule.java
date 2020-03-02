@@ -178,6 +178,7 @@ public class ApiModule extends CodeOnlyModule
             RReport.TestCase.class,
             Sampler.TestCase.class,
             SchemaKey.TestCase.class,
+            SessionHelper.TestCase.class,
             SimpleFilter.BetweenClauseTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,

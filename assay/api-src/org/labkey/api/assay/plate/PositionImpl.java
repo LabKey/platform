@@ -72,11 +72,13 @@ public class PositionImpl implements Position
         _column = column;
     }
 
+    @Override
     public int getColumn()
     {
         return _column;
     }
 
+    @Override
     public int getRow()
     {
         return _row;
@@ -102,6 +104,7 @@ public class PositionImpl implements Position
         return "(" + getRow() + ", " + getColumn() + ")";
     }
 
+    @Override
     public Integer getRowId()
     {
         return _rowId;

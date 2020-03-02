@@ -835,6 +835,8 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
     emptyDisplayValue: '[Blank]',
 
+    gridID: Ext.id(),
+
     initComponent : function() {
 
         Ext.apply(this, {
@@ -850,11 +852,15 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             items: [{
                 layout: 'hbox',
                 style: 'padding-bottom: 5px; overflow-x: hidden',
-                width: 100,
                 defaults: {
                     border: false
                 },
-                items: []
+                items: [{
+                    xtype: 'label',
+                    id: this.gridID + 'OverflowLabel',
+                    hidden: true,
+                    text: 'There are more than ' + this.MAX_FILTER_CHOICES + ' values. Showing a partial list.'
+                }]
             }]
         });
 
@@ -996,7 +1002,6 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             }
         });
 
-        this.gridID = Ext.id();
         var me = this;
 
         return {
@@ -1212,7 +1217,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     div.on('click', grid.onHeaderCellClick, grid);
                 }
 
-                if (numFacets > this.MAX_FILTER_CHOICES) {
+                // Issue 39727 - show a message if we've capped the number of options shown
+                Ext.getCmp(this.gridID + 'OverflowLabel').setVisible(this.overflow);
+
+                if (this.overflow) {
                     this.fireEvent('invalidfilter');
                 }
             }
@@ -1252,7 +1260,11 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             success : function(d) {
                 if (d && d.values) {
                     var recs = [], v, i=0, hasBlank = false, isString, formattedValue;
-                    for (; i < d.values.length; i++) {
+
+                    // Issue 39727 - remember if we exceeded our cap so we can show a message
+                    this.overflow = d.values.length > this.MAX_FILTER_CHOICES;
+
+                    for (; i < Math.min(d.values.length, this.MAX_FILTER_CHOICES); i++) {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
                         isString = Ext.isString(formattedValue);

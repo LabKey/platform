@@ -27,6 +27,7 @@ import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -141,7 +142,7 @@ public class UsersDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         return super.createDomain(domain, arguments, getDomainContainer(), user, templateInfo);
     }

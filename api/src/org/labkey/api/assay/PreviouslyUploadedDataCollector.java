@@ -97,10 +97,14 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         String separator = "";
         for (Map.Entry<String, File> entry : _uploadedFiles.entrySet())
         {
-            sb.append(separator);
-            separator = ", ";
-            sb.append(PageFlowUtil.filter(entry.getValue().getName()));
-            sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
+            // exclude the plate metadata file (if supported)
+            if (!AssayDataCollector.PLATE_METADATA_FILE.equals(entry.getKey()))
+            {
+                sb.append(separator);
+                separator = ", ";
+                sb.append(PageFlowUtil.filter(entry.getValue().getName()));
+                sb.append(getHiddenFormElementHTML(context.getContainer(), entry.getKey(), entry.getValue()));
+            }
         }
         return new HtmlView(sb.toString());
     }

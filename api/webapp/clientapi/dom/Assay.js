@@ -79,6 +79,9 @@ LABKEY.Assay = new function(impl) {
         if (config.dataRows)
             formData.append("dataRows", JSON.stringify(config.dataRows));
 
+        if (config.plateMetadata)
+            formData.append("plateMetadata", JSON.stringify(config.plateMetadata));
+
         if (config.runFilePath)
             formData.append("runFilePath", config.runFilePath);
 

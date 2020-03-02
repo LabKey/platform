@@ -1,4 +1,4 @@
-package org.labkey.experiment.api;
+package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -18,7 +18,7 @@ public class ReexecutableDataregion extends DataRegion
 
     // close current result set and update query parameters
     // usually followed immediately by call to getResults()
-    void reset(ReexecutableRenderContext ctx, Map<String, Object> currentParameters)
+    public void reset(ReexecutableRenderContext ctx, Map<String, Object> currentParameters)
     {
         ctx.setRow(Collections.emptyMap());
         Results results = ctx.getResults();

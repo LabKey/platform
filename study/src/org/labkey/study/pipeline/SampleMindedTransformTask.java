@@ -437,7 +437,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         StudyManager sm = StudyManager.getInstance();
         String primaryTypeSelectName = StudySchema.getInstance().getTableInfoSpecimenPrimaryType(c).getSelectName();
         String derivativeSelectName = StudySchema.getInstance().getTableInfoSpecimenDerivative(c).getSelectName();
-        for (Location l : sm.getSites(c))
+        for (Location l : sm.getLocations(c))
             _labIds.put(l.getLabel(), l.getRowId());
         (new SqlSelector(study,"SELECT primaryType, rowId FROM " + primaryTypeSelectName + " WHERE container=?", c)).forEach(rs -> _primaryIds.put(rs.getString(1), rs.getInt(2)));
         (new SqlSelector(study,"SELECT derivative, rowId FROM " + derivativeSelectName + " WHERE container=?", c)).forEach(rs -> _derivativeIds.put(rs.getString(1), rs.getInt(2)));
