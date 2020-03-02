@@ -40,6 +40,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -48,7 +49,10 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
@@ -86,6 +90,7 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
@@ -127,7 +132,10 @@ import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.metadata.MetadataServiceImpl;
+import org.labkey.query.metadata.client.GWTColumnInfo;
+import org.labkey.query.metadata.client.GWTTableInfo;
 import org.labkey.query.metadata.client.MetadataEditor;
+import org.labkey.query.metadata.client.MetadataUnavailableException;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -6661,34 +6669,322 @@ public class QueryController extends SpringActionController
         public Object execute(QueryForm queryForm, BindException errors) throws Exception
         {
             QueryDefinition queryDef = queryForm.getQueryDef();
-
-            GWTDomain queryDefDomain = new GWTDomain();
-            queryDefDomain.setName(queryDef.getName());
-            queryDefDomain.setDescription(queryDef.getDescription());
-            queryDefDomain.setSchemaName(queryDef.getSchema().getSchemaName());
-            queryDefDomain.setQueryName(queryDef.getName());
-
-            List<GWTPropertyDescriptor> fields = new ArrayList<>();
-
-            TableInfo queryTable = queryDef.getTable(new ArrayList<>(), true);
-            if (null != queryTable)
-            {
-                for (ColumnInfo col : queryTable.getColumns())
-                {
-                    GWTPropertyDescriptor p = new GWTPropertyDescriptor();
-                    p.setRangeURI(col.getRangeURI());
-                    p.setPropertyURI(col.getPropertyURI());
-                    p.setName(col.getName());
-
-                    fields.add(p);
-                }
-            }
-            queryDefDomain.setFields(fields);
-
-            return queryDefDomain;
+            return getMetadata(queryDef.getSchema().getSchemaName(), queryDef.getName());
         }
     }
 
+    private GWTTableInfo getMetadata(String schemaName, String tableName) throws MetadataUnavailableException
+    {
+        Map<String, GWTColumnInfo> columnInfos = new CaseInsensitiveHashMap<>();
+        List<GWTColumnInfo> orderedPDs = new ArrayList<>();
+        Set<String> injectedColumnNames = new CaseInsensitiveHashSet();
+        GWTTableInfo gwtTableInfo = new GWTTableInfo();
+        gwtTableInfo.setSchemaName(schemaName);
+        gwtTableInfo.setQueryName(tableName);
+        gwtTableInfo.setName(tableName);
+
+        UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+        if (schema == null)
+        {
+            return null;
+        }
+        TableInfo table;
+        try
+        {
+            table = schema.getTable(tableName);
+            Domain domain = table.getDomain();
+            if (domain != null)
+                gwtTableInfo.setProvisioned(domain.isProvisioned());
+        }
+        catch (QueryParseException e)
+        {
+            throw new MetadataUnavailableException(e.getMessage());
+        }
+        if (table == null)
+        {
+            return null;
+        }
+
+        for (ColumnInfo columnInfo : table.getColumns())
+        {
+            GWTColumnInfo gwtColumnInfo = new GWTColumnInfo();
+
+            gwtColumnInfo.setPropertyId(-1);
+            gwtColumnInfo.setName(columnInfo.getName());
+            columnInfos.put(gwtColumnInfo.getName(), gwtColumnInfo);
+            orderedPDs.add(gwtColumnInfo);
+
+            gwtColumnInfo.setRequired(!columnInfo.isNullable());
+            gwtColumnInfo.setLabel(columnInfo.getLabel());
+            gwtColumnInfo.setFormat(columnInfo.getFormat());
+            gwtColumnInfo.setHidden(columnInfo.isHidden());
+            gwtColumnInfo.setShownInDetailsView(columnInfo.isShownInDetailsView());
+            gwtColumnInfo.setShownInInsertView(columnInfo.isShownInInsertView());
+            gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
+            gwtColumnInfo.setDimension(columnInfo.isDimension());
+            gwtColumnInfo.setMeasure(columnInfo.isMeasure());
+            gwtColumnInfo.setRecommendedVariable(columnInfo.isRecommendedVariable());
+            gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
+            /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+            gwtColumnInfo.setPHI(columnInfo.getPHI().name());*/
+            gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
+            gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
+            gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
+            if (columnInfo.getFk() != null)
+            {
+                ForeignKey fk = columnInfo.getFk();
+                Pair<Lookup, Boolean> lookup = createLookup(fk, getContainer());
+                if (lookup != null)
+                {
+                    if (lookup.second)
+                        gwtColumnInfo.setLookupCustom(true);
+                    else
+                    {
+                        gwtColumnInfo.setLookupSchema(lookup.first.getSchemaName());
+                        gwtColumnInfo.setLookupQuery(lookup.first.getQueryName());
+                        if (lookup.first.getContainer() != null)
+                            gwtColumnInfo.setLookupContainer(lookup.first.getContainer().getPath());
+                    }
+                }
+            }
+            List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
+            gwtColumnInfo.setConditionalFormats(formats);
+        }
+
+        List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
+        if (queryDefs == null)
+        {
+            queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, true, false, null);
+            if (queryDefs != null)
+            {
+                gwtTableInfo.setUserDefinedQuery(true);
+            }
+        }
+
+        if (queryDefs != null && !queryDefs.isEmpty())
+        {
+            // Use the last QueryDef's metadata -- this should be the user's metadata override in the database if it exists
+            QueryDef queryDef = queryDefs.get(queryDefs.size()-1);
+
+            if (!getContainer().getId().equals(queryDef.getContainerId()))
+            {
+                Container c = ContainerManager.getForId(queryDef.getContainerId());
+                if (c != null)
+                {
+                    gwtTableInfo.setDefinitionFolder(c.getPath());
+                }
+            }
+            TablesDocument doc = null;
+            try
+            {
+                doc = parseDocument(queryDef.getMetaData());
+            }
+            catch (XmlException e)
+            {
+                // Just ignore the metadata override if it doesn't parse correctly
+            }
+            TableType tableType = getTableType(tableName, doc);
+            if (tableType != null)
+            {
+                if (tableType.getColumns() != null)
+                {
+                    for (ColumnType column : tableType.getColumns().getColumnArray())
+                    {
+                        GWTColumnInfo gwtColumnInfo = columnInfos.get(column.getColumnName());
+                        if (gwtColumnInfo == null)
+                        {
+                            // Omit columns that are in the XML but are no longer in the underlying table/query
+                            break;
+                        }
+                        if (column.isSetColumnTitle())
+                        {
+                            gwtColumnInfo.setLabel(column.getColumnTitle());
+                        }
+                        if (column.isSetDescription())
+                        {
+                            gwtColumnInfo.setDescription(column.getDescription());
+                        }
+                        if (column.isSetFormatString())
+                        {
+                            gwtColumnInfo.setFormat(column.getFormatString());
+                        }
+                        if (column.isSetShownInDetailsView())
+                        {
+                            gwtColumnInfo.setShownInDetailsView(column.getShownInDetailsView());
+                        }
+                        if (column.isSetDimension())
+                        {
+                            gwtColumnInfo.setDimension(column.getDimension());
+                        }
+                        if (column.isSetMeasure())
+                        {
+                            gwtColumnInfo.setMeasure(column.getMeasure());
+                        }
+                        if (column.isSetRecommendedVariable())
+                        {
+                            gwtColumnInfo.setRecommendedVariable(column.getRecommendedVariable());
+                        }
+                        else if (column.isSetKeyVariable())
+                        {
+                            gwtColumnInfo.setRecommendedVariable(column.getKeyVariable());
+                        }
+                        if (column.isSetDefaultScale())
+                        {
+                            gwtColumnInfo.setDefaultScale(column.getDefaultScale().toString());
+                        }
+                        /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+                        if (column.isSetPhi())
+                        {
+                            gwtColumnInfo.setPHI(column.getPhi().toString());
+                        }*/
+                        if (column.isSetExcludeFromShifting())
+                        {
+                            gwtColumnInfo.setExcludeFromShifting(column.getExcludeFromShifting());
+                        }
+                        if (column.isSetIsHidden())
+                        {
+                            gwtColumnInfo.setHidden(column.getIsHidden());
+                        }
+                        if (column.isSetShownInInsertView())
+                        {
+                            gwtColumnInfo.setShownInInsertView(column.getShownInInsertView());
+                        }
+                        if (column.isSetShownInUpdateView())
+                        {
+                            gwtColumnInfo.setShownInUpdateView(column.getShownInUpdateView());
+                        }
+                        if (column.getFk() != null)
+                        {
+                            gwtColumnInfo.setLookupQuery(column.getFk().getFkTable());
+                            gwtColumnInfo.setLookupSchema(column.getFk().getFkDbSchema());
+                        }
+                        if (column.isSetConditionalFormats())
+                        {
+                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
+                            List<GWTConditionalFormat> gwtFormats = new ArrayList<>();
+                            for (ConditionalFormat serverFormat : serverFormats)
+                            {
+                                gwtFormats.add(new GWTConditionalFormat(serverFormat));
+                            }
+                            gwtColumnInfo.setConditionalFormats(gwtFormats);
+                        }
+                        if (column.getWrappedColumnName() != null)
+                        {
+                            injectedColumnNames.add(column.getColumnName());
+                            gwtColumnInfo.setWrappedColumnName(column.getWrappedColumnName());
+                            ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
+                            if (tableColumn != null)
+                            {
+                                gwtColumnInfo.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                            }
+                        }
+                        else
+                        {
+                            ColumnInfo tableColumn = table.getColumn(column.getColumnName());
+                            if (tableColumn != null)
+                            {
+                                gwtColumnInfo.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                            }
+                            else
+                            {
+                                injectedColumnNames.add(column.getColumnName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
+        builtInColumnNames.removeAll(injectedColumnNames);
+        gwtTableInfo.setMandatoryFieldNames(builtInColumnNames);
+        gwtTableInfo.setFields(orderedPDs);
+
+        // TODO: figure out something better for defaultValuesURL
+        gwtTableInfo.setDefaultValuesURL(" ");
+        return gwtTableInfo;
+    }
+
+    private List<GWTConditionalFormat> convertToGWT(List<ConditionalFormat> formats)
+    {
+        List<GWTConditionalFormat> result = new ArrayList<>();
+        for (ConditionalFormat format : formats)
+        {
+            result.add(new GWTConditionalFormat(format));
+        }
+        return result;
+    }
+
+    private Pair<Lookup, Boolean> createLookup(ForeignKey fk, Container currentContainer)
+    {
+        if (fk == null)
+            return null;
+
+        boolean custom = false;
+        Lookup lookup = new Lookup();
+
+        TableInfo lookupTarget = null;
+        try
+        {
+            lookupTarget = fk.getLookupTableInfo();
+        }
+        catch (QueryParseException ignored)
+        {
+            // Be tolerant of problematic lookup targets
+        }
+
+        if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
+        {
+            if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
+            {
+                lookup.setSchemaName(lookupTarget.getPublicSchemaName());
+                lookup.setQueryName(lookupTarget.getPublicName());
+            }
+            else
+            {
+                custom = true;
+            }
+        }
+        else
+        {
+            lookup.setSchemaName(fk.getLookupSchemaName());
+            lookup.setQueryName(fk.getLookupTableName());
+        }
+
+        // Set the lookup's container if it targets some other container
+        if (lookupTarget != null && lookupTarget.getUserSchema() != null && !lookupTarget.getUserSchema().getContainer().equals(currentContainer))
+        {
+            lookup.setContainer(lookupTarget.getUserSchema().getContainer());
+        }
+
+        return Pair.of(lookup, custom);
+    }
+
+    private TableType getTableType(String name, TablesDocument doc)
+    {
+        if (doc != null && doc.getTables() != null)
+        {
+            TablesType tables = doc.getTables();
+            for (TableType tableType : tables.getTableArray())
+            {
+                if (name.equalsIgnoreCase(tableType.getTableName()))
+                {
+                    return tableType;
+                }
+            }
+        }
+        return null;
+    }
+
+    private TablesDocument parseDocument(String xml) throws XmlException
+    {
+        if (xml == null)
+        {
+            return null;
+        }
+
+        return TablesDocument.Factory.parse(xml);
+    }
 
     public static class TestCase extends AbstractActionPermissionTest
     {
