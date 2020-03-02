@@ -19,6 +19,7 @@ package org.labkey.study.pipeline;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.ImportException;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -61,9 +62,8 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         try
         {
             PipelineJob job = getJob();
-            SpecimenJobSupport support = job.getJobSupport(SpecimenJobSupport.class);
-            File specimenArchive = support.getSpecimenArchive();
-            StudyImportContext ctx = job.getJobSupport(StudyJobSupport.class).getImportContext();
+            File specimenArchive = getSpecimenArchive(job);
+            StudyImportContext ctx = getImportContext(job);
 
             doImport(specimenArchive, job, ctx, isMerge());
         }
@@ -79,11 +79,21 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return new RecordedActionSet();
     }
 
+    protected File getSpecimenArchive(PipelineJob job) throws Exception
+    {
+        SpecimenJobSupport support = job.getJobSupport(SpecimenJobSupport.class);
+        return support.getSpecimenArchive();
+    }
+
+    StudyImportContext getImportContext(PipelineJob job)
+    {
+        return job.getJobSupport(StudyJobSupport.class).getImportContext();
+    }
+
     public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge) throws PipelineJobException
     {
         doImport(inputFile, job, ctx, merge, true);
     }
-
 
     public static void doImport(@Nullable File inputFile, PipelineJob job, StudyImportContext ctx, boolean merge,
             boolean syncParticipantVisit) throws PipelineJobException
@@ -94,6 +104,9 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         // do nothing if we've specified data types and specimen is not one of them
         if (!ctx.isDataTypeSelected(StudyImportSpecimenTask.getType()))
             return;
+
+        AbstractSpecimenTask task = (AbstractSpecimenTask)job.getActiveTaskFactory().createTask(job);
+
 
         try
         {
@@ -128,7 +141,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     ctx.getLogger().info("Unzipping specimen archive " + specimenArchive.getPath());
                     String tempDirName = DateUtil.formatDateTime(new Date(), "yyMMddHHmmssSSS");
                     unzipDir = new File(specimenArchive.getParentFile(), tempDirName);
-                    List<File> files = ZipUtil.unzipToDirectory(specimenArchive, unzipDir, ctx.getLogger());
+                    ZipUtil.unzipToDirectory(specimenArchive, unzipDir, ctx.getLogger());
 
                     ctx.getLogger().info("Archive unzipped to " + unzipDir.getPath());
                     specimenDir = new FileSystemFile(unzipDir);
@@ -137,7 +150,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             else
             {
                 // the specimen files must already be "extracted" in the specimens directory
-                specimenDir = ctx.getDir("specimens");
+                specimenDir = getSpecimenDir(ctx);
             }
 
             if (specimenDir != null)
@@ -175,7 +188,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         finally
         {
             if (unzipDir != null && unzipDir.exists())
-                delete(unzipDir, ctx.getLogger());
+                delete(unzipDir, ctx);
 
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
@@ -189,12 +202,23 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         return getJob().getJobSupport(SpecimenJobSupport.class).isMerge();
     }
 
-    private static void delete(File file, Logger log)
+    /**
+     * If the specimen files are pre-exploded or loose, returns the location of the VirtualFile location.
+     */
+    protected static VirtualFile getSpecimenDir(StudyImportContext ctx) throws ImportException
     {
+        // the specimen files must already be "extracted" in the specimens directory
+        return ctx.getDir("specimens");
+    }
+
+    protected static void delete(File file, StudyImportContext ctx)
+    {
+        Logger log = ctx.getLogger();
+
         if (file.isDirectory())
         {
             for (File child : file.listFiles())
-                delete(child, log);
+                delete(child, ctx);
         }
         log.info("Deleting " + file.getPath());
         if (!file.delete())
