@@ -105,6 +105,7 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         }
     }
 
+    // TODO: Move to LabKeyStringUtils or similar
     private static @NotNull String whatChanged(AuthenticationConfiguration<?> oldConfiguration, AuthenticationConfiguration<?> newConfiguration)
     {
         MapDifference<String, Object> difference = Maps.difference(oldConfiguration.getLoggingProperties(), newConfiguration.getLoggingProperties());

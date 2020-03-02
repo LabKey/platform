@@ -1,5 +1,6 @@
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
@@ -57,7 +58,7 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
     }
 
     // Returns true if a new logo is saved
-    private boolean handleLogo(User user, SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
+    private boolean handleLogo(User user, SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, @NotNull AuthLogoType logoType) throws IOException, ServletException
     {
         if (null == configuration)
             throw new NotFoundException("Configuration not found");
@@ -96,7 +97,7 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
         return true;
     }
 
-    private void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType, String action)
+    private void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, @NotNull AuthLogoType logoType, String action)
     {
         AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(logoType.getLabel() + " logo for " + configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + configuration.getRowId() + ") was " + action);
         event.setChanges(logoType.getLabel() + " logo " + action);
