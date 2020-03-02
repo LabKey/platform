@@ -17,17 +17,30 @@ package org.labkey.api.security.roles;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.view.ViewContext;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.security.SecurityPolicy;
+import org.labkey.api.security.SecurityPolicyManager;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.view.ViewContext;
 
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.lang.reflect.Constructor;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /*
 * User: Dave
@@ -122,6 +135,14 @@ public class RoleManager
     public static List<Role> getAllRoles()
     {
         return _roles;
+    }
+
+    public static Set<Role> getSiteRoles()
+    {
+        SecurityPolicy policy = ContainerManager.getRoot().getPolicy();
+        return _roles.stream().
+                filter(r -> r.isAssignable() && r.isApplicable(policy, ContainerManager.getRoot())).
+                collect(Collectors.toSet());
     }
 
     public static void registerRole(Role role)

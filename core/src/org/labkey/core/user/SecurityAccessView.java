@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 /**
  * Created by adam on 5/31/2017.
@@ -60,6 +61,8 @@ public class SecurityAccessView extends VBox
     private final Map<Container, List<Group>> _projectGroupCache = new HashMap<>();
     private final List<AccessDetailRow> _rows = new ArrayList<>();
     private final Set<Container> _containersInList = new HashSet<>();
+    private final Set<Role> _userSiteRoles = new TreeSet<>((o1, o2) -> o1.getDisplayName().compareTo(o2.getDisplayName()));
+    private final Set<Role> _allSiteRoles = RoleManager.getSiteRoles();
 
     public SecurityAccessView(Container c, User currentUser, @NotNull UserPrincipal principal, boolean showAll)
     {
@@ -68,20 +71,31 @@ public class SecurityAccessView extends VBox
         _showAll = showAll;
         _containerTree = c.isRoot() ? ContainerManager.getContainerTree() : ContainerManager.getContainerTree(c.getProject());
 
+        // Issue 37124 : filter out site level roles from the permission report
+        boolean filterSiteRoles = c.isRoot();
+
+        buildAccessDetailList(c.isRoot() ? ContainerManager.getRoot() : null, filterSiteRoles, 0);
+
         FolderAccessForm accessForm = new FolderAccessForm();
         accessForm.setShowAll(showAll);
         accessForm.setShowCaption("show all folders");
         accessForm.setHideCaption("hide unassigned folders");
         addView(new JspView<>("/org/labkey/core/user/toggleShowAll.jsp", accessForm));
 
-        buildAccessDetailList(c.isRoot() ? ContainerManager.getRoot() : null, 0);
         AccessDetail details = new AccessDetail(_rows);
         details.setActive(_principal.isActive());
         JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/securityAccess.jsp", details);
         addView(accessView);
+
+        if (filterSiteRoles && !_userSiteRoles.isEmpty())
+        {
+            // don't include the site roles in the permission report, just list them
+            // at the top of the page
+            addView(new JspView<>("/org/labkey/core/user/siteRoles.jsp", _userSiteRoles));
+        }
     }
 
-    private void buildAccessDetailList(Container parent, int depth)
+    private void buildAccessDetailList(Container parent, boolean filterSiteRoles, int depth)
     {
         // Note: _containerTree.get() returns empty collection if no mapping or no children
         for (Container child : _containerTree.get(parent))
@@ -91,8 +105,24 @@ public class SecurityAccessView extends VBox
                 continue;
 
             SecurityPolicy policy = child.getPolicy();
-            Collection<Role> roles = policy.getEffectiveRoles(_principal);
-            roles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+            Collection<Role> allRoles = policy.getEffectiveRoles(_principal);
+            allRoles.remove(RoleManager.getRole(NoPermissionsRole.class)); //ignore no perms
+
+            List<Role> roles = new ArrayList<>();
+            if (filterSiteRoles)
+            {
+                // filter out site level roles to avoid cluttering the permissions report, this is the case
+                // only when viewing the permissions report at the site level
+                for (Role role : allRoles)
+                {
+                    if (_allSiteRoles.contains(role))
+                        _userSiteRoles.add(role);
+                    else
+                        roles.add(role);
+                }
+            }
+            else
+                roles.addAll(allRoles);
 
             Map<String, List<Group>> childAccessGroups = new TreeMap<>();
 
@@ -135,7 +165,7 @@ public class SecurityAccessView extends VBox
                 }
             }
 
-            buildAccessDetailList(child, depth + 1);
+            buildAccessDetailList(child, filterSiteRoles, depth + 1);
         }
     }
 }
