@@ -1,6 +1,9 @@
 package org.labkey.api.security;
 
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.MutatingApiAction;
@@ -12,6 +15,8 @@ import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -74,19 +79,57 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         if (null == form.getRowId())
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
+            AuthenticationConfigurationCache.clear();
             AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" was created");
             event.setChanges("created");
             AuditLogService.get().addEvent(user, event);
         }
         else
         {
+            AuthenticationConfiguration<?> oldConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
             Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
-            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" (" + form.getRowId() + ") was updated");
-            event.setChanges("updated");
-            AuditLogService.get().addEvent(user, event);
-        }
+            AuthenticationConfigurationCache.clear();
+            AuthenticationConfiguration<?> newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
 
-        AuthenticationConfigurationCache.clear();
+            if (null != oldConfiguration && null != newConfiguration)
+            {
+                String whatChanged = whatChanged(oldConfiguration, newConfiguration);
+
+                if (!whatChanged.isEmpty())
+                {
+                    AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" (" + form.getRowId() + ") was updated");
+                    event.setChanges(whatChanged);
+                    AuditLogService.get().addEvent(user, event);
+                }
+            }
+        }
+    }
+
+    private static @NotNull String whatChanged(AuthenticationConfiguration<?> oldConfiguration, AuthenticationConfiguration<?> newConfiguration)
+    {
+        MapDifference<String, Object> difference = Maps.difference(oldConfiguration.getLoggingProperties(), newConfiguration.getLoggingProperties());
+
+        List<String> list = new LinkedList<>();
+
+        difference.entriesOnlyOnLeft().entrySet().stream()
+            .map(e->e.getKey() + ": " + truncate(e.getValue()) + " » ")
+            .forEach(list::add);
+
+        difference.entriesOnlyOnRight().entrySet().stream()
+            .map(e->e.getKey() + ": » " + truncate(e.getValue()))
+            .forEach(list::add);
+
+        difference.entriesDiffering().entrySet().stream()
+            .map(e->e.getKey() + ": " + truncate(e.getValue().leftValue()) + " » " + truncate(e.getValue().rightValue()))
+            .forEach(list::add);
+
+        return String.join(", ", list);
+    }
+
+    private static String truncate(Object o)
+    {
+        String s = String.valueOf(o);
+        return s.length() > 50 ? s.substring(0, 47) + "..." : s;
     }
 
     protected AC getFromCache(int rowId)

@@ -122,7 +122,7 @@ public class AuthenticationSettingsAuditTypeProvider extends AbstractAuditTypePr
     public static class AuthSettingsAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "AuthenticationProviderConfigAuditDomain"; // Leave old name for backward compatibility
-        public static String NAMESPACE_PREFIX = "Audit-" + NAME;
+        public static final String NAMESPACE_PREFIX = "Audit-" + NAME;
 
         private final Set<PropertyDescriptor> _fields;
 

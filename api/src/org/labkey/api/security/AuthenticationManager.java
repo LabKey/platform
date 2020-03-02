@@ -77,6 +77,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -120,16 +121,23 @@ public class AuthenticationManager
 
     public enum AuthLogoType
     {
-        HEADER("auth_header_logo", "16"),
-        LOGIN_PAGE("auth_login_page_logo", "32");
+        HEADER("header", "auth_header_logo", "16"),
+        LOGIN_PAGE("login page", "auth_login_page_logo", "32");
 
+        private final String _label;
         private final String _fileName;
         private final String _height;
 
-        AuthLogoType(String fileName, String height)
+        AuthLogoType(String label, String fileName, String height)
         {
+            _label = label;
             _fileName = fileName;
             _height = height;
+        }
+
+        public String getLabel()
+        {
+            return _label;
         }
 
         public String getFileName()
@@ -145,6 +153,15 @@ public class AuthenticationManager
         public String getOldPrefix()
         {
             return _fileName + "_";
+        }
+
+        public static @NotNull AuthLogoType getForFilename(String fileName)
+        {
+            for (AuthLogoType type : values())
+                if (type.getFileName().equals(fileName))
+                    return type;
+
+            throw new NotFoundException("Unknown logo type");
         }
     }
 
