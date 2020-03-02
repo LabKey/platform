@@ -30,6 +30,8 @@ import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -64,6 +66,8 @@ import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -106,6 +110,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
+import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
@@ -246,45 +251,77 @@ public class ListController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
+    {
+        @Override
+        public Object execute(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            ListDomainKindProperties properties = ListManager.get().getListDomainKindProperties(getContainer(), form.getListId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("List does not exist in this container for listId " + form.getListId() + ".");
+        }
+    }
 
     @RequiresPermission(DesignListPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
+        String listDesignerHeader = "List Designer";
 
         @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
-
             boolean createList = (null == form.getListId() || 0 == form.getListId()) && form.getName() == null;
             if (!createList)
                 _list = form.getList();
 
-            Map<String, String> props = new HashMap<>();
+            if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
+            {
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
+            }
+            else
+             {
 
-            URLHelper returnURL = form.getReturnURLHelper();
+                Map<String, String> props = new HashMap<>();
 
-            props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-            props.put("allowFileLinkProperties", "0");
-            props.put("allowAttachmentProperties", "1");
-            props.put("showDefaultValueSettings", "1");
-            props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("loading", "Loading...");
+                URLHelper returnURL = form.getReturnURLHelper();
 
-            return new GWTView("org.labkey.list.Designer", props);
+                props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
+                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
+                props.put("allowFileLinkProperties", "0");
+                props.put("allowAttachmentProperties", "1");
+                props.put("showDefaultValueSettings", "1");
+                props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
+                props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
+                props.put("loading", "Loading...");
+                return new GWTView("org.labkey.list.Designer", props);
+            }
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
             if (null == _list)
-                root.addChild("Create new List");
+            {
+                if (experimentalFlagEnabled)
+                    root.addChild(listDesignerHeader);
+                else
+                    root.addChild("Create new List");
+            }
             else
-                appendListNavTrail(root, _list, null);
+            {
+                if (experimentalFlagEnabled)
+                    appendListNavTrail(root, _list, listDesignerHeader);
+                else
+                    appendListNavTrail(root, _list, null);
+            }
             return root;
         }
     }
@@ -489,70 +526,6 @@ public class ListController extends SpringActionController
                 else
                     inputs.add(Pair.of(value.getName(), value.getValue().toString()));
             }
-
-            return inputs;
-        }
-    }
-
-
-    /**
-     * DO NOT USE. This action has been deprecated in 13.2 in favor of the standard query/updateQueryRow action.
-     * Only here for backwards compatibility to resolve requests and redirect.
-     */
-    @Deprecated
-    @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends InsertUpdateAction
-    {
-        @Override
-        protected ActionURL getActionView(ListDefinition list, BindException errors)
-        {
-            TableInfo listTable = list.getTable(getUser());
-            return listTable.getUserSchema().getQueryDefForTable(listTable.getName()).urlFor(QueryAction.updateQueryRow, getContainer());
-        }
-
-        @Override
-        protected Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues)
-        {
-            Collection<Pair<String, String>> inputs = new ArrayList<>();
-            final String FORM_PREFIX = "quf_";
-
-            for (PropertyValue value : getPropertyValues().getPropertyValues())
-            {
-                if (value.getName().equals(ActionURL.Param.returnUrl.toString()))
-                {
-                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
-                }
-                else if (value.getName().equalsIgnoreCase(ActionURL.Param.returnUrl.toString()))
-                {
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-                        throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
-                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
-                }
-                else if (value.getName().equalsIgnoreCase(list.getKeyName()) || (FORM_PREFIX + list.getKeyName()).equalsIgnoreCase(value.getName()))
-                {
-                    url.addParameter(list.getKeyName(), (String) value.getValue());
-                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
-                }
-                else
-                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
-            }
-
-            // support for old values
-            try
-            {
-                // convert to map
-                HashMap<String, Object> oldValues = new HashMap<>();
-                for (Pair<String, String> entry : inputs)
-                {
-                    oldValues.put(entry.getKey().replace(FORM_PREFIX, ""), entry.getValue());
-                }
-                inputs.add(Pair.of(DataRegion.OLD_VALUES_NAME, PageFlowUtil.encodeObject(oldValues)));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Bad " + DataRegion.OLD_VALUES_NAME + " on List.UpdateAction");
-            }
-
 
             return inputs;
         }

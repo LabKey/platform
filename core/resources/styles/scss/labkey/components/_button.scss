@@ -104,6 +104,7 @@
     &.disabled, &.labkey-disabled-button, &[disabled] {
       cursor: not-allowed !important;
       color: $lk-button-disabled-color;
+      pointer-events: none;
 
       &:active,
       &:hover,

@@ -19,6 +19,7 @@ package org.labkey.experiment.api;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -37,7 +38,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -54,9 +55,9 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
-import javax.validation.constraints.Null;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -65,7 +66,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends AbstractDomainKind
+public class SampleSetDomainKind extends BaseAbstractDomainKind
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -257,7 +258,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, @Nullable Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, @Nullable JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -267,7 +268,7 @@ public class SampleSetDomainKind extends AbstractDomainKind
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? (Object[])arguments.get("idCols") : new Object[0];
+        Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? ((ArrayList<Object>)arguments.get("idCols")).toArray() : new Object[0];
         int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
         int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
         int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;

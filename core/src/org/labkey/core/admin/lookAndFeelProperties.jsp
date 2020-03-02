@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -49,6 +50,7 @@
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
 <table class="lk-fields-table">
+<%=getTroubleshooterWarning(HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>

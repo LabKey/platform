@@ -367,14 +367,14 @@
                         <td><%=link("Edit Specimen fields", specimenUrl)%></td>
                     </tr>
                     <tr>
-                        <td class="lk-study-prop-label">SpecimenEvent Fields</td>
-                        <td class="lk-study-prop-desc">Customize specimen event fields for this repository</td>
-                        <td><%=link("Edit Specimen Event fields", specimenEventUrl)%></td>
-                    </tr>
-                    <tr>
                         <td class="lk-study-prop-label">Vial Fields</td>
                         <td class="lk-study-prop-desc">Customize vial fields for this repository</td>
                         <td><%=link("Edit Vial fields", vialUrl)%></td>
+                    </tr>
+                    <tr>
+                        <td class="lk-study-prop-label">Specimen Event Fields</td>
+                        <td class="lk-study-prop-desc">Customize specimen event fields for this repository</td>
+                        <td><%=link("Edit Specimen Event fields", specimenEventUrl)%></td>
                     </tr>
                     <tr>
                         <td class="lk-study-prop-label">Display and Behavior</td>

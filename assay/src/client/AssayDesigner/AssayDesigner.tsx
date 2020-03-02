@@ -190,6 +190,7 @@ export class App extends React.Component<any, State> {
                 onComplete={this.onComplete}
                 onChange={this.onChange}
                 useTheme={true}
+                successBsStyle={'primary'}
             />
         )
     }
