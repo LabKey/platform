@@ -215,6 +215,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         onComplete={this.submitAndNavigate}
                         onCancel={this.onCancelBtnHandler}
                         defaultSampleFieldConfig={DEFAULT_SAMPLE_FIELD_CONFIG}
+                        includeDataClasses={true}
                 />
                 }
             </>
