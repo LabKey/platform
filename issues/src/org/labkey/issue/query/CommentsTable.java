@@ -130,44 +130,43 @@ public class CommentsTable extends FilteredTable<IssuesQuerySchema>
         sql.append(")");
         addCondition(sql, containerFieldKey);
     }
-}
 
-/**
- * Display column to render the title of the issue
- */
-class IssueIdDisplayColumn extends DataColumn
-{
-    private Container _container;
-    private User _user;
-
-    public IssueIdDisplayColumn(ColumnInfo col, Container container, User user)
+    /**
+     * Display column to render the title of the issue
+     */
+    static class IssueIdDisplayColumn extends DataColumn
     {
-        super(col);
-        _container = container;
-        _user = user;
-    }
+        private Container _container;
+        private User _user;
 
-    @NotNull
-    @Override
-    public String getFormattedValue(RenderContext ctx)
-    {
-        String title = getIssueTitle(ctx);
-        return title != null ? title : super.getFormattedValue(ctx);
-    }
-
-    @Nullable
-    private String getIssueTitle(RenderContext ctx)
-    {
-        Object o = getValue(ctx);
-        if (o instanceof Integer)
+        public IssueIdDisplayColumn(ColumnInfo col, Container container, User user)
         {
-            Issue issue = IssueManager.getIssue(_container, _user, (Integer)o);
-            if (issue != null)
-            {
-                return issue.getTitle();
-            }
+            super(col);
+            _container = container;
+            _user = user;
         }
-        return null;
+
+        @NotNull
+        @Override
+        public String getFormattedValue(RenderContext ctx)
+        {
+            String title = getIssueTitle(ctx);
+            return title != null ? title : super.getFormattedValue(ctx);
+        }
+
+        @Nullable
+        private String getIssueTitle(RenderContext ctx)
+        {
+            Object o = getValue(ctx);
+            if (o instanceof Integer)
+            {
+                Issue issue = IssueManager.getIssue(_container, _user, (Integer)o);
+                if (issue != null)
+                {
+                    return issue.getTitle();
+                }
+            }
+            return null;
+        }
     }
 }
-
