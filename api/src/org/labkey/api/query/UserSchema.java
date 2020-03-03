@@ -778,27 +778,25 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         if (ret != null && !ret.equals(c))
         {
-            // Issue 39413: If incoming container is not a workbook container or a sub-container of the current container
-            // then ignore the incoming container. This was an issue when queries for ETLs contained a different container
-            // than the current container, verify permissions was looking for destination target in incoming container
-            if (!ret.isWorkbook() || !ret.hasAncestor(c))
+            // Issue 39413: If row container does not have the schema or table then ignore incoming container.
+            if (!validContainerAndPermissions(ret, c, u, ti, clazz))
             {
                 return null;
             }
-
-            verifyPermissionsForContainer(ret, c, u, ti, clazz);
         }
         return ret;
     }
 
-    private static void verifyPermissionsForContainer(@NotNull Container rowContainer, Container originalContainer, User u, TableInfo ti, Class<? extends Permission> clazz)
+    // If a row supplies an alternate container, it is possible that permissions differ.  TableInfo can supply custom permissions.
+    // If the effective permission container for the row-level container is actually the same as the original table (which is currently always true, such as Workbook->Parent,
+    // then just defer to the original TableInfo.  If this is not the case, attempt to construct a new TableInfo and fail if we cannot do this.
+    // If the schema or table do not resolve in the row container, then the row container is not valid and should be ignored.
+    private static boolean validContainerAndPermissions(@NotNull Container rowContainer, Container originalContainer, User u, TableInfo ti, Class<? extends Permission> clazz)
     {
         Container permissionContainer = rowContainer.getContainerFor(ContainerType.DataType.permissions);
 
-        // If a row supplies an alternate container, it is possible that permisions differ.  TableInfo can supply custom permissions.
-        // If the effective permission container for the row-level container is actually the same as the original table (which is currently always true, such as Workbook->Parent,
-        // then just defer to the original TableInfo.  If this is not the case, attempt to construct a new TableInfo and fail if we cannot do this.
         boolean hasPermission = false;
+        boolean validContainer = true;
         if (originalContainer.equals(permissionContainer))
         {
             hasPermission = ti.hasPermission(u, clazz);
@@ -815,19 +813,21 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 }
                 else
                 {
-                    throw new UnauthorizedException("Unknown table: " + us.getSchemaName() + "." + ti.getName() + " in container: " + rowContainer.getPath());
+                    validContainer = false;
                 }
             }
             else
             {
-                throw new UnauthorizedException("Unknown table: " + ti.getUserSchema().getSchemaName() + "." + ti.getName() + " in container: " + rowContainer.getPath());
+                validContainer = false;
             }
         }
 
-        if (!hasPermission)
+        if (!hasPermission && validContainer)
         {
             throw new UnauthorizedException("Insufficient permissions for folder: " + rowContainer.getPath());
         }
+
+        return validContainer;
     }
 
     /**
