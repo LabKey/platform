@@ -98,4 +98,6 @@ public interface ExperimentUrls extends UrlProvider
     ActionURL getUploadXARURL(Container container);
 
     ActionURL getRepairTypeURL(Container container);
+
+    ActionURL getSampleRunEditorURL(Container container);
 }

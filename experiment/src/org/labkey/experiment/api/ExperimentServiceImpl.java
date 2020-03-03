@@ -49,27 +49,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.IdentifiableBase;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.ProtocolApplicationParameter;
-import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -84,7 +64,6 @@ import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
@@ -212,6 +191,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
+    private List<ExpRunEditor> _runEditors = new ArrayList<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
@@ -6253,6 +6233,19 @@ public class ExperimentServiceImpl implements ExperimentService
     public ProtocolImplementation getProtocolImplementation(String name)
     {
         return _protocolImplementations.get(name);
+    }
+
+    @Override
+    public void registerRunEditor(ExpRunEditor editor)
+    {
+        _runEditors.add(editor);
+    }
+
+    @Override
+    @NotNull
+    public List<ExpRunEditor> getRunEditors()
+    {
+        return _runEditors;
     }
 
     @Override

@@ -6,13 +6,18 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -46,6 +51,38 @@ public class SampleSetContentsView extends QueryView
         deriveButton.setDisplayPermission(InsertPermission.class);
         deriveButton.setRequiresSelection(true);
         return deriveButton;
+    }
+
+    private String getSelectedScript(ActionURL url)
+    {
+        return "function(rows) {" +
+                "window.location = " + url.getLocalURIString() + "" +
+                "}";
+    }
+
+    private String getCreateRunScript(DataView view, ActionURL url)
+    {
+        // Need to figure out selection key
+        return DataRegion.getJavaScriptObjectReference(getDataRegionName()) +
+            ".getSelected({success: " + getSelectedScript(url) + ", selectionKey: " +
+                DataRegion.getJavaScriptObjectReference(getDataRegionName()) + "});";
+    }
+
+    public ActionButton getCreateRunButton(@NotNull DataView view)
+    {
+        MenuButton addRunsButton = new MenuButton("Create Run");
+
+        ActionURL createSampleRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getSampleRunEditorURL(view.getViewContext().getContainer());
+//        NavTree inputItem = new NavTree("Input samples");
+        NavTree inputItem = new NavTree("Input samples", createSampleRunUrl);
+        inputItem.usePost();
+//        inputItem.setScript(getCreateRunScript(view, createSampleRunUrl));
+
+        addRunsButton.addMenuItem(inputItem);
+        addRunsButton.setRequiresSelection(true);
+        addRunsButton.setDisplayPermission(InsertPermission.class);
+
+        return addRunsButton;
     }
 
     @Override
@@ -90,6 +127,12 @@ public class SampleSetContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
+        
+        List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
+        if (!editors.isEmpty())
+        {
+            bar.add(getCreateRunButton(view));
+        }
     }
 
     @Override
