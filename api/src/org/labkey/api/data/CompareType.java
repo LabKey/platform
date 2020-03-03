@@ -1525,7 +1525,9 @@ public abstract class CompareType
             super(fieldKey, t, param0.getTime());
             if (null == rawFilterValue)
                 rawFilterValue = "";
-            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(((Date)rawFilterValue).getTime()) : String.valueOf(rawFilterValue);
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
         }
 
@@ -1534,7 +1536,9 @@ public abstract class CompareType
             super(fieldKey, t, null);
             if (null == rawFilterValue)
                 rawFilterValue = "";
-            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(((Date)rawFilterValue).getTime()) : String.valueOf(rawFilterValue);
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
             _paramVals = new Object[]{param0.getTime(), param1.getTime()};
         }
