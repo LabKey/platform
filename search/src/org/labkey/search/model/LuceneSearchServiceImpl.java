@@ -321,7 +321,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         try
         {
             initializeIndex();
-            clearLastIndexedIfEmpty();
         }
         catch (Exception e)
         {
@@ -331,6 +330,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         super.start();
     }
 
+
+    @Override
+    public void startCrawler()
+    {
+        clearLastIndexedIfEmpty();
+        super.startCrawler();
+    }
 
     @Override
     public void resetIndex()
