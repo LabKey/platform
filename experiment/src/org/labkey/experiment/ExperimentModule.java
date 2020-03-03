@@ -297,7 +297,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (data == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeData(data, user);
+                    return ExperimentJSONConverter.serializeData(data, user, true);
                 }
             });
             ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
@@ -312,7 +312,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (sampleSet == null)
                         return null;
 
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null);
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null, true);
 
                     //Need to map to proper Icon
                     properties.put("type", "sampleSet");
@@ -333,7 +333,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (material == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeMaterial(material);
+                    return ExperimentJSONConverter.serializeMaterial(material, true);
                 }
             });
             ss.addDocumentProvider(this);

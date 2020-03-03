@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
@@ -52,14 +53,12 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,9 +107,9 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        return ExperimentController.getRunGraphURL(getContainer(), getRowId());
+        return _object.detailsURL();
     }
 
     @Override

@@ -15,7 +15,9 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 
 /**
  * Base functionality for objects that have an LSID.
@@ -34,4 +36,10 @@ public interface Identifiable
     String getName();
 
     Container getContainer();
+
+    default @Nullable ActionURL detailsURL()
+    {
+        return null;
+    }
+
 }

@@ -109,11 +109,9 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+        return _object.detailsURL();
     }
 
 

@@ -15,7 +15,10 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -29,6 +32,7 @@ public class IdentifiableBase implements Identifiable, Serializable
 {
     private String _lsid;
     private String _name;
+    private ActionURL _detailsURL;
     // some entities copy the exp.object.objectid value
     private Integer objectId;
     protected Container container;
@@ -45,10 +49,16 @@ public class IdentifiableBase implements Identifiable, Serializable
 
     public IdentifiableBase(OntologyObject oo)
     {
+        this(oo, null);
+    }
+
+    public IdentifiableBase(OntologyObject oo, ActionURL detailsURL)
+    {
         this();
         _lsid = oo.getObjectURI();
         objectId = oo.getObjectId();
         container = oo.getContainer();
+        _detailsURL = detailsURL;
     }
 
     public String getLSID()
@@ -95,6 +105,12 @@ public class IdentifiableBase implements Identifiable, Serializable
     public void setContainer(Container container)
     {
         this.container = container;
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        return _detailsURL;
     }
 
     @Override

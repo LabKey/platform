@@ -6546,7 +6546,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(ExpLineageOptions options, BindException errors)
         {
             ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
-            return new ApiSimpleResponse(lineage.toJSON(options.isSingleSeedRequested()));
+            return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), options.isIncludeProperties()));
         }
     }
 
@@ -6598,7 +6598,7 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser());
+                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), true);
                             props.put("docid", docId);
                             notInIndex.add(props);
                         }

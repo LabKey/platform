@@ -28,8 +28,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,7 +53,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         return _object.getContainer();
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         return null;
     }

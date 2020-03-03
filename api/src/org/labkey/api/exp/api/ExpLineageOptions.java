@@ -34,6 +34,7 @@ public class ExpLineageOptions
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
+    private boolean _includeProperties = false;
 
     public ExpLineageOptions()
     {
@@ -139,5 +140,15 @@ public class ExpLineageOptions
     public void setUseObjectIds(boolean useObjectIds)
     {
         _useObjectIds = useObjectIds;
+    }
+
+    public boolean isIncludeProperties()
+    {
+        return _includeProperties;
+    }
+
+    public void setIncludeProperties(boolean includeProperties)
+    {
+        _includeProperties = includeProperties;
     }
 }

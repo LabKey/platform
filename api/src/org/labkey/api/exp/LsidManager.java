@@ -34,6 +34,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.HashMap;
@@ -132,13 +133,19 @@ public class LsidManager
             if (oo == null)
                 return null;
 
-            return new IdentifiableBase(oo);
+            return new IdentifiableBase(oo, getDisplayURL(oo));
+        }
+
+        protected @Nullable ActionURL getDisplayURL(@NotNull OntologyObject oo)
+        {
+            return null;
         }
 
         @Override
-        public @Nullable ActionURL getDisplayURL(Lsid lsid)
+        public final @Nullable ActionURL getDisplayURL(Lsid lsid)
         {
-            return null;
+            Identifiable obj = getObject(lsid);
+            return obj == null ? null : obj.detailsURL();
         }
 
         @Override
@@ -177,13 +184,9 @@ public class LsidManager
         }
 
         @Override
-        public @Nullable ActionURL getDisplayURL(Lsid lsid)
+        protected @Nullable ActionURL getDisplayURL(@NotNull OntologyObject oo)
         {
-            Container c = getContainer(lsid);
-            if (c == null)
-                return null;
-
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(_provider, c, lsid);
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(_provider, oo.getContainer(), new Lsid(oo.getObjectURI()));
         }
     }
 

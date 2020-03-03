@@ -98,11 +98,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+        return _object.detailsURL();
     }
 
     @Override

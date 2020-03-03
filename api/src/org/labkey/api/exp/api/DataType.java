@@ -18,7 +18,7 @@ package org.labkey.api.exp.api;
 
 import com.google.common.base.MoreObjects;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 /**
  * Recognizes {@link ExpData} based on the namespace prefix in their LSIDs to identify specific flavors that have custom handling within the
@@ -38,7 +38,7 @@ public class DataType
         return _namespacePrefix;
     }
 
-    public URLHelper getDetailsURL(ExpData dataObject)
+    public ActionURL getDetailsURL(ExpData dataObject)
     {
         return null;
     }

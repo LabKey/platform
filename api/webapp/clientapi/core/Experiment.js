@@ -469,6 +469,7 @@ LABKEY.Experiment.saveBatch({
          * @param {Boolean} [config.children] Include children in the lineage response.  Defaults to true.
          * @param {String} [config.expType] Optional experiment type to filter response -- either "Data", "Material", or "ExperimentRun".  Defaults to include all.
          * @param {String} [config.cpasType] Optional LSID of a SampleSet or DataClass to filter the response.  Defaults to include all.
+         * @param {Boolean} [config.includeProperties] Include node properties in the lineage response.  Defaults to false.
          * @static
          */
         lineage : function (config)
@@ -489,6 +490,8 @@ LABKEY.Experiment.saveBatch({
                 params.children = config.children;
             if (config.hasOwnProperty('depth'))
                 params.depth = config.depth;
+            if (config.hasOwnProperty('includeProperties'))
+                params.includeProperties = config.includeProperties;
 
             if (config.expType)
                 params.expType = config.expType;

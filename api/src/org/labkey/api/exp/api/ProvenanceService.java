@@ -16,7 +16,13 @@ import java.util.Set;
  * */
 public interface ProvenanceService
 {
-    String PROVENANCE_INPUT_PROPERTY = "prov:objectInputs";
+    String PROVENANCE_PROPERTY_PREFIX = "prov";
+
+    String PROVENANCE_OBJECT_INPUTS = "objectInputs";
+    String PROVENANCE_INPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_INPUTS;
+
+    String PROVENANCE_OBJECT_OUTPUTS = "objectOutputs";
+    String PROVENANCE_OUTPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_OUTPUTS;
 
     static ProvenanceService get()
     {

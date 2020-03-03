@@ -778,7 +778,7 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
-                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser());
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), true);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
                 {
