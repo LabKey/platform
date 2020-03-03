@@ -35,6 +35,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.notification.Notification;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.announcements.api.Tour;
 import org.labkey.api.announcements.api.TourService;
@@ -55,6 +56,7 @@ import org.labkey.api.reader.Readers;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.CustomLabelProvider;
@@ -140,18 +142,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
 import static org.apache.commons.lang3.StringUtils.startsWith;
-import static org.labkey.api.util.DOM.Attribute.valign;
-import static org.labkey.api.util.DOM.TD;
-import static org.labkey.api.util.DOM.TR;
-import static org.labkey.api.util.DOM.at;
-import static org.labkey.api.util.DOM.cl;
 
 
 public class PageFlowUtil
@@ -175,6 +172,8 @@ public class PageFlowUtil
     private static final String NONPRINTING_ALTCHAR = "~";
 
     public static final String SESSION_PAGE_ADMIN_MODE = "session-page-admin-mode";
+
+    public static final String XML_ENCODING_DECLARATION = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
 
     public static boolean useExperimentalCoreUI()
     {
@@ -1281,13 +1280,33 @@ public class PageFlowUtil
     }
 
     /**
-     *  Returns an onClick handler that posts to the specified href, providing a CSRF token. If confirmMessage is not null,
-     *  displays a confirmation dialog and requires an "OK" before posting. Used by NavTree, LinkBuilder, and ButtonBuilder,
-     *  this shouldn't be called directly by other code paths.
+     *  Returns an onClick handler that posts to the specified href, provided a CSRF token. Use with ButtonBuilder to create
+     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
+     *  NavTree as an option (e.g., usePost()).
      */
-    public static String postOnClickJavaScript(String href, @Nullable String confirmMessage)
+    public static String postOnClickJavaScript(String href)
     {
-        return null == confirmMessage ? "LABKEY.Utils.postToAction(" + jsString(href) + ");" : "LABKEY.Utils.confirmAndPost(" + jsString(confirmMessage) + ", " + jsString(href) + ");";
+        return "var form = document.createElement('form');\n" +
+            "form.setAttribute('method', 'post');\n" +
+            "form.setAttribute('action', '" + href + "');\n" +
+            "var input = document.createElement('input');\n" +
+            "input.type = 'hidden';\n" +
+            "input.name = '" + CSRFUtil.csrfName + "';\n" +
+            "input.value = LABKEY.CSRF;\n" +
+            "form.appendChild(input);\n" +
+            "form.style.display = 'hidden';\n" +
+            "document.body.appendChild(form)\n" +
+            "form.submit();";
+    }
+
+    /**
+     *  Returns an onClick handler that posts to the specified url, providing a CSRF token. Use with ButtonBuilder to create
+     *  a button that posts or NavTree to create a menu item that posts. TODO: Integrate this into ButtonBuilder and/or
+     *  NavTree as an option (see LinkBuilder.usePost()).
+     */
+    public static String postOnClickJavaScript(ActionURL url)
+    {
+        return postOnClickJavaScript(url.getLocalURIString());
     }
 
     public static ButtonBuilder button(String text)
@@ -1300,52 +1319,6 @@ public class PageFlowUtil
         return new LinkBuilder(text);
     }
 
-    public static LinkBuilder iconLink(String iconCls, @Nullable String tooltip)
-    {
-        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip);
-    }
-
-    private static final String ARBITRARY_LETTER = "Q";
-
-    /**
-     * Converts the provided string into a legal HTML ID or Name, based on the HTML 4 rules:
-     * <ul>
-     * <li>Must begin with a letter ([A-Za-z])</li>
-     * <li>May be followed by any number of letters, digits ([0-9]), hyphens ("-"), underscores ("_"), colons (":"), and periods (".")</li>
-     * </ul>
-     * See <a href="https://www.w3.org/TR/html4/types.html#type-id">W3C HTML 4.01 Specification</a><br>
-     *
-     * Removes all illegal characters (e.g., whitespace and non-alphanumeric characters except the four mentioned above) and then
-     * pre-pends an arbitrary letter if the stripped version doesn't start with a letter. The return value is guaranteed to have
-     * a legal form, but of course it's not guaranteed to be unique on the page.
-     *
-     * @param s Any string
-     * @return A legal HTML ID produced from the string. Passing null is valid and returns a single letter ID.
-     */
-    public static @NotNull HtmlString makeHtmlId(@Nullable String s)
-    {
-        final String ret;
-
-        if (null == s)
-        {
-            ret = ARBITRARY_LETTER;
-        }
-        else
-        {
-            String stripped = s.replaceAll("[^0-9A-Za-z\\-_:.]", "");
-
-            if (stripped.isEmpty())
-                ret = ARBITRARY_LETTER;
-            else if (!Character.isLetter(stripped.charAt(0)))
-                ret = ARBITRARY_LETTER + stripped;
-            else
-                ret = stripped;
-        }
-
-        // We've stripped all characters that could possibly cause HTML problems
-        return HtmlString.unsafe(ret);
-    }
-
     public static HtmlString generateBackButton()
     {
         return generateBackButton("Back");
@@ -1354,6 +1327,22 @@ public class PageFlowUtil
     public static HtmlString generateBackButton(String text)
     {
         return button(text).href("#").onClick("LABKEY.setDirty(false); window.history.back(); return false;").getHtmlString();
+    }
+
+    public static String generateDropDownButton(String text, String href, String onClick, @Nullable Map<String, String> attributes)
+    {
+        return button(text)
+                .attributes(attributes)
+                .dropdown(true)
+                .href(href)
+                .onClick(onClick)
+                .toString();
+    }
+
+    /* Renders a span and a drop down arrow image wrapped in a link */
+    public static String generateDropDownButton(String text, String href, String onClick)
+    {
+        return generateDropDownButton(text, href, onClick, null);
     }
 
     /* Renders text and a drop down arrow image wrapped in a link not of type labkey-button */
@@ -1410,6 +1399,11 @@ public class PageFlowUtil
         return attributes.toString();
     }
 
+    public static String generateDisabledButton(String text)
+    {
+        return button(text).enabled(false).toString();
+    }
+
     /**
      * If the provided text uses ", return '. If it uses ', return ".
      * This is useful to quote javascript.
@@ -1434,10 +1428,62 @@ public class PageFlowUtil
         return '"';
     }
 
-    @Deprecated    // Use LinkBuilder directly - see PageFlowUtil.link(). 37 usages.
     public static String textLink(String text, URLHelper url)
     {
-        return link(text).href(url).toString();
+        return link(text).href(url).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, String id)
+    {
+        return link(text).href(url).id(id).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id)
+    {
+        return link(text).href(url).onClick(onClickScript).id(id).build().toString();
+    }
+
+    public static String textLink(String text, URLHelper url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        return link(text).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
+    }
+
+    public static String textLink(String text, String href, String id)
+    {
+        return link(text).href(href).id(id).build().toString();
+    }
+
+    public static String textLink(String text, String href)
+    {
+        return link(text).href(href).build().toString();
+    }
+
+    @Deprecated
+    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id)
+    {
+        return link(text).href(href).onClick(onClickScript).id(id).build().toString();
+    }
+
+    @Deprecated
+    public static String textLink(String text, String href, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        return link(text).href(href).onClick(onClickScript).id(id).attributes(properties).build().toString();
+    }
+
+    public static String unstyledTextLink(String text, String href, String onClickScript, String id)
+    {
+        return link(text).href(href).onClick(onClickScript).id(id).clearClasses().toString();
+    }
+
+    public static String unstyledTextLink(String text, URLHelper url)
+    {
+        return link(text).href(url).clearClasses().toString();
+    }
+
+
+    public static String iconLink(String iconCls, String tooltip, @Nullable String url, @Nullable String onClickScript, @Nullable String id, Map<String, String> properties)
+    {
+        return new LinkBuilder().iconCls(iconCls).tooltip(tooltip).href(url).onClick(onClickScript).id(id).attributes(properties).build().toString();
     }
 
     public static String helpPopup(String title, String helpText)
@@ -1494,7 +1540,7 @@ public class PageFlowUtil
             // Finally, since this is script inside of an attribute, it must be HTML escaped again.
             showHelpDivArgs.append(filter(jsString(htmlHelpText ? helpText : filter(helpText, true))));
             if (width != 0)
-                showHelpDivArgs.append(", ").append(filter(jsString(filter(width + "px"))));
+                showHelpDivArgs.append(", ").append(filter(jsString(filter(String.valueOf(width) + "px"))));
             if (onClickScript == null)
             {
                 onClickScript = "return showHelpDiv(" + showHelpDivArgs + ");";
@@ -1658,7 +1704,6 @@ public class PageFlowUtil
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, config, resources, includePostParameters));
         sb.append(getStylesheetIncludes(c, resources, includeDefaultResources));
-        sb.append(getManifestIncludes(c, resources));
         sb.append(getJavaScriptIncludes(c, resources));
 
         return sb.toString();
@@ -1809,43 +1854,6 @@ public class PageFlowUtil
         }
     }
 
-    // Manifest files are included as links in the HTML head.  These files are used to identify resources for progressive
-    // web apps like flash page and home page link icons.  There can be multiple on the same page.
-    private static String getManifestIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources)
-    {
-        StringBuilder sb = new StringBuilder();
-
-        if (resources != null)
-        {
-            Set<String> manifestFiles = new HashSet<>();
-            for (ClientDependency r : resources)
-            {
-                for (String manifest : r.getManifestPaths(c))
-                {
-                    if (!manifestFiles.contains(manifest))
-                    {
-                        sb.append("<link href=\"");
-                        if (ClientDependency.isExternalDependency(manifest))
-                        {
-                            sb.append(filter(manifest));
-                        }
-                        else
-                        {
-                            sb.append(AppProps.getInstance().getContextPath());
-                            sb.append("/");
-                            sb.append(filter(manifest));
-                        }
-                        sb.append("\" rel=\"manifest\">");
-
-                        manifestFiles.add(manifest);
-                    }
-                }
-            }
-        }
-
-        return sb.toString();
-    }
-
     public static final String extJsRoot()
     {
         return "ext-3.4.1";
@@ -1863,7 +1871,6 @@ public class PageFlowUtil
 
             // TODO: This needs to be refactored to allow themes by convention
             if (!"seattle".equalsIgnoreCase(themeName) &&
-                    !"sky".equalsIgnoreCase(themeName) &&
                     !"overcast".equalsIgnoreCase(themeName) &&
                     !"harvest".equalsIgnoreCase(themeName) &&
                     !"leaf".equalsIgnoreCase(themeName) &&
@@ -2170,22 +2177,21 @@ public class PageFlowUtil
         if (null != project)
         {
             JSONObject projectProps = new JSONObject();
+
             projectProps.put("id", project.getId());
             projectProps.put("path", project.getPath());
             projectProps.put("name", project.getName());
-            projectProps.put("rootId", ContainerManager.getRoot().getId());
             json.put("project", projectProps);
         }
 
         json.put("tours", getTourJson(container));
         String serverName = appProps.getServerName();
-        json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "LabKey Server");
-        json.put("versionString", appProps.getReleaseVersion());
+        json.put("serverName", StringUtils.isNotEmpty(serverName) ? serverName : "Labkey Server");
+        json.put("versionString", appProps.getLabKeyVersionString());
         json.put("helpLinkPrefix", HelpTopic.getHelpLinkPrefix());
-        json.put("jdkJavaDocLinkPrefix", HelpTopic.getJdkJavaDocLinkPrefix());
 
         if (AppProps.getInstance().isExperimentalFeatureEnabled(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU))
-            json.put("notifications", Map.of("unreadCount", NotificationService.get().getNotificationsByUser(null, user.getUserId(), true).size()));
+        json.put("notifications", getNotificationJson(user));
 
         JSONObject defaultHeaders = new JSONObject();
         defaultHeaders.put("X-ONUNAUTHORIZED", "UNAUTHORIZED");
@@ -2260,6 +2266,48 @@ public class PageFlowUtil
             }
         }
         return tourProps;
+    }
+
+    public static JSONObject getNotificationJson(User user)
+    {
+        Map<Integer, Map<String, Object>> notificationsPropMap = new HashMap<>();
+        Map<String, List<Integer>> notificationGroupingsMap = new TreeMap<>();
+        int unreadCount = 0;
+        boolean hasRead = false;
+
+        NotificationService service = NotificationService.get();
+        if (service != null && user != null && !user.isGuest())
+        {
+            List<Notification> userNotifications = service.getNotificationsByUser(null, user.getUserId(), false);
+            for (Notification notification : userNotifications)
+            {
+                if (notification.getReadOn() != null)
+                {
+                    hasRead = true;
+                    continue;
+                }
+
+                Map<String, Object> notifPropMap = notification.asPropMap();
+                notifPropMap.put("CreatedBy", UserManager.getDisplayName((Integer)notifPropMap.get("CreatedBy"), user));
+                notifPropMap.put("IconCls", service.getNotificationTypeIconCls(notification.getType()));
+                notificationsPropMap.put(notification.getRowId(), notifPropMap);
+
+                String groupLabel = service.getNotificationTypeLabel(notification.getType());
+                if (!notificationGroupingsMap.containsKey(groupLabel))
+                {
+                    notificationGroupingsMap.put(groupLabel, new ArrayList<>());
+                }
+                notificationGroupingsMap.get(groupLabel).add(notification.getRowId());
+
+                unreadCount++;
+            }
+        }
+
+        JSONObject notifications = new JSONObject(notificationsPropMap);
+        notifications.put("grouping", notificationGroupingsMap);
+        notifications.put("unreadCount", unreadCount);
+        notifications.put("hasRead", hasRead);
+        return notifications;
     }
 
     public static String getServerSessionHash()
@@ -2571,22 +2619,6 @@ public class PageFlowUtil
         }
 
         @Test
-        public void testMakeHtmlId()
-        {
-            testMakeHtmlId(null);
-            testMakeHtmlId("");
-            testMakeHtmlId("!@#$");
-            testMakeHtmlId(")(*&^%$");
-            testMakeHtmlId("</html>");
-            testMakeHtmlId("123@#$%");
-            testMakeHtmlId("foo");
-            testMakeHtmlId("!@#1!@#");
-            testMakeHtmlId("ABC");
-            testMakeHtmlId("!BC234");
-            testMakeHtmlId("1A-34-FB-44");
-        }
-
-        @Test
         public void testEncodeObject() throws Exception
         {
             TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
@@ -2603,17 +2635,6 @@ public class PageFlowUtil
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));
             assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
-        }
-
-        private void testMakeHtmlId(@Nullable String id)
-        {
-            HtmlString legalId = makeHtmlId(id);
-            assertTrue(id + " was converted to " + legalId + ", which is not a legal HTML ID!", isLegalId(legalId.toString()));
-        }
-
-        private boolean isLegalId(String id)
-        {
-            return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
         }
     }
 
@@ -2826,25 +2847,29 @@ public class PageFlowUtil
         }
     }
 
-    public static HtmlString getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
+    public static String getDataRegionHtmlForPropertyObjects(Map<String, Object> propValueMap)
     {
         Map<String, String> stringValMap = new LinkedHashMap<>();
         for (Map.Entry<String, Object> entry : propValueMap.entrySet())
-            stringValMap.put(entry.getKey(), null==entry.getValue() ? "" : entry.getValue().toString());
+            stringValMap.put(entry.getKey(), entry.getValue().toString());
         return getDataRegionHtmlForPropertyValues(stringValMap);
     }
 
-    public static HtmlString getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
+    public static String getDataRegionHtmlForPropertyValues(Map<String, String> propValueMap)
     {
         StringBuilder sb = new StringBuilder();
-        final AtomicInteger rowCount = new AtomicInteger();
-        DOM.TABLE(cl("labkey-data-region-legacy","labkey-show-borders"),
-                TR(TD(cl("labkey-column-header"),"Property"),TD(cl("labkey-column-header"),"Value")),
-                propValueMap.entrySet().stream().map(entry ->
-                    TR(cl(rowCount.getAndIncrement() % 2 == 0, "labkey-alternate-row", "labkey-row"),
-                        TD(at(valign,"top"),entry.getKey()),
-                        TD(at(valign,"top"),entry.getValue())))
-        ).appendTo(sb);
-        return HtmlString.unsafe(sb.toString());
+        sb.append("<table class=\"labkey-data-region-legacy labkey-show-borders\">\n");
+        sb.append("<tr><td class=\"labkey-column-header\">Property</td><td class=\"labkey-column-header\">Value</td></tr>\n");
+        int rowCount = 0;
+        for (Map.Entry<String, String> entry : propValueMap.entrySet())
+        {
+            sb.append("<tr class=\"").append(rowCount % 2 == 0 ? "labkey-alternate-row" : "labkey-row").append("\">");
+            sb.append("<td valign=\"top\">").append(entry.getKey()).append("</td>");
+            sb.append("<td valign=\"top\">").append(entry.getValue()).append("</td>");
+            sb.append("</tr>\n");
+            rowCount++;
+        }
+        sb.append("</table>\n");
+        return sb.toString();
     }
 }
