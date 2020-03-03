@@ -35,7 +35,7 @@ import java.util.Set;
  * A collection of {@link ExpMaterial}, with a custom {@link Domain} for additional properties.
  * Material version of {@link ExpDataClass}
  */
-public interface ExpSampleSet extends ExpObject, DomainKindProperties
+public interface ExpSampleSet extends ExpObject
 {
     String SEQUENCE_PREFIX = "org.labkey.experiment.api.MaterialSource";
 
