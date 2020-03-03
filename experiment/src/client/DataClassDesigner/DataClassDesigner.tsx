@@ -44,7 +44,7 @@ export class App extends React.Component<any, State> {
         const { name } = ActionURL.getParameters();
         if (name) {
             fetchDataClass(name)
-                .then((model) => {
+                .then((model: DataClassModel) => {
                     this.setState(() => ({model, isLoading: false}));
                 })
                 .catch((error) => {
