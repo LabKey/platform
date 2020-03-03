@@ -23,9 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.TaskFactory;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
@@ -120,11 +117,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
         if (studyDoc != null)
         {
             StudyImportContext ctx = new StudyImportContext(getUser(), destStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
-            StudyImportSpecimenTask.doImport(null, this, ctx, false);
-
-            TaskFactory factory = PipelineJobService.get().getTaskFactory(new TaskId(StudyImportSpecimenTask.class));
-            StudyImportSpecimenTask task = (StudyImportSpecimenTask)factory.createTask(this);
-
+            StudyImportSpecimenTask.doImport(null, this, ctx, false, true);
         }
     }
 

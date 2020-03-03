@@ -19,14 +19,15 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
-import org.labkey.api.admin.*;
+import org.labkey.api.admin.AbstractFolderImportFactory;
+import org.labkey.api.admin.FolderArchiveDataTypes;
+import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJobWarning;
-import org.labkey.api.pipeline.TaskFactory;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -135,10 +136,6 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
                 // specimen import task
                 File specimenFile = studyImportContext.getSpecimenArchive(studyDir);
                 StudyImportSpecimenTask.doImport(specimenFile, job, studyImportContext, false, false);
-
-                TaskFactory factory = PipelineJobService.get().getTaskFactory(new TaskId(StudyImportSpecimenTask.class));
-                StudyImportSpecimenTask task = (StudyImportSpecimenTask)factory.createTask(job);
-
 
                 ctx.getLogger().info("Updating study-wide subject/visit information...");
                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, datasets, null, null, true, ctx.getLogger());
