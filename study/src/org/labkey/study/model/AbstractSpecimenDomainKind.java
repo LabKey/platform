@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -29,7 +30,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -53,7 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
+public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
 {
     protected static final String COMMENTS = "Comments";                   // Reserved field name for Vial and Specimen
     protected static final String COLUMN = "Column";                       // Reserved field name for Vial, Specimen and Event

@@ -60,6 +60,17 @@ LABKEY.Domain = new function()
         });
     }
 
+    function getDomainDetails(success, failure, parameters, containerPath)
+    {
+        LABKEY.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("property", "getDomainDetails.api", containerPath),
+            method : 'GET',
+            success: LABKEY.Utils.getCallbackWrapper(success),
+            failure: LABKEY.Utils.getCallbackWrapper(failure, this, true),
+            params : parameters
+        });
+    }
+
     function saveDomain(success, failure, parameters, containerPath)
     {
         LABKEY.Ajax.request({
@@ -194,7 +205,7 @@ LABKEY.Domain.create({
         },
 
 	/**
-	* Gets a domain design.
+	* This api is deprecated, use {@link LABKEY.Domain.getDomainDetails} instead.
      * @param {Object} config An object which contains the following configuration properties.
 	* @param {Function} config.success Required. Function called if the
 	*	"get" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
@@ -252,6 +263,65 @@ LABKEY.Domain.create({
                 config.containerPath);
         },
 
+    /**
+     * Gets a domain design along with domain kind specific properties.
+     * @param {Object} config An object which contains the following configuration properties.
+     * @param {Function} config.success Required. Function called if the
+     *    "getDomainDetails" function executes successfully. Will be called with the argument {@link LABKEY.Domain.DomainDesign},
+     *    which describes the fields of a domain.
+     * @param {Function} [config.failure] Function called if execution of the "getDomainDetails" function fails.
+     * @param {String} config.schemaName Name of the schema
+     * @param {String} config.queryName Name of the query
+     * @param {String} config.domainId Id of the domain. This is an alternate way to identify the domain.
+     *       SchemaName and queryName will be ignored if this value is not undefined or null.
+     * @param {String} [config.containerPath] The container path in which the requested Domain is defined.
+     *       If not supplied, the current container path will be used.
+     * @example Example:
+<pre name="code" class="xml">
+&lt;script type="text/javascript"&gt;
+     function successHandler(domainDesign)
+     {
+        var html = '';
+
+        html += '&lt;b&gt;' + domainDesign.name + ':&lt;/b&gt;&lt;br&gt; ';
+        for (var i in domainDesign.fields)
+        {
+            html += '   ' + domainDesign.fields[i].name + '&lt;br&gt;';
+        }
+        document.getElementById('testDiv').innerHTML = html;
+     }
+
+     function errorHandler(error)
+     {
+        alert('An error occurred retrieving data: ' + error);
+     }
+
+    LABKEY.Domain.getDomainDetails(successHandler, errorHandler, 'study', 'StudyProperties');
+&lt;/script&gt;
+&lt;div id='testDiv'&gt;Loading...&lt;/div&gt;
+</pre>
+     * @see LABKEY.Assay.AssayDesign
+     */
+        getDomainDetails : function(config)
+        {
+            if (arguments.length > 1)
+            {
+                config = {
+                    success: arguments[0],
+                    failure: arguments[1],
+                    schemaName: arguments[2],
+                    queryName: arguments[3],
+                    containerPath: arguments[4]
+                };
+            }
+
+            getDomainDetails(
+                    config.success,
+                    config.failure,
+                    {schemaName: config.schemaName, queryName: config.queryName, domainId: config.domainId},
+                    config.containerPath);
+        },
+
         /**
          * Lists all the domains within a given container. Specify domain kinds to get the targeted list of domain kinds.
          * @param {Object} config An object which contains the following configuration properties.
@@ -287,7 +357,9 @@ LABKEY.Domain.create({
         },
 
         /**
-         * Saves the provided domain design
+         * Saves the provided domain design.
+         * Note: All of the domain properties are expected to be present before saving, and not just the diff - the easiest way
+         * is to get the existing domain via {@Link LABKEY.Domain.getDomainDetails} and update the resultant json with your changes before saving.
          * @param {Object} config An object which contains the following configuration properties.
          * @param {Function} config.success Required. Function called if this
                   function executes successfully. No parameters will be passed to the success callback.
@@ -301,6 +373,10 @@ LABKEY.Domain.create({
          *       If not supplied, the current container path will be used.
          * @param {boolean} config.includeWarnings set this to true, if server side warnings are desired along with the errors
          *       If this is set to true and there are warnings detected, they will prevent the save from completing successfully
+         * @param {Object} [config.options] Domain Kind specific properties.
+         *       If not supplied, will be ignored.
+         *       Note: Certain domain kind specific properties are read-only and cannot be updated.
+         *       Read-only properties for 'IntList' & 'VarList' domain kinds: listId, domainId, keyName, keyType, and lastIndexed.
          */
         save : function(config)
         {
@@ -313,7 +389,8 @@ LABKEY.Domain.create({
                     schemaName: arguments[3],
                     queryName: arguments[4],
                     containerPath: arguments[5],
-                    includeWarnings: arguments[6]
+                    includeWarnings: arguments[6],
+                    options: arguments[7]
                 };
             }
 
@@ -321,7 +398,7 @@ LABKEY.Domain.create({
                 config.success,
                 config.failure,
                 {domainDesign: config.domainDesign, schemaName: config.schemaName, queryName: config.queryName,
-                    domainId: config.domainId, includeWarnings: config.includeWarnings},
+                    domainId: config.domainId, includeWarnings: config.includeWarnings, options: config.options},
                 config.containerPath);
         },
 
@@ -378,7 +455,7 @@ LABKEY.Domain.create({
 /**
 * @name LABKEY.Domain.DomainDesign
 * @class  DomainDesign static class to describe the shape and fields of a domain.  The {@link LABKEY.Domain}
-*             'get' and 'set' methods employ DomainDesign.
+*             'getDomainDetails' and 'save' methods employ DomainDesign.
 */
 
 /**#@+
@@ -394,7 +471,7 @@ LABKEY.Domain.create({
 
 /**
 * @name domainId
-* @description The uinque ID of this domain.
+* @description The unique ID of this domain.
 * @type Integer
 */
 
@@ -413,6 +490,7 @@ LABKEY.Domain.create({
 /**
 * @name fields
 * @description An array of objects that each describe a domain field.  Each object has the following properties:
+    *       (Note: Not all properties below are expected to have values or will have values. See {@Link LABKEY.Domain} 'Create' to see minimally required properties when creating a Domain.)
     *      <ul>
     *          <li><b>propertyId:</b> The unique ID of this field. (integer)</li>
     *          <li><b>propertyURI:</b> The URI of this field. (string)</li>
@@ -429,6 +507,19 @@ LABKEY.Domain.create({
     *          <li><b>lookupContainer:</b> If this domain field is a lookup, this holds the container in which to look. (string)</li>
     *          <li><b>lookupSchema:</b> If this domain field is a lookup, this holds the schema in which to look. (string)</li>
     *          <li><b>lookupQuery:</b> if this domain field is a lookup, this holds the query in which to look. (string)</li>
+    *          <li><b>defaultDisplayValue:</b> Default value to display. (string)</li>
+    *          <li><b>defaultValue:</b> Default value for the field. (string)</li>
+    *          <li><b>defaultValueType:</b> Default value type for the field. (string)</li>
+    *          <li><b>hidden:</b> Indicates whether this field is to be hidden or shown in a view. (boolean)</li>
+    *          <li><b>isPrimaryKey:</b> Indicates whether this field is a Primary Key. (boolean)</li>
+    *          <li><b>lockType:</b> Set lock level on this field. Expected value should be one of: "NotLocked"
+    *              (can change all properties, this is default) or "PartiallyLocked" (can't change name and type property) or "FullyLocked" (can't change any of the properties). (string)</li>
+    *          <li><b>phi:</b> Set PHI level on this field. Expected value should be one of: "NotPhi" (default) or "Limited" or "PHI" or "Restricted". (string)</li>
+    *          <li><b>scale:</b> Scale for the field. (int)</li>
+    *          <li><b>shownInDetailsView:</b> Indicates whether this field is to be shown in Details view. (boolean)</li>
+    *          <li><b>shownInInsertView:</b> Indicates whether this field is to be shown in an Insert view. (boolean)</li>
+    *          <li><b>shownInUpdateView:</b> Indicates whether this field is to be shown in an Update view. (boolean)</li>
+    *          <li><b>url:</b> A url associated with this field. (string)</li>
     *      </ul>
     * @type Object
 */

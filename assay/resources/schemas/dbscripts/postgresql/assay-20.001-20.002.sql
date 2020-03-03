@@ -19,9 +19,10 @@ ALTER TABLE assay.well
 ALTER TABLE assay.wellgroup
     ADD CONSTRAINT uq_wellgroup_lsid UNIQUE (lsid);
 
--- plate names are unique in each container
-ALTER TABLE assay.plate
-    ADD CONSTRAINT uq_plate_container_name UNIQUE (container, name);
+-- Issue 39805: uq_plate_container_name violation when upgrading via assay-20.001-20.002.sql
+-- plate template names are unique in each container
+--ALTER TABLE assay.plate
+--  ADD CONSTRAINT uq_plate_container_name UNIQUE (container, name);
 
 -- each well position is unique on the plate
 ALTER TABLE assay.well

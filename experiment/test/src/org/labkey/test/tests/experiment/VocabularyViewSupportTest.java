@@ -248,7 +248,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
         };
 
         _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
-        clickButton("Done");
+        goToManageLists();
     }
 
     private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException

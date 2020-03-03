@@ -45,6 +45,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -636,6 +637,11 @@ public class DbScope
             if (clazz.isAssignableFrom(getCause().getClass()))
                 throw (T)getCause();
         }
+
+        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        {
+            throw UnexpectedException.wrap(getCause());
+        }
     }
 
     /** Won't retry if we're already in a transaction
@@ -834,6 +840,19 @@ public class DbScope
     public Connection getPooledConnection() throws SQLException
     {
         return getPooledConnection(ConnectionType.Pooled, null);
+    }
+
+    /**
+     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
+     *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
+     **/
+    @JsonIgnore
+    public Connection getReadOnlyConnection() throws SQLException
+    {
+        ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
+        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
+
+        return conn;
     }
 
     /** Create a new connection that completely bypasses the connection pool. */

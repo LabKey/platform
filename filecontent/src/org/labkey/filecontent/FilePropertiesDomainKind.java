@@ -15,11 +15,12 @@
  */
 package org.labkey.filecontent;
 
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
@@ -37,7 +38,7 @@ import java.util.Set;
  * Date: May 4, 2010
  * Time: 4:24:36 PM
  */
-public class FilePropertiesDomainKind extends AbstractDomainKind
+public class FilePropertiesDomainKind extends BaseAbstractDomainKind
 {
     private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
             "name",

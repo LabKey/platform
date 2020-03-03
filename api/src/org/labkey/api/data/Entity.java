@@ -38,7 +38,6 @@ public class Entity implements java.io.Serializable, Ownable
     private long modified;
     private GUID containerId;
 
-
     protected void copyTo(Entity to)
     {
         to.entityId = entityId;
