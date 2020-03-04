@@ -16,8 +16,11 @@
  */
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils"%>
+<%@ page import="org.labkey.api.docker.DockerService"%>
 <%@ page import="org.labkey.api.files.FileContentService"%>
-<%@ page import="org.labkey.api.reports.ExternalScriptEngine"%>
+<%@ page import="org.labkey.api.premium.PremiumService" %>
+<%@ page import="org.labkey.api.reports.ExternalScriptEngine" %>
+<%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
 <%@ page import="org.labkey.api.reports.report.ExternalScriptEngineReport" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
 <%@ page import="org.labkey.api.reports.report.ScriptEngineReport" %>
@@ -25,11 +28,9 @@
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.FileUtil" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="org.labkey.api.reports.ExternalScriptEngineDefinition" %>
-<%@ page import="org.labkey.api.docker.DockerService" %>
-<%@ page import="org.labkey.api.premium.PremiumService" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -930,6 +931,7 @@
 <labkey:errors/>
 
 <labkey:panel title="Scripting Engine Configurations">
+    <%=getTroubleshooterWarning(HtmlString.unsafe("<br>"))%>
     <p>
         A scripting engine enables the execution of scripting code on the server, for example, in a report or a QC validation script.
         Scripting languages like JavaScript, R, and Perl can be configured below.

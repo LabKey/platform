@@ -2392,33 +2392,44 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            dbSchema.getScope().executeWithRetry(tx ->
+            try
             {
-                try
+                dbSchema.getScope().executeWithRetry(tx ->
                 {
-                    updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
-                }
-                catch (SQLException x)
-                {
-                    if (!RuntimeSQLException.isConstraintException(x))
-                        throw new RuntimeSQLException(x);
-                    errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
-                }
-                catch (DataIntegrityViolationException | OptimisticConflictException e)
-                {
-                    errors.reject(ERROR_MSG, e.getMessage());
-                }
-                catch (BatchValidationException x)
-                {
-                    x.addToErrors(errors);
-                }
-                catch (Exception x)
-                {
-                    errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
-                    ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-                }
-                return !errors.hasErrors();
-            });
+                    try
+                    {
+                        updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
+                    }
+                    catch (SQLException x)
+                    {
+                        if (!RuntimeSQLException.isConstraintException(x))
+                            throw new RuntimeSQLException(x);
+                        errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
+                    }
+                    catch (DataIntegrityViolationException | OptimisticConflictException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                    catch (BatchValidationException x)
+                    {
+                        x.addToErrors(errors);
+                    }
+                    catch (Exception x)
+                    {
+                        errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                        ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+                    }
+                    // need to throw here to avoid committing tx
+                    if (errors.hasErrors())
+                        throw new DbScope.RetryException(errors);
+                    return true;
+                });
+            }
+            catch (DbScope.RetryException x)
+            {
+                if (x.getCause() != errors)
+                    x.throwRuntimeException();
+            }
             return !errors.hasErrors();
         }
 
@@ -4194,12 +4205,9 @@ public class QueryController extends SpringActionController
             if (getPageConfig().getTitle() == null)
                 setTitle("Delete Schema");
 
-            if (isBlank(form.getBean().getUserSchemaName()))
-            {
-                throw new NotFoundException("Schema not specified");
-            }
             form.refreshFromDb();
-            return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
+            String schemaName = isBlank(form.getBean().getUserSchemaName()) ? "this schema" : "the schema '" + form.getBean().getUserSchemaName() + "'";
+            return new HtmlView("Are you sure you want to delete " + schemaName + "? The tables and queries defined in this schema will no longer be accessible.");
         }
 
         public boolean handlePost(F form, BindException errors)

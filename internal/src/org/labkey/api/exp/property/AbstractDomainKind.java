@@ -17,6 +17,7 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -44,16 +45,14 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * User: kevink
  * Date: Jun 4, 2010
  * Time: 3:29:46 PM
  */
-public abstract class AbstractDomainKind extends DomainKind
+public abstract class AbstractDomainKind<T> extends DomainKind<T>
 {
 
     public static final String OBJECT_URI_COLUMN_NAME = "lsid";
@@ -106,7 +105,13 @@ public abstract class AbstractDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, T arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        return null;
+    }
+
+    @Override
+    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         return null;
     }
@@ -114,7 +119,8 @@ public abstract class AbstractDomainKind extends DomainKind
     /** @return Errors encountered during the save attempt */
     @Override
     @NotNull
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user, boolean includeWarnings)
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable T options, Container container, User user, boolean includeWarnings)
     {
         return DomainUtil.updateDomainDescriptor(original, update, container, user);
     }
