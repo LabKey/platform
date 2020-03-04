@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-//TODO rename? SampleTypeDomainDetails?
 /**
  * Small class with only the properties and fields (de)serialized to the DomainKindProperties (avoids hassle of pasting @JsonIgnores all over three classes.
  */
@@ -29,7 +28,7 @@ public class SampleTypeDomainKindProperties implements Cloneable
             this.lsid = ss.getLSID();
             this.description = ss.getDescription();
             this.idCols = new ArrayList<>();
-            ss.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));  //TODO verify this...
+            ss.getIdCols().forEach(col -> this.idCols.add(col.getPropertyId()));
 
             try
             {
@@ -138,7 +137,6 @@ public class SampleTypeDomainKindProperties implements Cloneable
     @JsonIgnore
     public JSONObject toJSONObject()
     {
-        //TODO probably need to do more here... see MassSpecFractionsDomainKind.createDomain
         return new JSONObject(this);
     }
 
