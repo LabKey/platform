@@ -39,7 +39,6 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -51,9 +50,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     private Class<K> _class;
 
     // for performance pre-calculate readable/writeable properties
-    protected HashMap<String,PropertyDescriptor> _writeableProperties = null;
+    protected HashSet<String> _writeableProperties = null;
     protected HashSet<String> _readableProperties = null;
-
 
     protected BeanObjectFactory()
     {
@@ -63,7 +61,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     public BeanObjectFactory(Class<K> clss)
     {
         _class = clss;
-        _writeableProperties = new HashMap<>();
+        _writeableProperties = new HashSet<>();
         _readableProperties = new HashSet<>();
 
         K bean;
@@ -77,7 +75,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         }
 
         PropertyDescriptor[] origDescriptors = PropertyUtils.getPropertyDescriptors(bean);
-        _writeableProperties = new HashMap<>(origDescriptors.length * 2);
+        _writeableProperties = new HashSet<>(origDescriptors.length * 2);
         _readableProperties = new HashSet<>(origDescriptors.length * 2);
 
         for (PropertyDescriptor origDescriptor : origDescriptors)
@@ -95,7 +93,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 }
             }
             if (PropertyUtils.isWriteable(bean, name))
-                _writeableProperties.put(name,origDescriptor);
+                _writeableProperties.add(name);
         }
     }
 
@@ -135,10 +133,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         if (!(m instanceof CaseInsensitiveHashMap))
             m = new CaseInsensitiveHashMap<>(m);
 
-        for (var entry : _writeableProperties.entrySet())
+        for (var prop : _writeableProperties)
         {
-            String prop = entry.getKey();
-
             // If the map contains the key, assuming that we should use the map's value, even if it's null.
             // Otherwise, don't set a value on the bean.
             if (m.containsKey(prop))
@@ -249,7 +245,7 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
         ResultSetMetaData md = rs.getMetaData();
         int count = md.getColumnCount();
         CaseInsensitiveHashMap<String> propMap = new CaseInsensitiveHashMap<>(count * 2);
-        for (String prop : _writeableProperties.keySet())
+        for (String prop : _writeableProperties)
             propMap.put(prop, prop);
 
         String[] properties = new String[count + 1];
