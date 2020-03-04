@@ -18,6 +18,7 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.search.SearchService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -45,6 +46,7 @@ else
 {
     %><p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
+            <%=getTroubleshooterWarning(HtmlString.unsafe("<br>"))%>
             <tr>
                 <td>Path to full-text search index:&nbsp;</td>
                 <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>
