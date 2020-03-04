@@ -415,14 +415,14 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
 
         if (row.get("container") != null)
         {
-            Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), UpdatePermission.class);
+            Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), UpdatePermission.class, false);
             if (rowContainer == null)
             {
                 throw new ValidationException("Unknown container: " + row.get("container"));
             }
             else
             {
-                Container oldContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRow).get("container"), container, user, getQueryTable(), UpdatePermission.class);
+                Container oldContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRow).get("container"), container, user, getQueryTable(), UpdatePermission.class, false);
                 if (null != oldContainer && !rowContainer.equals(oldContainer))
                     throw new UnauthorizedException("The row is from the wrong container.");
             }
@@ -611,7 +611,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         if (container != null && getDbTable().getColumn("container") != null)
         {
             // UNDONE: 9077: check container permission on each row before delete
-            Container rowContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRowMap).get("container"), container, user, getQueryTable(), DeletePermission.class);
+            Container rowContainer = UserSchema.translateRowSuppliedContainer(new CaseInsensitiveHashMap<>(oldRowMap).get("container"), container, user, getQueryTable(), DeletePermission.class, false);
             if (null != rowContainer && !container.equals(rowContainer))
             {
                 //Issue 15301: allow workbooks records to be deleted/updated from the parent container
@@ -760,7 +760,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
             //Issue 15301: allow workbooks records to be deleted/updated from the parent container
             if (row.get("container") != null)
             {
-                Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), clazz);
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(row.get("container"), container, user, getQueryTable(), clazz, false);
                 if (rowContainer != null && container.allowRowMutationForContainer(rowContainer))
                 {
                     row.put("container", rowContainer.getId()); //normalize to container ID
