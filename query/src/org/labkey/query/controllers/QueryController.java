@@ -17,7 +17,11 @@
 package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -53,6 +57,7 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.LockedPropertyType;
+import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -124,6 +129,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.data.xml.queryCustomView.FilterType;
+import org.labkey.experiment.api.GWTDomainMixin;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
@@ -217,6 +223,26 @@ public class QueryController extends SpringActionController
     public QueryController()
     {
         setActionResolver(_actionResolver);
+    }
+
+    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
+    {
+        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
+        if(null == filter)
+        {
+            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+        }
+        else
+        {
+            gwtDomainPropertiesFilter = filter;
+        }
+
+        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
+        om.setFilterProvider(gwtDomainFilterProvider);
+        om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
+        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
+        om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
     public static void registerAdminConsoleLinks()
@@ -6693,10 +6719,24 @@ public class QueryController extends SpringActionController
     {
 
         @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+            configureObjectMapper(mapper, null);
+            return mapper;
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
         public Object execute(QueryMetadataApiForm queryMetadataApiForm, BindException errors) throws Exception
         {
-            GWTTableInfo gwtTableInfo = (GWTTableInfo) queryMetadataApiForm.getDomain();
-            String schemaName = queryMetadataApiForm.getDomain().getSchemaName();
+            GWTTableInfo gwtTableInfo = queryMetadataApiForm.getDomain();
+            String schemaName = queryMetadataApiForm.getSchemaName();
             saveMetadata(gwtTableInfo, schemaName);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
@@ -6706,22 +6746,32 @@ public class QueryController extends SpringActionController
 
     private static class QueryMetadataApiForm
     {
-        GWTDomain _domain;
+        GWTTableInfo _domain;
+        String _schemaName;
 
-        public GWTDomain getDomain()
+        public GWTTableInfo getDomain()
         {
             return _domain;
         }
 
-        public void setDomain(GWTDomain domain)
+        public void setDomain(GWTTableInfo domain)
         {
             _domain = domain;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
         }
     }
 
     public GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
     {
-
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
         TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), false);
@@ -7147,7 +7197,7 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
-            gwtColumnInfo.setLockType(LockedPropertyType.PartiallyLocked.name());
+
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
             gwtColumnInfo.setConditionalFormats(formats);
         }
@@ -7281,6 +7331,7 @@ public class QueryController extends SpringActionController
                         }
                         else
                         {
+                            gwtColumnInfo.setLockType(LockedPropertyType.PartiallyLocked.name());
                             ColumnInfo tableColumn = table.getColumn(column.getColumnName());
                             if (tableColumn != null)
                             {

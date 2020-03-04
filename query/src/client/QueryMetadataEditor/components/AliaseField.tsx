@@ -43,7 +43,8 @@ export class AliasField extends PureComponent<AliasFieldProps, AliasFieldState> 
                 .merge({
                     name: 'Wrapped' + selectedFieldName,
                     dataType: undefined,
-                    lockType: undefined
+                    lockType: undefined,
+                    wrappedColumnName: selectedFieldName
                 });
             const newDomainField =  DomainField.create(domainFieldChange.toJS());
             onAdd(newDomainField);

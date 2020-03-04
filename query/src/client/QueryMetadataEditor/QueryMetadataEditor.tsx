@@ -23,9 +23,9 @@ import {
     DomainDesign,
     DomainForm,
     fetchQueryMetadata,
-    DomainField
+    DomainField, buildURL
 } from "@labkey/components";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, Ajax, Utils} from "@labkey/api";
 import {AliasField} from "./components/AliaseField";
 
 import "@labkey/components/dist/components.css"
@@ -71,11 +71,9 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             //TODO: remove domainId from this call
             fetchQueryMetadata(1, schemaName, queryName)
                 .then(domain => {
-                    console.log("success-app -", domain.toJS());
                     this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    console.log("error");
                     this.setState(() => ({
                         messages : messages.set(0, {message: error.exception, messageType: 'danger'})
                     }));
@@ -126,7 +124,18 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onSaveBtnHandler = () => {
+        const { domain, schemaName } = this.state;
 
+        Ajax.request({
+           url: buildURL('query', 'saveQueryMetadata.api'),
+           method: 'POST',
+           success: Utils.getCallbackWrapper(() => {console.log("Save success")}),
+           failure: Utils.getCallbackWrapper(() => {console.log("Save failure")}),
+           jsonData : {
+               domain : DomainDesign.serialize(domain),
+               schemaName : schemaName
+           }
+        });
     };
 
     editSourceBtnHandler = () => {
@@ -145,11 +154,10 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         return (
             <div className={'domain-form-panel query-metadata-editor-buttons'}>
                 <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>
-                <Button onClick={this.onSaveBtnHandler()}>Save</Button>
-                <Button onClick={this.editSourceBtnHandler()}>Edit Source</Button>
-                <Button onClick={this.viewDataBtnHandler()}>View Data</Button>
-                <Button onClick={this.onResetBtnHandler()}>Reset To Default</Button>
-                <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
+                <Button onClick={this.onSaveBtnHandler}>Save</Button>
+                <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
+                <Button onClick={this.viewDataBtnHandler}>View Data</Button>
+                <Button onClick={this.onResetBtnHandler}>Reset To Default</Button>
             </div>
         )
     }
