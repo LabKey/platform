@@ -33,6 +33,10 @@ core/resources/views/authenticationConfigurationDev.html
 core/resources/views/authenticationConfigurationDev.view.xml
 
 experiment/resources/web/experiment/gen
+experiment/resources/views/dataClassDesigner.html
+experiment/resources/views/dataClassDesigner.view.xml
+experiment/resources/views/dataClassDesignerDev.html
+experiment/resources/views/dataClassDesignerDev.view.xml
 experiment/resources/views/domainDesigner.html
 experiment/resources/views/domainDesigner.view.xml
 experiment/resources/views/domainDesignerDev.html
