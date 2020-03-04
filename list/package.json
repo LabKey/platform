@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.31.1"
+    "@labkey/components": "0.32.0-fb-smSourceCRUD.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
