@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Entity;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Sort;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -272,7 +273,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Date getResolved()
     {
-        return (Date)_properties.get("resolved");
+        return (Date) JdbcType.DATE.convert(_properties.get("resolved"));
     }
 
     public void setResolved(Date resolved)
@@ -353,7 +354,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Date getClosed()
     {
-        return (Date)_properties.get("closed");
+        return (Date) JdbcType.DATE.convert(_properties.get("closed"));
     }
 
     public void setClosed(Date closed)

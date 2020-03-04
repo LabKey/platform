@@ -39,6 +39,7 @@ import org.labkey.api.security.AvatarType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.view.WebPartFactory;
 
@@ -98,6 +99,7 @@ public class ApiModule extends CodeOnlyModule
             SqlScanner.TestCase.class,
             FieldKey.TestCase.class,
             SchemaKey.TestCase.class,
+            SessionHelper.TestCase.class,
             Pair.TestCase.class
         );
     }
