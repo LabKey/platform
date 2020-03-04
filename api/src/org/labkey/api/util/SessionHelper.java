@@ -18,6 +18,8 @@ package org.labkey.api.util;
 import org.apache.commons.collections4.IteratorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.data.LockManager;
 import org.labkey.api.security.AuthenticatedRequest;
 
@@ -25,9 +27,11 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 
 /**
  * User: matthewb
@@ -172,6 +176,73 @@ public class SessionHelper
                     .filter(name->name.startsWith(prefix))
                     .forEach(session::removeAttribute);
             }
+        }
+    }
+
+    // put a value in the session, but with a clean up time, return value is used get the value back
+    public static String stashAttribute(@NotNull HttpServletRequest request, Object o, long maxAge)
+    {
+        String key = GUID.makeHash();
+        Map m = SessionHelper.getAttribute(request, SessionHelper.class.getName() + "#stash", () ->
+            Collections.synchronizedMap(new LinkedHashMap<String,Pair<Long,Object>>()));
+        clearOldStashedAttributes(request);
+        m.put(key, new Pair<>(HeartBeat.currentTimeMillis()+maxAge, o));
+        return key;
+    }
+
+    public static Object getStashedAttribute(@NotNull HttpServletRequest request, String key)
+    {
+        clearOldStashedAttributes(request);
+
+        Map<String,Pair<Long,Object>> m = SessionHelper.getAttribute(request, SessionHelper.class.getName() + "#stash", null);
+        if (null == m)
+            return null;
+        Pair<Long,Object> p = m.get(key);
+        if (null == p)
+            return null;
+        return p.getValue();
+    }
+
+    public static void clearStashedAttribute(@NotNull HttpServletRequest request, String key)
+    {
+        Map<String,Pair<Long,Object>> m = SessionHelper.getAttribute(request, SessionHelper.class.getName() + "#stash", null);
+        if (null == m)
+            return;
+        m.remove(key);
+        clearOldStashedAttributes(request);
+    }
+
+    private static void clearOldStashedAttributes(@NotNull HttpServletRequest request)
+    {
+        Map<String,Pair<Long,Object>> m = SessionHelper.getAttribute(request, SessionHelper.class.getName() + "#stash", null);
+        if (null == m)
+            return;
+        Object[] keys = m.keySet().toArray();
+        long now = HeartBeat.currentTimeMillis();
+        for (var key : keys)
+        {
+            Pair<Long,Object> p = m.get(key);
+            if (null != p && p.getKey() < now)
+                m.remove(key);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testStash()
+        {
+            HttpServletRequest req = TestContext.get().getRequest();
+            Object o = new Object();
+
+            assertNull(getStashedAttribute(req, "NONE"));
+            String key = stashAttribute(req, o, 1000);
+            Object ret = getStashedAttribute(req, key);
+            assertEquals(o, ret);
+            try {Thread.sleep(2000);}catch(Exception x){}
+            clearOldStashedAttributes(req);
+            ret = getStashedAttribute(req, key);
+            assertNull(ret);
         }
     }
 }
