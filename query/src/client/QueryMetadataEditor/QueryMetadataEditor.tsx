@@ -16,19 +16,28 @@
 
 import {List} from "immutable";
 import React,{PureComponent} from 'react';
-import {Button, Panel} from "react-bootstrap";
-import {LoadingSpinner, IBannerMessage, DomainDesign, DomainForm, fetchQueryMetadata} from "@labkey/components";
+import {Button} from "react-bootstrap";
+import {
+    LoadingSpinner,
+    IBannerMessage,
+    DomainDesign,
+    DomainForm,
+    fetchQueryMetadata,
+    DomainField
+} from "@labkey/components";
 import {ActionURL} from "@labkey/api";
+import {AliasField} from "./components/AliaseField";
 
 import "@labkey/components/dist/components.css"
 
 interface IAppState {
     dirty: boolean,
-    domain: DomainDesign
+    domain: DomainDesign,
     messages?: List<IBannerMessage>,
-    queryName: string
-    returnUrl: string
-    schemaName: string
+    queryName: string,
+    returnUrl: string,
+    schemaName: string,
+    showAlias: boolean
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -50,13 +59,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             schemaName,
             queryName,
             returnUrl,
-            messages
+            messages,
+            showAlias : false
         };
     }
 
     componentDidMount() {
         const { schemaName, queryName, messages } = this.state;
-        console.log("component did mount");
 
         if (schemaName && queryName) {
             //TODO: remove domainId from this call
@@ -97,20 +106,56 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         }
     };
 
-    renderButtons() {
-        // const { submitting } = this.state;
-        console.log("in render buttons");
+    aliasFieldBtnHandler = () => {
+        this.setState(() => ({showAlias: true}));
+    };
 
+    onHideAliasField = (): any => {
+        this.setState(() => ({showAlias: false}));
+    };
+
+    onAddAliasField = (domainField: DomainField): any => {
+        const { domain } = this.state;
+        const newFields = domain.fields.push(domainField);
+        const newDomain = domain.set('fields', newFields) as DomainDesign;
+
+        this.setState(() => ({
+            showAlias: false,
+            domain: newDomain
+        }));
+    };
+
+    onSaveBtnHandler = () => {
+
+    };
+
+    editSourceBtnHandler = () => {
+
+    };
+
+    viewDataBtnHandler = () => {
+
+    };
+
+    onResetBtnHandler = () => {
+
+    };
+
+    renderButtons() {
         return (
-            <div className={'domain-form-panel domain-designer-buttons'}>
+            <div className={'domain-form-panel query-metadata-editor-buttons'}>
+                <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>
+                <Button onClick={this.onSaveBtnHandler()}>Save</Button>
+                <Button onClick={this.editSourceBtnHandler()}>Edit Source</Button>
+                <Button onClick={this.viewDataBtnHandler()}>View Data</Button>
+                <Button onClick={this.onResetBtnHandler()}>Reset To Default</Button>
                 <Button onClick={this.onCancelBtnHandler}>Cancel</Button>
-                {/*<Button className='pull-right' bsStyle='success' disabled={submitting} onClick={this.submitAndNavigate}>Save</Button>*/}
             </div>
         )
     }
 
     render() {
-        const { domain } = this.state;
+        const { domain, showAlias } = this.state;
         const isLoading = domain === undefined;
 
         if (isLoading) {
@@ -127,8 +172,19 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                         useTheme={false}
                 />
                 }
+
                 { domain && this.renderButtons() }
+
+                { showAlias &&
+                <AliasField
+                        domainFields={domain.fields}
+                        showAlias={true}
+                        onHide={this.onHideAliasField}
+                        onAdd={this.onAddAliasField}
+                />
+                }
             </>
         )
     }
 }
+

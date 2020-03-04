@@ -52,6 +52,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -6691,7 +6692,10 @@ public class QueryController extends SpringActionController
         TableInfo table;
         try
         {
-            table = schema.getTable(tableName);
+            table = schema.getTable(tableName, null);
+            if (null == table)
+                return null;
+
             Domain domain = table.getDomain();
             if (domain != null)
                 gwtTableInfo.setProvisioned(domain.isProvisioned());
@@ -6699,10 +6703,6 @@ public class QueryController extends SpringActionController
         catch (QueryParseException e)
         {
             throw new MetadataUnavailableException(e.getMessage());
-        }
-        if (table == null)
-        {
-            return null;
         }
 
         for (ColumnInfo columnInfo : table.getColumns())
@@ -6747,6 +6747,7 @@ public class QueryController extends SpringActionController
                     }
                 }
             }
+            gwtColumnInfo.setLockType(LockedPropertyType.PartiallyLocked.name());
             List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
             gwtColumnInfo.setConditionalFormats(formats);
         }
