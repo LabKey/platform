@@ -5029,89 +5029,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class CreateSampleRunAction extends SimpleViewAction<CreateSampleRunForm>
-    {
-        private int[] _samples;
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-
-        @Override
-        public void validate(CreateSampleRunForm form, BindException errors)
-        {
-            _samples = form.getIds(false);
-        }
-
-        @Override
-        public ModelAndView getView(CreateSampleRunForm form, BindException errors) throws Exception
-        {
-            //            Set<Integer> selections = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
-            int[] selected = form.getIds(false);
-
-            List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
-            if (!editors.isEmpty())
-            {
-                ActionURL editURL = editors.get(0).getEditUrl(getContainer());
-                getViewContext().getResponse().sendRedirect(editURL.getLocalURIString());
-            }
-            return null;
-        }
-    }
-
-    public static class CreateSampleRunForm implements HasViewContext, DataRegionSelection.DataSelectionKeyForm
-    {
-        private int[] _rowIds;
-        private String _dataRegionSelectionKey;
-        private ViewContext _context;
-
-        public int[] getIds(boolean clear)
-        {
-            return PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), clear));
-        }
-
-        public int[] getRowIds()
-        {
-            if (_rowIds == null)
-            {
-                _rowIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), getDataRegionSelectionKey(), false));
-            }
-            return _rowIds;
-        }
-
-        @Override
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        @Override
-        public void setDataRegionSelectionKey(String key)
-        {
-            _dataRegionSelectionKey = key;
-        }
-
-        public void setRowIds(int[] rowIds)
-        {
-            _rowIds = rowIds;
-        }
-
-        @Override
-        public void setViewContext(ViewContext context)
-        {
-            _context = context;
-        }
-
-        @Override
-        public ViewContext getViewContext()
-        {
-            return _context;
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
     public class DeriveSamplesAction extends FormViewAction<DeriveMaterialForm>
     {
         private List<ExpMaterial> _materials;
@@ -6514,11 +6431,6 @@ public class ExperimentController extends SpringActionController
         public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
         {
             return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", materialRowId);
-        }
-
-        public ActionURL getSampleRunEditorURL(Container c)
-        {
-            return new ActionURL(CreateSampleRunAction.class, c);
         }
 
         @Override

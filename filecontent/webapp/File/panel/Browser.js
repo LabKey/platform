@@ -713,6 +713,17 @@ Ext4.define('File.panel.Browser', {
                 scope: this
             });
 
+            this.actionsMap.createRun = Ext4.create('File.panel.Action', {
+                text: 'Create Run',
+                hardText: 'Create Run',
+                itemId: 'createRun',
+                handler: this.onCreateRun,
+                fontCls: 'fa-sitemap',
+                tooltip: 'Create run with selected files as inputs or outputs',
+                actionType : File.panel.Action.Type.NOMIN,
+                scope: this
+            });
+
             this.explicitActions = new Ext4.util.MixedCollection();
 
             if (Ext4.isArray(this.actions)) {
@@ -1899,6 +1910,78 @@ Ext4.define('File.panel.Browser', {
         }
     },
 
+    onCreateRun : function() {
+
+        var radios = [{
+            xtype: 'radio',
+            labelSeparator: '',
+            boxLabel: 'Inputs',
+            name: 'data',
+            inputValue: 'dataInputs',
+            width : '100%',
+            validateOnChange: false,
+            validateOnBlur: false
+        },{
+            xtype: 'radio',
+            labelSeparator: '',
+            boxLabel: 'Ouputs',
+            name: 'data',
+            inputValue: 'dataOutputs',
+            width : '100%',
+            validateOnChange: false,
+            validateOnBlur: false
+        }];
+
+        var radioGroup = {
+            xtype: 'radiogroup',
+            fieldLabel: "Create a new run with the selected files as inputs or outputs.",
+            tooltip: "This will use the selected file(s) in a new sample derivation run.",
+            columns: 1,
+            labelSeparator: '',
+            items: radios,
+            labelWidth: 350,
+            bodyStyle: 'margin-bottom: 4px;',
+            validateOnChange: false,
+        };
+
+        var actionPanelId = Ext4.id();
+        var items = [{
+            xtype: 'form',
+            id: actionPanelId,
+            bodyStyle: 'padding: 10px;',
+            labelAlign: 'left',
+            itemCls: 'x-check-group',
+            items: [radioGroup]
+        }];
+
+        var win = Ext4.create('Ext.Window', {
+            title: 'Create Run',
+            cls: 'data-window',
+            width: 725,
+            minHeight: 100,
+            maxHeight: 500,
+            autoScroll: true,
+            closeAction: 'destroy',
+            modal: true,
+            items: items,
+            autoShow: true,
+            buttons: [{
+                text: 'Cancel',
+                handler: function() {
+                    win.close();
+                },
+                scope: this
+            },{
+                text: 'Create Run',
+                handler: function() {
+                    this.submitCreateRunForm(Ext4.getCmp(actionPanelId));
+                    win.close();
+                },
+                scope: this
+            }]
+        });
+    },
+
     onImportData : function() {
 
         //
@@ -2055,6 +2138,44 @@ Ext4.define('File.panel.Browser', {
         }
         else {
             console.warn('failed to find action for submission.');
+        }
+    },
+
+    getFileRelativePath : function(path) {
+        var containerParts = path.split('@files');
+        return containerParts[containerParts.length - 1];
+    },
+
+    submitCreateRunForm : function(panel) {
+        // client side validation
+        var selection = panel.getForm().getValues();
+        var param = selection.data;
+
+        var files = this.getGridSelection();
+        var url = Object.values(this.runEditors)[0];  // Right now we're just handling one editor
+
+        if (files.length === 0) {
+            window.location = url;
+        }
+        else {
+            var fileString ="";
+            var failed = false;
+            for (var j = 0; j < files.length; j++) {
+                if (fileString) {
+                    fileString += ';';
+                }
+                if (files[j].data.collection) {
+                    failed = true;
+                    LABKEY.Utils.alert("Unsupported operation", "Directory selection is not supported for run creation. " +
+                            "Please select files only.");
+                    break;
+                }
+
+                fileString += this.getFileRelativePath(files[j].id);
+            }
+            if (!failed) {
+                window.location = url + param + "=" + fileString;
+            }
         }
     },
 

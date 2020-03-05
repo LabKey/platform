@@ -11,13 +11,11 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -53,36 +51,35 @@ public class SampleSetContentsView extends QueryView
         return deriveButton;
     }
 
-    private String getSelectedScript(ActionURL url)
+    private String getSelectedScript(ActionURL url, boolean isOuput)
     {
-        return "function(rows) {" +
-                "window.location = " + url.getLocalURIString() + "" +
+        return "function(data) {" +
+                "   var selected = data.selected.join(';');" +
+                    DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});" +
+                "   if(selected.length === 0) {window.location = '" + url.getLocalURIString() + "';}" +
+                "   else {" +
+                "       window.location = '" + url.getLocalURIString() +
+                        (isOuput ? "materialOutputs" : "materialInputs") + "=' + selected" +
+                "   }" +
                 "}";
     }
 
-    private String getCreateRunScript(DataView view, ActionURL url)
+    private String getCreateRunScript(ActionURL url, boolean isOutput)
     {
         // Need to figure out selection key
         return DataRegion.getJavaScriptObjectReference(getDataRegionName()) +
-            ".getSelected({success: " + getSelectedScript(url) + ", selectionKey: " +
-                DataRegion.getJavaScriptObjectReference(getDataRegionName()) + "});";
+            ".getSelected({success: " + getSelectedScript(url, isOutput) + "});";
     }
 
-    public ActionButton getCreateRunButton(@NotNull DataView view)
+    public void addCreateRunOptions(@NotNull MenuButton button, @NotNull DataView view, @NotNull ExpRunEditor editor)
     {
-        MenuButton addRunsButton = new MenuButton("Create Run");
+        NavTree inputItem = new NavTree("Input  " + editor.getDisplayName() + " samples");
+        inputItem.setScript(getCreateRunScript(editor.getEditUrl(view.getViewContext().getContainer()), false));
+        button.addMenuItem(inputItem);
 
-        ActionURL createSampleRunUrl = PageFlowUtil.urlProvider(ExperimentUrls.class).getSampleRunEditorURL(view.getViewContext().getContainer());
-//        NavTree inputItem = new NavTree("Input samples");
-        NavTree inputItem = new NavTree("Input samples", createSampleRunUrl);
-        inputItem.usePost();
-//        inputItem.setScript(getCreateRunScript(view, createSampleRunUrl));
-
-        addRunsButton.addMenuItem(inputItem);
-        addRunsButton.setRequiresSelection(true);
-        addRunsButton.setDisplayPermission(InsertPermission.class);
-
-        return addRunsButton;
+        NavTree outputItem = new NavTree("Output " + editor.getDisplayName() + " samples");
+        outputItem.setScript(getCreateRunScript(editor.getEditUrl(view.getViewContext().getContainer()), true));
+        button.addMenuItem(outputItem);
     }
 
     @Override
@@ -131,7 +128,15 @@ public class SampleSetContentsView extends QueryView
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
         if (!editors.isEmpty())
         {
-            bar.add(getCreateRunButton(view));
+            MenuButton addRunsButton = new MenuButton("Create Run");
+            addRunsButton.setDisplayPermission(InsertPermission.class);
+
+            for (ExpRunEditor editor : editors)
+            {
+                addCreateRunOptions(addRunsButton, view, editor);
+            }
+
+            bar.add(addRunsButton);
         }
     }
 
