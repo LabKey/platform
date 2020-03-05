@@ -27,12 +27,9 @@ import {
     DomainDetails,
     SAMPLE_TYPE,
     IDomainField,
-    User,
-    hasAllPermissions,
-    PermissionTypes,
     getSampleSet,
     initQueryGridState,
-    AppURL
+    Alert
 } from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
@@ -54,6 +51,8 @@ interface IAppState {
     badDomain: DomainDetails
 }
 
+const CREATE_SAMPLE_SET_ACTION = 'createSampleSet';
+
 //TODO should these be moved to a constants file? or shared through components?
 export const NAME_EXPRESSION_TOPIC = 'sampleIDs#expression';
 export const DEFAULT_SAMPLE_FIELD_CONFIG = {
@@ -73,20 +72,17 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         super(props);
 
         initQueryGridState();
-        //TODO case-sensitive?
-        const { RowId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
+        const { RowId, schemaName, queryName, domainId, returnUrl } = ActionURL.getParameters();
+        const action = ActionURL.getAction();
 
-        let messages = List<IBannerMessage>();
-        if ((!schemaName || !queryName) && !RowId) {
-            let msg =  'Missing required parameter: rowId or schemaName and queryName.';
-            let msgType = 'danger';
-            let bannerMsg ={message : msg, messageType : msgType};
-            messages = messages.push(bannerMsg);
-        }
+        let messages = (action !== CREATE_SAMPLE_SET_ACTION) ?
+            this.checkUpdateActionParameters(schemaName, queryName, domainId, RowId,) :
+            List<IBannerMessage>();
 
         this.state = {
             schemaName,
             queryName,
+            domainId,
             rowId: RowId,
             returnUrl,
             submitting: false,
@@ -100,15 +96,18 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     componentDidMount() {
         const { domainId, schemaName, queryName, rowId, messages } = this.state;
 
+        //These will allow direct querying of the domain design
         if ((schemaName && queryName) || domainId ) {
             this.fetchSampleTypeDomain(domainId, schemaName, queryName);
         }
         else if (rowId) {
+            //Get SampleType from experiment service
             getSampleSet({rowId})
                 .then(results => {
                     const sampleSet = results.get('sampleSet');
                     const {domainId} = sampleSet;
 
+                    // Then query for actual domain design
                     this.fetchSampleTypeDomain(domainId);
                 })
                 .catch(error => {
@@ -126,6 +125,26 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
+
+    /**
+     * Verify that the needed parameters are supplied either
+     * @param schemaName of sample type
+     * @param queryName of sample type
+     * @param rowId of sample type
+     * @returns List of error messages
+     */
+    private checkUpdateActionParameters = (schemaName: string, queryName: string, domainId: number, rowId: number): List<IBannerMessage> => {
+        let messages = List<IBannerMessage>();
+
+        if ( (!schemaName || !queryName) && !domainId && !rowId) {
+            let msg =  'Need at least one required identifier: rowId, domainId, or schemaName and queryName.';
+            let msgType = 'danger';
+            let bannerMsg ={message: msg, messageType: msgType};
+            messages = messages.push(bannerMsg);
+        }
+
+        return messages;
+    };
 
     /**
      * Look up full Sample Type domain, including fields
@@ -166,6 +185,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         this.navigate();
     };
 
+    dismissAlert = (index: any) => {
+        this.setState(() => ({
+            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
+        }));
+    };
+
     showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
         const { messages } = this.state;
 
@@ -185,28 +210,23 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         });
     };
 
-    userCanDesignSampleSets = (user: User): boolean => {
-        return hasAllPermissions(user, [PermissionTypes.DesignSampleSet]);
-    };
-
     beforeFinish = ():void => {}; //TODO may need something here...
 
     render() {
         const {menuLoading} = this.props;
-        const {sampleType} = this.state;
+        const {sampleType, messages} = this.state;
         const subtitle = 'Edit Sample Type Details';
 
-        //TODO check permissions
-        // if (!this.userCanDesignSampleSets(user)) {
-        //     return <InsufficientPermissionsPage title={subtitle}/>
-        // }
-        // else
         if (menuLoading) {
             return <LoadingPage title={subtitle}/>
         }
 
         return (
             <>
+                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
+                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
+                }
+
                 {sampleType &&
                 <SampleTypeDesigner
                         initModel={sampleType}
@@ -216,6 +236,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         onCancel={this.onCancelBtnHandler}
                         defaultSampleFieldConfig={DEFAULT_SAMPLE_FIELD_CONFIG}
                         includeDataClasses={true}
+                        useTheme={true}
+                        appPropertiesOnly={false}
                 />
                 }
             </>
