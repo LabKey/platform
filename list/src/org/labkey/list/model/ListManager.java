@@ -593,13 +593,7 @@ public class ListManager implements SearchService.DocumentProvider
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
-        new TableSelector(listTable, filter, null){
-            @Override
-            public Connection getConnection() throws SQLException
-            {
-                return getScope().getReadOnlyConnection();
-            }
-        }.setForDisplay(true).forEachResults(results -> {
+        new TableSelector(listTable, filter, null).setJdbcUncached().setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
             String entityId = (String)map.get(entityIdKey);
@@ -700,13 +694,7 @@ public class ListManager implements SearchService.DocumentProvider
         String lastIndexedClause = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 
-        new TableSelector(listTable, filter, null){
-            @Override
-            public Connection getConnection() throws SQLException
-            {
-                return getScope().getReadOnlyConnection();
-            }
-        }.setForDisplay(true).forEachResults(results ->
+        new TableSelector(listTable, filter, null).setJdbcUncached().setForDisplay(true).forEachResults(results ->
         {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             String title = titleTemplate.eval(map);
@@ -807,13 +795,7 @@ public class ListManager implements SearchService.DocumentProvider
                 FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
 
                 // All columns, all rows, no filters, no sorts
-                new TableSelector(ti) {
-                    @Override
-                    public Connection getConnection() throws SQLException
-                    {
-                        return getScope().getReadOnlyConnection();
-                    }
-                }.setForDisplay(true).forEachResults(new ForEachBlock<>()
+                new TableSelector(ti).setJdbcUncached().setForDisplay(true).forEachResults(new ForEachBlock<>()
                 {
                     @Override
                     public void exec(Results results) throws StopIteratingException
@@ -870,13 +852,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         List<String> parentIds = new ArrayList<>();
         Set<String> cols = new HashSet<>(Arrays.asList("EntityId"));
-        new TableSelector(listTable, cols){
-            @Override
-            public Connection getConnection() throws SQLException
-            {
-                return getScope().getReadOnlyConnection();
-            }
-        }.forEachMap(row -> {
+        new TableSelector(listTable, cols).setJdbcUncached().forEachMap(row -> {
             parentIds.add((String)row.get(entityIdKey.getName()));
 
             // Delete in batches to minimize db queries
