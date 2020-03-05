@@ -6744,6 +6744,18 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(EditQueriesPermission.class)
+    public class ResetQueryMetadataAction extends MutatingApiAction<QueryForm>
+    {
+        @Override
+        public Object execute(QueryForm queryForm, BindException errors) throws Exception
+        {
+            QueryDefinition queryDef = queryForm.getQueryDef();
+            return resetToDefault(queryDef.getSchema().getSchemaName(), queryDef.getName());
+        }
+    }
+
     private static class QueryMetadataApiForm
     {
         GWTTableInfo _domain;
@@ -6770,7 +6782,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    public GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
+    private GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
     {
         UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
@@ -7436,6 +7448,26 @@ public class QueryController extends SpringActionController
         }
 
         return TablesDocument.Factory.parse(xml);
+    }
+
+    public GWTTableInfo resetToDefault(String schemaName, String queryName) throws MetadataUnavailableException
+    {
+        QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
+        if (queryDef != null)
+        {
+            // Delete the metadata override on a built-in table
+            QueryManager.get().delete(queryDef);
+        }
+        else
+        {
+            queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, true);
+            if (queryDef != null)
+            {
+                queryDef.setMetaData(null);
+                QueryManager.get().update(getViewContext().getUser(), queryDef);
+            }
+        }
+        return getMetadata(schemaName, queryName);
     }
 
     public static class TestCase extends AbstractActionPermissionTest

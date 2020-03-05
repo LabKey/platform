@@ -79,7 +79,6 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                     }));
                 });
         }
-
         window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
@@ -93,15 +92,6 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             domain: newDomain,
             dirty: state.dirty || dirty // if the state is already dirty, leave it as such
         }));
-    };
-
-    onCancelBtnHandler = () => {
-        if (this.state.dirty) {
-            // this.setState(() => ({showConfirm: true}));
-        }
-        else {
-            // this.navigate();
-        }
     };
 
     aliasFieldBtnHandler = () => {
@@ -124,17 +114,23 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onSaveBtnHandler = () => {
-        const { domain, schemaName } = this.state;
+        const { domain, schemaName, messages } = this.state;
 
         Ajax.request({
-           url: buildURL('query', 'saveQueryMetadata.api'),
-           method: 'POST',
-           success: Utils.getCallbackWrapper(() => {console.log("Save success")}),
-           failure: Utils.getCallbackWrapper(() => {console.log("Save failure")}),
-           jsonData : {
-               domain : DomainDesign.serialize(domain),
-               schemaName : schemaName
-           }
+            url: buildURL('query', 'saveQueryMetadata.api'),
+            method: 'POST',
+            success: Utils.getCallbackWrapper(() => {
+
+            }),
+            failure: Utils.getCallbackWrapper((error) => {
+                this.setState(() => ({
+                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                }))
+            }),
+            jsonData: {
+                domain: DomainDesign.serialize(domain),
+                schemaName: schemaName
+            }
         });
     };
 
@@ -147,7 +143,26 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onResetBtnHandler = () => {
+        const { schemaName, queryName, messages } = this.state;
 
+        Ajax.request({
+            url: buildURL('query', 'resetQueryMetadata.api'),
+            method: 'POST',
+            success: Utils.getCallbackWrapper((data) => {
+                this.setState(() => ({
+                    domain: DomainDesign.create(data, undefined)
+                }))
+            }),
+            failure: Utils.getCallbackWrapper((error) => {
+                this.setState(() => ({
+                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                }))
+            }),
+            params : {
+                schemaName : schemaName,
+                queryName : queryName
+            }
+        });
     };
 
     renderButtons() {
