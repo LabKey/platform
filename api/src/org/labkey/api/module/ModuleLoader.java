@@ -387,7 +387,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
             }
 
             if (null != moduleExisting)
+            {
                 ContextListener.fireModuleChangeEvent(moduleExisting);
+                ((DefaultModule)moduleExisting).unregister();
+            }
 
             try
             {

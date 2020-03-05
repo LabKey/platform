@@ -74,6 +74,9 @@ public class SimpleModule extends SpringModule
     private String _folderPathPattern = null;
     private PathMatcher _pathMatcher = null;
 
+    // remember listener so we can unregister it
+    SimpleModuleContainerListener _containerListener = null;
+
     public SimpleModule()
     {
     }
@@ -169,7 +172,8 @@ public class SimpleModule extends SpringModule
 
     protected void registerContainerListeners()
     {
-        ContainerManager.addContainerListener(new SimpleModuleContainerListener(this));
+        _containerListener = new SimpleModuleContainerListener(this);
+        ContainerManager.addContainerListener(_containerListener);
     }
 
     protected void registerSchemas()
@@ -252,5 +256,16 @@ public class SimpleModule extends SpringModule
         super.copyPropertiesFrom(from);
         if (from instanceof SimpleModule)
             this._pathMatcher = ((SimpleModule)from)._pathMatcher;
+    }
+
+    @Override
+    public void unregister()
+    {
+        super.unregister();
+        if (null != _containerListener)
+        {
+            ContainerManager.removeContainerListener(_containerListener);
+            _containerListener = null;
+        }
     }
 }
