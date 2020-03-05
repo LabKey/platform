@@ -701,6 +701,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             iterator.remove();
             removeMapValue(current, _moduleClassMap);
             removeMapValue(current, _moduleMap);
+            removeMapValue(current, _controllerNameToModule);
         }
     }
 
@@ -1640,6 +1641,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
         {
             removeMapValue(m, _moduleClassMap);
             removeMapValue(m, _moduleMap);
+            removeMapValue(m, _controllerNameToModule);
             _moduleContextMap.remove(context.getName());
             _modules.remove(m);
         }
