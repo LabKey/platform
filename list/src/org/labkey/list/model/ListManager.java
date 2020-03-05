@@ -75,8 +75,6 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.view.ListItemAttachmentParent;
 
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;

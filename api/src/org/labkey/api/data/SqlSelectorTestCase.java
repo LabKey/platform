@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Test;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -92,6 +93,16 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         public void setBody(String body)
         {
             _body = body;
+        }
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testJdbcUncached() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+        try (Connection conn = scope.getConnection())
+        {
+            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcUncached();
         }
     }
 }
