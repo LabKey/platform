@@ -21,7 +21,6 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
@@ -37,11 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * User: kevink
@@ -51,7 +45,6 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "DirectoryResource Cache", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
-    private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
     private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;
@@ -102,12 +95,6 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         super(path, resolver);
         _dir = dir;
         _cacheKey = new Pair<>(_resolver, getPath());
-
-        if (!KEYS_WITH_LISTENERS.contains(_cacheKey))
-        {
-            registerListener(WATCHER, new DirectoryResourceListener(), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-            KEYS_WITH_LISTENERS.add(_cacheKey);
-        }
     }
 
     public Path getRelativePath(java.nio.file.Path nioPath)
