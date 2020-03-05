@@ -23,12 +23,13 @@ import {
     DomainDesign,
     DomainForm,
     fetchQueryMetadata,
-    DomainField, buildURL
+    DomainField, buildURL, Alert
 } from "@labkey/components";
 import {ActionURL, Ajax, Utils} from "@labkey/api";
 import {AliasField} from "./components/AliaseField";
 
 import "@labkey/components/dist/components.css"
+import "./queryMetadataEditor.scss";
 
 interface IAppState {
     dirty: boolean,
@@ -37,7 +38,8 @@ interface IAppState {
     queryName: string,
     returnUrl: string,
     schemaName: string,
-    showAlias: boolean
+    showAlias: boolean,
+    showSave: boolean,
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -60,7 +62,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             queryName,
             returnUrl,
             messages,
-            showAlias : false
+            showAlias : false,
+            showSave: false
         };
     }
 
@@ -87,10 +90,27 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
+
     onChangeHandler = (newDomain, dirty) => {
+        console.log("called");
         this.setState((state) => ({
             domain: newDomain,
-            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
+            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
+            showSave: true
+        }));
+    };
+
+    showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
+        const { messages } = this.state;
+
+        this.setState(Object.assign({}, additionalState, {
+            messages : messages.set(index, {message: message, messageType: messageType})
+        }));
+    };
+
+    dismissAlert = (index: any) => {
+        this.setState(() => ({
+            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
         }));
     };
 
@@ -109,7 +129,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         this.setState(() => ({
             showAlias: false,
-            domain: newDomain
+            domain: newDomain,
+            showSave: true
         }));
     };
 
@@ -120,7 +141,10 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             url: buildURL('query', 'saveQueryMetadata.api'),
             method: 'POST',
             success: Utils.getCallbackWrapper(() => {
-
+                this.showMessage("Save Successful", 'success', 0);
+                this.setState(() => ({
+                    showSave: false
+                }));
             }),
             failure: Utils.getCallbackWrapper((error) => {
                 this.setState(() => ({
@@ -135,11 +159,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     editSourceBtnHandler = () => {
-
+        const { schemaName, queryName } = this.state;
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
+        });
     };
 
     viewDataBtnHandler = () => {
-
+        const { schemaName, queryName } = this.state;
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
+        });
     };
 
     onResetBtnHandler = () => {
@@ -166,10 +196,12 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     renderButtons() {
+        const { showSave } = this.state;
+
         return (
             <div className={'domain-form-panel query-metadata-editor-buttons'}>
                 <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>
-                <Button onClick={this.onSaveBtnHandler}>Save</Button>
+                <Button bsStyle='primary' className='pull-right' disabled={!showSave} onClick={this.onSaveBtnHandler}>Save</Button>
                 <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
                 <Button onClick={this.viewDataBtnHandler}>View Data</Button>
                 <Button onClick={this.onResetBtnHandler}>Reset To Default</Button>
@@ -178,7 +210,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, showAlias } = this.state;
+        const { domain, showAlias, messages } = this.state;
         const isLoading = domain === undefined;
 
         if (isLoading) {
@@ -186,25 +218,42 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         }
         return (
             <>
-                { domain &&
-                <DomainForm
-                        headerTitle={'Properties'}
+                {
+                    domain &&
+                    <DomainForm
+                        headerTitle={'Metadata Properties'}
                         helpTopic={'metadataSql'}
                         domain={domain}
                         onChange={this.onChangeHandler}
                         useTheme={false}
-                />
+                        hideAddFieldsButton={true}
+                    />
+                }
+
+                {
+                    messages && messages.size > 0 &&
+                    messages.map((bannerMessage, idx) => {
+                        return (
+                            <Alert
+                                key={idx}
+                                bsStyle={bannerMessage.messageType}
+                                onDismiss={() => this.dismissAlert(idx)}>
+                                {bannerMessage.message}
+                            </Alert>
+                        )
+                    })
                 }
 
                 { domain && this.renderButtons() }
 
-                { showAlias &&
-                <AliasField
+                {
+                    showAlias &&
+                    <AliasField
                         domainFields={domain.fields}
                         showAlias={true}
                         onHide={this.onHideAliasField}
                         onAdd={this.onAddAliasField}
-                />
+                    />
                 }
             </>
         )
