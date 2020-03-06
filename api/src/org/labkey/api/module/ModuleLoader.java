@@ -490,7 +490,11 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
-        initializeAndPruneModules(getModules());
+        synchronized (_modulesLock)
+        {
+            // use _modules here because this List<> needs to be modifiable
+            initializeAndPruneModules(_modules);
+        }
 
         if (!_duplicateModuleErrors.isEmpty())
         {
