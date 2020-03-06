@@ -1920,7 +1920,8 @@ Ext4.define('File.panel.Browser', {
             inputValue: 'dataInputs',
             width : '100%',
             validateOnChange: false,
-            validateOnBlur: false
+            validateOnBlur: false,
+            checked: true
         },{
             xtype: 'radio',
             labelSeparator: '',
@@ -1951,7 +1952,9 @@ Ext4.define('File.panel.Browser', {
             bodyStyle: 'padding: 10px;',
             labelAlign: 'left',
             itemCls: 'x-check-group',
-            items: [radioGroup]
+            items: [radioGroup],
+            bodyPadding: 10,
+            margin: '5px 5px 10px 5px'
         }];
 
         var win = Ext4.create('Ext.Window', {
