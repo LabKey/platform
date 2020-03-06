@@ -7,6 +7,7 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyA;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.params.FieldDefinition;
@@ -68,9 +69,11 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
     @Test
     public void testSteps()
     {
+        log("Changing the timepoint to date");
         goToProjectHome();
         changeTimepointType("date");
 
+        log("Creating a new dataset");
         EditDatasetDefinitionPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
@@ -82,22 +85,54 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
         editDatasetPage.save();
 
+        log("Inserting rows in the dataset");
         goToProjectHome();
         clickAndWait(Locator.linkWithText(datasetName));
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickInsertNewRow();
-
         setFormElement(Locator.name("quf_ParticipantId"), "P1");
         setFormElement(Locator.name("quf_date"), getDate());
         setFormElement(Locator.name("quf_TestDate"), getDate());
-        clickAndWait(Locator.tagWithText("span", "Submit"));
+        clickButton("Submit");
 
+        log("Verifying the visit column in dataset");
+        goToProjectHome();
+        clickAndWait(Locator.linkWithText(datasetName));
+        table = new DataRegionTable("Dataset", getDriver());
+        CustomizeView tableCustomizeView = table.getCustomizeView();
+        tableCustomizeView.openCustomizeViewPanel();
+        waitForText("Available Fields");
+        tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
+        tableCustomizeView.saveDefaultView();
+        checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList("Day 0"),
+                table.getColumnDataAsText("ParticipantVisit/Visit"));
+
+        log("Changing the timepoint to continuous and verifying visit");
         goToProjectHome();
         changeTimepointType("continuous");
         clickAndWait(Locator.linkWithText(datasetName));
         table = new DataRegionTable("Dataset", getDriver());
-        checker().verifyEquals("Date field changed when study is changed to continuous", 1,
-                table.getColumnDataAsText("TestDate"));
+        checker().verifyEquals("Visit field is blank when study is changed to continuous", Arrays.asList(" "),
+                table.getColumnDataAsText("ParticipantVisit/Visit"));
+    }
+
+    @Test
+    public void testPublishStudy()
+    {
+        goToProjectHome();
+
+        clickTab("Manage");
+
+        log("Publish study.");
+        clickButton("Publish Study", 0);
+        _extHelper.waitForExtDialog("Publish Study");
+
+        checker().verifyTrue("Date timepoint value should be present",
+                isElementPresent(Locator.tagWithId("input", "dateRadio")));
+
+        checker().verifyTrue("Continuous timepoint value should be present",
+                isElementPresent(Locator.tagWithId("input", "continuousRadio")));
+
     }
 
     private void changeTimepointType(String type)
