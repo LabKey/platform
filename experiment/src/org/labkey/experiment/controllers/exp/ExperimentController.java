@@ -1414,7 +1414,7 @@ public class ExperimentController extends SpringActionController
             {
                 if (editor.isProtocolEditor(form.lookupRun().getProtocol()))
                 {
-                    updateLinks.append(PageFlowUtil.link("edit " + editor.getDisplayName())
+                    updateLinks.append(PageFlowUtil.link("edit " + editor.getDisplayName() + " run")
                             .href(editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
                 }
             }
