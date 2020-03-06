@@ -344,7 +344,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             Map<String, String> editorMap = new HashMap<>();
             for (ExpRunEditor editor : editors)
             {
-                editorMap.put(editor.getDisplayName(), editor.getEditUrl(getContextContainer()).getLocalURIString());
+                editorMap.put(editor.getProtocolName(), editor.getEditUrl(getContextContainer()).getLocalURIString());
             }
             form.setRunEditors(editorMap);
         }
@@ -810,6 +810,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                    -1 != StringUtils.indexOf(_rootPath, "%40files/");
         }
 
+        @Nullable
         public Map<String, String> getRunEditors()
         {
             return _runEditors;

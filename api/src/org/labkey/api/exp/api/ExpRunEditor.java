@@ -28,6 +28,11 @@ public class ExpRunEditor
         return _displayName;
     }
 
+    public String getProtocolName()
+    {
+        return _protocolName;
+    }
+
     public boolean isProtocolEditor(ExpProtocol protocol)
     {
         return protocol.getName().equals(_protocolName);

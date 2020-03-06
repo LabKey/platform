@@ -2142,8 +2142,7 @@ Ext4.define('File.panel.Browser', {
     },
 
     getFileRelativePath : function(path) {
-        var containerParts = path.split('@files');
-        return containerParts[containerParts.length - 1];
+        return path.split('@files').pop();
     },
 
     submitCreateRunForm : function(panel) {
