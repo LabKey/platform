@@ -460,7 +460,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     return rowContainerVal;
                 }
 
-                Container rowContainer = UserSchema.translateRowSuppliedContainer(rowContainerVal, us.getContainer(), us.getUser(), tableInfo, UpdatePermission.class, true);
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(rowContainerVal, us.getContainer(), us.getUser(), tableInfo, UpdatePermission.class, getDataSource());
                 if (rowContainer != null)
                 {
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))

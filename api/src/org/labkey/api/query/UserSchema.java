@@ -760,7 +760,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * If a value is supplied but cannot be resolved to a valid container then null is returned.
      */
     @Nullable
-    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz, boolean isETL)
+    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz, @Nullable String dataSource)
     {
         Container ret;
         if (rowContainerVal == null)
@@ -782,7 +782,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             // then ignore the incoming container. This was an issue when queries for ETLs contained a different container
             // than the current container, verify permissions was looking for destination target in incoming container.
             // This function is used a little differently for ETLs vs QUS usage so scope this behavior only to ETLs.
-            if (isETL && (!ret.isWorkbook() || !ret.hasAncestor(c)))
+            if ((dataSource != null && dataSource.equals("etl")) && (!ret.isWorkbook() || !ret.hasAncestor(c)))
             {
                 return null;
             }
