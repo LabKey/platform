@@ -619,6 +619,12 @@ public class AdminController extends SpringActionController
         }
 
         @Override
+        public ActionURL getSiteLookAndFeelSettingsURL()
+        {
+            return new ActionURL(LookAndFeelSettingsAction.class, ContainerManager.getRoot());
+        }
+
+        @Override
         public ActionURL getFolderSettingsURL(Container c)
         {
             return new ActionURL(FolderSettingsAction.class, c);
