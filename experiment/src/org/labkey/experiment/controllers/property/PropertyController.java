@@ -729,10 +729,22 @@ public class PropertyController extends SpringActionController
                 if (kind == null)
                     throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
 
+                //Name and description fields are supplied through the GWTDomain
+                String name = null;
+                Domain domain = null;
+                GWTDomain design = this.getDomainDesign();
+                if (design != null)
+                {
+                    name = StringUtils.trimToNull(design.getName());
+                    domain = PropertyService.get().getDomain(container, design.getDomainURI());
+                }
+
+
                 //TODO not a fan of doing this conversion in multiple locations
                 ObjectMapper mapper = new ObjectMapper();
                 Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
-                kind.validateOptions(container, user, options, isUpdate);
+
+                kind.validateOptions(container, user, options, name, domain, isUpdate);
             }
         }
     }

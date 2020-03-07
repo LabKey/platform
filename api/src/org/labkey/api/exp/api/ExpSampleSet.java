@@ -82,7 +82,7 @@ public interface ExpSampleSet extends ExpObject
 
     /** @return column that contains parent sample names */
     @Nullable
-    @Deprecated //Please use lineage syntax or parent aliases materialSource/parentSampleType/columnName or
+    @Deprecated //Please use lineage syntax or parent aliases materialSource/parentSampleType/columnName
     DomainProperty getParentCol();
 
     /** @return name expression if set. */

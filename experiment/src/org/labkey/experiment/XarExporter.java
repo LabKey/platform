@@ -548,11 +548,10 @@ public class XarExporter
                 xSampleSet.addKeyField(getPropertyName(keyCol));
             }
         }
-// TODO remove
-//        if (sampleSet.getParentCol() != null)
-//        {
-//            xSampleSet.setParentField(getPropertyName(sampleSet.getParentCol()));
-//        }
+        if (sampleSet.getParentCol() != null)
+        {
+            xSampleSet.setParentField(getPropertyName(sampleSet.getParentCol()));
+        }
         if (sampleSet.hasNameExpression())
         {
             xSampleSet.setNameExpression(sampleSet.getNameExpression());

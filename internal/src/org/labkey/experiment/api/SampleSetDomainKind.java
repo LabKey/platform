@@ -69,8 +69,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
-//TODO Remove or use?
-//public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -267,7 +265,6 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         return domain.getContainer().hasPermission(user, DesignSampleSetPermission.class);
     }
 
-    //TODO Remove or use?
     @Override
     @NotNull
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
@@ -277,38 +274,36 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     }
 
     @Override
-    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, boolean isUpdate)
+    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, boolean isUpdate)
     {
-        if (options == null)
-        {
-            return;  //TODO verify this is correct...
-        }
+        super.validateOptions(container, user, options, name, domain, isUpdate);
 
-        super.validateOptions(container, user, options, isUpdate);
-
-        //TODO these are supplied within the domainDesign fields
-//        String name = StringUtils.trimToNull(options.getName());
-//        if (!isUpdate)
-//        {
-//            if (name == null)
-//            {
-//                throw new IllegalArgumentException("You must supply a name for the sample type.");
-//            }
-//            else
-//            {
-//                ExpSampleSet ss = SampleSetService.get().getSampleSet(container, user, name);
-//                if (ss != null)
-//                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
-//            }
-//        }
-
-        // verify the length of the Name and NameExpression values
+        // verify and NameExpression values
         TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
 
-        //TODO this supplied within the domainDesign fields
-//        int nameMax = materialSourceTI.getColumn("Name").getScale();
-//        if (name != null && name.length() >= nameMax)
-//            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+        if (!isUpdate)
+        {
+            if (name == null)
+            {
+                throw new IllegalArgumentException("You must supply a name for the sample type.");
+            }
+            else
+            {
+                ExpSampleSet ss = SampleSetService.get().getSampleSet(container, user, name);
+                if (ss != null)
+                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
+            }
+        }
+
+        // verify the length of the Name
+        int nameMax = materialSourceTI.getColumn("Name").getScale();
+        if (name != null && name.length() >= nameMax)
+            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+
+        if (options == null)
+        {
+            return;
+        }
 
         int nameExpMax = materialSourceTI.getColumn("NameExpression").getScale();
         if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
@@ -318,11 +313,10 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
         if (aliasMap == null || aliasMap.size() == 0)
             return;
 
-        //TODO verify rowId value for create
         SampleSetService ss = SampleSetService.get();
-        ExpSampleSet sampleSet = options.getRowId() != -1 ? ss.getSampleSet(options.getRowId()) : null;
-        Domain domain = sampleSet != null ? sampleSet.getDomain() : null;
-        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(domain));
+        ExpSampleSet sampleSet = options.getRowId() >= 0 ? ss.getSampleSet(options.getRowId()) : null;
+        Domain ssDomain = sampleSet != null ? sampleSet.getDomain() : null;
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(ssDomain));
         Set<String> existingAliases = new CaseInsensitiveHashSet();
         Set<String> dupes = new CaseInsensitiveHashSet();
 
@@ -354,7 +348,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (domain != null && !finalExistingAliases.contains(trimmedKey) && domain.getPropertyByName(trimmedKey) != null)
+            if (ssDomain != null && !finalExistingAliases.contains(trimmedKey) && ssDomain.getPropertyByName(trimmedKey) != null)
             {
                 throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
             }

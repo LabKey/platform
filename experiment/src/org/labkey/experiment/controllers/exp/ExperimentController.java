@@ -3485,7 +3485,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
-    @Deprecated //Use PropertyController.SaveDomainAction
     public class UpdateMaterialSourceAction extends BaseSampleSetAction
     {
         @Override
@@ -3516,7 +3515,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
-    @Deprecated //Use PropertyController.CreateDomainAction
     public class CreateSampleSetAction extends BaseSampleSetAction
     {
         @Override
