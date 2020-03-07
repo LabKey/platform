@@ -48,6 +48,8 @@ public interface AdminUrls extends UrlProvider
     ActionURL getFolderSettingsURL(Container c);
     ActionURL getFileRootsURL(Container c);
 
+    ActionURL getSiteLookAndFeelSettingsURL();
+
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getMemTrackerURL();
