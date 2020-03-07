@@ -19,6 +19,7 @@ package org.labkey.api.admin;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -37,6 +38,8 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
     ActionURL getExperimentalFeaturesURL();
     ActionURL getMaintenanceURL(URLHelper returnURL);
+    ActionURL getModulesDetailsURL();
+    ActionURL getDeleteModuleURL(String moduleName);
 
     // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);
