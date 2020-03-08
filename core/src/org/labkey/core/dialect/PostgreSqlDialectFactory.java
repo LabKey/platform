@@ -54,7 +54,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
-    final static String RECOMMENDED = PRODUCT_NAME + " 11.x is the recommended version.";
+    final static String RECOMMENDED = PRODUCT_NAME + " 12.x is the recommended version.";
     final static String JDBC_PREFIX = "jdbc:postgresql:";
 
     @Override
@@ -97,17 +97,14 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         {
             // This approach is used when it's time to deprecate a version of PostgreSQL. Also, change the old dialect's
             // addAdminWarningMessages() method to add a message that gets displayed in the page header for admins.
-//            if (94 == version)
-//            {
-//                // PostgreSQL 9.3 is deprecated; support will be removed soon
-//                if (logWarnings)
-//                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
-//
-//                return new PostgreSql94Dialect();
-//            }
-
             if (94 == version)
+            {
+                // PostgreSQL 9.4 is deprecated; support will be removed in 20.4
+                if (logWarnings)
+                    _log.warn("LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+
                 return new PostgreSql94Dialect();
+            }
 
             if (95 == version)
                 return new PostgreSql95Dialect();
