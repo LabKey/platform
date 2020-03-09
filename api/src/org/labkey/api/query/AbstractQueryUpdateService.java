@@ -216,7 +216,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         context.getErrors().setExtraContext(extraScriptContext);
         if (extraScriptContext != null)
         {
-            context.setDataSource((String) extraScriptContext.get("dataSource"));
+            context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
         }
 
         in = preTriggerDataIterator(in, context);
