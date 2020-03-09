@@ -17,9 +17,9 @@ package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -84,9 +84,9 @@ import java.util.stream.Stream;
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
+    public ModuleResourceCacheListener createChainedListener(final Module module)
     {
-        return new FileSystemDirectoryListener()
+        return new ModuleResourceCacheListener()
         {
             @Override
             public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -107,6 +107,11 @@ import java.util.stream.Stream;
 
             @Override
             public void overflow()
+            {
+            }
+
+            @Override
+            public void moduleChanged(Module module)
             {
             }
 

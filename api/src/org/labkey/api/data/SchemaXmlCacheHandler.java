@@ -17,9 +17,9 @@ package org.labkey.api.data;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
@@ -83,14 +83,14 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
+    public ModuleResourceCacheListener createChainedListener(final Module module)
     {
         return CHAINED_LISTENER;
     }
 
 
     // No need to distinguish by module, since DbSchemas are a single global list
-    private static final FileSystemDirectoryListener CHAINED_LISTENER = new FileSystemDirectoryListener()
+    private static final ModuleResourceCacheListener CHAINED_LISTENER = new ModuleResourceCacheListener()
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -113,6 +113,14 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         @Override
         public void overflow()
         {
+        }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            module.getSchemaNames().stream()
+                .map(DbSchema::getDbScopeAndSchemaName)
+                .forEach(pair->invalidateSchema(pair.getKey(), pair.getValue()));
         }
 
         private void uncacheDbSchema(java.nio.file.Path entry)
