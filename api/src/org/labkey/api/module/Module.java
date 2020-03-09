@@ -97,6 +97,15 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
+
+    /**
+     * Can this module be enabled in this container?
+     */
+    default boolean canBeEnabled(Container c)
+    {
+        return true;
+    }
+
     /**
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
      */
@@ -330,6 +339,10 @@ public interface Module extends Comparable<Module>
      * @param path The path to the module's exploded directory
      */
     void setExplodedPath(File path);
+
+    @Nullable
+    File getZippedPath();
+    void setZippedPath(File zipped);
 
     /**
      * Returns a list of sql script file names for a given schema

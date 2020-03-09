@@ -18,10 +18,10 @@ package org.labkey.query.olap;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ModuleResourceCaches.CacheId;
 import org.labkey.api.resource.Resource;
@@ -54,7 +54,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<St
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    public ModuleResourceCacheListener createChainedListener(Module module)
     {
         return new OlapDirectoryListener();
     }
@@ -78,7 +78,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<St
     }
 
 
-    private static class OlapDirectoryListener implements FileSystemDirectoryListener
+    private static class OlapDirectoryListener implements ModuleResourceCacheListener
     {
         private OlapDirectoryListener()
         {
@@ -104,6 +104,12 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<Map<St
         @Override
         public void overflow()
         {
+        }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            ServerManager.olapSchemaDescriptorChanged(null);
         }
     }
 }
