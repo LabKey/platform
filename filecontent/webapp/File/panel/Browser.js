@@ -2176,7 +2176,7 @@ Ext4.define('File.panel.Browser', {
                 fileString += this.getFileRelativePath(files[j].id);
             }
             if (!failed) {
-                var loc = new URL(url);
+                var loc = new URL(url, LABKEY.ActionURL.getBaseURL());
                 loc.searchParams.append(param, fileString);
                 window.location = loc;
             }
