@@ -15,6 +15,7 @@
  */
 package org.labkey.api;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
@@ -49,6 +50,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.SimpleModule;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
@@ -81,8 +83,10 @@ import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -193,6 +197,14 @@ public class ApiModule extends CodeOnlyModule
             TSVWriter.TestCase.class,
             ValidEmail.TestCase.class
         );
+    }
+
+    @Override
+    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    {
+        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        return list;
     }
 
     @Override

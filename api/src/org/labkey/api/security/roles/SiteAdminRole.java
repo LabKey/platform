@@ -35,7 +35,8 @@ public class SiteAdminRole extends AbstractRootContainerRole
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
         PlatformDeveloperPermission.class,
-        TrustedPermission.class
+        TrustedPermission.class,
+        UploadFileBasedModulePermission.class
     );
 
     public SiteAdminRole()
