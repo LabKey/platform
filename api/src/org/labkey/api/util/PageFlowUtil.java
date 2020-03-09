@@ -2586,17 +2586,6 @@ public class PageFlowUtil
             testMakeHtmlId("1A-34-FB-44");
         }
 
-        private void testMakeHtmlId(@Nullable String id)
-        {
-            HtmlString legalId = makeHtmlId(id);
-            assertTrue(id + " was converted to " + legalId + ", which is not a legal HTML ID!", isLegalId(legalId.toString()));
-        }
-
-        private boolean isLegalId(String id)
-        {
-            return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
-        }
-
         @Test
         public void testEncodeObject() throws Exception
         {
@@ -2614,6 +2603,17 @@ public class PageFlowUtil
             assertEquals(bean.i, map.get("i"));
             assertEquals(bean.s, map.get("s"));
             assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
+        }
+
+        private void testMakeHtmlId(@Nullable String id)
+        {
+            HtmlString legalId = makeHtmlId(id);
+            assertTrue(id + " was converted to " + legalId + ", which is not a legal HTML ID!", isLegalId(legalId.toString()));
+        }
+
+        private boolean isLegalId(String id)
+        {
+            return !id.isEmpty() && Character.isLetter(id.charAt(0)) && id.replaceAll("[0-9A-Za-z\\-_:.]", "").isEmpty();
         }
     }
 
