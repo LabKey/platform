@@ -37,6 +37,7 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION
  */
 public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
 {
+    @Override
     public Map<Path, ModuleHtmlViewDefinition> load(Stream<? extends Resource> resources, Module module)
     {
         return unmodifiable(resources

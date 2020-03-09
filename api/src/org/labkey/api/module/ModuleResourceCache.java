@@ -24,12 +24,13 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceWrapper;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.Path;
 
 import java.util.Collection;
@@ -63,7 +64,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * User: adam
  * Date: 12/26/13
  */
-public final class ModuleResourceCache<V>
+public final class ModuleResourceCache<V> implements ModuleChangeListener
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceCache.class);
 
@@ -71,6 +72,13 @@ public final class ModuleResourceCache<V>
     private final ModuleResourceCacheHandler<V> _handler;
     private final FileSystemWatcher _watcher = FileSystemWatchers.get();
     private final Set<String> _pathsWithListeners = new ConcurrentHashSet<>();
+
+    @Override
+    public void onModuleChanged(Module module)
+    {
+        if (null != module)
+            getListener(module).moduleChanged(module);
+    }
 
     ModuleResourceCache(String description, ModuleResourceCacheHandler<V> handler, ResourceRootProvider provider, ResourceRootProvider... extraProviders)
     {
@@ -111,6 +119,8 @@ public final class ModuleResourceCache<V>
 
         _cache = CacheManager.getBlockingCache(Constants.getMaxModules(), CacheManager.DAY, description, wrapper);  // Cache is one entry per module
         _handler = handler;
+
+        ContextListener.addModuleChangeListener(this);
     }
 
     public @NotNull V getResourceMap(Module module)
@@ -155,9 +165,9 @@ public final class ModuleResourceCache<V>
         _cache.clear();
     }
 
-    FileSystemDirectoryListener getListener(Module module)
+    ModuleResourceCacheListener getListener(Module module)
     {
-        return new StandardListener(module, _handler.createChainedDirectoryListener(module));
+        return new StandardListener(module, _handler.createChainedListener(module));
     }
 
     public void ensureListener(Resource resource, Module module)
@@ -237,12 +247,12 @@ public final class ModuleResourceCache<V>
     }
 
 
-    private class StandardListener implements FileSystemDirectoryListener
+    private class StandardListener implements ModuleResourceCacheListener
     {
         private final Module _module;
-        private final @Nullable FileSystemDirectoryListener _chainedListener;
+        private final @Nullable ModuleResourceCacheListener _chainedListener;
 
-        public StandardListener(Module module, @Nullable FileSystemDirectoryListener chainedListener)
+        public StandardListener(Module module, @Nullable ModuleResourceCacheListener chainedListener)
         {
             _module = module;
             _chainedListener = chainedListener;
@@ -285,6 +295,15 @@ public final class ModuleResourceCache<V>
 
             if (null != _chainedListener)
                 _chainedListener.overflow();
+        }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            removeResourceMap(module);
+
+            if (null != _chainedListener)
+                _chainedListener.moduleChanged(module);
         }
     }
 }
