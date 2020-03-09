@@ -720,7 +720,7 @@ Ext4.define('File.panel.Browser', {
                 handler: this.onCreateRun,
                 fontCls: 'fa-sitemap',
                 tooltip: 'Create run with selected files as inputs or outputs',
-                actionType : File.panel.Action.Type.NOMIN,
+                actionType: File.panel.Action.Type.ATLEASTONE,
                 scope: this
             });
 

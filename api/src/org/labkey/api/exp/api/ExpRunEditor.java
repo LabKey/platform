@@ -3,6 +3,11 @@ package org.labkey.api.exp.api;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
 
+/**
+ * Identifies a run editor entry point like the Sample Derivation run editor in the Provenance module.  An ExpRunEditor
+ * class instance can be registered in the ExperimentService and create run links will be added on the Runs grid,
+ * samples content grid and file browser webpart.  Right now this only supports a single run editor.
+ */
 public class ExpRunEditor
 {
     private ActionURL _editUrl;
@@ -19,7 +24,7 @@ public class ExpRunEditor
     public ActionURL getEditUrl(Container c)
     {
         // new action url so parameters don't get added repeatedly to _editUrl
-        ActionURL editUrl = new ActionURL(_editUrl.getLocalURIString());
+        ActionURL editUrl = _editUrl.clone();
         return editUrl.setContainer(c);
     }
 

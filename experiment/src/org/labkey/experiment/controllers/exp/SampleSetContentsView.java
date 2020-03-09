@@ -124,7 +124,8 @@ public class SampleSetContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
-        
+
+        // Add run editors
         List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
         if (!editors.isEmpty())
         {
