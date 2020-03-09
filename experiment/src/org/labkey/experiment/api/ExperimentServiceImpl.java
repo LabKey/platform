@@ -6309,25 +6309,13 @@ public class ExperimentServiceImpl implements ExperimentService
                                         List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
-        if (name == null)
-            throw new IllegalArgumentException("DataClass name is required.");
-
-        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
-        int nameMax = dataClassTable.getColumn("Name").getScale();
-        if (name.length() > nameMax)
-            throw new IllegalArgumentException("DataClass name may not exceed " + nameMax + " characters.");
-
-        ExpDataClass existing = getDataClass(c, u, name);
-        if (existing != null)
-            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists.");
-
+        validateDataClassName(c, u, name);
         validateDataClassOptions(c, u, options);
 
         Lsid lsid = getDataClassLsid(name, c);
         Domain domain = PropertyService.get().createDomain(c, lsid.toString(), name, templateInfo);
         DomainKind kind = domain.getDomainKind();
 
-        // TODO can't these be checked a different way? see what Ian is doing for the SampleType story
         Set<String> reservedNames = kind.getReservedPropertyNames(domain);
         Set<String> lowerReservedNames = reservedNames.stream().map(String::toLowerCase).collect(toSet());
 
@@ -6335,12 +6323,6 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<String> propertyUris = new HashSet<>();
         for (GWTPropertyDescriptor pd : properties)
         {
-            String propertyName = pd.getName().toLowerCase();
-            if (lowerReservedNames.contains(propertyName))
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
-            else if (domain.getPropertyByName(propertyName) != null) // issue 25275
-                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain.");
-
             DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
 
@@ -6369,7 +6351,7 @@ public class ExperimentServiceImpl implements ExperimentService
             domain.save(u);
             impl.save(u);
 
-            // TODO do DataClasses actually support default values? see what Ian is doing for the SampleType story
+            //TODO do DataClasses actually support default values? The DataClassDomainKind does not override showDefaultValueSettings to return true so it isn't shown in the UI.
             DefaultValueService.get().setDefaultValues(domain.getContainer(), defaultValues);
 
             tx.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
@@ -6388,7 +6370,6 @@ public class ExperimentServiceImpl implements ExperimentService
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
         DataClassDomainKindProperties options = properties != null && properties.getRowId() > 0 ? properties : null;
 
-        // TODO any other validation to do here for the update case? see what Ian is doing for the SampleType story
         validateDataClassOptions(c, u, options);
 
         DataClass bean = getDataClassBean(c, dataClass.getName(), dataClass.getLSID(), options, dataClass);
@@ -6421,6 +6402,21 @@ public class ExperimentServiceImpl implements ExperimentService
         dataClass.setCategory(options != null ? options.getCategory() : original.getCategory());
 
         return dataClass;
+    }
+
+    private void validateDataClassName(@NotNull Container c, @NotNull User u, String name) throws IllegalArgumentException
+    {
+        if (name == null)
+            throw new IllegalArgumentException("DataClass name is required.");
+
+        TableInfo dataClassTable = ExperimentService.get().getTinfoDataClass();
+        int nameMax = dataClassTable.getColumn("Name").getScale();
+        if (name.length() > nameMax)
+            throw new IllegalArgumentException("DataClass name may not exceed " + nameMax + " characters.");
+
+        ExpDataClass existing = getDataClass(c, u, name);
+        if (existing != null)
+            throw new IllegalArgumentException("DataClass '" + existing.getName() + "' already exists.");
     }
 
     private void validateDataClassOptions(@NotNull Container c, @NotNull User u, @Nullable DataClassDomainKindProperties options)
