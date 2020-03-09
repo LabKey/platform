@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
@@ -9,7 +10,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
@@ -31,7 +32,7 @@ import java.util.Set;
 /**
 * VocabularyDomainKind can be used to hold ad hoc properties.
 * */
-public class VocabularyDomainKind extends AbstractDomainKind
+public class VocabularyDomainKind extends BaseAbstractDomainKind
 {
     public static final String KIND_NAME = "Vocabulary";
 
@@ -130,7 +131,7 @@ public class VocabularyDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)

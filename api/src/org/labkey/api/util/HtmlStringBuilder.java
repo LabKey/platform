@@ -57,6 +57,11 @@ public class HtmlStringBuilder implements HasHtmlString
         return this;
     }
 
+    public int length()
+    {
+        return _sb.length();
+    }
+
     @Override
     public HtmlString getHtmlString()
     {

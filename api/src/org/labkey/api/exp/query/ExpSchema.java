@@ -18,11 +18,11 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
@@ -58,6 +58,7 @@ import java.util.TreeSet;
 public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
+    public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategory";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -310,7 +311,23 @@ public class ExpSchema extends AbstractExpSchema
             return createExperimentsTableWithRunMemberships(null, cf);
         }
 
+        if (DATA_CLASS_CATEGORY_TABLE.equalsIgnoreCase(name))
+        {
+            return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Category");
+        }
+
         return null;
+    }
+
+    /**
+     * Exposed as EnumTableInfo
+     *
+     */
+    public enum DataClassCategoryType
+    {
+        registry,
+        media,
+        sources;
     }
 
     @Override

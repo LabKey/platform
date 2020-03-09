@@ -50,4 +50,12 @@
 .lk-menu-drop {
   /* allows items to sit next to each other while also keeping menu open below this clickable drop */
   display: inline-block;
+
+  &.labkey-disabled-button {
+    & > ul > li > a {
+      pointer-events: none;
+      cursor: default;
+      color: $lk-button-disabled-color;
+    }
+  }
 }

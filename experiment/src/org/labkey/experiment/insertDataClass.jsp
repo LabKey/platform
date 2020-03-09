@@ -94,6 +94,8 @@
         </div>
     </div>
 
+    <%-- TODO: dataclass.category field not yet supported for LKS insert --%>
+
     <div class="form-radio">
         <input type="radio" id="useTemplate2" name="useTemplate" value="true" <%=h(templateNames.size()==0?"disabled":"")%>>
         <label for="useTemplate2" class="<%=h(templateNames.size()==0?"form-disabled":"")%>">Using Template</label>

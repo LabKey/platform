@@ -85,7 +85,7 @@ public class StorageProvisioner
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
-    private static String _create(DbScope scope, DomainKind kind, Domain domain)
+    private static String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
         assert create.start();
 
@@ -229,7 +229,7 @@ public class StorageProvisioner
 
     public static void addStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties, boolean allowAddBaseProperty)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction
@@ -268,7 +268,7 @@ public class StorageProvisioner
 
     public static void addProperties(Domain domain, Collection<DomainProperty> properties, boolean allowAddBaseProperty)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -387,7 +387,7 @@ public class StorageProvisioner
 
     public static void dropProperties(Domain domain, Collection<DomainProperty> properties)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
@@ -419,7 +419,7 @@ public class StorageProvisioner
 
     public static void renameProperty(Domain domain, DomainProperty domainProperty, PropertyDescriptor oldPropDescriptor, boolean mvDropped)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -482,7 +482,7 @@ public class StorageProvisioner
      */
     public static void resizeProperty(Domain domain, DomainProperty prop, Integer scale) throws ChangePropertyDescriptorException
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -1018,7 +1018,7 @@ public class StorageProvisioner
         }
     }
 
-    public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind kind, Domain domain, String tableName)
+    public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind<?> kind, Domain domain, String tableName)
     {
         assert !ti.isLocked();
 
@@ -1283,7 +1283,7 @@ public class StorageProvisioner
                         domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             if (kind == null)
             {
                 domainReport.addError(String.format("Could not find a domain kind for %s.%s",

@@ -38,12 +38,12 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
@@ -161,7 +161,7 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
-    private static final FileSystemDirectoryListener INVALIDATE_QUERY_METADATA_HANDLER = new FileSystemDirectoryListener()
+    private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -185,6 +185,12 @@ public class QueryServiceImpl implements QueryService
         public void overflow()
         {
         }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            QueryService.get().updateLastModified();
+        }
     };
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
@@ -192,6 +198,8 @@ public class QueryServiceImpl implements QueryService
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
+
+    private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
 
     private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
@@ -684,7 +692,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -1036,7 +1044,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -2165,7 +2173,7 @@ public class QueryServiceImpl implements QueryService
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -2738,6 +2746,19 @@ public class QueryServiceImpl implements QueryService
             schemaLinks.put(new ActionURL(actionClass, c), actionInfo.second);
         }
         return schemaLinks;
+    }
+
+    @Override
+    public void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider)
+    {
+        _queryIconURLProviders.add(queryIconProvider);
+    }
+
+    @Override
+    @NotNull public List<QueryIconURLProvider> getQueryIconURLProviders()
+    {
+        ArrayList<QueryIconURLProvider> providers = new ArrayList<>(_queryIconURLProviders);
+        return Collections.unmodifiableList(providers);
     }
 
     private static class QAliasedColumn extends AliasedColumn

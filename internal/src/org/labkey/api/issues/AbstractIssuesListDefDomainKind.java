@@ -17,6 +17,7 @@ package org.labkey.api.issues;
 
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -33,10 +34,9 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -50,7 +50,6 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
@@ -69,7 +68,7 @@ import java.util.stream.Collectors;
 /**
  * Created by davebradlee on 8/3/16.
  */
-public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
+public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomainKind
 {
     protected static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     protected static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -269,7 +268,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;
