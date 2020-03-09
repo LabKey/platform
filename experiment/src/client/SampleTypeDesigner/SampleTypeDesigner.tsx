@@ -53,30 +53,16 @@ interface IAppState {
 
 const CREATE_SAMPLE_SET_ACTION = 'createSampleSet';
 
-//TODO should these be moved to a constants file? or shared through components?
-export const NAME_EXPRESSION_TOPIC = 'sampleIDs#expression';
-export const DEFAULT_SAMPLE_FIELD_CONFIG = {
-    required: true,
-    dataType: SAMPLE_TYPE,
-    conceptURI: SAMPLE_TYPE.conceptURI,
-    rangeURI: SAMPLE_TYPE.rangeURI,
-    lookupSchema: 'exp',
-    lookupQuery: 'Materials',
-    lookupType: {...SAMPLE_TYPE},
-    name: 'SampleId',
-} as Partial<IDomainField>;
-
 export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     constructor(props) {
         super(props);
 
-        initQueryGridState();
         const { RowId, schemaName, queryName, domainId, returnUrl } = ActionURL.getParameters();
         const action = ActionURL.getAction();
 
         let messages = (action !== CREATE_SAMPLE_SET_ACTION) ?
-            this.checkUpdateActionParameters(schemaName, queryName, domainId, RowId,) :
+            this.checkUpdateActionParameters( RowId,) :
             List<IBannerMessage>();
 
         this.state = {
@@ -94,13 +80,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     componentDidMount() {
-        const { domainId, schemaName, queryName, rowId, messages } = this.state;
+        const { rowId, messages } = this.state;
 
-        //These will allow direct querying of the domain design
-        if ((schemaName && queryName) || domainId ) {
-            this.fetchSampleTypeDomain(domainId, schemaName, queryName);
-        }
-        else if (rowId) {
+        if (rowId) {
             //Get SampleType from experiment service
             getSampleSet({rowId})
                 .then(results => {
@@ -133,11 +115,11 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
      * @param rowId of sample type
      * @returns List of error messages
      */
-    private checkUpdateActionParameters = (schemaName: string, queryName: string, domainId: number, rowId: number): List<IBannerMessage> => {
+    private checkUpdateActionParameters = ( rowId: number): List<IBannerMessage> => {
         let messages = List<IBannerMessage>();
 
-        if ( (!schemaName || !queryName) && !domainId && !rowId) {
-            let msg =  'Need at least one required identifier: rowId, domainId, or schemaName and queryName.';
+        if ( !rowId) {
+            let msg =  'RowId parameter not supplied, unable to determine which Sample Type to edit.';
             let msgType = 'danger';
             let bannerMsg ={message: msg, messageType: msgType};
             messages = messages.push(bannerMsg);
@@ -151,8 +133,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
      **/
     private fetchSampleTypeDomain = (domainId, schemaName?, queryName?): void => {
         getSampleTypeDetails( SchemaQuery.create(schemaName, queryName), domainId)
-            .then( results => {
-                const sampleType = results;
+            .then( sampleType => {
                 this.setState(()=> ({sampleType}));
             }).catch(error => {
                 const {messages} = this.state;
@@ -210,16 +191,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         });
     };
 
-    beforeFinish = ():void => {}; //TODO may need something here...
+    beforeFinish = ():void => {};
 
     render() {
-        const {menuLoading} = this.props;
         const {sampleType, messages} = this.state;
-        const subtitle = 'Edit Sample Type Details';
-
-        if (menuLoading) {
-            return <LoadingPage title={subtitle}/>
-        }
 
         return (
             <>
@@ -230,11 +205,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 {sampleType &&
                 <SampleTypeDesigner
                         initModel={sampleType}
-                        nameExpressionInfoUrl={getHelpLink(NAME_EXPRESSION_TOPIC)}
                         beforeFinish={this.beforeFinish}
                         onComplete={this.submitAndNavigate}
                         onCancel={this.onCancelBtnHandler}
-                        defaultSampleFieldConfig={DEFAULT_SAMPLE_FIELD_CONFIG}
                         includeDataClasses={true}
                         useTheme={true}
                         appPropertiesOnly={false}
