@@ -49,7 +49,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
 import org.labkey.api.reports.report.ReportDescriptor;
@@ -91,7 +91,6 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
@@ -123,8 +122,6 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.metadata.MetadataServiceImpl;
-import org.labkey.query.metadata.client.MetadataEditor;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -1857,16 +1854,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    @Action(ActionType.SelectMetaData.class)
-    public static class MetadataServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new MetadataServiceImpl(getViewContext());
-        }
-    }
-
     // Trusted analysts who are editors can create and modify queries
     @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     @Action(ActionType.SelectMetaData.class)
@@ -1883,20 +1870,7 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm form, boolean reshow, BindException errors)
         {
-            _form = form;
-
-            _query = _form.getQueryDef();
-            Map<String, String> props = new HashMap<>();
-            props.put("schemaName", form.getSchemaName());
-            props.put("queryName", form.getQueryName());
-            var sourceQuery = _query.urlFor(QueryAction.sourceQuery, getContainer());
-            if (null != sourceQuery)
-                props.put(MetadataEditor.EDIT_SOURCE_URL, sourceQuery.getLocalURIString() + "#metadata");
-            var executeQuery = _query.urlFor(QueryAction.executeQuery, getContainer());
-            if (null != executeQuery)
-                props.put(MetadataEditor.VIEW_DATA_URL, executeQuery.getLocalURIString());
-
-            return new GWTView(MetadataEditor.class, props);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), "queryMetadataEditor");
         }
 
         @Override
@@ -6683,7 +6657,6 @@ public class QueryController extends SpringActionController
                 new ExportExcelTemplateAction(),
                 new ExportRowsTsvAction(),
                 controller.new ExcelWebQueryDefinitionAction(),
-                new MetadataServiceAction(),
                 controller.new SaveQueryViewsAction(),
                 controller.new PropertiesQueryAction(),
                 controller.new SelectRowsAction(),
