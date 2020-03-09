@@ -15,15 +15,17 @@
  */
 
 import {List} from "immutable";
-import React,{PureComponent} from 'react';
+import React, {PureComponent} from 'react';
 import {Button} from "react-bootstrap";
 import {
-    LoadingSpinner,
-    IBannerMessage,
+    Alert,
+    buildURL,
     DomainDesign,
+    DomainField,
     DomainForm,
     fetchQueryMetadata,
-    DomainField, buildURL, Alert
+    IBannerMessage,
+    LoadingSpinner
 } from "@labkey/components";
 import {ActionURL, Ajax, Utils} from "@labkey/api";
 import {AliasField} from "./components/AliaseField";
@@ -227,11 +229,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                         onChange={this.onChangeHandler}
                         useTheme={false}
                         hideAddFieldsButton={true}
+                        domainFormDisplayOptions= {{
+                            showRequired: false,
+                            isDragDisabled: true,
+                            showValidators: false
+                        }}
                     />
                 }
 
                 {
-                    messages && messages.size > 0 &&
+                    messages &&
+                    messages.size > 0 &&
                     messages.map((bannerMessage, idx) => {
                         return (
                             <Alert
