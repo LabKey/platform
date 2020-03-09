@@ -2586,25 +2586,6 @@ public class PageFlowUtil
             testMakeHtmlId("1A-34-FB-44");
         }
 
-        @Test
-        public void testEncodeObject() throws Exception
-        {
-            TestBean bean = new TestBean(5,"five",new Date(DateUtil.parseISODateTime("2005-05-05 05:05:05")));
-            String s = encodeObject(bean);
-
-            TestBean copy = decodeObject(TestBean.class, s);
-            assertNotNull(copy);
-            assertEquals(bean.i, copy.i);
-            assertEquals(bean.s, copy.s);
-            assertEquals(bean.d, copy.d);
-
-            Map<String,Object> map = (Map<String,Object>)decodeObject(Map.class, s);
-            assertNotNull(map);
-            assertEquals(bean.i, map.get("i"));
-            assertEquals(bean.s, map.get("s"));
-            assertEquals(bean.d.getTime(), DateUtil.parseDateTime((String)map.get("d")));
-        }
-
         private void testMakeHtmlId(@Nullable String id)
         {
             HtmlString legalId = makeHtmlId(id);
