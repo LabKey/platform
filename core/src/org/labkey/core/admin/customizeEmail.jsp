@@ -31,7 +31,8 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -48,6 +49,9 @@
 
     List<EmailTemplate> emailTemplates = EmailTemplateService.get().getEditableEmailTemplates(c);
     String errorHTML = formatMissedErrorsStr("form");
+
+    boolean showRootLookAndFeelLink = ContainerManager.getRoot().hasPermission(getUser(), AdminPermission.class);
+    boolean showProjectSettingsLink = c.getProject() != null && c.getProject().hasPermission(getUser(), AdminPermission.class);
 %>
 <%=text(errorHTML)%>
 
@@ -109,8 +113,18 @@
         </tr>
         <tr><td colspan="2"><table id="validSubstitutions" class="labkey-data-region-legacy labkey-show-borders"></table></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on
-            the <a href="<%=h(urlProvider(AdminUrls.class).getProjectSettingsURL(c))%>">Look and Feel Settings page</a> and on the Project Settings page for each project.</i>
+        <tr><td align="justify" colspan="2"><i>The values of many of these parameters can be configured on the site
+            <% if (showRootLookAndFeelLink) { %>
+                <a href="<%=h(urlProvider(AdminUrls.class).getSiteLookAndFeelSettingsURL())%>">Look and Feel Settings</a>
+            <% } else { %>
+                Look and Feel Settings
+            <% } %>
+            page and on the
+            <% if (showProjectSettingsLink) { %>
+                <a href="<%=h(urlProvider(AdminUrls.class).getProjectSettingsURL(c))%>">Project Settings</a>
+            <% } else { %>
+            Project Settings
+            <% } %> page for each project</i>
         </tr>
     </table>
     <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>

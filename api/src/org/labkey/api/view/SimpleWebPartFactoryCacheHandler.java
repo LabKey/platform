@@ -16,9 +16,9 @@
 package org.labkey.api.view;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.SimpleWebPartFactory;
 import org.labkey.api.resource.Resource;
 
@@ -47,9 +47,9 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
+    public ModuleResourceCacheListener createChainedListener(final Module module)
     {
-        return new FileSystemDirectoryListener()
+        return new ModuleResourceCacheListener()
         {
             @Override
             public void entryCreated(Path directory, Path entry)
@@ -71,6 +71,12 @@ public class SimpleWebPartFactoryCacheHandler implements ModuleResourceCacheHand
 
             @Override
             public void overflow()
+            {
+                update();
+            }
+
+            @Override
+            public void moduleChanged(Module module)
             {
                 update();
             }
