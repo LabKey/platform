@@ -16,6 +16,7 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
 
@@ -32,5 +33,11 @@ public class PostgreSql95Dialect extends PostgreSql94Dialect
         words.add("tablesample");
 
         return words;
+    }
+
+    @Override
+    public void addAdminWarningMessages(Warnings warnings)
+    {
+        // Override warning added by PostgreSql94Dialect -- no warnings for 9.5+
     }
 }

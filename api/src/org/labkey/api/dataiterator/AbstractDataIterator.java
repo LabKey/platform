@@ -16,7 +16,7 @@
 
 package org.labkey.api.dataiterator;
 
-import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -133,5 +133,11 @@ public abstract class AbstractDataIterator implements DataIterator
     protected boolean preserveEmptyString()
     {
         return _context.getConfigParameterBoolean(QueryUpdateService.ConfigParameters.PreserveEmptyString);
+    }
+
+    @Nullable
+    protected String getDataSource()
+    {
+        return _context.getDataSource();
     }
 }
