@@ -28,7 +28,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -1167,7 +1167,7 @@ public class AuthenticationManager
 
     private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
 
-    @RemoveIn20_1
+    @RemoveIn20_7
     private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
     {
         return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
