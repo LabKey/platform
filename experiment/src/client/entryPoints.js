@@ -12,7 +12,7 @@ module.exports = {
     },{
         name: 'dataClassDesigner',
         title: 'Data Class Designer',
-        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see PropertyController.DataClassDesignerAction for main usage
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see <View Action TBD> for main usage
         path: './src/client/DataClassDesigner'
     }]
 };
