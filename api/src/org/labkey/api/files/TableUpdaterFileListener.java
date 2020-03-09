@@ -118,7 +118,7 @@ public class TableUpdaterFileListener implements FileListener
             }
         },
 
-        /** field has root of file path, but need to match with filename in "name" field */
+        /** field has root of file path */
         fileRootPath
         {
             @Override
