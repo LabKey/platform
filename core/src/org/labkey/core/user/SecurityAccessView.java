@@ -85,13 +85,17 @@ public class SecurityAccessView extends VBox
         AccessDetail details = new AccessDetail(_rows);
         details.setActive(_principal.isActive());
         JspView<AccessDetail> accessView = new JspView<>("/org/labkey/core/user/securityAccess.jsp", details);
+        accessView.setTitle("Folder Role Assignments");
+        accessView.setFrame(FrameType.PORTAL);
         addView(accessView);
 
         if (filterSiteRoles && !_userSiteRoles.isEmpty())
         {
             // don't include the site roles in the permission report, just list them
-            // at the top of the page
-            addView(new JspView<>("/org/labkey/core/user/siteRoles.jsp", _userSiteRoles));
+            // at the bottom of the page
+            JspView<?> siteRoles = new JspView<>("/org/labkey/core/user/siteRoles.jsp", _userSiteRoles);
+            siteRoles.setTitle("Site-Level Role Assignments");
+            addView(siteRoles);
         }
     }
 

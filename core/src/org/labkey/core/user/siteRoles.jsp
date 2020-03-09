@@ -15,7 +15,6 @@
      * limitations under the License.
      */
 %>
-<%@ page import="org.labkey.api.security.UserManager"%>
 <%@ page import="org.labkey.api.security.roles.Role"%>
 <%@ page import="org.labkey.api.util.HtmlString"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
@@ -26,24 +25,13 @@
 <%
     JspView<Set<Role>> me = (JspView<Set<Role>>) HttpView.currentView();
     Set<Role> roles = me.getModelBean();
-
-    String userIdStr = getActionURL().getParameter("userId");
-    int userId = 0;
-    if (userIdStr != null)
-    {
-        userId = Integer.parseInt(userIdStr);
-    }
 %>
 
-<br>
-<labkey:panel type="portal" id="site-roles" className="lk-sg-section">
-    <h4 class="labkey-page-section-header">Site Level Permissions : <%=HtmlString.of(UserManager.getEmailForId(userId))%></h4>
-    <%
-        for (Role role : roles)
-        {
-    %>
-        <li><%=HtmlString.of(role.getDisplayName())%></li>
-    <%
-        }
-    %>
-</labkey:panel>
+<%
+    for (Role role : roles)
+    {
+%>
+    <li><%=HtmlString.of(role.getDisplayName())%></li>
+<%
+    }
+%>
