@@ -16,6 +16,7 @@ import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -56,9 +57,12 @@ public class SampleSetContentsView extends QueryView
         return "function(data) {" +
                 "   var selected = data.selected.join(';');" +
                     DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});" +
-                "   if(selected.length === 0) {window.location = '" + url.getLocalURIString() + "';}" +
+                "   if (selected.length === 0) {" +
+                "       window.location = '" + url.getLocalURIString() + "';" +
+                "   }" +
                 "   else {" +
                 "       window.location = '" + url.getLocalURIString() +
+                (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "") +
                         (isOuput ? "materialOutputs" : "materialInputs") + "=' + selected" +
                 "   }" +
                 "}";
