@@ -232,7 +232,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                         domainFormDisplayOptions= {{
                             showRequired: false,
                             isDragDisabled: true,
-                            showValidators: false
+                            showValidators: false,
+                            phiLevelDisabled: true
                         }}
                     />
                 }

@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.33.0-fb-queryMetadataEditor-0.3"
+    "@labkey/components": "0.33.0-fb-queryMetadataEditor-0.4"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
