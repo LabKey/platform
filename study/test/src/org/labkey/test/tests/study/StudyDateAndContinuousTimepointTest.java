@@ -22,7 +22,7 @@ import java.util.Calendar;
 import java.util.List;
 
 @Category({DailyA.class})
-@BaseWebDriverTest.ClassTimeout(minutes = 5)
+@BaseWebDriverTest.ClassTimeout(minutes = 4)
 public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
 {
     private String datasetName = "SampleDataset";
@@ -131,7 +131,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
     {
         String publishedFolder = "Published study - Continuous";
         goToProjectHome();
-        //changeTimepointType("date");
+        changeTimepointType("date");
 
         log("Publish study.");
         clickTab("Manage");
@@ -206,7 +206,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
         tableCustomizeView.saveDefaultView();
         checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList("20200310.0000"),
-                table.getColumnDataAsText("ParticipantVisit/Visit"));
+                table.getColumnDataAsText("ParticipantVisit/Visit")); //Needs to be updated when related bug is fixed.
     }
 
 
