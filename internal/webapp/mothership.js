@@ -63,16 +63,6 @@ LABKEY.Mothership = (function () {
             alert(arguments);
     }
 
-    function encodeQuery(data) {
-        var ret = '';
-        var and = '';
-        for (var i in data) {
-            ret += and + encodeURIComponent(i) + '=' + encodeURIComponent(data[i]);
-            and = '&';
-        }
-        return ret;
-    }
-
     /** send an async GET message. */
     function send(url, data) {
         log("submitting error", data);
@@ -160,9 +150,9 @@ LABKEY.Mothership = (function () {
         if (!fileName)
             return false;
 
-        // remove stacktrace-1.3.0.min.js and mothership.js from the stack
+        // remove stacktrace.js and mothership.js from the stack
         if (_filterStacktrace &&
-                fileName.indexOf("/stacktrace-") > -1 ||
+                fileName.indexOf("/stacktrace.min.js") > -1 ||
                 fileName.indexOf("/mothership.js") != -1)
             return false;
 
@@ -268,20 +258,21 @@ LABKEY.Mothership = (function () {
                 stackTrace: stackTrace || msg,
                 file: file,
                 line: line,
-                column: column,
+                // column: column,
                 browser: navigator && navigator.userAgent || "Unknown",
                 platform:  navigator && navigator.platform  || "Unknown"
             };
+
+            try {
+                send(url, o);
+                return true;
+            }
+            catch (e) {
+                // ignore error
+            }
         }
 
-        try {
-            send(url, o);
-            return true;
-        }
-        catch (e) {
-            // ignore error
-            return false;
-        }
+        return false;
     }
 
     // err is either the thrown Error object, ErrorEvent, or a string message.
@@ -321,7 +312,8 @@ LABKEY.Mothership = (function () {
 
         var error = errorObj || err.error || err;
         var promise = null;
-        // Sadly, IE10 doesn't support Promises and I don't care enough to add a polyfill
+
+        // See if browser has native support for Promises
         if (window.Promise) {
             if (error instanceof Error) {
                 promise = StackTrace.fromError(error, {filter: filterTrace});
@@ -330,32 +322,34 @@ LABKEY.Mothership = (function () {
                 promise = StackTrace.get({filter: filterTrace});
             }
         }
-        if (!promise) {
+
+        if (promise) {
+            // wait for allocation stack
+            if (err._allocationPromise) {
+                //console.log("chaining allocationPromise");
+                promise.then(function () {
+                    return err._allocationPromise;
+                });
+            }
+
+            promise.then(function(stackframes) {
+                var stackTrace = msg;
+                if (stackframes && stackframes.length) {
+                    stackTrace += '\n  ' + stackframes.join('\n  ');
+                }
+
+                if (err._allocation) {
+                    stackTrace += '\n\n' + err._allocation;
+                }
+
+                _report(msg, file, line, column, stackTrace);
+            }).catch(errback);
+        }
+        else {
             // We have no Error or the browser doesn't support Promises -- just submit the message that we have
             return _report(msg, file, line, column, null);
         }
 
-        // wait for allocation stack
-        if (err._allocationPromise) {
-            //console.log("chaining allocationPromise");
-            promise.then(function () {
-                return err._allocationPromise;
-            });
-        }
-
-        promise.then(function (stackframes) {
-            var stackTrace = msg;
-            if (stackframes && stackframes.length) {
-                stackTrace += '\n  ' + stackframes.join('\n  ');
-            }
-
-            if (err._allocation) {
-                stackTrace += '\n\n' + err._allocation;
-            }
-
-            _report(msg, file, line, column, stackTrace);
-
-        }).catch(errback);
         return true;
     }
 
@@ -403,13 +397,13 @@ LABKEY.Mothership = (function () {
         if (_gatherAllocation && window.Promise)
         {
             //log("Gathering allocation stack...");
-            fn._allocationPromise = StackTrace.get({filter: filterTrace, offline: true}).then(function (stackframes) {
-                delete fn._allocationPromise;
-                if (stackframes && stackframes.length) {
-                    fn._allocation = "Callback Allocation:\n  " + stackframes.join('\n  ');
-                    //log(fn._allocation);
-                }
-            }).catch(errback);
+            // fn._allocationPromise = StackTrace.get({filter: filterTrace, offline: true}).then(function (stackframes) {
+            //     delete fn._allocationPromise;
+            //     if (stackframes && stackframes.length) {
+            //         fn._allocation = "Callback Allocation:\n  " + stackframes.join('\n  ');
+            //         //log(fn._allocation);
+            //     }
+            // }).catch(errback);
         }
         return wrap;
     }
@@ -818,6 +812,11 @@ LABKEY.Mothership = (function () {
         //    Promise.prototype.then = createWrap(Promise.prototype.then);
     }
 
+    function reportReactError(error, reactInfo) {
+        log('Received a react error', error, reactInfo);
+        report(error);
+    }
+
     register();
 
     return {
@@ -850,7 +849,13 @@ LABKEY.Mothership = (function () {
         setReportErrors : function (b) { _mothership = b; },
 
         /** Render a little window displaying the 10 most recent errors collected. */
-        renderLastErrors : renderLastErrors
+        renderLastErrors : renderLastErrors,
+
+        /**
+         * Report React specific errors to central mothership. This supports what is
+         * returned by componentDidCatch(error, info) in React v16+.
+         */
+        reportReactError : reportReactError
     };
 })();
 
