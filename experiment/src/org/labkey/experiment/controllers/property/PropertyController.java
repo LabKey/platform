@@ -723,29 +723,36 @@ public class PropertyController extends SpringActionController
         public void validate(Container container, User user, boolean isUpdate)
         {
             String kindName = this.getKind() == null ? this.getDomainKind() : this.getKind();
+            DomainKind kind = null;
+            GWTDomain design = this.getDomainDesign();
+
             if (kindName != null)
             {
-                DomainKind kind = PropertyService.get().getDomainKindByName(kindName);
-                if (kind == null)
-                    throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
-
-                //Name and description fields are supplied through the GWTDomain
-                String name = null;
-                Domain domain = null;
-                GWTDomain design = this.getDomainDesign();
-                if (design != null)
-                {
-                    name = StringUtils.trimToNull(design.getName());
-                    domain = PropertyService.get().getDomain(container, design.getDomainURI());
-                }
-
-
-                //TODO not a fan of doing this conversion in multiple locations
-                ObjectMapper mapper = new ObjectMapper();
-                Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
-
-                kind.validateOptions(container, user, options, name, domain, isUpdate);
+                kind = PropertyService.get().getDomainKindByName(kindName);
             }
+            else if (design != null)
+            {
+                kind = PropertyService.get().getDomainKind(design.getDomainURI());
+            }
+
+            if (kind == null)
+                throw new IllegalArgumentException("No domain kind matches name '" + kindName + "'");
+
+            //Name and description fields are supplied through the GWTDomain
+            String name = null;
+            Domain domain = null;
+            if (design != null)
+            {
+                name = StringUtils.trimToNull(design.getName());
+                domain = PropertyService.get().getDomain(container, design.getDomainURI());
+            }
+
+
+            //TODO not a fan of doing this conversion in multiple locations
+            ObjectMapper mapper = new ObjectMapper();
+            Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
+
+            kind.validateOptions(container, user, options, name, domain, isUpdate);
         }
     }
 
