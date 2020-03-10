@@ -6341,7 +6341,18 @@ public class ExperimentServiceImpl implements ExperimentService
         }
         domain.setPropertyIndices(propertyIndices);
 
-        DataClass bean = getDataClassBean(c, name, lsid.toString(), options, null);
+        DataClass bean = new DataClass();
+        bean.setContainer(c);
+        bean.setName(name);
+        bean.setLSID(lsid.toString());
+        if (options != null)
+        {
+            bean.setDescription(options.getDescription());
+            bean.setNameExpression(options.getNameExpression());
+            bean.setMaterialSourceId(options.getSampleSet());
+            bean.setCategory(options.getCategory());
+        }
+
         ExpDataClassImpl impl = new ExpDataClassImpl(bean);
         try (DbScope.Transaction tx = ensureTransaction())
         {
@@ -6368,40 +6379,26 @@ public class ExperimentServiceImpl implements ExperimentService
                                         GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         // if options doesn't have a rowId value, then it is just coming from the property-editDomain action only only updating domain fields
-        DataClassDomainKindProperties options = properties != null && properties.getRowId() > 0 ? properties : null;
+        DataClassDomainKindProperties options = properties != null && properties.getRowId() == dataClass.getRowId() ? properties : null;
+        if (options != null)
+        {
+            validateDataClassOptions(c, u, options);
+            dataClass.setDescription(options.getDescription());
+            dataClass.setNameExpression(options.getNameExpression());
+            dataClass.setSampleSet(options.getSampleSet());
+            dataClass.setCategory(options.getCategory());
+        }
 
-        validateDataClassOptions(c, u, options);
-
-        DataClass bean = getDataClassBean(c, dataClass.getName(), dataClass.getLSID(), options, dataClass);
-        bean.setRowId(dataClass.getRowId());
-
-        ExpDataClassImpl impl = new ExpDataClassImpl(bean);
         ValidationException errors;
         try (DbScope.Transaction transaction = ensureTransaction())
         {
-            impl.save(u);
+            dataClass.save(u);
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u);
 
             transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
             transaction.commit();
         }
         return errors;
-    }
-
-    private DataClass getDataClassBean(Container c, String name, String lsid, DataClassDomainKindProperties options, ExpDataClass original)
-    {
-        DataClass dataClass = new DataClass();
-        dataClass.setContainer(c);
-        dataClass.setName(name);
-        dataClass.setLSID(lsid);
-
-        // the editable options for an existing data class
-        dataClass.setDescription(options != null ? options.getDescription() : original.getDescription());
-        dataClass.setNameExpression(options != null ? options.getNameExpression() : original.getNameExpression());
-        dataClass.setMaterialSourceId(options != null ? options.getSampleSet() : original.getSampleSet() != null ? original.getSampleSet().getRowId() : null);
-        dataClass.setCategory(options != null ? options.getCategory() : original.getCategory());
-
-        return dataClass;
     }
 
     private void validateDataClassName(@NotNull Container c, @NotNull User u, String name) throws IllegalArgumentException
