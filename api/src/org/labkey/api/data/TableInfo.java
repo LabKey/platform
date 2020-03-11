@@ -557,6 +557,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return AuditBehaviorType.NONE;
     }
 
+    /* Can be used to dinstinguish AuditBehaviorType.NONE vs absent xml audit config */
+    default AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return null;
+    }
+
     /**
      * Returns the row primary key column to use for audit history details. Note, this must
      * be a single key as we don't support multiple column primary keys for audit details.

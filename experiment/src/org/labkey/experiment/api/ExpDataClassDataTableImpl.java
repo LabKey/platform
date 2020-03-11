@@ -61,6 +61,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -133,6 +134,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Domain getDomain()
     {
         return _dataClass.getDomain();
+    }
+
+    @Override
+    public AuditBehaviorType getAuditBehavior()
+    {
+        // if there is xml config, use xml config
+        if (_auditBehaviorType == AuditBehaviorType.NONE && getXmlAuditBehaviorType() == null)
+        {
+            if (ExpSchema.DataClassCategoryType.sources.name().equals(_dataClass.getCategory()))
+                return AuditBehaviorType.DETAILED;
+        }
+
+        return _auditBehaviorType;
     }
 
     @Override

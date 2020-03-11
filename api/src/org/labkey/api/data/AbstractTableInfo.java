@@ -148,6 +148,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     private DetailsURL _detailsURL;
     protected AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
+    protected AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
     private final Map<String, CounterDefinition> _counterDefinitionMap = new CaseInsensitiveHashMap<>();    // Really only 1 for now, but could be more in future
@@ -1715,12 +1716,19 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     {
         checkLocked();
         _auditBehaviorType = type;
+        _xmlAuditBehaviorType = type;
     }
 
     @Override
     public AuditBehaviorType getAuditBehavior()
     {
         return _auditBehaviorType;
+    }
+
+    @Override
+    public AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return _xmlAuditBehaviorType;
     }
 
     @Override
