@@ -50,7 +50,6 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
-import org.labkey.api.module.SimpleModule;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
@@ -203,7 +202,8 @@ public class ApiModule extends CodeOnlyModule
     public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
     {
         List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
-        list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        //TODO: No test cases.
+        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
         return list;
     }
 
