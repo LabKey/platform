@@ -219,7 +219,7 @@ public abstract class ContainerFilter
         // have children that match the types. If there are no children that match
         // the set of included types, we can simplify the query to a simple IN clause
         // instead of joining to core.Containers and filtering by container type.
-        Set<String> finalIncludedChildTypes = includedChildTypes;
+        final Set<String> finalIncludedChildTypes = includedChildTypes;
         List<Container> containers = ids.stream()
                 .map(ContainerManager::getForId)
                 .filter(Objects::nonNull)
