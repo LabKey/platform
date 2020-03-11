@@ -239,7 +239,7 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
             verifyDatasetColumnTypes();
             return;
         }
-        DomainFormPanel designer = new DomainFormPanel.DomainFormPanelFinder(getDriver()).waitFor();
+        DomainFormPanel designer = new DomainFormPanel.DomainFormPanelFinder(getDriver()).withTitle("Fields").waitFor();
         designer.expand();
         checker().setErrorMark();
         checker().verifyEquals("Wrong type for 'booleancol'",
