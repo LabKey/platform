@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.33.0-fb-mergeSTUI-6848.15"
+    "@labkey/components": "0.33.0-fb-mergeSTUI-6848.16"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.9.0",
