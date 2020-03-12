@@ -3351,19 +3351,27 @@ public class QueryController extends SpringActionController
 
                 // create a response object mapping the analytics providers to their relevant aggregate results
                 Map<String, Map<String, Object>> aggregateResults = new HashMap<>();
-                for (Aggregate.Result r : aggResults.get(_colFieldKey.toString()))
+                if (aggResults.containsKey(_colFieldKey.toString()))
                 {
-                    Map<String, Object> props = new HashMap<>();
-                    Aggregate.Type type = r.getAggregate().getType();
-                    props.put("label", type.getFullLabel());
-                    props.put("description", type.getDescription());
-                    props.put("value", r.getFormattedValue(displayColumn, getContainer()));
-                    aggregateResults.put(type.getName(), props);
-                }
+                    for (Aggregate.Result r : aggResults.get(_colFieldKey.toString()))
+                    {
+                        Map<String, Object> props = new HashMap<>();
+                        Aggregate.Type type = r.getAggregate().getType();
+                        props.put("label", type.getFullLabel());
+                        props.put("description", type.getDescription());
+                        props.put("value", r.getFormattedValue(displayColumn, getContainer()));
+                        aggregateResults.put(type.getName(), props);
+                    }
 
-                response.put("success", true);
-                response.put("analyticsProviders", analyticsProviders);
-                response.put("aggregateResults", aggregateResults);
+                    response.put("success", true);
+                    response.put("analyticsProviders", analyticsProviders);
+                    response.put("aggregateResults", aggregateResults);
+                }
+                else
+                {
+                    response.put("success", false);
+                    response.put("message", "Unable to get aggregate results for " + _colFieldKey);
+                }
             }
             else
             {
