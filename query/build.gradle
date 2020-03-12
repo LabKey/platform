@@ -1,3 +1,5 @@
+import org.labkey.gradle.util.BuildUtils
+
 configurations {
    antlr
 }
@@ -33,4 +35,5 @@ sourceSets {
 
 apply plugin: 'org.labkey.antlr'
 
-//project.tasks.npmInstall.dependsOn(project.project(BuildUtils.getPlatformProjectPath(project.gradle)).tasks.npmInstall)
+project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))
+project.tasks.npmInstall.dependsOn(project.project(BuildUtils.getPlatformProjectPath(project.gradle)).tasks.npmInstall)
