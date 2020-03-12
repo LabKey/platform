@@ -19,19 +19,19 @@ import React, {PureComponent} from 'react';
 import {Button} from "react-bootstrap";
 import {
     Alert,
-    buildURL,
+    ConfirmModal,
     DomainDesign,
     DomainField,
     DomainForm,
-    fetchQueryMetadata,
     IBannerMessage,
     LoadingSpinner
 } from "@labkey/components";
-import {ActionURL, Ajax, Utils} from "@labkey/api";
-import {AliasField} from "./components/AliaseField";
+import {ActionURL} from "@labkey/api";
 
 import "@labkey/components/dist/components.css"
 import "./queryMetadataEditor.scss";
+import {AliasFieldModal} from "./components/AliaseFieldModal";
+import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
 interface IAppState {
     dirty: boolean,
@@ -42,6 +42,9 @@ interface IAppState {
     schemaName: string,
     showAlias: boolean,
     showSave: boolean,
+    showEditSourceConfirmationModal: boolean,
+    showResetConfirmationModal: boolean,
+    showViewDataConfirmationModal: boolean
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -65,7 +68,11 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             returnUrl,
             messages,
             showAlias : false,
-            showSave: false
+            showSave: false,
+            dirty: false,
+            showEditSourceConfirmationModal: false,
+            showResetConfirmationModal: false,
+            showViewDataConfirmationModal: false
         };
     }
 
@@ -73,14 +80,11 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName, messages } = this.state;
 
         if (schemaName && queryName) {
-            //TODO: remove domainId from this call
-            fetchQueryMetadata(1, schemaName, queryName)
-                .then(domain => {
-                    this.setState(() => ({domain}));
-                })
-                .catch(error => {
+            fetchQueryMetadata(schemaName, queryName)
+                .then((domain) => this.setState(() => ({domain})))
+                .catch((error) => {
                     this.setState(() => ({
-                        messages : messages.set(0, {message: error.exception, messageType: 'danger'})
+                        messages: messages.set(0, {message: error.exception, messageType: 'danger'})
                     }));
                 });
         }
@@ -94,7 +98,6 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-        console.log("called");
         this.setState((state) => ({
             domain: newDomain,
             dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
@@ -108,6 +111,25 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this.setState(Object.assign({}, additionalState, {
             messages : messages.set(index, {message: message, messageType: messageType})
         }));
+    };
+
+    dismissChangeConfirmation = () => {
+        const {showViewDataConfirmationModal, showEditSourceConfirmationModal} = this.state;
+
+        this.setState(() => ({
+            showResetConfirmationModal: false,
+            showViewDataConfirmationModal: false,
+            showEditSourceConfirmationModal: false,
+            dirty: false
+        }));
+
+        if (showViewDataConfirmationModal) {
+            this.navigateToViewData();
+        }
+
+        if (showEditSourceConfirmationModal) {
+            this.navigateToEditSource();
+        }
     };
 
     dismissAlert = (index: any) => {
@@ -132,69 +154,118 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this.setState(() => ({
             showAlias: false,
             domain: newDomain,
-            showSave: true
+            showSave: true,
+            dirty: true
         }));
+    };
+
+    onConfirmEditSource = () => {
+        const { dirty } = this.state;
+
+        if (dirty) {
+            this.onSaveBtnHandler();
+        }
+
+        this.navigateToEditSource();
+    };
+
+    navigateToViewData() {
+        const { schemaName, queryName } = this.state;
+
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
+        });
+    }
+
+    onConfirmViewData = () => {
+        const { dirty } = this.state;
+
+        if (dirty) {
+            this.onSaveBtnHandler();
+        }
+
+        this.navigateToViewData();
     };
 
     onSaveBtnHandler = () => {
         const { domain, schemaName, messages } = this.state;
 
-        Ajax.request({
-            url: buildURL('query', 'saveQueryMetadata.api'),
-            method: 'POST',
-            success: Utils.getCallbackWrapper(() => {
+        saveQueryMetadata(domain, schemaName)
+            .then(() => {
                 this.showMessage("Save Successful", 'success', 0);
                 this.setState(() => ({
-                    showSave: false
+                    showSave: false,
+                    dirty: false
                 }));
-            }),
-            failure: Utils.getCallbackWrapper((error) => {
+            })
+            .catch((error) => {
                 this.setState(() => ({
                     messages: messages.set(0, {message: error.exception, messageType: 'danger'})
-                }))
-            }),
-            jsonData: {
-                domain: DomainDesign.serialize(domain),
-                schemaName: schemaName
-            }
-        });
+                }));
+            });
     };
 
-    editSourceBtnHandler = () => {
+    navigateToEditSource() {
         const { schemaName, queryName } = this.state;
         this.setState(() => ({dirty: false}), () => {
             window.location.href =  ActionURL.buildURL('query', 'sourceQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
         });
+    }
+
+    editSourceBtnHandler = () => {
+        const { dirty } = this.state;
+
+        if (dirty) {
+            this.setState(() => ({
+                showEditSourceConfirmationModal: true
+            }));
+        }
+        else {
+            this.onConfirmEditSource();
+        }
     };
 
     viewDataBtnHandler = () => {
-        const { schemaName, queryName } = this.state;
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
-        });
+        const { dirty } = this.state;
+
+        if (dirty) {
+            this.setState(() => ({
+                showViewDataConfirmationModal: true
+            }));
+        }
+        else {
+            this.onConfirmViewData();
+        }
+    };
+
+    onConfirmReset = () => {
+        const { schemaName, queryName, messages } = this.state;
+
+        resetQueryMetadata(schemaName, queryName)
+            .then((domain) => {
+                this.setState(() => ({
+                    domain: domain,
+                    showResetConfirmationModal: false
+                }))
+            })
+            .catch((error) => {
+                this.setState(() => ({
+                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
+                }));
+            });
     };
 
     onResetBtnHandler = () => {
-        const { schemaName, queryName, messages } = this.state;
+        const { dirty } = this.state;
 
-        Ajax.request({
-            url: buildURL('query', 'resetQueryMetadata.api'),
-            method: 'POST',
-            success: Utils.getCallbackWrapper((data) => {
-                this.setState(() => ({
-                    domain: DomainDesign.create(data, undefined)
-                }))
-            }),
-            failure: Utils.getCallbackWrapper((error) => {
-                this.setState(() => ({
-                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
-                }))
-            }),
-            params : {
-                schemaName : schemaName,
-                queryName : queryName
-            }
-        });
+        if (dirty) {
+            this.setState(() => ({
+                showResetConfirmationModal: true
+            }));
+        }
+        else {
+            this.onConfirmReset();
+        }
     };
 
     renderButtons() {
@@ -211,8 +282,22 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         )
     }
 
+    renderConfirmationModal(title: string, msg: string, onConfirm: any, onCancel: any, confirmButtonText: string, cancelButtonText: string) {
+        return (
+            <ConfirmModal
+                title={title}
+                msg={msg}
+                onConfirm={onConfirm}
+                onCancel={onCancel}
+                confirmVariant='danger'
+                confirmButtonText={confirmButtonText}
+                cancelButtonText={cancelButtonText}
+            />
+        )
+    }
+
     render() {
-        const { domain, showAlias, messages } = this.state;
+        const { domain, showAlias, messages, showEditSourceConfirmationModal, showResetConfirmationModal, showViewDataConfirmationModal } = this.state;
         const isLoading = domain === undefined;
 
         if (isLoading) {
@@ -228,12 +313,12 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                         domain={domain}
                         onChange={this.onChangeHandler}
                         useTheme={false}
-                        hideAddFieldsButton={true}
                         domainFormDisplayOptions= {{
                             showRequired: false,
                             isDragDisabled: true,
                             showValidators: false,
-                            phiLevelDisabled: true
+                            phiLevelDisabled: true,
+                            showAddFieldsButton: false
                         }}
                     />
                 }
@@ -257,12 +342,30 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
                 {
                     showAlias &&
-                    <AliasField
+                    <AliasFieldModal
                         domainFields={domain.fields}
                         showAlias={true}
                         onHide={this.onHideAliasField}
                         onAdd={this.onAddAliasField}
                     />
+                }
+
+                {
+                    showResetConfirmationModal &&
+                    this.renderConfirmationModal("Confirm Reset", "Are you sure you want to reset? You will lose any edits you made.",
+                        this.onConfirmReset, this.dismissChangeConfirmation, "Reset", "Cancel")
+                }
+
+                {
+                    showEditSourceConfirmationModal &&
+                    this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
+                        this.onConfirmEditSource, this.dismissChangeConfirmation, "Yes, Save", "No, Edit Source")
+                }
+
+                {
+                    showViewDataConfirmationModal &&
+                    this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
+                        this.onConfirmViewData, this.dismissChangeConfirmation, "Yes, Save", "No, View Data")
                 }
             </>
         )

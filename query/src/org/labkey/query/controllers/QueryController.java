@@ -56,6 +56,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.LockedPropertyType;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTConditionalFormat;
@@ -223,26 +224,6 @@ public class QueryController extends SpringActionController
     public QueryController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
-    {
-        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
-        if(null == filter)
-        {
-            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
-        }
-        else
-        {
-            gwtDomainPropertiesFilter = filter;
-        }
-
-        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
-                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
-        om.setFilterProvider(gwtDomainFilterProvider);
-        om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
-        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
-        om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
     public static void registerAdminConsoleLinks()
@@ -6714,16 +6695,23 @@ public class QueryController extends SpringActionController
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(EditQueriesPermission.class)
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     public class SaveQueryMetadataAction extends MutatingApiAction<QueryMetadataApiForm>
     {
-
         @Override
         protected ObjectMapper createRequestObjectMapper()
         {
-            ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
-            return mapper;
+            PropertyService propertyService = PropertyService.get();
+            if (null != propertyService)
+            {
+                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+                propertyService.configureObjectMapper(mapper, null);
+                return mapper;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         @Override
@@ -6737,15 +6725,16 @@ public class QueryController extends SpringActionController
         {
             GWTTableInfo gwtTableInfo = queryMetadataApiForm.getDomain();
             String schemaName = queryMetadataApiForm.getSchemaName();
-            saveMetadata(gwtTableInfo, schemaName);
+            GWTTableInfo domain = saveMetadata(gwtTableInfo, schemaName);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
+            resp.put("domain", domain);
             return resp;
         }
     }
 
     @Marshal(Marshaller.Jackson)
-    @RequiresPermission(EditQueriesPermission.class)
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     public class ResetQueryMetadataAction extends MutatingApiAction<QueryForm>
     {
         @Override

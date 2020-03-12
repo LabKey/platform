@@ -50,5 +50,7 @@ public enum QueryAction
     createSnapshot,
     editSnapshot,
     schemaBrowser,   // same as begin, but more explicit
-    getQueryEditorMetadata
+    getQueryEditorMetadata,
+    saveQueryMetadata,
+    resetQueryMetadata
 }

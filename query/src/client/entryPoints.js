@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'queryMetadataEditor',
         title: 'Metadata Editor',
-        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see PropertyController.EditDomainAction for main usage
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see QueryController.MetadataQueryAction for main usage
         path: './src/client/QueryMetadataEditor'
     }]
 };

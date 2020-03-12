@@ -1,9 +1,9 @@
 import React, {PureComponent} from "react";
-import {Button, Modal, FormControl} from "react-bootstrap";
+import {Button, Modal} from "react-bootstrap";
 import {List} from "immutable";
-import {DomainField} from "@labkey/components";
+import {DomainField, SelectInput} from "@labkey/components";
 
-interface AliasFieldProps
+interface AliasFieldModalProps
 {
     domainFields: List<DomainField>
     showAlias?: boolean
@@ -11,40 +11,38 @@ interface AliasFieldProps
     onAdd: (any) => any
 }
 
-interface AliasFieldState
+interface AliasFieldModalState
 {
     show?: boolean
-    selectedFieldName?: string
-    selectedDomainFieldIndex?: number
-    selectedDomainField?: DomainField
+    selectedField?: DomainField
 }
 
-export class AliasField extends PureComponent<AliasFieldProps, AliasFieldState> {
+export class AliasFieldModal extends PureComponent<AliasFieldModalProps, AliasFieldModalState> {
 
     // pass fields as props
     constructor(props) {
         super(props);
 
-        const { domainFields } = this.props;
-
         this.state = {
             show: this.props.showAlias,
-            selectedDomainField: domainFields.get(0),
-            selectedFieldName: domainFields.get(0).name
+            selectedField: this.props.domainFields.get(0)
         }
     }
 
     handleOK = () => {
-        const { domainFields, onAdd } = this.props;
-        const { selectedDomainFieldIndex, selectedFieldName } = this.state;
+        const { onAdd } = this.props;
+        const { selectedField } = this.state;
 
-        if (onAdd && selectedDomainFieldIndex) {
-            const domainFieldChange = domainFields.get(selectedDomainFieldIndex)
+        const selectedFieldName = selectedField.name;
+
+        if (onAdd) {
+            const domainFieldChange = selectedField
                 .merge({
                     name: 'Wrapped' + selectedFieldName,
                     dataType: undefined,
                     lockType: undefined,
-                    wrappedColumnName: selectedFieldName
+                    wrappedColumnName: selectedFieldName,
+                    propertyId: undefined
                 });
             const newDomainField =  DomainField.create(domainFieldChange.toJS());
             onAdd(newDomainField);
@@ -58,31 +56,29 @@ export class AliasField extends PureComponent<AliasFieldProps, AliasFieldState> 
         onHide();
     };
 
-    handleChange = (evt) => {
-
-        this.setState( {
-            selectedFieldName: evt.target.value,
-            selectedDomainFieldIndex: evt.target.selectedIndex
-        });
+    handleChange = (name, formValue, selected) => {
+        this.setState( () =>({
+            selectedField: selected
+        }));
     };
 
     renderDisplayFieldOptions = () => {
         const { domainFields } = this.props;
-        const { selectedFieldName } = this.state;
+
         return (
             <>
                 <div>Field Options</div>
-                <FormControl
-                    componentClass="select"
+                <SelectInput
                     onChange={this.handleChange}
-                    value={selectedFieldName}
-                >
-                    {
-                        domainFields.map((level, i) => (
-                            <option key={i} value={level.name}>{level.label}</option>
-                        ))
-                    }
-                </FormControl>
+                    value={domainFields.get(0)}
+                    options={domainFields.toArray()}
+                    inputClass="" // This attr is necessary for proper styling
+                    valueKey="name"
+                    labelKey="label"
+                    formsy={false}
+                    multiple={false}
+                    required={false}
+                />
             </>
         )
 
