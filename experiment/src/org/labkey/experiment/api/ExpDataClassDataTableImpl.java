@@ -142,11 +142,23 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         // if there is xml config, use xml config
         if (_auditBehaviorType == AuditBehaviorType.NONE && getXmlAuditBehaviorType() == null)
         {
-            if (ExpSchema.DataClassCategoryType.sources.name().equals(_dataClass.getCategory()))
-                return AuditBehaviorType.DETAILED;
+            ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+            if (categoryType != null && categoryType.defaultBehavior != null)
+                return categoryType.defaultBehavior;
         }
 
         return _auditBehaviorType;
+    }
+
+    @Override
+    @Nullable
+    public Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+        if (categoryType != null)
+            return categoryType.additionalAuditFields;
+
+        return null;
     }
 
     @Override
