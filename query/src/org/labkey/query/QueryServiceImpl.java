@@ -688,7 +688,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                 .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -1040,7 +1040,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
@@ -2169,7 +2169,7 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override

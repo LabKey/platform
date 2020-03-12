@@ -662,7 +662,7 @@ public class SurveyManager
                 .filter(getFilter(MODULE_RESOURCE_FILE_EXTENSION))
                 .map(this::loadSurveyDesign)
                 .filter(Objects::nonNull)
-                .collect(LabKeyCollectors.toMultivaluedMap(SurveyDesign::getSchemaName, Function.identity())));
+                .collect(LabKeyCollectors.toMultiValuedMap(SurveyDesign::getSchemaName, Function.identity())));
         }
 
         private @Nullable SurveyDesign loadSurveyDesign(Resource r)
