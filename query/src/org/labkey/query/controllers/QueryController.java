@@ -2428,11 +2428,11 @@ public class QueryController extends SpringActionController
                     }
                     // need to throw here to avoid committing tx
                     if (errors.hasErrors())
-                        throw new DbScope.RetryException(errors);
+                        throw new DbScope.RetryPassthroughException(errors);
                     return true;
                 });
             }
-            catch (DbScope.RetryException x)
+            catch (DbScope.RetryPassthroughException x)
             {
                 if (x.getCause() != errors)
                     x.throwRuntimeException();

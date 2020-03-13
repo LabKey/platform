@@ -208,12 +208,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         context.getErrors().setExtraContext(extraScriptContext);
+        if (extraScriptContext != null)
+        {
+            context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
+        }
 
         in = preTriggerDataIterator(in, context);
 
@@ -320,7 +324,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
-                                                      DataIteratorContext context, Map<String, Object> extraScriptContext)
+                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");

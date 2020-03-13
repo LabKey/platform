@@ -1422,7 +1422,7 @@ public class UserController extends SpringActionController
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("User Access Details: " + UserManager.getEmailForId(_userId));
+                return root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
             return null;
         }
