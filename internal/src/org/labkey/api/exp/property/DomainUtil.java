@@ -485,9 +485,6 @@ public class DomainUtil
         if (!kind.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 
-        if (domain.getReservedFieldNames() != null && domain.getReservedFieldNames().size() == 0)
-            domain.setReservedFieldNames(kind.getReservedPropertyNames(null));
-
         ValidationException ve = DomainUtil.validateProperties(null, domain, null, null);
         if (ve.hasErrors())
         {

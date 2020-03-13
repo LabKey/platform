@@ -6323,6 +6323,12 @@ public class ExperimentServiceImpl implements ExperimentService
         Set<String> propertyUris = new HashSet<>();
         for (GWTPropertyDescriptor pd : properties)
         {
+            String propertyName = pd.getName().toLowerCase();
+            if (lowerReservedNames.contains(propertyName))
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
+            else if (domain.getPropertyByName(propertyName) != null) // issue 25275
+                throw new IllegalArgumentException("Property name '" + propertyName + "' is already defined for this domain.");
+
             DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
         }
 

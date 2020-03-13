@@ -132,7 +132,7 @@ public class ExpDataClassDataTestCase extends ExpProvisionedTableTestHelper
         }
         catch (IllegalArgumentException e)
         {
-            assertEquals("DataClass name is required", e.getMessage());
+            assertEquals("DataClass name is required.", e.getMessage());
         }
     }
 
