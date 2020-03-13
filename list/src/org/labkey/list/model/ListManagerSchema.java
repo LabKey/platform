@@ -205,8 +205,8 @@ public class ListManagerSchema extends UserSchema
                 {
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
-                        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER);
-                        String text = experimentalFlagEnabled ? "Design" : "View Design";
+                        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_GWT_LIST_DESIGNER);
+                        String text = !experimentalFlagEnabled ? "Design" : "View Design";
 
                         SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
                         {
