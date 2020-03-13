@@ -309,6 +309,11 @@ public abstract class SqlDialect
         return null;
     }
 
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return false;
+    }
+
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default

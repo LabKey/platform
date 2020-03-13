@@ -1740,6 +1740,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return true;
+    }
+
+    @Override
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         Closer ret = super.configureToDisableJdbcCaching(connection, scope, sql);
