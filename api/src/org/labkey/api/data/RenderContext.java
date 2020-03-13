@@ -38,6 +38,7 @@ import org.springframework.validation.ObjectError;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -492,11 +493,23 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
-        TableSelector selector = new TableSelector(table, columns, filter, sort)
-                .setNamedParameters(parameters)
-                .setMaxRows(maxRows)
-                .setOffset(offset)
-                .setForDisplay(true);
+        TableSelector selector = getCache() ?
+            new TableSelector(table, columns, filter, sort) :
+            // TODO: Refactor in 20.4 to call TableSelector.setJdbcUncached() instead of overridding getConnection(). Also, review other getCache() callers.
+            new TableSelector(table, columns, filter, sort)
+            {
+                @Override
+                public Connection getConnection() throws SQLException
+                {
+                    return getScope().getReadOnlyConnection();
+                }
+            };
+
+        selector
+            .setNamedParameters(parameters)
+            .setMaxRows(maxRows)
+            .setOffset(offset)
+            .setForDisplay(true);
 
         if (async)
         {

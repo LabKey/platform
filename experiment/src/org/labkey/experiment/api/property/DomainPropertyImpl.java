@@ -240,6 +240,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setName(String name)
     {
+        if (StringUtils.equals(name, getName()))
+            return;
         edit().setName(name);
     }
 
@@ -423,6 +425,8 @@ public class DomainPropertyImpl implements DomainProperty
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String aliases)
     {
+        if (StringUtils.equals(aliases, getImportAliases()))
+            return;
         edit().setImportAliases(aliases);
     }
 

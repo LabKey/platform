@@ -33,7 +33,7 @@ public enum JavaVersion
     JAVA_UNSUPPORTED(-1, true, false),
     JAVA_12(12, true, true),
     JAVA_13(13, false, true),
-    JAVA_14(14, false, false),
+    JAVA_14(14, false, true),
     JAVA_15(15, false, false),
     JAVA_FUTURE(Integer.MAX_VALUE, false, false);
 
@@ -79,7 +79,7 @@ public enum JavaVersion
         JavaVersion jv = get(version);
 
         if (JAVA_UNSUPPORTED == jv)
-            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 12 or Java 13. We recommend installing " + getRecommendedJavaVersion() + ".");
+            throw new ConfigurationException("Unsupported Java runtime version: " + getJavaVersionDescription() + ". LabKey Server requires Java 13 or Java 14. We recommend installing " + getRecommendedJavaVersion() + ".");
 
         return jv;
     }
@@ -105,7 +105,7 @@ public enum JavaVersion
 
     public static String getRecommendedJavaVersion()
     {
-        return "Oracle OpenJDK 13";
+        return "AdoptOpenJDK 14 with HotSpot JVM";
     }
 
     public static class TestCase extends Assert
