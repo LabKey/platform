@@ -1,13 +1,16 @@
 package org.labkey.api.security;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthLogoType;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.SsoSaveConfigurationAction.SsoSaveConfigurationForm;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.view.NotFoundException;
@@ -32,12 +35,12 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
     {
         SSOAuthenticationConfiguration<?> configuration = AuthenticationManager.getSSOConfiguration(form.getRowId());
         Map<String, MultipartFile> fileMap = getFileMap();
-        boolean changedLogos = deleteLogos(form, configuration);
+        boolean changedLogos = deleteLogos(getUser(), form, configuration);
 
         try
         {
-            changedLogos |= handleLogo(configuration, fileMap, AuthLogoType.HEADER);
-            changedLogos |= handleLogo(configuration, fileMap, AuthLogoType.LOGIN_PAGE);
+            changedLogos |= handleLogo(getUser(), configuration, fileMap, AuthLogoType.HEADER);
+            changedLogos |= handleLogo(getUser(), configuration, fileMap, AuthLogoType.LOGIN_PAGE);
         }
         catch (Exception e)
         {
@@ -55,7 +58,7 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
     }
 
     // Returns true if a new logo is saved
-    private boolean handleLogo(SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, AuthLogoType logoType) throws IOException, ServletException
+    private boolean handleLogo(User user, SSOAuthenticationConfiguration<?> configuration, Map<String, MultipartFile> fileMap, @NotNull AuthLogoType logoType) throws IOException, ServletException
     {
         if (null == configuration)
             throw new NotFoundException("Configuration not found");
@@ -71,11 +74,13 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
         AttachmentFile aFile = new SpringAttachmentFile(file, logoType.getFileName());
         AttachmentService.get().addAttachments(configuration, Collections.singletonList(aFile), getUser());
 
+        logLogoAction(user, configuration, logoType, "saved");
+
         return true;
     }
 
     // Returns true if a logo is deleted
-    public boolean deleteLogos(F form, SSOAuthenticationConfiguration<?> configuration)
+    private boolean deleteLogos(User user, F form, SSOAuthenticationConfiguration<?> configuration)
     {
         String deletedLogos = form.getDeletedLogos();
 
@@ -83,9 +88,20 @@ public abstract class SsoSaveConfigurationAction<F extends SsoSaveConfigurationF
             return false;
 
         for (String logoName : deletedLogos.split(","))
+        {
             AttachmentService.get().deleteAttachment(configuration, logoName, getUser());
+            AuthLogoType logoType = AuthLogoType.getForFilename(logoName);
+            logLogoAction(user, configuration, logoType, "deleted");
+        }
 
         return true;
+    }
+
+    private void logLogoAction(User user, SSOAuthenticationConfiguration<?> configuration, @NotNull AuthLogoType logoType, String action)
+    {
+        AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(logoType.getLabel() + " logo for " + configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + configuration.getRowId() + ") was " + action);
+        event.setChanges(logoType.getLabel() + " logo " + action);
+        AuditLogService.get().addEvent(user, event);
     }
 
     @Override

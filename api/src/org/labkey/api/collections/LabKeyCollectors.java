@@ -56,10 +56,10 @@ public class LabKeyCollectors
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
      */
-    public static <T, K, V> Collector<T, ?, MultiValuedMap<K, V>> toMultivaluedMap(Function<? super T, ? extends K> keyMapper,
-                                                                     Function<? super T, ? extends V> valueMapper)
+    public static <T, K, V> Collector<T, ?, MultiValuedMap<K, V>> toMultiValuedMap(Function<? super T, ? extends K> keyMapper,
+                                                                                   Function<? super T, ? extends V> valueMapper)
     {
-        return toMultivaluedMap(keyMapper, valueMapper, ArrayListValuedHashMap::new);
+        return toMultiValuedMap(keyMapper, valueMapper, ArrayListValuedHashMap::new);
     }
 
     /**
@@ -76,9 +76,9 @@ public class LabKeyCollectors
      * @return a {@code Collector} that collects elements into a {@code MultiValuedMap} whose keys and values are the
      * result of applying mapping functions to the input elements
      */
-    public static <T, K, V> Collector<T, ?, MultiValuedMap<K, V>> toMultivaluedMap(Function<? super T, ? extends K> keyMapper,
-                                                                     Function<? super T, ? extends V> valueMapper,
-                                                                     Supplier<MultiValuedMap<K, V>> supplier)
+    public static <T, K, V> Collector<T, ?, MultiValuedMap<K, V>> toMultiValuedMap(Function<? super T, ? extends K> keyMapper,
+                                                                                   Function<? super T, ? extends V> valueMapper,
+                                                                                   Supplier<MultiValuedMap<K, V>> supplier)
     {
         return Collector.of(
             supplier,
@@ -113,7 +113,7 @@ public class LabKeyCollectors
                 "D", "four"
             );
 
-            MultiValuedMap<String, String> mmap = map.entrySet().stream().collect(toMultivaluedMap(Map.Entry::getKey, Map.Entry::getValue));
+            MultiValuedMap<String, String> mmap = map.entrySet().stream().collect(toMultiValuedMap(Map.Entry::getKey, Map.Entry::getValue));
             assertEquals(4, mmap.size());
 
             Map<String, String> lhmap = map.entrySet().stream().sorted(Map.Entry.comparingByKey()).collect(toLinkedMap(Map.Entry::getKey, Map.Entry::getValue));
@@ -124,7 +124,7 @@ public class LabKeyCollectors
             assertEquals("[\"A\",\"B\",\"C\",\"D\"]", jsonArray.toString());
 
             List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 2, 4, 6, 8, 10);
-            MultiValuedMap<Integer, Integer> mmap2 = list.stream().collect(toMultivaluedMap(i -> i, i -> i));
+            MultiValuedMap<Integer, Integer> mmap2 = list.stream().collect(toMultiValuedMap(i -> i, i -> i));
             assertEquals(15, mmap2.size());
             assertEquals(10, mmap2.keySet().size());
         }

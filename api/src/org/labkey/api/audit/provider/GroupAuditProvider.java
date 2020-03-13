@@ -170,7 +170,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
 
-        return createUserView(context, filter, "Access Modification History:", columns, errors, ContainerFilter.Type.AllFolders);
+        return createUserView(context, filter, "Access Modification History", columns, errors, ContainerFilter.Type.AllFolders);
     }
 
     @Nullable
