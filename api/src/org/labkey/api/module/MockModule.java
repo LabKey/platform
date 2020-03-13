@@ -382,6 +382,18 @@ public class MockModule implements Module
     }
 
     @Override
+    public @Nullable File getZippedPath()
+    {
+        return null;
+    }
+
+    @Override
+    public void setZippedPath(File zipped)
+    {
+
+    }
+
+    @Override
     public void dispatch(HttpServletRequest request, HttpServletResponse response, ActionURL url)
     {
     }

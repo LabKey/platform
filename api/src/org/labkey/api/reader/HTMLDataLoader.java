@@ -34,6 +34,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -148,16 +149,17 @@ public class HTMLDataLoader extends DataLoader
         }
     }
 
+    @NotNull
     protected Collection<String[]> parse(int limit)
     {
         List<String> errors = new LinkedList<>();
         Document doc = TidyUtil.convertHtmlToDocument(_html, true, errors);
         if (errors.size() > 0 || doc == null)
-            return null;
+            return Collections.emptyList();
 
         Element table = findTable(doc);
         if (table == null)
-            return null;
+            return Collections.emptyList();
 
         return parseTable(table, limit);
     }

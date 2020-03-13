@@ -25,28 +25,29 @@ import org.labkey.api.view.template.ClientDependency;
 import java.util.Set;
 
 /**
+ * Used to wire up customized buttons to standard LabKey data grids, like QueryWebPart will render.
  * User: bimber
  * Date: 5/5/13
- * Time: 9:23 AM
  */
 public interface ButtonConfigFactory
 {
-    public UserDefinedButtonConfig createBtn(TableInfo ti);
+    UserDefinedButtonConfig createBtn(TableInfo ti);
 
-    public NavTree create(TableInfo ti);
+    /** Generate a representation of the button (which might be a cascading menu) and what it should do when clicked */
+    NavTree create(TableInfo ti);
 
     /**
      * @return true if the button is eligible to be added to the table's button bar. As this is invoked frequently,
      * it should be quick to return. If a detailed check is needed, use isVisible() which is invoked only at display
      * time
      */
-    public boolean isAvailable(TableInfo ti);
+    boolean isAvailable(TableInfo ti);
 
     /**
      * @return true if the button should be visible in the table's button bar. This will be invoked only when
      * actually constructing
      */
-    public boolean isVisible(TableInfo ti);
+    boolean isVisible(TableInfo ti);
 
-    public Set<ClientDependency> getClientDependencies(Container c, User u);
+    Set<ClientDependency> getClientDependencies(Container c, User u);
 }
