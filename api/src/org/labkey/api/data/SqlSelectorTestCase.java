@@ -23,6 +23,9 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+import static java.sql.Connection.TRANSACTION_READ_COMMITTED;
+import static java.sql.Connection.TRANSACTION_READ_UNCOMMITTED;
+
 /**
  * User: adam
  * Date: 12/18/12
@@ -96,13 +99,70 @@ public class SqlSelectorTestCase extends AbstractSelectorTestCase<SqlSelector>
         }
     }
 
-    @Test(expected = IllegalStateException.class)
+    // Not practical to test that very large ResultSets are uncached, but we can at least check that we see shared and
+    // not shared connections where we expect them. And we can verify we've configured uncached settings on PostgreSQL.
+    @Test
     public void testJdbcUncached() throws SQLException
     {
         DbScope scope = CoreSchema.getInstance().getScope();
         try (Connection conn = scope.getConnection())
         {
-            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcUncached();
+            // Default setting is to cache and share the connection
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").getConnection())
+            {
+                assertEquals(conn, conn2);
+            }
+
+            // Same as the default setting
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true).getConnection())
+            {
+                assertEquals(conn, conn2);
+            }
+
+            // Set and reset should still share
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).setJdbcCaching(true).getConnection())
+            {
+                assertEquals(conn, conn2);
+            }
+
+            // Here we expect a different Connection object on PostgreSQL, but still shared on SQL Server
+            try (Connection conn2 = new SqlSelector(scope, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false).getConnection())
+            {
+                if (scope.getSqlDialect().isPostgreSQL())
+                {
+                    assertNotEquals(conn, conn2);
+                    assertEquals(conn2.getTransactionIsolation(), TRANSACTION_READ_UNCOMMITTED);
+                    assertFalse(conn2.getAutoCommit());
+                }
+                else
+                {
+                    assertEquals(conn, conn2);
+                    assertEquals(conn2.getTransactionIsolation(), TRANSACTION_READ_COMMITTED);
+                    assertTrue(conn2.getAutoCommit());
+                }
+            }
+        }
+    }
+
+    // Passing in a Connections and calling setJdbcCaching() should throw
+    @Test(expected = IllegalStateException.class)
+    public void testJdbcUncachedTrue() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+        try (Connection conn = scope.getConnection())
+        {
+            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(true);
+        }
+    }
+
+    // Passing in a Connections and calling setJdbcCaching() should throw
+    @Test(expected = IllegalStateException.class)
+    public void testJdbcUncachedFalse() throws SQLException
+    {
+        DbScope scope = CoreSchema.getInstance().getScope();
+        try (Connection conn = scope.getConnection())
+        {
+            new SqlSelector(scope, conn, "SELECT RowId, Body FROM comm.Announcements").setJdbcCaching(false);
         }
     }
 }
