@@ -1794,7 +1794,10 @@ public class SecurityController extends SpringActionController
             buildAccessDetailList(activeUsers, rows, form.showAll());
             Collections.sort(rows); // the sort is done using the user display name
             UserController.AccessDetail bean = new UserController.AccessDetail(rows, true, true);
-            view.addView(new JspView<>("/org/labkey/core/user/securityAccess.jsp", bean, errors));
+            JspView<UserController.AccessDetail> accessView = new JspView<>("/org/labkey/core/user/securityAccess.jsp", bean, errors);
+            accessView.setTitle("Folder Role Assignments");
+            accessView.setFrame(WebPartView.FrameType.PORTAL);
+            view.addView(accessView);
 
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
             if (schema != null)

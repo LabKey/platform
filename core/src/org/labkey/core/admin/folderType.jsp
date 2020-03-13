@@ -308,6 +308,8 @@ for (Module module : allModules)
 
     if (active || enabled)
     {
+        if (!module.canBeEnabled(c))
+            continue;
         %>
         <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules"
                title="<%= h(module.getTabName(context))%>"

@@ -550,6 +550,7 @@ public abstract class SqlDialect
 
     public abstract String getClobLengthFunction();
 
+    /** Literal string search, no wildcards supported */
     public abstract SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch);
 
     public abstract String getSubstringFunction(String s, String start, String length);

@@ -16,6 +16,7 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
@@ -49,7 +50,7 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
-        // Override the 9.3 override... no warnings for 9.4+
+        warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + PostgreSqlDialectFactory.RECOMMENDED));
     }
 
     @Override
@@ -57,5 +58,4 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
     {
         return "percentile_cont";
     }
-
 }
