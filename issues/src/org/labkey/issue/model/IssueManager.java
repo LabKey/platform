@@ -199,6 +199,7 @@ public class IssueManager
         return issue;
     }
 
+    @Nullable
     public static Issue getIssue(@Nullable Container c, User user, int issueId)
     {
         Issue issue = _getIssue(c, issueId);
