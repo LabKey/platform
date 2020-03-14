@@ -29,6 +29,7 @@ import org.labkey.api.data.dialect.JdbcHelperTest;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectFactory;
 import org.labkey.api.data.dialect.TestUpgradeCode;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.VersionNumber;
 
@@ -80,15 +81,46 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 
         // Get the appropriate dialect and stash version information
-        SqlDialect dialect = getDialect(versionNumber, databaseProductVersion, logWarnings);
-        int versionInt = versionNumber.getVersionInt();
-        dialect.setDatabaseVersion(versionInt);
-        dialect.setProductVersion(String.valueOf(versionInt/(double)10));
+        int version = versionNumber.getVersionInt();
+        SqlDialect dialect = getDialect(version, databaseProductVersion, logWarnings);
+        dialect.setDatabaseVersion(version);
+        dialect.setProductVersion(String.valueOf(version/(double)10));
+
+        // Test old approach against new. TODO: Delete
+        SqlDialect oldDialect = getDialectOld(versionNumber, databaseProductVersion, logWarnings);
+        assert oldDialect.getClass() == dialect.getClass();
 
         return dialect;
     }
 
-    private @NotNull SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
+    private @NotNull SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings)
+    {
+        PostgreSqlVersion psv = PostgreSqlVersion.get(version);
+
+        if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
+            throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
+
+        PostgreSql94Dialect dialect = psv.getDialect();
+
+        if (logWarnings)
+        {
+            if (!psv.isTested())
+            {
+                _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+            }
+            else if (psv.isDeprecated())
+            {
+                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                _log.warn(deprecationWarning);
+                dialect.setAdminWarning(HtmlString.of(deprecationWarning));
+            }
+        }
+
+        return dialect;
+    }
+
+    @Deprecated // Remove after testing new approach for a while
+    private @NotNull SqlDialect getDialectOld(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
     {
         int version = versionNumber.getVersionInt();
 

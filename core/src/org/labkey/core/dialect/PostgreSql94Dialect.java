@@ -28,6 +28,8 @@ import java.util.Set;
  */
 public class PostgreSql94Dialect extends PostgreSql93Dialect
 {
+    private HtmlString _adminWarning = null;
+
     public PostgreSql94Dialect()
     {
     }
@@ -47,10 +49,16 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
         return words;
     }
 
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
-        warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + PostgreSqlDialectFactory.RECOMMENDED));
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
     }
 
     @Override

@@ -274,6 +274,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return stmt.executeQuery();
     }
 
+    @Override
     public boolean requiresStatementMaxRows()
     {
         return false;
@@ -632,6 +633,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return "TRUNCATE TABLE " + tableName + " RESTART IDENTITY";
     }
 
+    @Override
     public String getDateDiff(int part, String value1, String value2)
     {
         return getDateDiff(part, new SQLFragment(value1), new SQLFragment(value2)).getSQL();
@@ -681,7 +683,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
                 throw new IllegalArgumentException("Unsupported time unit: " + part);
             }
         }
-        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).append(" - ").append(value2).append( ")) / " + divideBy + ")::INT");
+        return new SQLFragment("(EXTRACT(EPOCH FROM (").append(value1).append(" - ").append(value2).append(")) / ").append(String.valueOf(divideBy)).append(")::INT");
     }
 
     @Override
@@ -1173,10 +1175,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private List<String> getDropConstraintsStatement(TableChange change)
     {
-        List<String> statements = change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
+        return change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
                 change.getSchemaName() + "." + change.getTableName(), constraint.getName())).collect(Collectors.toList());
-
-        return statements;
     }
 
     private List<String> getAddConstraintsStatement(TableChange change)
@@ -1307,6 +1307,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
     }
 
+    @Override
     public String nameIndex(String tableName, String[] indexedColumns)
     {
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
@@ -1475,7 +1476,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
-        return new PostgreSQLColumnMetaDataReader(rsCols, table);
+        return new PostgreSqlColumnMetaDataReader(rsCols, table);
     }
 
     @Override
@@ -1559,7 +1560,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         sb.append("{");
         if (assignResult)
             sb.append("? = ");
-        sb.append("CALL " + procSchema + "." + procName +"(");
+        sb.append("CALL ").append(procSchema).append(".").append(procName).append("(");
         String comma = "";
         for (int i = 0; i < paramCount; i++)
         {
@@ -1621,11 +1622,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return true;
     }
 
-    private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
+    private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final TableInfo _table;
 
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, TableInfo table)
+        public PostgreSqlColumnMetaDataReader(ResultSet rsCols, TableInfo table)
         {
             super(rsCols);
 
@@ -1693,23 +1694,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
             }
 
             return scale.intValue();
-        }
-
-        // Domain could be defined in the current schema or in the "public" schema
-        // This is the old way... apparently PostgreSQL changed behavior at some point, where column meta data shifted from
-        // returning unqualified domain names to fully qualified domain names. See #26149.
-        // TODO: Delete this once we're sure we don't need to resurrect the old way for older versions of PostgreSQL
-        private Integer getDomainScale(DbSchema schema, String domainName)
-        {
-            // Check the schema first
-            String key = getDomainKey(schema.getName(), domainName);
-            Integer scale = _domainScaleMap.get(key);
-
-            // Not there, check "public"
-            if (null == scale)
-                scale = _domainScaleMap.get(domainName);
-
-            return scale;
         }
 
         @Nullable
