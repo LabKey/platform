@@ -169,6 +169,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -290,10 +291,17 @@ import java.util.stream.Collectors;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
 import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.action;
 import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.Attribute.width;
 import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
@@ -1453,7 +1461,7 @@ public class ExperimentController extends SpringActionController
             lowerView.setTitle("Run Details");
             NavTree tree = new NavTree("");
             File runRoot = _experimentRun.getFilePathRoot();
-            if (runRoot != null && NetworkDrive.exists(runRoot))
+            if (NetworkDrive.exists(runRoot))
             {
                 if (!runRoot.isDirectory())
                 {
@@ -1469,11 +1477,16 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
+
+            final String exportFilesFormId = "exportFilesForm";
             NavTree downloadFiles = new NavTree("Download all files");
-
-            downloadFiles.setScript("exportFiles();");
-
+            downloadFiles.setScript("document.getElementById('" + exportFilesFormId + "').submit();");
             tree.addChild(downloadFiles);
+
+            // CONSIDER: Show modal dialog using ExperimentService.get().createRunExportView()
+            NavTree exportXarFiles = new NavTree("Export XAR");
+            exportXarFiles.setScript("LABKEY.Experiment.exportRuns({runIds: [" + _experimentRun.getRowId() + "] });");
+            tree.addChild(exportXarFiles);
 
             lowerView.setNavMenu(tree);
             lowerView.setIsWebPart(false);
@@ -1481,24 +1494,21 @@ public class ExperimentController extends SpringActionController
             vbox.addView(lowerView);
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL(), errors));
 
-            StringBuilder html = new StringBuilder();
-            html.append("<form id=\"exportFilesForm\" method=\"POST\" action=\"");
-            html.append(new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer()));
-            html.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
-            html.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
-            html.append("\" /><input type=\"hidden\" name=\"");
-            html.append(DataRegion.SELECT_CHECKBOX_NAME);
-            html.append("\" value=\"");
-            html.append(_experimentRun.getRowId());
-            html.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
-            html.append(PageFlowUtil.filter(_experimentRun.getName()));
-            html.append(".zip\" />");
-            html.append("<input type=\"hidden\" name=\"").append(CSRFUtil.csrfName).append("\"");
-            html.append(" value=\"").append(CSRFUtil.getExpectedToken(getViewContext())).append("\"");
-            html.append("/></form>");
-            html.append("<script>function exportFiles() { document.getElementById('exportFilesForm').submit(); }</script>");
+            DOM.Renderable exportFilesForm = LK.FORM(at(
+                    id, exportFilesFormId,
+                    method, "POST",
+                    action, new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer())),
+                    INPUT(at(type, "hidden",
+                            name, DataRegionSelection.DATA_REGION_SELECTION_KEY,
+                            value, "ExportSingleRun")),
+                    INPUT(at(type, "hidden",
+                            name, DataRegion.SELECT_CHECKBOX_NAME,
+                            value, _experimentRun.getRowId())),
+                    INPUT(at(type, "hidden",
+                            name, "zipFileName",
+                            value, _experimentRun.getName() + ".zip")));
 
-            HtmlView hiddenFormView = new HtmlView(html.toString());
+            HtmlView hiddenFormView = new HtmlView(exportFilesForm);
             vbox.addView(hiddenFormView);
 
             return vbox;
@@ -4248,8 +4258,8 @@ public class ExperimentController extends SpringActionController
     public static class ExportOptionsForm extends ExperimentRunListForm
     {
         private String _error;
-        private String _exportType;
-        private String _lsidOutputType;
+        private XarExportType _exportType;
+        private LSIDRelativizer _lsidOutputType;
         private String _xarFileName;
         private String _zipFileName;
         private String _fileExportType;
@@ -4268,12 +4278,12 @@ public class ExperimentController extends SpringActionController
             _error = error;
         }
 
-        public String getExportType()
+        public XarExportType getExportType()
         {
             return _exportType;
         }
 
-        public String getLsidOutputType()
+        public LSIDRelativizer getLsidOutputType()
         {
             return _lsidOutputType;
         }
@@ -4308,12 +4318,12 @@ public class ExperimentController extends SpringActionController
             _zipFileName = zipFileName;
         }
 
-        public void setExportType(String exportType)
+        public void setExportType(XarExportType exportType)
         {
             _exportType = exportType;
         }
 
-        public void setLsidOutputType(String lsidOutputType)
+        public void setLsidOutputType(LSIDRelativizer lsidOutputType)
         {
             _lsidOutputType = lsidOutputType;
         }
@@ -4397,46 +4407,24 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName)
+    private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable String fileName)
             throws ExperimentException, IOException, PipelineValidationException
     {
-        final LSIDRelativizer lsidRelativizer;
-        final XarExportType exportType;
-        if (lsidRelativizerName == null)
-        {
+        return exportXAR(selection, (LSIDRelativizer)null, (XarExportType)null, fileName);
+    }
+
+    private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable LSIDRelativizer lsidRelativizer, @Nullable XarExportType exportType, @Nullable String fileName)
+            throws ExperimentException, IOException, PipelineValidationException
+    {
+        if (lsidRelativizer == null)
             lsidRelativizer = LSIDRelativizer.FOLDER_RELATIVE;
-        }
-        else
-        {
-            try
-            {
-                lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new NotFoundException("No such LSID relativizer available: " + lsidRelativizerName);
-            }
-        }
-        if (exportTypeName == null)
-        {
+
+        if (exportType == null)
             exportType = XarExportType.BROWSER_DOWNLOAD;
-        }
-        else
-        {
-            try
-            {
-                exportType = XarExportType.valueOf(exportTypeName);
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new NotFoundException("No such export type available: " + exportTypeName);
-            }
-        }
 
         if (fileName == null || fileName.equals(""))
-        {
             fileName = "export.xar";
-        }
+
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
         if (fileName.endsWith(".xar") || fileName.endsWith(".XAR") || fileName.endsWith("Xar"))
@@ -4527,7 +4515,12 @@ public class ExperimentController extends SpringActionController
 
         public List<ExpRun> lookupRuns(ExportOptionsForm form)
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+            Set<Integer> runIds;
+            if (form.getRunIds() != null && form.getRunIds().length > 0)
+                runIds = new HashSet<>(Arrays.asList(form.getRunIds()));
+            else
+                runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4612,7 +4605,7 @@ public class ExperimentController extends SpringActionController
             }
             selection.addRuns(lookupRuns(form));
 
-            _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+            _resultURL = exportXAR(selection, form.getZipFileName());
             if (form.getDataRegionSelectionKey() != null)
                 DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             return true;
@@ -4645,7 +4638,7 @@ public class ExperimentController extends SpringActionController
                 selection.setIncludeXarXml(false);
                 selection.addDataIds(dataIds);
 
-                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+                _resultURL = exportXAR(selection, form.getZipFileName());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4659,6 +4652,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _dataRegionSelectionKey;
         private Integer _expRowId;
+        private Integer[] _runIds;
 
         public String getDataRegionSelectionKey()
         {
@@ -4678,6 +4672,16 @@ public class ExperimentController extends SpringActionController
         public void setExpRowId(Integer expRowId)
         {
             _expRowId = expRowId;
+        }
+
+        public Integer[] getRunIds()
+        {
+            return _runIds;
+        }
+
+        public void setRunIds(Integer[] runIds)
+        {
+            _runIds = runIds;
         }
 
         public ExpExperiment lookupExperiment()

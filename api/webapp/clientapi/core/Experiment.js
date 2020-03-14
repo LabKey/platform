@@ -313,6 +313,31 @@ LABKEY.Experiment.loadBatch({
         },
 
         /**
+         * Export a run as a XAR archive.
+         * @memberOf LABKEY.Experiment
+         * @function
+         * @name exportRuns
+         * @param config
+         * @param {Number[]} config.runIds Array of ExpRun rowId to export
+         * @param {String} config.lsidOutputType Determines how LSIDs will be translated in the XAR XML file. Defaults to 'FOLDER_RELATIVE'
+         * <ul>
+         *     <li><b>ABSOLUTE</b> Keeps the original LSID from the source server
+         *     <li><b>FOLDER_RELATIVE</b> ?
+         *     <li><b>PARTIAL_FOLDER_RELATIVE</b> ?
+         * </ul>
+         * @param {String} config.exportType Defaults to 'BROWSER_DOWNLOAD'
+         * <ul>
+         *     <li><b>BROWSER_DOWNLOAD</b> Download to web browser
+         *     <li><b>PIPELIE_FILE</b> Write to exportedXars directory in pipeline
+         * </ul>
+         * @param {String} config.fileName The exported archive file name.  Defaults to 'export.xar'
+         */
+        exportRuns: function (config)
+        {
+            throw new Error('dom/Experiment.js required');
+        },
+
+        /**
          * Saves a modified batch.
          * Runs within the batch may refer to existing data and material objects, either inputs or outputs, by ID or LSID.
          * Runs may also define new data and materials objects by not specifying an ID or LSID in their properties.
@@ -1289,5 +1314,4 @@ LABKEY.Exp.Data.prototype.getContent = function(config)
     });
 
 };
-
 
