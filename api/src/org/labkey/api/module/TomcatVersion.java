@@ -119,7 +119,7 @@ public enum TomcatVersion
             }
         }
 
-        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.0.x, 8.5.x, or 9.0.x.");
+        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 8.5.x or 9.0.x.");
     }
 
     private static @NotNull TomcatVersion get(int version)

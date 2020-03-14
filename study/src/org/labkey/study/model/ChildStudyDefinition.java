@@ -35,6 +35,7 @@ public class ChildStudyDefinition
     private String _description;
     private String _srcPath;
     private String _dstPath;
+    private String _timepointType;
     private PHI _exportPhiLevel;
     private boolean _shiftDates;
     private boolean _useAlternateParticipantIds;
@@ -352,10 +353,21 @@ public class ChildStudyDefinition
         _participantGroupsAll = participantGroupsAll;
     }
 
+    public String getTimepointType()
+    {
+        return _timepointType;
+    }
+
+    public void setTimepointType(String timepointType)
+    {
+        _timepointType = timepointType;
+    }
+
     public void logSelections(Logger logger)
     {
         logger.info("----- Start Selected Properties -----");
         logger.info("Name: " + getName());
+        logger.info("Timepoint Type: " + getTimepointType());
         logger.info("Source Path: " + getSrcPath());
         logger.info("Destination Path: " + getDstPath());
         logger.info("Participant Groups: " + (isParticipantGroupsAll() ? "All" : Arrays.toString(getGroups())));

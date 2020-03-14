@@ -302,7 +302,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         public static ExplodedModuleService newInstance(Object obj)
         {
-            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()))
+            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) && !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()))
                 return null;
             Class interfaces[] = new Class[] {ExplodedModuleService.class};
             return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
