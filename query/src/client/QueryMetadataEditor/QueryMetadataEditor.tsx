@@ -44,7 +44,8 @@ interface IAppState {
     showSave: boolean,
     showEditSourceConfirmationModal: boolean,
     showResetConfirmationModal: boolean,
-    showViewDataConfirmationModal: boolean
+    showViewDataConfirmationModal: boolean,
+    navigateAfterSave: boolean
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -68,11 +69,12 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             returnUrl,
             messages,
             showAlias : false,
-            showSave: false,
+            showSave: true,
             dirty: false,
             showEditSourceConfirmationModal: false,
             showResetConfirmationModal: false,
-            showViewDataConfirmationModal: false
+            showViewDataConfirmationModal: false,
+            navigateAfterSave: false
         };
     }
 
@@ -163,10 +165,11 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { dirty } = this.state;
 
         if (dirty) {
-            this.onSaveBtnHandler();
+            this.onSaveBtnHandler(this.navigateToEditSource());
         }
-
-        this.navigateToEditSource();
+        else {
+            this.navigateToEditSource();
+        }
     };
 
     navigateToViewData() {
@@ -181,22 +184,33 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { dirty } = this.state;
 
         if (dirty) {
-            this.onSaveBtnHandler();
+            this.onSaveBtnHandler(this.navigateToViewData());
         }
-
-        this.navigateToViewData();
+        else {
+            this.navigateToViewData();
+        }
     };
 
-    onSaveBtnHandler = () => {
-        const { domain, schemaName, messages } = this.state;
-
+    onSaveBtnHandler = (onSaveNavigation) => {
+        const { domain, schemaName, messages, navigateAfterSave } = this.state;
         saveQueryMetadata(domain, schemaName)
             .then(() => {
                 this.showMessage("Save Successful", 'success', 0);
-                this.setState(() => ({
-                    showSave: false,
-                    dirty: false
-                }));
+
+                if (navigateAfterSave) {
+                    this.setState(() => ({
+                        showSave: false,
+                        dirty: false
+                    }), () => {
+                        onSaveNavigation();
+                    });
+                }
+                else {
+                    this.setState(() => ({
+                        showSave: false,
+                        dirty: false
+                    }));
+                }
             })
             .catch((error) => {
                 this.setState(() => ({
@@ -215,6 +229,10 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     editSourceBtnHandler = () => {
         const { dirty } = this.state;
 
+        this.setState(() => ({
+            navigateAfterSave: true
+        }));
+
         if (dirty) {
             this.setState(() => ({
                 showEditSourceConfirmationModal: true
@@ -227,6 +245,10 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
     viewDataBtnHandler = () => {
         const { dirty } = this.state;
+
+        this.setState(() => ({
+            navigateAfterSave: true
+        }));
 
         if (dirty) {
             this.setState(() => ({
