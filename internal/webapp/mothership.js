@@ -311,44 +311,10 @@ LABKEY.Mothership = (function () {
             return false;
 
         var error = errorObj || err.error || err;
-        var promise = null;
 
-        // See if browser has native support for Promises
-        if (window.Promise) {
-            if (error instanceof Error) {
-                promise = StackTrace.fromError(error, {filter: filterTrace});
-            }
-            else if (_generateStacktrace) {
-                promise = StackTrace.get({filter: filterTrace});
-            }
-        }
-
-        if (promise) {
-            // wait for allocation stack
-            if (err._allocationPromise) {
-                //console.log("chaining allocationPromise");
-                promise.then(function () {
-                    return err._allocationPromise;
-                });
-            }
-
-            promise.then(function(stackframes) {
-                var stackTrace = msg;
-                if (stackframes && stackframes.length) {
-                    stackTrace += '\n  ' + stackframes.join('\n  ');
-                }
-
-                if (err._allocation) {
-                    stackTrace += '\n\n' + err._allocation;
-                }
-
-                _report(msg, file, line, column, stackTrace);
-            }).catch(errback);
-        }
-        else {
-            // We have no Error or the browser doesn't support Promises -- just submit the message that we have
-            return _report(msg, file, line, column, null);
-        }
+        processStackTrace(error, function(stackTrace) {
+            _report(msg, file, line, column, stackTrace);
+        }, msg);
 
         return true;
     }
@@ -406,6 +372,54 @@ LABKEY.Mothership = (function () {
             // }).catch(errback);
         }
         return wrap;
+    }
+
+    /**
+     * Process and updates a stack trace by integrating available source map information.
+     * The stack trace is processed asynchronously so the updated stack trace is returned via
+     * callback. If the stack trace could not be processed then it will return null.
+     * @param error
+     * @param cb
+     * @param stack
+     */
+    function processStackTrace(error, cb, stack) {
+        var promise = null;
+        var stackTrace = stack || error.stack || "";
+
+        // See if browser has native support for Promises
+        if (window.Promise) {
+            if (error instanceof Error) {
+                promise = StackTrace.fromError(error, {filter: filterTrace});
+            }
+            else if (_generateStacktrace) {
+                promise = StackTrace.get({filter: filterTrace});
+            }
+        }
+
+        if (promise) {
+            // wait for allocation stack
+            if (error._allocationPromise) {
+                promise.then(function () {
+                    return error._allocationPromise;
+                });
+            }
+
+            promise.then(function(stackframes) {
+                if (stackframes && stackframes.length) {
+                    stackTrace += '\n  ' + stackframes.join('\n  ');
+                }
+
+                if (error._allocation) {
+                    stackTrace += '\n\n' + err._allocation;
+                }
+
+                cb(stackTrace);
+            }).catch(errback);
+        }
+        else {
+            // Unable to process this stack trace -- return null
+            cb(null);
+        }
     }
 
     function replace_LABKEY_Ajax() {
@@ -838,6 +852,9 @@ LABKEY.Mothership = (function () {
 
         /** Turn error reporting on or off (default is on). */
         enable  : function (b) { _enabled = b; },
+
+        /** Process and updates a stack trace by integrating available source map information */
+        processStackTrace : processStackTrace,
 
         /** Turn rethrowing Errors on or off (default is on). */
         setRethrow : function (b) { _rethrow = b; },
