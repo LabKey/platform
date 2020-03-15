@@ -442,6 +442,12 @@ public class MuleListenerHelper implements ServletContext
 
     }
 
+// Allow building on Tomcat 7 for now    @Override
+    public String getVirtualServerName()
+    {
+        return null;
+    }
+
     @Override
     public ClassLoader getClassLoader()
     {

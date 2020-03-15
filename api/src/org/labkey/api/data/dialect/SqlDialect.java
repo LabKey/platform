@@ -1150,12 +1150,9 @@ public abstract class SqlDialect
 
         public Integer getMaxTotal()
         {
-            // Need to invoke a different method on Tomcat 7 vs. Tomcat 8/9
-            String methodName = ModuleLoader.getInstance().getTomcatVersion().getMaxTotalMethodName();
-
             try
             {
-                return callGetter(methodName);
+                return callGetter("getMaxTotal");
             }
             catch (ServletException e)
             {
