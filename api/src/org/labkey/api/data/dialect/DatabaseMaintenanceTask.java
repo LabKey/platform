@@ -25,6 +25,7 @@ import org.springframework.jdbc.BadSqlGrammarException;
 
 class DatabaseMaintenanceTask implements MaintenanceTask
 {
+    @Override
     public String getDescription()
     {
         return "Database maintenance";
@@ -36,6 +37,7 @@ class DatabaseMaintenanceTask implements MaintenanceTask
         return "Database";
     }
 
+    @Override
     public void run(Logger log)
     {
         DbScope scope = DbScope.getLabKeyScope();
