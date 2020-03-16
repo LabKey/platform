@@ -12,7 +12,7 @@ module.exports = {
     },{
         name: 'components',
         title: '@labkey/components',
-        permission: 'read',
+        permission: 'admin',
         path: './src/client/LabKeyUIComponentsPage'
     }]
 };
