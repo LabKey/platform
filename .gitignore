@@ -31,6 +31,10 @@ core/resources/views/authenticationConfiguration.html
 core/resources/views/authenticationConfiguration.view.xml
 core/resources/views/authenticationConfigurationDev.html
 core/resources/views/authenticationConfigurationDev.view.xml
+core/resources/views/components.html
+core/resources/views/components.view.xml
+core/resources/views/componentsDev.html
+core/resources/views/componentsDev.view.xml
 
 experiment/resources/web/experiment/gen
 experiment/resources/views/domainDesigner.html
