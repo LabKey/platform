@@ -96,6 +96,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
+import org.labkey.experiment.api.GWTDomainMixin;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -132,29 +133,11 @@ public class PropertyController extends SpringActionController
 
     public static final String UNRECOGNIZED_FILE_TYPE_ERROR = "Unrecognized file type. Please upload a .xls, .xlsx, .tsv, .csv or .txt file";
 
+    private static PropertyService _propertyService = PropertyService.get();
+
     public PropertyController()
     {
         setActionResolver(_actionResolver);
-    }
-
-    static void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
-    {
-        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
-        if(null == filter)
-        {
-            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
-        }
-        else
-        {
-            gwtDomainPropertiesFilter = filter;
-        }
-
-        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
-                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
-        om.setFilterProvider(gwtDomainFilterProvider);
-        om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
-        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
-        om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
     }
 
     @RequiresNoPermission //Real permissions will be enforced by the DomainKind
@@ -252,7 +235,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -387,7 +370,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -421,7 +404,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createResponseObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -455,7 +438,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -709,7 +692,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -1141,7 +1124,7 @@ public class PropertyController extends SpringActionController
     private static Map<String, Object> convertDomainToApiResponse(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om, null);
+        _propertyService.configureObjectMapper(om, null);
         try
         {
             return om.convertValue(domain, Map.class);
@@ -1155,7 +1138,7 @@ public class PropertyController extends SpringActionController
     public static String convertDomainToJson(@NotNull GWTDomain domain)
     {
         ObjectMapper om = new ObjectMapper();
-        configureObjectMapper(om, null);
+        _propertyService.configureObjectMapper(om, null);
         try
         {
             return om.writeValueAsString(domain);
@@ -1235,7 +1218,7 @@ public class PropertyController extends SpringActionController
         protected ObjectMapper createRequestObjectMapper()
         {
             ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-            configureObjectMapper(mapper, null);
+            _propertyService.configureObjectMapper(mapper, null);
             return mapper;
         }
 
@@ -1246,11 +1229,11 @@ public class PropertyController extends SpringActionController
 
             if (!includeFields)
             {
-               configureObjectMapper(mapper, SimpleBeanPropertyFilter.serializeAllExcept("fields","indices"));
+               _propertyService.configureObjectMapper(mapper, SimpleBeanPropertyFilter.serializeAllExcept("fields","indices"));
             }
             else
             {
-                configureObjectMapper(mapper, null);
+                _propertyService.configureObjectMapper(mapper, null);
             }
             return mapper;
         }
@@ -1263,8 +1246,6 @@ public class PropertyController extends SpringActionController
 
             Container c = containerDomainForm.getContainerPath() == null ? getContainer():
                     ContainerService.get().getForPath(containerDomainForm.getContainerPath());
-
-            List<GWTDomain> domains = listDomains(c, getUser(), containerDomainForm, includeProjectAndShared);
 
             return success(listDomains(c, getUser(), containerDomainForm, includeProjectAndShared));
         }
