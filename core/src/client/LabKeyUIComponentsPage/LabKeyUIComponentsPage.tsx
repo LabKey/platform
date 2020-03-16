@@ -294,10 +294,35 @@ export class App extends React.Component<any, State> {
                         </p>
                     </>
                 }
-                {/*TODO continue testing/fixes below this line*/}
                 {selected === 'Grid' &&
-                    this.renderPanel('Grid',
-                        <Grid data={GRID_DATA} columns={GRID_COLUMNS} />
+                    <>
+                        {this.renderPanel('Grid',
+                            <Grid data={GRID_DATA} columns={GRID_COLUMNS}/>
+                        )}
+                        {this.renderPanel('Grid - transposed',
+                            <Grid data={GRID_DATA} columns={GRID_COLUMNS} transpose={true} striped={false}/>
+                        )}
+                    </>
+                }
+                {selected === 'HeatMap' &&
+                    this.renderPanel('HeatMap',
+                        <>
+                            <Alert bsStyle={'info'}>Note: this currently pulls data from the exp.SampleSetHeatMap query.</Alert>
+                            <HeatMap
+                                schemaQuery={SCHEMAS.EXP_TABLES.SAMPLE_SET_HEAT_MAP}
+                                nounSingular={'sample'}
+                                nounPlural={'samples'}
+                                yAxis={'protocolName'}
+                                xAxis={'monthName'}
+                                measure={'monthTotal'}
+                                yInRangeTotal={'InRangeTotal'}
+                                yTotalLabel={'12 month total samples'}
+                                getCellUrl={() => AppURL.create()}
+                                getHeaderUrl={() => AppURL.create()}
+                                getTotalUrl={() => AppURL.create()}
+                                headerClickUrl={AppURL.create()}
+                            />
+                        </>
                     )
                 }
                 {selected === 'LabelHelpTip' &&
@@ -309,6 +334,11 @@ export class App extends React.Component<any, State> {
                                 </div>
                             )
                         }}/>
+                    )
+                }
+                {selected === 'Lineage' &&
+                    this.renderPanel('Lineage',
+                        <LineagePage/>
                     )
                 }
                 {selected === 'LoadingModal' &&
@@ -327,6 +357,33 @@ export class App extends React.Component<any, State> {
                         <LoadingSpinner msg={'Loading message goes here...'}/>
                     )
                 }
+                {selected === 'NavigationBar' &&
+                    this.renderPanel('NavigationBar',
+                        <NavigationBarPage/>
+                    )
+                }
+                {selected === 'PageDetailHeader' &&
+                    this.renderPanel('PageDetailHeader',
+                        <PageDetailHeader
+                            user={new User(LABKEY.user)}
+                            iconDir={'_images'}
+                            title={'Page Detail Header'}
+                            subTitle={'With a subtitle'}
+                        >
+                            <div className="btn-group">
+                                <ManageDropdownButton id={'pagedetailheader1'} pullRight={true}>
+                                    <MenuItem disabled={true}>Without collapse</MenuItem>
+                                </ManageDropdownButton>
+                                <ManageDropdownButton id={'pagedetailheader2'} pullRight={true} collapsed={true}>
+                                    <MenuItem disabled={true}>With collapse</MenuItem>
+                                </ManageDropdownButton>
+                            </div>
+                        </PageDetailHeader>
+                    )
+                }
+                {selected === 'PermissionAssignments' &&
+                    <PermissionAssignmentsPage/>
+                }
                 {selected === 'Progress' &&
                     this.renderPanel('Progress',
                         <>
@@ -335,6 +392,7 @@ export class App extends React.Component<any, State> {
                         </>
                     )
                 }
+                {/*TODO continue testing/fixes below this line*/}
                 {selected === 'Tip' &&
                     this.renderPanel('Tip',
                         <Tip caption={'This is a tooltip'}>
@@ -360,56 +418,6 @@ export class App extends React.Component<any, State> {
                             previousStep={() => console.log('WizardNavButtons back clicked')}
                             finish={true}
                         />
-                    )
-                }
-                {selected === 'NavigationBar' &&
-                    this.renderPanel('NavigationBar',
-                        <NavigationBarPage/>
-                    )
-                }
-                {selected === 'HeatMap' &&
-                    this.renderPanel('HeatMap',
-                        <>
-                            <Alert bsStyle={'info'}>Note: this currently pulls data from the exp.SampleSetHeatMap query.</Alert>
-                            <HeatMap
-                                schemaQuery={SCHEMAS.EXP_TABLES.SAMPLE_SET_HEAT_MAP}
-                                nounSingular={'sample'}
-                                nounPlural={'samples'}
-                                yAxis={'protocolName'}
-                                xAxis={'monthName'}
-                                measure={'monthTotal'}
-                                yInRangeTotal={'InRangeTotal'}
-                                yTotalLabel={'12 month total samples'}
-                                getCellUrl={() => AppURL.create()}
-                                getHeaderUrl={() => AppURL.create()}
-                                getTotalUrl={() => AppURL.create()}
-                                headerClickUrl={AppURL.create()}
-                            />
-                        </>
-                    )
-                }
-                {selected === 'Lineage' &&
-                    this.renderPanel('Lineage',
-                        <LineagePage/>
-                    )
-                }
-                {selected === 'PageDetailHeader' &&
-                    this.renderPanel('PageDetailHeader',
-                        <PageDetailHeader
-                            user={new User(LABKEY.user)}
-                            iconDir={'_images'}
-                            title={'Page Detail Header'}
-                            subTitle={'With a subtitle'}
-                        >
-                            <div className="btn-group">
-                                <ManageDropdownButton id={'pagedetailheader1'} pullRight={true}>
-                                    <MenuItem disabled={true}>Without collapse prop</MenuItem>
-                                </ManageDropdownButton>
-                                <ManageDropdownButton id={'pagedetailheader2'} pullRight={true} collapsed={true}>
-                                    <MenuItem disabled={true}>With collapse prop</MenuItem>
-                                </ManageDropdownButton>
-                            </div>
-                        </PageDetailHeader>
                     )
                 }
                 {selected === 'QueriesListing' &&
@@ -471,9 +479,6 @@ export class App extends React.Component<any, State> {
                 }
                 {selected === 'UserProfile' &&
                     <UserProfilePage user={new User(LABKEY.user)}/>
-                }
-                {selected === 'PermissionAssignments' &&
-                    <PermissionAssignmentsPage/>
                 }
                 {selected === 'SiteUsersGridPanel' &&
                     <SiteUsersGridPanelPage/>

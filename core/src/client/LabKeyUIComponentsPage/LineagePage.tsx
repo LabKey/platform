@@ -66,9 +66,7 @@ export class LineagePage extends React.Component<any, StateProps> {
 
         return (
             <>
-                <Row>
-                    <Col xs={12}>lsid: <FormControl name={'lsidField'} type="text" onChange={this.onLsidChange}/></Col>
-                </Row>
+                LSID: <FormControl name={'lsidField'} type="text" onChange={this.onLsidChange}/>
                 <br/>
                 {body}
             </>

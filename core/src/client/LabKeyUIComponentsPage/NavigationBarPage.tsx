@@ -4,7 +4,7 @@
  */
 import React from 'react'
 import { List, Map, fromJS } from 'immutable'
-import {AppURL, imageURL, LoadingSpinner, User, MenuSectionConfig, ProductMenuModel, NavigationBar } from "@labkey/components";
+import { AppURL, imageURL, LoadingSpinner, User, MenuSectionConfig, ProductMenuModel, NavigationBar } from "@labkey/components";
 
 const PRODUCT_KEY = "sampleManager"; // TODO change this to a user select or input
 

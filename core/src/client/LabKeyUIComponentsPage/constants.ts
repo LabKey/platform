@@ -2,6 +2,10 @@ import { List, fromJS, Map } from 'immutable'
 import {GridColumn} from "@labkey/components";
 
 export const GRID_DATA = fromJS([{
+    name: 'biologics',
+    label: 'Biologics',
+    link: 'https://github.com/LabKey/biologics'
+}, {
     name: 'premium',
     label: 'Premium',
     link: 'https://github.com/LabKey/premium'
