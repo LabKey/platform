@@ -52,6 +52,7 @@ public class ResultSetCollapser extends ResultSetImpl
         }
     }
 
+    @Override
     public boolean isComplete()
     {
         return _tableRS.isComplete();
@@ -63,11 +64,13 @@ public class ResultSetCollapser extends ResultSetImpl
         return -1;
     }
 
+    @Override
     public String getTruncationMessage(int maxRows)
     {
         return _tableRS.getTruncationMessage(maxRows);
     }
 
+    @Override
     public boolean next() throws SQLException
     {
         Object lastValue;
