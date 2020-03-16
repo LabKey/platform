@@ -26,7 +26,7 @@ import java.util.Set;
  * Date: 8/5/2014
  * Time: 10:49 PM
  */
-public class PostgreSql94Dialect extends PostgreSql93Dialect
+public abstract class PostgreSql94Dialect extends PostgreSql93Dialect
 {
     private HtmlString _adminWarning = null;
 
