@@ -245,26 +245,35 @@ public class ExperimentJSONConverter
             }
         }
 
-        // Include provenance outputs of the run in this format:
-        // {
-        //   objectOutputs: [{
-        //     from: 'urn:lsid:input1', to: 'urn:lsid:output1'
-        //   },{
-        //     from: 'urn:lsid:input2', to: 'urn:lsid:output1'
-        //   }]
-        // }
         ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
         if (outputApp != null)
         {
-            var outputSet = svc.getProvenanceObjectUris(outputApp.getRowId());
-            if (!outputSet.isEmpty())
-            {
-                obj.put(ProvenanceService.PROVENANCE_OBJECT_OUTPUTS,
-                        outputSet.stream().map(pair ->
-                                Map.of("from", serializeProvenanceObject(pair.getKey()),
-                                        "to", serializeProvenanceObject(pair.getValue()))
-                        ).collect(Collectors.toUnmodifiableList()));
-            }
+            provenanceMap(obj, outputApp);
+        }
+    }
+
+    // Include provenance object mapping for the run in this format:
+    // {
+    //   provenanceMap: [{
+    //     from: 'urn:lsid:input1', to: 'urn:lsid:output1'
+    //   },{
+    //     from: 'urn:lsid:input2', to: 'urn:lsid:output1'
+    //   }]
+    // }
+    public static void provenanceMap(@NotNull JSONObject obj, ExpProtocolApplication app)
+    {
+        ProvenanceService svc = ProvenanceService.get();
+        if (svc == null)
+            return;
+
+        var outputSet = svc.getProvenanceObjectUris(app.getRowId());
+        if (!outputSet.isEmpty())
+        {
+            obj.put(ProvenanceService.PROVENANCE_OBJECT_MAP,
+                    outputSet.stream().map(pair ->
+                            Map.of("from", serializeProvenanceObject(pair.getKey()),
+                                    "to", serializeProvenanceObject(pair.getValue()))
+                    ).collect(Collectors.toUnmodifiableList()));
         }
     }
 

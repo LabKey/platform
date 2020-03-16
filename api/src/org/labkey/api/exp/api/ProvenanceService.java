@@ -24,6 +24,8 @@ public interface ProvenanceService
     String PROVENANCE_OBJECT_OUTPUTS = "objectOutputs";
     String PROVENANCE_OUTPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_OUTPUTS;
 
+    String PROVENANCE_OBJECT_MAP = "provenanceMap";
+
     static ProvenanceService get()
     {
         return ServiceRegistry.get().getService(ProvenanceService.class);
