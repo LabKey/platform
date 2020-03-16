@@ -4427,7 +4427,7 @@ public class ExperimentController extends SpringActionController
 
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
-        if (fileName.endsWith(".xar") || fileName.endsWith(".XAR") || fileName.endsWith("Xar"))
+        if (StringUtils.endsWithIgnoreCase(fileName, ".xar"))
             xarXmlFileName = fileName + ".xml";
 
         switch (exportType)
