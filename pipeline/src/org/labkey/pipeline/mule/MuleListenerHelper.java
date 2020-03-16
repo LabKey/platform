@@ -442,7 +442,7 @@ public class MuleListenerHelper implements ServletContext
 
     }
 
-    @Override
+//    @Override
     public String getVirtualServerName()
     {
         return null;
