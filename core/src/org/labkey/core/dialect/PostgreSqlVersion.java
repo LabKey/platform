@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 public enum PostgreSqlVersion
 {
     POSTGRESQL_UNSUPPORTED(-1, true, false, null),
-    POSTGRESQL_94(94, true, true, PostgreSql94Dialect::new),
     POSTGRESQL_95(95, false, true, PostgreSql95Dialect::new),
     POSTGRESQL_96(96, false, true, PostgreSql96Dialect::new),
     POSTGRESQL_10(100, false, true, PostgreSql_10_Dialect::new),
@@ -84,7 +83,6 @@ public enum PostgreSqlVersion
         public void test()
         {
             // Good
-            test(94, POSTGRESQL_94);
             test(95, POSTGRESQL_95);
             test(96, POSTGRESQL_96);
             test(100, POSTGRESQL_10);
@@ -105,7 +103,7 @@ public enum PostgreSqlVersion
             test(91, POSTGRESQL_UNSUPPORTED);
             test(92, POSTGRESQL_UNSUPPORTED);
             test(93, POSTGRESQL_UNSUPPORTED);
-//            test(94, POSTGRESQL_UNSUPPORTED);
+            test(94, POSTGRESQL_UNSUPPORTED);
             test(97, POSTGRESQL_UNSUPPORTED);
             test(98, POSTGRESQL_UNSUPPORTED);
         }
