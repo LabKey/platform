@@ -274,22 +274,27 @@ export class App extends React.Component<any, State> {
                         <EditableGridPage/>
                     )
                 }
-                {/*TODO continue testing/fixes below this line*/}
                 {selected === 'FileAttachmentForm' &&
-                    this.renderPanel('FileAttachmentForm',
-                        <FileAttachmentForm
-                            acceptedFormats={".csv, .tsv, .txt, .xls, .xlsx, .fasta, .png, .pdf"}
-                            showButtons={true}
-                            onSubmit={this.onFileUpload}
-                            allowMultiple={false}
-                            templateUrl={'#fileattachmentform?downloadtemplate=clicked'}
-                            previewGridProps={{
-                                previewCount: 3,
-                                acceptedFormats: ".csv, .tsv, .txt, .xls, .xlsx, .fasta"
-                            }}
-                        />
-                    )
+                    <>
+                        {this.renderPanel('FileAttachmentForm',
+                            <FileAttachmentForm
+                                label={'File Attachment'}
+                                acceptedFormats={".csv, .tsv, .txt, .xls, .xlsx, .fasta, .png, .pdf"}
+                                allowMultiple={false}
+                                templateUrl={'#fileattachmentform?downloadtemplate=clicked'}
+                                previewGridProps={{
+                                    previewCount: 3,
+                                    acceptedFormats: ".csv, .tsv, .txt, .xls, .xlsx, .fasta"
+                                }}
+                            />
+                        )}
+                        <p>
+                            Note: this component also supports multiple file selection (in which case the preview grid options are not available),
+                            showing an initial set of files on component mount, and a compact display format.
+                        </p>
+                    </>
                 }
+                {/*TODO continue testing/fixes below this line*/}
                 {selected === 'Grid' &&
                     this.renderPanel('Grid',
                         <Grid data={GRID_DATA} columns={GRID_COLUMNS} />
