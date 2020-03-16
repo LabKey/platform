@@ -26,12 +26,18 @@ LABKEY.Ajax = new function () {
 
     var DEFAULT_HEADERS = LABKEY.defaultHeaders;
 
+    // Download the file from the ajax response.
+    // For now, we assume we are in a browser enviornment and use the browser's download
+    // file prompt by clicking an <a> element or navigating by updating window.location.
     var downloadFile = function (xhr, config) {
         var filename = "";
         if (typeof config.downloadFile === 'string') {
             filename = config.downloadFile;
         }
         else {
+            // parse the filename out of the Content-Disposition header. Example:
+            //   Content-Disposition: attachment; filename=data.xlsx
+            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
             var disposition = xhr.getResponseHeader('Content-Disposition');
             if (disposition && disposition.indexOf('attachment') !== -1) {
                 var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
