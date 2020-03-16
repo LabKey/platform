@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { Button, Alert } from 'react-bootstrap';
 import { Ajax, ActionURL } from '@labkey/api';
+import { LoadingSpinner } from "@labkey/components";
 
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
@@ -25,8 +26,17 @@ interface State {
 }
 
 export class App extends PureComponent<{}, State> {
+    public actions: Actions;
     constructor(props) {
         super(props);
+
+        this.actions = {
+            onDragEnd: this.onDragEnd,
+            onDelete: this.onDelete,
+            updateAuthRowsAfterSave: this.updateAuthRowsAfterSave,
+            toggleModalOpen: this.toggleModalOpen
+        };
+
         this.state = {
             formConfigurations: null,
             ssoConfigurations: null,
@@ -82,6 +92,7 @@ export class App extends PureComponent<{}, State> {
         }
     };
 
+    // controls whether or not a authrow modal is open
     toggleModalOpen = (modalOpen: boolean): void => {
         this.setState({ modalOpen });
     };
@@ -224,28 +235,30 @@ export class App extends PureComponent<{}, State> {
         const alertText =
             'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
         const { globalSettings, dirtinessData, dirty, authCount, modalOpen, ...restProps } = this.state;
-        const actions = {
-            onDragEnd: this.onDragEnd,
-            onDelete: this.onDelete,
-            updateAuthRowsAfterSave: this.updateAuthRowsAfterSave,
-            toggleModalOpen: this.toggleModalOpen,
-        };
+
+        if (!this.state.formConfigurations &&
+            !this.state.ssoConfigurations &&
+            !this.state.secondaryConfigurations &&
+            !this.state.primaryProviders &&
+            !this.state.secondaryProviders &&
+            !this.state.globalSettings
+        ) {
+            return <LoadingSpinner/>;
+        }
 
         return (
             <div className="parent-panel">
-                {this.state.globalSettings && (
-                    <GlobalSettings
-                        {...globalSettings}
-                        canEdit={this.state.canEdit}
-                        checkGlobalAuthBox={this.checkGlobalAuthBox}
-                        authCount={this.state.authCount}
-                    />
-                )}
+                <GlobalSettings
+                    {...globalSettings}
+                    canEdit={this.state.canEdit}
+                    checkGlobalAuthBox={this.checkGlobalAuthBox}
+                    authCount={this.state.authCount}
+                />
 
                 <AuthConfigMasterPanel
                     {...restProps}
                     isDragDisabled={this.state.modalOpen}
-                    actions={actions}
+                    actions={this.actions}
                 />
 
                 {this.state.dirty && <Alert> {alertText} </Alert>}

@@ -198,22 +198,20 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                         caption="Description"
                     />
 
-                    {modalType &&
-                        <DynamicFields
-                                fields={modalType.settingsFields}
-                                search={search}
-                                canEdit={canEdit}
-                                emptyRequiredFields={emptyRequiredFields}
-                                modalType={modalType}
-                                onChange={this.onChange}
-                                checkCheckBox={this.checkCheckBox}
-                                onFileChange={this.onFileChange}
-                                onFileRemoval={this.onFileRemoval}
-                                {...restState}
-                        />
-                    }
+                    <DynamicFields
+                            fields={modalType.settingsFields}
+                            search={search}
+                            canEdit={canEdit}
+                            emptyRequiredFields={emptyRequiredFields}
+                            modalType={modalType}
+                            onChange={this.onChange}
+                            checkCheckBox={this.checkCheckBox}
+                            onFileChange={this.onFileChange}
+                            onFileRemoval={this.onFileRemoval}
+                            {...restState}
+                    />
 
-                    {modalType && modalType.sso && (
+                    {modalType.sso &&
                         <SSOFields
                             headerLogoUrl={this.props.headerLogoUrl}
                             loginLogoUrl={this.props.loginLogoUrl}
@@ -221,7 +219,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Stat
                             handleDeleteLogo={this.handleDeleteLogo}
                             canEdit={canEdit}
                         />
-                    )}
+                    }
 
                     {modalType.testLink && (
                         <div className="modal__test-button">

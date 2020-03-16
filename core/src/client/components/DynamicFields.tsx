@@ -19,14 +19,12 @@ export class TextInput extends PureComponent<TextInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                {description && (
-                    <LabelHelpTip
-                        title="Tip"
-                        body={() => {
-                            return <div> {description} </div>;
-                        }}
-                    />
-                )}
+                <LabelHelpTip
+                    title="Tip"
+                    body={() => {
+                        return <div> {description} </div>;
+                    }}
+                />
 
                 {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
 
@@ -63,14 +61,12 @@ export class CheckBoxInput extends PureComponent<any> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                {description && (
-                    <LabelHelpTip
-                        title="Tip"
-                        body={() => {
-                            return <div> {description} </div>;
-                        }}
-                    />
-                )}
+                <LabelHelpTip
+                    title="Tip"
+                    body={() => {
+                        return <div> {description} </div>;
+                    }}
+                />
 
                 <span className="modal__input">
                     {this.props.canEdit ? (
@@ -104,14 +100,12 @@ export class Option extends PureComponent<OptionInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                {description && (
-                    <LabelHelpTip
-                        title="Tip"
-                        body={() => {
-                            return <div> {description} </div>;
-                        }}
-                    />
-                )}
+                <LabelHelpTip
+                    title="Tip"
+                    body={() => {
+                        return <div> {description} </div>;
+                    }}
+                />
 
                 {canEdit ? (
                     <div className="modal__option-input">
@@ -120,8 +114,7 @@ export class Option extends PureComponent<OptionInputProps> {
                             name={name}
                             onChange={onChange}
                             value={value}>
-                            {options &&
-                            Object.keys(options).map(item => (
+                            {Object.keys(options).map(item => (
                                 <option value={item} key={item}>
                                     {options[item]}
                                 </option>
@@ -175,14 +168,12 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                {description && (
-                    <LabelHelpTip
-                        title="Tip"
-                        body={() => {
-                            return <div> {description} </div>;
-                        }}
-                    />
-                )}
+                <LabelHelpTip
+                    title="Tip"
+                    body={() => {
+                        return <div> {description} </div>;
+                    }}
+                />
 
                 {requiredFieldEmpty && (
                     <div className="modal__tiny-error--small-file-input"> This file is required </div>
@@ -246,7 +237,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
         const allFields = fieldsToCreate.map((field, index) => {
             const requiredFieldEmpty = (emptyRequiredFields.indexOf(field.name) !== -1);
 
-            switch (field.type) {
+            switch (field.type) { //RP TODO
                 case 'input':
                     return (
                         <TextInput
@@ -318,7 +309,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
         });
         return (
             <>
-                { fields && allFields }
+                { allFields }
             </>
         );
     };

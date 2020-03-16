@@ -14,7 +14,8 @@
     "build-themes": "bnr build-themes:dev",
     "prebuild-themes-prod": "bnr clean",
     "build-themes-prod": "bnr build-themes:prod",
-    "test": "cross-env NODE_ENV=test jest",
+    "test": "bnr build:jest-test",
+    "teamcity": "bnr build:jest-teamcity",
     "lint": "eslint --ext '*.ts,*.tsx'",
     "lint-all": "eslint --ext '*.ts,*.tsx' src/client/**/*",
     "lint-fix": "eslint --fix --ext '*.ts,*.tsx'"
@@ -22,6 +23,12 @@
   "betterScripts": {
     "clean": {
       "command": "rimraf resources/web/core/gen && rimraf resources/web/core/css && rimraf resources/web/clientapi"
+    },
+    "build:jest-test": {
+      "command": "jest",
+      "env": {
+        "NODE_ENV": "test"
+      }
     },
     "build-themes:dev": {
       "command": "node build.js && node webpack/themes/buildThemes.js",
@@ -47,6 +54,12 @@
       "env": {
         "LK_MODULE": "core",
         "NODE_ENV": "development"
+      }
+    },
+    "build:jest-teamcity": {
+      "command": "jest --testResultsProcessor=jest-teamcity-reporter",
+      "env": {
+        "NODE_ENV": "test"
       }
     }
   },
@@ -92,7 +105,6 @@
     "@typescript-eslint/parser": "2.12.0",
     "better-npm-run": "0.1.1",
     "bootstrap-sass": "3.4.1",
-    "cross-env": "5.2.1",
     "enzyme": "3.10.0",
     "enzyme-adapter-react-16": "1.14.0",
     "enzyme-to-json": "3.4.3",
@@ -104,6 +116,7 @@
     "eslint-plugin-react": "7.17.0",
     "fs-extra": "8.1.0",
     "jest": "24.9.0",
+    "jest-teamcity-reporter": "0.9.0",
     "mixin-deep": "2.0.1",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "prettier": "1.19.1",
@@ -111,6 +124,7 @@
     "react-test-renderer": "16.8.6",
     "rimraf": "3.0.0",
     "ts-jest": "24.0.2",
+    "typescript": "3.7.3",
     "uglifyjs-webpack-plugin": "2.2.0",
     "webpack": "4.41.2",
     "webpack-cli": "3.3.9",

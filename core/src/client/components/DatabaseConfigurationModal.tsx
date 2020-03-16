@@ -25,10 +25,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     constructor(props) {
         super(props);
         this.state = {
-            passwordRules: {
-                Weak: '',
-                Strong: '',
-            },
+            passwordRules: { Weak: '', Strong: '' },
             helpLink: null,
             currentSettings: { strength: '', expiration: '' },
         };
@@ -77,8 +74,9 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
     render() {
         const { canEdit } = this.props;
-        const passwordStrength = this.state.currentSettings && this.state.currentSettings.strength;
-        const expiration = this.state.currentSettings && this.state.currentSettings.expiration;
+        const { currentSettings } = this.state;
+        const passwordStrength = currentSettings.strength;
+        const expiration = currentSettings.expiration;
 
         return (
             <Modal show={true} onHide={this.props.closeModal}>
