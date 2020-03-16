@@ -43,6 +43,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
     @Nullable Map<String, Object> _namedParameters = null;
+    private ConnectionFactory _connectionFactory = super::getConnection;
 
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
@@ -67,6 +68,60 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     {
         super(scope, conn);
         _queryLogging = queryLogging;
+    }
+
+    private interface ConnectionFactory
+    {
+        Connection get() throws SQLException;
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException
+    {
+        return _connectionFactory.get();
+    }
+
+    /**
+     * <p>Calling this method with cache=false ensures that the JDBC driver will not cache the produced ResultSet in
+     * memory, which is useful when potentially working with very large (e.g., > 100MB) ResultSets. Calling it with
+     * cache=true (the default setting) ensures the JDBC driver's default caching behavior.</p>
+     *
+     * <p>By default, the PostgreSQL JDBC driver caches every ResultSet in its entirety. This can lead to
+     * OutOfMemoryErrors when working with very large ResultSets. When the underlying database is PostgreSQL, calling
+     * this method with false instructs this SqlExecutingSelector to use an unshared Connection and configure it with
+     * special settings that disable the driver caching. The trade-off is that the underlying database query will not
+     * use the shared Connection that other code on the thread (up or down the call stack) may be using, making
+     * Connection exhaustion more likely; that's why JDBC caching is on by default. Calling this method is not
+     * compatible with passing in an explicit Connection to the constructor.</p>
+     *
+     * <p>When the underlying database is not PostgreSQL, calling this method has no effect, other than validating that
+     * the stashed Connection is null.</p>
+     *
+     * @return this SqlExecutingSelector, to allow chaining of setters
+     * @throws IllegalStateException if a Connection was provided at construction time
+     */
+    public SELECTOR setJdbcCaching(boolean cache)
+    {
+        if (null != _conn)
+            throw new IllegalStateException("Calling setJdbcCaching() is not valid when a Connection has already been provided");
+
+        if (!cache && getScope().getSqlDialect().isJdbcCachingEnabledByDefault())
+        {
+            // Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared
+            // with the thread, etc. This connection shouldn't cache ResultSet data in the JDBC driver, making it suitable
+            // for streaming very large ResultSets. See #39753 and #39888.
+            _connectionFactory = () -> {
+                ConnectionWrapper conn = getScope().getPooledConnection(DbScope.ConnectionType.Pooled, null);
+                conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
+                return conn;
+            };
+        }
+        else
+        {
+            _connectionFactory = super::getConnection;
+        }
+
+        return getThis();
     }
 
     @Override
@@ -344,13 +399,6 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 {
                     DbScope scope = getScope();
                     conn = getConnection();
-
-//  #34406: Don't tweak connection settings on PostgreSQL for now. Get coverage on PostgreSQL connection sharing.
-//                    if (conn instanceof ConnectionWrapper)
-//                    {
-//                        // Ask the ConnectionWrapper to tweak connection settings, if needed
-//                        ((ConnectionWrapper) conn).configureToDisableJdbcCaching(_sql);
-//                    }
 
                     try
                     {

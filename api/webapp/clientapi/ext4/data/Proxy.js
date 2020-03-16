@@ -296,8 +296,8 @@ Ext4.define('LABKEY.ext4.data.AjaxProxy', {
 
          for (i = 0; i < length; i++) {
              sorter = sorters[i];
-
-             sortStrs[i] = (sorter.direction=='DESC' ? '-' : '') + sorter.property
+             if (sorter.property)
+                sortStrs.push((sorter.direction==='DESC' ? '-' : '') + sorter.property);
          }
 
          return sortStrs.join(",");

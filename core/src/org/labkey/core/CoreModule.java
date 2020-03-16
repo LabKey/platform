@@ -181,6 +181,7 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
@@ -392,27 +393,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerHealthChecks()
     {
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+            {
+                Map<String, Object> healthValues = new HashMap<>();
+                boolean allConnected = true;
+                for (DbScope dbScope : DbScope.getDbScopes())
                 {
-                    Map<String, Object> healthValues = new HashMap<>();
-                    Boolean allConnected = true;
-                    for (DbScope dbScope : DbScope.getDbScopes())
+                    boolean dbConnected;
+                    try (Connection conn = dbScope.getConnection())
                     {
-                        Boolean dbConnected;
-                        try (Connection conn = dbScope.getConnection())
-                        {
-                            dbConnected = conn != null;
-                        }
-                        catch (SQLException e)
-                        {
-                            dbConnected = false;
-                        }
-
-                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                        allConnected &= dbConnected;
+                        dbConnected = conn != null;
+                    }
+                    catch (SQLException e)
+                    {
+                        dbConnected = false;
                     }
 
-                    return new HealthCheck.Result(allConnected, healthValues);
+                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                    allConnected &= dbConnected;
                 }
+
+                return new HealthCheck.Result(allConnected, healthValues);
+            }
         );
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
@@ -1074,10 +1075,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
+            CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class,
-            CommandLineTokenizer.TestCase.class
+            StatsServiceImpl.TestCase.class
         );
     }
 

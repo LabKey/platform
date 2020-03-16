@@ -31,7 +31,6 @@ import java.util.stream.Collectors;
 public enum JavaVersion
 {
     JAVA_UNSUPPORTED(-1, true, false),
-    JAVA_12(12, true, true),
     JAVA_13(13, false, true),
     JAVA_14(14, false, true),
     JAVA_15(15, false, false),
@@ -114,7 +113,6 @@ public enum JavaVersion
         public void test()
         {
             // Good
-            test(12, JAVA_12);
             test(13, JAVA_13);
             test(14, JAVA_14);
             test(15, JAVA_15);
@@ -126,6 +124,7 @@ public enum JavaVersion
             test(19, JAVA_FUTURE);
 
             // Bad
+            test(12, JAVA_UNSUPPORTED);
             test(11, JAVA_UNSUPPORTED);
             test(10, JAVA_UNSUPPORTED);
             test(9, JAVA_UNSUPPORTED);

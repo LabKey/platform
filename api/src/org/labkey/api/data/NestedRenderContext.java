@@ -49,6 +49,7 @@ public class NestedRenderContext extends RenderContext
         _nestingOption = nestingOption;
     }
 
+    @Override
     public Sort buildSort(TableInfo tinfo, ActionURL url, String name)
     {
         Sort standardSort = super.buildSort(tinfo, url, name);
@@ -224,8 +225,12 @@ public class NestedRenderContext extends RenderContext
             offset = 0;
         }
 
-        TableSelector selector = new TableSelector(table, columns, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
+        TableSelector selector = new TableSelector(table, columns, filter, sort)
+            .setJdbcCaching(getCache()) // #39888
+            .setForDisplay(true)
+            .setMaxRows(maxRows)
+            .setOffset(offset)
+            .setNamedParameters(parameters);
 
         // Force the result set to be cached so that we can do our nesting
         if (async)
