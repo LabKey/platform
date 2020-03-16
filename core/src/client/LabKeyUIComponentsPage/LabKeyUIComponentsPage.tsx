@@ -269,6 +269,11 @@ export class App extends React.Component<any, State> {
                 {selected === 'DetailEditing' &&
                     <DetailPage editable={true}/>
                 }
+                {selected === 'EditableGridPanel' &&
+                    this.renderPanel('EditableGridPanel',
+                        <EditableGridPage/>
+                    )
+                }
                 {/*TODO continue testing/fixes below this line*/}
                 {selected === 'FileAttachmentForm' &&
                     this.renderPanel('FileAttachmentForm',
@@ -355,11 +360,6 @@ export class App extends React.Component<any, State> {
                 {selected === 'NavigationBar' &&
                     this.renderPanel('NavigationBar',
                         <NavigationBarPage/>
-                    )
-                }
-                {selected === 'EditableGridPanel' &&
-                    this.renderPanel('EditableGridPanel',
-                        <EditableGridPage/>
                     )
                 }
                 {selected === 'HeatMap' &&

@@ -80,9 +80,23 @@ export class EditableGridPage extends React.Component<any, any> {
 
         return <EditableGridPanel
             model={editorModelWithData}
-            allowBulkRemove={true}
-            initialEmptyRowCount={5}
             columnMetadata={columnMetadata}
+            initialEmptyRowCount={0}
+            bordered={true}
+            condensed={false}
+            striped={true}
+            allowAdd={true}
+            allowBulkAdd={true}
+            allowBulkRemove={true}
+            allowBulkUpdate={true}
+            addControlProps={{
+                placement: 'top',
+                nounPlural: 'rows',
+                nounSingular: 'row'
+            }}
+            bulkAddProps={{
+                title: 'Bulk Add'
+            }}
         />;
     }
 }
