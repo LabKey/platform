@@ -116,22 +116,21 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     dismissChangeConfirmation = () => {
-        const {showViewDataConfirmationModal, showEditSourceConfirmationModal} = this.state;
+        const { showViewDataConfirmationModal, showEditSourceConfirmationModal } = this.state;
 
         this.setState(() => ({
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
             showEditSourceConfirmationModal: false,
             dirty: false
-        }));
-
-        if (showViewDataConfirmationModal) {
-            this.navigateToViewData();
-        }
-
-        if (showEditSourceConfirmationModal) {
-            this.navigateToEditSource();
-        }
+        }), () => {
+            if (showViewDataConfirmationModal) {
+                this.navigateToViewData();
+            }
+            if (showEditSourceConfirmationModal) {
+                this.navigateToEditSource();
+            }
+        });
     };
 
     dismissAlert = (index: any) => {
@@ -165,26 +164,26 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { dirty } = this.state;
 
         if (dirty) {
-            this.onSaveBtnHandler(this.navigateToEditSource());
+            this.onSaveBtnHandler(this.navigateToEditSource);
         }
         else {
             this.navigateToEditSource();
         }
     };
 
-    navigateToViewData() {
+    navigateToViewData = () => {
         const { schemaName, queryName } = this.state;
 
         this.setState(() => ({dirty: false}), () => {
             window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
         });
-    }
+    };
 
     onConfirmViewData = () => {
         const { dirty } = this.state;
 
         if (dirty) {
-            this.onSaveBtnHandler(this.navigateToViewData());
+            this.onSaveBtnHandler(this.navigateToViewData);
         }
         else {
             this.navigateToViewData();
@@ -219,12 +218,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             });
     };
 
-    navigateToEditSource() {
+    navigateToEditSource = () =>  {
         const { schemaName, queryName } = this.state;
+
         this.setState(() => ({dirty: false}), () => {
             window.location.href =  ActionURL.buildURL('query', 'sourceQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
         });
-    }
+    };
 
     editSourceBtnHandler = () => {
         const { dirty } = this.state;
