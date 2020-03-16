@@ -34,7 +34,7 @@ public abstract class JdbcCommand<COMMAND extends JdbcCommand>
     private static final Logger LOG = Logger.getLogger(JdbcCommand.class);
 
     private final @NotNull DbScope _scope;
-    private final @Nullable Connection _conn;
+    protected final @Nullable Connection _conn;
 
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
     private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
