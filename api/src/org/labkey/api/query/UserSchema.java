@@ -29,6 +29,7 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -760,7 +761,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * If a value is supplied but cannot be resolved to a valid container then null is returned.
      */
     @Nullable
-    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz)
+    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz, @Nullable String dataSource)
     {
         Container ret;
         if (rowContainerVal == null)
@@ -780,8 +781,9 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         {
             // Issue 39413: If incoming container is not a workbook container or a sub-container of the current container
             // then ignore the incoming container. This was an issue when queries for ETLs contained a different container
-            // than the current container, verify permissions was looking for destination target in incoming container
-            if (!ret.isWorkbook() || !ret.hasAncestor(c))
+            // than the current container, verify permissions was looking for destination target in incoming container.
+            // This function is used a little differently for ETLs vs QUS usage so scope this behavior only to ETLs.
+            if ((dataSource != null && dataSource.equals(DataIteratorUtil.ETL_DATA_SOURCE)) && (!ret.isWorkbook() || !ret.hasAncestor(c)))
             {
                 return null;
             }

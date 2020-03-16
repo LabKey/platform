@@ -42,17 +42,13 @@ public interface AuditTypeProvider
     /**
      * Perform any initialization of the provider at registration time such as
      * domain creation.
-     * @param user User useed when saving the backing Domain.
+     * @param user User used when saving the backing Domain.
      */
     void initializeProvider(User user);
 
     Domain getDomain();
 
-    default TableInfo createTableInfo(UserSchema schema, ContainerFilter cf)
-    {
-        return createTableInfo(schema, null);
-    }
-
+    TableInfo createTableInfo(UserSchema schema, ContainerFilter cf);
 
     <K extends AuditTypeEvent> Class<K> getEventClass();
 

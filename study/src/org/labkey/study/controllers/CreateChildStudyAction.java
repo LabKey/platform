@@ -29,11 +29,13 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.study.SpecimenManager;
@@ -201,13 +203,23 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         }
     }
 
-    private StudyImpl createNewStudy(ChildStudyDefinition form)
+    private StudyImpl createNewStudy(ChildStudyDefinition form) throws ValidationException
     {
         // Minimum set of properties needed to create a study (due to NOT NULL constraints). All other study properties are
         // round-tripped from the source study by StudyXmlWriter and TopLevelStudyPropertiesImporter to ensure consistency
         // with export/import, create from template, etc. #35422
         StudyImpl study = new StudyImpl(_dstContainer, null);
-        study.setTimepointType(_sourceStudy.getTimepointType());
+        TimepointType timepointType = _sourceStudy.getTimepointType();
+        if (form.getTimepointType() != null)
+        {
+            try
+            {
+                timepointType = TimepointType.valueOf(form.getTimepointType());
+            }
+            catch (IllegalArgumentException ignored) {}
+        }
+        _sourceStudy.getTimepointType().validateTransition(timepointType);
+        study.setTimepointType(timepointType);
         study.setSubjectNounSingular(_sourceStudy.getSubjectNounSingular());
         study.setSubjectNounPlural(_sourceStudy.getSubjectNounPlural());
         study.setSubjectColumnName(_sourceStudy.getSubjectColumnName());
