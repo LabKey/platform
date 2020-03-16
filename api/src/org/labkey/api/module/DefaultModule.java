@@ -50,6 +50,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -150,6 +151,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildNumber = null;
     private String _enlistmentId = null;
     private File _explodedPath = null;
+    private File _zippedPath = null;
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
 
@@ -163,6 +165,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     protected DefaultModule()
     {
+        assert MemTracker.getInstance().put(this);
     }
 
     @Override
@@ -230,6 +233,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 //        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
+    }
+
+    public void unregister()
+    {
+        synchronized(INSTANTIATED_MODULES)
+        {
+            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            INSTANTIATED_MODULES.remove(reg);
+        }
     }
 
     protected abstract void init();
@@ -978,7 +990,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public boolean shouldManageVersion()
     {
-        return _manageVersion;
+        return _manageVersion != Boolean.FALSE;
     }
 
     @Override
@@ -1027,6 +1039,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
         props.put("Source Path", getSourcePath());
+        if (null != getZippedPath())
+            props.put("Module File", getZippedPath().getPath());
         props.put("Build Number", getBuildNumber());
         props.put("Enlistment ID", getEnlistmentId());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
@@ -1044,6 +1058,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final void setExplodedPath(File path)
     {
         _explodedPath = path.getAbsoluteFile();
+    }
+
+    @Override
+    public @Nullable File getZippedPath()
+    {
+        return _zippedPath;
+    }
+
+    @Override
+    public void setZippedPath(File zipped)
+    {
+        _zippedPath = zipped;
     }
 
     @Override
@@ -1661,5 +1687,32 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
         _releaseVersion = labkeyVersion;
+    }
+
+    public void copyPropertiesFrom(DefaultModule from)
+    {
+        this.setAuthor(from.getAuthor());
+        this.setBuildNumber(from.getBuildNumber());
+        this.setBuildOS(from.getBuildOS());
+        this.setBuildPath(from.getBuildPath());
+        this.setBuildTime(from.getBuildTime());
+        this.setBuildType(from.getBuildType());
+        this.setBuildUser(from.getBuildUser());
+        this.setDescription(from.getDescription());
+        this.setEnlistmentId(from.getEnlistmentId());
+        this.setLabel(from.getLabel());
+        this.setLabkeyVersion(from.getLabkeyVersion());
+        this.setLicense(from.getLicense());
+        this.setLicenseUrl(from.getLicenseUrl());
+        this.setMaintainer(from.getMaintainer());
+        this.setOrganization(from.getOrganization());
+        this.setOrganizationUrl(from.getOrganizationUrl());
+        this.setUrl(from.getUrl());
+        this.setVcsBranch(from.getVcsBranch());
+        this.setVcsRevision(from.getVcsRevision());
+        this.setVcsTag(from.getVcsTag());
+        this.setVcsUrl(from.getVcsUrl());
+        this.setVersion(from.getVersion());
+        this.setZippedPath(from.getZippedPath());
     }
 }

@@ -19,7 +19,7 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -89,7 +89,7 @@ public interface AuthenticationProvider
         return null;
     }
 
-    @RemoveIn20_1  // Not used -- but need to remove usages in compliance and CDS, which don't have a multiAuthUI branch
+    @RemoveIn20_7  // Not used -- but need to remove usages in compliance and CDS, which don't have a multiAuthUI branch
     default @Nullable ActionURL getConfigurationLink()
     {
         return null;

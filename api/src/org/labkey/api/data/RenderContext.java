@@ -493,10 +493,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         TableSelector selector = new TableSelector(table, columns, filter, sort)
-                .setNamedParameters(parameters)
-                .setMaxRows(maxRows)
-                .setOffset(offset)
-                .setForDisplay(true);
+            .setJdbcCaching(getCache())  // #39888
+            .setNamedParameters(parameters)
+            .setMaxRows(maxRows)
+            .setOffset(offset)
+            .setForDisplay(true);
 
         if (async)
         {
@@ -508,12 +509,22 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
     }
 
-
+    /**
+     * If false, callers should anticipate very large ResultSets. They should ensure that they don't cache the ResultSet
+     * in memory, e.g., don't use CachedResultSet and call setJdbcCaching(getCache()).
+     * @return The current setting
+     */
     public boolean getCache()
     {
         return _cache;
     }
 
+    /**
+     * Calling with cache=false ensures that the produced ResultSet will not be cached in the JVM heap. Specifically,
+     * false means that LabKey will simply wrap the underlying ResultSet (without using a CachedResultSet) and will
+     * configure the Connection to ensure the JDBC driver doesn't cache the ResultSet either. If true, ResultSets may
+     * be cached in both places.
+     */
     public void setCache(boolean cache)
     {
         _cache = cache;
