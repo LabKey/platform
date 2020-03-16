@@ -61,6 +61,7 @@ const COMPONENT_NAMES = List<string>([
     {value: 'Detail'},
     {value: 'DetailEditing'},
     {value: 'EditableGridPanel'},
+    {value: 'EntityInsertPanel'},
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
     {value: 'HeatMap'},
@@ -74,7 +75,6 @@ const COMPONENT_NAMES = List<string>([
     {value: 'Progress'},
     {value: 'QueriesListing'},
     {value: 'QueryGridPanel'},
-    {value: 'SampleInsertPanel'},
     {value: 'SchemaListing'},
     {value: 'SearchResultCard'},
     {value: 'SearchResultsPanel'},
@@ -274,6 +274,11 @@ export class App extends React.Component<any, State> {
                         <EditableGridPage/>
                     )
                 }
+                {selected === 'EntityInsertPanel' &&
+                    this.renderPanel('EntityInsertPanel',
+                        <SampleInsertPage/>
+                    )
+                }
                 {selected === 'FileAttachmentForm' &&
                     <>
                         {this.renderPanel('FileAttachmentForm',
@@ -392,44 +397,11 @@ export class App extends React.Component<any, State> {
                         </>
                     )
                 }
-                {/*TODO continue testing/fixes below this line*/}
-                {selected === 'Tip' &&
-                    this.renderPanel('Tip',
-                        <Tip caption={'This is a tooltip'}>
-                            <Button>Hover Here</Button>
-                        </Tip>
-                    )
-                }
-                {selected === 'ToggleButtons' &&
-                    this.renderPanel('ToggleButtons',
-                        <ToggleButtons
-                            first={'First Option'}
-                            second={'Second Option'}
-                            active={this.state.selectedToggleButton}
-                            onClick={this.onToggleButtonsClick}
-                        />
-                    )
-                }
-                {selected === 'WizardNavButtons' &&
-                    this.renderPanel('WizardNavButtons',
-                        <WizardNavButtons
-                            cancel={() => console.log('WizardNavButtons cancel clicked')}
-                            nextStep={() => console.log('WizardNavButtons finish clicked')}
-                            previousStep={() => console.log('WizardNavButtons back clicked')}
-                            finish={true}
-                        />
-                    )
-                }
                 {selected === 'QueriesListing' &&
                     <QueriesListingPage/>
                 }
                 {selected === 'QueryGridPanel' &&
                     <QueryGridPage/>
-                }
-                {selected === 'SampleInsertPanel' &&
-                    this.renderPanel('SampleInsertPanel',
-                        <SampleInsertPage/>
-                    )
                 }
                 {selected === 'SchemaListing' &&
                     this.renderPanel('SchemaListing',
@@ -452,6 +424,26 @@ export class App extends React.Component<any, State> {
                             model={SearchResultsModel.create({
                                 entities: Map(fromJS(SEARCH_RESULT_HITS))
                             })}
+                        />
+                    )
+                }
+                {selected === 'SiteUsersGridPanel' &&
+                    <SiteUsersGridPanelPage/>
+                }
+                {selected === 'Tip' &&
+                    this.renderPanel('Tip',
+                        <Tip caption={'This is a tooltip'}>
+                            <Button>Hover Here</Button>
+                        </Tip>
+                    )
+                }
+                {selected === 'ToggleButtons' &&
+                    this.renderPanel('ToggleButtons',
+                        <ToggleButtons
+                            first={'First Option'}
+                            second={'Second Option'}
+                            active={this.state.selectedToggleButton}
+                            onClick={this.onToggleButtonsClick}
                         />
                     )
                 }
@@ -480,8 +472,15 @@ export class App extends React.Component<any, State> {
                 {selected === 'UserProfile' &&
                     <UserProfilePage user={new User(LABKEY.user)}/>
                 }
-                {selected === 'SiteUsersGridPanel' &&
-                    <SiteUsersGridPanelPage/>
+                {selected === 'WizardNavButtons' &&
+                    this.renderPanel('WizardNavButtons',
+                        <WizardNavButtons
+                            cancel={() => console.log('WizardNavButtons cancel clicked')}
+                            nextStep={() => console.log('WizardNavButtons finish clicked')}
+                            previousStep={() => console.log('WizardNavButtons back clicked')}
+                            finish={true}
+                        />
+                    )
                 }
             </>
         )

@@ -3,12 +3,22 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import {Col, FormControl, Row} from "react-bootstrap";
-import {SchemaQuery, Alert, QueryGridModel, ManageDropdownButton, SelectionMenuItem, getStateQueryGridModel, QueryGridPanel} from "@labkey/components";
+import {Col, FormControl, Row, Button} from "react-bootstrap";
+import {
+    SchemaQuery,
+    Alert,
+    QueryGridModel,
+    ManageDropdownButton,
+    SelectionMenuItem,
+    getStateQueryGridModel,
+    QueryGridPanel
+} from "@labkey/components";
 
 interface StateProps {
     schemaName: string
-    queryName: string
+    queryName: string,
+    error: string,
+    model: QueryGridModel
 }
 
 export class QueryGridPage extends React.Component<any, StateProps> {
@@ -18,7 +28,9 @@ export class QueryGridPage extends React.Component<any, StateProps> {
 
         this.state = {
             schemaName: undefined,
-            queryName: undefined
+            queryName: undefined,
+            error: undefined,
+            model: undefined
         };
     }
 
@@ -32,42 +44,53 @@ export class QueryGridPage extends React.Component<any, StateProps> {
         this.setState(() => ({queryName: value}));
     };
 
-    render() {
+    onApply = () => {
         const { schemaName, queryName } = this.state;
+        let error;
+        let model;
 
-        let body;
         if (!schemaName || !queryName) {
-            body = <Alert>You must enter a schema/query to view the grid.</Alert>;
+            error = 'You must enter a schema/query to view the QueryGridPanel.'
         }
         else {
-            const model = getStateQueryGridModel('querygrid', SchemaQuery.create(schemaName, queryName), {isPaged: true});
-            body = <QueryGridPanel
-                model={model}
-                buttons={(updatedModel: QueryGridModel) => {
-                    if (updatedModel) {
-                        return (
-                            <ManageDropdownButton id={'componentmanage'}>
-                                <SelectionMenuItem
-                                    id={'componentselectionmenu'}
-                                    model={updatedModel}
-                                    text={'Selection Based Menu Item'}
-                                    onClick={() => console.log('SelectionMenuItem click: ' + updatedModel.selectedQuantity + ' selected.')}
-                                />
-                            </ManageDropdownButton>
-                        )
-                    }
-                }}
-            />;
+            model = getStateQueryGridModel('querygrid', SchemaQuery.create(schemaName, queryName), {isPaged: true});
         }
+
+        this.setState(() => ({model, error}));
+    };
+
+    render() {
+        const { error, model } = this.state;
 
         return (
             <>
                 <Row>
-                    <Col xs={6}>Schema: <FormControl name={'schemaNameField'} type="text" onChange={this.onSchemaNameChange}/></Col>
-                    <Col xs={6}>Query: <FormControl name={'queryNameField'} type="text" onChange={this.onQueryNameChange}/></Col>
+                    <Col xs={4}>Schema: <FormControl name={'schemaNameField'} type="text" onChange={this.onSchemaNameChange}/></Col>
+                    <Col xs={4}>Query: <FormControl name={'queryNameField'} type="text" onChange={this.onQueryNameChange}/></Col>
+                    <Col xs={4}><Button onClick={this.onApply}>Apply</Button></Col>
                 </Row>
                 <br/>
-                {body}
+                {error && <Alert>{error}</Alert>}
+                {model &&
+                    <QueryGridPanel
+                        header={'QueryGridPanel'}
+                        model={model}
+                        buttons={(updatedModel: QueryGridModel) => {
+                            if (updatedModel) {
+                                return (
+                                    <ManageDropdownButton id={'componentmanage'}>
+                                        <SelectionMenuItem
+                                            id={'componentselectionmenu'}
+                                            model={updatedModel}
+                                            text={'Selection Based Menu Item'}
+                                            onClick={() => console.log('SelectionMenuItem click: ' + updatedModel.selectedQuantity + ' selected.')}
+                                        />
+                                    </ManageDropdownButton>
+                                )
+                            }
+                        }}
+                    />
+                }
             </>
         )
     }

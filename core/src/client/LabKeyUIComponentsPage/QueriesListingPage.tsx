@@ -3,10 +3,11 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import {Col, FormControl, Row} from "react-bootstrap";
+import {Col, FormControl, Row, Button} from "react-bootstrap";
 import {Alert, QueriesListing} from "@labkey/components";
 
 interface StateProps {
+    inputValue: string
     schemaName: string
 }
 
@@ -16,33 +17,31 @@ export class QueriesListingPage extends React.Component<any, StateProps> {
         super(props);
 
         this.state = {
+            inputValue: undefined,
             schemaName: undefined
         };
     }
 
     onSchemaNameChange = (evt) => {
         const value = evt.target.value;
-        this.setState(() => ({schemaName: value}));
+        this.setState(() => ({inputValue: value}));
+    };
+
+    onApply = () => {
+        this.setState((state) => ({schemaName: state.inputValue}));
     };
 
     render() {
         const { schemaName } = this.state;
 
-        let body;
-        if (!schemaName) {
-            body = <Alert>You must enter a schema name to view the listing.</Alert>;
-        }
-        else {
-            body = <QueriesListing schemaName={schemaName} asPanel={true}/>;
-        }
-
         return (
             <>
                 <Row>
                     <Col xs={6}>Schema: <FormControl name={'schemaNameField'} type="text" onChange={this.onSchemaNameChange}/></Col>
+                    <Col xs={6}><Button onClick={this.onApply}>Apply</Button></Col>
                 </Row>
                 <br/>
-                {body}
+                {schemaName && <QueriesListing schemaName={schemaName} asPanel={true}/>}
             </>
         )
     }

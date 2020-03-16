@@ -5,27 +5,39 @@
 import React from 'react'
 import { Alert, EntityInsertPanel, initQueryGridState, SampleTypeDataType } from "@labkey/components";
 
+interface State {
+    message: string
+}
 
-export class  SampleInsertPage extends React.Component<any, any> {
+export class SampleInsertPage extends React.Component<any, State> {
 
     constructor(props: any) {
         super(props);
 
-        this.afterSampleCreation = this.afterSampleCreation.bind(this);
-
-
         initQueryGridState();
+
+        this.state = {
+            message: undefined
+        }
     }
 
-    afterSampleCreation(sampleSetName: string, filter: any, sampleCount: number)  {
-        window.alert("Created " + sampleCount + " samples in sample type '" + sampleSetName + "'");
-    }
+    afterSampleCreation = (sampleSetName: string, filter: any, sampleCount: number) => {
+        this.setState(() => ({message: "Created " + sampleCount + " samples in sample type '" + sampleSetName + "'."}));
+    };
 
     render() {
+        const { message } = this.state;
+
         return (
             <>
                 <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually insert samples into the selected target sample type.</Alert>
-                <EntityInsertPanel entityDataType={SampleTypeDataType} afterSampleCreation={this.afterSampleCreation}/>
+                {message && <Alert bsStyle={'success'}>{message}</Alert>}
+                <EntityInsertPanel
+                    nounSingular={'sample'}
+                    nounPlural={'samples'}
+                    entityDataType={SampleTypeDataType}
+                    afterEntityCreation={this.afterSampleCreation}
+                />
             </>
         )
     }
