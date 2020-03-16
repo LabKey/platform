@@ -36,12 +36,11 @@ import {
     UserDetailHeader,
     SelectInput
 } from '@labkey/components';
-import { GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
+import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
 import { QueryGridPage } from "./QueryGridPage";
 import { QueriesListingPage } from "./QueriesListingPage";
 import { EditableGridPage } from "./EditableGridPage";
 import { DetailPage } from "./DetailPage";
-import { DetailEditingPage } from "./DetailEditingPage";
 import { SampleInsertPage } from './SampleInsertPage';
 import { NavigationBarPage } from "./NavigationBarPage";
 import { AssayImportPage } from "./AssayImportPage";
@@ -86,18 +85,6 @@ const COMPONENT_NAMES = List<string>([
     {value: 'UserProfile'},
     {value: 'WizardNavButtons'},
 ]);
-
-const CREATE_ROW = Map<string, any>(fromJS({
-    Created: {
-        formattedValue: "2019-05-15 19:45",
-        value: "2019-05-15 19:45:40.593"
-    },
-    CreatedBy: {
-        displayValue: "username",
-        url: "#/q/core/siteusers/1004",
-        value: 1001
-    }
-}));
 
 const INITIAL_STATE = {
     selected: undefined,
@@ -211,9 +198,36 @@ export class App extends React.Component<any, State> {
                     options={COMPONENT_NAMES.toArray()}
                 />
 
+                <br/>
+
                 {selected === 'Alert' &&
                     this.renderPanel('Alert',
-                        <Alert>This is an alert message.</Alert>
+                        <>
+                            <Alert>This is the default, error alert message.</Alert>
+                            <Alert bsStyle={'info'}>This is an info alert message.</Alert>
+                            <Alert bsStyle={'warning'}>This is an warning alert message.</Alert>
+                        </>
+                    )
+                }
+                {selected === 'AssayImportPanels' &&
+                    <AssayImportPage/>
+                }
+                {selected === 'Breadcrumb' &&
+                    this.renderPanel('Breadcrumb',
+                        <Breadcrumb>
+                            <Link to={AppURL.create('q').toString()}>Schemas</Link>
+                            <Link to={AppURL.create('q', 'myschema').toString()}>{'My Schema'}</Link>
+                            <Link to={AppURL.create('q', 'myschema', 'myquery').toString()}>{'My Query'}</Link>
+                        </Breadcrumb>
+                    )
+                }
+                {selected === 'BreadcrumbCreate' &&
+                    this.renderPanel('BreadcrumbCreate',
+                        <BreadcrumbCreate row={CREATE_ROW}>
+                            <Link to={AppURL.create('q').toString()}>Schemas</Link>
+                            <Link to={AppURL.create('q', 'myschema').toString()}>{'My Schema'}</Link>
+                            <Link to={AppURL.create('q', 'myschema', 'myquery').toString()}>{'My Query'}</Link>
+                        </BreadcrumbCreate>
                     )
                 }
                 {selected === 'Cards' &&
@@ -249,6 +263,13 @@ export class App extends React.Component<any, State> {
                         </>
                     )
                 }
+                {selected === 'Detail' &&
+                    <DetailPage editable={false}/>
+                }
+                {selected === 'DetailEditing' &&
+                    <DetailPage editable={true}/>
+                }
+                {/*TODO continue testing/fixes below this line*/}
                 {selected === 'FileAttachmentForm' &&
                     this.renderPanel('FileAttachmentForm',
                         <FileAttachmentForm
@@ -331,37 +352,10 @@ export class App extends React.Component<any, State> {
                         />
                     )
                 }
-                {selected === 'Breadcrumb' &&
-                    this.renderPanel('Breadcrumb',
-                        <Breadcrumb>
-                            <Link to={AppURL.create('q').toString()}>Schemas</Link>
-                            <Link to={AppURL.create('q', 'myschema').toString()}>{'My Schema'}</Link>
-                            <Link to={AppURL.create('q', 'myschema', 'myquery').toString()}>{'My Query'}</Link>
-                        </Breadcrumb>
-                    )
-                }
-                {selected === 'BreadcrumbCreate' &&
-                    this.renderPanel('BreadcrumbCreate',
-                        <BreadcrumbCreate row={CREATE_ROW}>
-                            <Link to={AppURL.create('q').toString()}>Schemas</Link>
-                            <Link to={AppURL.create('q', 'myschema').toString()}>{'My Schema'}</Link>
-                            <Link to={AppURL.create('q', 'myschema', 'myquery').toString()}>{'My Query'}</Link>
-                        </BreadcrumbCreate>
-                    )
-                }
                 {selected === 'NavigationBar' &&
                     this.renderPanel('NavigationBar',
                         <NavigationBarPage/>
                     )
-                }
-                {selected === 'AssayImportPanels' &&
-                    <AssayImportPage/>
-                }
-                {selected === 'Detail' &&
-                    <DetailPage/>
-                }
-                {selected === 'DetailEditing' &&
-                    <DetailEditingPage/>
                 }
                 {selected === 'EditableGridPanel' &&
                     this.renderPanel('EditableGridPanel',

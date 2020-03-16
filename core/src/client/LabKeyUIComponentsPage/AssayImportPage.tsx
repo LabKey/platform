@@ -4,7 +4,6 @@
  */
 import React from 'react'
 import {List} from "immutable";
-import {Col, Row} from "react-bootstrap";
 import {ActionURL} from "@labkey/api";
 import {
     fetchAllAssays,
@@ -13,7 +12,8 @@ import {
     naturalSort,
     Alert,
     AssayImportPanels,
-    AssayUploadResultModel
+    AssayUploadResultModel,
+    SelectInput
 } from "@labkey/components";
 
 const BASE_FILE_TYPES = ['.csv', '.tsv', '.txt', '.xlsx', '.xls'];
@@ -48,10 +48,7 @@ export class AssayImportPage extends React.Component<any, State> {
             });
     }
 
-    onAssaySelectChange = (evt) => {
-        const { assayDefinitions } = this.state;
-        const value = parseInt(evt.target.value);
-        const selected = assayDefinitions.find((assay) => assay.id === value);
+    onAssaySelectChange = (id, val, selected) => {
         this.setState(() => ({selected}));
     };
 
@@ -59,21 +56,21 @@ export class AssayImportPage extends React.Component<any, State> {
         const { assayDefinitions, selected } = this.state;
 
         return (
-            <select id={SELECT_ID}
-                    key={SELECT_ID}
-                    className={'form-control'}
-                    onChange={this.onAssaySelectChange}
-                    value={selected ? selected.id : undefined}
-            >
-                <option key={0} value={0}>&nbsp;</option>
-                {
-                    assayDefinitions.map(function (assay) {
-                        return (
-                            <option key={assay.id} value={assay.id}>{assay.name}</option>
-                        )
-                    })
-                }
-            </select>
+            <SelectInput
+                key={'assay-import-panels-select'}
+                name={'assay-import-panels-select'}
+                placeholder={"Select an assay..."}
+                inputClass={'col-xs-4'}
+                showLabel={false}
+                formsy={false}
+                multiple={false}
+                required={true}
+                valueKey={'id'}
+                labelKey={'name'}
+                value={selected ? selected.id : undefined}
+                onChange={this.onAssaySelectChange}
+                options={assayDefinitions.toArray()}
+            />
         )
     }
 
@@ -86,16 +83,14 @@ export class AssayImportPage extends React.Component<any, State> {
 
         return (
             <>
-                <Row>
-                    <Col xs={12}>GPAT Assays: {this.getAssaySelectInput()}</Col>
-                </Row>
-                <br/>
-                {!selected
-                    ? <Alert>You must select an assay from the list above.</Alert>
-                    : <>
+                <div>
+                    GPAT Assays: {this.getAssaySelectInput()}
+                </div>
+                {selected &&
+                    <>
                         <Alert bsStyle={'info'}>NOTE: if you have the proper permissions, this will actually import an assay run.</Alert>
                         {message && <Alert bsStyle={'success'}>{message}</Alert>}
-                        {/*TODO why doesn't the on file change handler get called with the FileAttachmentForm here but it does in the SM app?*/}
+                        {/*TODO why doesn't the on file change handler get called with the FileAttachmentForm here but it does in the app?*/}
                         <AssayImportPanels
                             assayDefinition={selected}
                             onCancel={() => {
