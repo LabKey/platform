@@ -101,9 +101,7 @@ List others = [
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
         "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
-        "net.sourceforge.jtds:jtds:${jtdsVersion}", // MS SQLServer JDBC Driver
-        "org.postgresql:postgresql:${postgresqlDriverVersion}",
-        "mysql:mysql-connector-java:${mysqlDriverVersion}"
+        "org.postgresql:postgresql:${postgresqlDriverVersion}"
 ]
 
 List javax = [
