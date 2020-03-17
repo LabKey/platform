@@ -1097,8 +1097,6 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
     private void initializeDataSources()
     {
-        verifyJdbcDrivers();
-
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
         Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
@@ -1150,8 +1148,19 @@ public class ModuleLoader implements Filter, MemTrackerListener
                 .collect(Collectors.toList());
 
             if (!existing.isEmpty())
+            {
 //                throw new ConfigurationException("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
-                _log.warn("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
+                String message = "You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing;
+                _log.warn(message);
+                WarningService.get().register(new WarningProvider()
+                {
+                    @Override
+                    public void addStaticWarnings(Warnings warnings)
+                    {
+                        warnings.add(HtmlString.of(message));
+                    }
+                });
+            }
         }
     }
 
@@ -1273,6 +1282,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         coreModule.initialize();
+
+        // Earliest opportunity to check, since the method adds an admin warning (and WarningService is initialized by
+        // the line above). TODO: Move this to initializeDataSources() once it throws instead of warning.
+        verifyJdbcDrivers();
 
         ModuleContext coreContext;
 
