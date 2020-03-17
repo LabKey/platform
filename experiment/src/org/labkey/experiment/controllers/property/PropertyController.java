@@ -705,6 +705,10 @@ public class PropertyController extends SpringActionController
         @JsonIgnore
         public void validate(Container container, User user, boolean isUpdate)
         {
+            // Issue 39995: validate form options for non-template case
+            if (getDomainGroup() != null)
+                return;
+
             String kindName = this.getKind() == null ? this.getDomainKind() : this.getKind();
             DomainKind kind = null;
             GWTDomain design = this.getDomainDesign();
