@@ -5,6 +5,16 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AbstractMethodInfo;
 
+/**
+ * <code>
+ * SELECT
+ *   d.*
+ * FROM assay.General.MyAssay.Data d
+ * WHERE
+    ExpChildOf(d.resultsample.LSID, 'urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522') OR ExpChildOf(d.Run.runsample.LSID, 'urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522')
+ * </code>
+ */
+
 public class ChildOfMethod extends AbstractMethodInfo
 {
     public static final String NAME = "ExpChildOf";

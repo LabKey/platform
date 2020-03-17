@@ -61,7 +61,8 @@ public class LineageHelper
         String lsidStr = lsidFrag.getRawSQL();
 
         // FIXME remove the quote workaround from client and here when parser is able to parse parts correctly
-        // our parser is currently not able to parse a where filter with multiple parts clauses when a clause value contains special character such as :
+        // https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39996
+        // our parser is currently not able to parse a where clause whose value contains special character such as :
         // Fail to parse
                 // (ExpChildOf(resultsample.LSID, urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522) OR ExpChildOf(Run.runsample.LSID, urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522))
         // Workaround on client side (add quotes) so it can be parsed
