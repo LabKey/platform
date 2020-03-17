@@ -2474,7 +2474,7 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(AuthParameterForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.setAuthConfigProperty(getUser(), form.getParameter(), form.isEnabled());
+            AuthenticationManager.saveAuthSetting(getUser(), form.getParameter(), form.isEnabled());
             return true;
         }
 
@@ -2532,7 +2532,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(DeleteConfigurationForm form, BindException errors) throws Exception
         {
-            AuthenticationManager.deleteConfiguration(form.getConfiguration());
+            AuthenticationManager.deleteConfiguration(getUser(), form.getConfiguration());
             return new ApiSimpleResponse("success", true);
         }
     }
@@ -2543,7 +2543,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(SaveDbLoginPropertiesForm form, BindException errors) throws Exception
         {
-            DbLoginManager.saveProperties(form);
+            DbLoginManager.saveProperties(getUser(), form);
             return new ApiSimpleResponse("success", true);
         }
     }

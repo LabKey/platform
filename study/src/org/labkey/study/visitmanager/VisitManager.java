@@ -100,11 +100,11 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      */
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets)
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, logger);
     }
@@ -112,7 +112,7 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
     }
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         @Nullable Logger logger)
     {
@@ -138,7 +138,7 @@ public abstract class VisitManager
      * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
      * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         boolean isSpecimenImport, @Nullable Logger logger)
     {

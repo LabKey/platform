@@ -46,6 +46,8 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Manages bookkeeping for date-based studies, lumping dates into timepoints as defined for the study.
@@ -269,15 +271,17 @@ public class RelativeDateVisitManager extends VisitManager
             "WHERE Container = ? AND (VisitRowId IS NULL OR VisitRowId = -1)");
         sql.add(getStudy().getContainer());
 
-        final MutableInt days = new MutableInt(0);
+        // Build up a set so that we can create all of them in bulk
+        Set<Double> daysToEnsure = new HashSet<>();
 
         new SqlSelector(schema, sql).forEach(day -> {
             double seqNum = null != day ? day : 0;
-            StudyManager.getInstance().ensureVisit(getStudy(), user, seqNum, null, true);
-            days.increment();
+            daysToEnsure.add(seqNum);
         }, Integer.class);
 
-        if (days.intValue() > 0)
+        StudyManager.getInstance().ensureVisits(getStudy(), user, daysToEnsure, null);
+
+        if (daysToEnsure.size() > 0)
             _updateVisitRowId();
     }
 
