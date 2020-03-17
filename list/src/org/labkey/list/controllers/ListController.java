@@ -270,7 +270,7 @@ public class ListController extends SpringActionController
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
-        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_GWT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
         String listDesignerHeader = "List Designer";
 
         @Override
@@ -281,7 +281,7 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-            if(experimentalFlagEnabled && getContainer().hasPermission(getUser(), InsertPermission.class))
+            if(!experimentalFlagEnabled)
             {
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
             }
@@ -310,14 +310,14 @@ public class ListController extends SpringActionController
         {
             if (null == _list)
             {
-                if (experimentalFlagEnabled)
+                if (!experimentalFlagEnabled)
                     root.addChild(listDesignerHeader);
                 else
                     root.addChild("Create new List");
             }
             else
             {
-                if (experimentalFlagEnabled)
+                if (!experimentalFlagEnabled)
                     appendListNavTrail(root, _list, listDesignerHeader);
                 else
                     appendListNavTrail(root, _list, null);

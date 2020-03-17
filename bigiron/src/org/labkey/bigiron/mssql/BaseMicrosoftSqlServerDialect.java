@@ -563,9 +563,10 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     @Override
     public SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch)
     {
-        SQLFragment result = new SQLFragment("patindex('%' + ");
+        // Use CHARINDEX instead of PATINDEX, which does wildcard matching
+        SQLFragment result = new SQLFragment("CHARINDEX(");
         result.append(toFind);
-        result.append(" + '%', ");
+        result.append(", ");
         result.append(toSearch);
         result.append(")");
         return result;

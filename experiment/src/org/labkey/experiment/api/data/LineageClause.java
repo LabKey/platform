@@ -24,9 +24,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.query.FieldKey;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -47,17 +45,7 @@ public abstract class LineageClause extends CompareType.CompareClause
             return null;
 
         // TODO: support rowId as well
-        String lsid = String.valueOf(o);
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        ExpRunItem start = svc.getExpMaterial(lsid);
-        if (start == null)
-            start = svc.getExpData(lsid);
-
-        if (start == null || svc.isUnknownMaterial(start))
-            return null;
-
-        return start;
+        return LineageHelper.getStart(String.valueOf(o));
     }
 
     protected abstract ExpLineageOptions createOptions();
@@ -71,16 +59,9 @@ public abstract class LineageClause extends CompareType.CompareClause
         String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
 
         ExpRunItem start = getStart();
-        if (start == null)
-            return new SQLFragment("(1 = 2)");
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         ExpLineageOptions options = createOptions();
-        List<String> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
-        if (runsToInvestigate.isEmpty())
-            return new SQLFragment("(1 = 2)");
 
-        SQLFragment tree = svc.generateExperimentTreeSQLLsidSeeds(runsToInvestigate, options);
+        SQLFragment tree = LineageHelper.createExperimentTreeSQLLsidSeeds(start, options);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(").append(alias).append(") IN (");
