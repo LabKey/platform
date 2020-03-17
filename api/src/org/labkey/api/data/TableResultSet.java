@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Iterator;
@@ -31,7 +33,8 @@ public interface TableResultSet extends ResultSet, Iterable<Map<String, Object>>
 
     Map<String, Object> getRowMap() throws SQLException;
 
-    Iterator<Map<String, Object>> iterator();
+    @Override
+    @NotNull Iterator<Map<String, Object>> iterator();
 
     String getTruncationMessage(int maxRows);
 
