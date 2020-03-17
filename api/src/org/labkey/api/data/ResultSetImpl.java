@@ -80,6 +80,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
+    @Override
     public boolean isComplete()
     {
         return _isComplete;
@@ -97,6 +98,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
         return -1;
     }
 
+    @Override
     public boolean next() throws SQLException
     {
         boolean success = super.next();
@@ -110,6 +112,7 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
+    @Override
     public void close() throws SQLException
     {
         if (_wasClosed)
@@ -146,22 +149,26 @@ public class ResultSetImpl extends LoggingResultSetWrapper implements TableResul
     }
 
 
+    @Override
     public @NotNull Iterator<Map<String, Object>> iterator()
     {
         return new ResultSetIterator(this);
     }
 
+    @Override
     public String getTruncationMessage(int maxRows)
     {
         return "Displaying only the first " + maxRows + " rows.";
     }
 
+    @Override
     public Map<String, Object> getRowMap()
     {
         throw new UnsupportedOperationException("getRowMap()");
     }
 
 
+    @Override
     protected void finalize() throws Throwable
     {
         if (!_wasClosed)

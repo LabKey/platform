@@ -129,6 +129,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
+    @Override
     public void registerDescriptor(ReportDescriptor descriptor)
     {
         if (descriptor == null)
@@ -138,6 +139,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             _log.warn("Descriptor type : " + descriptor.getDescriptorType() + " has previously been registered.");
     }
 
+    @Override
     public ReportDescriptor createDescriptorInstance(String typeName)
     {
         if (typeName == null)
@@ -165,18 +167,21 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
+    @Override
     @Nullable
     public ReportDescriptor getModuleReportDescriptor(Module module, String path)
     {
         return ModuleReportCache.getModuleReportDescriptor(module, path);
     }
 
+    @Override
     @NotNull
     public List<ReportDescriptor> getModuleReportDescriptors(Module module, @Nullable String path)
     {
         return ModuleReportCache.getModuleReportDescriptors(module, path);
     }
 
+    @Override
     public void registerReport(Report report)
     {
         if (report == null)
@@ -186,6 +191,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             _log.warn("Report type : " + report.getType() + " has previously been registered.");
     }
 
+    @Override
     @Nullable
     public Report createReportInstance(String typeName)
     {
@@ -218,6 +224,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
+    @Override
     @Nullable
     public Report createReportInstance(ReportDescriptor descriptor)
     {
@@ -262,12 +269,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return CoreSchema.getInstance().getTableInfoReport();
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
         DatabaseReportCache.uncache(c);
     }
 
+    @Override
     public Report createFromQueryString(String queryString)
     {
         for (Pair<String, String> param : PageFlowUtil.fromQueryString(queryString))
@@ -285,6 +294,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return null;
     }
 
+    @Override
     public void deleteReport(ContainerUser context, Report report)
     {
         //ensure that descriptor id is a DbReportIdentifier
@@ -322,11 +332,13 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return _saveReport(context, key, report, skipValidation).getRowId();
     }
 
+    @Override
     public int saveReport(ContainerUser context, String key, Report report)
     {
         return _saveReport(context, key, report).getRowId();
     }
 
+    @Override
     public void validateReportPermissions(ContainerUser context, Report report)
     {
         List<ValidationError> errors = new ArrayList<>();
@@ -348,6 +360,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
+    @Override
     public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
     {
         final ReportDescriptor descriptor = report.getDescriptor();
@@ -493,6 +506,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         }
     }
 
+    @Override
     public Report getReportByEntityId(Container c, String entityId)
     {
         return DatabaseReportCache.getReportByEntityId(c, entityId);
@@ -530,12 +544,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return AbstractReportIdentifier.fromString(reportId, user, container);
     }
 
+    @Override
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c)
     {
         List<Report> reportsList = new ArrayList<>(DatabaseReportCache.getReports(c));
         return getSortedReadableReports(reportsList, user);
     }
 
+    @Override
     public Collection<Report> getReports(@Nullable User user, @NotNull Container c, @Nullable String key)
     {
         List<ReportDescriptor> moduleReportDescriptors = new ArrayList<>();
@@ -571,6 +587,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return getSortedReadableReports(reports, user);
     }
 
+    @Override
     @Deprecated
     public Collection<Report> getInheritableReports(User user, Container c, @Nullable String reportKey)
     {
@@ -614,32 +631,38 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return readableReports;
     }
 
+    @Override
     @Nullable
     public Report getReport(ReportDB reportDB)
     {
         return _getInstance(reportDB);
     }
 
+    @Override
     public void addUIProvider(UIProvider provider)
     {
         _uiProviders.add(provider);
     }
 
+    @Override
     public List<UIProvider> getUIProviders()
     {
         return Collections.unmodifiableList(_uiProviders);
     }
 
+    @Override
     public void addGlobalItemFilterType(String type)
     {
         _globalItemFilterTypes.add(type);
     }
 
+    @Override
     public List<String> getGlobalItemFilterTypes()
     {
         return Collections.unmodifiableList(_globalItemFilterTypes);
     }
 
+    @Override
     public @NotNull String getIconPath(Report report)
     {
         if (report != null)
@@ -674,6 +697,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return "/_.gif";
     }
 
+    @Override
     public @Nullable String getIconCls(Report report)
     {
         if (report != null)
@@ -925,6 +949,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
 
     private static class ReportServiceMaintenanceTask implements MaintenanceTask
     {
+        @Override
         public String getDescription()
         {
             return "Report Service Maintenance";
@@ -936,6 +961,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             return "ReportService";
         }
 
+        @Override
         public void run(Logger log)
         {
             ReportService.get().maintenance(log);

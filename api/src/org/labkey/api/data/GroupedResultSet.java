@@ -160,6 +160,7 @@ public class GroupedResultSet extends ResultSetImpl
         return _groupCount;
     }
 
+    @Override
     public String getTruncationMessage(int maxRows)
     {
         if (_lastRow != 0)
