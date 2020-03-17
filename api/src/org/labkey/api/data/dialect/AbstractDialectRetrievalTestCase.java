@@ -66,7 +66,7 @@ public abstract class AbstractDialectRetrievalTestCase extends Assert
             }
             catch (Exception e)
             {
-                assertNull(description + " failed; expected success", expectedDialectClass);
+                assertNull(description + " failed: ", expectedDialectClass);
                 assertEquals(description, expectedExceptionClass, e.getClass());
             }
         }

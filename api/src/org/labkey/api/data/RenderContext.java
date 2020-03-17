@@ -38,7 +38,6 @@ import org.springframework.validation.ObjectError;
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.Serializable;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -493,19 +492,8 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
-        TableSelector selector = getCache() ?
-            new TableSelector(table, columns, filter, sort) :
-            // TODO: Refactor in 20.4 to call TableSelector.setJdbcUncached() instead of overridding getConnection(). Also, review other getCache() callers.
-            new TableSelector(table, columns, filter, sort)
-            {
-                @Override
-                public Connection getConnection() throws SQLException
-                {
-                    return getScope().getReadOnlyConnection();
-                }
-            };
-
-        selector
+        TableSelector selector = new TableSelector(table, columns, filter, sort)
+            .setJdbcCaching(getCache())  // #39888
             .setNamedParameters(parameters)
             .setMaxRows(maxRows)
             .setOffset(offset)
@@ -521,12 +509,22 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
     }
 
-
+    /**
+     * If false, callers should anticipate very large ResultSets. They should ensure that they don't cache the ResultSet
+     * in memory, e.g., don't use CachedResultSet and call setJdbcCaching(getCache()).
+     * @return The current setting
+     */
     public boolean getCache()
     {
         return _cache;
     }
 
+    /**
+     * Calling with cache=false ensures that the produced ResultSet will not be cached in the JVM heap. Specifically,
+     * false means that LabKey will simply wrap the underlying ResultSet (without using a CachedResultSet) and will
+     * configure the Connection to ensure the JDBC driver doesn't cache the ResultSet either. If true, ResultSets may
+     * be cached in both places.
+     */
     public void setCache(boolean cache)
     {
         _cache = cache;
