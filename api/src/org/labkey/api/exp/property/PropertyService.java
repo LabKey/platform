@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.property;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,4 +115,6 @@ public interface PropertyService
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);
 
     void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats);
+
+    void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter);
 }

@@ -529,13 +529,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
             for (ModuleContext context : getAllModuleContexts())
                 _moduleContextMap.put(context.getName(), context);
 
-            //Make sure we have a context for all modules, even ones we haven't seen before
+            // Refresh our list of modules as some may have been filtered out based on dependencies or DB platform
+            modules = getModules();
             for (Module module : modules)
             {
                 ModuleContext context = _moduleContextMap.get(module.getName());
 
                 if (null == context)
                 {
+                    // Make sure we have a context for all modules, even ones we haven't seen before
                     context = new ModuleContext(module);
                     _moduleContextMap.put(module.getName(), context);
                 }

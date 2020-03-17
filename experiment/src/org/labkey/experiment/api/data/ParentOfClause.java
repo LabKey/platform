@@ -32,11 +32,7 @@ public class ParentOfClause extends LineageClause
 
     protected ExpLineageOptions createOptions()
     {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setForLookup(true);
-        options.setParents(true);
-        options.setChildren(false);
-        return options;
+        return LineageHelper.createParentOfOptions();
     }
 
     protected String getLsidColumn()
