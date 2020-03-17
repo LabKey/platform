@@ -16,6 +16,7 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -31,8 +32,10 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
+import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
@@ -53,7 +56,9 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -106,6 +111,22 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     public Class<DataClassDomainKindProperties> getTypeClass()
     {
         return DataClassDomainKindProperties.class;
+    }
+
+    @Override
+    public Map<String, Object> processArguments(Container container, User user, Map<String, Object> arguments)
+    {
+        Map<String, Object> updatedArguments = new HashMap<>(arguments);
+
+        // if "sampleSet" is the Name string, look it up and switch the argument map to use the RowId
+        if (arguments.containsKey("sampleSet") && !StringUtils.isNumeric(arguments.get("sampleSet").toString()))
+        {
+            ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(container, user, (String)arguments.get("sampleSet"));
+            if (sampleSet != null)
+                updatedArguments.put("sampleSet", sampleSet.getRowId());
+        }
+
+        return updatedArguments;
     }
 
     @Override
