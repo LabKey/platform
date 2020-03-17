@@ -79,6 +79,7 @@ To add a new `entryPoint` for a LabKey React page:
     an example from one of the existing app pages. Add your main app React component file, 
     `<ENTRYPOINT_NAME>.tsx`, and any other components, models, actions, 
     etc. in the `<module>/src/client/<ENTRYPOINT_NAME>` directory.
+1. Update the `platform/.gitignore` file for your new entrypoint's generated views / files
 1. Run the `./gradlew deployModule` command for your module and verify that your new generated files
     are created in your module's `resources` directory.
 

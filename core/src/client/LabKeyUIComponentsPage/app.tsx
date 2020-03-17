@@ -15,23 +15,9 @@
  */
 import React from 'react'
 import ReactDOM from 'react-dom'
-import { AppContainer } from 'react-hot-loader'
+import { App } from './LabKeyUIComponentsPage'
 
-import { App } from './AuthenticationConfiguration'
-
-const render = () => {
-    ReactDOM.render(
-        <AppContainer>
-            <App/>
-        </AppContainer>,
-        document.getElementById('app')
-    )
-};
-
-declare const module: any;
-
-if (module.hot) {
-    module.hot.accept();
-}
-
-render();
+// Need to wait for container element to be available in labkey wrapper before render
+window.addEventListener('DOMContentLoaded', (event) => {
+    ReactDOM.render(<App/>, document.getElementById('app'));
+});
