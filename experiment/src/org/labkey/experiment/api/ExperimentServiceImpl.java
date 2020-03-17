@@ -2095,6 +2095,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Get lisd of ExpRun LSIDs for the start Data or Material
+    @Override
     public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
@@ -2317,7 +2318,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
     }
 
-
+    @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
         assert options.isUseObjectIds() == false;
