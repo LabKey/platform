@@ -49,6 +49,7 @@ public class DataIteratorContext
     private final Set<String> _passThroughBuiltInColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private final Set<String> _alternateKeys = new CaseInsensitiveHashSet();
+    private String _dataSource;
 
     int _maxRowErrors = 1;
 
@@ -82,6 +83,17 @@ public class DataIteratorContext
     public void setSelectIds(Boolean selectIds)
     {
         _selectIds = selectIds;
+    }
+
+    @Nullable
+    public String getDataSource()
+    {
+        return _dataSource;
+    }
+
+    public void setDataSource(@Nullable String dataSource)
+    {
+        _dataSource = dataSource;
     }
 
     public boolean isFailFast()

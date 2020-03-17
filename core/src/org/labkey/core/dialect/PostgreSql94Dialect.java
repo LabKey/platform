@@ -16,6 +16,7 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
@@ -25,8 +26,10 @@ import java.util.Set;
  * Date: 8/5/2014
  * Time: 10:49 PM
  */
-public class PostgreSql94Dialect extends PostgreSql93Dialect
+public abstract class PostgreSql94Dialect extends PostgreSql93Dialect
 {
+    private HtmlString _adminWarning = null;
+
     public PostgreSql94Dialect()
     {
     }
@@ -46,10 +49,16 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
         return words;
     }
 
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
     @Override
     public void addAdminWarningMessages(Warnings warnings)
     {
-        // Override the 9.3 override... no warnings for 9.4+
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
     }
 
     @Override
@@ -57,5 +66,4 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
     {
         return "percentile_cont";
     }
-
 }

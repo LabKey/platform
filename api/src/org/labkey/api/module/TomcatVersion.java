@@ -32,60 +32,24 @@ import java.util.stream.Collectors;
  */
 public enum TomcatVersion
 {
-    TOMCAT_UNSUPPORTED(-1, true, null, null, null, null, null),
-    TOMCAT_7_0(70, true, "getMaxActive", "Connector", "keystoreFile", "keystorePass", "keystoreType"),
-    TOMCAT_8_5(85, false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword", "certificateKeystoreType"),
-    TOMCAT_9_0(90, false, "getMaxTotal", "SSLHostConfigCertificate", "certificateKeystoreFile", "certificateKeystorePassword" , "certificateKeystoreType"),
-    TOMCAT_FUTURE(Integer.MAX_VALUE, true, null, null, null, null, null);
+    TOMCAT_UNSUPPORTED(-1, true),
+    TOMCAT_8_5(85, false),
+    TOMCAT_9_0(90, false),
+    TOMCAT_FUTURE(Integer.MAX_VALUE, true);
 
     private final int _version;
     private final boolean _deprecated;
-    private final String _maxTotalMethodName;
-    private final String _sslConfigPropName;
-    private final String _keystoreFilePropertyName;
-    private final String _keystorePasswordPropertyName;
-    private final String _keystoreTypePropertyName;
 
-    TomcatVersion(int version, boolean deprecated, String maxTotalMethodName, String sslConfigPropName, String keystoreFilePropertyName, String keystorePasswordPropertyName, String keystoreTypePropertyName)
+    TomcatVersion(int version, boolean deprecated)
     {
         _version = version;
         _deprecated = deprecated;
-        _maxTotalMethodName = maxTotalMethodName;
-        _sslConfigPropName = sslConfigPropName;
-        _keystoreFilePropertyName = keystoreFilePropertyName;
-        _keystorePasswordPropertyName = keystorePasswordPropertyName;
-        _keystoreTypePropertyName = keystoreTypePropertyName;
     }
 
     // Should LabKey warn administrators that support for this Tomcat version will be removed soon?
     public boolean isDeprecated()
     {
         return _deprecated;
-    }
-
-    public String getMaxTotalMethodName()
-    {
-        return _maxTotalMethodName;
-    }
-
-    public String getSslConfigPropName()
-    {
-        return _sslConfigPropName;
-    }
-
-    public String getKeystoreFilePropertyName()
-    {
-        return _keystoreFilePropertyName;
-    }
-
-    public String getKeystorePasswordPropertyName()
-    {
-        return _keystorePasswordPropertyName;
-    }
-
-    public String getKeystoreTypePropertyName()
-    {
-        return _keystoreTypePropertyName;
     }
 
     private static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
@@ -119,7 +83,7 @@ public enum TomcatVersion
             }
         }
 
-        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.0.x, 8.5.x, or 9.0.x.");
+        throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 8.5.x or 9.0.x.");
     }
 
     private static @NotNull TomcatVersion get(int version)
@@ -141,7 +105,6 @@ public enum TomcatVersion
         public void test()
         {
             // Good
-            test(70, TOMCAT_7_0);
             test(85, TOMCAT_8_5);
             test(90, TOMCAT_9_0);
 
@@ -151,6 +114,7 @@ public enum TomcatVersion
             test(120, TOMCAT_FUTURE);
 
             // Bad
+            test(70, TOMCAT_UNSUPPORTED);
             test(60, TOMCAT_UNSUPPORTED);
             test(50, TOMCAT_UNSUPPORTED);
             test(40, TOMCAT_UNSUPPORTED);

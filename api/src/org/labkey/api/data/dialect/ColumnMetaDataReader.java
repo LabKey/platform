@@ -65,8 +65,7 @@ public abstract class ColumnMetaDataReader
 
     public abstract boolean isAutoIncrement() throws SQLException;
 
-    public @Nullable
-    String getLabel() throws SQLException
+    public @Nullable String getLabel() throws SQLException
     {
         return null;
     }

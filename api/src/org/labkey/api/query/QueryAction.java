@@ -49,5 +49,8 @@ public enum QueryAction
     excelWebQueryDefinition,
     createSnapshot,
     editSnapshot,
-    schemaBrowser   // same as begin, but more explicit
+    schemaBrowser,   // same as begin, but more explicit
+    getQueryEditorMetadata,
+    saveQueryMetadata,
+    resetQueryMetadata
 }

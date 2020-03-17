@@ -214,13 +214,30 @@ public abstract class ContainerFilter
             return new SQLFragment("1 = 0");
         }
 
-        if (ids.size() == 1)
+        // Issue 39891: Biologics: slow page loads for sample/assay and assay/results
+        // When including child containers by type, check if any of the containers
+        // have children that match the types. If there are no children that match
+        // the set of included types, we can simplify the query to a simple IN clause
+        // instead of joining to core.Containers and filtering by container type.
+        final Set<String> finalIncludedChildTypes = includedChildTypes;
+        List<Container> containers = ids.stream()
+                .map(ContainerManager::getForId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toUnmodifiableList());
+        boolean hasNoSpecialChildren = includedChildTypes.isEmpty() ||
+                containers.stream().noneMatch(c -> c.hasChildrenOfAnyType(finalIncludedChildTypes));
+
+        if (hasNoSpecialChildren)
         {
-            Container first = ContainerManager.getForId(ids.iterator().next());
-            if (null == first)
+            if (containers.isEmpty())
+            {
                 return new SQLFragment("1 = 0");
-            if (includedChildTypes.isEmpty() || !first.hasChildrenOfAnyType(includedChildTypes))
-                return new SQLFragment(containerColumnSQL).append("=").append(first);
+            }
+            else
+            {
+                // For optimization, turn off join to core.containers to filter by container type
+                includedChildTypes = Collections.emptySet();
+            }
         }
 
         SQLFragment list = new SQLFragment();

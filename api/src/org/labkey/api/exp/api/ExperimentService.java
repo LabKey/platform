@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -832,6 +833,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
 
     boolean useUXDomainDesigner();
+
+    List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
+
+    SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
 
     class XarExportOptions
     {
