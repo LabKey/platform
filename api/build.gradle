@@ -100,7 +100,10 @@ List others = [
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
-        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}"
+        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
+        "net.sourceforge.jtds:jtds:${jtdsVersion}", // MS SQLServer JDBC Driver
+        "org.postgresql:postgresql:${postgresqlDriverVersion}",
+        "mysql:mysql-connector-java:${mysqlDriverVersion}"
 ]
 
 List javax = [

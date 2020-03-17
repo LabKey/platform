@@ -38,11 +38,13 @@ jfreechart-1.0.14.jar|JFreeChart|1.0.14|{link:JFreeChart|http://www.jfree.org/jf
 jmock-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
 jmock-legacy-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
 json-simple-1.1.jar|JSON.simple - A Simple Java toolkit for JSON|Version 1.1|{link:JSON.simple|https://code.google.com/p/json-simple/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|klum|JSON parser for remoteapi
+jtds-1.3.1.jar|jTDS JDBC Driver|1.3.1|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server database servers
 jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 junit-4.12.jar|JUnit|4.12|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing
 jxl-2.6.3.jar|API|2.6.3|{link:jexcelapi|http://www.jexcelapi.org/}|{link:LGPL|http://www.opensource.org/licenses/lgpl-license.php}|jeckels|Java Excel library
 kaptcha-2.3.jar|Captcha generator|2.3|{link:kaptcha|http://code.google.com/p/kaptcha/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|User signup forms
 log4j-1.2.17.jar|Log4j|1.2.17|{link:Apache|http://logging.apache.org/log4j/1.2/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Logging
+mysql-connector-java-8.0.18.jar|MySQL JDBC Driver|8.0.18|{link:MySQL|http://www.mysql.com/downloads/connector/j}|{link:GPL v2|http://www.gnu.org/licenses/gpl-2.0.html} with {link:Universal FOSS Exception|https://oss.oracle.com/licenses/universal-foss-exception/}|adam|Connect with MySQL database servers
 objenesis-1.0.jar|Objenesis|1.0|{link:Objenesis|http://code.google.com/p/objenesis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library for instantiating Java objects, dependency of jMock
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
 patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.com/p/patricia-trie/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|PATRICIA Trie data structure implementation
@@ -50,6 +52,7 @@ pdfbox-2.0.11.jar|Apache PDFBox®|2.0.11|{link:PDFBox|https://pdfbox.apache.org/
 poi-4.0.0.jar|Apache POI|4.0.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Extracting text from and exporting to Microsoft document formats (Excel, Word, PowerPoint, etc.)
 poi-ooxml-4.0.0.jar|Apache POI OOXML|4.0.0|{link:Apache|https://poi.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|POI support for OOXML formats
 pollingwatchservice-0.2.0.jar|Polling Watch Service|0.2.0|{link:imca|https://www.imca.aps.anl.gov/~jlmuir/sw/pollingwatchservice.html}|{link:BSD 2-Clause license|https://www.imca.aps.anl.gov/~jlmuir/repo/bsd-2-clause-license.txt}|klum|Provide polling file watcher for cifs file systems
+postgresql-42.2.10.jar|PostgreSQL JDBC Driver|42.2.10|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|cnathe|R client classes
 rome-1.7.1.jar|ROME|1.7.1|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation

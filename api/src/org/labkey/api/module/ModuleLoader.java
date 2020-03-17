@@ -128,6 +128,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
@@ -453,12 +454,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
         if (!webinfModulesDir.isDirectory() && null == service)
             throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
-        File[] webInfModules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+        File[] webInfModules = webinfModulesDir.listFiles(File::isDirectory);
         if (null != webInfModules)
         {
             Arrays.stream(webInfModules)
-                    .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
-                    .forEach(e -> explodedModuleDirs.add(e));
+                .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
+                .forEach(explodedModuleDirs::add);
         }
 
         doInitWithSourceModule(explodedModuleDirs);
@@ -1096,6 +1097,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     // Enumerate each jdbc DataSource in labkey.xml and tell DbScope to initialize them
     private void initializeDataSources()
     {
+        verifyJdbcDrivers();
+
         _log.debug("Ensuring that all databases specified by datasources in webapp configuration xml are present");
 
         Map<String, DataSource> dataSources = new TreeMap<>(String::compareTo);
@@ -1133,6 +1136,51 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         DbScope.initializeScopes(labkeyDsName, dataSources);
+    }
+
+    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
+    private void verifyJdbcDrivers()
+    {
+        File lib = getTomcatLib();
+
+        if (null != lib)
+        {
+            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
+                .filter(name->new File(lib, name).exists())
+                .collect(Collectors.toList());
+
+            if (!existing.isEmpty())
+//                throw new ConfigurationException("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
+                _log.warn("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
+        }
+    }
+
+    public @Nullable File getTomcatLib()
+    {
+        String classPath = System.getProperty("java.class.path", ".");
+
+        for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
+        {
+            if (path.endsWith("/bin/bootstrap.jar"))
+            {
+                path = path.substring(0, path.length() - "/bin/bootstrap.jar".length());
+                if (new File(path, "lib").isDirectory())
+                    return new File(path, "lib");
+            }
+        }
+
+        String tomcat = System.getenv("CATALINA_HOME");
+
+        if (null == tomcat)
+            tomcat = System.getenv("TOMCAT_HOME");
+
+        if (null == tomcat)
+        {
+            _log.warn("Could not find CATALINA_HOME environment variable");
+            return null;
+        }
+
+        return new File(tomcat, "lib");
     }
 
     // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
