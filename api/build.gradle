@@ -141,7 +141,7 @@ sourceSets {
 dependencies {
     // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
     // and so the dependencies are included in the dependencies.txt file.
-    BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default")
+    BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default", depVersion: {labkeyClientApiVersion})
     if (project.hasProperty("gradle7Compat"))
     {
         BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
