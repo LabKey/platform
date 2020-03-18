@@ -2106,6 +2106,7 @@ public class PageFlowUtil
         JSONObject json = new JSONObject();
 
         // Expose some experimental flags to the client
+        // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
