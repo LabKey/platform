@@ -9,7 +9,7 @@
 	<xsd:annotation>
 
     <xsd:documentation xml:lang="en">
-        Describes module properties.  Currently experimental and not in active use.
+        Describes module properties.
     </xsd:documentation>
 	</xsd:annotation>
 

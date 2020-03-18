@@ -32,12 +32,14 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
@@ -76,7 +78,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     public BaseApiAction()
     {
-        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         _marshaller = findMarshaller();
     }
 
@@ -121,6 +122,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             return handleGet();
     }
 
+
+    @Override
+    public void setViewContext(ViewContext context)
+    {
+        // Issue 34825 - don't prompt for basic auth for browser requests
+        setUnauthorizedType(HttpUtil.isBrowser(context.getRequest()) ? UnauthorizedException.Type.sendUnauthorized : UnauthorizedException.Type.sendBasicAuth);
+        super.setViewContext(context);
+    }
 
     @SuppressWarnings("TryWithIdenticalCatches")
     public ModelAndView handlePost() throws Exception
