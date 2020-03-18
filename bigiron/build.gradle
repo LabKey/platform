@@ -1,0 +1,7 @@
+dependencies {
+    external "net.sourceforge.jtds:jtds:${jtdsVersion}" // MS SQLServer JDBC Driver
+    external ("mysql:mysql-connector-java:${mysqlDriverVersion}")
+    {
+        exclude group: "com.google.protobuf", module: "protobuf-java" // We haven't needed this in the past...
+    }
+}

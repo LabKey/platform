@@ -58,12 +58,12 @@ import java.util.Set;
  */
 public class MuleListenerHelper implements ServletContext
 {
-    private MuleXmlBuilderContextListener _muleContextListener;
-
-    private ServletContext _parentContext = null;
-    private HashMap<String,Object> _attributes = new HashMap<>();
-    private HashMap<String,String> _initParameters = new HashMap<>();
     private static final Logger _log = Logger.getLogger(MuleListenerHelper.class);
+
+    private final MuleXmlBuilderContextListener _muleContextListener;
+    private final ServletContext _parentContext;
+    private final HashMap<String, Object> _attributes = new HashMap<>();
+    private final HashMap<String, String> _initParameters = new HashMap<>();
 
     public MuleListenerHelper(ServletContext parentContext, String muleConfigPaths)
     {
@@ -77,7 +77,7 @@ public class MuleListenerHelper implements ServletContext
         // HACK: Fix for MULE-2289
         final Converter conv = ConvertUtils.lookup(Integer.TYPE);
         ConvertUtils.register(new Converter() {
-            private final Map POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveHashMap<Integer>()
+            private final Map<String, Integer> POOL_EXHAUSTED_ACTIONS = new CaseInsensitiveHashMap<>()
             {
                 // static initializer
                 {
@@ -103,6 +103,7 @@ public class MuleListenerHelper implements ServletContext
                 }
             };
 
+            @Override
             public Object convert(Class clazz, Object obj)
             {
                 // MULE-2289: Threading-profile tag always sets poolExhaustedAction to WAIT.
@@ -110,7 +111,7 @@ public class MuleListenerHelper implements ServletContext
                 //            this conversion.  Our registered converter will throw an
                 //            exception in this case, so we catch it, and do what Mule
                 //            intends but fails to do.
-                Integer val = (Integer) POOL_EXHAUSTED_ACTIONS.get(obj);
+                Integer val = POOL_EXHAUSTED_ACTIONS.get(obj);
                 if (val != null)
                 {
                     _log.info("Hack for MULE-2289, converting " + obj + " to integer value " + val);
@@ -146,36 +147,43 @@ public class MuleListenerHelper implements ServletContext
         _muleContextListener.contextDestroyed(null);
     }
 
+    @Override
     public ServletContext getContext(String string)
     {
         return null;
     }
 
+    @Override
     public int getMajorVersion()
     {
         return 0;
     }
 
+    @Override
     public int getMinorVersion()
     {
         return 0;
     }
 
+    @Override
     public String getMimeType(String string)
     {
         return "text/html";
     }
 
+    @Override
     public Set<String> getResourcePaths(String string)
     {
         return _parentContext.getResourcePaths(string);
     }
 
+    @Override
     public URL getResource(String string) throws MalformedURLException
     {
         return _parentContext.getResource(string);
     }
 
+    @Override
     public InputStream getResourceAsStream(String string)
     {
         InputStream is = _parentContext.getResourceAsStream(string);
@@ -205,56 +213,67 @@ public class MuleListenerHelper implements ServletContext
         return is;
     }
 
+    @Override
     public RequestDispatcher getRequestDispatcher(String string)
     {
         return _parentContext.getRequestDispatcher(string);
     }
 
+    @Override
     public RequestDispatcher getNamedDispatcher(String string)
     {
         return _parentContext.getNamedDispatcher(string);
     }
 
+    @Override
     public Servlet getServlet(String string) throws ServletException
     {
         return _parentContext.getServlet(string);
     }
 
+    @Override
     public Enumeration<Servlet> getServlets()
     {
         return _parentContext.getServlets();
     }
 
+    @Override
     public Enumeration<String> getServletNames()
     {
         return _parentContext.getServletNames();
     }
 
+    @Override
     public void log(String string)
     {
         _log.info(string);
     }
 
+    @Override
     public void log(Exception exception, String string)
     {
         _log.error(string, exception);
     }
 
+    @Override
     public void log(String string, Throwable throwable)
     {
         _log.error(string, throwable);
     }
 
+    @Override
     public String getRealPath(String string)
     {
         return _parentContext.getRealPath(string);
     }
 
+    @Override
     public String getServerInfo()
     {
         return _parentContext.getServerInfo();
     }
 
+    @Override
     public String getInitParameter(String string)
     {
         String param = _initParameters.get(string);
@@ -263,36 +282,43 @@ public class MuleListenerHelper implements ServletContext
         return param;
     }
 
+    @Override
     public Enumeration<String> getInitParameterNames()
     {
         return null;
     }
 
+    @Override
     public Object getAttribute(String string)
     {
         return _attributes.get(string);
     }
 
+    @Override
     public Enumeration<String> getAttributeNames()
     {
         return null;
     }
 
+    @Override
     public void setAttribute(String string, Object object)
     {
         _attributes.put(string,object);
     }
 
+    @Override
     public void removeAttribute(String string)
     {
         _attributes.remove(string);
     }
 
+    @Override
     public String getServletContextName()
     {
         return null;
     }
 
+    @Override
     public String getContextPath()
     {
         return AppProps.getInstance().getContextPath();
@@ -442,12 +468,6 @@ public class MuleListenerHelper implements ServletContext
 
     }
 
-//    @Override
-    public String getVirtualServerName()
-    {
-        return null;
-    }
-
     @Override
     public ClassLoader getClassLoader()
     {
@@ -456,6 +476,12 @@ public class MuleListenerHelper implements ServletContext
 
     @Override
     public JspConfigDescriptor getJspConfigDescriptor()
+    {
+        return null;
+    }
+
+    @Override
+    public String getVirtualServerName()
     {
         return null;
     }
