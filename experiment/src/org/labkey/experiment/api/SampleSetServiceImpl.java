@@ -852,7 +852,9 @@ public class SampleSetServiceImpl implements SampleSetService
         {
             ss.save(user);
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
-            transaction.commit();
+
+            if (!errors.hasErrors())
+                transaction.commit();
         }
 
         return errors;
