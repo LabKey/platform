@@ -1869,27 +1869,24 @@ public class QueryController extends SpringActionController
         @Override
         public ModelAndView getView(QueryForm queryForm, BindException errors) throws Exception
         {
-            String schemaName = getViewContext().getActionURL().getParameter("schemaName");
-            String queryName = getViewContext().getActionURL().getParameter("queryName");
+            String schemaName = queryForm.getSchemaName();
+            String queryName = queryForm.getQueryName();
 
             _form = queryForm;
 
-            if (null == schemaName && null == queryName)
+            if (schemaName.isEmpty() && (null == queryName || queryName.isEmpty()))
             {
-                errors.reject(ERROR_MSG, "Must provide schemaName and queryName.");
-                return new SimpleErrorView(errors);
+                throw new NotFoundException("Must provide schemaName and queryName.");
             }
 
-            if (null == schemaName)
+            if (schemaName.isEmpty())
             {
-                errors.reject(ERROR_MSG, "Must provide schemaName.");
-                return new SimpleErrorView(errors);
+                throw new NotFoundException("Must provide schemaName.");
             }
 
-            if (null == queryName)
+            if (null == queryName || queryName.isEmpty())
             {
-                errors.reject(ERROR_MSG, "Must provide queryName.");
-                return new SimpleErrorView(errors);
+                throw new NotFoundException("Must provide queryName.");
             }
 
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("query"), "queryMetadataEditor");
