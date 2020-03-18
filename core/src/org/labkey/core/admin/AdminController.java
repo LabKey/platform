@@ -135,6 +135,7 @@ import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ApplicationAdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
@@ -484,6 +485,12 @@ public class AdminController extends SpringActionController
         public ActionURL getProjectSettingsURL(Container c)
         {
             return new ActionURL(ProjectSettingsAction.class, LookAndFeelProperties.getSettingsContainer(c));
+        }
+
+        @Override
+        public ActionURL getLookAndFeelSettingsURL()
+        {
+            return new ActionURL(LookAndFeelSettingsAction.class, ContainerManager.getRoot());
         }
 
         ActionURL getLookAndFeelResourcesURL(Container c)
@@ -1171,14 +1178,17 @@ public class AdminController extends SpringActionController
             props.save();
             // TODO: Audit log?
 
+            AdminUrls urls = new AdminUrlsImpl();
+
             if (!folder)
             {
                 WriteableAppProps.incrementLookAndFeelRevisionAndSave();
-                _returnUrl = new AdminUrlsImpl().getProjectSettingsURL(c);
+                _returnUrl = c.isRoot() ? urls.getLookAndFeelSettingsURL() : urls.getProjectSettingsURL(c);
             }
             else
             {
-                _returnUrl = new AdminUrlsImpl().getFolderSettingsURL(c);
+                // Folder-level settings are just display formats and measure/dimension flags -- no need to increment L&F revision
+                _returnUrl = urls.getFolderSettingsURL(c);
             }
 
             return true;
@@ -9812,7 +9822,7 @@ public class AdminController extends SpringActionController
     }
 
     // Same as ProjectSettingsAction, but provides special admin console permissions handling
-    @AdminConsoleAction
+    @AdminConsoleAction(ApplicationAdminPermission.class)
     public class LookAndFeelSettingsAction extends ProjectSettingsAction
     {
         @Override
