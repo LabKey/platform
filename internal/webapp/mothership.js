@@ -228,7 +228,7 @@ LABKEY.Mothership = (function () {
         // or if it's an event, as triggered in several browsers
         var msg = err;
         if (err.message) {
-            msg = err.message;
+            msg = (err.name ? err.name + ': ' : '') + err.message;
         }
         else if (err.target && err.type) {
             msg = err.type;
@@ -368,7 +368,7 @@ LABKEY.Mothership = (function () {
             stackTrace = _processErrorMsg(error);
         }
         else {
-            stackTrace = error.stack || '';
+            stackTrace = msg;
         }
 
         // See if browser has native support for Promises
