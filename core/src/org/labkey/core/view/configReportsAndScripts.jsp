@@ -931,7 +931,7 @@
 <labkey:errors/>
 
 <labkey:panel title="Scripting Engine Configurations">
-    <%=getTroubleshooterWarning(HtmlString.unsafe("<br>"))%>
+    <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
     <p>
         A scripting engine enables the execution of scripting code on the server, for example, in a report or a QC validation script.
         Scripting languages like JavaScript, R, and Perl can be configured below.
