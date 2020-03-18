@@ -255,24 +255,6 @@ public class DavController extends SpringActionController
         return _webdavresolver;
     }
 
-    /** @return best guess if the request came from the OSX integrated WebDAV client */
-    boolean isMacFinder()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
-    }
-
-    /** @return best guess if the request came from the Windows Explorer integrated WebDAV client */
-    boolean isWindowsExplorer()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("Microsoft-WebDAV");
-    }
-
     // clients that support following redirects when getting a resource
     boolean supportsGetRedirect()
     {
@@ -3166,7 +3148,7 @@ public class DavController extends SpringActionController
                 if (!overwrite)
                 {
                     // allow finder to overwrite zero byte files without overwrite header
-                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
+                    boolean finderException = HttpUtil.isMacFinder(getRequest()) && 0 == resource.getContentLength();
                     if (!finderException)
                         throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
                 }
@@ -3617,7 +3599,7 @@ public class DavController extends SpringActionController
             checkReadOnly();
             checkLocked();
 
-            if (!isWindowsExplorer())
+            if (!HttpUtil.isWindowsExplorer(getRequest()))
             {
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }

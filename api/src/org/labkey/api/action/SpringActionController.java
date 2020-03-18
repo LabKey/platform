@@ -579,7 +579,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
                 if (!user.hasSiteAdminPermission())
                 {
-                    if (isApiLike(request, action))
+                    if (HttpUtil.isApiLike(request, action))
                     {
                         UnauthorizedException uae = new UnauthorizedException(upgradeRequired || !startupComplete ?
                                 "server is not ready" :
@@ -1109,18 +1109,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return new ArrayList<>(_nameToDescriptor.values());
             }
         }
-    }
-
-
-    // Check for cases that should not respond with a Redirect, used by getUpgradeMaintenanceRedirect()
-    public static boolean isApiLike(HttpServletRequest request, Controller action)
-    {
-        boolean throwUnauthorized = StringUtils.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
-        boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
-        boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
-        boolean apiClass = action instanceof BaseApiAction;
-        boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
-        return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || r);
     }
 
     // helpers for debug checks related to Action

@@ -66,7 +66,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
-        if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")) && !HttpUtil.isBrowser(getViewContext().getRequest()))
+        if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")))
             setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         super.checkPermissions();
     }
