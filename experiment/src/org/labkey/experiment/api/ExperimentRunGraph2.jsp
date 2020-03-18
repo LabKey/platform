@@ -1,9 +1,5 @@
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.data.CoreSchema" %>
-<%@ page import="static org.labkey.api.util.HtmlString.unsafe" %>
-<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
-<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
-<%@ page import="org.labkey.api.view.HttpView" %><%--
+<%
+/*
  * Copyright (c) 2018-2019 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,7 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
---%>
+%>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.data.CoreSchema" %>
+<%@ page import="org.labkey.api.data.dialect.SqlDialect" %>
+<%@ page import="org.labkey.api.exp.api.ExpLineageOptions" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
 -- CTE comments are used as a marker to split up this file
 -- we could have multiple files, or multiple multi-line string constants, but it's easier to develop this way.
 
@@ -30,7 +32,7 @@
     int depth = bean.getDepth();
     if (depth == 0)
       depth = dialect.isSqlServer() ? 100 : 1000;
-    var CONCAT = unsafe(dialect.isPostgreSQL() ? "||" : "+");
+    var CONCAT = HtmlString.unsafe(dialect.isPostgreSQL() ? "||" : "+");
 
     assert "ALL".equals(expType) || "Data".equals(expType) || "Material".equals(expType) || "ExperimentRun".equals(expType) || "Object".equals(expType);
 %>
