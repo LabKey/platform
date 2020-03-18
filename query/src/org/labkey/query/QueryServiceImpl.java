@@ -2951,20 +2951,30 @@ public class QueryServiceImpl implements QueryService
                                 List<Map<String, Object>> updatedRows = params[1];
                                 Map<String, Object> updatedRow = updatedRows.get(i);
 
-                                // only record modified fields
+                                // record modified fields
                                 Map<String, Object> originalRow = new HashMap<>();
                                 Map<String, Object> modifiedRow = new HashMap<>();
 
+                                Set<String> extraFieldsToInclude = table.getExtraDetailedUpdateAuditFields();
+
                                 for (Entry<String, Object> entry : row.entrySet())
                                 {
+                                    boolean isExtraAuditField = extraFieldsToInclude != null && extraFieldsToInclude.contains(entry.getKey());
                                     if (updatedRow.containsKey(entry.getKey()))
                                     {
                                         Object newValue = updatedRow.get(entry.getKey());
-                                        if (!Objects.equals(entry.getValue(), newValue))
+                                        if (!Objects.equals(entry.getValue(), newValue) || isExtraAuditField)
                                         {
                                             originalRow.put(entry.getKey(), entry.getValue());
                                             modifiedRow.put(entry.getKey(), newValue);
                                         }
+                                    }
+                                    else if (isExtraAuditField)
+                                    {
+                                        // persist extra fields desired for audit details even if no change is made, so that extra field values is available after record is deleted
+                                        // for example, a display label/id is desired in audit log for the record updated.
+                                        originalRow.put(entry.getKey(), entry.getValue());
+                                        modifiedRow.put(entry.getKey(), entry.getValue());
                                     }
                                 }
 

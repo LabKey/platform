@@ -468,13 +468,6 @@ public class ProjectController extends SpringActionController
             headers.put("ETag", iconPath);
             PageFlowUtil.streamFile(response, headers, iconFile, false);
         }
-
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
-            super.checkPermissions();
-        }
     }
 
 
