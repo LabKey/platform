@@ -211,6 +211,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     includeDataClasses={true}
                     useTheme={true}
                     appPropertiesOnly={false}
+                    successBsStyle={'primary'}
                 />
                 }
             </>
