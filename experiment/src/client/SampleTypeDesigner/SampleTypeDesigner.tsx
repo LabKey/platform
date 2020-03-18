@@ -14,22 +14,17 @@
  * limitations under the License.
  */
 
-import {List} from "immutable";
+import { List, Map } from "immutable";
 import * as React from 'react'
-import {ActionURL} from "@labkey/api";
+import { ActionURL } from "@labkey/api";
 import {
+    Alert,
+    DomainDetails,
+    getSampleSet,
+    getSampleTypeDetails,
     IBannerMessage,
     SampleTypeDesigner,
-    getHelpLink,
-    LoadingPage,
-    getSampleTypeDetails,
-    SchemaQuery,
-    DomainDetails,
-    SAMPLE_TYPE,
-    IDomainField,
-    getSampleSet,
-    initQueryGridState,
-    Alert
+    SchemaQuery
 } from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
@@ -49,6 +44,8 @@ interface IAppState {
     includeWarnings: boolean
     showWarnings: boolean
     badDomain: DomainDetails
+    name?: string
+    nameReadOnly?: boolean
 }
 
 const CREATE_SAMPLE_SET_ACTION = 'createSampleSet';
@@ -58,7 +55,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     constructor(props) {
         super(props);
 
-        const { RowId, schemaName, queryName, domainId, returnUrl } = ActionURL.getParameters();
+        const { RowId, schemaName, queryName, domainId, returnUrl, name, nameReadOnly } = ActionURL.getParameters();
         const action = ActionURL.getAction();
 
         let messages = (action !== CREATE_SAMPLE_SET_ACTION) ?
@@ -75,7 +72,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             messages,
             showConfirm: false,
             dirty: false,
-            includeWarnings: true
+            includeWarnings: true,
+            name,
+            nameReadOnly,
         };
     }
 
@@ -101,7 +100,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         else {
             //Creating a new Sample Type
             this.setState(()=>({
-                sampleType: DomainDetails.create()
+                sampleType: DomainDetails.create(Map<string, any> ({
+                    domainDesign: {name: this.state.name},
+                    nameReadOnly: this.state.nameReadOnly
+                }))
             }));
         }
 
@@ -110,8 +112,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
     /**
      * Verify that the needed parameters are supplied either
-     * @param schemaName of sample type
-     * @param queryName of sample type
      * @param rowId of sample type
      * @returns List of error messages
      */
@@ -194,7 +194,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     beforeFinish = ():void => {};
 
     render() {
-        const {sampleType, messages} = this.state;
+        const { sampleType, messages } = this.state;
 
         return (
             <>
@@ -204,13 +204,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
                 {sampleType &&
                 <SampleTypeDesigner
-                        initModel={sampleType}
-                        beforeFinish={this.beforeFinish}
-                        onComplete={this.submitAndNavigate}
-                        onCancel={this.onCancelBtnHandler}
-                        includeDataClasses={true}
-                        useTheme={true}
-                        appPropertiesOnly={false}
+                    initModel={sampleType}
+                    beforeFinish={this.beforeFinish}
+                    onComplete={this.submitAndNavigate}
+                    onCancel={this.onCancelBtnHandler}
+                    includeDataClasses={true}
+                    useTheme={true}
+                    appPropertiesOnly={false}
                 />
                 }
             </>
