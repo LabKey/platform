@@ -1925,7 +1925,7 @@ Ext4.define('File.panel.Browser', {
         },{
             xtype: 'radio',
             labelSeparator: '',
-            boxLabel: 'Ouputs',
+            boxLabel: 'Outputs',
             name: 'data',
             inputValue: 'dataOutputs',
             width : '100%',
