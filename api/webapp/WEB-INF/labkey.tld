@@ -519,23 +519,6 @@
         </attribute>
     </tag>
     <tag>
-        <name>scriptDependency</name>
-        <tag-class>org.labkey.api.jsp.taglib.ScriptDependenciesTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>ajaxOnly</name>
-            <required>false</required>
-        </attribute>
-        <attribute>
-            <name>callback</name>
-            <required>false</required>
-        </attribute>
-        <attribute>
-            <name>scope</name>
-            <required>false</required>
-        </attribute>
-    </tag>
-    <tag>
         <name>loadClientDependencies</name>
         <tag-class>org.labkey.api.jsp.taglib.LoadClientDependenciesTag</tag-class>
         <body-content>JSP</body-content>
