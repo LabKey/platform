@@ -1129,7 +1129,8 @@ Ext4.define('File.panel.Browser', {
                 flex: 1,
                 dataIndex: customColumns[i].name,
                 height: 20,
-                hidden: customColumns[i].hidden
+                hidden: customColumns[i].hidden,
+                sortable: false            // sorting of custom file properties are not supported
             });
         }
 

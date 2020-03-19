@@ -28,11 +28,13 @@ import java.util.*;
  */
 public class GWTPlate implements IsSerializable
 {
+    private int _rowId;
     private String _name;
     private String _type;
     private int _rows;
     private int _cols;
-    private Map<String, Set<GWTWellGroup>> _groups = new HashMap<String, Set<GWTWellGroup>>();
+    private Map<String, List<GWTWellGroup>> _groups = new HashMap<String, List<GWTWellGroup>>();
+    private Set<GWTWellGroup> _allGroups = new HashSet<>();
     private boolean _showWarningPanel;
 
     private List<String> _groupTypes;
@@ -44,8 +46,9 @@ public class GWTPlate implements IsSerializable
     {
     }
 
-    public GWTPlate(String name, String type, int rows, int cols, List<String> groupTypes, boolean showWarningPanel)
+    public GWTPlate(int rowId, String name, String type, int rows, int cols, List<String> groupTypes, boolean showWarningPanel)
     {
+        _rowId = rowId;
         _name = name;
         _type = type;
         _rows = rows;
@@ -54,12 +57,17 @@ public class GWTPlate implements IsSerializable
         _showWarningPanel = showWarningPanel;
     }
 
+    public int getRowId()
+    {
+        return _rowId;
+    }
+
     public Map getPositionToGroupsMap()
     {
         if (_positionToGroups == null)
         {
             _positionToGroups = new HashMap<GWTPosition, Set<GWTWellGroup>>();
-            for (Set<GWTWellGroup> typeGroups : _groups.values())
+            for (List<GWTWellGroup> typeGroups : _groups.values())
             {
                 for (GWTWellGroup group : typeGroups)
                 {
@@ -79,9 +87,9 @@ public class GWTPlate implements IsSerializable
         return _positionToGroups;
     }
 
-    public Map<String, Set<GWTWellGroup>> getTypeToGroupsMap()
+    public Map<String, List<GWTWellGroup>> getTypeToGroupsMap()
     {
-        return _groups;
+        return Collections.unmodifiableMap(_groups);
     }
 
     public void removeGroup(GWTWellGroup group)
@@ -91,26 +99,36 @@ public class GWTPlate implements IsSerializable
             _groups.get(group.getType()).remove(group);
             _positionToGroups = null;
         }
+        _allGroups.remove(group);
     }
 
     public boolean addGroup(GWTWellGroup group)
     {
         if (!_groups.containsKey(group.getType()))
-            _groups.put(group.getType(), new HashSet<GWTWellGroup>());
+            _groups.put(group.getType(), new ArrayList<GWTWellGroup>());
 
-        Set<GWTWellGroup> g = _groups.get(group.getType());
-        if (!g.contains(group))
+        // verify the group rowId is unique
+        if (_allGroups.contains(group))
         {
-            g.add(group);
-            _positionToGroups = null;
-
-            return true;
-        }
-        else
-        {
-            Window.alert("Group : " + group.getName() + " already exists.");
+            Window.alert("Group '" + group.getName() + "' already exists.");
             return false;
         }
+        _allGroups.add(group);
+
+        // verify the group name is unique within the group type
+        List<GWTWellGroup> groups = _groups.get(group.getType());
+        for (GWTWellGroup g : groups)
+        {
+            if (group.getName().equals(g.getName()))
+            {
+                Window.alert("Group '" + group.getName() + "' already exists.");
+                return false;
+            }
+        }
+        groups.add(group);
+
+        _positionToGroups = null;
+        return true;
     }
 
     public int getCols()
@@ -118,14 +136,14 @@ public class GWTPlate implements IsSerializable
         return _cols;
     }
 
-    public List<GWTWellGroup> getGroups()
+    public int getWellGroupCount()
     {
-        List<GWTWellGroup> groups = new ArrayList<GWTWellGroup>();
+        return _allGroups.size();
+    }
 
-        for (Set<GWTWellGroup> typeGroups : _groups.values())
-            groups.addAll(typeGroups);
-
-        return groups;
+    public Set<GWTWellGroup> getGroups()
+    {
+        return Collections.unmodifiableSet(_allGroups);
     }
 
     public int getRows()

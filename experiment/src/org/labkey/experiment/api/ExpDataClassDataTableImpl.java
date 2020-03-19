@@ -50,6 +50,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -60,6 +61,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -70,6 +72,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -134,6 +137,31 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     }
 
     @Override
+    public AuditBehaviorType getAuditBehavior()
+    {
+        // if there is xml config, use xml config
+        if (_auditBehaviorType == AuditBehaviorType.NONE && getXmlAuditBehaviorType() == null)
+        {
+            ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+            if (categoryType != null && categoryType.defaultBehavior != null)
+                return categoryType.defaultBehavior;
+        }
+
+        return _auditBehaviorType;
+    }
+
+    @Override
+    @Nullable
+    public Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+        if (categoryType != null)
+            return categoryType.additionalAuditFields;
+
+        return null;
+    }
+
+    @Override
     public BaseColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -164,7 +192,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), _dataClass.getNameExpression());
+                String nameExpression = _dataClass.getNameExpression();
+                c.setNullable(nameExpression != null);
+                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
                 c.setDescription(desc);
                 return c;
             }
@@ -272,6 +302,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
@@ -695,6 +726,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.index(null);
             }
+
+            ret.put("lsid", lsid);
+            return ret;
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+
+            /* setup mini dataiterator pipeline to process lineage */
+            DataIterator di = _toDataIterator("updateRows.lineage", ret);
+            ExpDataIterators.derive(user, container, di, false);
 
             return ret;
         }

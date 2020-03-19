@@ -223,7 +223,6 @@ public class AuditTypeEvent
         StringBuilder builder = new StringBuilder();
         builder.append(getEventType()).append(" - ");
 
-
         Map<String, Object> messageElements = getAuditLogMessageElements();
         for (String key : messageElements.keySet())
         {

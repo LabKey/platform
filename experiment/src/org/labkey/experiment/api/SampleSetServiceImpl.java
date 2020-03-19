@@ -241,7 +241,7 @@ public class SampleSetServiceImpl implements SampleSetService
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
+        sql.append("SELECT mi.Role, MAX(m.CpasType) AS MaxSampleSetLSID, MIN (m.CpasType) AS MinSampleSetLSID FROM ");
         sql.append(getTinfoMaterial(), "m");
         sql.append(", ");
         sql.append(getTinfoMaterialInput(), "mi");
@@ -267,26 +267,19 @@ public class SampleSetServiceImpl implements SampleSetService
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Collection<Map<String, Object>> queryResults = new SqlSelector(getExpSchema(), sql).getMapCollection();
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
-        for (Map<String, Object> queryResult : queryResults)
+        for (Map<String, Object> queryResult : new SqlSelector(getExpSchema(), sql).getMapCollection())
         {
             ExpSampleSet sampleSet = null;
-            Number sampleSetCount = (Number) queryResult.get("SampleSetCount");
-            if (sampleSetCount.intValue() == 1)
+            String maxSampleSetLSID = (String) queryResult.get("MaxSampleSetLSID");
+            String minSampleSetLSID = (String) queryResult.get("MinSampleSetLSID");
+
+            // Check if we have a sample set that was being referenced
+            if (maxSampleSetLSID != null && maxSampleSetLSID.equalsIgnoreCase(minSampleSetLSID))
             {
-                String sampleSetLSID = (String) queryResult.get("SampleSetLSID");
-                if (!lsidToSampleSet.containsKey(sampleSetLSID))
-                {
-                    sampleSet = getSampleSet(sampleSetLSID);
-                    lsidToSampleSet.put(sampleSetLSID, sampleSet);
-                }
-                else
-                {
-                    sampleSet = lsidToSampleSet.get(sampleSetLSID);
-                }
+                // If the min and the max are the same, it means all rows share the same value so we know that there's
+                // a single sample set being targeted
+                sampleSet = getSampleSet(container, maxSampleSetLSID);
             }
             result.put((String) queryResult.get("Role"), sampleSet);
         }
@@ -724,16 +717,14 @@ public class SampleSetServiceImpl implements SampleSetService
                 }
                 catch (ExperimentException eex)
                 {
-                    throw new RuntimeException(eex);
+                    throw new DbScope.RetryPassthroughException(eex);
                 }
             });
         }
-        catch (RuntimeException x)
+        catch (DbScope.RetryPassthroughException x)
         {
-            if (x.getCause() instanceof ExperimentException)
-                throw (ExperimentException)x.getCause();
-            else
-                throw x;
+            x.rethrow(ExperimentException.class);
+            throw x;
         }
 
         return ss;

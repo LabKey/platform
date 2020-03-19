@@ -27,8 +27,8 @@ import java.util.*;
 */
 public class DeactivateUsersBean
 {
-    private boolean _activate = false;
-    private ActionURL _redirUrl;
+    private final boolean _activate;
+    private final ActionURL _redirUrl;
 
     private List<User> _users = new ArrayList<>();
 
@@ -50,7 +50,7 @@ public class DeactivateUsersBean
 
     public void addUser(User user)
     {
-        if(null != user && user.isActive() != _activate)
+        if (null != user && user.isActive() != _activate)
             _users.add(user);
     }
 

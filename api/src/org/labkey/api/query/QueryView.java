@@ -18,6 +18,8 @@ package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiQueryResponse;
@@ -111,7 +113,6 @@ import java.util.stream.Collectors;
 public class QueryView extends WebPartView<Object>
 {
     public static final String EXPERIMENTAL_GENERIC_DETAILS_URL = "generic-details-url";
-    public static final String EXPERIMENTAL_EXPORT_COLUMN_HEADER_TYPE = "export-column-header-type";
     public static final String EXCEL_WEB_QUERY_EXPORT_TYPE = "excelWebQuery";
     public static final String DATAREGIONNAME_DEFAULT = "query";
 
@@ -192,6 +193,7 @@ public class QueryView extends WebPartView<Object>
     private boolean _showInsertNewButton = true;
     private boolean _showImportDataButton = true;
     private boolean _showDeleteButton = true;
+    private boolean _showDeleteButtonConfirmationText = true;
     private boolean _showConfiguredButtons = true;
     private boolean _allowExportExternalQuery = true;
 
@@ -886,6 +888,16 @@ public class QueryView extends WebPartView<Object>
         _showDeleteButton = showDeleteButton;
     }
 
+    public boolean showDeleteButtonConfirmationText()
+    {
+        return _showDeleteButtonConfirmationText;
+    }
+
+    public void setShowDeleteButtonConfirmationText(boolean showDeleteButtonConfirmationText)
+    {
+        _showDeleteButtonConfirmationText = showDeleteButtonConfirmationText;
+    }
+
     public boolean showRecordSelectors()
     {
         return _showRecordSelectors;
@@ -932,7 +944,6 @@ public class QueryView extends WebPartView<Object>
         }
 
         populateChartsReports(bar);
-
 
         if ((canInsert() || allowQueryTableInsertURLOverride()) && (showInsertNewButton() || showImportDataButton()))
         {
@@ -995,6 +1006,11 @@ public class QueryView extends WebPartView<Object>
     @Nullable
     public ActionButton createDeleteButton()
     {
+        return createDeleteButton(showDeleteButtonConfirmationText());
+    }
+
+    public ActionButton createDeleteButton(boolean showConfirmation)
+    {
         ActionURL urlDelete = urlFor(QueryAction.deleteQueryRows);
         if (urlDelete != null)
         {
@@ -1002,7 +1018,10 @@ public class QueryView extends WebPartView<Object>
             btnDelete.setIconCls("trash");
             btnDelete.setActionType(ActionButton.Action.POST);
             btnDelete.setDisplayPermission(DeletePermission.class);
-            btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            if (showConfirmation)
+                btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+            else
+                btnDelete.setRequiresSelection(true);
             return btnDelete;
         }
         return null;
@@ -2199,9 +2218,12 @@ public class QueryView extends WebPartView<Object>
         if (!(isApiResponseView() || isPrintView() || isExportView()))
         {
             populateButtonBar(ret, bb);
+
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
+            // Print button is rendered separately to respect ordering -- we want it rendering after all custom buttons
+            // added by overrides of populateButtonBar().
             bb.add(createPrintButton());
-//            bb.add(populateMoreMenu(ret));
+//        bar.add(populateMoreMenu());
         }
         rgn.setButtonBar(bb);
 
@@ -2299,6 +2321,11 @@ public class QueryView extends WebPartView<Object>
 
     protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType) throws IOException
     {
+        return getTsvWriter(headerType, Collections.emptyMap());
+    }
+
+    protected TSVGridWriter getTsvWriter(ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
         _exportView = true;
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
@@ -2309,7 +2336,7 @@ public class QueryView extends WebPartView<Object>
         try
         {
             Results results = rgn.getResults(rc);
-            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()));
+            TSVGridWriter tsv = new TSVGridWriter(results, getExportColumns(rgn.getDisplayColumns()), renameColumn);
             tsv.setFilenamePrefix(getSettings().getQueryName() != null ? getSettings().getQueryName() : "query");
             // don't step on default
             if (null != headerType)
@@ -2376,6 +2403,11 @@ public class QueryView extends WebPartView<Object>
 
     public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType) throws IOException
     {
+        return getExcelWriter(docType, null);
+    }
+
+    public ExcelWriter getExcelWriter(ExcelWriter.ExcelDocumentType docType, Map<String, String> renameColumns) throws IOException
+    {
         DataView view = createDataView();
         DataRegion rgn = view.getDataRegion();
 
@@ -2384,7 +2416,7 @@ public class QueryView extends WebPartView<Object>
         try
         {
             Results results = rgn.getResults(rc);
-            ExcelWriter ew = new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType);
+            ExcelWriter ew = renameColumns == null || renameColumns.isEmpty() ? new ExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType) : new AliasColumnExcelWriter(results, getExportColumns(rgn.getDisplayColumns()), docType, renameColumns);
             ew.setFilenamePrefix(getSettings().getQueryName());
             ew.setAutoSize(true);
             return ew;
@@ -2395,7 +2427,40 @@ public class QueryView extends WebPartView<Object>
         }
     }
 
-    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, ExcelWriter.ExcelDocumentType docType)
+    private static class AliasColumnExcelWriter extends ExcelWriter
+    {
+        private Map<String, String> _renameColumns;
+
+        public AliasColumnExcelWriter(Results results, List<DisplayColumn> displayColumns, ExcelDocumentType docType, Map<String, String> renameColumns)
+        {
+            super(results, displayColumns, docType);
+            _renameColumns = renameColumns;
+        }
+
+        @Override
+        public void renderColumnCaptions(Sheet sheet, List<ExcelColumn> visibleColumns) throws
+                ExcelWriter.MaxRowsExceededException
+        {
+
+            super.renderColumnCaptions(sheet, visibleColumns);
+            if (_renameColumns == null || _renameColumns.isEmpty())
+                return;
+
+            int row = getCurrentRow() - 1;
+            for (int col = 0; col < visibleColumns.size(); col++)
+            {
+                String originalColName = visibleColumns.get(col).getName();
+                if (_renameColumns.containsKey(originalColName))
+                {
+                    Cell cell = sheet.getRow(row).getCell(col);
+                    if (cell != null)
+                        cell.setCellValue(_renameColumns.get(originalColName));
+                }
+            }
+        }
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(boolean respectView, @NotNull List<FieldKey> includeCols, @NotNull Map<String, String> renameCols, @NotNull ExcelWriter.ExcelDocumentType docType)
     {
         // The template should be based on the actual columns in the table, not the user's default view,
         // which may be hiding columns or showing values joined through lookups
@@ -2466,10 +2531,10 @@ public class QueryView extends WebPartView<Object>
             fieldKeys.addAll(requiredCols);
         }
 
-        return getExcelTemplateWriter(fieldKeys, docType);
+        return getExcelTemplateWriter(fieldKeys, docType, renameCols);
     }
 
-    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType)
+    protected List<DisplayColumn> getExcelTemplateDisplayColumns(List<FieldKey> fieldKeys)
     {
         // Force the view to use our special list
         getSettings().setFieldKeys(fieldKeys);
@@ -2502,7 +2567,15 @@ public class QueryView extends WebPartView<Object>
 
         // Need to remove special MV columns
         displayColumns.removeIf(col -> col.getColumnInfo() instanceof RawValueColumn);
-        return new ExcelWriter(null, displayColumns, docType);
+
+        return displayColumns;
+    }
+
+    protected ExcelWriter getExcelTemplateWriter(List<FieldKey> fieldKeys, ExcelWriter.ExcelDocumentType docType, Map<String, String> renameCols)
+    {
+        List<DisplayColumn> displayColumns = getExcelTemplateDisplayColumns(fieldKeys);
+
+        return renameCols == null || renameCols.isEmpty()? new ExcelWriter(null, displayColumns, docType) : new AliasColumnExcelWriter(null, displayColumns, docType, renameCols);
     }
 
     protected RenderContext configureForExcelExport(ExcelWriter.ExcelDocumentType docType, DataView view, DataRegion rgn)
@@ -2531,7 +2604,12 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType) throws IOException
     {
-        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), null);
+        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), Collections.emptyMap(), null);
+    }
+
+    public void exportToExcel(HttpServletResponse response, ColumnHeaderType headerType, ExcelWriter.ExcelDocumentType docType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
+        exportToExcel(response, false, headerType, false, docType, false, Collections.emptyList(), Collections.emptyList(), renameColumn, null);
     }
 
     public void exportToExcel(HttpServletResponse response,
@@ -2541,19 +2619,23 @@ public class QueryView extends WebPartView<Object>
                                  ExcelWriter.ExcelDocumentType docType,
                                  boolean respectView,
                                  List<FieldKey> includeColumns,
-                                 @Nullable String prefix)
+                                 List<FieldKey> excludeColumns,
+                                 @NotNull Map<String, String> renameColumns,
+                                 @Nullable String prefix
+                                 )
             throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
         if (table != null)
         {
-            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, docType) : getExcelWriter(docType))
+            try (ExcelWriter ew = templateOnly ? getExcelTemplateWriter(respectView, includeColumns, renameColumns, docType)
+                    : (renameColumns.isEmpty() ? getExcelWriter(docType) : getExcelWriter(docType, renameColumns)))
             {
                 if (headerType == null)
                     headerType = getColumnHeaderType();
                 ew.setCaptionType(headerType);
-                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns);
+                ew.setShowInsertableColumnsOnly(insertColumnsOnly, includeColumns, excludeColumns);
                 if (prefix != null)
                     ew.setFilenamePrefix(prefix);
                 ew.write(response);
@@ -2611,20 +2693,25 @@ public class QueryView extends WebPartView<Object>
 
     public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
     {
+        exportToTsv(response, delim, quote, headerType, Collections.emptyMap());
+    }
+
+    public void exportToTsv(final HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
+    {
         _exportView = true;
         TableInfo table = getTable();
 
         if (table != null)
         {
-            int rowCount = doExport(response, delim, quote, headerType);
+            int rowCount = doExport(response, delim, quote, headerType, renameColumn);
             logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
 
-    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType) throws IOException
+    private int doExport(HttpServletResponse response, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote, ColumnHeaderType headerType, @NotNull Map<String, String> renameColumn) throws IOException
     {
-        try (TSVGridWriter tsv = getTsvWriter(headerType))
+        try (TSVGridWriter tsv = renameColumn.isEmpty() ? getTsvWriter(headerType) : getTsvWriter(headerType, renameColumn))
         {
             tsv.setDelimiterCharacter(delim);
             tsv.setQuoteCharacter(quote);

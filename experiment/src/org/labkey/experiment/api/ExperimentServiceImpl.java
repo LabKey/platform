@@ -49,27 +49,7 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
-import org.labkey.api.exp.AbstractParameter;
-import org.labkey.api.exp.DomainNotFoundException;
-import org.labkey.api.exp.ExperimentDataHandler;
-import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.ExperimentRunListView;
-import org.labkey.api.exp.ExperimentRunType;
-import org.labkey.api.exp.ExperimentRunTypeSource;
-import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.IdentifiableBase;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.LsidManager;
-import org.labkey.api.exp.LsidType;
-import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.ProtocolApplicationParameter;
-import org.labkey.api.exp.ProtocolParameter;
-import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.XarContext;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.*;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -84,7 +64,6 @@ import org.labkey.api.exp.query.ExpDataInputTable;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.ExpProtocolApplicationTable;
 import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
@@ -126,12 +105,12 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.ExperimentAuditProvider;
 import org.labkey.experiment.LSIDRelativizer;
 import org.labkey.experiment.XarExportType;
@@ -143,8 +122,6 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.pipeline.MoveRunsPipelineJob;
 import org.labkey.experiment.xar.AutoFileLSIDReplacer;
 import org.labkey.experiment.xar.XarExportSelection;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -251,7 +228,8 @@ public class ExperimentServiceImpl implements ExperimentService
         return run == null ? null : new ExpRunImpl(run);
     }
 
-    private List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
+    @Override
+    public List<ExpRunImpl> getExpRuns(Collection<Integer> rowids)
     {
         SimpleFilter filter = new SimpleFilter().addInClause(FieldKey.fromParts(ExpRunTable.Column.RowId.name()), rowids);
         TableSelector selector = new TableSelector(getTinfoExperimentRun(), filter, null);
@@ -1091,7 +1069,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpProtocolApplicationTable createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf)
+    public ExpProtocolApplicationTableImpl createProtocolApplicationTable(String name, UserSchema schema, ContainerFilter cf)
     {
         return new ExpProtocolApplicationTableImpl(name, schema, cf);
     }
@@ -1500,6 +1478,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
         try
         {
+            List<ExpRun> runs = new ArrayList<>();
             for (int id : runIds)
             {
                 ExpRun run = ExperimentService.get().getExpRun(id);
@@ -1507,6 +1486,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 {
                     throw new NotFoundException("Could not find run " + id);
                 }
+                runs.add(run);
             }
 
             XarExportSelection selection = new XarExportSelection();
@@ -1519,7 +1499,7 @@ public class ExperimentServiceImpl implements ExperimentService
                 }
                 selection.addExperimentIds(experiment.getRowId());
             }
-            selection.addRunIds(runIds);
+            selection.addRuns(runs);
             // NOTE: selection distinguishes between null and empty (careful)
             // TODO have ArchiveURLRewriter() differentiate between input and output roles
             // TODO using Set<roles> is adequate for now (as long as the caller knows all the roles of interest)
@@ -2115,6 +2095,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Get lisd of ExpRun LSIDs for the start Data or Material
+    @Override
     public List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options)
     {
         Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate(start, options);
@@ -2337,7 +2318,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return new ExpLineage(seeds, datas, materials, runs, otherObjects, edges);
     }
 
-
+    @Override
     public SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options)
     {
         assert options.isUseObjectIds() == false;
@@ -2364,32 +2345,20 @@ public class ExperimentServiceImpl implements ExperimentService
         return generateExperimentTreeSQL(sqlf, options);
     }
 
-
-
-    private String getSourceSql(ExpLineageOptions options, String source)
-    {
-        var view = new JspView<>(source, options);
-        view.setFrame(WebPartView.FrameType.NOT_HTML);
-
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        try
-        {
-            HttpView.include(view, request, response);
-            String ret;
-            ret = response.getContentAsString().trim();
-            return ret;
-        }
-        catch (Exception x)
-        {
-            throw new RuntimeException(x);
-        }
-    }
-
     /* return <ParentsQuery,ChildrenQuery> */
     private Pair<String,String> getRunGraphCommonTableExpressions(SQLFragment ret, SQLFragment lsidsFrag, ExpLineageOptions options)
     {
-        String sourceSQL = getSourceSql(options, options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp");
+        String jspPath = options.isForLookup() ? "/org/labkey/experiment/api/ExperimentRunGraphForLookup2.jsp" : "/org/labkey/experiment/api/ExperimentRunGraph2.jsp";
+
+        String sourceSQL;
+        try
+        {
+            sourceSQL = new JspTemplate<>(jspPath, options).render();
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
 
         Map<String,String> map = new HashMap<>();
 
@@ -3803,19 +3772,25 @@ public class ExperimentServiceImpl implements ExperimentService
         new SqlExecutor(getSchema()).execute("DELETE FROM exp.ProtocolInput WHERE ProtocolId IN (" + protocolIdsInClause + ")");
     }
 
-    /**
-     * Finds the subset of materialIds that are used as inputs to runs.
-     *
-     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     */
-    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    public static Map<String, Collection<Map<String, Object>>> partitionRequestedDeleteObjects(List<Integer> deleteRequest, List<Integer> cannotDelete, List<? extends ExpRunItem> allData)
     {
-        if (materialIds.isEmpty())
-            return emptyList();
-        final SqlDialect dialect = getExpSchema().getSqlDialect();
-        SQLFragment rowIdInFrag = new SQLFragment();
-        dialect.appendInClauseSql(rowIdInFrag, materialIds);
-        return new SqlSelector(getExpSchema(), getMaterialsUsedAsInputs(rowIdInFrag)).getArrayList(Integer.class);
+        // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from the deleteRequest set.
+        deleteRequest.removeAll(cannotDelete);
+        List<Map<String, Object>> canDeleteRows = new ArrayList<>();
+        List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
+        allData.forEach((dataObject) -> {
+            Map<String, Object> rowMap = Map.of("RowId", dataObject.getRowId(), "Name", dataObject.getName());
+            if (deleteRequest.contains(dataObject.getRowId()))
+                canDeleteRows.add(rowMap);
+            else
+                cannotDeleteRows.add(rowMap);
+        });
+
+
+        Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
+        partitionedIds.put("canDelete", canDeleteRows);
+        partitionedIds.put("cannotDelete", cannotDeleteRows);
+        return partitionedIds;
     }
 
     public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
@@ -4026,8 +4001,14 @@ public class ExperimentServiceImpl implements ExperimentService
                 SELECT DISTINCT m2.runId
                 FROM exp.material m2
                 WHERE m.rowId in (3592, 3593, 3594)
-                    AND m.rowId != m2.rowId
                     AND m.runId = m2.runId
+                    -- exclude siblings from selected materialIds
+                    AND NOT EXIST (
+                        SELECT rowId
+                        FROM exp.material m3
+                        WHERE m3.rowId in (3592, 3593, 3594)
+                            AND m2.rowId = m3.rowId
+                    )
             );
          */
 
@@ -4041,8 +4022,12 @@ public class ExperimentServiceImpl implements ExperimentService
                 .append("SELECT DISTINCT m2.runId\n")
                 .append("FROM ").append(getTinfoMaterial(), "m2").append("\n")
                 .append("WHERE m.rowId ").append(idInclause).append("\n")
-                .append("AND m.rowId != m2.rowId\n")
                 .append("AND m.runId = m2.runId\n")
+                .append("AND NOT EXISTS (\n") // m2.rowID not in materialIds
+                .append("SELECT rowId FROM ").append(getTinfoMaterial(), "m3").append("\n")
+                .append("WHERE m3.rowId ").append(idInclause).append("\n")
+                .append("AND m2.rowId = m3.rowId\n")
+                .append(")\n")
                 .append(")");
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(sql));
@@ -4055,6 +4040,71 @@ public class ExperimentServiceImpl implements ExperimentService
             return Collections.emptyList();
 
         return ExpRunImpl.fromRuns(getRunsForRunIds(getTargetRunIdsFromMaterialIds(getAppendInClause(materialIds))));
+    }
+
+    /**
+     * Finds the subset of materialIds that are used as inputs to runs.
+     *
+     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
+     */
+    public List<Integer> getMaterialsUsedAsInput(Collection<Integer> materialIds)
+    {
+        if (materialIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, materialIds);
+
+        // ex SQL:
+        /*
+            SELECT DISTINCT m.materialId
+            FROM exp.MaterialInput m, exp.protocolapplication pa
+            WHERE m.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND m.materialId <materialIdRowSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT mi.materialID\n");
+        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
+                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+                .append("AND mi.materialID ").append(rowIdInFrag).append("\n");
+
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
+    }
+
+    /**
+     * Finds the subset of data that are used as inputs to runs.
+     */
+    public List<Integer> getDataUsedAsInput(Collection<Integer> dataIds)
+    {
+        if (dataIds.isEmpty())
+            return emptyList();
+        final SqlDialect dialect = getExpSchema().getSqlDialect();
+        SQLFragment rowIdInFrag = new SQLFragment();
+        dialect.appendInClauseSql(rowIdInFrag, dataIds);
+
+        // ex SQL:
+        /*
+            SELECT DISTINCT d.dataId
+            FROM exp.DataInput d, exp.protocolapplication pa
+            WHERE d.targetapplicationId = pa.rowId
+             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
+             AND d.dataId <dataRowIdSQL>;
+         */
+        SQLFragment sql = new SQLFragment();
+
+        sql.append("SELECT DISTINCT d.dataID\n");
+        sql.append("FROM ").append(getTinfoDataInput(), "d").append(", \n\t");
+        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
+        sql.append("WHERE d.TargetApplicationId = pa.rowId\n\t")
+                .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
+                .append("AND d.dataID ").append(rowIdInFrag).append("\n");
+
+        return new SqlSelector(getExpSchema(), sql).getArrayList(Integer.class);
     }
 
 
@@ -4654,36 +4704,6 @@ public class ExperimentServiceImpl implements ExperimentService
         sql.append("\n)");
 
         return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
-    }
-
-    /**
-     * Generate a query to get the subset of rowids from the supplied set material RowIds
-     * that are inputs to runs.
-     *
-     * Note that this currently will not find runs where the batch id references a sampleId.  See Issue 37918.
-     * @param materialRowIdSQL --  SQL clause generating material rowIds used to limit results
-     * @return Query to retrieve subset of materialIds
-     */
-    private SQLFragment getMaterialsUsedAsInputs(SQLFragment materialRowIdSQL)
-    {
-        // ex SQL:
-        /*
-            SELECT DISTINCT m.materialId
-            FROM exp.MaterialInput m, exp.protocolapplication pa
-            WHERE m.targetapplicationId = pa.rowId
-             AND pa.cpastype IN ('ProtocolApplication', 'ExperimentRun')
-             AND m.materialId <materialIdRowSQL>;
-         */
-        SQLFragment sql = new SQLFragment();
-
-        sql.append("SELECT DISTINCT mi.materialID\n");
-        sql.append("FROM ").append(getTinfoMaterialInput(), "mi").append(", \n\t");
-        sql.append(getTinfoProtocolApplication(), "pa").append("\n");
-        sql.append("WHERE mi.TargetApplicationId = pa.rowId\n\t")
-            .append("AND pa.cpastype IN (?, ?) \n").add(ProtocolApplication.name()).add(ExperimentRun.name())
-            .append("AND mi.materialID ").append(materialRowIdSQL).append("\n");
-
-        return sql;
     }
 
     /**
@@ -6239,7 +6259,7 @@ public class ExperimentServiceImpl implements ExperimentService
             @NotNull Container c, @NotNull User u, @NotNull String name, String description,
             List<GWTPropertyDescriptor> properties,
             List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
-            @Nullable TemplateInfo templateInfo)
+            @Nullable TemplateInfo templateInfo, @Nullable String category)
         throws ExperimentException
     {
         if (name == null)
@@ -6258,6 +6278,11 @@ public class ExperimentServiceImpl implements ExperimentService
         int nameExpMax = dataClassTable.getColumn("NameExpression").getScale();
         if (nameExpression != null && nameExpression.length() > nameExpMax)
             throw new IllegalArgumentException("Name expression may not exceed " + nameExpMax + " characters.");
+
+        // Validate category length
+        int categoryMax = dataClassTable.getColumn("Category").getScale();
+        if (category != null && category.length() > categoryMax)
+            throw new IllegalArgumentException("Category may not exceed " + categoryMax + " characters.");
 
         if (sampleSetId != null)
         {
@@ -6312,6 +6337,8 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClass.setMaterialSourceId(sampleSetId);
         if (nameExpression != null)
             dataClass.setNameExpression(nameExpression);
+        if (category != null)
+            dataClass.setCategory(category);
         dataClass.setContainer(c);
 
         ExpDataClassImpl impl = new ExpDataClassImpl(dataClass);

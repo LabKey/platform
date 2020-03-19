@@ -51,7 +51,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     @Override
     public @Nullable SqlDialect createFromDriverClassName(String driverClassName)
     {
-        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql94Dialect() : null;
+        return "org.postgresql.Driver".equals(driverClassName) ? new PostgreSql95Dialect() : null;
     }
 
     final static String PRODUCT_NAME = "PostgreSQL";
@@ -81,40 +81,39 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(databaseProductVersion);
 
         // Get the appropriate dialect and stash version information
-        SqlDialect dialect = getDialect(versionNumber, databaseProductVersion, logWarnings);
-        int versionInt = versionNumber.getVersionInt();
-        dialect.setDatabaseVersion(versionInt);
-        dialect.setProductVersion(String.valueOf(versionInt/(double)10));
+        int version = versionNumber.getVersionInt();
+        SqlDialect dialect = getDialect(version, databaseProductVersion, logWarnings);
+        dialect.setDatabaseVersion(version);
+        dialect.setProductVersion(String.valueOf(version/(double)10));
 
         return dialect;
     }
 
-    private @NotNull SqlDialect getDialect(VersionNumber versionNumber, String databaseProductVersion, boolean logWarnings)
+    private @NotNull SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings)
     {
-        PostgreSqlVersion pv = PostgreSqlVersion.get(versionNumber.getVersionInt());
+        PostgreSqlVersion psv = PostgreSqlVersion.get(version);
 
-        if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == pv)
+        if (PostgreSqlVersion.POSTGRESQL_UNSUPPORTED == psv)
             throw new DatabaseNotSupportedException(PRODUCT_NAME + " version " + databaseProductVersion + " is not supported. You must upgrade your database server installation; " + RECOMMENDED);
 
-        SqlDialect dialect = pv.getDialect();
+        PostgreSql94Dialect dialect = psv.getDialect();
 
         if (logWarnings)
         {
-            if (pv.isDeprecated())
-            {
-                String deprecationMessage = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + "; please upgrade. " + RECOMMENDED;
-                _log.warn(deprecationMessage);
-                dialect.setDeprecationMessage(HtmlString.of(deprecationMessage));
-            }
-            else if (!pv.isTested())
+            if (!psv.isTested())
             {
                 _log.warn("LabKey Server has not been tested against " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED);
+            }
+            else if (psv.isDeprecated())
+            {
+                String deprecationWarning = "LabKey Server no longer supports " + PRODUCT_NAME + " version " + databaseProductVersion + ". " + RECOMMENDED;
+                _log.warn(deprecationWarning);
+                dialect.setAdminWarning(HtmlString.of(deprecationWarning));
             }
         }
 
         return dialect;
     }
-
 
     @Override
     public Collection<? extends Class> getJUnitTests()
@@ -127,8 +126,8 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
     {
         // PostgreSQL dialects are nearly identical, so just test 9.4
         return PageFlowUtil.set(
-            new PostgreSql94Dialect(true),
-            new PostgreSql94Dialect(false)
+            new PostgreSql95Dialect(true),
+            new PostgreSql95Dialect(false)
         );
     }
 
@@ -140,13 +139,12 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
             final String connectionUrl = "jdbc:postgresql:";
 
             // < 9.4 should result in bad version number exception
-            badVersion("PostgreSQL", 0.0, 9.3, null, connectionUrl);
+            badVersion("PostgreSQL", 0.0, 9.4, null, connectionUrl);
 
             // 9.7, 9.8, and 9.9 are bad as well - these versions never existed
             badVersion("PostgreSQL", 9.7, 10.0, null, connectionUrl);
 
             // Test good versions
-            good("PostgreSQL", 9.4, 9.5, "", connectionUrl, null, PostgreSql94Dialect.class);
             good("PostgreSQL", 9.5, 9.6, "", connectionUrl, null, PostgreSql95Dialect.class);
             good("PostgreSQL", 9.6, 9.7, "", connectionUrl, null, PostgreSql96Dialect.class);
             good("PostgreSQL", 10.0, 11.0, "", connectionUrl, null, PostgreSql_10_Dialect.class);
@@ -179,7 +177,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                     "SELECT core.executeJaavUpgradeCode('upgradeCode');\n" +          // Misspell function name
                     "SELECT core.executeJavaUpgradeCode('upgradeCode')\n";            // No semicolon
 
-            SqlDialect dialect = new PostgreSql94Dialect();
+            SqlDialect dialect = new PostgreSql95Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
             dialect.runSql(null, goodSql, good, null, null);
             assertEquals(5, good.getCounter());
@@ -200,7 +198,7 @@ public class PostgreSqlDialectFactory implements SqlDialectFactory
                 @Override
                 protected SqlDialect getDialect()
                 {
-                    return new PostgreSql94Dialect();
+                    return new PostgreSql95Dialect();
                 }
 
                 @NotNull

@@ -19,22 +19,23 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
+import org.labkey.study.visitmanager.VisitManager;
 
-import java.sql.SQLException;
 import java.util.Date;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         if (null == study)
             throw new QueryUpdateServiceException("No study found.");
         StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
-        TableInfo queryTableInfo = querySchema.getTable("StudyProperties");
+        TableInfo queryTableInfo = querySchema.getTable("StudyProperties", null);
         if (null == queryTableInfo)
             throw new QueryUpdateServiceException("StudyProperties table not found.");
         return new TableSelector(queryTableInfo).getObject(container.getId(), Map.class);
@@ -81,30 +82,84 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
         // update the base table, but only some columns StudyPropertiesTable
         CaseInsensitiveHashMap<Object> updateRow = new CaseInsensitiveHashMap<>();
-        boolean recalculateVisits = false;
+        boolean recomputeStartDates = false;
+        boolean recalculateTimepoints = false;
         for (Map.Entry<String,Object> entry : row.entrySet())
         {
             ColumnInfo c = table.getColumn(entry.getKey());
-            if (null != c && c.isUserEditable() || (null != c && c.getName().equals("TimepointType") && study.isEmptyStudy()))
+            if (null != c)
             {
-                updateRow.put(entry.getKey(), entry.getValue());
-
-                if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate") && study.getTimepointType() == TimepointType.DATE)
+                if ("TimepointType".equalsIgnoreCase(c.getName()))
                 {
-                    Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
-                    recalculateVisits = study.getStartDate().compareTo(newDate) != 0;
+                    if (entry.getValue() != null)
+                    {
+                        // Brand new studies can be set to whatever type the user likes
+                        if (study.isEmptyStudy())
+                        {
+                            updateRow.put(entry.getKey(), entry.getValue());
+                        }
+                        else
+                        {
+                            try
+                            {
+                                // Existing studies only support certain changes to the timepoint type
+                                TimepointType newTimepointType = TimepointType.valueOf(entry.getValue().toString());
+                                if (newTimepointType != study.getTimepointType())
+                                {
+                                    study.getTimepointType().validateTransition(newTimepointType);
+                                    updateRow.put(entry.getKey(), entry.getValue());
+                                    recalculateTimepoints = true;
+                                }
+                            }
+                            catch (IllegalArgumentException ignored)
+                            {
+                                throw new ValidationException("Invalid TimepointType: " + entry.getValue());
+                            }
+                        }
+                    }
+                }
+                else if (c.isUserEditable())
+                {
+                    updateRow.put(entry.getKey(), entry.getValue());
+
+                    if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate"))
+                    {
+                        Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
+                        recomputeStartDates = !study.getStartDate().equals(newDate);
+                    }
                 }
             }
         }
+
         if (!updateRow.isEmpty())
             Table.update(user, table.getRealTable(), updateRow, study.getContainer().getId());
 
-        if (recalculateVisits)
+        StudyManager.getInstance().clearCaches(container, false);
+
+        // Reload the study object after flushing caches
+        study = StudyManager.getInstance().getStudy(study.getContainer());
+
+        if (recalculateTimepoints)
         {
+            // Blow away all of the existing visit info and rebuild it
+            VisitManager manager = StudyManager.getInstance().getVisitManager(study);
+            StudySchema schema = StudySchema.getInstance();
+
+            SQLFragment sqlFragParticipantVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoParticipantVisit() + " WHERE Container = ?").add(study.getContainer());
+            new SqlExecutor(schema.getSchema()).execute(sqlFragParticipantVisit);
+            SQLFragment sqlFragVisitMap = new SQLFragment("DELETE FROM " + schema.getTableInfoVisitMap() + " WHERE Container = ?").add(study.getContainer());
+            new SqlExecutor(schema.getSchema()).execute(sqlFragVisitMap);
+            SQLFragment sqlFragVisit = new SQLFragment("DELETE FROM " + schema.getTableInfoVisit() + " WHERE Container = ?").add(study.getContainer());
+            new SqlExecutor(schema.getSchema()).execute(sqlFragVisit);
+
+            manager.updateParticipantVisits(user, study.getDatasets());
+        }
+        else if (recomputeStartDates && study.getTimepointType() == TimepointType.DATE)
+        {
+            // Only recalculate relative to the start date
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) StudyManager.getInstance().getVisitManager(study);
             visitManager.recomputeDates(study.getStartDate(), user);
         }
-        StudyManager.getInstance().clearCaches(container, false);
 
         return getRow(user, container, null);
     }

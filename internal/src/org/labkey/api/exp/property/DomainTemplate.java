@@ -284,6 +284,8 @@ public class DomainTemplate
                 optionsMap.put("nameExpression", options.getNameExpression());
                 if (options.isSetSampleSet())
                     optionsMap.put("sampleSet", options.getSampleSet());
+                if (options.isSetCategory())
+                    optionsMap.put("category", options.getCategory());
             }
         }
         else if (template instanceof SampleSetTemplateType)
@@ -585,6 +587,6 @@ public class DomainTemplate
     public TemplateInfo getTemplateInfo()
     {
         Module m = ModuleLoader.getInstance().getModule(getModuleName());
-        return new TemplateInfo(m.getName(), getTemplateGroup(), getTemplateName(), m.getVersion());
+        return new TemplateInfo(m.getName(), getTemplateGroup(), getTemplateName(), m.getSchemaVersion());
     }
 }

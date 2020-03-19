@@ -60,8 +60,12 @@ import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptor;
 import org.labkey.api.exp.OntologyManager.ImportPropertyDescriptorsList;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.DefaultPropertyValidator;
 import org.labkey.api.exp.property.Domain;
@@ -149,6 +153,7 @@ import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudySnapshot.SnapshotSettings;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
+import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.visitmanager.AbsoluteDateVisitManager;
 import org.labkey.study.visitmanager.RelativeDateVisitManager;
 import org.labkey.study.visitmanager.SequenceVisitManager;
@@ -193,7 +198,6 @@ public class StudyManager
 
     private final QueryHelper<StudyImpl> _studyHelper;
     private final QueryHelper<VisitImpl> _visitHelper;
-    //    private final QueryHelper<LocationImpl> _locationHelper;
     private final QueryHelper<AssaySpecimenConfigImpl> _assaySpecimenHelper;
     private final DatasetHelper _datasetHelper;
     private final QueryHelper<CohortImpl> _cohortHelper;
@@ -800,26 +804,34 @@ public class StudyManager
             ensureDatasetDefinitionDomain(user, datasetDefinition);
             _datasetHelper.update(user, datasetDefinition, pk);
 
+            QueryChangeListener.QueryPropertyChange nameChange = null;
             if (!old.getName().equals(datasetDefinition.getName()))
             {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                nameChange = new QueryChangeListener.QueryPropertyChange<>(
                         QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
                         QueryChangeListener.QueryProperty.Name,
                         old.getName(),
                         datasetDefinition.getName()
                 );
-
-                QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
-                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
-            transaction.addCommitTask(() -> {
-                // And post-commit to make sure that no other threads have reloaded the cache in the meantime
+            final QueryChangeListener.QueryPropertyChange change = nameChange;
+
+            transaction.addCommitTask(() ->
+            {
                 uncache(datasetDefinition);
-            }, CommitTaskOption.POSTCOMMIT, CommitTaskOption.IMMEDIATE);
+                if (null != change)
+                {
+                    QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
+                            QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
+                }
+                indexDataset(null, datasetDefinition);
+            }, CommitTaskOption.POSTCOMMIT);
+
+            // NOTE: not redundant with uncache() in commit task, there may be an active outer transaction
+            uncache(datasetDefinition);
             QueryService.get().updateLastModified();
             transaction.commit();
         }
-        indexDataset(null, datasetDefinition);
         return true;
     }
 
@@ -1651,25 +1663,16 @@ public class StudyManager
         );
     }
 
-
-    public List<LocationImpl> getSites(Container container)
+    public List<LocationImpl> getLocations(Container container)
     {
-//        return _locationHelper.get(container, "Label");
-        return getLocations(container, null, null);
-    }
-
-    public List<LocationImpl> getLocations(final Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
-    {
-        final List<LocationImpl> locations = new ArrayList<>();
-        getLocationsSelector(container, filter, sort).forEachMap(map -> locations.add(new LocationImpl(container, map)));
-        return locations;
+        return LocationCache.getLocations(container);
     }
 
     public List<LocationImpl> getValidRequestingLocations(Container container)
     {
         Study study = getStudy(container);
         List<LocationImpl> validLocations = new ArrayList<>();
-        List<LocationImpl> locations = getSites(container);
+        List<LocationImpl> locations = getLocations(container);
         for (LocationImpl location : locations)
         {
             if (isSiteValidRequestingLocation(study, location))
@@ -1717,7 +1720,8 @@ public class StudyManager
     {
         // If a default ID has been registered, just use that
         Integer defaultSiteId = SpecimenService.get().getRequestCustomizer().getDefaultDestinationSiteId();
-        if(defaultSiteId != null && id == defaultSiteId.intValue())
+
+        if (defaultSiteId != null && id == defaultSiteId.intValue())
         {
             LocationImpl location = new LocationImpl(container, "User Request");
             location.setRowId(defaultSiteId);
@@ -1725,28 +1729,19 @@ public class StudyManager
             return location;
         }
 
-        List<LocationImpl> locations = getLocations(container, new SimpleFilter(FieldKey.fromParts("RowId"), id), null);
-        if (!locations.isEmpty())
-            return locations.get(0);
-        return null;
-    }
-
-    public List<LocationImpl> getLocationsByLabel(Container container, String label)
-    {
-//        return _locationHelper.get(container, new SimpleFilter(FieldKey.fromParts("Label"), label));
-        return getLocations(container, new SimpleFilter(FieldKey.fromParts("Label"), label), null);
+        return LocationCache.getForRowId(container, id);
     }
 
     public void createSite(User user, LocationImpl location)
     {
-//        _locationHelper.create(user, location);
         Table.insert(user, getTableInfoLocations(location.getContainer()), location);
+        LocationCache.clear(location.getContainer());
     }
 
     public void updateSite(User user, LocationImpl location)
     {
-//        _locationHelper.update(user, location);
         Table.update(user, getTableInfoLocations(location.getContainer()), location, location.getRowId());
+        LocationCache.clear(location.getContainer());
     }
 
     private boolean isLocationInUse(LocationImpl loc, TableInfo table, String... columnNames)
@@ -1808,8 +1803,8 @@ public class StudyManager
 
                 TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
 
-//                _locationHelper.delete(location);
                 Table.delete(getTableInfoLocations(container), new SimpleFilter(FieldKey.fromString("RowId"), location.getRowId()));
+                LocationCache.clear(container);
 
                 transaction.commit();
             }
@@ -1823,11 +1818,6 @@ public class StudyManager
     private TableInfo getTableInfoLocations(Container container)
     {
         return StudySchema.getInstance().getTableInfoSite(container);
-    }
-
-    private TableSelector getLocationsSelector(Container container, @Nullable SimpleFilter filter, @Nullable Sort sort)
-    {
-        return new TableSelector(getTableInfoLocations(container), filter, sort);
     }
 
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
@@ -2731,6 +2721,20 @@ public class StudyManager
         return dataset.deleteRows(cutoff);
     }
 
+    private Collection<String> getDatasetProvenanceLsids(DatasetDefinition ds)
+    {
+        String datasetTableName = ds.getStorageTableInfo().getName();
+
+        SQLFragment sql = new SQLFragment("SELECT ds.lsid FROM ");
+        sql.append("studydataset.").append(datasetTableName).append(" ds ");
+        sql.append(" INNER JOIN exp.Object o ON (ds.lsid = o.objecturi) ");
+        sql.append("WHERE EXISTS (");
+        sql.append(" SELECT prov.protocolApplicationId FROM provenance.protocolapplicationobjectmap prov ");
+        sql.append(" WHERE o.objectid = prov.fromobjectid or o.objectid = prov.toobjectid )");
+
+        return  new SqlSelector(StudySchema.getInstance().getSchema(), sql).getCollection(String.class);
+    }
+
     /**
      * delete a dataset definition along with associated type, data, visitmap entries
      * @param performStudyResync whether or not to kick off our normal bookkeeping. If the whole study is being deleted,
@@ -2742,6 +2746,33 @@ public class StudyManager
 
         if (!ds.canDeleteDefinition(user))
             throw new IllegalStateException("Can't delete dataset: " + ds.getName());
+
+        // When the dataset is deleted, the provenance rows should be cleaned up
+        ProvenanceService pvs = ProvenanceService.get();
+        if (null != pvs)
+        {
+            Collection<String> allDatasetLsids = getDatasetProvenanceLsids(ds);
+
+            allDatasetLsids.forEach(lsid -> {
+                Set<Integer> protocolApplications = pvs.getProtocolApplications(lsid);
+
+                OntologyObject expObject = OntologyManager.getOntologyObject(null, lsid);
+                if (null != expObject)
+                {
+                    pvs.deleteObjectProvenance(expObject.getObjectId());
+                }
+
+                if (!protocolApplications.isEmpty())
+                {
+                    ExperimentService expService = ExperimentService.get();
+                    protocolApplications.forEach(protocolApp -> {
+                        ExpRun run = expService.getExpProtocolApplication(protocolApp).getRun();
+                        expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
+                    });
+                }
+
+            });
+        }
 
         deleteDatasetType(study, user, ds);
         try {
@@ -2822,7 +2853,7 @@ public class StudyManager
         clearCachedStudies();
         _studyHelper.clearCache(c);
         _visitHelper.clearCache(c);
-//        _locationHelper.clearCache(c);
+        LocationCache.clear(c);
         AssayService.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
             for (DatasetDefinition def : getDatasetDefinitions(study))
@@ -2897,8 +2928,6 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoUploadLog());
             Table.delete(_datasetHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_datasetHelper.getTableInfo());
-//            Table.delete(_locationHelper.getTableInfo(), containerFilter);
-//            assert deletedTables.add(_locationHelper.getTableInfo());
             Table.delete(_visitHelper.getTableInfo(), containerFilter);
             assert deletedTables.add(_visitHelper.getTableInfo());
             Table.delete(_studyHelper.getTableInfo(), containerFilter);

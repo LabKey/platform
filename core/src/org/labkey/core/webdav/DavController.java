@@ -80,6 +80,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -129,7 +130,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
@@ -255,44 +255,10 @@ public class DavController extends SpringActionController
         return _webdavresolver;
     }
 
-    // best guess is this a browser vs. a WebDAV client
-    boolean isBrowser()
-    {
-        if ("XMLHttpRequest".equals(getRequest().getHeader("x-requested-with")))
-            return true;
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
-    }
-
-    // best guess is this a browser vs. a WebDAV client
-    boolean isMacFinder()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
-    }
-
-    boolean isWindowsExplorer()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("Microsoft-WebDAV");
-    }
-
-    boolean isChrome()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
-    }
-
     // clients that support following redirects when getting a resource
     boolean supportsGetRedirect()
     {
-        return isBrowser();
+        return HttpUtil.isBrowser(getRequest());
     }
 
 
@@ -507,7 +473,7 @@ public class DavController extends SpringActionController
                         o.put("exception", message);
                         // if this is a multi-part post, it's probably really a background ext form, respond in an ext compatible way
                         if (!"XMLHttpRequest".equals(getRequest().getHeader("X-Requested-With")) &&
-                                "post".equals(getViewContext().getActionURL().getAction()) &&
+                                isPost() &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
                             super.setHeader("Content-Type", "text/html");
@@ -797,14 +763,17 @@ public class DavController extends SpringActionController
                 {
                     getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resourcePath);
                 }
-                else if ("GET".equals(method) && isBrowser())
+                else if ("GET".equals(method) && HttpUtil.isBrowser(getRequest()))
                 {
                     getResponse().setStatus(WebdavStatus.SC_MOVED_TEMPORARILY);
                     getResponse().setLocation(getLoginURL().getEncodedLocalURIString());
                 }
                 else
                 {
-                    getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
+                    if (!HttpUtil.isBrowser(getRequest()))
+                    {
+                        getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
+                    }
                     getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resourcePath);
                 }
             }
@@ -1886,15 +1855,7 @@ public class DavController extends SpringActionController
 
                 resourceWriter.sendData();
             }
-            catch (ConfigurationException x)
-            {
-                throw x;
-            }
-            catch (IOException x)
-            {
-                throw x;
-            }
-            catch (DavException x)
+            catch (ConfigurationException | IOException | DavException | CloudStoreService.ServiceException x)
             {
                 throw x;
             }
@@ -1906,13 +1867,15 @@ public class DavController extends SpringActionController
             {
                 if (resourceWriter != null)
                 {
-                    try {
-                        resourceWriter.endResponse();
-                        resourceWriter.sendData();
-                    }
-                    catch (Exception e) { }
+                    resourceWriter.endResponse();
                 }
             }
+
+            try
+            {
+                resourceWriter.sendData();
+            }
+            catch (Exception ignored) { }
 
             close(writer, "response writer");
             return WebdavStatus.SC_MULTI_STATUS;
@@ -3185,7 +3148,7 @@ public class DavController extends SpringActionController
                 if (!overwrite)
                 {
                     // allow finder to overwrite zero byte files without overwrite header
-                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
+                    boolean finderException = HttpUtil.isMacFinder(getRequest()) && 0 == resource.getContentLength();
                     if (!finderException)
                         throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
                 }
@@ -3306,6 +3269,10 @@ public class DavController extends SpringActionController
     {
         Date lastModified = null;
         String lastModifiedHeader = getRequest().getHeader("X-LABKEY-Last-Modified");
+        if (lastModifiedHeader == null)
+        {
+            lastModifiedHeader = getRequest().getParameter("X-LABKEY-Last-Modified");
+        }
         if (lastModifiedHeader != null)
         {
             try
@@ -3632,7 +3599,7 @@ public class DavController extends SpringActionController
             checkReadOnly();
             checkLocked();
 
-            if (!isWindowsExplorer())
+            if (!HttpUtil.isWindowsExplorer(getRequest()))
             {
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
@@ -4728,7 +4695,7 @@ public class DavController extends SpringActionController
         // force non browsers to log-in, except windowsexplorer over http (avoid cryptic "appears to be invalid" message)
         //if (isWindowsExplorer() && "http".equals(getRequest().getScheme()))
         //    return;
-        if (!isBrowser())
+        if (!HttpUtil.isBrowser(getRequest()))
             throw new UnauthorizedException(r);
     }
 
@@ -5020,7 +4987,7 @@ public class DavController extends SpringActionController
             try
             {
                 // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
-                if (isChrome())
+                if (HttpUtil.isChrome(getRequest()))
                 {
                     Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
                     getResponse().setContentDisposition(contentDisposition + "; filename=" + requestPath.getName());
@@ -5348,8 +5315,6 @@ public class DavController extends SpringActionController
             String path = trimToEmpty(url.getParameter("path"));
             if (path == null || path.length() == 0)
                 path = "/";
-            if (path.equals(""))
-                path = "/";
             _urlResourcePathStr = path;
         }
         if (!_urlResourcePathStr.startsWith("/"))
@@ -5363,8 +5328,6 @@ public class DavController extends SpringActionController
         if (null == _resourcePath)
         {
             String str = getUrlResourcePathStr();
-            if (null == str)
-                return Path.rootPath;
             Path p = Path.parse(str).normalize();
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
@@ -5483,8 +5446,7 @@ public class DavController extends SpringActionController
         // some user agents incorrectly double encode!  check here
         if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
         {
-            Resource r = null;
-            r = resolvePath(path);
+            Resource r = resolvePath(path);
             if (null == r || r instanceof WebdavResolverImpl.UnboundResource)
             {
                 String decodeAgain = PageFlowUtil.decode(destinationPath);
@@ -5635,8 +5597,8 @@ public class DavController extends SpringActionController
         {
             range.start = Long.parseLong(rangeHeader.substring(0, dashPos));
             range.end = Long.parseLong(rangeHeader.substring(dashPos + 1, slashPos));
-            if (!"*".equals(rangeHeader.substring(slashPos + 1, rangeHeader.length())))
-                range.length = Long.parseLong(rangeHeader.substring(slashPos + 1, rangeHeader.length()));
+            if (!"*".equals(rangeHeader.substring(slashPos + 1)))
+                range.length = Long.parseLong(rangeHeader.substring(slashPos + 1));
         }
         catch (NumberFormatException e)
         {
@@ -5768,7 +5730,7 @@ public class DavController extends SpringActionController
                 {
                     currentRange.start = Long.parseLong(rangeDefinition.substring(0, dashPos));
                     if (dashPos < rangeDefinition.length() - 1)
-                        currentRange.end = Long.parseLong(rangeDefinition.substring(dashPos + 1, rangeDefinition.length()));
+                        currentRange.end = Long.parseLong(rangeDefinition.substring(dashPos + 1));
                     else
                         currentRange.end = fileLength - 1;
                 }
@@ -6056,9 +6018,6 @@ public class DavController extends SpringActionController
     /**
      * Holds a lock information.
      */
-    /**
-     * Holds a lock information.
-     */
     private class LockInfo
     {
         public LockInfo()
@@ -6075,7 +6034,7 @@ public class DavController extends SpringActionController
         String scope = "exclusive";
         int depth = 0;
         String owner = "";
-        final List<String> tokens = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> tokens = Collections.synchronizedList(new ArrayList<>());
         long expiresAt = 0;
         final Date creationDate = new Date();
 
@@ -6252,7 +6211,7 @@ public class DavController extends SpringActionController
     private class ReadAheadInputStream extends FilterInputStream
     {
         ByteArrayOutputStream bos = null;
-        InputStream is = null;
+        InputStream is;
 
         ReadAheadInputStream(InputStream is) throws IOException
         {
@@ -6600,12 +6559,7 @@ public class DavController extends SpringActionController
                 f.setAccessible(true);
                 inner = (HttpSession)f.get(facade);
             }
-            catch (NoSuchFieldException x)
-            {
-            }
-            catch (IllegalAccessException x)
-            {
-            }
+            catch (NoSuchFieldException | IllegalAccessException ignored) {}
             if (null == inner)
                 inner = facade;
             Method access = null;
@@ -6615,9 +6569,7 @@ public class DavController extends SpringActionController
                 access = inner.getClass().getMethod("access");
                 endAccess = inner.getClass().getMethod("endAccess");
             }
-            catch (NoSuchMethodException x)
-            {
-            }
+            catch (NoSuchMethodException ignored) {}
             if (null == access || null == endAccess)
                 return in;
             return new SessionKeepAliveFilter(in, inner, access, endAccess);
@@ -6650,14 +6602,7 @@ public class DavController extends SpringActionController
                     accessMethod.invoke(session);
                     endAccessMethod.invoke(session);
                 }
-                catch (IllegalAccessException x)
-                {
-
-                }
-                catch (InvocationTargetException x)
-                {
-
-                }
+                catch (IllegalAccessException | InvocationTargetException ignored) {}
             }
         }
 

@@ -18,11 +18,12 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ActionButton;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
@@ -31,8 +32,8 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -59,9 +60,11 @@ import java.util.TreeSet;
 public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
+    public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategory";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
+    private static final Set<String> ADDITIONAL_SOURES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
 
     public enum NestedSchemas
     {
@@ -311,7 +314,41 @@ public class ExpSchema extends AbstractExpSchema
             return createExperimentsTableWithRunMemberships(null, cf);
         }
 
+        if (DATA_CLASS_CATEGORY_TABLE.equalsIgnoreCase(name))
+        {
+            return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Category");
+        }
+
         return null;
+    }
+
+    /**
+     * Exposed as EnumTableInfo
+     *
+     */
+    public enum DataClassCategoryType
+    {
+        registry(null, null),
+        media(null, null),
+        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURES_AUDIT_FIELDS);
+
+        public AuditBehaviorType defaultBehavior;
+        public Set<String> additionalAuditFields;
+
+        DataClassCategoryType(@Nullable AuditBehaviorType defaultBehavior, @Nullable Set<String> addlAuditFields)
+        {
+            this.defaultBehavior = defaultBehavior;
+            this.additionalAuditFields = addlAuditFields;
+        }
+
+        public static DataClassCategoryType fromString(String typeVal) {
+            for (DataClassCategoryType type : DataClassCategoryType.values()) {
+                if (type.name().equalsIgnoreCase(typeVal)) {
+                    return type;
+                }
+            }
+            return null;
+        }
     }
 
     @Override
@@ -385,9 +422,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             public TableInfo getLookupTableInfo()
             {
-                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString(), cf);
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return protocolTable;
+                return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
             }
         };
     }
@@ -418,9 +453,13 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey("RowId", "RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return PipelineService.get().getJobsTable(getUser(), getContainer());
+                QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
+                if (null == pipeline)
+                    return null;
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
             public StringExpression getURL(ColumnInfo parent)
@@ -458,11 +497,25 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.RunGroups.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
+                ContainerFilter cf = getLookupContainerFilter();
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey(ExpSchema.this.getContainer());
+                // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
+            }
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                return Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+            }
+
+            private TableInfo createLookupTableInfo()
+            {
                 // CONSIDER: I wonder if this shouldn't be using UnionContainerFilter(cf, CurrentPlusProjectAndShared)
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
-                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
+                ExpExperimentTable result = (ExpExperimentTable) getTable(TableType.RunGroups.name(), getLookupContainerFilter(), true, true);
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);
@@ -607,25 +660,16 @@ public class ExpSchema extends AbstractExpSchema
             };
         }
 
+        QueryView queryView = super.createView(context, settings, errors);
+
         if (TableType.Materials.name().equalsIgnoreCase(settings.getQueryName()) ||
-            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()))
+            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()) ||
+            TableType.Protocols.name().equalsIgnoreCase(settings.getQueryName()))
         {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
+            // Use default delete button, but without showing the confirmation text
+            queryView.setShowDeleteButtonConfirmationText(false);
         }
 
-        return super.createView(context, settings, errors);
+        return queryView;
     }
 }

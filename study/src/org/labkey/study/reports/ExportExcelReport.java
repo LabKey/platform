@@ -17,7 +17,7 @@
 package org.labkey.study.reports;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
@@ -55,7 +55,7 @@ import java.util.Arrays;
  * Date: Jun 14, 2006
  * Time: 12:49:42 PM
  */
-@RemoveIn20_1  // I don't see how this is used...
+@RemoveIn20_7  // I don't see how this is used...
 @Deprecated
 public class ExportExcelReport extends RedirectReport
 {

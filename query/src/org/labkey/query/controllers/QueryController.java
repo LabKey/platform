@@ -17,7 +17,11 @@
 package org.labkey.query.controllers;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.antlr.runtime.tree.Tree;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
@@ -40,6 +44,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.JdbcMetaDataLocator;
@@ -48,7 +53,15 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.LockedPropertyType;
+import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
+import org.labkey.api.gwt.client.model.GWTConditionalFormat;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -81,10 +94,14 @@ import org.labkey.api.study.DatasetTable;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlBeansUtil;
@@ -107,11 +124,13 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.PrintWriters;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DefaultScaleType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.data.xml.queryCustomView.FilterType;
+import org.labkey.experiment.api.GWTDomainMixin;
 import org.labkey.query.CustomViewImpl;
 import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
@@ -123,7 +142,10 @@ import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
 import org.labkey.query.metadata.MetadataServiceImpl;
+import org.labkey.query.metadata.client.GWTColumnInfo;
+import org.labkey.query.metadata.client.GWTTableInfo;
 import org.labkey.query.metadata.client.MetadataEditor;
+import org.labkey.query.metadata.client.MetadataUnavailableException;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -147,6 +169,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -163,6 +187,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -174,11 +199,17 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
 
+import static java.util.Objects.requireNonNull;
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
+
+@SuppressWarnings("DefaultAnnotationParam")
 
 public class QueryController extends SpringActionController
 {
@@ -242,7 +273,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EditRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
+    public static class EditRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
         public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
@@ -289,7 +320,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
+    public static class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
         public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
@@ -325,7 +356,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class TestRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
+    public static class TestRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
         public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
@@ -410,14 +441,8 @@ public class QueryController extends SpringActionController
             if (StringUtils.isEmpty(queryName))
                 return urlSchemaBrowser(c, schemaName);
             ActionURL ret = urlSchemaBrowser(c);
-            if (schemaName != null)
-            {
-                ret.addParameter(QueryParam.schemaName.toString(), schemaName);
-            }
-            if (queryName != null)
-            {
-                ret.addParameter(QueryParam.queryName.toString(), queryName);
-            }
+            ret.addParameter(QueryParam.schemaName.toString(), trimToEmpty(schemaName));
+            ret.addParameter(QueryParam.queryName.toString(), trimToEmpty(queryName));
             return ret;
         }
 
@@ -511,7 +536,7 @@ public class QueryController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class DataSourceAdminAction extends SimpleViewAction
+    public static class DataSourceAdminAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -614,7 +639,7 @@ public class QueryController extends SpringActionController
                                 sb.append("              <tr><td>");
                                 sb.append("<a href=\"").append(PageFlowUtil.filter(url)).append("\">").append(PageFlowUtil.filter(def.getUserSchemaName()));
 
-                                if (!def.getSourceSchemaName().equals(def.getUserSchemaName()))
+                                if (!StringUtils.equals(def.getSourceSchemaName(),def.getUserSchemaName()))
                                 {
                                     sb.append(" (");
                                     sb.append(PageFlowUtil.filter(def.getSourceSchemaName()));
@@ -645,19 +670,19 @@ public class QueryController extends SpringActionController
 
             sb.append("</table>\n");
 
-            return new HtmlView(sb.toString());
+            return new HtmlView(HtmlString.unsafe(sb.toString()));
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Data Source Administration ", null);
+            requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).appendAdminNavTrail(root, "Data Source Administration ", null);
             return root;
         }
     }
 
 
     @RequiresPermission(ReadPermission.class)
-    public class BrowseAction extends SimpleViewAction
+    public static class BrowseAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors)
         {
@@ -671,7 +696,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends QueryViewAction
+    public static class BeginAction extends QueryViewAction
     {
         @SuppressWarnings("UnusedDeclaration")
         public BeginAction()
@@ -812,7 +837,7 @@ public class QueryController extends SpringActionController
                     errors.reject(ERROR_MSG, "The query '" + newQueryName + "' already exists.");
                     return false;
                 }
-                TableInfo existingTable = form.getSchema().getTable(newQueryName);
+                TableInfo existingTable = form.getSchema().getTable(newQueryName, null);
                 if (existingTable != null)
                 {
                     errors.reject(ERROR_MSG, "A table with the name '" + newQueryName + "' already exists.");
@@ -964,24 +989,21 @@ public class QueryController extends SpringActionController
     // Trusted analysts who are editors can create and modify queries
     @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
     @Action(ActionType.Configure.class)
-    public class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
+    public static class SaveSourceQueryAction extends MutatingApiAction<SourceForm>
     {
-        private SourceForm _form;
         private QuerySchema _baseSchema;
-        private QueryDefinition _queryDef;
 
         @Override
         public void validateForm(SourceForm target, Errors errors)
         {
-            _form = target;
             if (StringUtils.isEmpty(target.getSchemaName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
             if (StringUtils.isEmpty(target.getQueryName()))
                 throw new NotFoundException("Query definition not found, schemaName and queryName are required.");
 
-            _baseSchema = DefaultSchema.get(getUser(), getContainer(), _form.getSchemaKey());
+            _baseSchema = DefaultSchema.get(getUser(), getContainer(), target.getSchemaKey());
             if (null == _baseSchema)
-                throw new NotFoundException("Schema not found: " + _form.getSchemaKey().toDisplayString());
+                throw new NotFoundException("Schema not found: " + target.getSchemaKey().toDisplayString());
 
             XmlOptions options = XmlBeansUtil.getDefaultParseOptions();
             List<XmlValidationError> xmlErrors = new ArrayList<>();
@@ -1051,7 +1073,7 @@ public class QueryController extends SpringActionController
                 String displayStr = "Filter for operation : " + operation.name();
                 for (FilterType filter : filters)
                 {
-                    if (StringUtils.isBlank(filter.getColumn()))
+                    if (isBlank(filter.getColumn()))
                         errors.reject(ERROR_MSG, displayStr + " requires columnName");
 
                     if (null == filter.getOperator())
@@ -1088,38 +1110,38 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(SourceForm form, BindException errors)
         {
-            _queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
-            if (null == _queryDef)
-                _queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
-            if (null == _queryDef)
+            var queryDef = QueryService.get().getQueryDef(getUser(), getContainer(), _baseSchema.getSchemaName(), form.getQueryName());
+            if (null == queryDef)
+                queryDef = ((UserSchema)_baseSchema).getQueryDefForTable(form.getQueryName());
+            if (null == queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
 
-            if (!_queryDef.canEdit(getUser()))
+            if (!queryDef.canEdit(getUser()))
                 throw new UnauthorizedException("Edit permissions are required.");
 
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             try
             {
-                _queryDef.setSql(form.ff_queryText);
+                queryDef.setSql(form.ff_queryText);
 
-                if (_queryDef.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
+                if (queryDef.isTableQueryDefinition() && StringUtils.trimToNull(form.ff_metadataText) == null)
                 {
                     if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
                         // delete the query in order to reset the metadata over a built-in query
-                        _queryDef.delete(getUser());
+                        queryDef.delete(getUser());
                     }
                 }
                 else
                 {
-                    _queryDef.setMetadataXml(form.ff_metadataText);
-                    _queryDef.save(getUser(), getContainer());
+                    queryDef.setMetadataXml(form.ff_metadataText);
+                    queryDef.save(getUser(), getContainer());
 
                     // the query was successfully saved, validate the query but return any errors in the success response
                     List<QueryParseException> parseErrors = new ArrayList<>();
                     List<QueryParseException> parseWarnings = new ArrayList<>();
-                    _queryDef.validateQuery(_baseSchema, parseErrors, parseWarnings);
+                    queryDef.validateQuery(_baseSchema, parseErrors, parseWarnings);
                     if (!parseErrors.isEmpty())
                     {
                         JSONArray errorArray = new JSONArray();
@@ -1166,7 +1188,7 @@ public class QueryController extends SpringActionController
     // Trusted analysts who are editors can create and modify queries
     @RequiresAllOf({EditQueriesPermission.class, DeletePermission.class})
     @Action(ActionType.Configure.class)
-    public class DeleteQueryAction extends ConfirmAction<SourceForm>
+    public static class DeleteQueryAction extends ConfirmAction<SourceForm>
     {
         public SourceForm _form;
         public QuerySchema _baseSchema;
@@ -1215,11 +1237,12 @@ public class QueryController extends SpringActionController
             }
             catch (OptimisticConflictException x)
             {
+                /* reshow will throw NotFound, so just ignore */
             }
             return true;
         }
 
-
+        @NotNull
         public ActionURL getSuccessURL(SourceForm queryForm)
         {
             return ((UserSchema)_baseSchema).urlFor(QueryAction.schema);
@@ -1387,7 +1410,12 @@ public class QueryController extends SpringActionController
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             _schemaName = getViewContext().getActionURL().getParameter("schemaName");
-            DbSchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(_schemaName).getDbSchema();
+            if (null == _schemaName)
+                throw new NotFoundException();
+            QuerySchema qs = DefaultSchema.get(getUser(), getContainer()).getSchema(_schemaName);
+            if (null == qs)
+                throw new NotFoundException(_schemaName);
+            DbSchema schema = qs.getDbSchema();
             String dbSchemaName = schema.getName();
             DbScope scope = schema.getScope();
             SqlDialect dialect = scope.getSqlDialect();
@@ -1486,7 +1514,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    abstract class _ExportQuery<K extends ExportQueryForm> extends SimpleViewAction<K>
+    abstract static class _ExportQuery<K extends ExportQueryForm> extends SimpleViewAction<K>
     {
         public ModelAndView getView(K form, BindException errors) throws Exception
         {
@@ -1515,6 +1543,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExportScriptForm extends QueryForm
     {
         private String _type;
@@ -1533,10 +1562,11 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)    // This is called "export" but it doesn't export any data
-    public class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
+    public static class ExportScriptAction extends SimpleViewAction<ExportScriptForm>
     {
         public ModelAndView getView(ExportScriptForm form, BindException errors)
         {
+            // comment? Is this call ehre for validation purposes?
             QueryView view = form.getQueryView();
 
             return ExportScriptModel.getExportScriptView(QueryView.create(form, errors), form.getScriptType(), getPageConfig(), getViewContext().getResponse());
@@ -1551,24 +1581,25 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExportRowsExcelAction extends _ExportQuery
+    public static class ExportRowsExcelAction extends _ExportQuery
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls);
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xls, form.getRenameColumns());
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExportRowsXLSXAction extends _ExportQuery
+    public static class ExportRowsXLSXAction extends _ExportQuery
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
-            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx);
+            view.exportToExcel(getViewContext().getResponse(), form.getHeaderType(), ExcelWriter.ExcelDocumentType.xlsx, form.getRenameColumns());
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class TemplateForm extends ExportQueryForm
     {
         boolean insertColumnsOnly = true;
@@ -1649,13 +1680,21 @@ public class QueryController extends SpringActionController
      *     For example, this can be used to add a fake column that is only supported during the import process.
      *     </dd>
      *
+     *     <dt>excludeColumn</dt>
+     *     <dd>List of column names to exclude.
+     *     </dd>
+     *
+     *     <dt>exportAlias.columns</dt>
+     *     <dd>Use alternative column name in excel: exportAlias.originalColumnName=aliasColumnName
+     *     </dd>
+     *
      *     <dt>captionType</dt>
      *     <dd>determines which column property is used in the header.  either Label or Name</dd>
      * </dl>
      */
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
+    public static class ExportExcelTemplateAction extends _ExportQuery<TemplateForm>
     {
         public ExportExcelTemplateAction()
         {
@@ -1674,13 +1713,17 @@ public class QueryController extends SpringActionController
                 }
                 catch (IllegalArgumentException ignored) {}
             }
-            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getFilenamePrefix());
+            view.exportToExcel(getViewContext().getResponse(), true, form.getHeaderType(), form.insertColumnsOnly, fileType, respectView, form.getIncludeColumns(), form.getExcludeColumns(), form.getRenameColumns(), form.getFilenamePrefix());
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExportQueryForm extends QueryForm
     {
         protected ColumnHeaderType _headerType = null; // QueryView will provide a default header type if the user doesn't select one
+        FieldKey[] excludeColumn;
+        Map<String, String> renameColumns = null;
 
         public ColumnHeaderType getHeaderType()
         {
@@ -1691,8 +1734,42 @@ public class QueryController extends SpringActionController
         {
             _headerType = headerType;
         }
+
+        public List<FieldKey> getExcludeColumns()
+        {
+            if (excludeColumn == null || excludeColumn.length == 0)
+                return Collections.emptyList();
+            return Arrays.asList(excludeColumn);
+        }
+
+        public void setExcludeColumn(FieldKey[] excludeColumn)
+        {
+            this.excludeColumn = excludeColumn;
+        }
+
+        public Map<String, String> getRenameColumns()
+        {
+            if (renameColumns != null)
+                return renameColumns;
+
+            renameColumns = new CaseInsensitiveHashMap<>();
+            final String renameParamPrefix = "exportAlias.";
+            PropertyValue[] pvs = getInitParameters().getPropertyValues();
+            for (PropertyValue pv : pvs)
+            {
+                String paramName = pv.getName();
+                if (!paramName.startsWith(renameParamPrefix) || pv.getValue() == null)
+                    continue;
+
+                renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
+            }
+
+            return renameColumns;
+        }
+
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExportRowsTsvForm extends ExportQueryForm
     {
         private TSVWriter.DELIM _delim = TSVWriter.DELIM.TAB;
@@ -1719,9 +1796,10 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExportRowsTsvAction extends _ExportQuery<ExportRowsTsvForm>
+    public static class ExportRowsTsvAction extends _ExportQuery<ExportRowsTsvForm>
     {
         public ExportRowsTsvAction()
         {
@@ -1730,7 +1808,7 @@ public class QueryController extends SpringActionController
 
         void _export(ExportRowsTsvForm form, QueryView view) throws Exception
         {
-            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType());
+            view.exportToTsv(getViewContext().getResponse(), form.getDelim(), form.getQuote(), form.getHeaderType(), form.getRenameColumns());
         }
     }
 
@@ -1738,7 +1816,7 @@ public class QueryController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @Action(ActionType.Export.class)
-    public class ExcelWebQueryAction extends ExportRowsTsvAction
+    public static class ExcelWebQueryAction extends ExportRowsTsvAction
     {
         public ModelAndView getView(ExportRowsTsvForm form, BindException errors) throws Exception
         {
@@ -1806,7 +1884,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class MetadataServiceAction extends GWTServiceAction
+    public static class MetadataServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
         {
@@ -1975,12 +2053,12 @@ public class QueryController extends SpringActionController
             }
 
             // NOTE: Updating, saving, and deleting the view may throw an exception
-            CustomViewImpl cview;
+            CustomViewImpl cview = null;
             if (view instanceof EditableCustomView && view.isOverridable())
             {
                 cview = ((EditableCustomView)view).getEditableViewInfo(owner, session);
             }
-            else
+            if (null == cview)
             {
                 throw new IllegalArgumentException("View cannot be edited");
             }
@@ -2182,7 +2260,7 @@ public class QueryController extends SpringActionController
 			{
                 // issue 17766: check if query or table exist with this name
                 if (null != QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.rename, true)
-                    || null != form.getSchema().getTable(form.rename))
+                    || null != form.getSchema().getTable(form.rename,null))
                 {
                     errors.reject(ERROR_MSG, "A query or table with the name \"" + form.rename + "\" already exists.");
                     return false;
@@ -2223,7 +2301,7 @@ public class QueryController extends SpringActionController
 
     @ActionNames("truncateTable")
     @RequiresPermission(AdminPermission.class)
-    public class TruncateTableAction extends MutatingApiAction<QueryForm>
+    public static class TruncateTableAction extends MutatingApiAction<QueryForm>
     {
         UserSchema schema;
         TableInfo table;
@@ -2234,14 +2312,14 @@ public class QueryController extends SpringActionController
             String schemaName = form.getSchemaName();
             String queryName = form.getQueryName();
 
-            if (null == schemaName || null == queryName)
+            if (isBlank(schemaName) || isBlank(queryName))
                 throw new NotFoundException("schemaName and queryName are required");
 
             schema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (null == schema)
                 throw new NotFoundException("The schema '" + schemaName + "' does not exist.");
 
-            table = schema.getTable(queryName);
+            table = schema.getTable(queryName, null);
             if (null == table)
                 throw new NotFoundException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
         }
@@ -2274,7 +2352,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(DeletePermission.class)
-    public class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
+    public static class DeleteQueryRowsAction extends FormHandlerAction<QueryForm>
     {
         public void validateCommand(QueryForm target, Errors errors)
         {
@@ -2322,33 +2400,44 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            try (DbScope.Transaction tx = dbSchema.getScope().ensureTransaction())
+            try
             {
-                updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
-                tx.commit();
+                dbSchema.getScope().executeWithRetry(tx ->
+                {
+                    try
+                    {
+                        updateService.deleteRows(getUser(), getContainer(), keyValues, null, null);
+                    }
+                    catch (SQLException x)
+                    {
+                        if (!RuntimeSQLException.isConstraintException(x))
+                            throw new RuntimeSQLException(x);
+                        errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
+                    }
+                    catch (DataIntegrityViolationException | OptimisticConflictException e)
+                    {
+                        errors.reject(ERROR_MSG, e.getMessage());
+                    }
+                    catch (BatchValidationException x)
+                    {
+                        x.addToErrors(errors);
+                    }
+                    catch (Exception x)
+                    {
+                        errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
+                        ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
+                    }
+                    // need to throw here to avoid committing tx
+                    if (errors.hasErrors())
+                        throw new DbScope.RetryPassthroughException(errors);
+                    return true;
+                });
             }
-            catch (SQLException x)
+            catch (DbScope.RetryPassthroughException x)
             {
-                if (!RuntimeSQLException.isConstraintException(x))
-                    throw x;
-                errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
-                return false;
+                if (x.getCause() != errors)
+                    x.throwRuntimeException();
             }
-            catch (DataIntegrityViolationException | OptimisticConflictException e)
-            {
-                errors.reject(ERROR_MSG, e.getMessage());
-                return false;
-            }
-            catch (BatchValidationException x)
-            {
-                x.addToErrors(errors);
-            }
-            catch (Exception x)
-            {
-                errors.reject(ERROR_MSG, null == x.getMessage() ? x.toString() : x.getMessage());
-                ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), x);
-            }
-
             return !errors.hasErrors();
         }
 
@@ -2424,10 +2513,13 @@ public class QueryController extends SpringActionController
                             auditURL.getParameter(QueryParam.queryName),
                             auditURL.getParameter("keyValue"), errors);
 
-                    historyView.setFrame(WebPartView.FrameType.PORTAL);
-                    historyView.setTitle("History");
+                    if (null != historyView)
+                    {
+                        historyView.setFrame(WebPartView.FrameType.PORTAL);
+                        historyView.setTitle("History");
 
-                    view.addView(historyView);
+                        view.addView(historyView);
+                    }
                 }
             }
             return view;
@@ -2499,7 +2591,7 @@ public class QueryController extends SpringActionController
             String str = null;
             if (form.getSuccessUrl() != null)
                 str = form.getSuccessUrl().toString();
-            if (StringUtils.isBlank(str))
+            if (isBlank(str))
                 str = form.getReturnUrl();
 
             if (StringUtils.equals(str, "details.view"))
@@ -2513,7 +2605,7 @@ public class QueryController extends SpringActionController
             }
             try
             {
-                if (!StringUtils.isBlank(str))
+                if (!isBlank(str))
                     return new ActionURL(str);
             }
             catch (IllegalArgumentException x)
@@ -2594,22 +2686,17 @@ public class QueryController extends SpringActionController
     }
 
     // alias
-    public class DeleteAction extends DeleteQueryRowsAction
+    public static class DeleteAction extends DeleteQueryRowsAction
     {
     }
 
-    public abstract class QueryViewAction extends SimpleViewAction<QueryForm>
-    {
-        QueryForm _form;
-        QueryView _queryView;
-    }
-
-    public abstract class QueryFormAction extends FormViewAction<QueryForm>
+    public abstract static class QueryViewAction extends SimpleViewAction<QueryForm>
     {
         QueryForm _form;
         QueryView _queryView;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class APIQueryForm extends ContainerFilterQueryForm
     {
         private Integer _start;
@@ -2747,6 +2834,7 @@ public class QueryController extends SpringActionController
     {
         public ApiResponse execute(APIQueryForm form, BindException errors)
         {
+            // Issue 12233: add implicit maxRows=100k when using client API
             QueryView view = form.getQueryView();
 
             view.setShowPagination(form.isIncludeTotalCount());
@@ -2806,7 +2894,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class GetDataAction extends ReadOnlyApiAction<SimpleApiJsonForm>
+    public static class GetDataAction extends ReadOnlyApiAction<SimpleApiJsonForm>
     {
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors) throws Exception
         {
@@ -2837,6 +2925,7 @@ public class QueryController extends SpringActionController
         return null != table && null != updateService;
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExecuteSqlForm extends APIQueryForm
     {
         private String _sql;
@@ -3117,7 +3206,7 @@ public class QueryController extends SpringActionController
             SimpleFilter filter = getFilterFromQueryForm(form);
 
             // Strip out filters on columns that don't exist - issue 21669
-            service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<FieldKey>());
+            service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<>());
             QueryLogging queryLogging = new QueryLogging();
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
@@ -3198,7 +3287,7 @@ public class QueryController extends SpringActionController
         {
             QuerySettings settings = form.getQuerySettings();
             List<FieldKey> fieldKeys = settings != null ? settings.getFieldKeys() : null;
-            if (null == fieldKeys || fieldKeys.isEmpty() || fieldKeys.size() != 1)
+            if (null == fieldKeys || fieldKeys.size() != 1)
                 errors.reject(ERROR_MSG, "GetColumnSummaryStats requires that only one column be requested.");
             else
                 _colFieldKey = fieldKeys.get(0);
@@ -3263,19 +3352,27 @@ public class QueryController extends SpringActionController
 
                 // create a response object mapping the analytics providers to their relevant aggregate results
                 Map<String, Map<String, Object>> aggregateResults = new HashMap<>();
-                for (Aggregate.Result r : aggResults.get(_colFieldKey.toString()))
+                if (aggResults.containsKey(_colFieldKey.toString()))
                 {
-                    Map<String, Object> props = new HashMap<>();
-                    Aggregate.Type type = r.getAggregate().getType();
-                    props.put("label", type.getFullLabel());
-                    props.put("description", type.getDescription());
-                    props.put("value", r.getFormattedValue(displayColumn, getContainer()));
-                    aggregateResults.put(type.getName(), props);
-                }
+                    for (Aggregate.Result r : aggResults.get(_colFieldKey.toString()))
+                    {
+                        Map<String, Object> props = new HashMap<>();
+                        Aggregate.Type type = r.getAggregate().getType();
+                        props.put("label", type.getFullLabel());
+                        props.put("description", type.getDescription());
+                        props.put("value", r.getFormattedValue(displayColumn, getContainer()));
+                        aggregateResults.put(type.getName(), props);
+                    }
 
-                response.put("success", true);
-                response.put("analyticsProviders", analyticsProviders);
-                response.put("aggregateResults", aggregateResults);
+                    response.put("success", true);
+                    response.put("analyticsProviders", analyticsProviders);
+                    response.put("aggregateResults", aggregateResults);
+                }
+                else
+                {
+                    response.put("success", false);
+                    response.put("message", "Unable to get aggregate results for " + _colFieldKey);
+                }
             }
             else
             {
@@ -3297,6 +3394,7 @@ public class QueryController extends SpringActionController
         {
             _form = form;
 
+            _insertOption = form.getInsertOption();
             QueryDefinition query = form.getQueryDef();
             List<QueryException> qpe = new ArrayList<>();
             TableInfo t = query.getTable(form.getSchema(), qpe, true);
@@ -3317,13 +3415,18 @@ public class QueryController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             new SchemaAction(_form).appendNavTrail(root);
-            root.addChild(_form.getQueryName(), _form.urlFor(QueryAction.executeQuery));
+            var executeQuery = _form.urlFor(QueryAction.executeQuery);
+            if (null == executeQuery)
+                root.addChild(_form.getQueryName());
+            else
+                root.addChild(_form.getQueryName(), executeQuery);
             root.addChild("Import Data");
             return root;
         }
     }
 
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExportSqlForm
     {
         private String _sql;
@@ -3366,7 +3469,6 @@ public class QueryController extends SpringActionController
             return _format;
         }
 
-        @SuppressWarnings({"UnusedDeclaration"})
         public void setFormat(String format)
         {
             _format = format;
@@ -3376,7 +3478,7 @@ public class QueryController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(9.2)
     @Action(ActionType.Export.class)
-    public class ExportSqlAction extends ExportAction<ExportSqlForm>
+    public static class ExportSqlAction extends ExportAction<ExportSqlForm>
     {
         public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws IOException, ExportException
         {
@@ -3551,7 +3653,7 @@ public class QueryController extends SpringActionController
 
         private final Class<? extends Permission> _permission;
 
-        private CommandType(Class<? extends Permission> permission)
+        CommandType(Class<? extends Permission> permission)
         {
             _permission = permission;
         }
@@ -3568,7 +3670,7 @@ public class QueryController extends SpringActionController
     /**
      * Base action class for insert/update/delete actions
      */
-    public abstract class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
+    public abstract static class BaseSaveRowsAction extends MutatingApiAction<ApiSaveRowsForm>
     {
         public static final String PROP_SCHEMA_NAME = "schemaName";
         public static final String PROP_QUERY_NAME = "queryName";
@@ -3713,7 +3815,7 @@ public class QueryController extends SpringActionController
             if (null == schema)
                 throw new IllegalArgumentException("The schema '" + schemaName + "' does not exist.");
 
-            TableInfo table = schema.getTable(queryName);
+            TableInfo table = schema.getTable(queryName, null);
             if (table == null)
                 throw new IllegalArgumentException("The query '" + queryName + "' in the schema '" + schemaName + "' does not exist.");
             return table;
@@ -3724,7 +3826,7 @@ public class QueryController extends SpringActionController
     //
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public class UpdateRowsAction extends BaseSaveRowsAction
+    public static class UpdateRowsAction extends BaseSaveRowsAction
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -3738,7 +3840,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public class InsertRowsAction extends BaseSaveRowsAction
+    public static class InsertRowsAction extends BaseSaveRowsAction
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -3752,7 +3854,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public class ImportRowsAction extends BaseSaveRowsAction
+    public static class ImportRowsAction extends BaseSaveRowsAction
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -3767,7 +3869,7 @@ public class QueryController extends SpringActionController
     @ActionNames("deleteRows, delRows")
     @RequiresPermission(ReadPermission.class) //will check below
     @ApiVersion(8.3)
-    public class DeleteRowsAction extends BaseSaveRowsAction
+    public static class DeleteRowsAction extends BaseSaveRowsAction
     {
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
@@ -3780,7 +3882,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresNoPermission //will check below
-    public class SaveRowsAction extends BaseSaveRowsAction
+    public static class SaveRowsAction extends BaseSaveRowsAction
     {
         public static final String PROP_VALUES = "values";
         public static final String PROP_OLD_KEYS = "oldKeys";
@@ -3844,6 +3946,7 @@ public class QueryController extends SpringActionController
                         throw new IllegalArgumentException("All queries must be from the same source database");
                     }
                 }
+                assert scope != null;
             }
 
             int startingErrorIndex = 0;
@@ -3916,7 +4019,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
-    public class ApiTestAction extends SimpleViewAction
+    public static class ApiTestAction extends SimpleViewAction
     {
         public ModelAndView getView(Object o, BindException errors)
         {
@@ -3931,7 +4034,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class AdminAction extends SimpleViewAction<QueryForm>
+    public static class AdminAction extends SimpleViewAction<QueryForm>
     {
         @SuppressWarnings("UnusedDeclaration")
         public AdminAction()
@@ -3960,6 +4063,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ResetRemoteConnectionsForm
     {
         private boolean _reset;
@@ -3975,8 +4079,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(AdminPermission.class)
-    public class ManageRemoteConnectionsAction extends FormViewAction<ResetRemoteConnectionsForm>
+    public static class ManageRemoteConnectionsAction extends FormViewAction<ResetRemoteConnectionsForm>
     {
         @Override
         public void validateCommand(ResetRemoteConnectionsForm target, Errors errors) {}
@@ -4023,7 +4128,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    private abstract class BaseInsertExternalSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
+    private abstract static class BaseInsertExternalSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
     {
         protected BaseInsertExternalSchemaAction(Class<F> commandClass)
         {
@@ -4075,7 +4180,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class InsertLinkedSchemaAction extends BaseInsertExternalSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    public static class InsertLinkedSchemaAction extends BaseInsertExternalSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public InsertLinkedSchemaAction()
         {
@@ -4090,7 +4195,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class InsertExternalSchemaAction extends BaseInsertExternalSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    public static class InsertExternalSchemaAction extends BaseInsertExternalSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public InsertExternalSchemaAction()
         {
@@ -4104,7 +4209,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    private abstract class BaseDeleteSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends ConfirmAction<F>
+    private abstract static class BaseDeleteSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends ConfirmAction<F>
     {
         public String getConfirmText()
         {
@@ -4116,12 +4221,9 @@ public class QueryController extends SpringActionController
             if (getPageConfig().getTitle() == null)
                 setTitle("Delete Schema");
 
-            if (null == form.getBean().getUserSchemaName())
-            {
-                throw new NotFoundException("Schema not specified");
-            }
             form.refreshFromDb();
-            return new HtmlView("Are you sure you want to delete the schema '" + form.getBean().getUserSchemaName() + "'? The tables and queries defined in this schema will no longer be accessible.");
+            String schemaName = isBlank(form.getBean().getUserSchemaName()) ? "this schema" : "the schema '" + form.getBean().getUserSchemaName() + "'";
+            return new HtmlView("Are you sure you want to delete " + schemaName + "? The tables and queries defined in this schema will no longer be accessible.");
         }
 
         public boolean handlePost(F form, BindException errors)
@@ -4142,6 +4244,7 @@ public class QueryController extends SpringActionController
         {
         }
 
+        @NotNull
         public ActionURL getSuccessURL(F form)
         {
             return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
@@ -4149,7 +4252,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteLinkedSchemaAction extends BaseDeleteSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    public static class DeleteLinkedSchemaAction extends BaseDeleteSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public void delete(LinkedSchemaForm form)
         {
@@ -4159,7 +4262,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class DeleteExternalSchemaAction extends BaseDeleteSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    public static class DeleteExternalSchemaAction extends BaseDeleteSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public void delete(ExternalSchemaForm form)
         {
@@ -4168,7 +4271,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    private abstract class BaseEditSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
+    private abstract static class BaseEditSchemaAction<F extends AbstractExternalSchemaForm<T>, T extends AbstractExternalSchemaDef> extends FormViewAction<F>
     {
         protected BaseEditSchemaAction(Class<F> commandClass)
         {
@@ -4251,7 +4354,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EditLinkedSchemaAction extends BaseEditSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
+    public static class EditLinkedSchemaAction extends BaseEditSchemaAction<LinkedSchemaForm, LinkedSchemaDef>
     {
         public EditLinkedSchemaAction()
         {
@@ -4275,7 +4378,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class EditExternalSchemaAction extends BaseEditSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
+    public static class EditExternalSchemaAction extends BaseEditSchemaAction<ExternalSchemaForm, ExternalSchemaDef>
     {
         public EditExternalSchemaAction()
         {
@@ -4481,6 +4584,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class GetTablesForm
     {
         private String _dataSource;
@@ -4519,7 +4623,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class GetTablesAction extends ReadOnlyApiAction<GetTablesForm>
+    public static class GetTablesAction extends ReadOnlyApiAction<GetTablesForm>
     {
         @Override
         public ApiResponse execute(GetTablesForm form, BindException errors)
@@ -4570,6 +4674,7 @@ public class QueryController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class SchemaTemplateForm
     {
         private String _name;
@@ -4585,8 +4690,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SchemaTemplateAction extends ReadOnlyApiAction<SchemaTemplateForm>
+    public static class SchemaTemplateAction extends ReadOnlyApiAction<SchemaTemplateForm>
     {
         @Override
         public ApiResponse execute(SchemaTemplateForm form, BindException errors)
@@ -4607,7 +4713,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class SchemaTemplatesAction extends ReadOnlyApiAction
+    public static class SchemaTemplatesAction extends ReadOnlyApiAction
     {
         @Override
         public ApiResponse execute(Object form, BindException errors)
@@ -4634,7 +4740,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ReloadExternalSchemaAction extends FormHandlerAction<ExternalSchemaForm>
+    public static class ReloadExternalSchemaAction extends FormHandlerAction<ExternalSchemaForm>
     {
         @Override
         public void validateCommand(ExternalSchemaForm form, Errors errors)
@@ -4660,7 +4766,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(AdminPermission.class)
-    public class ReloadAllUserSchemas extends FormHandlerAction
+    public static class ReloadAllUserSchemas extends FormHandlerAction
     {
         @Override
         public void validateCommand(Object target, Errors errors)
@@ -4683,7 +4789,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public class TableInfoAction extends SimpleViewAction<TableInfoForm>
+    public static class TableInfoAction extends SimpleViewAction<TableInfoForm>
     {
         public ModelAndView getView(TableInfoForm form, BindException errors) throws Exception
         {
@@ -4720,7 +4826,7 @@ public class QueryController extends SpringActionController
     // Permission will be checked inline (guests are allowed to delete their session custom views)
     @RequiresNoPermission
     @Action(ActionType.Configure.class)
-    public class DeleteViewAction extends MutatingApiAction<DeleteViewForm>
+    public static class DeleteViewAction extends MutatingApiAction<DeleteViewForm>
     {
         @Override
         public ApiResponse execute(DeleteViewForm form, BindException errors)
@@ -4778,6 +4884,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class SaveSessionViewForm extends QueryForm
     {
         private String newName;
@@ -4828,7 +4935,7 @@ public class QueryController extends SpringActionController
 
     // Moves a session view into the database.
     @RequiresPermission(ReadPermission.class) @RequiresLogin
-    public class SaveSessionViewAction extends MutatingApiAction<SaveSessionViewForm>
+    public static class SaveSessionViewAction extends MutatingApiAction<SaveSessionViewForm>
     {
         @Override
         public ApiResponse execute(SaveSessionViewForm form, BindException errors)
@@ -4981,6 +5088,7 @@ public class QueryController extends SpringActionController
         {
         }
 
+        @NotNull
         public ActionURL getSuccessURL(InternalViewForm internalViewForm)
         {
             return new ActionURL(ManageViewsAction.class, getContainer());
@@ -5152,6 +5260,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class SelectForm extends QueryForm
     {
         protected String key;
@@ -5166,6 +5276,7 @@ public class QueryController extends SpringActionController
             this.key = key;
         }
     }
+
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
@@ -5242,6 +5353,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class SetCheckForm extends SelectForm
     {
         protected String[] ids;
@@ -5271,11 +5384,14 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     public static String getMessage(SqlDialect d, SQLException x)
     {
         return x.getMessage();
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class GetSchemasForm
     {
         private boolean _includeHidden = true;
@@ -5302,9 +5418,10 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
     @ApiVersion(12.3)
-    public class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
+    public static class GetSchemasAction extends ReadOnlyApiAction<GetSchemasForm>
     {
         @Override
         protected long getLastModified(GetSchemasForm form)
@@ -5374,6 +5491,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class GetQueriesForm
     {
         private String _schemaName;
@@ -5433,9 +5551,10 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
+    public static class GetQueriesAction extends ReadOnlyApiAction<GetQueriesForm>
     {
         @Override
         protected long getLastModified(GetQueriesForm form)
@@ -5569,6 +5688,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class GetQueryViewsForm
     {
         private String _schemaName;
@@ -5617,9 +5737,10 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
+    public static class GetQueryViewsAction extends ReadOnlyApiAction<GetQueryViewsForm>
     {
         @Override
         protected long getLastModified(GetQueryViewsForm form)
@@ -5695,7 +5816,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresNoPermission
-    public class GetServerDateAction extends ReadOnlyApiAction
+    public static class GetServerDateAction extends ReadOnlyApiAction
     {
         public ApiResponse execute(Object o, BindException errors)
         {
@@ -5703,6 +5824,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     private static class SaveApiTestForm
     {
         private String _getUrl;
@@ -5751,8 +5874,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
-    public class SaveApiTestAction extends MutatingApiAction<SaveApiTestForm>
+    public static class SaveApiTestAction extends MutatingApiAction<SaveApiTestForm>
     {
         public ApiResponse execute(SaveApiTestForm form, BindException errors)
         {
@@ -5799,7 +5923,7 @@ public class QueryController extends SpringActionController
     }
 
 
-    private abstract class ParseAction extends SimpleViewAction
+    private abstract static class ParseAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -5879,7 +6003,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ParseExpressionAction extends ParseAction
+    public static class ParseExpressionAction extends ParseAction
     {
         QNode _parse(String s, List<QueryParseException> errors)
         {
@@ -5894,7 +6018,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class ParseQueryAction extends ParseAction
+    public static class ParseQueryAction extends ParseAction
     {
         QNode _parse(String s, List<QueryParseException> errors)
         {
@@ -5911,7 +6035,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectMetaData.class)
-    public class ValidateQueryMetadataAction extends ReadOnlyApiAction<QueryForm>
+    public static class ValidateQueryMetadataAction extends ReadOnlyApiAction<QueryForm>
     {
         public ApiResponse execute(QueryForm form, BindException errors)
         {
@@ -5923,7 +6047,7 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            TableInfo table = schema.getTable(form.getQueryName());
+            TableInfo table = schema.getTable(form.getQueryName(), null);
 
             if (null == table)
             {
@@ -5962,6 +6086,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class QueryExportAuditForm
     {
         private int rowId;
@@ -5981,7 +6106,7 @@ public class QueryController extends SpringActionController
      * Action used to redirect QueryAuditProvider [details] column to the exported table's grid view.
      */
     @RequiresPermission(AdminPermission.class)
-    public class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
+    public static class QueryExportAuditRedirectAction extends SimpleRedirectAction<QueryExportAuditForm>
     {
         public URLHelper getRedirectURL(QueryExportAuditForm form)
         {
@@ -5989,7 +6114,9 @@ public class QueryController extends SpringActionController
                 throw new NotFoundException("Query export audit rowid required");
 
             UserSchema auditSchema = QueryService.get().getUserSchema(getUser(), getContainer(), AbstractAuditTypeProvider.QUERY_SCHEMA_NAME);
-            TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT);
+            TableInfo queryExportAuditTable = auditSchema.getTable(QueryExportAuditProvider.QUERY_AUDIT_EVENT, null);
+            if (null == queryExportAuditTable)
+                throw new NotFoundException();
 
             TableSelector selector = new TableSelector(queryExportAuditTable,
                     PageFlowUtil.set(
@@ -6028,7 +6155,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class AuditHistoryAction extends SimpleViewAction<QueryForm>
+    public static class AuditHistoryAction extends SimpleViewAction<QueryForm>
     {
         @Override
         public ModelAndView getView(QueryForm form, BindException errors)
@@ -6044,7 +6171,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class AuditDetailsAction extends SimpleViewAction<QueryDetailsForm>
+    public static class AuditDetailsAction extends SimpleViewAction<QueryDetailsForm>
     {
         @Override
         public ModelAndView getView(QueryDetailsForm form, BindException errors)
@@ -6059,6 +6186,7 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class QueryDetailsForm extends QueryForm
     {
         String _keyValue;
@@ -6075,7 +6203,40 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
+    public static class GetQueryAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
+    {
+        @Override
+        public Object execute(AuditChangesForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, form.getAuditRowId());
+
+            if (event != null)
+            {
+                response.put("comment", event.getComment());
+                response.put("eventUserId", event.getCreatedBy().getUserId());
+                response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
+
+                String oldRecord = event.getOldRecordMap();
+                String newRecord = event.getNewRecordMap();;
+
+                if (oldRecord != null || newRecord != null)
+                {
+                    response.put("oldData", QueryExportAuditProvider.decodeFromDataMap(oldRecord));
+                    response.put("newData", QueryExportAuditProvider.decodeFromDataMap(newRecord));
+                }
+
+                response.put("success", true);
+                return response;
+            }
+
+            response.put("success", false);
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
+    public static class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
     {
         @Override
         public ModelAndView getView(AuditChangesForm form, BindException errors)
@@ -6104,7 +6265,7 @@ public class QueryController extends SpringActionController
             return new NoRecordView();
         }
 
-        private class NoRecordView extends HttpView
+        private static class NoRecordView extends HttpView
         {
             @Override
             protected void renderInternal(Object model, PrintWriter out)
@@ -6120,6 +6281,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AuditChangesForm
     {
         private int auditRowId;
@@ -6129,9 +6292,10 @@ public class QueryController extends SpringActionController
         public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
     }
 
+
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public class ExportTablesAction extends FormViewAction<ExportTablesForm>
+    public static class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
         private ActionURL _successUrl;
 
@@ -6194,6 +6358,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class ExportTablesForm implements HasBindParameters
     {
         ColumnHeaderType _headerType = ColumnHeaderType.DisplayFieldKey;
@@ -6254,8 +6420,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
-    public class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
+    public static class SaveNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
         @Override
         public Object execute(NamedSetForm namedSetForm, BindException errors)
@@ -6265,6 +6432,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class NamedSetForm
     {
         String setName;
@@ -6296,8 +6465,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(ReadPermission.class)
-    public class DeleteNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
+    public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
 
         @Override
@@ -6308,6 +6478,8 @@ public class QueryController extends SpringActionController
         }
     }
 
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class GenerateSchemaForm extends ReturnUrlForm
     {
         String sourceSchema;
@@ -6321,7 +6493,6 @@ public class QueryController extends SpringActionController
             return sourceSchema;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
         public void setSourceSchema(String sourceSchema)
         {
             this.sourceSchema = sourceSchema;
@@ -6332,7 +6503,6 @@ public class QueryController extends SpringActionController
             return targetSchema;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
         public void setTargetSchema(String targetSchema)
         {
             this.targetSchema = targetSchema;
@@ -6343,7 +6513,6 @@ public class QueryController extends SpringActionController
             return pathInScript;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
         public void setPathInScript(String pathInScript)
         {
             this.pathInScript = pathInScript;
@@ -6354,7 +6523,6 @@ public class QueryController extends SpringActionController
             return sourceDataSource;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
         public void setSourceDataSource(String sourceDataSource)
         {
             this.sourceDataSource = sourceDataSource;
@@ -6365,15 +6533,15 @@ public class QueryController extends SpringActionController
             return outputDir;
         }
 
-        @SuppressWarnings("UnusedDeclaration")
         public void setOutputDir(String outputDir)
         {
             this.outputDir = outputDir;
         }
     }
 
+
     @RequiresPermission(AdminOperationsPermission.class)
-    public class GenerateSchemaAction extends FormViewAction<GenerateSchemaForm>
+    public static class GenerateSchemaAction extends FormViewAction<GenerateSchemaForm>
     {
         @Override
         public void validateCommand(GenerateSchemaForm form, Errors errors)
@@ -6395,8 +6563,8 @@ public class QueryController extends SpringActionController
 
             // NOTE: should we add any kind of dialect tags to the importScript output?
             DbSchema sourceSchema = DbSchema.createFromMetaData(DbScope.getDbScope(form.getSourceDataSource()), form.getSourceSchema(), DbSchemaType.Bare);
-            String targetSchema = StringUtils.isBlank(form.getTargetSchema()) ? form.getSourceSchema() : form.getTargetSchema();
-            String pathInScript = StringUtils.isBlank(form.getPathInScript()) ? "" : form.getPathInScript();
+            String targetSchema = isBlank(form.getTargetSchema()) ? form.getSourceSchema() : form.getTargetSchema();
+            String pathInScript = isBlank(form.getPathInScript()) ? "" : form.getPathInScript();
             if (!pathInScript.endsWith("/"))
                 pathInScript += "/";
 
@@ -6465,8 +6633,9 @@ public class QueryController extends SpringActionController
         }
     }
 
+
     @RequiresPermission(AdminPermission.class)
-    public class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction
+    public static class GetSchemasWithDataSourcesAction extends ReadOnlyApiAction
     {
         @Override
         public Object execute(Object o, BindException errors)
@@ -6495,7 +6664,7 @@ public class QueryController extends SpringActionController
 
     // could make this requires(ReadPermission), but it could be pretty easy to abuse, or maybe RequiresLogin && ReadPermission
     @RequiresLogin
-    public class TestSQLAction extends SimpleViewAction
+    public static class TestSQLAction extends SimpleViewAction
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -6511,6 +6680,7 @@ public class QueryController extends SpringActionController
             return root;
         }
     }
+
 
     @RequiresPermission(ReadPermission.class)
     public static class AnalyzeQueriesAction extends ReadOnlyApiAction
@@ -6541,7 +6711,6 @@ public class QueryController extends SpringActionController
                 JSONArray dependants = new JSONArray();
                 for (var from : deps.keySet())
                 {
-                    JSONArray toList = new JSONArray();
                     for (var to : deps.get(from))
                         dependants.put(new String[] {from.getKey(), to.getKey()});
                 }
@@ -6553,6 +6722,783 @@ public class QueryController extends SpringActionController
             }
             return ret;
         }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetQueryEditorMetadataAction extends ReadOnlyApiAction<QueryForm>
+    {
+        @Override
+        public Object execute(QueryForm queryForm, BindException errors) throws Exception
+        {
+            QueryDefinition queryDef = queryForm.getQueryDef();
+            return getMetadata(queryDef.getSchema().getSchemaName(), queryDef.getName());
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
+    public class SaveQueryMetadataAction extends MutatingApiAction<QueryMetadataApiForm>
+    {
+        @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            PropertyService propertyService = PropertyService.get();
+            if (null != propertyService)
+            {
+                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+                propertyService.configureObjectMapper(mapper, null);
+                return mapper;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
+        public Object execute(QueryMetadataApiForm queryMetadataApiForm, BindException errors) throws Exception
+        {
+            GWTTableInfo gwtTableInfo = queryMetadataApiForm.getDomain();
+            String schemaName = queryMetadataApiForm.getSchemaName();
+            GWTTableInfo domain = saveMetadata(gwtTableInfo, schemaName);
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("domain", domain);
+            return resp;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresAllOf({EditQueriesPermission.class, UpdatePermission.class})
+    public class ResetQueryMetadataAction extends MutatingApiAction<QueryForm>
+    {
+        @Override
+        public Object execute(QueryForm queryForm, BindException errors) throws Exception
+        {
+            QueryDefinition queryDef = queryForm.getQueryDef();
+            return resetToDefault(queryDef.getSchema().getSchemaName(), queryDef.getName());
+        }
+    }
+
+    private static class QueryMetadataApiForm
+    {
+        GWTTableInfo _domain;
+        String _schemaName;
+
+        public GWTTableInfo getDomain()
+        {
+            return _domain;
+        }
+
+        public void setDomain(GWTTableInfo domain)
+        {
+            _domain = domain;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+    }
+
+    private GWTTableInfo saveMetadata(GWTTableInfo gwtTableInfo, String schemaName) throws MetadataUnavailableException
+    {
+        UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+        QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), gwtTableInfo.getName(), gwtTableInfo.isUserDefinedQuery());
+        TableInfo rawTableInfo = schema.getTable(gwtTableInfo.getName(), false);
+
+        TablesDocument doc = null;
+        TableType xmlTable = null;
+
+        if (queryDef != null)
+        {
+            try
+            {
+                doc = parseDocument(queryDef.getMetaData());
+            }
+            catch (XmlException e)
+            {
+                throw new MetadataUnavailableException(e.getMessage());
+            }
+            xmlTable = getTableType(gwtTableInfo.getName(), doc);
+        }
+        else
+        {
+            queryDef = new QueryDef();
+            queryDef.setSchema(schemaName);
+            queryDef.setContainer(getViewContext().getContainer().getId());
+            queryDef.setName(gwtTableInfo.getName());
+        }
+
+        if (doc == null)
+        {
+            doc = TablesDocument.Factory.newInstance();
+        }
+
+        if (xmlTable == null)
+        {
+            TablesType tables = doc.addNewTables();
+            xmlTable = tables.addNewTable();
+            xmlTable.setTableName(gwtTableInfo.getName());
+        }
+
+        if (xmlTable.getColumns() == null)
+        {
+            xmlTable.addNewColumns();
+        }
+
+        if (xmlTable.getTableDbType() == null)
+        {
+            xmlTable.setTableDbType("NOT_IN_DB");
+        }
+
+        Map<String, ColumnType> columnsToDelete = new CaseInsensitiveHashMap<>();
+        for (ColumnType columnType : xmlTable.getColumns().getColumnArray())
+        {
+            // Remember all the columns in the metadata overrides so that we can delete any that the user
+            // has removed completely.
+            columnsToDelete.put(columnType.getColumnName(), columnType);
+        }
+
+
+        for (GWTColumnInfo gwtColumnInfo : gwtTableInfo.getFields())
+        {
+            ColumnType xmlColumn = columnsToDelete.get(gwtColumnInfo.getName());
+            ColumnInfo rawColumnInfo = rawTableInfo.getColumn(gwtColumnInfo.getName());
+            if (rawColumnInfo == null)
+            {
+                rawColumnInfo = new BaseColumnInfo((String)null);
+                // Establish the type of the column
+                if (gwtColumnInfo.getWrappedColumnName() != null)
+                {
+                    ColumnInfo columnToBeWrapped = rawTableInfo.getColumn(gwtColumnInfo.getWrappedColumnName());
+                    if (columnToBeWrapped == null)
+                    {
+                        continue;
+                    }
+                    ((BaseColumnInfo)rawColumnInfo).setJdbcType(columnToBeWrapped.getJdbcType());
+                }
+                else
+                {
+                    throw new MetadataUnavailableException("No such column: " + gwtColumnInfo.getName());
+                }
+            }
+
+            if (xmlColumn != null)
+            {
+                // Still valid, don't delete it from the metadata overrides
+                columnsToDelete.remove(gwtColumnInfo.getName());
+            }
+            else
+            {
+                // This column was not in the overrides before, so add it now
+                xmlColumn = xmlTable.getColumns().addNewColumn();
+                xmlColumn.setColumnName(gwtColumnInfo.getName());
+
+                if (gwtColumnInfo.getWrappedColumnName() != null)
+                {
+                    // This is a newly created column that wraps another column
+                    xmlColumn.setWrappedColumnName(gwtColumnInfo.getWrappedColumnName());
+                }
+            }
+
+            // Set the description
+            if (shouldStoreValue(gwtColumnInfo.getDescription(), rawColumnInfo.getDescription()))
+            {
+                xmlColumn.setDescription(gwtColumnInfo.getDescription());
+            }
+            else if (xmlColumn.isSetDescription())
+            {
+                xmlColumn.unsetDescription();
+            }
+
+            // Set the format
+            if (shouldStoreValue(gwtColumnInfo.getFormat(), rawColumnInfo.getFormat()))
+            {
+                xmlColumn.setFormatString(gwtColumnInfo.getFormat());
+            }
+            else if (xmlColumn.isSetFormatString())
+            {
+                xmlColumn.unsetFormatString();
+            }
+
+            // Set visibility info
+            if (gwtColumnInfo.isHidden() != rawColumnInfo.isHidden())
+            {
+                xmlColumn.setIsHidden(gwtColumnInfo.isHidden());
+            }
+            else if (xmlColumn.isSetIsHidden())
+            {
+                xmlColumn.unsetIsHidden();
+            }
+            if (gwtColumnInfo.isShownInInsertView() != rawColumnInfo.isShownInInsertView())
+            {
+                xmlColumn.setShownInInsertView(gwtColumnInfo.isShownInInsertView());
+            }
+            else if (xmlColumn.isSetShownInInsertView())
+            {
+                xmlColumn.unsetShownInInsertView();
+            }
+            if (gwtColumnInfo.isShownInUpdateView() != rawColumnInfo.isShownInUpdateView())
+            {
+                xmlColumn.setShownInUpdateView(gwtColumnInfo.isShownInUpdateView());
+            }
+            else if (xmlColumn.isSetShownInUpdateView())
+            {
+                xmlColumn.unsetShownInUpdateView();
+            }
+            if (gwtColumnInfo.isShownInDetailsView() != rawColumnInfo.isShownInDetailsView())
+            {
+                xmlColumn.setShownInDetailsView(gwtColumnInfo.isShownInDetailsView());
+            }
+            else if (xmlColumn.isSetShownInDetailsView())
+            {
+                xmlColumn.unsetShownInDetailsView();
+            }
+            if (gwtColumnInfo.isMeasure() != rawColumnInfo.isMeasure())
+            {
+                xmlColumn.setMeasure(gwtColumnInfo.isMeasure());
+            }
+            else if (xmlColumn.isSetMeasure())
+            {
+                xmlColumn.unsetMeasure();
+            }
+
+            if (gwtColumnInfo.isDimension() != rawColumnInfo.isDimension())
+            {
+                xmlColumn.setDimension(gwtColumnInfo.isDimension());
+            }
+            else if (xmlColumn.isSetDimension())
+            {
+                xmlColumn.unsetDimension();
+            }
+
+            if (gwtColumnInfo.isRecommendedVariable() != rawColumnInfo.isRecommendedVariable())
+            {
+                xmlColumn.setRecommendedVariable(gwtColumnInfo.isRecommendedVariable());
+            }
+            else if (xmlColumn.isSetRecommendedVariable())
+            {
+                xmlColumn.unsetRecommendedVariable();
+            }
+
+            if (!StringUtils.equals(gwtColumnInfo.getDefaultScale(), rawColumnInfo.getDefaultScale().name()))
+            {
+                xmlColumn.setDefaultScale(DefaultScaleType.Enum.forString(gwtColumnInfo.getDefaultScale()));
+            }
+            else if (xmlColumn.isSetDefaultScale())
+            {
+                xmlColumn.unsetDefaultScale();
+            }
+
+            /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+
+            if (!StringUtils.equals(gwtColumnInfo.getPHI(), rawColumnInfo.getPHI().name()))
+            {
+                xmlColumn.setPhi(PHIType.Enum.forString(gwtColumnInfo.getPHI()));
+            }
+            else if (xmlColumn.isSetPhi())
+            {
+                xmlColumn.unsetPhi();
+            }*/
+
+            if (gwtColumnInfo.isExcludeFromShifting() != rawColumnInfo.isExcludeFromShifting())
+            {
+                xmlColumn.setExcludeFromShifting(gwtColumnInfo.isExcludeFromShifting());
+            }
+            else if (xmlColumn.isSetExcludeFromShifting())
+            {
+                xmlColumn.unsetExcludeFromShifting();
+            }
+
+            // Set the label
+            if (shouldStoreValue(gwtColumnInfo.getLabel(), rawColumnInfo.getLabel()))
+            {
+                xmlColumn.setColumnTitle(gwtColumnInfo.getLabel());
+            }
+            else if (xmlColumn.isSetColumnTitle())
+            {
+                xmlColumn.unsetColumnTitle();
+            }
+
+            // Set the URL
+            String originalURL = rawColumnInfo.getURL() == null ? null : rawColumnInfo.getURL().toString();
+            if (shouldStoreValue(gwtColumnInfo.getURL(), originalURL))
+            {
+                if (gwtColumnInfo.getURL() != null)
+                {
+                    try
+                    {
+                        StringExpression expr = StringExpressionFactory.createURL(gwtColumnInfo.getURL());
+                        xmlColumn.setUrl(expr.toXML());
+                    }
+                    catch (Exception e)
+                    {
+                        throw new MetadataUnavailableException(e.getMessage());
+                    }
+                }
+            }
+            else if (xmlColumn.isSetUrl())
+            {
+                xmlColumn.unsetUrl();
+            }
+
+            // Set the FK
+            if (!gwtColumnInfo.isLookupCustom() && gwtColumnInfo.getLookupQuery() != null && gwtColumnInfo.getLookupSchema() != null)
+            {
+                Pair<Lookup, Boolean> lookup = createLookup(rawColumnInfo.getFk(), getContainer());
+
+                // Check if it's the same FK, based on schema, query, and container
+                if (lookup == null ||
+                        !gwtColumnInfo.getLookupSchema().equals(lookup.first.getSchemaName()) ||
+                        !gwtColumnInfo.getLookupQuery().equals(lookup.first.getQueryName()) ||
+                        !Objects.equals(gwtColumnInfo.getLookupContainer(), lookup.first.getContainer() != null ? lookup.first.getContainer().getPath() : null))
+                {
+                    Container targetContainer = gwtColumnInfo.getLookupContainer() != null ? ContainerManager.getForPath(gwtColumnInfo.getLookupContainer()) : null;
+                    UserSchema fkSchema = QueryService.get().getUserSchema(getViewContext().getUser(), targetContainer == null ? getViewContext().getContainer() : targetContainer, gwtColumnInfo.getLookupSchema());
+                    if (fkSchema != null)
+                    {
+                        TableInfo fkTableInfo = fkSchema.getTable(gwtColumnInfo.getLookupQuery());
+                        if (fkTableInfo != null)
+                        {
+                            List<String> pkCols = fkTableInfo.getPkColumnNames();
+                            if (pkCols.size() == 1)
+                            {
+                                ColumnType.Fk fk = xmlColumn.getFk();
+                                if (fk == null)
+                                {
+                                    fk = xmlColumn.addNewFk();
+                                }
+                                fk.setFkDbSchema(gwtColumnInfo.getLookupSchema());
+                                fk.setFkTable(gwtColumnInfo.getLookupQuery());
+                                fk.setFkColumnName(pkCols.get(0));
+                                if (targetContainer != null)
+                                {
+                                    fk.setFkFolderPath(targetContainer.getPath());
+                                }
+                            }
+                        }
+                    }
+                }
+                else if (xmlColumn.isSetFk())
+                {
+                    xmlColumn.unsetFk();
+                }
+            }
+            else if (xmlColumn.isSetFk())
+            {
+                xmlColumn.unsetFk();
+            }
+
+            // Always clear it out the conditional formats if they've been set
+            if (xmlColumn.isSetConditionalFormats())
+            {
+                xmlColumn.unsetConditionalFormats();
+            }
+            // Set the conditional formats
+            if (shouldStoreValue(gwtColumnInfo.getConditionalFormats(), convertToGWT(rawColumnInfo.getConditionalFormats())))
+            {
+                ConditionalFormat.convertToXML(gwtColumnInfo.getConditionalFormats(), xmlColumn);
+            }
+
+            if (xmlColumn.getWrappedColumnName() == null)
+            {
+                NodeList childNodes = xmlColumn.getDomNode().getChildNodes();
+                // May be empty, or may have empty text between the start and end tags
+                if (childNodes.getLength() == 0 ||
+                        (childNodes.getLength() == 1 && childNodes.item(0) instanceof Text && ((Text)childNodes.item(0)).getData().trim().length() == 0))
+                {
+                    // Remove columns that no longer have any metadata set on them
+                    removeColumn(xmlTable, xmlColumn);
+                }
+            }
+        }
+
+
+        // Yank out the columns that were in the metadata that aren't in the list from the client
+        for (ColumnType columnType : columnsToDelete.values())
+        {
+            removeColumn(xmlTable, columnType);
+        }
+
+        XmlOptions xmlOptions = new XmlOptions();
+        xmlOptions.setSavePrettyPrint();
+        // Don't use an explicit namespace, making the XML much more readable
+        xmlOptions.setUseDefaultNamespace();
+        queryDef.setMetaData(doc.xmlText(xmlOptions));
+        if (queryDef.getQueryDefId() == 0)
+        {
+            QueryManager.get().insert(getViewContext().getUser(), queryDef);
+        }
+        else
+        {
+            QueryManager.get().update(getViewContext().getUser(), queryDef);
+        }
+
+        return getMetadata(schemaName, gwtTableInfo.getName());
+    }
+
+    private void removeColumn(TableType tableType, ColumnType columnType)
+    {
+        for (int i = 0; i < tableType.getColumns().getColumnArray().length; i++)
+        {
+            if (tableType.getColumns().getColumnArray(i) == columnType)
+            {
+                tableType.getColumns().removeColumn(i);
+                break;
+            }
+        }
+    }
+
+    private boolean shouldStoreValue(Object userValue, Object defaultValue)
+    {
+        return userValue != null && !userValue.equals(defaultValue);
+    }
+
+    private GWTTableInfo getMetadata(String schemaName, String tableName) throws MetadataUnavailableException
+    {
+        Map<String, GWTColumnInfo> columnInfos = new CaseInsensitiveHashMap<>();
+        List<GWTColumnInfo> orderedPDs = new ArrayList<>();
+        Set<String> injectedColumnNames = new CaseInsensitiveHashSet();
+        GWTTableInfo gwtTableInfo = new GWTTableInfo();
+        gwtTableInfo.setSchemaName(schemaName);
+        gwtTableInfo.setQueryName(tableName);
+        gwtTableInfo.setName(tableName);
+
+        UserSchema schema = QueryService.get().getUserSchema(getViewContext().getUser(), getViewContext().getContainer(), schemaName);
+        if (schema == null)
+        {
+            return null;
+        }
+        TableInfo table;
+        try
+        {
+            table = schema.getTable(tableName, null);
+            if (null == table)
+                return null;
+
+            Domain domain = table.getDomain();
+            if (domain != null)
+                gwtTableInfo.setProvisioned(domain.isProvisioned());
+        }
+        catch (QueryParseException e)
+        {
+            throw new MetadataUnavailableException(e.getMessage());
+        }
+
+        for (ColumnInfo columnInfo : table.getColumns())
+        {
+            GWTColumnInfo gwtColumnInfo = new GWTColumnInfo();
+
+            gwtColumnInfo.setPropertyId(-1);
+            gwtColumnInfo.setName(columnInfo.getName());
+            columnInfos.put(gwtColumnInfo.getName(), gwtColumnInfo);
+            orderedPDs.add(gwtColumnInfo);
+
+            gwtColumnInfo.setRequired(!columnInfo.isNullable());
+            gwtColumnInfo.setLabel(columnInfo.getLabel());
+            gwtColumnInfo.setFormat(columnInfo.getFormat());
+            gwtColumnInfo.setHidden(columnInfo.isHidden());
+            gwtColumnInfo.setShownInDetailsView(columnInfo.isShownInDetailsView());
+            gwtColumnInfo.setShownInInsertView(columnInfo.isShownInInsertView());
+            gwtColumnInfo.setShownInUpdateView(columnInfo.isShownInUpdateView());
+            gwtColumnInfo.setDimension(columnInfo.isDimension());
+            gwtColumnInfo.setMeasure(columnInfo.isMeasure());
+            gwtColumnInfo.setRecommendedVariable(columnInfo.isRecommendedVariable());
+            gwtColumnInfo.setDefaultScale(columnInfo.getDefaultScale().name());
+            /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+            gwtColumnInfo.setPHI(columnInfo.getPHI().name());*/
+            gwtColumnInfo.setExcludeFromShifting(columnInfo.isExcludeFromShifting());
+            gwtColumnInfo.setURL(columnInfo.getURL() == null ? null : columnInfo.getURL().toString());
+            gwtColumnInfo.setRangeURI(PropertyType.getFromClass(columnInfo.getJavaObjectClass()).getTypeUri());
+            if (columnInfo.getFk() != null)
+            {
+                ForeignKey fk = columnInfo.getFk();
+                Pair<Lookup, Boolean> lookup = createLookup(fk, getContainer());
+                if (lookup != null)
+                {
+                    if (lookup.second)
+                        gwtColumnInfo.setLookupCustom(true);
+                    else
+                    {
+                        gwtColumnInfo.setLookupSchema(lookup.first.getSchemaName());
+                        gwtColumnInfo.setLookupQuery(lookup.first.getQueryName());
+                        if (lookup.first.getContainer() != null)
+                            gwtColumnInfo.setLookupContainer(lookup.first.getContainer().getPath());
+                    }
+                }
+            }
+
+            List<GWTConditionalFormat> formats = convertToGWT(columnInfo.getConditionalFormats());
+            gwtColumnInfo.setConditionalFormats(formats);
+        }
+
+        List<QueryDef> queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, false, false, null);
+        if (queryDefs == null)
+        {
+            queryDefs = QueryServiceImpl.get().findMetadataOverrideImpl(schema, tableName, true, false, null);
+            if (queryDefs != null)
+            {
+                gwtTableInfo.setUserDefinedQuery(true);
+            }
+        }
+
+        if (queryDefs != null && !queryDefs.isEmpty())
+        {
+            // Use the last QueryDef's metadata -- this should be the user's metadata override in the database if it exists
+            QueryDef queryDef = queryDefs.get(queryDefs.size()-1);
+
+            if (!getContainer().getId().equals(queryDef.getContainerId()))
+            {
+                Container c = ContainerManager.getForId(queryDef.getContainerId());
+                if (c != null)
+                {
+                    gwtTableInfo.setDefinitionFolder(c.getPath());
+                }
+            }
+            TablesDocument doc = null;
+            try
+            {
+                doc = parseDocument(queryDef.getMetaData());
+            }
+            catch (XmlException e)
+            {
+                // Just ignore the metadata override if it doesn't parse correctly
+            }
+            TableType tableType = getTableType(tableName, doc);
+            if (tableType != null)
+            {
+                if (tableType.getColumns() != null)
+                {
+                    for (ColumnType column : tableType.getColumns().getColumnArray())
+                    {
+                        GWTColumnInfo gwtColumnInfo = columnInfos.get(column.getColumnName());
+                        if (gwtColumnInfo == null)
+                        {
+                            // Omit columns that are in the XML but are no longer in the underlying table/query
+                            break;
+                        }
+                        if (column.isSetColumnTitle())
+                        {
+                            gwtColumnInfo.setLabel(column.getColumnTitle());
+                        }
+                        if (column.isSetDescription())
+                        {
+                            gwtColumnInfo.setDescription(column.getDescription());
+                        }
+                        if (column.isSetFormatString())
+                        {
+                            gwtColumnInfo.setFormat(column.getFormatString());
+                        }
+                        if (column.isSetShownInDetailsView())
+                        {
+                            gwtColumnInfo.setShownInDetailsView(column.getShownInDetailsView());
+                        }
+                        if (column.isSetDimension())
+                        {
+                            gwtColumnInfo.setDimension(column.getDimension());
+                        }
+                        if (column.isSetMeasure())
+                        {
+                            gwtColumnInfo.setMeasure(column.getMeasure());
+                        }
+                        if (column.isSetRecommendedVariable())
+                        {
+                            gwtColumnInfo.setRecommendedVariable(column.getRecommendedVariable());
+                        }
+                        else if (column.isSetKeyVariable())
+                        {
+                            gwtColumnInfo.setRecommendedVariable(column.getKeyVariable());
+                        }
+                        if (column.isSetDefaultScale())
+                        {
+                            gwtColumnInfo.setDefaultScale(column.getDefaultScale().toString());
+                        }
+                        /* NOTE: explicitly not supporting this metadata via this pathway, do not uncomment
+                        if (column.isSetPhi())
+                        {
+                            gwtColumnInfo.setPHI(column.getPhi().toString());
+                        }*/
+                        if (column.isSetExcludeFromShifting())
+                        {
+                            gwtColumnInfo.setExcludeFromShifting(column.getExcludeFromShifting());
+                        }
+                        if (column.isSetIsHidden())
+                        {
+                            gwtColumnInfo.setHidden(column.getIsHidden());
+                        }
+                        if (column.isSetShownInInsertView())
+                        {
+                            gwtColumnInfo.setShownInInsertView(column.getShownInInsertView());
+                        }
+                        if (column.isSetShownInUpdateView())
+                        {
+                            gwtColumnInfo.setShownInUpdateView(column.getShownInUpdateView());
+                        }
+                        if (column.getFk() != null)
+                        {
+                            gwtColumnInfo.setLookupQuery(column.getFk().getFkTable());
+                            gwtColumnInfo.setLookupSchema(column.getFk().getFkDbSchema());
+                        }
+                        if (column.isSetConditionalFormats())
+                        {
+                            List<ConditionalFormat> serverFormats = ConditionalFormat.convertFromXML(column.getConditionalFormats());
+                            List<GWTConditionalFormat> gwtFormats = new ArrayList<>();
+                            for (ConditionalFormat serverFormat : serverFormats)
+                            {
+                                gwtFormats.add(new GWTConditionalFormat(serverFormat));
+                            }
+                            gwtColumnInfo.setConditionalFormats(gwtFormats);
+                        }
+                        if (column.getWrappedColumnName() != null)
+                        {
+                            injectedColumnNames.add(column.getColumnName());
+                            gwtColumnInfo.setWrappedColumnName(column.getWrappedColumnName());
+                            ColumnInfo tableColumn = table.getColumn(column.getWrappedColumnName());
+                            if (tableColumn != null)
+                            {
+                                gwtColumnInfo.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                            }
+                        }
+                        else
+                        {
+                            gwtColumnInfo.setLockType(LockedPropertyType.PartiallyLocked.name());
+                            ColumnInfo tableColumn = table.getColumn(column.getColumnName());
+                            if (tableColumn != null)
+                            {
+                                gwtColumnInfo.setRangeURI(PropertyType.getFromClass(tableColumn.getJavaObjectClass()).getTypeUri());
+                            }
+                            else
+                            {
+                                injectedColumnNames.add(column.getColumnName());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Set<String> builtInColumnNames = new CaseInsensitiveHashSet(columnInfos.keySet());
+        builtInColumnNames.removeAll(injectedColumnNames);
+        gwtTableInfo.setMandatoryFieldNames(builtInColumnNames);
+        gwtTableInfo.setFields(orderedPDs);
+
+        // TODO: figure out something better for defaultValuesURL
+        gwtTableInfo.setDefaultValuesURL(" ");
+        return gwtTableInfo;
+    }
+
+    private List<GWTConditionalFormat> convertToGWT(List<ConditionalFormat> formats)
+    {
+        List<GWTConditionalFormat> result = new ArrayList<>();
+        for (ConditionalFormat format : formats)
+        {
+            result.add(new GWTConditionalFormat(format));
+        }
+        return result;
+    }
+
+    private Pair<Lookup, Boolean> createLookup(ForeignKey fk, Container currentContainer)
+    {
+        if (fk == null)
+            return null;
+
+        boolean custom = false;
+        Lookup lookup = new Lookup();
+
+        TableInfo lookupTarget = null;
+        try
+        {
+            lookupTarget = fk.getLookupTableInfo();
+        }
+        catch (QueryParseException ignored)
+        {
+            // Be tolerant of problematic lookup targets
+        }
+
+        if (fk.getLookupSchemaName() == null || fk.getLookupTableName() == null)
+        {
+            if (lookupTarget != null && lookupTarget.isPublic() && lookupTarget.getPublicSchemaName() != null && lookupTarget.getPublicName() != null)
+            {
+                lookup.setSchemaName(lookupTarget.getPublicSchemaName());
+                lookup.setQueryName(lookupTarget.getPublicName());
+            }
+            else
+            {
+                custom = true;
+            }
+        }
+        else
+        {
+            lookup.setSchemaName(fk.getLookupSchemaName());
+            lookup.setQueryName(fk.getLookupTableName());
+        }
+
+        // Set the lookup's container if it targets some other container
+        if (lookupTarget != null && lookupTarget.getUserSchema() != null && !lookupTarget.getUserSchema().getContainer().equals(currentContainer))
+        {
+            lookup.setContainer(lookupTarget.getUserSchema().getContainer());
+        }
+
+        return Pair.of(lookup, custom);
+    }
+
+    private TableType getTableType(String name, TablesDocument doc)
+    {
+        if (doc != null && doc.getTables() != null)
+        {
+            TablesType tables = doc.getTables();
+            for (TableType tableType : tables.getTableArray())
+            {
+                if (name.equalsIgnoreCase(tableType.getTableName()))
+                {
+                    return tableType;
+                }
+            }
+        }
+        return null;
+    }
+
+    private TablesDocument parseDocument(String xml) throws XmlException
+    {
+        if (xml == null)
+        {
+            return null;
+        }
+
+        return TablesDocument.Factory.parse(xml);
+    }
+
+    public GWTTableInfo resetToDefault(String schemaName, String queryName) throws MetadataUnavailableException
+    {
+        QueryDef queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, false);
+        if (queryDef != null)
+        {
+            // Delete the metadata override on a built-in table
+            QueryManager.get().delete(queryDef);
+        }
+        else
+        {
+            queryDef = QueryManager.get().getQueryDef(getViewContext().getContainer(), schemaName, queryName, true);
+            if (queryDef != null)
+            {
+                queryDef.setMetaData(null);
+                QueryManager.get().update(getViewContext().getUser(), queryDef);
+            }
+        }
+        return getMetadata(schemaName, queryName);
     }
 
     public static class TestCase extends AbstractActionPermissionTest
@@ -6567,105 +7513,105 @@ public class QueryController extends SpringActionController
 
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
-                controller.new BrowseAction(),
-                controller.new BeginAction(),
+                new BrowseAction(),
+                new BeginAction(),
                 controller.new SchemaAction(),
                 controller.new SourceQueryAction(),
                 controller.new ExecuteQueryAction(),
                 controller.new PrintRowsAction(),
-                controller.new ExportScriptAction(),
-                controller.new ExportRowsExcelAction(),
-                controller.new ExportRowsXLSXAction(),
-                controller.new ExportExcelTemplateAction(),
-                controller.new ExportRowsTsvAction(),
+                new ExportScriptAction(),
+                new ExportRowsExcelAction(),
+                new ExportRowsXLSXAction(),
+                new ExportExcelTemplateAction(),
+                new ExportRowsTsvAction(),
                 controller.new ExcelWebQueryDefinitionAction(),
-                controller.new MetadataServiceAction(),
+                new MetadataServiceAction(),
                 controller.new SaveQueryViewsAction(),
                 controller.new PropertiesQueryAction(),
                 controller.new SelectRowsAction(),
-                controller.new GetDataAction(),
+                new GetDataAction(),
                 controller.new ExecuteSqlAction(),
                 controller.new SelectDistinctAction(),
                 controller.new GetColumnSummaryStatsAction(),
                 controller.new ImportAction(),
-                controller.new ExportSqlAction(),
-                controller.new UpdateRowsAction(),
-                controller.new InsertRowsAction(),
-                controller.new ImportRowsAction(),
-                controller.new DeleteRowsAction(),
-                controller.new TableInfoAction(),
-                controller.new SaveSessionViewAction(),
-                controller.new GetSchemasAction(),
-                controller.new GetQueriesAction(),
-                controller.new GetQueryViewsAction(),
-                controller.new SaveApiTestAction(),
-                controller.new ValidateQueryMetadataAction(),
-                controller.new AuditHistoryAction(),
-                controller.new AuditDetailsAction(),
-                controller.new QueryAuditChangesAction(),
-                controller.new ExportTablesAction(),
-                controller.new SaveNamedSetAction(),
-                controller.new DeleteNamedSetAction()
+                new ExportSqlAction(),
+                new UpdateRowsAction(),
+                new InsertRowsAction(),
+                new ImportRowsAction(),
+                new DeleteRowsAction(),
+                new TableInfoAction(),
+                new SaveSessionViewAction(),
+                new GetSchemasAction(),
+                new GetQueriesAction(),
+                new GetQueryViewsAction(),
+                new SaveApiTestAction(),
+                new ValidateQueryMetadataAction(),
+                new AuditHistoryAction(),
+                new AuditDetailsAction(),
+                new QueryAuditChangesAction(),
+                new ExportTablesAction(),
+                new SaveNamedSetAction(),
+                new DeleteNamedSetAction()
             );
 
             // @RequiresPermission(DeletePermission.class)
             assertForUpdateOrDeletePermission(user,
-                controller.new DeleteQueryRowsAction()
+                new DeleteQueryRowsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                controller.new DeleteQueryAction(),
+                new DeleteQueryAction(),
                 controller.new MetadataQueryAction(),
                 controller.new NewQueryAction(),
-                controller.new SaveSourceQueryAction(),
+                new SaveSourceQueryAction(),
 
-                controller.new TruncateTableAction(),
-                controller.new ApiTestAction(),
-                controller.new AdminAction(),
-                controller.new ManageRemoteConnectionsAction(),
-                controller.new ReloadExternalSchemaAction(),
-                controller.new ReloadAllUserSchemas(),
+                new TruncateTableAction(),
+                new ApiTestAction(),
+                new AdminAction(),
+                new ManageRemoteConnectionsAction(),
+                new ReloadExternalSchemaAction(),
+                new ReloadAllUserSchemas(),
                 controller.new ManageViewsAction(),
                 controller.new InternalDeleteView(),
                 controller.new InternalSourceViewAction(),
                 controller.new InternalNewViewAction(),
-                controller.new QueryExportAuditRedirectAction(),
-                controller.new GetSchemasWithDataSourcesAction()
+                new QueryExportAuditRedirectAction(),
+                new GetSchemasWithDataSourcesAction()
             );
 
             // @RequiresPermission(AdminOperationsPermission.class)
             assertForAdminOperationsPermission(user,
-                controller.new EditRemoteConnectionAction(),
-                controller.new DeleteRemoteConnectionAction(),
-                controller.new TestRemoteConnectionAction(),
+                new EditRemoteConnectionAction(),
+                new DeleteRemoteConnectionAction(),
+                new TestRemoteConnectionAction(),
                 controller.new RawTableMetaDataAction(),
                 controller.new RawSchemaMetaDataAction(),
-                controller.new InsertLinkedSchemaAction(),
-                controller.new InsertExternalSchemaAction(),
-                controller.new DeleteLinkedSchemaAction(),
-                controller.new DeleteExternalSchemaAction(),
-                controller.new EditLinkedSchemaAction(),
-                controller.new EditExternalSchemaAction(),
-                controller.new GetTablesAction(),
-                controller.new GenerateSchemaAction(),
-                controller.new SchemaTemplateAction(),
-                controller.new SchemaTemplatesAction(),
-                controller.new ParseExpressionAction(),
-                controller.new ParseQueryAction()
+                new InsertLinkedSchemaAction(),
+                new InsertExternalSchemaAction(),
+                new DeleteLinkedSchemaAction(),
+                new DeleteExternalSchemaAction(),
+                new EditLinkedSchemaAction(),
+                new EditExternalSchemaAction(),
+                new GetTablesAction(),
+                new GenerateSchemaAction(),
+                new SchemaTemplateAction(),
+                new SchemaTemplatesAction(),
+                new ParseExpressionAction(),
+                new ParseQueryAction()
             );
 
             // @AdminConsoleAction
             assertForAdminPermission(ContainerManager.getRoot(), user,
-                controller.new DataSourceAdminAction()
+                new DataSourceAdminAction()
             );
 
             // In addition to administrators (tested above), trusted analysts who are editors can create and edit queries
             assertTrustedEditorPermission(
-                controller.new DeleteQueryAction(),
+                new DeleteQueryAction(),
                 controller.new MetadataQueryAction(),
                 controller.new NewQueryAction(),
-                controller.new SaveSourceQueryAction()
+                new SaveSourceQueryAction()
             );
         }
     }

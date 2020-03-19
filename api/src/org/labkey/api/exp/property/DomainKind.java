@@ -41,12 +41,19 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-abstract public class DomainKind implements Handler<String>
+abstract public class DomainKind<T>  implements Handler<String>
 {
     abstract public String getKindName();
+
+    /**
+     * Return a class of DomainKind's bean which carries domain specific properties.
+     * This class will used when marshalling/unmarshalling via Jackson during Create and Save/Update Domain
+     * @return Class of DomainKind's bean with domain specific properties
+     */
+    abstract public Class<? extends T> getTypeClass();
+
     abstract public String getTypeLabel(Domain domain);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);
 
@@ -95,24 +102,35 @@ abstract public class DomainKind implements Handler<String>
     // so that it can hold instance data (e.g. a DatasetDefinition)
 
     /**
+     * Get DomainKind specific properties.
+     * @param domain The domain design.
+     * @param container Container
+     * @param user User
+     * @return Return object that holds DomainKind specific properties.
+     */
+    abstract public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user);
+
+    /**
      * Create a Domain appropriate for this DomainKind.
      * @param domain The domain design.
-     * @param arguments Any extra arguments.
+     * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
      * @return The newly created Domain.
      */
-    abstract public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo);
+    abstract public Domain createDomain(GWTDomain domain, T options, Container container, User user, @Nullable TemplateInfo templateInfo);
 
     /**
      * Update a Domain definition appropriate for this DomainKind.
      * @param original The original domain definition.
      * @param update The updated domain definition.
+     * @param options Any domain kind specific properties/options.
      * @param container Container
      * @param user User
      * @return A list of errors collected during the update.
      */
-    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
+    abstract public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable T options, Container container, User user, boolean includeWarnings);
 
     /**
      * Delete a Domain and its associated data.

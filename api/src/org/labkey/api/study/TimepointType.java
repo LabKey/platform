@@ -16,6 +16,8 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.EnumHasHtmlString;
 
 /**
@@ -42,5 +44,13 @@ public enum TimepointType implements EnumHasHtmlString<TimepointType>
     public boolean isVisitBased()
     {
         return _visitBased;
+    }
+
+    /** @throws org.labkey.api.query.ValidationException if a study of this type can't be switched to the other type */
+    public void validateTransition(@NotNull TimepointType target) throws ValidationException
+    {
+        // Visit-based studies can't be shifted, but date and continuous can flip back and forth to each other
+        if (isVisitBased() != target.isVisitBased())
+            throw new ValidationException("Cannot create study type " + target + " from a " + target + " study");
     }
 }

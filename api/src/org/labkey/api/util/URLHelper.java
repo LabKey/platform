@@ -29,6 +29,7 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValue;
@@ -37,8 +38,10 @@ import org.springframework.beans.PropertyValues;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -139,7 +142,8 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         setPort(req.getServerPort());
         setScheme(req.getScheme());
 
-        _parsePath(req.getRequestURI());
+        // NOTE: request.getRequestURI() is encoded unlike request.getServletPath()
+        setPath(_parsePath(req.getRequestURI(), true));
         _parseQuery(req.getQueryString(), req.getCharacterEncoding());
     }
 
@@ -227,7 +231,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.insert(0, '/');
         }
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
-        if (!isDirectory() || hasParams)
+        if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
             uriString.append('?');      // makes it easier for users who want to concatenate
         if (hasParams)
             uriString.append(getQueryString(allowSubstSyntax));
@@ -235,6 +239,12 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.append("#").append(_fragment);
 
         return uriString.toString();
+    }
+
+    // when true, don't include '?' unless there are query parameters
+    private boolean isExperimentalNoQuestionMark()
+    {
+        return AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL);
     }
 
 
@@ -249,19 +259,19 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     {
         setHost(uri.getHost());
         setPort(uri.getPort());       // TODO: Don't store -1 if port is not specified -- use scheme to save default ports
-        _parsePath(uri.getRawPath());
+        setPath(_parsePath(uri.getRawPath(), true));
         _parseQuery(uri.getRawQuery());
         setScheme(uri.getScheme());
         _fragment = uri.getFragment();
     }
 
 
-    protected void _parsePath(String path)
+    protected Path _parsePath(String path, boolean decode)
     {
         if (null == path || 0 == path.length() || "/".equals(path))
-            _path = Path.rootPath;
+            return Path.rootPath;
         else
-            _path = Path.decode(path);
+            return decode ? Path.decode(path) : Path.parse(path);
     }
 
 
@@ -313,19 +323,20 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     }
 
 
-    public URLHelper setPath(Path path)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _path = path;
-        return this;
-    }
-
-
+    /**
+     * The path argument is not URL encoded.
+     */
     public URLHelper setPath(String path)
     {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _parsePath(path);
-        return this;
+        return setParsedPath(_parsePath(path, false));
+    }
+
+    /**
+     * The path argument is not URL encoded.
+     */
+    public URLHelper setPath(Path path)
+    {
+        return setParsedPath(path);
     }
 
 
@@ -339,7 +350,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
 
     public URLHelper setRawQuery(String query)
     {
-        //_query = query;
         _parseQuery(query);
         return this;
     }
@@ -402,6 +412,13 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Path getParsedPath()
     {
         return null == _path ? Path.rootPath : _path;
+    }
+
+    public URLHelper setParsedPath(Path path)
+    {
+        if (_readOnly) throw new java.lang.IllegalStateException();
+        _path = path;
+        return this;
     }
 
 
@@ -796,8 +813,9 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public Enumeration<String> getParameterNames()
     {
         Hashtable<String,String> h = new Hashtable<>();
-        for (Pair<String,String> p : _parameters)
-            h.put(p.getKey(), p.getKey());
+        if (null != _parameters)
+            for (Pair<String,String> p : _parameters)
+                h.put(p.getKey(), p.getKey());
         return h.keys();
     }
 
@@ -857,21 +875,25 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         filter.applyToURL(this, dataRegionName);
     }
 
+    public boolean isHttpURL()
+    {
+        if (null == getScheme() && null == getHost())
+            return true;
+        if (null == getScheme() || null == getHost())
+            return false;
+        String scheme = getScheme().toLowerCase();
+        if ("https".equals(scheme) || "http".equals(scheme))
+            return true;
+        return false;
+    }
+
     public static boolean isHttpURL(String url)
     {
         if (StringUtils.isEmpty(url))
             return false;
         try
         {
-            URLHelper h = new URLHelper(url);
-            if (null == h.getScheme() && null == h.getHost())
-                return true;
-            if (null == h.getScheme() || null == h.getHost())
-                return false;
-            String scheme = h.getScheme().toLowerCase();
-            if ("https".equals(scheme) || "http".equals(scheme))
-                return true;
-            return false;
+            return new URLHelper(url).isHttpURL();
         }
         catch (URISyntaxException x)
         {
@@ -897,6 +919,65 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     public HtmlString getHtmlString()
     {
         return HtmlString.of(toString());
+    }
+
+    public boolean isConfiguredExternalHost()
+    {
+        String requestedHost = this.getHost();
+        if (StringUtils.trimToNull(requestedHost) != null )
+            return AppProps.getInstance().getExternalRedirectHosts().stream().anyMatch(requestedHost::equalsIgnoreCase);
+
+        return false;
+    }
+
+    // Issue 35896 - Disallow external redirects to URLs not on the whitelist
+    public boolean isAllowableHost()
+    {
+        String host = StringUtils.trimToNull(this.getHost());
+
+        // We have a returnURL that includes a server host name
+        if (host != null)
+        {
+            // Check if it matches the current server's preferred host name, per the base server URL setting
+            String allowedHost = null;
+            try
+            {
+                allowedHost = new URL(AppProps.getInstance().getBaseServerUrl()).getHost();
+            }
+            catch (MalformedURLException ignored) {}
+
+            if (!host.equalsIgnoreCase(allowedHost))
+            {
+                // Server host name that doesn't match, log and possibly reject based on config
+                // Allow 'localhost' for servers in dev mode
+                boolean isConfigured = AppProps.getInstance().isDevMode() && "localhost".equalsIgnoreCase(host);
+                isConfigured |= this.isConfiguredExternalHost();
+
+                if (!isConfigured)
+                {
+                    String logMessageDetails = "returnURL value: " + this.toString();
+                    HttpServletRequest request = HttpView.currentRequest();
+                    if (request != null)
+                    {
+                        logMessageDetails += " from URL: " + request.getRequestURL();
+                        if (request.getHeader("Referer") != null)
+                        {
+                            logMessageDetails += " with referrer: " + request.getHeader("Referer");
+                        }
+                    }
+
+                    LOG.warn("Rejected external host redirect " + logMessageDetails +
+                            "\nPlease configure external redirect url host from: Admin gear --> Site --> Admin Console --> Settings --> External Redirect Hosts");
+                    return false;
+                }
+                else
+                {
+                    LOG.debug("Detected configured external host returnURL: " + this.toString());
+                }
+            }
+        }
+
+        return true;
     }
 
     public static class TestCase extends Assert
@@ -937,13 +1018,15 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
         @Test
         public void testParseWithHash() throws URISyntaxException
         {
-            URLHelper h;
-            String url = "/ehr-animalHistory" +
-                    ".view?#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
-
-            h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
+            URLHelper h = new URLHelper("http://server/ehr-animalHistory.view?#subjects:AB12&inputType:singleSubject&showReport" +
                     ":1&activeReport:virusTesting");
-            assertEquals(url,h.toString());
+
+            String url = "/ehr-animalHistory.view";
+            if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL))
+                url += "?";
+            url += "#subjects:AB12&inputType:singleSubject&showReport:1&activeReport:virusTesting";
+
+            assertEquals(url, h.toString());
         }
     }
 

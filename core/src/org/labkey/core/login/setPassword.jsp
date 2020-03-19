@@ -17,6 +17,7 @@
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.collections.NamedObject" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -24,6 +25,8 @@
 <%@ page import="org.labkey.core.login.DbLoginManager" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.portal.ProjectController" %>
+<%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -88,15 +91,15 @@
 
         <div>
         <% if (null != bean.email) { %>
-            <labkey:input type="hidden" name="email" value="<%=h(bean.email)%>"/>
+            <labkey:input type="hidden" name="email" value="<%=bean.email%>"/>
         <% }
 
         if (null != bean.form.getVerification()) { %>
-            <labkey:input type="hidden" name="verification" value="<%=h(bean.form.getVerification())%>"/>
+            <labkey:input type="hidden" name="verification" value="<%=bean.form.getVerification()%>"/>
         <% }
 
         if (null != bean.form.getMessage()) { %>
-            <labkey:input type="hidden" name="message" value="<%=h(bean.form.getMessage())%>"/>
+            <labkey:input type="hidden" name="message" value="<%=bean.form.getMessage()%>"/>
         <% }
 
         if (bean.form.getSkipProfile()) { %>
@@ -112,6 +115,15 @@
             <%= button(bean.buttonText).submit(true).name("set") %>
             <%=unsafe(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.HomeAction.class, getContainer())).toString() : "")%>
         </div>
+    <% }
+       else
+       {
+           Container c = getContainer().isRoot() ? ContainerManager.getHomeContainer() : getContainer();
+           URLHelper homeURL = bean.form.getReturnURLHelper() != null ? bean.form.getReturnURLHelper() : new ActionURL(ProjectController.StartAction.class, c);
+    %>
+            <div class="auth-item">
+                <%= unsafe(button("Home").href(homeURL).toString()) %>
+            </div>
     <% } %>
     </div>
 </labkey:form>

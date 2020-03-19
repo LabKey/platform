@@ -24,6 +24,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -110,6 +111,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(int rowid);
 
+    List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
+
     ExpRun getExpRun(String lsid);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
@@ -173,9 +176,17 @@ public interface ExperimentService extends ExperimentRunTypeSource
     /**
      * Create a new DataClass with the provided properties.
      */
-    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
+    default ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
                                  @Nullable TemplateInfo templateInfo)
+            throws ExperimentException, SQLException
+    {
+        return createDataClass(c, u, name, description, properties, indices, sampleSetId, nameExpression, templateInfo, null);
+    }
+
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
+                                 @Nullable TemplateInfo templateInfo, @Nullable String category)
             throws ExperimentException, SQLException;
 
     /**
@@ -822,6 +833,10 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<ExpRun> getDeletableRunsFromMaterials(Collection<? extends ExpMaterial> materials);
 
     boolean useUXDomainDesigner();
+
+    List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
+
+    SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
 
     class XarExportOptions
     {

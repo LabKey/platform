@@ -46,6 +46,7 @@ public interface AppProps
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String EXPERIMENTAL_STRICT_RETURN_URL = "strictReturnUrl";
+    String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
 
     static AppProps getInstance()
     {
@@ -95,7 +96,15 @@ public interface AppProps
     @NotNull
     UsageReportingLevel getUsageReportingLevel();
 
-    String getLabKeyVersionString();
+    /**
+     * Returns the core module's release version, a string such as 20.3-SNAPSHOT, 20.1.0, or 20.3.7
+     */
+    String getReleaseVersion();
+
+    /**
+     * Convenience method for getting the core schema version, returning 0.0 instead of null
+     */
+    double getSchemaVersion();
 
     String getContextPath();
 
@@ -218,5 +227,4 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
-
 }

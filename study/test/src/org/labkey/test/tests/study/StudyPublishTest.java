@@ -33,6 +33,7 @@ import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
+import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.SaveChartDialog;
@@ -45,6 +46,7 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
 import org.labkey.test.util.RReportHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.WebElement;
 
 import java.io.File;
@@ -149,7 +151,6 @@ public class StudyPublishTest extends StudyPHIExportTest
     private final String[] PUB3_LISTS = {}; // none
     private final int PUB3_EXPECTED_SPECIMENS = 29;
 
-    private final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
     private final String[] SPECIMEN_PHI_FIELDS = {"Fr_Container", "Fr_Level1"};
 
     private int _pipelineJobs = 0;
@@ -230,7 +231,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         publishStudy(PUB3_NAME, PUB3_DESCRIPTION, PublishLocation.project, PUB3_GROUPS, PUB3_DATASETS, PUB3_VISITS, PUB3_VIEWS, PUB3_REPORTS, PUB3_LISTS, true, false, false, true, false, true);
 
         // load specimen set B to test the specimen refresh for the published studies
-        startSpecimenImport(++_pipelineJobs, SPECIMEN_ARCHIVE_B);
+        startSpecimenImport(++_pipelineJobs, StudyHelper.SPECIMEN_ARCHIVE_B);
     }
 
     @Override
@@ -1053,19 +1054,15 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setSpecimenFieldsPhi(String[] phiFields)
     {
         goToManageStudy();
-        clickAndWait(Locator.linkContainingText("Edit specimen properties"));
+        clickAndWait(Locator.linkContainingText("Edit Specimen Event fields"));
 
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("SpecimenEvent").waitFor();
-        List<String> fields = new ArrayList<>();
-        fields.addAll(Arrays.asList(phiFields));
+        DomainDesignerPage designerPage = new DomainDesignerPage(getDriver());
+        List<String> fields = new ArrayList<>(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            editor.selectField(field);
-            PropertiesEditor.FieldPropertyDock.AdvancedTabPane advancedTabPane = editor.fieldProperties().selectAdvancedTab();
-            advancedTabPane.setPhiLevel(PropertiesEditor.PhiSelectType.PHI);
+            designerPage.fieldsPanel().getField(field).setPHILevel(PropertiesEditor.PhiSelectType.PHI);
         }
-        clickButton("Save", 0);
-        waitForText("Save successful.");
+       designerPage.clickFinish();
     }
 
     private void setUnshiftedDateField(String dataset, String fieldName)

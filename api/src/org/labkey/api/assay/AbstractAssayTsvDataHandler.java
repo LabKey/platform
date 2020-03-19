@@ -20,29 +20,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ForeignKey;
-import org.labkey.api.data.ImportAliasable;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.RemapCache;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableResultSet;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
@@ -101,6 +84,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -119,6 +103,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     };
 
     private static final Logger LOG = Logger.getLogger(AbstractAssayTsvDataHandler.class);
+    private Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
 
     protected abstract boolean allowEmptyData();
 
@@ -302,26 +287,26 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                 {
                     ExpProtocol protocol = run.getProtocol();
                     AssayProvider provider = AssayService.get().getProvider(protocol);
+                    FieldKey assayResultLsidFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
 
                     SQLFragment assayResultLsidSql = null;
 
                     Domain domain;
-                    if (provider != null)
+                    if (provider != null && assayResultLsidFieldKey != null)
                     {
                         domain = provider.getResultsDomain(protocol);
 
-                        AssayTableMetadata tableMetadata = provider.getTableMetadata(protocol);
                         AssayProtocolSchema assayProtocolSchema = provider.createProtocolSchema(user, protocol.getContainer(), protocol, null);
                         TableInfo assayDataTable = assayProtocolSchema.createDataTable(ContainerFilter.EVERYTHING, false);
                         if (assayDataTable != null)
                         {
-                            ColumnInfo lsidCol = assayDataTable.getColumn("LSID");
+                            ColumnInfo lsidCol = assayDataTable.getColumn(assayResultLsidFieldKey);
                             ColumnInfo dataIdCol = assayDataTable.getColumn("DataId");
                             if (lsidCol == null || dataIdCol == null)
-                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and LSID column");
+                                throw new IllegalStateException("Assay results table expected to have dataId lookup column and " + assayResultLsidFieldKey + " column");
 
                             // select the assay results LSID column for all rows referenced by the data
-                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X"))
+                            assayResultLsidSql = new SQLFragment("SELECT ").append(lsidCol.getValueSql("X")).append(" AS ObjectURI")
                                     .append(" FROM ").append(assayDataTable.getFromSQL("X"))
                                     .append(" WHERE ").append(dataIdCol.getValueSql("X")).append(" = ").append(d.getRowId());
                         }
@@ -363,6 +348,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                             {
                                 throw new RuntimeSQLException(x);
                             }
+                        }
+
+                        // call pvs to delete assay result rows provenance
+                        ProvenanceService pvs = ProvenanceService.get();
+                        if (null != pvs)
+                        {
+                            pvs.deleteAssayResultProvenance(assayResultLsidSql);
                         }
 
                         OntologyManager.deleteOntologyObjects(ExperimentService.get().getSchema(), assayResultLsidSql, run.getContainer(), false);
@@ -432,7 +424,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             final TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
 
-            Map<ExpMaterial, String> inputMaterials = checkData(container, user, dataTable, dataDomain, rawData, settings, resolver);
+            Map<ExpMaterial, String> inputMaterials = checkData(container, user, protocol, provider, dataTable, dataDomain, rawData, settings, resolver);
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
@@ -440,8 +432,23 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             // On insert, the raw data will have the provisioned table's rowId added to the list of maps
             List<Map<String, Object>> inserted = insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, dataTable);
 
+            ProvenanceService pvs = ProvenanceService.get();
+            Map<Integer, String> rowIdToLsidMap = Collections.emptyMap();
+            if (pvs != null || provider.isPlateMetadataEnabled(protocol))
+            {
+                if (provider.getResultRowLSIDPrefix() == null)
+                {
+                    LOG.info("Import failed for run '" + run.getName() + "; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+                    return;
+                }
+                rowIdToLsidMap = getRowIdtoLsidMap(user, container, provider, protocol, run, inserted);
+            }
+
             // Attach run's final protocol application with output LSIDs for Assay Result rows
-            addAssayResultRowsProvenance(user, container, protocol, run, provider, inserted);
+            addAssayResultRowsProvenance(container, run, inserted, rowIdToLsidMap);
+
+            // add plate metadata if the assay is configured to support it
+            addAssayPlateMetadata(container, user, run, provider, protocol, data, inserted, rowIdToLsidMap);
 
             if (shouldAddInputMaterials())
             {
@@ -460,20 +467,24 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
     }
 
-
-    private void addAssayResultRowsProvenance(
-            User user, Container container,
-            ExpProtocol protocol, ExpRun run,
-            AssayProvider provider,
-            List<Map<String, Object>> insertedData)
+    /**
+     * The insertedData collection that is returned from insertRowData contains the actual rowId but the wrong lsid. This
+     * utility will return a map of rowId to lsid that can be used during the construction of ontology objects attached
+     * to the result data row.
+     */
+    private Map<Integer, String> getRowIdtoLsidMap(User user, Container container, AssayProvider provider, ExpProtocol protocol,
+                                                   ExpRun run, List<Map<String, Object>> insertedData)
     {
-        ProvenanceService pvs = ProvenanceService.get();
-        if (pvs == null)
-            return;
+        FieldKey assayResultFieldKey = provider.getTableMetadata(protocol).getResultLsidFieldKey();
+        if (assayResultFieldKey == null)
+            throw new IllegalStateException("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
 
         // get the LSID for the newly inserted assay result data rows
-        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).getTable("Data", null);
-        ColumnInfo lsidCol = dataTable.getColumn("LSID");
+        TableInfo dataTable = provider.createProtocolSchema(user, container, protocol, null).createDataTable(null);
+        if (dataTable == null)
+            throw new IllegalStateException("Assay results table required to attach provenance");
+
+        ColumnInfo lsidCol = dataTable.getColumn(assayResultFieldKey);
         if (lsidCol == null)
             throw new IllegalStateException("Assay results table LSID column required to attach provenance");
 
@@ -486,8 +497,15 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("run"), run.getRowId());
         filter.addCondition(rowIdCol, rowIds, CompareType.IN);
         Sort sort = new Sort(FieldKey.fromParts("rowId"));
-        Map<Integer, String> rowIdToLsid = new TableSelector(dataTable, List.of(rowIdCol, lsidCol), filter, sort).getValueMap();
-        assert rowIds.size() == rowIds.size();
+
+        return new TableSelector(dataTable, List.of(rowIdCol, lsidCol), filter, sort).getValueMap();
+    }
+
+    private void addAssayResultRowsProvenance(Container container, ExpRun run, List<Map<String, Object>> insertedData, Map<Integer, String> rowIdToLsid)
+    {
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return;
 
         Set<Pair<String, String>> provPairs = new HashSet<>(insertedData.size());
         for (Map<String, Object> insertedRow : insertedData)
@@ -519,6 +537,38 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         if (!provPairs.isEmpty())
         {
             pvs.addProvenance(container, outputProtocolApp, provPairs);
+        }
+    }
+
+    private void addAssayPlateMetadata(Container container, User user, ExpRun run, AssayProvider provider, ExpProtocol protocol,
+                                       ExpData resultData, List<Map<String, Object>> inserted, Map<Integer, String> rowIdToLsidMap) throws ExperimentException
+    {
+        if (provider.isPlateMetadataEnabled(protocol))
+        {
+            // find the ExpData object for the plate metadata
+            List<? extends ExpData> datas = run.getOutputDatas(PlateMetadataDataHandler.DATA_TYPE);
+            if (datas.size() == 1)
+            {
+                ExpData plateData = datas.get(0);
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService((AssayDataType)plateData.getDataType());
+                if (svc != null)
+                {
+                    Map<String, AssayPlateMetadataService.MetadataLayer> plateMetadata;
+
+                    if (plateData.getFile() != null)
+                        plateMetadata = svc.parsePlateMetadata(plateData.getFile());
+                    else if (getRawPlateMetadata() != null)
+                        plateMetadata = getRawPlateMetadata();
+                    else
+                        throw new ExperimentException("There was no plate metadata JSON available for this run");
+
+                    svc.addAssayPlateMetadata(resultData, plateMetadata, container, user, run, provider, protocol, inserted, rowIdToLsidMap);
+                }
+                else
+                    throw new ExperimentException("No PlateMetadataService registered for data type : " + plateData.getDataType().toString());
+            }
+            else
+                throw new ExperimentException("Unable to locate the ExpData with the plate metadata");
         }
     }
 
@@ -632,7 +682,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
      * NOTE: Mutates the rawData list in-place
      * @return the set of materials that are inputs to this run
      */
-    private Map<ExpMaterial, String> checkData(Container container, User user, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
+    private Map<ExpMaterial, String> checkData(Container container, User user, ExpProtocol protocol, AssayProvider provider, TableInfo dataTable, Domain dataDomain, List<Map<String, Object>> rawData, DataLoaderSettings settings, ParticipantVisitResolver resolver)
             throws ValidationException, ExperimentException
     {
         final ExperimentService exp = ExperimentService.get();
@@ -1007,6 +1057,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                         rowInputLSIDs.add(lsid.toString());
                     }
                 }
+                else if (provenanceInputs instanceof Collection)
+                {
+                    for (Object obj : (Collection)provenanceInputs)
+                    {
+                        rowInputLSIDs.add(Objects.toString(obj));
+                    }
+                }
                 else
                 {
                     String lsids = (String) map.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
@@ -1075,6 +1132,17 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), protocol, run.getRowId());
         }
         return null;
+    }
+
+    @Nullable
+    public Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
+    {
+        return _rawPlateMetadata;
+    }
+
+    public void setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
+    {
+        _rawPlateMetadata = rawPlateMetadata;
     }
 
     /** Wrapper around a row's key->value map that can find the values based on any of the DomainProperty's potential

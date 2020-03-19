@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -119,7 +120,7 @@ public abstract class CompareType
             if (value == null || "".equals(value))
                 return ISBLANK.createFilterClause(fieldKey, value);
 
-            return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateEqCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -154,7 +155,7 @@ public abstract class CompareType
             if (value == null || "".equals(value))
                 return NONBLANK.createFilterClause(fieldKey, value);
 
-            return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateNeqCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -190,11 +191,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) > 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -203,7 +204,7 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateGtCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -224,11 +225,12 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) < 0;
+
+            return compareTo((Comparable)value, (Comparable)filterValue) < 0;
         }
     };
 
@@ -237,7 +239,7 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateLtCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -258,11 +260,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) >= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) >= 0;
         }
     };
 
@@ -271,7 +273,7 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateGteCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -292,11 +294,11 @@ public abstract class CompareType
                 return false;
             }
             Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
-            if (filterValue == null)
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) <= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) <= 0;
         }
     };
 
@@ -305,7 +307,7 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateLteCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
@@ -776,6 +778,8 @@ public abstract class CompareType
 
     private static class QClause extends CompareType.CompareClause
     {
+        private List<ColumnInfo> _queryColumns = null;
+
         QClause(String value)
         {
             super(new FieldKey(null, "*"), Q, value);
@@ -793,7 +797,52 @@ public abstract class CompareType
         @Override
         public List<FieldKey> getFieldKeys()
         {
-            return Collections.emptyList();
+            return this.getQueryColumns(null).stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList());
+        }
+
+        private List<ColumnInfo> getQueryColumns(@Nullable Integer paramNum)
+        {
+            if (_selectColumns == null)
+                return Collections.emptyList();
+
+            if (_queryColumns == null)
+            {
+                _queryColumns = new ArrayList<>();
+                for (ColumnInfo column : _selectColumns)
+                {
+                    if (column == null)
+                        continue;
+
+                    // If the search term parsed as a number, include a test for the primary key column
+                    if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
+                    {
+                        _queryColumns.add(column);
+                    }
+
+                    // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
+                    if (column.isHidden())
+                        continue;
+
+                    // skip uninteresting things like 'Folder' and 'CreatedBy'
+                    ForeignKey fk = column.getFk();
+                    if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
+                        continue;
+
+                    ColumnInfo targetColumn = column.getDisplayField();
+                    if (targetColumn == null)
+                        targetColumn = column;
+
+                    // skip more uninteresting columns
+                    if (!targetColumn.isStringType() ||
+                            targetColumn.getName().equalsIgnoreCase("lsid") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
+                        continue;
+
+                    _queryColumns.add(targetColumn);
+                }
+            }
+            return _queryColumns;
         }
 
         @Override
@@ -820,7 +869,7 @@ public abstract class CompareType
             SQLFragment sql = new SQLFragment();
             String sep = "";
 
-            for (ColumnInfo column : _selectColumns)
+            for (ColumnInfo column : this.getQueryColumns(paramNum))
             {
                 if (column == null)
                     continue;
@@ -837,24 +886,7 @@ public abstract class CompareType
                     continue;
                 }
 
-                // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
-                if (column.isHidden())
-                    continue;
-
-                // skip uninteresting things like 'Folder' and 'CreatedBy'
-                ForeignKey fk = column.getFk();
-                if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
-                    continue;
-
-                ColumnInfo targetColumn = column.getDisplayField();
-                if (targetColumn == null)
-                    targetColumn = column;
-
-                // skip more uninteresting columns
-                if (!targetColumn.isStringType() || targetColumn.getName().equalsIgnoreCase("lsid") || targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") || targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
-                    continue;
-
-                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
+                ColumnInfo mappedColumn = columnMap.get(column.getFieldKey());
                 if (mappedColumn == null)
                     continue;
 
@@ -1216,6 +1248,22 @@ public abstract class CompareType
         }
     }
 
+    // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+    // Widen numeric types before calling compareTo to avoid ClassCastException comparing Long to Integer
+    private static int compareTo(@NotNull Comparable a, @NotNull Comparable b)
+    {
+        if (a.getClass() == b.getClass())
+            return a.compareTo(b);
+
+        if (a instanceof Number && b instanceof Number)
+        {
+            // widen and compare both numbers as doubles
+            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        }
+
+        return ((Comparable)a).compareTo(b);
+    }
+
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
     public static Object convertParamValue(ColumnRenderProperties colInfo, Object paramVal)
     {
@@ -1472,17 +1520,25 @@ public abstract class CompareType
         private final String _filterTextDate;
         private final String _filterTextOperator;
 
-        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0)
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0)
         {
             super(fieldKey, t, param0.getTime());
-            _filterTextDate = ConvertUtils.convert(date.getTime());
+            if (null == rawFilterValue)
+                rawFilterValue = "";
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
         }
 
-        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0, Calendar param1)
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0, Calendar param1)
         {
             super(fieldKey, t, null);
-            _filterTextDate = ConvertUtils.convert(date.getTime());
+            if (null == rawFilterValue)
+                rawFilterValue = "";
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
             _paramVals = new Object[]{param0.getTime(), param1.getTime()};
         }
@@ -1502,6 +1558,12 @@ public abstract class CompareType
             sb.append(_filterTextOperator);
             sb.append(_filterTextDate);
         }
+
+        @Override
+        protected String toURLParamValue()
+        {
+            return _filterTextDate;
+        }
     }
 
 
@@ -1509,7 +1571,12 @@ public abstract class CompareType
     {
         DateEqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_EQUAL, " = ", startValue, startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateEqCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_EQUAL, " = ", rawFilterValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -1544,7 +1611,12 @@ public abstract class CompareType
     {
         DateNeqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_NOT_EQUAL, " <> ", startValue, startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateNeqCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_NOT_EQUAL, " <> ", rawFilterValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -1579,7 +1651,12 @@ public abstract class CompareType
     {
         DateGtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_GT, " > ", startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateGtCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_GT, " > ", rawFilterValue, addOneDay(startValue));
         }
 
         @Override
@@ -1598,7 +1675,12 @@ public abstract class CompareType
     {
         DateGteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_GTE, " >= ", startValue, startValue);
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateGteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_GTE, " >= ", rawFilterValue, startValue);
         }
 
         @Override
@@ -1617,7 +1699,12 @@ public abstract class CompareType
     {
         DateLtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_LT, " < ", startValue, startValue);
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateLtCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_LT, " < ", rawFilterValue, startValue);
         }
 
         @Override
@@ -1636,7 +1723,12 @@ public abstract class CompareType
     {
         DateLteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_LTE, " <= ", startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateLteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_LTE, " <= ", rawFilterValue, addOneDay(startValue));
         }
 
         @Override
@@ -2136,7 +2228,19 @@ public abstract class CompareType
             assertTrue(clause.meetsCriteria(userPd, user.getUserId()));
             assertFalse(clause.meetsCriteria(createdByDisplayCol, user.getUserId()));
             assertTrue(clause.meetsCriteria(createdByDisplayCol, user.getDisplayName(user)));
+
+            // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+            // call meetsCriteria with a Long value against an Integer column type
+            SimpleFilter.FilterClause gtClause = CompareType.GT.createFilterClause(createdByCol.getFieldKey(), "1000");
+            assertTrue(gtClause.meetsCriteria(createdByCol, 1001L));
         }
 
+        @Test
+        public void testUrlParamValue()
+        {
+            CompareClause ct = (CompareClause)CompareType.DATE_GT.createFilterClause(new FieldKey(null,"datecol"), "-1");
+            // make sure this isn't converted into a date
+            assertEquals("-1",ct.toURLParamValue());
+        }
     }
 }

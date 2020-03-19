@@ -21,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.data.MvUtil;
@@ -40,12 +42,12 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.view.ViewContext;
+import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * User: jeckels
@@ -185,6 +187,17 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         List<Map<String, Object>> dataRows = convertRunData(dataArray, run.getContainer(), protocol);
         ExpData tsvData = DefaultAssayRunCreator.generateResultData(context.getUser(), run.getContainer(), getProvider(), dataRows, (Map)outputData);
 
+        // add plate metadata
+        JSONObject rawPlateMetadata = null;
+        if (runJson.has(AssayJSONConverter.PLATE_METADATA))
+        {
+            rawPlateMetadata = runJson.getJSONObject(AssayJSONConverter.PLATE_METADATA);
+
+            ExpData plateData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Plate Metadata", PlateMetadataDataHandler.DATA_TYPE, true);
+            plateData.save(context.getUser());
+            outputData.put(plateData, ExpDataRunInput.DEFAULT_ROLE);
+        }
+
         // CONSIDER: Is this block still needed?
         // Try to find a data object to attach our data rows to
         if (tsvData == null && !outputData.isEmpty())
@@ -203,7 +216,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
 
         if (tsvData != null && dataRows != null)
         {
-            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows,
+            AssayRunUploadContext uploadContext = createRunUploadContext(context, protocol, runJson, dataRows, rawPlateMetadata,
                     inputData, outputData, inputMaterial, outputMaterial);
 
             return saveAssayRun(uploadContext, batch, run);
@@ -217,32 +230,49 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     private List<Map<String, Object>> convertRunData(JSONArray dataArray, Container container, ExpProtocol protocol)
     {
         Domain domain = _provider.getResultsDomain(protocol);
-        Map<String, DomainProperty> propertyMap = domain.getProperties().stream()
-                .collect(Collectors.toMap(DomainProperty::getName, e -> e));
+        Map<String, DomainProperty> propertyMap = new CaseInsensitiveHashMap<>();
+        for (DomainProperty prop : domain.getProperties())
+            propertyMap.put(prop.getName(), prop);
+        List<Map<String, Object>> dataRows = new ArrayList<>();
 
-        List<Map<String, Object>> dataRows = dataArray.toMapList();
-        for (Map<String, Object> row : dataRows)
+        for (Map<String, Object> row : dataArray.toMapList())
         {
+            Map<String, Object> dataRow = new CaseInsensitiveHashMap<>();
             for (Map.Entry<String, Object> entry : row.entrySet())
             {
                 DomainProperty prop = propertyMap.get(entry.getKey());
-                if (prop != null && prop.isMvEnabled())
+                if (prop != null)
                 {
-                    String mvIndicatorName = entry.getKey() + MvColumn.MV_INDICATOR_SUFFIX;
-                    if (row.containsKey(mvIndicatorName))
+                    if (prop.isMvEnabled())
                     {
-                        MvFieldWrapper mvFieldWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container), entry.getValue(), String.valueOf(row.get(mvIndicatorName)));
-                        row.put(entry.getKey(), mvFieldWrapper);
+                        String mvIndicatorName = entry.getKey() + MvColumn.MV_INDICATOR_SUFFIX;
+                        if (row.containsKey(mvIndicatorName))
+                        {
+                            MvFieldWrapper mvFieldWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container), entry.getValue(), String.valueOf(row.get(mvIndicatorName)));
+                            dataRow.put(entry.getKey(), mvFieldWrapper);
+                        }
+                        else if (MvUtil.isValidMvIndicator(entry.getValue().toString(), container))
+                        {
+                            MvFieldWrapper mvWrapper = new MvFieldWrapper(MvUtil.getMvIndicators(container));
+                            mvWrapper.setMvIndicator(entry.getValue() != null ? entry.getValue().toString() : null);
+
+                            dataRow.put(entry.getKey(), mvWrapper);
+                        }
+                        else
+                            dataRow.put(entry.getKey(), entry.getValue());
                     }
+                    else
+                        dataRow.put(entry.getKey(), entry.getValue());
                 }
             }
+            dataRows.add(dataRow);
         }
         return dataRows;
     }
 
     @Nullable
     protected AssayRunUploadContext createRunUploadContext(ViewContext context, ExpProtocol protocol, JSONObject runJsonObject, List<Map<String, Object>> dataRows,
-                                                           Map<ExpData, String> inputData, Map<ExpData, String> outputData,
+                                                           JSONObject rawPlateMetadata, Map<ExpData, String> inputData, Map<ExpData, String> outputData,
                                                            Map<ExpMaterial, String> inputMaterial, Map<ExpMaterial, String> outputMaterial)
     {
         if (dataRows != null)
@@ -258,6 +288,22 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
             }
             factory.setUploadedData(Collections.emptyMap());
             factory.setRawData(dataRows);
+
+            if (rawPlateMetadata != null)
+            {
+                AssayPlateMetadataService svc = AssayPlateMetadataService.getService(PlateMetadataDataHandler.DATA_TYPE);
+                if (svc != null)
+                {
+                    try
+                    {
+                        factory.setRawPlateMetadata(svc.parsePlateMetadata(rawPlateMetadata));
+                    }
+                    catch(ExperimentException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
             factory.setInputDatas(inputData);
             factory.setOutputDatas(outputData);
             factory.setInputMaterials(inputMaterial);

@@ -71,7 +71,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
 
         if (success)
         {
-            if ("POST".equals(context.getRequest().getMethod()))
+            if (isPost())
             {
                 success = handlePost(form, errors);
 

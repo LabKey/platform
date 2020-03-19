@@ -45,6 +45,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -160,7 +161,7 @@ public class DbScope
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
          * outer-most layer of the transaction has completed (either by committing or closing the connection).
          */
-        boolean isReleaseLocksOnFinalCommit();
+        default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
 
 
@@ -213,22 +214,7 @@ public class DbScope
     }
 
 
-    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
-    {
-        @NotNull
-        @Override
-        public String getKind()
-        {
-            return "NORMAL";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
-
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
     {
@@ -635,12 +621,32 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
+        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
     }
 
+    /** Can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryPassthroughException extends RuntimeException
+    {
+        public RetryPassthroughException(@NotNull Exception x)
+        {
+            super(x);
+        }
 
-    /** Won't retry if we're already in a transaction
-     * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
+        public <T extends Throwable> void rethrow(Class<T> clazz) throws T
+        {
+            if (clazz.isAssignableFrom(getCause().getClass()))
+                throw (T)getCause();
+        }
+
+        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        {
+            throw UnexpectedException.wrap(getCause());
+        }
+    }
+
+    /**
+     * If there's a deadlock exception, retry two more times after a delay. Won't retry if we're already in a transaction
+     * fn() should throw DeadlockLoserDataAccessException or RuntimeSQLException to get the retry behavior
      */
     public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
@@ -648,7 +654,7 @@ public class DbScope
         ReturnType ret = null;
         int tries = isTransactionActive() ? 1 : 3;
         long delay = 100;
-        DeadlockLoserDataAccessException lastException = null;
+        RuntimeException lastException = null;
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
@@ -661,7 +667,17 @@ public class DbScope
             catch (DeadlockLoserDataAccessException dldae)
             {
                 lastException = dldae;
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+            catch (RuntimeSQLException e)
+            {
+                lastException = e;
+                if (!SqlDialect.isTransactionException(e))
+                {
+                    break;
+                }
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
                 LOG.info("Retrying operation after deadlock", new Throwable());
             }
         }
@@ -835,6 +851,19 @@ public class DbScope
     public Connection getPooledConnection() throws SQLException
     {
         return getPooledConnection(ConnectionType.Pooled, null);
+    }
+
+    /**
+     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
+     *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
+     **/
+    @JsonIgnore
+    public Connection getReadOnlyConnection() throws SQLException
+    {
+        ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
+        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
+
+        return conn;
     }
 
     /** Create a new connection that completely bypasses the connection pool. */
@@ -2741,6 +2770,21 @@ public class DbScope
                 }
                 t.commit();
                 assertTrue(c.isClosed());
+            }
+        }
+
+        @Test
+        public void testRetryException()
+        {
+            var r = new RetryPassthroughException(new IllegalArgumentException());
+            try
+            {
+                r.rethrow(IllegalArgumentException.class);
+                fail("should have thrown");
+            }
+            catch (IllegalArgumentException x)
+            {
+                // expected!
             }
         }
     }

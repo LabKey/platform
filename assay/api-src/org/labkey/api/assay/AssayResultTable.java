@@ -31,6 +31,7 @@ import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.StatementUtils;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -53,6 +54,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -69,6 +71,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -270,6 +273,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var lsidCol = createRowExpressionLsidColumn(this);
         addColumn(lsidCol);
 
+        var propsCol = createPropertiesColumn();
+        addColumn(propsCol);
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -293,11 +299,29 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setHidden(true);
         lsidCol.setCalculated(true);
         lsidCol.setUserEditable(false);
         lsidCol.setReadOnly(true);
+        lsidCol.setHidden(true);
         return lsidCol;
     }
+
+    // Expensive render-time fetching of all ontology properties attached to the object row
+    protected BaseColumnInfo createPropertiesColumn()
+    {
+        var lsidColumn = getColumn("LSID");
+
+        var col = new AliasedColumn(this, "Properties", lsidColumn);
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
+        return col;
+    }
+
 
     private void configureSpecimensLookup(BaseColumnInfo specimenIdCol, boolean foundTargetStudyCol)
     {
@@ -365,9 +389,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         // There isn't a container column directly on this table so do a special filter
         if (getContainer() != null)
         {
-            FieldKey containerColumn = FieldKey.fromParts("Run", "Folder");
+            FieldKey containerColumn = FieldKey.fromParts("Container");
             clearConditions(containerColumn);
-            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("(SELECT d.Container FROM exp.Data d WHERE d.RowId = DataId)"), getContainer()), containerColumn);
+            addCondition(filter.getSQLFragment(getSchema(), new SQLFragment("Container"), getContainer()), containerColumn);
         }
     }
 
@@ -376,15 +400,28 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
     public SQLFragment getFromSQL(String alias)
     {
         SQLFragment result = new SQLFragment();
-        result.append("(SELECT innerResults.*, innerData.RunId AS " );
-        result.append(RUN_ID_ALIAS);
+        result.append("(SELECT innerResults.*, innerData.RunId AS ").append(RUN_ID_ALIAS).append(", innerData.Container" );
         result.append(" FROM\n");
-        result.append(super.getFromSQL("innerResults"));
+        result.append(getFromTable().getFromSQL("innerResults"));
         result.append("\nINNER JOIN ");
         result.append(ExperimentService.get().getTinfoData(), "innerData");
-        result.append(" ON (innerData.RowId = innerResults.DataId)) ");
-        result.append(alias);
+        result.append(" ON (innerData.RowId = innerResults.DataId) ");
+        var filter = getFilter();
+        var where = filter.getSQLFragment(_rootTable.getSqlDialect());
+        if (!where.isEmpty())
+        {
+            Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
+            SQLFragment filterFrag = filter.getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+            result.append("\n").append(filterFrag);
+        }
+        result.append(") ").append(alias);
         return result;
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, boolean skipTransform)
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

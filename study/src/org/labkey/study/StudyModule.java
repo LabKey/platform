@@ -61,6 +61,7 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -216,9 +217,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override
@@ -471,7 +472,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             });
         }
 
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         QCStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
@@ -732,14 +733,14 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SampleMindedTransformTask.TestCase.class);
-        set.add(DatasetDataWriter.TestCase.class);
-        set.add(SpecimenWriter.TestCase.class);
-        set.add(SequenceNumImportHelper.SequenceNumTest.class);
-        set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
-        set.add(DefaultStudyDesignWriter.TestCase.class);
-        return set;
+        return Set.of(
+            DatasetDataWriter.TestCase.class,
+            DefaultStudyDesignWriter.TestCase.class,
+            ParticipantIdImportHelper.ParticipantIdTest.class,
+            SampleMindedTransformTask.TestCase.class,
+            SequenceNumImportHelper.SequenceNumTest.class,
+            SpecimenWriter.TestCase.class
+        );
     }
 
     @Override

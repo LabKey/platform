@@ -29,11 +29,12 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -80,9 +81,8 @@ public class AuditController extends SpringActionController
         }
     }
 
-    @ActionNames("showAuditLog")
-    @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
+    // An admin console action, but we want Troubleshooters to be able to POST (for export)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -90,6 +90,7 @@ public class AuditController extends SpringActionController
             super(ShowAuditLogForm.class);
         }
 
+        @Override
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
             VBox view = new VBox();
@@ -102,8 +103,14 @@ public class AuditController extends SpringActionController
             return view;
         }
 
+        @Override
         protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion)
         {
+            // Troubleshooters don't have read permission, so add Reader as a contextual role to placate DataRegion's
+            // and ButtonBar's render-time permissions check. See #39638
+            if (!getContainer().hasPermission(getUser(), ReadPermission.class))
+                getViewContext().addContextualRole(ReaderRole.class);
+
             String selected = form.getView();
 
             if (selected == null)

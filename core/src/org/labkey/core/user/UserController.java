@@ -322,7 +322,7 @@ public class UserController extends SpringActionController
             deactivate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(deactivate);
 
-            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Re-Activate");
+            ActionButton activate = new ActionButton(ActivateUsersAction.class, "Reactivate");
             activate.setRequiresSelection(true);
             activate.setActionType(ActionButton.Action.POST);
             gridButtonBar.add(activate);
@@ -388,7 +388,6 @@ public class UserController extends SpringActionController
     public static class UserIdForm extends ReturnUrlForm
     {
         private Integer[] _userId;
-        private String _redirUrl;
 
         public Integer[] getUserId()
         {
@@ -436,7 +435,7 @@ public class UserController extends SpringActionController
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToUpdate(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -445,17 +444,17 @@ public class UserController extends SpringActionController
                 //try to get a user selection list from the dataregion
                 Set<Integer> userIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
                 if (userIds.isEmpty())
-                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
+                    throw new RedirectException(new UserUrlsImpl().getSiteUsersURL());
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToUpdate(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
 
             if (bean.getUsers().size() == 0)
-                throw new RedirectException(bean.getRedirUrl().getLocalURIString());
+                throw new RedirectException(bean.getRedirUrl());
 
             return new JspView<>("/org/labkey/core/user/deactivateUsers.jsp", bean, errors);
         }
@@ -469,20 +468,10 @@ public class UserController extends SpringActionController
             User curUser = getUser();
             for (Integer userId : form.getUserId())
             {
-                if (isValidUserToUpdate(userId))
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.setUserActive(curUser, userId, _active);
             }
             return true;
-        }
-
-        private boolean isValidUserToUpdate(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user activate/deactivate themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate a site admin
         }
 
         @Override
@@ -496,7 +485,7 @@ public class UserController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            String title = _active ? "Re-activate Users" : "Deactivate Users";
+            String title = _active ? "Reactivate Users" : "Deactivate Users";
             return root.addChild(title);
         }
     }
@@ -519,6 +508,89 @@ public class UserController extends SpringActionController
         }
     }
 
+    private boolean isValidUserToUpdate(Integer formUserId, User currentUser)
+    {
+        User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
+
+        return null != formUser
+                && formUserId != currentUser.getUserId() // don't let a user activate/deactivate/delete themselves
+                && (currentUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin deactivate/delete a site admin
+    }
+
+    @RequiresPermission(UserManagementPermission.class)
+    public class UpdateUsersStateApiAction extends MutatingApiAction<UpdateUserStateForm>
+    {
+        private List<Integer> validUserIds = new ArrayList<>();
+        private List<Integer> invalidUserIds = new ArrayList<>();
+
+        @Override
+        public void validateForm(UpdateUserStateForm form, Errors errors)
+        {
+            if (form.getUserId() == null || form.getUserId().length == 0)
+            {
+                errors.reject(ERROR_MSG, "UserId parameter must be provided.");
+            }
+            else
+            {
+                for (Integer userId : form.getUserId())
+                {
+                    if (isValidUserToUpdate(userId, getUser()))
+                        validUserIds.add(userId);
+                    else
+                        invalidUserIds.add(userId);
+                }
+
+                if (invalidUserIds.size() > 0)
+                    errors.reject(ERROR_MSG, "Invalid user id(s) provided: " + StringUtils.join(invalidUserIds, ", ") + ".");
+            }
+        }
+
+        @Override
+        public Object execute(UpdateUserStateForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            for (Integer userId : validUserIds)
+            {
+                if (form.isDelete())
+                    UserManager.deleteUser(userId);
+                else
+                    UserManager.setUserActive(getUser(), userId, form.isActivate());
+            }
+
+            response.put("success", true);
+            response.put("delete", form.isDelete());
+            response.put("activate", form.isActivate());
+            response.put("userIds", validUserIds);
+            return response;
+        }
+    }
+
+    public static class UpdateUserStateForm extends UserIdForm
+    {
+        private boolean activate;
+        private boolean delete;
+
+        public boolean isActivate()
+        {
+            return activate;
+        }
+
+        public void setActivate(boolean activate)
+        {
+            this.activate = activate;
+        }
+
+        public boolean isDelete()
+        {
+            return delete;
+        }
+
+        public void setDelete(boolean delete)
+        {
+            this.delete = delete;
+        }
+    }
+
     @RequiresPermission(UserManagementPermission.class)
     public class DeleteUsersAction extends FormViewAction<UserIdForm>
     {
@@ -530,14 +602,14 @@ public class UserController extends SpringActionController
         @Override
         public ModelAndView getView(UserIdForm form, boolean reshow, BindException errors)
         {
-            String siteUsersUrl = new UserUrlsImpl().getSiteUsersURL().getLocalURIString();
+            ActionURL siteUsersUrl = new UserUrlsImpl().getSiteUsersURL();
             DeleteUsersBean bean = new DeleteUsersBean();
 
             if (null != form.getUserId())
             {
                 for (Integer userId : form.getUserId())
                 {
-                    if (isValidUserToDelete(userId))
+                    if (isValidUserToUpdate(userId, getUser()))
                         bean.addUser(UserManager.getUser(userId));
                 }
             }
@@ -550,7 +622,7 @@ public class UserController extends SpringActionController
 
                 for (Integer id : userIds)
                 {
-                    if (isValidUserToDelete(id))
+                    if (isValidUserToUpdate(id, getUser()))
                         bean.addUser(UserManager.getUser(id));
                 }
             }
@@ -568,23 +640,12 @@ public class UserController extends SpringActionController
                 return false;
 
             User curUser = getUser();
-
             for (Integer userId : form.getUserId())
             {
-                if (null != userId && userId != curUser.getUserId())
+                if (isValidUserToUpdate(userId, curUser))
                     UserManager.deleteUser(userId);
             }
             return true;
-        }
-
-        private boolean isValidUserToDelete(Integer formUserId)
-        {
-            User curUser = getUser();
-            User formUser = null != formUserId ? UserManager.getUser(formUserId) : null;
-
-            return null != formUser
-                && formUserId != curUser.getUserId() // don't let a user delete themselves
-                && (curUser.hasSiteAdminPermission() || !formUser.hasSiteAdminPermission()); // don't let non-site admin delete a site admin
         }
 
         @Override
@@ -1361,7 +1422,7 @@ public class UserController extends SpringActionController
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("User Access Details: " + UserManager.getEmailForId(_userId));
+                return root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
             return null;
         }
@@ -1495,7 +1556,7 @@ public class UserController extends SpringActionController
                     bb.add(reset);
                 }
 
-                if (canManageDetailsUser)
+                if (canManageDetailsUser && !isLoginAutoRedirect) // Issue 33393
                     bb.add(makeChangeEmailButton(c, detailsUser));
 
                 if (!isOwnRecord && canManageDetailsUser)
@@ -1503,7 +1564,7 @@ public class UserController extends SpringActionController
                     ActionURL deactivateUrl = new ActionURL(detailsUser.isActive() ? DeactivateUsersAction.class : ActivateUsersAction.class, c);
                     deactivateUrl.addParameter("userId", _detailsUserId);
                     deactivateUrl.addParameter("redirUrl", getViewContext().getActionURL().getLocalURIString());
-                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Re-Activate", deactivateUrl));
+                    bb.add(new ActionButton(detailsUser.isActive() ? "Deactivate" : "Reactivate", deactivateUrl));
 
                     ActionURL deleteUrl = new ActionURL(DeleteUsersAction.class, c);
                     deleteUrl.addParameter("userId", _detailsUserId);
@@ -1523,7 +1584,8 @@ public class UserController extends SpringActionController
             {
                 if (!isUserManager  // site/app admin already had this link added above
                         && loginExists  // only show link to users where LabKey manages the password
-                        && AuthenticationManager.isSelfServiceEmailChangesEnabled())
+                        && AuthenticationManager.isSelfServiceEmailChangesEnabled()
+                        && !isLoginAutoRedirect) // Issue 33393
                 {
                     bb.add(makeChangeEmailButton(c, detailsUser));
                 }

@@ -96,6 +96,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
 
+    /** Cache this because it can be expensive to recompute */
+    private Boolean _finalRunOutput;
+
     /**
      * Temporary mapping until experiment.xml contains the mime type
      */
@@ -131,10 +134,13 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     public URLHelper detailsURL()
     {
         DataType dataType = getDataType();
-        if (dataType == null)
-            return null;
-
-        return dataType.getDetailsURL(this);
+        if (dataType != null)
+        {
+            return dataType.getDetailsURL(this);
+        }
+        ActionURL ret = new ActionURL(ExperimentController.ShowDataAction.class, getContainer());
+        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return ret;
     }
 
     @Override
@@ -346,11 +352,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public boolean isFinalRunOutput()
     {
-        ExpRun run = getRun();
-        if (run == null)
-            return false;
-        else
-            return run.isFinalOutput(this);
+        if (_finalRunOutput == null)
+        {
+            ExpRun run = getRun();
+            _finalRunOutput = run != null && run.isFinalOutput(this);
+        }
+        return _finalRunOutput.booleanValue();
     }
 
     @Override

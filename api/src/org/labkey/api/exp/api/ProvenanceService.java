@@ -1,8 +1,8 @@
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
@@ -40,6 +40,11 @@ public interface ProvenanceService
     Set<Pair<String,String>> getProvenanceObjectUris(int protocolAppId);
 
     /**
+     * Get all input and output lsids for a protocol application.
+     */
+    Set<String> getProvenanceObjectUriSet(int protocolAppId);
+
+    /**
      * Get list of provenance input object IDs and output object IDs for a protocol application.
      */
     Set<Pair<Integer, Integer>> getProvenanceObjectIds(int protocolAppId);
@@ -55,7 +60,28 @@ public interface ProvenanceService
     void deleteRunProvenance(int runId);
 
     /**
+     * Delete provenance for assay result rows.
+     */
+    void deleteAssayResultProvenance(@NotNull SQLFragment sqlFragment);
+
+    /**
      * Delete provenance for a assay result row.
      */
     void deleteObjectProvenance(int objectId);
+
+    /**
+     * Get protocol applications for the lsid
+     */
+    Set<Integer> getProtocolApplications(String lsid);
+
+    /**
+     * Get the ExpRun referenced by the set of LSIDs
+     */
+    List<? extends ExpRun> getRuns(Set<String> lsids);
+
+    /**
+     * Get the ExpRun referenced by the set of LSIDs
+     */
+    Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids);
+
 }

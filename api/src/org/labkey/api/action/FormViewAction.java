@@ -78,7 +78,7 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     {
         boolean success = errors == null || !errors.hasErrors();
 
-        if ("POST".equals(getViewContext().getRequest().getMethod()))
+        if (isPost())
         {
             setReshow(true);
 

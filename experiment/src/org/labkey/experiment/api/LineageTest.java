@@ -110,10 +110,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // Create two DataClasses
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null, null, null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null, null, null, null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null, null, null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null, null, null, null);
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
 
         // Import data with magic "DataInputs" and "MaterialInputs" columns
@@ -233,6 +233,89 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         }
     }
 
+    // Issue 29361: Support updating lineage for DataClasses
+    @Test
+    public void testUpdateLineage() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup sample set
+        List<GWTPropertyDescriptor> sampleProps = new ArrayList<>();
+        sampleProps.add(new GWTPropertyDescriptor("name", "string"));
+        sampleProps.add(new GWTPropertyDescriptor("age", "int"));
+
+        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "MySamples", null, sampleProps, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+        final ExpMaterial s1 = ExperimentService.get().createExpMaterial(c,
+                ss.generateSampleLSID().setObjectId("S-1").toString(), "S-1");
+        s1.setCpasType(ss.getLSID());
+        s1.save(user);
+
+        final ExpMaterial s2 = ExperimentService.get().createExpMaterial(c,
+                ss.generateSampleLSID().setObjectId("S-2").toString(), "S-2");
+        s2.setCpasType(ss.getLSID());
+        s2.save(user);
+
+        // Create DataClass
+        List<GWTPropertyDescriptor> dcProps = new ArrayList<>();
+        dcProps.add(new GWTPropertyDescriptor("age", "int"));
+        final String myDataClassName = "MyData";
+        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null, null, null, null);
+
+        // Import data and derive from "S-1"
+        List<Map<String, Object>> rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of(
+                "name", "bob",
+                "age", "10",
+                "MaterialInputs/MySamples", "S-1"
+        ));
+
+        final UserSchema schema = QueryService.get().getUserSchema(user, c, expDataSchemaKey);
+        final TableInfo table = schema.getTable(myDataClassName);
+        MapLoader mapLoader = new MapLoader(rows);
+        DataIteratorContext diContext = new DataIteratorContext();
+        int count = table.getUpdateService().loadRows(user, c, mapLoader, diContext, null);
+        if (diContext.getErrors().hasErrors())
+            throw diContext.getErrors();
+        assertEquals(1, count);
+
+        final ExpData bob = ExperimentService.get().getExpData(myDataClass, "bob");
+
+        // Verify the lineage
+        ExpLineageOptions options = new ExpLineageOptions();
+        options.setDepth(2);
+        options.setParents(true);
+        options.setChildren(false);
+
+        ContainerUser context = new DefaultContainerUser(c, user);
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        Assert.assertTrue(lineage.getDatas().isEmpty());
+        assertEquals(1, lineage.getRuns().size());
+        assertEquals(1, lineage.getMaterials().size());
+        Assert.assertTrue(lineage.getMaterials().contains(s1));
+
+        // Use updateRows to create new lineage and derive from "S-2"
+        rows = new ArrayList<>();
+        rows.add(CaseInsensitiveHashMap.of(
+                "rowId", bob.getRowId(),
+                "MaterialInputs/MySamples", "S-2"
+        ));
+
+        List<Map<String, Object>> updatedRows = table.getUpdateService().updateRows(user, c, rows, rows, null, null);
+        assertEquals(1, updatedRows.size());
+
+        // TODO: Is the expected behavior to create a new derivation run from S-2 and leave the existing derivation from S-1 intact?
+        // TODO: Or should the existing derivation run be deleted/updated to match the SampleSet derivation behavior?
+        // Verify the lineage
+        lineage = ExperimentService.get().getLineage(c, user, bob, options);
+        Assert.assertTrue(lineage.getDatas().isEmpty());
+        assertEquals(2, lineage.getRuns().size());
+        assertEquals(2, lineage.getMaterials().size());
+        Assert.assertTrue(lineage.getMaterials().contains(s1));
+        Assert.assertTrue(lineage.getMaterials().contains(s2));
+    }
+
     // Issue 37690: Customize Grid on Assay Results Data Won't Allow for Showing Input to Sample ID
     @Test
     public void testListAndSampleLineage() throws Exception
@@ -248,7 +331,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 -1, -1, -1, -1, null, null);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("MySamples");
+        TableInfo table = schema.getTable("MySamples", null);
         QueryUpdateService svc = table.getUpdateService();
 
         // insert a sample and a derived sample
@@ -289,19 +372,24 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // query
         TableSelector ts = QueryService.get().selector(listSchema,
                 "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
-        Results results = ts.getResults();
-        RenderContext ctx = new RenderContext(new ViewContext());
-        ctx.getViewContext().setRequest(TestContext.get().getRequest());
-        ctx.getViewContext().setUser(user);
-        ctx.getViewContext().setContainer(c);
-        ctx.getViewContext().setActionURL(new ActionURL());
-        ColumnInfo sampleId       = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
-        DisplayColumn dcSampleId  = sampleId.getRenderer();
-        ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
-        DisplayColumn dcMySampleParent = mySampleParent.getRenderer();
+        RenderContext ctx;
+        DisplayColumn dcSampleId;
+        DisplayColumn dcMySampleParent;
+        try (Results results = ts.getResults())
+        {
+            ctx = new RenderContext(new ViewContext());
+            ctx.getViewContext().setRequest(TestContext.get().getRequest());
+            ctx.getViewContext().setUser(user);
+            ctx.getViewContext().setContainer(c);
+            ctx.getViewContext().setActionURL(new ActionURL());
+            ColumnInfo sampleId = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
+            dcSampleId = sampleId.getRenderer();
+            ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
+            dcMySampleParent = mySampleParent.getRenderer();
 
-        assertTrue(results.next());
-        ctx.setRow(results.getRowMap());
+            assertTrue(results.next());
+            ctx.setRow(results.getRowMap());
+        }
         assertEquals("sally", dcSampleId.getValue(ctx));
         assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
     }

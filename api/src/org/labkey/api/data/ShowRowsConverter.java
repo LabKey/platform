@@ -24,10 +24,9 @@ import org.apache.commons.beanutils.Converter;
  */
 public class ShowRowsConverter implements Converter
 {
-    @Override
     public Object convert(Class type, Object value)
     {
-        if (null == value || "null".equalsIgnoreCase(value.toString()))
+        if(null == value || "null".equalsIgnoreCase(value.toString()))
             return null;
         else
             return ShowRows.valueOf(value.toString().toUpperCase());

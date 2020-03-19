@@ -63,7 +63,7 @@
     SpecimenRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());
-    List<LocationImpl> locations = StudyManager.getInstance().getSites(c);
+    List<LocationImpl> locations = StudyManager.getInstance().getLocations(c);
     boolean notYetSubmitted = false;
     if (manager.isSpecimenShoppingCartEnabled(c))
     {
@@ -203,8 +203,10 @@
 <h3>Your request has been successfully submitted.</h3>
 <%
     }
+    %>
+<table class="labkey-request-warnings">
+<%
     if (!SpecimenService.get().getRequestCustomizer().hideRequestWarnings()) { %>
-        <table class="labkey-request-warnings">
     <%
         boolean multipleSites = bean.getProvidingLocations().length > 1;
         if (bean.hasMissingSpecimens() || multipleSites)

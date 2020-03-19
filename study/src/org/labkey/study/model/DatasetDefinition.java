@@ -47,11 +47,14 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -91,6 +94,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -121,6 +125,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 
 /**
@@ -2564,6 +2571,48 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return result;
     }
 
+    private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
+    {
+        // Get the ExpRuns referenced by the dataset row LSIDs
+        List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
+
+        // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
+        for (String lsid : lsids)
+        {
+            // NOTE: We need to get and delete the objects individually instead of deleting in bulk
+            // NOTE: because the objects live in a different container than the run.
+            // CONSIDER: This could be optimized by select from.exp object and performing bulk deletes partitioned by container
+            OntologyObject expObject = OntologyManager.getOntologyObject(null/*any container*/, lsid);
+            if (null != expObject)
+            {
+                pvs.deleteObjectProvenance(expObject.getObjectId());
+                OntologyManager.deleteOntologyObject(lsid, expObject.getContainer(), false);
+            }
+        }
+
+        // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
+        // NOTE: Should we do this for other run types as well?  In the future, other runs might have a provenance reference to the dataset LSID
+        for (ExpRun run : runs)
+        {
+            boolean syncNeeded = true;
+            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
+            {
+                // get all the input and output LSIDs that remain for the selected runs
+                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getObjectId()));
+                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getObjectId()));
+
+                if (allRunLsids.isEmpty())
+                {
+                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
+                    syncNeeded = false;
+                }
+            }
+
+            if (syncNeeded)
+                ExperimentService.get().syncRunEdges(run);
+        }
+    }
+
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
         // Need to fetch the old item in order to log the deletion
@@ -2571,6 +2620,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
+            ProvenanceService pvs = ProvenanceService.get();
+            if (null != pvs)
+            {
+                deleteProvenance(u, lsids, pvs);
+            }
             deleteRows(lsids);
 
             for (Map<String, Object> oldData : oldDatas)

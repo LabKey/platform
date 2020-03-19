@@ -23,6 +23,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.Specimen;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.util.Arrays;
@@ -38,11 +39,11 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected static final String PROJECT_NAME = "SpecimenMergeTest";
     protected static final String FOLDER_NAME = "My Study";
 
-    protected static final String LAB19_SPECIMENS = "/sampledata/study/specimens/lab19.specimens";
-    protected static final String LAB20_SPECIMENS = "/sampledata/study/specimens/lab20.specimens";
-    protected static final String LAB21_SPECIMENS = "/sampledata/study/specimens/lab21.specimens";
+    protected static final File LAB19_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab19.specimens");
+    protected static final File LAB20_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab20.specimens");
+    protected static final File LAB21_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab21.specimens");
 
-    protected static final String SPECIMEN_TEMP_DIR = "/sampledata/study/drt_temp";
+    protected static final File SPECIMEN_TEMP_DIR = StudyHelper.getStudyTempDir();
     protected int pipelineJobCount = 3;
 
     protected String _studyDataRoot = null;
@@ -69,7 +70,7 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         _studyDataRoot = TestFileUtils.getLabKeyRoot() + "/sampledata/study";
-        File tempDir = new File(TestFileUtils.getLabKeyRoot() + SPECIMEN_TEMP_DIR);
+        File tempDir = SPECIMEN_TEMP_DIR;
         if (tempDir.exists())
         {
             for (File file : tempDir.listFiles())
@@ -90,11 +91,11 @@ public class SpecimenMergeTest extends BaseWebDriverTest
     protected void importFirstFileSet()
     {
         File[] archives = new File[]{
-                new File(TestFileUtils.getLabKeyRoot(), LAB19_SPECIMENS),
-                new File(TestFileUtils.getLabKeyRoot(), LAB20_SPECIMENS),
-                new File(TestFileUtils.getLabKeyRoot(), LAB21_SPECIMENS)
+                LAB19_SPECIMENS,
+                LAB20_SPECIMENS,
+                LAB21_SPECIMENS
         };
-        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), archives, new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_TEMP_DIR), FOLDER_NAME, pipelineJobCount);
+        SpecimenImporter importer = new SpecimenImporter(new File(_studyDataRoot), archives, SPECIMEN_TEMP_DIR, FOLDER_NAME, pipelineJobCount);
         importer.setExpectError(true);
         importer.importAndWaitForComplete();
 

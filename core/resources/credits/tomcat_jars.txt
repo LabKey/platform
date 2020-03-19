@@ -1,8 +1,5 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
 javax.activation.jar|JavaBeans Activation Framework (JAF)|1.2.1|{link:Eclipse Project for JAF|https://projects.eclipse.org/projects/ee4j.jaf}|{link:Eclipse Public License 2.0|https://www.eclipse.org/legal/epl-2.0/}|adam|JavaMail and Workflow dependency
-jtds.jar|jTDS JDBC Driver|1.3.1|{link:SourceForge|http://jtds.sourceforge.net}|{link:LGPL|http://jtds.sourceforge.net/license.html}|adam|Connect with Microsoft SQL Server database servers
-mail.jar|Jakarta Mail|1.6.4|{link:Eclipse Project for Jakarta Mail|https://projects.eclipse.org/projects/ee4j.mail}|{link:Eclipse Public License 2.0|https://www.eclipse.org/legal/epl-2.0/}|adam|Send email from LabKey Server
-mysql.jar|MySQL JDBC Driver|8.0.18|{link:MySQL|http://www.mysql.com/downloads/connector/j}|{link:GPL v2|http://www.gnu.org/licenses/gpl-2.0.html} with {link:Universal FOSS Exception|https://oss.oracle.com/licenses/universal-foss-exception/}|adam|Connect with MySQL database servers
-postgresql.jar|PostgreSQL JDBC Driver|42.2.9|{link:jdbc.postgresql.org|http://jdbc.postgresql.org/index.html}|{link:BSD|https://jdbc.postgresql.org/about/license.html}|adam|Connect with PostgreSQL database servers
+mail.jar|Jakarta Mail|1.6.5|{link:Eclipse Project for Jakarta Mail|https://projects.eclipse.org/projects/ee4j.mail}|{link:Eclipse Public License 2.0|https://www.eclipse.org/legal/epl-2.0/}|adam|Send email from LabKey Server
 {table}

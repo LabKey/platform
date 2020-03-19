@@ -16,6 +16,7 @@
 
 package org.labkey.query;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -75,6 +76,7 @@ import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
@@ -128,6 +130,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -147,9 +150,9 @@ public class QueryModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override
@@ -227,12 +230,12 @@ public class QueryModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
-                new QueryWebPartFactory(),
-                new ReportsWebPartFactory(),
-                new DataViewsWebPartFactory()
-//                new QueryBrowserWebPartFactory()
-        ));
+        return Arrays.asList(
+            new DataViewsWebPartFactory(),
+            new QueryWebPartFactory(),
+            new ReportsWebPartFactory()
+//            new QueryBrowserWebPartFactory()
+        );
     }
 
     @Override
@@ -338,35 +341,44 @@ public class QueryModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                Query.QueryTestCase.class,
-                QueryServiceImpl.TestCase.class,
-                RolapReader.RolapTest.class,
-                RolapTestCase.class,
-                MultiValueTest.class,
-                OlapController.TestCase.class,
-                QueryController.TestCase.class,
-                ModuleReportCache.TestCase.class,
-                ServerManager.TestCase.class
-        ));
+        return Set.of(
+            ModuleReportCache.TestCase.class,
+            MultiValueTest.class,
+            OlapController.TestCase.class,
+            Query.QueryTestCase.class,
+            QueryController.TestCase.class,
+            QueryServiceImpl.TestCase.class,
+            RolapReader.RolapTest.class,
+            RolapTestCase.class,
+            ServerManager.TestCase.class
+        );
     }
+
+    @Override
+    public @NotNull List<Factory<Class>> getIntegrationTestFactories()
+    {
+        List<Factory<Class>> ret = new ArrayList<>(super.getIntegrationTestFactories());
+        ret.add(new JspTestCase("/org/labkey/query/olap/OlapTestCase.jsp"));
+        return ret;
+    }
+
 
     @Override
     @NotNull
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-                SqlParser.SqlParserTestCase.class,
-                JdbcType.TestCase.class,
-                QNode.TestCase.class,
-                TableWriter.TestCase.class,
-                AggregateQueryDataTransform.TestCase.class,
-                FilterClauseBuilder.TestCase.class,
-                MemberSet.TestCase.class,
-                MetadataElementBase.TestCase.class,
-                AttachmentReport.TestCase.class,
-                ReportsController.SerializationTest.class
-        ));
+        return Set.of(
+            AggregateQueryDataTransform.TestCase.class,
+            AttachmentReport.TestCase.class,
+            FilterClauseBuilder.TestCase.class,
+            JdbcType.TestCase.class,
+            MemberSet.TestCase.class,
+            MetadataElementBase.TestCase.class,
+            QNode.TestCase.class,
+            ReportsController.SerializationTest.class,
+            SqlParser.SqlParserTestCase.class,
+            TableWriter.TestCase.class
+        );
     }
 
     @Override

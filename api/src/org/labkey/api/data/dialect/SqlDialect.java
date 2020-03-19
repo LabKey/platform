@@ -30,7 +30,6 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
@@ -82,7 +81,6 @@ public abstract class SqlDialect
 
     private int _databaseVersion = 0;
     private String _productVersion = "0";
-    private @Nullable HtmlString _deprecationMessage = null;
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -311,14 +309,15 @@ public abstract class SqlDialect
         return null;
     }
 
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return false;
+    }
+
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
         return () -> {};
-    }
-
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
     }
 
     /**
@@ -458,11 +457,6 @@ public abstract class SqlDialect
         _productVersion = productVersion;
     }
 
-    public void setDeprecationMessage(@NotNull HtmlString deprecationMessage)
-    {
-        _deprecationMessage = deprecationMessage;
-    }
-
     public abstract String getProductName();
 
     public @Nullable String getProductEdition()
@@ -556,6 +550,7 @@ public abstract class SqlDialect
 
     public abstract String getClobLengthFunction();
 
+    /** Literal string search, no wildcards supported */
     public abstract SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch);
 
     public abstract String getSubstringFunction(String s, String start, String length);
@@ -1155,12 +1150,9 @@ public abstract class SqlDialect
 
         public Integer getMaxTotal()
         {
-            // Need to invoke a different method on Tomcat 7 vs. Tomcat 8/9
-            String methodName = ModuleLoader.getInstance().getTomcatVersion().getMaxTotalMethodName();
-
             try
             {
-                return callGetter(methodName);
+                return callGetter("getMaxTotal");
             }
             catch (ServletException e)
             {
@@ -1373,8 +1365,6 @@ public abstract class SqlDialect
     //   should reflect the final database configuration
     public void addAdminWarningMessages(Warnings warnings)
     {
-        if (null != _deprecationMessage)
-            warnings.add(_deprecationMessage);
     }
 
     public abstract List<String> getChangeStatements(TableChange change);

@@ -68,6 +68,7 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.ShowRows;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
@@ -245,6 +246,7 @@ import org.labkey.experiment.pipeline.ExperimentPipelineJob;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.XarExportSelection;
+import org.springframework.beans.PropertyValue;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
@@ -342,11 +344,15 @@ public class ExperimentController extends SpringActionController
 
     @ActionNames("begin,gridView")
     @RequiresPermission(ReadPermission.class)
-    public class BeginAction extends ShowRunsAction
+    public class BeginAction extends SimpleViewAction
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            VBox result = new VBox(super.getView(o, errors));
+            VBox result = new VBox();
+
+            VBox runListView = createRunListView(20);
+            result.addView(runListView);
+
             RunGroupWebPart runGroups = new RunGroupWebPart(getViewContext(), false);
             runGroups.showHeader();
             result.addView(runGroups);
@@ -369,15 +375,7 @@ public class ExperimentController extends SpringActionController
     {
         public VBox getView(Object o, BindException errors) throws Exception
         {
-            Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
-            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
-
-            ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
-            VBox result = new VBox(chooserView, view);
-            result.setTitle(view.getTitle());
-            result.setFrame(WebPartView.FrameType.PORTAL);
-            view.setFrame(WebPartView.FrameType.NONE);
+            VBox result = createRunListView(100);
             return result;
         }
 
@@ -385,6 +383,27 @@ public class ExperimentController extends SpringActionController
         {
             return appendRootNavTrail(root).addChild("Experiment Runs");
         }
+    }
+
+    private VBox createRunListView(int defaultMaxRows)
+    {
+        Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(getContainer());
+        ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter")), getViewContext().getActionURL().clone(), Collections.emptyList());
+        JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
+
+        ExperimentRunListView view = ExperimentService.get().createExperimentRunWebPart(getViewContext(), bean.getSelectedFilter());
+        view.setFrame(WebPartView.FrameType.NONE);
+
+        // When paginated and the user hasn't explicitly set a maxRows, use the default maxRows size.
+        QuerySettings settings = view.getSettings();
+        if (!settings.isMaxRowsSet() && settings.getShowRows() == ShowRows.PAGINATED)
+        {
+            settings.setMaxRows(defaultMaxRows);
+        }
+
+        VBox result = new VBox(chooserView, view);
+        result.setFrame(WebPartView.FrameType.PORTAL);
+        return result;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -1197,7 +1216,7 @@ public class ExperimentController extends SpringActionController
                 ExpDataClass dataClass = ExperimentService.get().createDataClass(
                         getContainer(), getUser(), form.getName(), form.getDescription(),
                         Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression(),
-                        null
+                        null, form.getCategory()
                 );
 
                 Domain domain = dataClass.getDomain();
@@ -2944,7 +2963,7 @@ public class ExperimentController extends SpringActionController
             }
 
             response.putIfAbsent("success", !errors.hasErrors());
-            return new ApiSimpleResponse();
+            return response;
         }
 
         protected abstract ApiSimpleResponse deleteObjects(CascadeDeleteForm form) throws Exception;
@@ -3100,6 +3119,31 @@ public class ExperimentController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(DeletePermission.class)
+    public class GetDataDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
+    {
+        @Override
+        public void validateForm(DeleteConfirmationForm deleteForm, Errors errors)
+        {
+            if (deleteForm.getDataRegionSelectionKey() == null && deleteForm.getRowIds() == null)
+                errors.reject(ERROR_REQUIRED, "You must provide either a set of rowIds or a dataRegionSelectionKey");
+        }
+
+        @Override
+        public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
+        {
+
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpDataImpl> allData = ExperimentServiceImpl.get().getExpDatas(deleteRequest);
+
+            List<Integer> cannotDelete = ExperimentServiceImpl.get().getDataUsedAsInput(deleteForm.getIds(false));
+
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allData));
+        }
+    }
+
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(DeletePermission.class)
     public class GetMaterialDeleteConfirmationDataAction extends ReadOnlyApiAction<DeleteConfirmationForm>
     {
         @Override
@@ -3113,26 +3157,11 @@ public class ExperimentController extends SpringActionController
         public Object execute(DeleteConfirmationForm deleteForm, BindException errors) throws Exception
         {
             // start with all of them marked as deletable.  As we find evidence to the contrary, we will remove from this set.
-            List<Integer> canDelete = new ArrayList<>(deleteForm.getIds(false));
-            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(canDelete);
+            List<Integer> deleteRequest = new ArrayList<>(deleteForm.getIds(false));
+            List<ExpMaterialImpl> allMaterials = ExperimentServiceImpl.get().getExpMaterials(deleteRequest);
 
             List<Integer> cannotDelete = ExperimentServiceImpl.get().getMaterialsUsedAsInput(deleteForm.getIds(false));
-            canDelete.removeAll(cannotDelete);
-            List<Map<String, Object>> canDeleteRows = new ArrayList<>();
-            List<Map<String, Object>> cannotDeleteRows = new ArrayList<>();
-            allMaterials.forEach((material) -> {
-                Map<String, Object> rowMap = Map.of("RowId", material.getRowId(), "Name", material.getName());
-                if (canDelete.contains(material.getRowId()))
-                    canDeleteRows.add(rowMap);
-                else
-                    cannotDeleteRows.add(rowMap);
-            });
-
-
-            Map<String, Collection<Map<String, Object>>> partitionedIds = new HashMap<>();
-            partitionedIds.put("canDelete", canDeleteRows);
-            partitionedIds.put("cannotDelete", cannotDeleteRows);
-            return success(partitionedIds);
+            return success(ExperimentServiceImpl.partitionRequestedDeleteObjects(deleteRequest, cannotDelete, allMaterials));
         }
     }
 
@@ -3492,8 +3521,9 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
-            form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
-            return new ApiSimpleResponse("success", true);
+            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
+            form.updateSampleSet(getContainer(), getUser(), sampleSet);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3534,7 +3564,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
         {
             ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return new ApiSimpleResponse("success", true);
+            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3553,16 +3583,23 @@ public class ExperimentController extends SpringActionController
         {
             ExpSampleSetImpl ss = form.getSampleSet(getContainer());
 
-            Map<String,Object> sampleSet = new HashMap<>();
-            sampleSet.put("name", ss.getName());
-            sampleSet.put("nameExpression", ss.getNameExpression());
-            sampleSet.put("description", ss.getDescription());
-            sampleSet.put("importAliases", ss.getImportAliasMap());
-            sampleSet.put("lsid", ss.getLSID());
-            sampleSet.put("rowId", ss.getRowId());
-
-            return new ApiSimpleResponse(Collections.singletonMap("sampleSet", sampleSet));
+            return getSampleSetApiResponse(ss);
         }
+    }
+
+    @NotNull
+    private static ApiSimpleResponse getSampleSetApiResponse(ExpSampleSet ss) throws IOException
+    {
+        Map<String,Object> sampleSet = new HashMap<>();
+        sampleSet.put("name", ss.getName());
+        sampleSet.put("nameExpression", ss.getNameExpression());
+        sampleSet.put("description", ss.getDescription());
+        sampleSet.put("importAliases", ss.getImportAliasMap());
+        sampleSet.put("lsid", ss.getLSID());
+        sampleSet.put("rowId", ss.getRowId());
+        sampleSet.put("domainId", ss.getDomain().getTypeId());
+
+        return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
 
     private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
@@ -3956,6 +3993,24 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
             return root;
+        }
+
+        @Override
+        protected Map<String, String> getRenamedColumns()
+        {
+            final String renameParamPrefix = "importAlias.";
+            Map<String, String> renameColumns = new CaseInsensitiveHashMap<>();
+            PropertyValue[] pvs = _form.getInitParameters().getPropertyValues();
+            for (PropertyValue pv : pvs)
+            {
+                String paramName = pv.getName();
+                if (!paramName.startsWith(renameParamPrefix) || pv.getValue() == null)
+                    continue;
+
+                renameColumns.put(paramName.substring(renameParamPrefix.length()), (String) pv.getValue());
+            }
+
+            return renameColumns;
         }
     }
 
@@ -4458,13 +4513,37 @@ public class ExperimentController extends SpringActionController
 
         public ModelAndView getView(ExportOptionsForm form, boolean reshow, BindException errors) throws Exception
         {
-            handlePost(form, errors);
+            // FormViewAction can reinvoke getView() in response to a POST if we're not redirecting the browser,
+            // so avoid double-creating the export
+            if ("get".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                handlePost(form, errors);
             return null;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
             return null;
+        }
+
+        public List<ExpRun> lookupRuns(ExportOptionsForm form)
+        {
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+            if (runIds.isEmpty())
+            {
+                throw new NotFoundException();
+            }
+            List<ExpRun> result = new ArrayList<>();
+
+            for (int id : runIds)
+            {
+                ExpRun run = ExperimentService.get().getExpRun(id);
+                if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
+                {
+                    throw new NotFoundException("Could not find run " + id);
+                }
+                result.add(run);
+            }
+            return result;
         }
     }
 
@@ -4473,44 +4552,22 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
-            if (runIds.isEmpty())
+            XarExportSelection selection = new XarExportSelection();
+            if (form.getExpRowId() != null)
             {
-                throw new NotFoundException();
-            }
-
-            try
-            {
-                for (int id : runIds)
+                ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
+                if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
                 {
-                    ExpRun run = ExperimentService.get().getExpRun(id);
-                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Could not find run " + id);
-                    }
+                    throw new NotFoundException("Run group " + form.getExpRowId());
                 }
-
-                XarExportSelection selection = new XarExportSelection();
-                if (form.getExpRowId() != null)
-                {
-                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
-                    if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Run group " + form.getExpRowId());
-                    }
-                    selection.addExperimentIds(experiment.getRowId());
-                }
-                selection.addRunIds(runIds);
-
-                _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
-                if (form.getDataRegionSelectionKey() != null)
-                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
-                return true;
+                selection.addExperimentIds(experiment.getRowId());
             }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException(runIds.toString());
-            }
+            selection.addRuns(lookupRuns(form));
+
+            _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+            return true;
         }
     }
 
@@ -4547,40 +4604,18 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
-            if (runIds.isEmpty())
+            XarExportSelection selection = new XarExportSelection();
+            selection.setIncludeXarXml(false);
+            if ("role".equalsIgnoreCase(form.getFileExportType()))
             {
-                throw new NotFoundException();
+                selection.addRoles(form.getRoles());
             }
+            selection.addRuns(lookupRuns(form));
 
-            try
-            {
-                for (int id : runIds)
-                {
-                    ExpRun run = ExperimentService.get().getExpRun(id);
-                    if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
-                    {
-                        throw new NotFoundException("Could not find run " + id);
-                    }
-                }
-
-                XarExportSelection selection = new XarExportSelection();
-                selection.setIncludeXarXml(false);
-                if ("role".equalsIgnoreCase(form.getFileExportType()))
-                {
-                    selection.addRoles(form.getRoles());
-                }
-                selection.addRunIds(runIds);
-
-                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
-                if (form.getDataRegionSelectionKey() != null)
-                    DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
-                return true;
-            }
-            catch (NumberFormatException e)
-            {
-                throw new NotFoundException(runIds.toString());
-            }
+            _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+            if (form.getDataRegionSelectionKey() != null)
+                DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
+            return true;
         }
     }
 

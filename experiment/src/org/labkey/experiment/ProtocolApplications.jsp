@@ -216,14 +216,14 @@
                     <% Pair<Identifiable, ActionURL> toObj = getObject(toLsid); %>
                     <tr class="labkey-row">
                         <td width="100px">
-                            <% if (fromObj == EMPTY_PAIR) { %>
+                            <% if (fromObj == EMPTY_PAIR || fromObj.second == null) { %>
                             <%= h(fromLsid) %>
                             <% } else { %>
                             <a href="<%=h(fromObj.second)%>" title="<%=h(fromLsid)%>"><%= h(fromObj.first.getName()) %></a>
                             <% } %>
                         </td>
                         <td width="100px">
-                            <% if (toObj == EMPTY_PAIR) { %>
+                            <% if (toObj == EMPTY_PAIR || toObj.second == null) { %>
                             <%= h(toLsid) %>
                             <% } else { %>
                             <a href="<%=h(toObj.second)%>" title="<%=h(toLsid)%>"><%= h(toObj.first.getName()) %></a>

@@ -95,6 +95,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
+    public static final String EXPERIMENTAL_GWT_LIST_DESIGNER = "experimental-gwtlistdesigner"; //TODO: Remove once automated test conversion of new list designer is complete
 
 
     private final Cache<String, List<ListDef>> _listDefCache = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
@@ -183,6 +184,27 @@ public class ListManager implements SearchService.DocumentProvider
         return list;
     }
 
+    public ListDomainKindProperties getListDomainKindProperties(Container container, Integer listId)
+    {
+        if (null == listId)
+        {
+            return new ListDomainKindProperties();
+        }
+        else
+        {
+            SimpleFilter filter = new PkFilter(getListMetadataTable(), new Object[]{container, listId});
+            ListDomainKindProperties list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+
+            // Workbooks can see their parent's lists, so check that container if we didn't find the list the first time
+            if (list == null && container.isWorkbook())
+            {
+                filter = new PkFilter(getListMetadataTable(), new Object[]{container.getParent(), listId});
+                list = new TableSelector(getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+            }
+            return list;
+        }
+    }
+
     // Note: callers must invoke indexer (can't invoke here since we may be in a transaction)
     public ListDef insert(User user, final ListDef def, Collection<Integer> preferredListIds)
     {
@@ -233,25 +255,54 @@ public class ListManager implements SearchService.DocumentProvider
         {
             ListDef old = getList(c, def.getListId());
             ret = Table.update(user, getListMetadataTable(), def, new Object[]{c, def.getListId()});
-            _listDefCache.remove(c.getId());
-            if (!old.getName().equals(ret.getName()))
-            {
-                QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                        QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(ret.getName()),
-                        QueryChangeListener.QueryProperty.Name,
-                        old.getName(),
-                        ret.getName()
-                );
-
-                QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
-                        QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
-            }
+            String oldName = old.getName();
+            String updatedName = ret.getName();
+            queryChangeUpdate(user, c, oldName, updatedName);
             transaction.commit();
         }
 
         return ret;
     }
 
+    //Note: this is sort of a dupe of above update() which returns ListDef
+    ListDomainKindProperties update(User user, Container c, final ListDomainKindProperties listProps)
+    {
+        if (null == c)
+            throw OptimisticConflictException.create(Table.ERROR_DELETED);
+
+        DbScope scope = getListMetadataSchema().getScope();
+        ListDomainKindProperties updated;
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            ListDomainKindProperties old = getListDomainKindProperties(c, listProps.getListId());
+            updated = Table.update(user, getListMetadataTable(), listProps, new Object[]{c, listProps.getListId()});
+            String oldName = old.getName();
+            String updatedName = updated.getName();
+
+            queryChangeUpdate(user, c, oldName, updatedName);
+            transaction.commit();
+        }
+
+        return updated;
+    }
+
+    private void queryChangeUpdate(User user, Container c, String oldName, String updatedName)
+    {
+        _listDefCache.remove(c.getId());
+        if (!oldName.equals(updatedName))
+        {
+            QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
+                    QueryService.get().getUserSchema(user, c, ListQuerySchema.NAME).getQueryDefForTable(updatedName),
+                    QueryChangeListener.QueryProperty.Name,
+                    oldName,
+                    updatedName
+            );
+
+            QueryService.get().fireQueryChanged(user, c, null, new SchemaKey(null, ListQuerySchema.NAME),
+                    QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
+        }
+    }
 
     // CONSIDER: move "list delete" from  ListDefinitionImpl.delete() implementation to ListManager for consistency
     void deleteListDef(Container c, int listid)
@@ -273,6 +324,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final SearchService.SearchCategory listCategory = new SearchService.SearchCategory("list", "List");
 
     // Index all lists in this container
+    @Override
     public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
     {
         final IndexTask task;
@@ -539,7 +591,7 @@ public class ListManager implements SearchService.DocumentProvider
         // TODO: Attempting to respect tableUrl for details link... but this doesn't actually work. See #28747.
         StringExpression se = listTable.getDetailsURL(null, list.getContainer());
 
-        new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results -> {
+        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results -> {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             final Object pk = map.get(keyKey);
             String entityId = (String)map.get(entityIdKey);
@@ -640,7 +692,7 @@ public class ListManager implements SearchService.DocumentProvider
         String lastIndexedClause = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 
-        new TableSelector(listTable, filter, null).setForDisplay(true).forEachResults(results ->
+        new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results ->
         {
             Map<FieldKey, Object> map = results.getFieldKeyRowMap();
             String title = titleTemplate.eval(map);
@@ -733,26 +785,28 @@ public class ListManager implements SearchService.DocumentProvider
         if (setting.indexItemData())
         {
             TableInfo ti = list.getTable(User.getSearchUser());
+            int fileSizeLimit = (int)(SearchService.get().getFileSizeLimit()*.99);
 
             if (ti != null)
             {
+                body.append(sep);
                 FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
-                StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
-                new TableSelector(ti).setForDisplay(true).forEachResults(new ForEachBlock<Results>()
+                new TableSelector(ti).setJdbcCaching(false).setForDisplay(true).forEachResults(new ForEachBlock<>()
                 {
                     @Override
                     public void exec(Results results) throws StopIteratingException
                     {
-                        data.append(template.eval(results.getFieldKeyRowMap())).append("\n");
-                        if (data.length() > SearchService.get().getFileSizeLimit())
-                            stopIterating();  // Short circuit for very large list, #25366
+                        body.append(template.eval(results.getFieldKeyRowMap())).append("\n");
+                        // Short circuit for very large list, #25366
+                        if (body.length() > fileSizeLimit)
+                        {
+                            body.setLength(fileSizeLimit); // indexer also checks size... make sure we're under the limit
+                            stopIterating();
+                        }
                     }
                 });
-
-                body.append(sep);
-                body.append(data);
             }
         }
 
@@ -796,7 +850,7 @@ public class ListManager implements SearchService.DocumentProvider
 
         List<String> parentIds = new ArrayList<>();
         Set<String> cols = new HashSet<>(Arrays.asList("EntityId"));
-        new TableSelector(listTable, cols).forEachMap(row -> {
+        new TableSelector(listTable, cols).setJdbcCaching(false).forEachMap(row -> {
             parentIds.add((String)row.get(entityIdKey.getName()));
 
             // Delete in batches to minimize db queries

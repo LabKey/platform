@@ -185,13 +185,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
 
         /* setup mini dataiterator pipeline to process lineage */
         DataIterator di = _toDataIterator("updateRows.lineage", ret);
-        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, true);
-        DataIteratorContext context = new DataIteratorContext();
-        context.setInsertOption(InsertOption.MERGE);
-        DataIterator derive = ddib.getDataIterator(context);
-        new Pump(derive, context).run();
-        if (context.getErrors().hasErrors())
-            throw context.getErrors();
+        ExpDataIterators.derive(user, container, di, true);
 
         if (ret.size() > 0)
         {
@@ -289,30 +283,50 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
-            throws QueryUpdateServiceException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
     {
-        List<Integer> ids = new LinkedList<>();
+        List<Integer> id = new LinkedList<>();
+        Integer rowId = getMaterialRowId(oldRowMap);
+        id.add(rowId);
+        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, id);
+        return oldRowMap;
+    }
+
+
+    @Override
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
+            throws QueryUpdateServiceException, SQLException, InvalidKeyException, BatchValidationException
+    {
+
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
 
-        for (Map<String, Object> k : keys)
+        // Check for trigger scripts
+        if (getQueryTable().hasTriggers(container))
         {
-            Integer rowId = getMaterialRowId(k);
-            Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
-            if (map == null)
-                throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
-
-            if (rowId == null)
-                rowId = getMaterialRowId(map);
-            if (rowId == null)
-                throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
-
-            ids.add(rowId);
-            result.add(map);
+            result = super.deleteRows(user, container, keys, configParameters, extraScriptContext);
         }
+        else
+        {
+            List<Integer> ids = new LinkedList<>();
 
-        // TODO check if this handle attachments???
-        ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids);
+            for (Map<String, Object> k : keys)
+            {
+                Integer rowId = getMaterialRowId(k);
+                Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
+                if (map == null)
+                    throw new QueryUpdateServiceException("No Sample Set Material found for rowId or LSID");
+
+                if (rowId == null)
+                    rowId = getMaterialRowId(map);
+                if (rowId == null)
+                    throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
+
+                ids.add(rowId);
+                result.add(map);
+            }
+            // TODO check if this handle attachments???
+            ExperimentServiceImpl.get().deleteMaterialByRowIds(user, container, ids);
+        }
 
         if (result.size() > 0)
         {

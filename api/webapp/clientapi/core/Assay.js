@@ -483,6 +483,7 @@ LABKEY.Assay = new function()
  * @param {Array} [config.files] Array of <a href='https://developer.mozilla.org/en-US/docs/DOM/File'><code>File</code></a> objects
  * or form file input elements to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
  * @param {Array} [config.dataRows] Array of assay results to import.  Only one of 'files', 'runFilePath', or 'dataRows' can be provided.
+ * @param {Object} [config.plateMetadata] JSON formatted plate metadata contains properties to associate with well groups in the plate template run property.
  * @param {Function} config.success The success callback function will be called with the following arguments:
  * <ul>
  *     <li><b>json</b>: The success response object contains two properties:

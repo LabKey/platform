@@ -1,6 +1,8 @@
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
+if (project.hasProperty("gradle7Compat"))
+    apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 apply plugin: 'org.labkey.xmlBeans'
 
@@ -98,7 +100,8 @@ List others = [
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
-        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}"
+        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
+        "org.postgresql:postgresql:${postgresqlDriverVersion}"
 ]
 
 List javax = [
@@ -111,6 +114,12 @@ configurations {
     // and the org.json module as well because they get in the way of our own JSON object implementations from server/api
     all*.exclude group: "org.apache.geronimo.bundles", module: "json"
     all*.exclude group: "org.json", module: "json"
+
+    creditable {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+
 }
 
 // declared separately to include the gwtsrc directory
@@ -130,45 +139,51 @@ sourceSets {
 
 
 dependencies {
-  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle))
-  BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
-  compile project.tasks.schemasCompile.outputs.files
+    // declare a transitive labkey dependency so the dependencies of the labkey-client-api are copied into api's lib directory
+    // and so the dependencies are included in the dependencies.txt file.
+    BuildUtils.addLabKeyDependency(project: project, config: "labkey", depProjectPath: BuildUtils.getRemoteApiProjectPath(gradle), transitive: true, depProjectConfig: "default")
+    if (project.hasProperty("gradle7Compat"))
+    {
+        BuildUtils.addLabKeyDependency(project: project, config: "implementation", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+        api project.tasks.schemasCompile.outputs.files
+    }
+    else
+    {
+        BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getBootstrapProjectPath(gradle))
+        compile project.tasks.schemasCompile.outputs.files
+    }
+    // always include labkey-client-api in the dependencies.txt file, whether that project is being built locally or not.
+    creditable "org.labkey:labkey-client-api:${project.labkeyVersion}"
 
-  BuildUtils.addTomcatBuildDependencies(project, "implementation")
-  // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
-  // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
-  compile "javax.servlet:servlet-api:${servletApiVersion}"
-  compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    BuildUtils.addTomcatBuildDependencies(project, "implementation")
+    // the following two libraries are required for compilation but we don't want extra ones in the classpath, so we exclude
+    // them from external dependencies in favor of the versions in the tomcat directory (FIXME seems somewhat sketchy...)
+    if (project.hasProperty("gradle7Compat"))
+    {
+        api "javax.servlet:servlet-api:${servletApiVersion}"
+        implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    }
+    else
+    {
+        compile "javax.servlet:servlet-api:${servletApiVersion}"
+        compile "com.sun.mail:jakarta.mail:${javaMailVersion}"
+    }
 
-  external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
+    external("com.fasterxml.jackson.datatype:jackson-datatype-json-org:${jacksonVersion}") {
       // exclude this because it gets in the way of our own JSON object implementations from server/api
       exclude group: "org.json", module:"json"
-  }
-  external ("org.apache.poi:poi-ooxml:${poiVersion}") {
-    // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
-    // dependency here in favor of the explicit dependency with a different version.
-    exclude group: "org.apache.xmlbeans", module: "xmlbeans"
-  }
-  external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
+    }
+    external ("org.apache.poi:poi-ooxml:${poiVersion}") {
+        // Issue 33146: Later versions of xmlbeans introduce some encoding problems, so we exclude the transitive
+        // dependency here in favor of the explicit dependency with a different version.
+        exclude group: "org.apache.xmlbeans", module: "xmlbeans"
+    }
+    external apache,caching,charting,gwt,jackson,javax,logging,others,r,spring
 
-  // These are required for running unit tests through the server junit controller
-  external test
+    // These are required for running unit tests through the server junit controller
+    external test
 
-  jspImplementation files(project.tasks.jar)
-  jspImplementation apache, jackson, spring
+    jspImplementation files(project.tasks.jar)
+    jspImplementation apache, jackson, spring
 }
 
-project.evaluationDependsOn(BuildUtils.getRemoteApiProjectPath(gradle))
-
-// Copy remoteapi (i.e., labkey-client-api-XX.X.jar) and its dependencies to api/lib
-project.task("copyRemoteApiJars",
-    type: Copy,
-    {CopySpec copy ->
-      copy.from project.project(BuildUtils.getRemoteApiProjectPath(gradle)).tasks.jar
-      copy.from project.project(BuildUtils.getRemoteApiProjectPath(gradle)).configurations.compile
-      copy.into "${project.file(project.labkey.explodedModuleLibDir)}"
-      copy.include '*.jar'
-    }
-)
-
-project.tasks.module.dependsOn(project.tasks.copyRemoteApiJars)

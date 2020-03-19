@@ -18,6 +18,7 @@ package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.collections4.Factory;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -45,7 +46,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -97,14 +97,36 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
-    /**
-     * Return the version of this module. Allows us to track whether
-     * module's version has changed.
-     */
-    double getVersion();
 
-    /** @return Formatted version number for display purposes. */
-    String getFormattedVersion();
+    /**
+     * Can this module be enabled in this container?
+     */
+    default boolean canBeEnabled(Container c)
+    {
+        return true;
+    }
+
+    /**
+     * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
+     */
+    @Nullable Double getSchemaVersion();
+
+    @Deprecated // Use getFormattedSchemaVersion() or getReleaseVersion() instead, as appropriate
+    default String getFormattedVersion()
+    {
+        return ObjectUtils.defaultIfNull(getFormattedSchemaVersion(), "");
+    }
+
+    @Nullable default String getFormattedSchemaVersion()
+    {
+        Double schemaVersion = getSchemaVersion();
+        return null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : null;
+    }
+
+    /**
+     * Return this module's release version, e.g., "20.3-SNAPSHOT" or "20.3.4"
+     */
+    @Nullable String getReleaseVersion();
 
     /** One line description of module's purpose (capitalized and without a period at the end) */
     @Nullable String getLabel();
@@ -303,7 +325,6 @@ public interface Module extends Comparable<Module>
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore
     Set<Module> getResolvedModuleDependencies();
-    boolean shouldConsolidateScripts();
     boolean shouldManageVersion();
 
     /**
@@ -318,6 +339,10 @@ public interface Module extends Comparable<Module>
      * @param path The path to the module's exploded directory
      */
     void setExplodedPath(File path);
+
+    @Nullable
+    File getZippedPath();
+    void setZippedPath(File zipped);
 
     /**
      * Returns a list of sql script file names for a given schema

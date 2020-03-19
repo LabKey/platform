@@ -73,7 +73,6 @@ public class StudyScheduleTest extends StudyBaseTest
     }
 
     private String _folderName = getFolderName();
-    private String _sampleDataPath = StudyHelper.getStudySampleDataPath();
 
     private final PortalHelper portalHelper = new PortalHelper(this);
 
@@ -291,8 +290,7 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));
                 clickButton("Next");
 
-                String datasetFileName = _sampleDataPath + "/datasets/plate002.tsv";
-                File file = new File(TestFileUtils.getLabKeyRoot(), datasetFileName);
+                File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
 
                 Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
                 waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
@@ -379,8 +377,7 @@ public class StudyScheduleTest extends StudyBaseTest
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));
                 clickButton("Next");
 
-                String datasetFileName = _sampleDataPath + "/datasets/plate002.tsv";
-                File file = new File(TestFileUtils.getLabKeyRoot(), datasetFileName);
+                File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
 
                 Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
                 waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);

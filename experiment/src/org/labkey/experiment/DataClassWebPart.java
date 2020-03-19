@@ -55,6 +55,8 @@ public class DataClassWebPart extends QueryView
         setTitle("Data Classes");
         setTitleHref(PageFlowUtil.urlProvider(ExperimentUrls.class).getDataClassListURL(context.getContainer()));
         setShowDetailsColumn(false);
+        // Use default delete button, but without showing the confirmation text -- DeleteDataClassAction will show a confirmation page.
+        setShowDeleteButtonConfirmationText(false);
 
         if (_narrow)
         {
@@ -97,15 +99,4 @@ public class DataClassWebPart extends QueryView
         return false;
     }
 
-    @Override
-    public ActionButton createDeleteButton()
-    {
-        // Use default delete button, but without showing the confirmation text -- DeleteDataClassAction will show a confirmation page.
-        ActionButton button = super.createDeleteButton();
-        if (button != null)
-        {
-            button.setRequiresSelection(true);
-        }
-        return button;
-    }
 }

@@ -83,11 +83,9 @@ import org.labkey.pipeline.xml.ScriptTaskType;
 
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -103,9 +101,9 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override
@@ -143,7 +141,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
+        return Arrays.asList(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
                 @Override
@@ -162,8 +160,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                     return new ProtocolManagementWebPart(portalCtx);
                 }
             }
-
-        ));
+        );
     }
 
     @Override
@@ -267,26 +264,26 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-            PipelineQueueImpl.TestCase.class,
+        return Set.of(
             PipelineController.TestCase.class,
             PipelineJobServiceImpl.IntegrationTestCase.class,
+            PipelineQueueImpl.TestCase.class,
             PipelineServiceImpl.TestCase.class,
             StatusController.TestCase.class
-        ));
+        );
     }
 
     @Override
     @NotNull
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
+            CommandTaskImpl.TestCase.class,
             PathMapperImpl.TestCase.class,
             PipelineCommandTestCase.class,
-            PipelineJobServiceImpl.TestCase.class,
-            CommandTaskImpl.TestCase.class,
-            PipelineJobMarshaller.TestCase.class
-        ));
+            PipelineJobMarshaller.TestCase.class,
+            PipelineJobServiceImpl.TestCase.class
+        );
     }
 
     @Override

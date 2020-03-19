@@ -26,6 +26,7 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.WebPartFrame.FrameConfig;
@@ -352,7 +353,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             return;
 
         Throwable exceptionToRender = _prepareException;
-        String errorMessage = null;
+        HtmlString errorHtml = null;
 
         String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
         try (Timing ignored = MiniProfiler.step(name))
@@ -379,11 +380,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 catch (UnauthorizedException x)
                 {
                     Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
-                    errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
+                    errorHtml = ExceptionUtil.getUnauthorizedMessage(getViewContext());
                 }
                 catch (NotFoundException x)
                 {
-                    errorMessage = "Not Found : " + x.getMessage();
+                    errorHtml = HtmlString.of("Not Found : " + x.getMessage());
                 }
                 catch (Throwable t)
                 {
@@ -406,11 +407,11 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             }
 
             //if we received an exception during prepare or render, we'll display it here
-            if (exceptionToRender != null || errorMessage != null)
+            if (exceptionToRender != null || errorHtml != null)
             {
-                if (errorMessage != null)
+                if (errorHtml != null)
                 {
-                    response.getWriter().write(errorMessage);
+                    response.getWriter().write(errorHtml.toString());
                 }
                 if (exceptionToRender != null)
                 {

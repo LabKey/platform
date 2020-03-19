@@ -43,6 +43,7 @@ import org.labkey.test.util.DataRegionTable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -207,6 +208,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         checkExpectedErrors(numExpectedErrors);
     }
 
+    public File getModifiedStudyReloadTxt()
+    {
+        File file = TestFileUtils.getSampleData("study/StudyVisitManagement.folder/studyload.txt");
+        file.setLastModified((new Date()).getTime());
+
+        return file;
+    }
+
     @Test
     public void testFailForUndefinedVisitsReload() throws IOException
     {
@@ -240,7 +249,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // test reload again with the failure bit unset
         goToModule("Pipeline");
         clickButton("Process and Import Data");
-        _fileBrowserHelper.uploadFile(EXPLODED_FOLDER_STUDYLOAD_TXT, null, null, true);
+        _fileBrowserHelper.uploadFile(getModifiedStudyReloadTxt(), null, null, true);
         attemptStudyReloadNow("Reloading Study 001", false);
 
         // verify undefined visits now created

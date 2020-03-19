@@ -656,12 +656,12 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues.containsKey(col.getFormFieldName(ctx));
     }
 
-    public Object get(String arg0)
+    public String get(String arg0)
     {
         return _stringValues.get(arg0);
     }
 
-    public Object get(ColumnInfo col)
+    public String get(ColumnInfo col)
     {
         return _stringValues.get(getFormFieldName(col));
     }
@@ -742,7 +742,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void forceReselect()
     {
         Object[] pk = getPkVals();
-        setStrings(new HashMap<String,String>());
+        setStrings(new HashMap<>());
         setOldValues(null);
         setPkVals(pk);
         setDataLoaded(false);
@@ -789,7 +789,9 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
             if (null != StringUtils.trimToNull(oldVals))
             {
-                _oldValues = PageFlowUtil.decodeObject(oldVals);
+                String className = getDynaClass().getName();
+                Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
+                _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
                 _isDataLoaded = true;
             }
         }
