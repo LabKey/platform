@@ -53,7 +53,6 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -196,6 +195,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+
+        // TODO move to an upgrade script
+        ExperimentUpgradeCode.upgradeMaterialSource(null);
     }
 
     @Override

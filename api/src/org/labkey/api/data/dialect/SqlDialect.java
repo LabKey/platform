@@ -315,10 +315,6 @@ public abstract class SqlDialect
         return () -> {};
     }
 
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
-    }
-
     /**
      * @return any additional information that should be sent to the mothership in the case of a SQLException
      */
