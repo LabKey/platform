@@ -348,7 +348,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (ssDomain != null && !finalExistingAliases.contains(trimmedKey) && ssDomain.getPropertyByName(trimmedKey) != null)
+            if (domain != null && !finalExistingAliases.contains(trimmedKey) && domain.getPropertyByName(trimmedKey) != null)
             {
                 throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
             }
