@@ -15,8 +15,12 @@
  */
 package org.labkey.api.util;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -29,7 +33,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -316,6 +322,54 @@ public class StringUtilsLabKey
             return normalizedName;
     }
 
+    /**
+     * See description below. This version won't truncate the values.
+     */
+    public static @NotNull <V> String getMapDifference(@Nullable Map<String, V> oldMap, @Nullable Map<String, V> newMap)
+    {
+        return getMapDifference(oldMap, newMap, Integer.MAX_VALUE);
+    }
+
+    /**
+     * Compares two maps of name:value pairs and generates a string that documents the entries that have changed
+     * (added, removed, or updated). Useful for audit logging of settings changes. A few examples of output:
+     *
+     *    enabled: true » false
+     *    description: My Configuration » CAS Configuration, enabled: true » false
+     *    serverUrl: » http://localhost:8080/labkey/cas, description: » CAS localhost, autoRedirect: » true
+     *
+     * Null can be passed for either map, in which case an empty map is substituted.
+     */
+    public static @NotNull <V> String getMapDifference(@Nullable Map<String, V> oldMap, @Nullable Map<String, V> newMap, int truncateLength)
+    {
+        oldMap = null == oldMap ? Collections.emptyMap() : oldMap;
+        newMap = null == newMap ? Collections.emptyMap() : newMap;
+
+        MapDifference<String, Object> difference = Maps.difference(oldMap, newMap);
+
+        List<String> list = new LinkedList<>();
+
+        difference.entriesOnlyOnLeft().entrySet().stream()
+            .map(e->e.getKey() + ": " + truncate(e.getValue(), truncateLength) + " » ")
+            .forEach(list::add);
+
+        difference.entriesOnlyOnRight().entrySet().stream()
+            .map(e->e.getKey() + ": » " + truncate(e.getValue(), truncateLength))
+            .forEach(list::add);
+
+        difference.entriesDiffering().entrySet().stream()
+            .map(e->e.getKey() + ": " + truncate(e.getValue().leftValue(), truncateLength) + " » " + truncate(e.getValue().rightValue(), truncateLength))
+            .forEach(list::add);
+
+        return String.join(", ", list);
+    }
+
+    private static String truncate(Object o, int truncateLength)
+    {
+        String s = String.valueOf(o);
+        return s.length() > truncateLength ? s.substring(0, truncateLength - 3) + "..." : s;
+    }
+
     public static class TestCase extends Assert
     {
         @Test
@@ -401,15 +455,15 @@ public class StringUtilsLabKey
         @Test
         public void testGetDomainName()
         {
-            assertEquals("Null value expected", null, getDomainName(null));
+            assertNull("Null value expected", getDomainName(null));
             assertEquals("No transformation expected", "subdomain", getDomainName("subdomain"));
             assertEquals("Expected to convert to lower case", "subdomain", getDomainName("SubDomain"));
             assertEquals("Expected to convert to lower case and remove spaces at beginning and end", "subdomain", getDomainName(" subDomain   "));
             assertEquals("Expected to replace space with dash", "sub-domain", getDomainName(" sub Domain "));
             assertEquals("Expected to remove leading and trailing dashes after trimming spaces", "sub-domain", getDomainName(" -sub Domain- "));
             assertEquals("Expected to remove invalid characters are normalize accented characters", "aoua", getDomainName("\u2603~!@$&()_+{}-=[],.#\u00E4\u00F6\u00FC\u00C5"));
-            assertEquals("Null expected if all characters are invalid ", null, getDomainName("-\u2603~!@$&()_+{}=[],.#-"));
-            assertEquals("Null expected if all characters are dashes ", null, getDomainName("-------"));
+            assertNull("Null expected if all characters are invalid ", getDomainName("-\u2603~!@$&()_+{}=[],.#-"));
+            assertNull("Null expected if all characters are dashes ", getDomainName("-------"));
             assertEquals("Expected to remove invalid characters in the middle, replace spaces with dashes", "my-own--domain-with-dashes", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]"));
             assertEquals("Expected to remove invalid characters and produce a string without any characters truncated", "my-own--domain-with-dashes-789012345678901234567890123456789012", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]-789012345678901234567890123456789012"));
             assertEquals("Expected to truncate characters beyond valid length after removing and converting characters", "my-own--domain-with-dashes-789012345678901234567890123456789012", getDomainName("My Own \u2603 D\u00F6main-with-[dashes]-7890123456789012345678901234567890123"));
@@ -480,6 +534,23 @@ public class StringUtilsLabKey
                 }
             }
             assertTrue("Didn't generate any Strings with: " + digits + ". This is quite unlikely.", digits.isEmpty());
+        }
+
+        @Test
+        public void testMapDifference()
+        {
+            // ImmutableMap.of() maintains entry order
+            Map<String, Object> map1 = ImmutableMap.of("prop1", 17, "prop2", "Chicken", "prop3", true);
+            Map<String, Object> map2 = ImmutableMap.of("prop1", 18, "prop2", "Chicken", "prop3", false);
+            Map<String, Object> map3 = ImmutableMap.of("prop1", 18, "prop2", "Marzipan", "prop3", false);
+
+            assertEquals("", getMapDifference(null, null));
+            assertEquals("prop1: » 17, prop2: » Chicken, prop3: » true", getMapDifference(null, map1));
+            assertEquals("prop1: 17 » 18, prop3: true » false", getMapDifference(map1, map2));
+            assertEquals("prop2: Chicken » Marzipan", getMapDifference(map2, map3));
+            assertEquals("prop1: 18 » 17, prop2: Marzipan » Chicken, prop3: false » true", getMapDifference(map3, map1));
+            assertEquals("prop1: 17 » , prop2: Chicken » , prop3: true » ", getMapDifference(map1, null));
+            assertEquals("prop1: 17 » 18, prop2: C... » M..., prop3: true » f...", getMapDifference(map1, map3, 4));
         }
     }
 }

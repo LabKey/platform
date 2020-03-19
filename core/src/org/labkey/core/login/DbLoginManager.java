@@ -22,6 +22,7 @@ import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
 import java.util.LinkedList;
@@ -78,11 +79,7 @@ public class DbLoginManager
         map.put(Key.Expiration.toString(), form.getExpiration());
         map.save();
 
-        List<String> changes = new LinkedList<>();
-        if (!Objects.equals(oldProperties.get(Key.Strength.toString()), form.getStrength()))
-            changes.add("Strength: " + form.getStrength());
-        if (!Objects.equals(oldProperties.get(Key.Expiration.toString()), form.getExpiration()))
-            changes.add("Expiration: " + form.getExpiration());
+        String changes = StringUtilsLabKey.getMapDifference(oldProperties, map);
 
         if (!changes.isEmpty())
         {
