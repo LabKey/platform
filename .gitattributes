@@ -2298,6 +2298,7 @@ experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGraphView.java
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGroupsView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentUpdateView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp -text
+experiment/src/org/labkey/experiment/controllers/exp/experimentRunGraphView.jsp -text
 experiment/src/org/labkey/experiment/controllers/exp/GraphMoreGrid.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolListView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolParametersView.java -text
