@@ -535,4 +535,9 @@
             <required>false</required>
         </attribute>
     </tag>
+    <tag>
+        <name>loadClientDependencies</name>
+        <tag-class>org.labkey.api.jsp.taglib.LoadClientDependenciesTag</tag-class>
+        <body-content>JSP</body-content>
+    </tag>
 </taglib>
