@@ -35,6 +35,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
@@ -298,5 +299,24 @@ abstract public class DomainKind<T>  implements Handler<String>
     public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
     {
         return null;
+    }
+
+    /**
+     * Overridable validity check. Base only executes canCreateDefinition check.
+     * NOTE: Due to historical limitations throws runtime exceptions instead of validation errors
+     * @param container being executed upon
+     * @param user executing service call
+     * @param options map to check
+     * @param name of design
+     * @param domain
+     * @param isUpdate flag indicating if this a creation or update action
+     */
+    public void validateOptions(Container container, User user, T options, String name, Domain domain, boolean isUpdate)
+    {
+        if (!isUpdate && !this.canCreateDefinition(user, container))
+            throw new UnauthorizedException("You don't have permission to create a new domain");
+
+        if (isUpdate && !canEditDefinition(user, domain))
+            throw new UnauthorizedException("You don't have permission to edit this domain");
     }
 }

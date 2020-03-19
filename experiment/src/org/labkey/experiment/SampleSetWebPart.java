@@ -92,9 +92,8 @@ public class SampleSetWebPart extends QueryView
         ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
-        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "Create New Sample Set", ActionButton.Action.LINK);
+        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "New Sample Set", ActionButton.Action.LINK);
         createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
-        createNewButton.setIconCls("plus");
         createNewButton.setURL(urlInsert);
         bar.add(createNewButton);
 
