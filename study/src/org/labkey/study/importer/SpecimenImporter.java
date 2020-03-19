@@ -3329,7 +3329,8 @@ public class SpecimenImporter
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
             info(remapExternalIdsSql.toDebugString());
-        executeSQL(schema, remapExternalIdsSql);
+        if (!sep.isBlank())
+            executeSQL(schema, remapExternalIdsSql);
         info("Update complete.");
     }
 

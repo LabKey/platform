@@ -9,6 +9,11 @@ module.exports = {
         title: 'Field Editor',
         permission: 'admin', // this is admin so that direct access to this view has highest level perm, see PropertyController.EditDomainAction for main usage
         path: './src/client/DomainDesigner'
+    }, {
+        name: 'sampleTypeDesigner',
+        title: 'Sample Type Designer',
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see ExperimentController.BaseSampleSetAction for main usage
+        path: './src/client/SampleTypeDesigner'
     },{
         name: 'dataClassDesigner',
         title: 'Data Class Designer',
