@@ -41,8 +41,17 @@ public class LoadClientDependenciesTag extends BodyTagSupport
             String delim = "";
             for (ClientDependency dependency : ((JspBase)page).getClientDependencies())
             {
-                files.append(delim).append("'").append(dependency.getScriptString()).append("'");
-                delim = ",";
+                String script = dependency.getScriptString();
+
+                if (script.endsWith(".css"))
+                {
+                    sb.append("LABKEY.requiresCss('").append(script).append("');\n");
+                }
+                else
+                {
+                    files.append(delim).append("'").append(dependency.getScriptString()).append("'");
+                    delim = ",";
+                }
             }
         }
 
