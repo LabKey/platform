@@ -17,9 +17,11 @@ package org.labkey.devtools.authentication;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
+import org.labkey.api.security.SettingsField;
 import org.labkey.api.view.ActionURL;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationAction;
 import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigurationForm;
@@ -30,7 +32,6 @@ import org.labkey.devtools.authentication.TestSsoController.TestSsoSaveConfigura
 public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfiguration>
 {
     public static final String NAME = "TestSSO";
-    static final String SET_KEY = "TestSsoAuthenticationProperties";
 
     @Override
     public TestSsoConfiguration getAuthenticationConfiguration(@NotNull ConfigurationSettings cs)
@@ -56,6 +57,13 @@ public class TestSsoProvider implements SSOAuthenticationProvider<TestSsoConfigu
     public String getDescription()
     {
         return "A trivial, insecure SSO authentication provider (for test purposes only)";
+    }
+
+    @Override
+    public @NotNull JSONArray getSettingsFields()
+    {
+        return new JSONArray()
+                .put(SettingsField.of("autoRedirect", SettingsField.FieldType.checkbox, "Default to this TestSSO configuration", "Redirects the login page directly to the TestSSO page instead of requiring the user to click on a logo.", false, false));
     }
 
     // TODO: Remove this once we stop upgrading from 19.3
