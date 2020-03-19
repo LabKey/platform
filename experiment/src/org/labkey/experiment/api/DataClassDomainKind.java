@@ -299,7 +299,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
 
     @Nullable
     @Override
-    public DataClassDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public DataClassDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
         ExpDataClass dc = ExperimentService.get().getDataClass(domain.getDomainURI());
         return new DataClassDomainKindProperties(dc);

@@ -6276,6 +6276,7 @@ public class ExperimentServiceImpl implements ExperimentService
                                         List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
             throws ExperimentException
     {
+        name = StringUtils.trimToNull(name);
         validateDataClassName(c, u, name);
         validateDataClassOptions(c, u, options);
 
@@ -6368,8 +6369,11 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClass.save(u);
             errors = DomainUtil.updateDomainDescriptor(original, update, c, u);
 
-            transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
-            transaction.commit();
+            if (!errors.hasErrors())
+            {
+                transaction.addCommitTask(() -> clearDataClassCache(c), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.commit();
+            }
         }
         return errors;
     }

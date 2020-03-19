@@ -1,5 +1,7 @@
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class DataClassDomainKindProperties
 {
     private int rowId;
@@ -52,7 +54,7 @@ public class DataClassDomainKindProperties
 
     public String getName()
     {
-        return name;
+        return StringUtils.trimToNull(name);
     }
 
     public void setName(String name)
@@ -62,7 +64,7 @@ public class DataClassDomainKindProperties
 
     public String getDescription()
     {
-        return description;
+        return StringUtils.trimToNull(description);
     }
 
     public void setDescription(String description)
@@ -72,7 +74,7 @@ public class DataClassDomainKindProperties
 
     public String getNameExpression()
     {
-        return nameExpression;
+        return StringUtils.trimToNull(nameExpression);
     }
 
     public void setNameExpression(String nameExpression)
@@ -92,7 +94,7 @@ public class DataClassDomainKindProperties
 
     public String getCategory()
     {
-        return category;
+        return StringUtils.trimToNull(category);
     }
 
     public void setCategory(String category)
