@@ -15,7 +15,7 @@
  */
 import React from 'react'
 import { ActionURL } from "@labkey/api";
-import { Alert, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
+import { Alert, BeforeUnload, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
 
@@ -23,18 +23,18 @@ type State = {
     model?: DataClassModel,
     isLoading: boolean,
     message?: string
-    dirty: boolean
 }
 
 export class App extends React.Component<any, State> {
+
+    private _dirty = false;
 
     constructor(props)
     {
         super(props);
 
         this.state = {
-            isLoading: true,
-            dirty: false
+            isLoading: true
         };
     }
 
@@ -54,26 +54,19 @@ export class App extends React.Component<any, State> {
         else {
             this.setState(() => ({isLoading: false}));
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
-    }
-
-    handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+    handleWindowBeforeUnload = (event: any) => {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
     navigate(defaultUrl: string) {
-        const returnUrl = ActionURL.getParameter('returnUrl');
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || defaultUrl;
-        });
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || defaultUrl;
     }
 
     onCancel = () => {
@@ -85,7 +78,7 @@ export class App extends React.Component<any, State> {
     };
 
     onChange = (model: DataClassModel) => {
-        this.setState(() => ({dirty: true}));
+        this._dirty = true;
     };
 
     render() {
@@ -100,12 +93,15 @@ export class App extends React.Component<any, State> {
         }
 
         return (
-            <DataClassDesigner
-                initModel={model}
-                onCancel={this.onCancel}
-                onComplete={this.onComplete}
-                onChange={this.onChange}
-            />
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
+                <DataClassDesigner
+                    initModel={model}
+                    onCancel={this.onCancel}
+                    onComplete={this.onComplete}
+                    onChange={this.onChange}
+                    successBsStyle={'primary'}
+                />
+            </BeforeUnload>
         )
     }
 }
