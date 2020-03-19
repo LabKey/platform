@@ -18,6 +18,7 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -31,6 +32,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -62,6 +64,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
+    private static final Set<String> ADDITIONAL_SOURES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
 
     public enum NestedSchemas
     {
@@ -326,9 +329,27 @@ public class ExpSchema extends AbstractExpSchema
      */
     public enum DataClassCategoryType
     {
-        registry,
-        media,
-        sources;
+        registry(null, null),
+        media(null, null),
+        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURES_AUDIT_FIELDS);
+
+        public AuditBehaviorType defaultBehavior;
+        public Set<String> additionalAuditFields;
+
+        DataClassCategoryType(@Nullable AuditBehaviorType defaultBehavior, @Nullable Set<String> addlAuditFields)
+        {
+            this.defaultBehavior = defaultBehavior;
+            this.additionalAuditFields = addlAuditFields;
+        }
+
+        public static DataClassCategoryType fromString(String typeVal) {
+            for (DataClassCategoryType type : DataClassCategoryType.values()) {
+                if (type.name().equalsIgnoreCase(typeVal)) {
+                    return type;
+                }
+            }
+            return null;
+        }
     }
 
     @Override
