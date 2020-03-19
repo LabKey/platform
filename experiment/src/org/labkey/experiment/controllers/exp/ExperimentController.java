@@ -106,6 +106,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
@@ -247,6 +249,7 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.exp.api.SampleSetService.MATERIAL_INPUTS_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
@@ -638,15 +641,6 @@ public class ExperimentController extends SpringActionController
             DomainKind domainKind = _source.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getDomain()))
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
-                if (editURL != null)
-                {
-                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
-                    editTypeButton.setDisplayPermission(UpdatePermission.class);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
-                }
-
                 if (domainKind instanceof SampleSetDomainKind)
                 {
                     ActionURL updateURL = new ActionURL(UpdateMaterialSourceAction.class, _source.getContainer());
@@ -665,6 +659,17 @@ public class ExperimentController extends SpringActionController
                     deleteButton.setURL(deleteURL);
                     deleteButton.setActionType(ActionButton.Action.LINK);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                }
+                else
+                {
+                    ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                    if (editURL != null)
+                    {
+                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
+                        editTypeButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                    }
                 }
             }
 
@@ -3487,24 +3492,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
-    public class UpdateMaterialSourceApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
-            form.updateSampleSet(getContainer(), getUser(), sampleSet);
-            return getSampleSetApiResponse(sampleSet);
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetAction extends BaseSampleSetAction
     {
         @Override
@@ -3525,23 +3512,6 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Sample Set");
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
-    public class CreateSampleSetApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3604,13 +3574,14 @@ public class ExperimentController extends SpringActionController
             form.setName(source.getName());
             form.setNameExpression(source.getNameExpression());
             form.setImportAliasJSON(source.getImportAliasJson());
+            form.setDomainId(source.getDomain().getTypeId());
         }
 
         @Override
         public ModelAndView getView(BaseSampleSetForm form, boolean reshow, BindException errors) throws Exception
         {
             initForm(form);
-            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
         }
 
         @Override
@@ -3632,7 +3603,7 @@ public class ExperimentController extends SpringActionController
         private Integer rowId;
         private String lsid;
 
-        public static final String NEW_SAMPLE_SET_VALUE = "{{this_sample_set}}";
+        private Integer domainId;
 
         //Parameter used by the Flow module
         private Boolean nameReadOnly = false;
@@ -3741,8 +3712,8 @@ public class ExperimentController extends SpringActionController
                 {
                     String key = getImportAliasKeys().get(i);
                     String val = getImportAliasValues().get(i);
-                    if (NEW_SAMPLE_SET_VALUE.equals(val))
-                        val = "materialInputs/" + this.getName();
+                    if (SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(val))
+                        val = MATERIAL_INPUTS_PREFIX + this.getName();
 
                     aliases.put(key, val);
                 }
@@ -3818,6 +3789,16 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ExperimentException("Couldn't create sample set: ", e);
             }
+        }
+
+        public void setDomainId(Integer domainId)
+        {
+            this.domainId = domainId;
+        }
+
+        public Integer getDomainId()
+        {
+            return this.domainId;
         }
     }
 
@@ -3905,7 +3886,7 @@ public class ExperimentController extends SpringActionController
             for (String parent : importParents)
             {
                 //check if it is of the expected format or targeting the to be created sampleset
-                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || BaseSampleSetForm.NEW_SAMPLE_SET_VALUE.equals(parent)))
+                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(parent)))
                     errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }

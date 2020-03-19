@@ -15,14 +15,18 @@
  */
 package org.labkey.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.assay.AssayDomainKind;
 import org.labkey.api.exp.TemplateInfo;
 import org.json.JSONObject;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
@@ -133,8 +137,17 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        return _assayDelegate.createDomain(domain, arguments, container, user, templateInfo);
+        JSONObject args = arguments != null ? arguments.toJSONObject() : null;
+        return _assayDelegate.createDomain(domain, args, container, user, templateInfo);
+    }
+
+    @NotNull
+    @Override
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        JSONObject args = options != null ? options.toJSONObject() : null;
+        return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings);
     }
 }

@@ -108,6 +108,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
     private AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
+    private AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
     protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
@@ -510,6 +511,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     public void setAuditBehavior(AuditBehaviorType type)
      {
          _auditBehaviorType = type;
+         _xmlAuditBehaviorType = type;
      }
 
     @Override
@@ -517,6 +519,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
      {
          return _auditBehaviorType;
      }
+
+    @Override
+    public AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return _xmlAuditBehaviorType;
+    }
 
     @Override
     public FieldKey getAuditRowPk()
