@@ -374,7 +374,7 @@ public class LineagePerfTest extends Assert
             insertDataTimer.start();
             List<GWTPropertyDescriptor> props = new ArrayList<>();
             props.add(new GWTPropertyDescriptor("age", "int"));
-            final ExpDataClass dc = ExperimentService.get().createDataClass(_container, _user, "MyData", null, props, Collections.emptyList(), null, null, null);
+            final ExpDataClass dc = ExperimentService.get().createDataClass(_container, _user, "MyData", null, props, Collections.emptyList(), null);
             TableInfo dcTable = QueryService.get().getUserSchema(_user, _container, "exp.data").getTable("MyData");
             BatchValidationException errors = new BatchValidationException();
             List<Map<String, Object>> insertedDatas = dcTable.getUpdateService().insertRows(_user, _container, data, errors, null, null);
