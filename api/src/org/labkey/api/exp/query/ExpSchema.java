@@ -60,7 +60,7 @@ import java.util.TreeSet;
 public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
-    public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategory";
+    public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
 
     public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
     public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
@@ -249,6 +249,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             tableNames.add(type.toString());
         }
+        tableNames.add(DATA_CLASS_CATEGORY_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -316,7 +317,7 @@ public class ExpSchema extends AbstractExpSchema
 
         if (DATA_CLASS_CATEGORY_TABLE.equalsIgnoreCase(name))
         {
-            return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Category");
+            return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Contains the list of available data class category types.");
         }
 
         return null;
