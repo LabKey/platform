@@ -95,9 +95,23 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     }
 
     @Override
+    public void setDescription(String description)
+    {
+        ensureUnlocked();
+        _object.setDescription(description);
+    }
+
+    @Override
     public String getNameExpression()
     {
         return _object.getNameExpression();
+    }
+
+    @Override
+    public void setNameExpression(String nameExpression)
+    {
+        ensureUnlocked();
+        _object.setNameExpression(nameExpression);
     }
 
     @Override
@@ -122,6 +136,13 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
             return ExperimentService.get().getSampleSet(sampleSetRowId);
 
         return null;
+    }
+
+    @Override
+    public void setSampleSet(Integer sampleSet)
+    {
+        ensureUnlocked();
+        _object.setMaterialSourceId(sampleSet);
     }
 
     @Override

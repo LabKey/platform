@@ -254,6 +254,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getDomainProperty(_object.getIdCol3());
     }
 
+    //TODO remove
     @Override
     public DomainProperty getParentCol()
     {
@@ -677,6 +678,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
     }
 }

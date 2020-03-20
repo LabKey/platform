@@ -32,12 +32,24 @@ core/resources/views/authenticationConfiguration.html
 core/resources/views/authenticationConfiguration.view.xml
 core/resources/views/authenticationConfigurationDev.html
 core/resources/views/authenticationConfigurationDev.view.xml
+core/resources/views/components.html
+core/resources/views/components.view.xml
+core/resources/views/componentsDev.html
+core/resources/views/componentsDev.view.xml
 
 experiment/resources/web/experiment/gen
+experiment/resources/views/dataClassDesigner.html
+experiment/resources/views/dataClassDesigner.view.xml
+experiment/resources/views/dataClassDesignerDev.html
+experiment/resources/views/dataClassDesignerDev.view.xml
 experiment/resources/views/domainDesigner.html
 experiment/resources/views/domainDesigner.view.xml
 experiment/resources/views/domainDesignerDev.html
 experiment/resources/views/domainDesignerDev.view.xml
+experiment/resources/views/sampleTypeDesigner.html
+experiment/resources/views/sampleTypeDesigner.view.xml
+experiment/resources/views/sampleTypeDesignerDev.html
+experiment/resources/views/sampleTypeDesignerDev.view.xml
 
 assay/resources/web/assay/gen
 assay/resources/views/assayDataImport.html

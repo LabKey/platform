@@ -9,5 +9,10 @@ module.exports = {
         title: 'Authentication',
         permission: 'admin',
         path: './src/client/AuthenticationConfiguration'
+    },{
+        name: 'components',
+        title: '@labkey/components',
+        permission: 'admin',
+        path: './src/client/LabKeyUIComponentsPage'
     }]
 };

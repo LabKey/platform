@@ -165,6 +165,7 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -6159,6 +6160,39 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
+    public static class GetQueryAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
+    {
+        @Override
+        public Object execute(AuditChangesForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, form.getAuditRowId());
+
+            if (event != null)
+            {
+                response.put("comment", event.getComment());
+                response.put("eventUserId", event.getCreatedBy().getUserId());
+                response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
+
+                String oldRecord = event.getOldRecordMap();
+                String newRecord = event.getNewRecordMap();;
+
+                if (oldRecord != null || newRecord != null)
+                {
+                    response.put("oldData", QueryExportAuditProvider.decodeFromDataMap(oldRecord));
+                    response.put("newData", QueryExportAuditProvider.decodeFromDataMap(newRecord));
+                }
+
+                response.put("success", true);
+                return response;
+            }
+
+            response.put("success", false);
+            return response;
+        }
+    }
+
+    @RequiresPermission(ReadPermission.class)
     public static class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
     {
         @Override
@@ -6390,7 +6424,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public static class DeleteNamedSetAction extends ReadOnlyApiAction<NamedSetForm>
+    public static class DeleteNamedSetAction extends MutatingApiAction<NamedSetForm>
     {
 
         @Override

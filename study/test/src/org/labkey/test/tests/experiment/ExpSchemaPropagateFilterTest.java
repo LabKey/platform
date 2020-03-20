@@ -198,8 +198,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
 
         if(null != fields)
         {
-            dgen = new TestDataGenerator(schema, domainName, path)
-                    .withColumnSet(fields);
+            dgen = new TestDataGenerator(schema, domainName, path).withColumns(fields);
         }
         else
         {

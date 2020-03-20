@@ -16,6 +16,7 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -26,12 +27,15 @@ import org.apache.http.impl.client.ContentEncodingHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.log4j.Logger;
+import org.labkey.api.action.BaseApiAction;
 import org.labkey.api.miniprofiler.CustomTiming;
 import org.labkey.api.miniprofiler.MiniProfiler;
+import org.springframework.web.servlet.mvc.Controller;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -55,11 +59,10 @@ public class HttpUtil
      * Get an InputStream from the endpoint following any HTTP redirects.
      * @param uri resource
      * @return An InputStream for the content and the final URI.
-     * @throws IOException
      */
     public static Pair<InputStream, URI> get(URI uri) throws IOException
     {
-        try (CustomTiming t = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath()))
+        try (CustomTiming ignored = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath()))
         {
             HttpClient client = new ContentEncodingHttpClient();
             HttpGet get = new HttpGet(uri);
@@ -193,5 +196,57 @@ public class HttpUtil
 
         return null;
     }
+
+
+    /**
+     * Check for cases that should not respond with a Redirect, used by getUpgradeMaintenanceRedirect()
+     * @return true if this seems like an API request based on the HTTP headers, including Content-Type and User-Agent
+     */
+    public static boolean isApiLike(HttpServletRequest request, Controller action)
+    {
+        boolean throwUnauthorized = StringUtils.equals("UNAUTHORIZED",request.getHeader("X-ONUNAUTHORIZED"));
+        boolean xmlhttp = StringUtils.equals("XMLHttpRequest", request.getHeader("x-requested-with"));
+        boolean json = StringUtils.startsWith(request.getHeader("Content-Type"), "application/json");
+        boolean apiClass = action instanceof BaseApiAction;
+        boolean r = StringUtils.equals(request.getHeader("User-Agent"),"Rlabkey");
+        return !HttpUtil.isBrowser(request) && (throwUnauthorized || xmlhttp || json || apiClass || r);
+    }
+
+    /** @return best guess if the request is from a browser vs. a WebDAV client or client API */
+    public static boolean isBrowser(HttpServletRequest request)
+    {
+        if ("XMLHttpRequest".equals(request.getHeader("x-requested-with")))
+            return true;
+        String userAgent = request.getHeader("User-Agent");
+        if (null == userAgent)
+            return false;
+        return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
+    }
+
+    /** @return best guess if the request came from a Chrome browser */
+    public static boolean isChrome(HttpServletRequest request)
+    {
+        String userAgent = request.getHeader("User-Agent");
+        return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
+    }
+
+    /** @return best guess if the request came from the OSX integrated WebDAV client */
+    public static boolean isMacFinder(HttpServletRequest request)
+    {
+        String userAgent = request.getHeader("User-Agent");
+        if (null == userAgent)
+            return false;
+        return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
+    }
+
+    /** @return best guess if the request came from the Windows Explorer integrated WebDAV client */
+    public static boolean isWindowsExplorer(HttpServletRequest request)
+    {
+        String userAgent = request.getHeader("User-Agent");
+        if (null == userAgent)
+            return false;
+        return userAgent.startsWith("Microsoft-WebDAV");
+    }
+
 
 }
