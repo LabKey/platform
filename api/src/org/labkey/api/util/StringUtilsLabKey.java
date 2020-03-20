@@ -364,10 +364,19 @@ public class StringUtilsLabKey
         return String.join(", ", list);
     }
 
-    private static String truncate(Object o, int truncateLength)
+    /**
+     * Returns the string representation of the {@code Object} argument truncated to the specified length. If truncated,
+     * the last three characters of the string are replaced with "..." to flag that truncation occurred. A null argument
+     * returns the string "null" (or truncated version of it).
+     *
+     * @throws IllegalStateException if maxLength < 3
+     */
+    public static String truncate(@Nullable Object o, int maxLength)
     {
+        if (maxLength < 3)
+            throw new IllegalStateException("maxLength parameter must be >= 3");
         String s = String.valueOf(o);
-        return s.length() > truncateLength ? s.substring(0, truncateLength - 3) + "..." : s;
+        return s.length() > maxLength ? s.substring(0, maxLength - 3) + "..." : s;
     }
 
     public static class TestCase extends Assert
@@ -551,6 +560,37 @@ public class StringUtilsLabKey
             assertEquals("prop1: 18 » 17, prop2: Marzipan » Chicken, prop3: false » true", getMapDifference(map3, map1));
             assertEquals("prop1: 17 » , prop2: Chicken » , prop3: true » ", getMapDifference(map1, null));
             assertEquals("prop1: 17 » 18, prop2: C... » M..., prop3: true » f...", getMapDifference(map1, map3, 4));
+        }
+
+        @Test
+        public void testTruncate()
+        {
+            String tiny = "A";
+            int number = 123456789;
+            String s = "ABDEFGHIJKL";
+
+            assertEquals("null", truncate(null, 5));
+            assertEquals("null", truncate(null, 4));
+            assertEquals("...", truncate(null, 3));
+
+            assertEquals("A", truncate(tiny, 5));
+            assertEquals("A", truncate(tiny, 3));
+
+            assertEquals("123456789", truncate(number, 20));
+            assertEquals("123456789", truncate(number, 9));
+            assertEquals("12...", truncate(number, 5));
+
+            assertEquals("ABDEFGHIJKL", truncate(s, 20));
+            assertEquals("ABDEFGHIJKL", truncate(s, 11));
+            assertEquals("ABDEFGH...", truncate(s, 10));
+            assertEquals("AB...", truncate(s, 5));
+            assertEquals("...", truncate(s, 3));
+        }
+
+        @Test(expected = IllegalStateException.class)
+        public void testTruncateTooShort()
+        {
+            truncate(null, 2);
         }
     }
 }
