@@ -152,7 +152,13 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         if (moduleContext.isNewInstall())
         {
             loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-            loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
+            // Support container is created by CoreModule during a normal bootstrap. However, some upgrade scenarios
+            // can conceivably add the Wiki module later, after the container was deleted by a user, and set a flag
+            // to simulate it being a new install
+            if (supportContainer != null)
+            {
+                loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
+            }
             loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
         }
 
