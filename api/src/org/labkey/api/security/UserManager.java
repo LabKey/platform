@@ -619,6 +619,13 @@ public class UserManager
         new SqlExecutor(CORE.getSchema()).execute(sql);
     }
 
+    /** Clear the ExpirationDate field for the given user */
+    public static void clearExpirationDate(User currentUser, User user)
+    {
+        Table.update(currentUser, CORE.getTableInfoUsersData(), new HashMap<>(){{put("ExpirationDate", null);}}, user.getUserId());
+        clearUserList();
+    }
+
     /**
      * Updates a user's basic account information
      * @param currentUser user to use to determine the display name for the user to be updated
