@@ -57,9 +57,9 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Provides a simple wiki with multiple rendering engine options.
  * User: migra
  * Date: Jul 18, 2005
- * Time: 3:07:21 PM
  */
 public class WikiModule extends CodeOnlyModule implements SearchService.DocumentProvider
 {
@@ -151,23 +151,13 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
 
         if (moduleContext.isNewInstall())
         {
-            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt", WikiRendererType.HTML);
-            // Support container is created by CoreModule during a normal bootstrap. However, some upgrade scenarios
-            // can conceivably add the Wiki module later, after the container was deleted by a user, and set a flag
-            // to simulate it being a new install
-            if (supportContainer != null)
-            {
-                loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt", WikiRendererType.HTML);
-            }
-            loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt", WikiRendererType.HTML);
+            loadWikiContent(homeContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Server", "/org/labkey/wiki/welcomeWiki.txt");
+            loadWikiContent(supportContainer, moduleContext.getUpgradeUser(), defaultPageName, "Welcome to LabKey Support", "/org/labkey/wiki/supportWiki.txt");
+            loadWikiContent(sharedContainer, moduleContext.getUpgradeUser(), defaultPageName, "Shared Resources", "/org/labkey/wiki/sharedWiki.txt");
         }
 
-        Map<String, String> wikiProps = new HashMap<>();
-        wikiProps.put("webPartContainer", supportContainer.getId());
-        addWebPart(WEB_PART_NAME, supportContainer, HttpView.BODY, 0, wikiProps);
-
-        wikiProps.put("webPartContainer", sharedContainer.getId());
-        addWebPart(WEB_PART_NAME, sharedContainer, HttpView.BODY, 0, wikiProps);
+        addWebPart(supportContainer, defaultPageName);
+        addWebPart(sharedContainer, defaultPageName);
 
         // if any modules have registered webparts to show on the home page, use those
         // otherwise, just add the default wiki webpart
@@ -181,9 +171,18 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         else
         {
             // Note: Core module already added the Projects webpart. Now add a wiki webpart with the default content.
-            wikiProps.put("webPartContainer", homeContainer.getId());
-            wikiProps.put("name", defaultPageName);
-            addWebPart(WEB_PART_NAME, homeContainer, HttpView.BODY, 0, wikiProps);
+            addWebPart(homeContainer, defaultPageName);
+        }
+    }
+
+    private void addWebPart(@Nullable Container c, String wikiName)
+    {
+        if (c != null)
+        {
+            Map<String, String> wikiProps = new HashMap<>();
+            wikiProps.put("webPartContainer", c.getId());
+            wikiProps.put("name", wikiName);
+            addWebPart(WEB_PART_NAME, c, HttpView.BODY, 0, wikiProps);
         }
     }
 
@@ -205,28 +204,28 @@ public class WikiModule extends CodeOnlyModule implements SearchService.Document
         return list;
     }
 
-    private void loadWikiContent(Container c, User user, String name, String title, String resource, WikiRendererType renderAs)
+    private void loadWikiContent(@Nullable Container c, User user, String name, String title, String resource)
     {
-        Wiki wiki = new Wiki(c, name);
-        WikiVersion wikiversion = new WikiVersion();
-        wikiversion.setTitle(title);
-
-        InputStream is = getClass().getResourceAsStream(resource);
-        String body = PageFlowUtil.getStreamContentsAsString(is);
-        wikiversion.setBody(body);
-
-        if (renderAs == null)
-            renderAs = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
-
-        wikiversion.setRendererTypeEnum(renderAs);
-
-        try
+        if (c != null)
         {
-            getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
-        }
-        catch (IOException e)
-        {
-            _log.error(e);
+            Wiki wiki = new Wiki(c, name);
+            WikiVersion wikiversion = new WikiVersion();
+            wikiversion.setTitle(title);
+
+            InputStream is = getClass().getResourceAsStream(resource);
+            String body = PageFlowUtil.getStreamContentsAsString(is);
+            wikiversion.setBody(body);
+
+            wikiversion.setRendererTypeEnum(WikiRendererType.HTML);
+
+            try
+            {
+                getWikiManager().insertWiki(user, c, wiki, wikiversion, null, false);
+            }
+            catch (IOException e)
+            {
+                _log.error("Failed to insert wiki in " + c.getPath() + " from " + resource, e);
+            }
         }
     }
 
