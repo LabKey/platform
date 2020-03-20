@@ -2,6 +2,7 @@
   "name": "labkey-core",
   "version": "0.0.0",
   "scripts": {
+    "setup": "npm ci",
     "prebuild": "bnr clean",
     "build": "bnr build-themes:dev && bnr build-pages:prod",
     "prebuild-prod": "bnr clean",

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "setup": "npm ci",
     "build": "npm run clean && better-npm-run build:prod",
     "start": "better-npm-run build:watch",
     "build-prod": "npm run build",
