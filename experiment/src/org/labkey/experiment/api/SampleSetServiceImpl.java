@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,6 +52,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -59,6 +61,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -66,11 +69,13 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -674,7 +679,7 @@ public class SampleSetServiceImpl implements SampleSetService
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
-        String importAliasJson = getAliasJson(importAliases);
+        String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
@@ -730,21 +735,47 @@ public class SampleSetServiceImpl implements SampleSetService
         return ss;
     }
 
-    public String getAliasJson(Map<String, String> importAliases)
+    public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
     {
         if (importAliases == null || importAliases.size() == 0)
             return null;
 
+        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
+
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(importAliases);
+            return mapper.writeValueAsString(aliases);
         }
         catch (JsonProcessingException e)
         {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
+    {
+        Map<String, String> cleanAliases = new HashMap<>();
+        importAliases.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedVal = StringUtils.trimToNull(value);
+
+            //Sanity check this should be caught earlier
+            if (trimmedKey == null || trimmedVal == null)
+                throw new IllegalArgumentException("Parent aliases contain blanks");
+
+            //Substitute the currentAliasName for the placeholder value
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_SET_ALIAS_VALUE) ||
+                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_SET_ALIAS_VALUE))
+            {
+                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+            }
+
+            cleanAliases.put(trimmedKey, trimmedVal);
+        });
+
+        return cleanAliases;
     }
 
 
@@ -790,5 +821,52 @@ public class SampleSetServiceImpl implements SampleSetService
         counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
         counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
         return counts;
+    }
+
+    @Override
+    public ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        ExpSampleSetImpl ss = new ExpSampleSetImpl(getMaterialSource(update.getDomainURI()));
+
+        String newDescription = StringUtils.trimToNull(update.getDescription());
+        String description = ss.getDescription();
+        if (description == null || !description.equals(newDescription))
+        {
+            ss.setDescription(newDescription);
+        }
+
+        if (options != null)
+        {
+            String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
+            String oldPattern = ss.getNameExpression();
+            if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
+            {
+                ss.setNameExpression(sampleIdPattern);
+            }
+
+            ss.setImportAliasMap(options.getImportAliases());
+        }
+
+        ValidationException errors;
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            ss.save(user);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+
+            if (!errors.hasErrors())
+                transaction.commit();
+        }
+
+        return errors;
+    }
+
+    @Override
+    public boolean parentAliasHasCorrectFormat(String parentAlias)
+    {
+        //check if it is of the expected format or targeting the to be created sampleset
+        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_SET_ALIAS_VALUE.equals(parentAlias)))
+            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
+
+        return true;
     }
 }

@@ -17,6 +17,7 @@ package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.attachments.AttachmentService;
@@ -635,7 +636,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
     }
 
     @Override
-    public @Nullable ListDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable ListDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
         ListDefinition list = ListService.get().getList(PropertyService.get().getDomain(domain.getDomainId()));
         return ListManager.get().getListDomainKindProperties(container, list.getListId());

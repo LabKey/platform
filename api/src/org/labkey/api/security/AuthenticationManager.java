@@ -1427,6 +1427,7 @@ public class AuthenticationManager
         Map<String, Object> map = getConfigurationMap(configuration);
         map.put("headerLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.HEADER));
         map.put("loginLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.LOGIN_PAGE));
+        map.put("autoRedirect", configuration.isAutoRedirect());
 
         return map;
     }

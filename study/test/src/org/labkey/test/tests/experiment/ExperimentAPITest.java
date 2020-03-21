@@ -28,12 +28,12 @@ import org.labkey.remoteapi.Connection;
 import org.labkey.remoteapi.PostCommand;
 import org.labkey.remoteapi.assay.Batch;
 import org.labkey.remoteapi.assay.Data;
+import org.labkey.remoteapi.assay.GetAssayRunCommand;
+import org.labkey.remoteapi.assay.GetAssayRunResponse;
 import org.labkey.remoteapi.assay.ImportRunCommand;
 import org.labkey.remoteapi.assay.ImportRunResponse;
 import org.labkey.remoteapi.assay.LoadAssayBatchCommand;
 import org.labkey.remoteapi.assay.LoadAssayBatchResponse;
-import org.labkey.remoteapi.assay.GetAssayRunCommand;
-import org.labkey.remoteapi.assay.GetAssayRunResponse;
 import org.labkey.remoteapi.assay.Material;
 import org.labkey.remoteapi.assay.Run;
 import org.labkey.remoteapi.assay.SaveAssayBatchCommand;
@@ -52,6 +52,7 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.experiment.SampleSetDefinition;
 import org.labkey.test.util.APIAssayHelper;
 import org.labkey.test.util.Maps;
 import org.labkey.test.util.SampleSetHelper;
@@ -149,11 +150,12 @@ public class ExperimentAPITest extends BaseWebDriverTest
         log("Create sample set");
         goToModule("Experiment");
         SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(sampleSetName, null,
-                Map.of("IntCol", FieldDefinition.ColumnType.Integer,
-                        "StringCol", FieldDefinition.ColumnType.String,
-                        "DateCol", FieldDefinition.ColumnType.DateAndTime,
-                        "BoolCol", FieldDefinition.ColumnType.Boolean),
+        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName)
+                        .setFields(List.of(
+                                new FieldDefinition("IntCol", FieldDefinition.ColumnType.Integer),
+                                new FieldDefinition("StringCol", FieldDefinition.ColumnType.String),
+                                new FieldDefinition("DateCol", FieldDefinition.ColumnType.DateAndTime),
+                                new FieldDefinition("BoolCol", FieldDefinition.ColumnType.Boolean))),
                 TestFileUtils.getSampleData("sampleSet.xlsx"));
     }
 
