@@ -620,9 +620,9 @@ public class UserManager
     }
 
     /** Clear the ExpirationDate field for the given user */
-    public static void clearExpirationDate(User currentUser, User user)
+    public static void clearExpirationDate(User adminUser, User expiringUser)
     {
-        Table.update(currentUser, CORE.getTableInfoUsersData(), new HashMap<>(){{put("ExpirationDate", null);}}, user.getUserId());
+        Table.update(adminUser, CORE.getTableInfoUsersData(), new HashMap<>(){{put("ExpirationDate", null);}}, expiringUser.getUserId());
         clearUserList();
     }
 
