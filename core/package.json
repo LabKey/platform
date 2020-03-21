@@ -73,7 +73,7 @@
       "^.+\\.tsx?$": "ts-jest"
     },
     "moduleNameMapper": {
-      "\\.(scss)$": "<rootDir>/test/styleMock.ts"
+      "\\.(css|scss)$": "<rootDir>/test/styleMock.ts"
     }
   },
   "dependencies": {
@@ -82,7 +82,7 @@
     "react-toggle-button": "2.2.0"
   },
   "devDependencies": {
-    "@hot-loader/react-dom": "16.9.0",
+    "@hot-loader/react-dom": "16.13.0",
     "@labkey/eslint-config-base": "0.0.5",
     "@types/enzyme": "3.9.3",
     "@types/enzyme-adapter-react-16": "1.0.5",
@@ -107,14 +107,14 @@
     "mixin-deep": "2.0.1",
     "optimize-css-assets-webpack-plugin": "5.0.3",
     "prettier": "1.19.1",
-    "react-hot-loader": "4.12.17",
+    "react-hot-loader": "4.12.20",
     "react-test-renderer": "16.8.6",
-    "rimraf": "3.0.0",
+    "rimraf": "3.0.2",
     "ts-jest": "24.0.2",
     "uglifyjs-webpack-plugin": "2.2.0",
-    "webpack": "4.41.2",
-    "webpack-cli": "3.3.9",
-    "webpack-dev-server": "3.9.0"
+    "webpack": "4.42.0",
+    "webpack-cli": "3.3.11",
+    "webpack-dev-server": "3.10.3"
   },
   "typings": "./src/client/typings/main.d.ts"
 }
