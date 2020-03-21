@@ -20,11 +20,9 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
-import org.labkey.api.cache.StringKeyCacheWrapper;
-import org.labkey.api.cache.Tracking;
 import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.TransactionCache;
 import org.labkey.api.util.Filter;
@@ -45,9 +43,9 @@ import java.util.Set;
  *
  * @see org.labkey.api.data.DbScope
  */
-public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
+public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueType>
 {
-    protected final StringKeyCache<ValueType> _sharedCache;
+    protected final Cache<KeyType, ValueType> _sharedCache;
     private final DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
@@ -62,28 +60,33 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         this(scope, maxSize, CacheManager.UNLIMITED, debugName);
     }
 
-    protected StringKeyCache<ValueType> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+    protected Cache<KeyType, ValueType> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
+        return (Cache<KeyType, ValueType>)CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
-    protected StringKeyCache<ValueType> createTemporaryCache(StringKeyCache<ValueType> sharedCache)
+    @Override
+    public Cache<KeyType, ValueType> createTemporaryCache()
     {
-        Tracking tracking = sharedCache.getTrackingCache();
-        return CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "transaction cache: " + tracking.getDebugName(), tracking.getStats());
+        return createTemporaryCache(getTrackingCache());
     }
 
-    private StringKeyCache<ValueType> getCache()
+    protected Cache<KeyType, ValueType> createTemporaryCache(TrackingCache<KeyType, ValueType> trackingCache)
+    {
+        return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getStats());
+    }
+
+    private Cache<KeyType, ValueType> getCache()
     {
         DbScope.TransactionImpl t = _scope.getCurrentTransactionImpl();
 
         if (null != t)
         {
-            StringKeyCache<ValueType> transactionCache = t.getCache(this);
+            Cache<KeyType, ValueType> transactionCache = t.getCache(this);
 
             if (null == transactionCache)
             {
-                transactionCache = new StringKeyCacheWrapper<>(new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache)));
+                transactionCache = new TransactionCache<KeyType, ValueType>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
                 t.addCache(this, transactionCache);
             }
 
@@ -95,28 +98,32 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
     }
 
-    public void put(String key, ValueType value)
+    @Override
+    public void put(KeyType key, ValueType value)
     {
         getCache().put(key, value);
     }
 
-    public void put(String key, ValueType value, long timeToLive)
+    @Override
+    public void put(KeyType key, ValueType value, long timeToLive)
     {
         getCache().put(key, value, timeToLive);
     }
 
-    public ValueType get(String key)
+    @Override
+    public ValueType get(KeyType key)
     {
         return getCache().get(key);
     }
 
     @Override
-    public ValueType get(String key, @Nullable Object arg, CacheLoader<String, ValueType> loader)
+    public ValueType get(KeyType key, @Nullable Object arg, CacheLoader<KeyType, ValueType> loader)
     {
         return getCache().get(key, arg, loader);
     }
 
-    public void remove(final String key)
+    @Override
+    public void remove(final KeyType key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -128,9 +135,9 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         getCache().remove(key);
     }
 
-    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask
+    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<KeyType>
     {
-        public CacheKeyRemovalCommitTask(String key)
+        public CacheKeyRemovalCommitTask(KeyType key)
         {
             super(key);
         }
@@ -138,17 +145,17 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         @Override
         public void run()
         {
-            getCache().remove(_key);
+            getCache().remove(object);
         }
     }
 
-    private abstract class AbstractCacheRemovalCommitTask implements Runnable
+    private abstract class AbstractCacheRemovalCommitTask<ObjectType> implements Runnable
     {
-        protected final String _key;
+        protected final ObjectType object;
 
-        public AbstractCacheRemovalCommitTask(String key)
+        public AbstractCacheRemovalCommitTask(ObjectType object)
         {
-            _key = key;
+            this.object = object;
         }
 
         @Override
@@ -160,10 +167,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             AbstractCacheRemovalCommitTask that = (AbstractCacheRemovalCommitTask) o;
 
             if (!getCache().equals(that.getCache())) return false;
-            return !(_key != null ? !_key.equals(that._key) : that._key != null);
+            return !(object != null ? !object.equals(that.object) : that.object != null);
         }
 
-        private StringKeyCache<ValueType> getCache()
+        private Cache<KeyType, ValueType> getCache()
         {
             return DatabaseCache.this.getCache();
         }
@@ -172,26 +179,14 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         public int hashCode()
         {
             int result = getCache().hashCode();
-            result = 31 * result + (_key != null ? _key.hashCode() : 0);
+            result = 31 * result + (object != null ? object.hashCode() : 0);
             return result;
         }
     }
 
 
 
-    public int removeUsingPrefix(final String prefix)
-    {
-        DbScope.Transaction t = _scope.getCurrentTransaction();
-
-        if (null != t)
-        {
-            t.addCommitTask(new CachePrefixRemovalCommitTask(prefix), DbScope.CommitTaskOption.POSTCOMMIT);
-        }
-
-        return getCache().removeUsingPrefix(prefix);
-    }
-
-
+    @Override
     public void clear()
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
@@ -217,7 +212,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             return getCache().equals(that.getCache());
         }
 
-        private StringKeyCache<ValueType> getCache()
+        private Cache<KeyType, ValueType> getCache()
         {
             return DatabaseCache.this.getCache();
         }
@@ -235,14 +230,21 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
 
-    @Override     // TODO: Is this right?
-    public int removeUsingFilter(Filter<String> filter)
+    @Override
+    public int removeUsingFilter(Filter<KeyType> filter)
     {
-        return _sharedCache.removeUsingFilter(filter);
+        DbScope.Transaction t = _scope.getCurrentTransaction();
+
+        if (null != t)
+        {
+            t.addCommitTask(new CachePrefixRemovalCommitTask(filter), DbScope.CommitTaskOption.POSTCOMMIT);
+        }
+
+        return getCache().removeUsingFilter(filter);
     }
 
     @Override
-    public Set<String> getKeys()
+    public Set<KeyType> getKeys()
     {
         return _sharedCache.getKeys();
     }
@@ -254,7 +256,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
     }
 
     @Override
-    public TrackingCache getTrackingCache()
+    public TrackingCache<KeyType, ValueType> getTrackingCache()
     {
         return _sharedCache.getTrackingCache();
     }
@@ -268,9 +270,10 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
             MyScope scope = new MyScope();
 
             // Shared cache needs to be a temporary cache, otherwise we'll leak a cache on every invocation because of KNOWN_CACHES
-            DatabaseCache<String> cache = new DatabaseCache<String>(scope, 10, "Test Cache") {
+            DatabaseCache<String, String> cache = new DatabaseCache<>(scope, 10, "Test Cache")
+            {
                 @Override
-                protected StringKeyCache<String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+                protected Cache<String, String> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
                 {
                     return CacheManager.getTemporaryCache(maxSize, defaultTimeToLive, debugName, null);
                 }
@@ -374,7 +377,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 // Test that remove got applied to shared cache
                 assertTrue(null == cache.get("key_11"));
 
-                cache.removeUsingPrefix("key");
+                cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));
                 assert trackingCache.size() == 0;
 
                 // This should close the (temporary) shared cache
@@ -461,17 +464,17 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
         }
     }
 
-    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask
+    private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Filter>
     {
-        public CachePrefixRemovalCommitTask(String prefix)
+        public CachePrefixRemovalCommitTask(Filter<KeyType> filter)
         {
-            super(prefix);
+            super(filter);
         }
 
         @Override
         public void run()
         {
-            getCache().removeUsingPrefix(_key);
+            getCache().removeUsingFilter(object);
         }
     }
 }

@@ -22,5 +22,4 @@ package org.labkey.api.cache;
  */
 public interface StringKeyCache<V> extends Cache<String, V>
 {
-    int removeUsingPrefix(String prefix);
 }

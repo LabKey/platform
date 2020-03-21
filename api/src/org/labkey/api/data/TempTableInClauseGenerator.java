@@ -20,8 +20,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.util.GUID;
 
 import java.sql.SQLException;
@@ -40,7 +40,7 @@ import java.util.TreeSet;
  */
 public class TempTableInClauseGenerator implements InClauseGenerator
 {
-    private static final StringKeyCache<TempTableInfo> _tempTableCache =
+    private static final Cache<String, TempTableInfo> _tempTableCache =
             CacheManager.getStringKeyCache(100, CacheManager.MINUTE * 5, "InClauseTempTableCache");
 
     /**

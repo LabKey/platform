@@ -17,7 +17,7 @@ package org.labkey.core.thumbnail;
 
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
@@ -35,7 +35,7 @@ import org.labkey.api.view.RedirectException;
  */
 public class ThumbnailCache
 {
-    private static final BlockingStringKeyCache<CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Thumbnails", null);
+    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Thumbnails", null);
     private static final DynamicThumbnailLoader _dynamicLoader = new DynamicThumbnailLoader();
 
     // Get the thumbnail for a DynamicThumbnailProvider. Returns the dynamic thumbnail if it has already been created

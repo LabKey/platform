@@ -17,11 +17,12 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.Tracking;
+import org.labkey.api.cache.TrackingCache;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseCache;
@@ -52,20 +53,23 @@ class UserCache
     private static final CoreSchema CORE = CoreSchema.getInstance();
     private static final String KEY = "USER_COLLECTIONS";
 
-    private static final StringKeyCache<UserCollections> CACHE = new DatabaseCache<UserCollections>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User Collections") {
+    private static final Cache<String, UserCollections> CACHE = new DatabaseCache<>(CORE.getSchema().getScope(), 2, CacheManager.DAY, "User Collections")
+    {
         @Override
-        protected StringKeyCache<UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+        protected Cache<String, UserCollections> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
         {
-            StringKeyCache<Wrapper<UserCollections>> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
-            return new BlockingStringKeyCache<>(shared, new UserCollectionsLoader());
+            Cache<String, Wrapper<UserCollections>> shared = CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
+            return new BlockingCache<>(shared, new UserCollectionsLoader());
         }
 
+
+
         @Override
-        protected StringKeyCache<UserCollections> createTemporaryCache(StringKeyCache<UserCollections> sharedCache)
+        protected Cache<String, UserCollections> createTemporaryCache(TrackingCache<String, UserCollections> sharedCache)
         {
             Tracking tracking = sharedCache.getTrackingCache();
-            StringKeyCache<Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getStats());
-            return new BlockingStringKeyCache<>(temp, new UserCollectionsLoader());
+            Cache<String, Wrapper<UserCollections>> temp = CacheManager.getTemporaryCache(tracking.getLimit(), tracking.getDefaultExpires(), "Transaction cache: User Collections", tracking.getStats());
+            return new BlockingCache<>(temp, new UserCollectionsLoader());
         }
     };
 

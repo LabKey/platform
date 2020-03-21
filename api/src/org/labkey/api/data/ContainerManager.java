@@ -37,8 +37,8 @@ import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
@@ -142,7 +142,7 @@ public class ContainerManager
     public static final String HOME_PROJECT_PATH = "/home";
     public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
 
-    private static final StringKeyCache<Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
+    private static final Cache<String, Object> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Containers");
     private static final ReentrantLock DATABASE_QUERY_LOCK = new ReentrantLock();
     public static final String FOLDER_TYPE_PROPERTY_SET_NAME = "folderType";
     public static final String FOLDER_TYPE_PROPERTY_NAME = "name";
@@ -1784,7 +1784,7 @@ public class ContainerManager
             CACHE.remove(CONTAINER_CHILDREN_PREFIX + parent.getId());
 
         // blow away the all children caches
-        CACHE.removeUsingPrefix(CONTAINER_CHILDREN_PREFIX);
+        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(CONTAINER_CHILDREN_PREFIX));
 
         navTreeManageUncache(c);
     }

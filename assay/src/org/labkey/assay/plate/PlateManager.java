@@ -34,6 +34,7 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.Well;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
@@ -976,7 +977,7 @@ public class PlateManager implements PlateService
         return PlateTemplateImpl.class.getName() + "/Folder-" + container.getRowId() + "-" + idString;
     }
 
-    private static final StringKeyCache<PlateTemplateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getSharedCache();
+    private static final Cache<String, PlateTemplateImpl> PLATE_TEMPLATE_CACHE = CacheManager.getSharedCache();
 
     private void cache(PlateTemplateImpl template)
     {
@@ -988,7 +989,7 @@ public class PlateManager implements PlateService
 
     private void clearCache()
     {
-        PLATE_TEMPLATE_CACHE.removeUsingPrefix(PlateTemplateImpl.class.getName());
+        PLATE_TEMPLATE_CACHE.removeUsingFilter(new Cache.StringPrefixFilter(PlateTemplateImpl.class.getName()));
     }
 
     private PlateTemplateImpl getCachedPlateTemplate(Container container, int rowId)

@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
@@ -97,9 +97,9 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-    private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
-    private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final BlockingCache<Pair<String, GUID>, PropertyDescriptor> propDescCache = CacheManager.getBlockingCache(10000, CacheManager.UNLIMITED, "Property descriptors", new CacheLoader<Pair<String, GUID>, PropertyDescriptor>()
+    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
+    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 10000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
     {
         @Override
         public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -132,8 +132,7 @@ public class OntologyManager
         }
     });
     // Cache a wrapper instead of the DomainDescriptor so we can easily cache misses
-    private static final BlockingCache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = CacheManager.getBlockingCache(2000, CacheManager.UNLIMITED, "Domain descriptors by URI", (CacheLoader<Pair<String, GUID>, DomainDescriptor>)
-            (key, argument) -> {
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
         String domainURI = key.first;
         Container c = ContainerManager.getForId(key.second);
 
@@ -165,9 +164,9 @@ public class OntologyManager
             }
         }
         return dd;
-    });
-    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = CacheManager.getBlockingCache( 2000, CacheManager.UNLIMITED,"Domain descriptors by ID", new DomainDescriptorLoader());
-    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = CacheManager.getBlockingCache(2000, CacheManager.UNLIMITED, "Domain properties", new CacheLoader<Pair<String, GUID>, List<Pair<String, Boolean>>>()
+        });
+    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
     {
         @Override
         public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
@@ -205,7 +204,7 @@ public class OntologyManager
             return Collections.unmodifiableList(propertyURIs);
         }
     });
-    private static final StringKeyCache<Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
+    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -1729,6 +1728,7 @@ public class OntologyManager
     public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
         DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+        String ddInContainerId = ddIn.getContainer().getId();
 
         if (null == dd)
         {
@@ -1748,8 +1748,45 @@ public class OntologyManager
             }
         }
 
-        dd = Table.update(null, getTinfoDomainDescriptor(), ddIn, dd.getDomainId());
-        uncache(dd);
+        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
+
+        if (colDiffs.size() == 0)
+        {
+            // if the descriptor differs by container only and the requested descriptor is in the project fldr
+            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
+            {
+                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
+            }
+            return dd;
+        }
+
+        // you are allowed to update if you are coming from the project root, or if  you are in the container
+        // in which the descriptor was created
+        boolean fUpdateIfExists = false;
+        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
+            fUpdateIfExists = true;
+
+        boolean fMajorDifference = false;
+        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
+            fMajorDifference = true;
+
+        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
+                "\n\t Descriptor In: " + ddIn +
+                "\n\t Descriptor Found: " + dd;
+
+        if (fUpdateIfExists)
+        {
+            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
+            if (fMajorDifference)
+                _log.debug(errmsg);
+        }
+        else
+        {
+            if (fMajorDifference)
+                _log.error(errmsg);
+            else
+                _log.debug(errmsg);
+        }
 
         return dd;
     }
@@ -1765,6 +1802,17 @@ public class OntologyManager
             colDiffs.add("Name");
 
         return colDiffs;
+    }
+
+    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
+    {
+        assert dd.getDomainId() != 0;
+        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
+        domainDescByURICache.remove(getURICacheKey(dd));
+        domainDescByIDCache.remove(dd.getDomainId());
+        domainPropertiesCache.remove(getURICacheKey(dd));
+        domainDescByContainerCache.clear();
+        return dd;
     }
 
     private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd)

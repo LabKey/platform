@@ -30,12 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * User: matthewb
- * Date: Sep 16, 2010
- * Time: 4:42:07 PM
- *
  * This is a decorator for any Cache instance, it will provide for synchronizing object load
  * (readers block while someone is creating an object)
+ * User: matthewb
+ * Date: Sep 16, 2010
  */
 public class BlockingCache<K, V> implements Cache<K, V>
 {
@@ -80,9 +78,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
         return new Wrapper<>();
     }
 
-
-    // TODO: Remove or at least rename & change signature? Nobody overloads it any more.
-    protected boolean isValid(Wrapper<V> w, K key, Object argument, CacheLoader loader)
+    protected boolean isInitialized(Wrapper<V> w)
     {
         return w.value != UNINITIALIZED;
     }
@@ -123,7 +119,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
 
         synchronized (w.getLockObject())
         {
-            if (isValid(w, key, argument, loader))
+            if (isInitialized(w))
                 return w.getValue();
 
             long startTime = -1;
@@ -150,7 +146,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 {/* */}
             }
 
-            if (isValid(w , key, argument, loader))
+            if (isInitialized(w))
                 return w.getValue();
 
                 // if we fall through here it means there _could_ be two threads trying to load the same object
@@ -270,6 +266,11 @@ public class BlockingCache<K, V> implements Cache<K, V>
         return _cache.getTrackingCache();
     }
 
+    @Override
+    public Cache<K, V> createTemporaryCache()
+    {
+        return new BlockingCache<>(_cache.createTemporaryCache(), _loader, _timeout);
+    }
 
     public static class BlockingCacheTest extends Assert
     {
@@ -300,6 +301,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 @Override public void clear() { throw new UnsupportedOperationException(); }
                 @Override public void close() { throw new UnsupportedOperationException(); }
                 @Override public TrackingCache getTrackingCache() { throw new UnsupportedOperationException(); }
+                @Override public Cache<Integer, Wrapper<Integer>> createTemporaryCache() { throw new UnsupportedOperationException(); }
             };
 
         }

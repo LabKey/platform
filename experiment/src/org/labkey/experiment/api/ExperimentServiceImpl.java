@@ -40,9 +40,9 @@ import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
@@ -171,9 +171,9 @@ public class ExperimentServiceImpl implements ExperimentService
 {
     private static final Logger LOG = Logger.getLogger(ExperimentServiceImpl.class);
 
-    private StringKeyCache<Protocol> protocolCache;
+    private Cache<String, Protocol> protocolCache;
 
-    private final StringKeyCache<SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
+    private final Cache<String, SortedSet<DataClass>> dataClassCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "DataClass", (containerId, argument) ->
     {
         Container c = ContainerManager.getForId(containerId);
         if (c == null)
@@ -197,7 +197,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
-    StringKeyCache<SortedSet<DataClass>> getDataClassCache()
+    Cache<String, SortedSet<DataClass>> getDataClassCache()
     {
         return dataClassCache;
     }
@@ -211,7 +211,7 @@ public class ExperimentServiceImpl implements ExperimentService
             dataClassCache.remove(c.getId());
     }
 
-    synchronized StringKeyCache<Protocol> getProtocolCache()
+    synchronized Cache<String, Protocol> getProtocolCache()
     {
         if (protocolCache == null)
         {
@@ -851,14 +851,14 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void cacheProtocol(Protocol p)
     {
-        StringKeyCache<Protocol> c = getProtocolCache();
+        Cache<String, Protocol> c = getProtocolCache();
         c.put(getCacheKey(p.getLSID()), p);
         c.put("ROWID/" + p.getRowId(), p);
     }
 
     private void uncacheProtocol(Protocol p)
     {
-        StringKeyCache<Protocol> c = getProtocolCache();
+        Cache<String, Protocol> c = getProtocolCache();
         c.remove(getCacheKey(p.getLSID()));
         c.remove("ROWID/" + p.getRowId());
         //TODO I don't think we're using a DbCache for protocols...

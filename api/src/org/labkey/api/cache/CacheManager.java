@@ -79,9 +79,9 @@ public class CacheManager
         return createCache(limit, defaultTimeToLive, debugName);
     }
 
-    public static <V> StringKeyCache<V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
+    public static <V> Cache<String, V> getStringKeyCache(int limit, long defaultTimeToLive, String debugName)
     {
-        return new StringKeyCacheWrapper<>(CacheManager.createCache(limit, defaultTimeToLive, debugName));
+        return CacheManager.createCache(limit, defaultTimeToLive, debugName);
     }
 
     public static <K, V> BlockingCache<K, V> getBlockingCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<K, V> loader)
@@ -90,24 +90,23 @@ public class CacheManager
         return new BlockingCache<>(cache, loader);
     }
 
-    public static <V> BlockingStringKeyCache<V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
+    public static <V> BlockingCache<String, V> getBlockingStringKeyCache(int limit, long defaultTimeToLive, String debugName, @Nullable CacheLoader<String, V> loader)
     {
-        StringKeyCache<Wrapper<V>> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
-        return new BlockingStringKeyCache<>(cache, loader);
+        Cache<String, Wrapper<V>> cache = getStringKeyCache(limit, defaultTimeToLive, debugName);
+        return new BlockingCache<>(cache, loader);
     }
 
     // Temporary caches must be closed when no longer needed. Their statistics can accumulate to another cache's stats.
-    public static <V> StringKeyCache<V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
+    public static <K, V> Cache<K, V> getTemporaryCache(int limit, long defaultTimeToLive, String debugName, @Nullable Stats stats)
     {
-        TrackingCache<String, V> cache = new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
-        return new StringKeyCacheWrapper<>(cache);
+        return new CacheWrapper<>(PROVIDER.getSimpleCache(debugName, limit, defaultTimeToLive, UNLIMITED, true), debugName, stats);
     }
 
-    private static final StringKeyCache<Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
+    private static final Cache<String, Object> SHARED_CACHE = getStringKeyCache(10000, DEFAULT_TIMEOUT, "sharedCache");
 
-    public static <V> StringKeyCache<V> getSharedCache()
+    public static <V> Cache<String, V> getSharedCache()
     {
-        return (StringKeyCache<V>)SHARED_CACHE;
+        return (Cache<String, V>)SHARED_CACHE;
     }
 
     // We hold onto "permanent" caches so memtracker can clear them and admin console can report statistics on them
