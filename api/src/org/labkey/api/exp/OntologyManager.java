@@ -1748,60 +1748,11 @@ public class OntologyManager
             }
         }
 
-        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
-
-        if (colDiffs.size() == 0)
-        {
-            // if the descriptor differs by container only and the requested descriptor is in the project fldr
-            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
-            {
-                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            }
-            return dd;
-        }
-
-        // you are allowed to update if you are coming from the project root, or if  you are in the container
-        // in which the descriptor was created
-        boolean fUpdateIfExists = false;
-        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
-            fUpdateIfExists = true;
-
-        boolean fMajorDifference = false;
-        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-            fMajorDifference = true;
-
-        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
-                "\n\t Descriptor In: " + ddIn +
-                "\n\t Descriptor Found: " + dd;
-
-        if (fUpdateIfExists)
+        if (!dd.deepEquals(ddIn))
         {
             dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            if (fMajorDifference)
-                _log.debug(errmsg);
         }
-        else
-        {
-            if (fMajorDifference)
-                _log.error(errmsg);
-            else
-                _log.debug(errmsg);
-        }
-
         return dd;
-    }
-
-    private static List<String> compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd)
-    {
-        List<String> colDiffs = new ArrayList<>();
-
-        if (ddIn.getDomainId() != 0 && !(dd.getDomainId() == ddIn.getDomainId()))
-            colDiffs.add("DomainId");
-
-        if (ddIn.getName() != null && !dd.getName().equals(ddIn.getName()))
-            colDiffs.add("Name");
-
-        return colDiffs;
     }
 
     public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
