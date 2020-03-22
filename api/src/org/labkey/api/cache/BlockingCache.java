@@ -122,23 +122,16 @@ public class BlockingCache<K, V> implements Cache<K, V>
             if (isInitialized(w))
                 return w.getValue();
 
-            long startTime = -1;
+            long endTime = _timeout > 0 ? System.currentTimeMillis() + _timeout : Long.MAX_VALUE;
             while (w.isLoading())
             {
-                if (_timeout > 0)
+                if (System.currentTimeMillis() > endTime)
                 {
-                    long now = System.currentTimeMillis();
-                    if (startTime < 0)
-                    {
-                        startTime = now;
-                    }
-                    else if (now - startTime > _timeout)
-                    {
-                        throw new RuntimeException("Cache timeout for " + getTrackingCache().getDebugName() + ". " + (now - startTime) + "ms elapsed, exceeding timeout of " + _timeout + "ms");
-                    }
+                    throw new RuntimeException("Cache timeout for " + getTrackingCache().getDebugName() + ", exceeding " + _timeout + "ms limit");
                 }
                 try
                 {
+                    // Wait either 1 second or 1 minute at a time, depending on the timeout value
                     long waitTime = _timeout > 0 && _timeout < TimeUnit.MINUTES.toMillis(1) ? TimeUnit.SECONDS.toMillis(1) : TimeUnit.MINUTES.toMillis(1);
                     w.getLockObject().wait(waitTime);
                 }
