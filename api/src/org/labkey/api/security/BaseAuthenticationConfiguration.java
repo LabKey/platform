@@ -76,7 +76,7 @@ public abstract class BaseAuthenticationConfiguration<AP extends AuthenticationP
     }
 
     @Override
-    public Map<String, Object> getCustomProperties()
+    public @NotNull Map<String, Object> getCustomProperties()
     {
         return Collections.emptyMap();
     }

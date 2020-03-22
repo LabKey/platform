@@ -72,10 +72,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
          * of showing the login page.
          * @return boolean indicates if this configuration is set to autoRedirect
          */
-        default boolean isAutoRedirect()
-        {
-            return false;
-        }
+        boolean isAutoRedirect();
     }
 
     interface SecondaryAuthenticationConfiguration<AP extends SecondaryAuthenticationProvider<? extends SecondaryAuthenticationConfiguration<?>>> extends AuthenticationConfiguration<AP>
