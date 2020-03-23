@@ -26,6 +26,47 @@ LABKEY.Ajax = new function () {
 
     var DEFAULT_HEADERS = LABKEY.defaultHeaders;
 
+    // Download the file from the ajax response.
+    // For now, we assume we are in a browser enviornment and use the browser's download
+    // file prompt by clicking an <a> element or navigating by updating window.location.
+    var downloadFile = function (xhr, config) {
+        var filename = "";
+        if (typeof config.downloadFile === 'string') {
+            filename = config.downloadFile;
+        }
+        else {
+            // parse the filename out of the Content-Disposition header. Example:
+            //   Content-Disposition: attachment; filename=data.xlsx
+            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Disposition
+            var disposition = xhr.getResponseHeader('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                var filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                var matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                    filename = matches[1].replace(/['"]/g, '');
+                }
+            }
+        }
+
+        var type = xhr.getResponseHeader('Content-Type');
+
+        var blob = xhr.response;
+        var downloadUrl = URL.createObjectURL(blob);
+
+        if (filename) {
+            // use HTML5 a[download] attribute to specify filename
+            var a = document.createElement("a");
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+        } else {
+            window.location.href = downloadUrl;
+        }
+
+        setTimeout(function () { URL.revokeObjectURL(downloadUrl); }, 100); // cleanup
+    };
+
     var callback = function(fn, scope, args) {
         if (fn) {
             fn.apply(scope, args);
@@ -153,6 +194,10 @@ LABKEY.Ajax = new function () {
          * @param {Object} [config.headers] Object specifying additional HTTP headers to add the request.
          * @param {Mixed} [config.form] FormData or Object consumable by FormData that can be used to POST key/value pairs of form information.
          *              For more information, see <a href="https://developer.mozilla.org/en-US/docs/Web/API/FormData">FormData documentation</a>.
+         * @param {Boolean|String} [config.downloadFile] Save the response as a file.
+         *              When <code>downloadFile</code> is <code>true</code>, the download filename should be included in the response header (e.g, <code>Content-Disposition: attachment; filename=data.xlsx</code>).
+         *              When <code>downloadFile</code> is a string, the download value will be used as the download filename.
+         *              The success or failure functions will still be called.
          * @param {Function} [config.success] A function called when a successful response is received (determined by XHR readyState and status).
          *              It will be passed the following arguments:
          * <ul>
@@ -181,10 +226,17 @@ LABKEY.Ajax = new function () {
                 scope = config.hasOwnProperty('scope') && config.scope !== null ? config.scope : this,
                 xhr = new XMLHttpRequest();
 
+            if (config.downloadFile) {
+                xhr.responseType = 'blob';
+            }
+
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     var success = (xhr.status >= 200 && xhr.status < 300) || xhr.status == 304;
 
+                    if (success && config.downloadFile) {
+                        downloadFile(xhr, config);
+                    }
                     callback(success ? config.success : config.failure, scope, [xhr, config]);
                     callback(config.callback, scope, [config, success, xhr]);
                 }

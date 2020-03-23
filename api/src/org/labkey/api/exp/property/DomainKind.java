@@ -42,6 +42,7 @@ import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 abstract public class DomainKind<T>  implements Handler<String>
@@ -54,6 +55,16 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @return Class of DomainKind's bean with domain specific properties
      */
     abstract public Class<? extends T> getTypeClass();
+
+    /**
+     * Give the domain kind a chance to process / map the arguments before converting it to the DomainKind properties object.
+     * @param arguments initial arguments coming from the caller
+     * @return updated arguments
+     */
+    public Map<String, Object> processArguments(Container container, User user, Map<String, Object> arguments)
+    {
+        return arguments;
+    }
 
     abstract public String getTypeLabel(Domain domain);
     abstract public SQLFragment sqlObjectIdsInDomain(Domain domain);

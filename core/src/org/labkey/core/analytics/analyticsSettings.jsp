@@ -30,7 +30,7 @@
     AnalyticsController.SettingsForm settingsForm = (AnalyticsController.SettingsForm) HttpView.currentModel();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
-<%=getTroubleshooterWarning(HtmlString.unsafe("<br>"))%>
+<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
 <p>Your LabKey Server can be configured to add JavaScript to your HTML pages, so that information about how your users
     use your server will be sent to Google Analytics.</p>
 <p>When enabled, the project/folder path will only be reported when it is accessible to Guest users. When a project/folder is secure,

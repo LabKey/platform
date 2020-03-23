@@ -1,7 +1,5 @@
 package org.labkey.api.security;
 
-import com.google.common.collect.MapDifference;
-import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -11,12 +9,11 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Table;
 import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
@@ -80,8 +77,10 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
         {
             Table.insert(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form);
             AuthenticationConfigurationCache.clear();
+            AuthenticationConfiguration<?> newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
+            String whatChanged = whatChanged(null, newConfiguration);
             AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" was created");
-            event.setChanges("created");
+            event.setChanges(whatChanged);
             AuditLogService.get().addEvent(user, event);
         }
         else
@@ -90,47 +89,24 @@ public abstract class SaveConfigurationAction<F extends SaveConfigurationForm, A
             Table.update(user, CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), form, form.getRowId());
             AuthenticationConfigurationCache.clear();
             AuthenticationConfiguration<?> newConfiguration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, form.getRowId());
+            String whatChanged = whatChanged(oldConfiguration, newConfiguration);
 
-            if (null != oldConfiguration && null != newConfiguration)
+            if (!whatChanged.isEmpty())
             {
-                String whatChanged = whatChanged(oldConfiguration, newConfiguration);
-
-                if (!whatChanged.isEmpty())
-                {
-                    AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" (" + form.getRowId() + ") was updated");
-                    event.setChanges(whatChanged);
-                    AuditLogService.get().addEvent(user, event);
-                }
+                AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(form.getProvider() + " authentication configuration \"" + form.getDescription() + "\" (" + form.getRowId() + ") was updated");
+                event.setChanges(whatChanged);
+                AuditLogService.get().addEvent(user, event);
             }
         }
     }
 
-    // TODO: Move to LabKeyStringUtils or similar
     private static @NotNull String whatChanged(AuthenticationConfiguration<?> oldConfiguration, AuthenticationConfiguration<?> newConfiguration)
     {
-        MapDifference<String, Object> difference = Maps.difference(oldConfiguration.getLoggingProperties(), newConfiguration.getLoggingProperties());
-
-        List<String> list = new LinkedList<>();
-
-        difference.entriesOnlyOnLeft().entrySet().stream()
-            .map(e->e.getKey() + ": " + truncate(e.getValue()) + " » ")
-            .forEach(list::add);
-
-        difference.entriesOnlyOnRight().entrySet().stream()
-            .map(e->e.getKey() + ": » " + truncate(e.getValue()))
-            .forEach(list::add);
-
-        difference.entriesDiffering().entrySet().stream()
-            .map(e->e.getKey() + ": " + truncate(e.getValue().leftValue()) + " » " + truncate(e.getValue().rightValue()))
-            .forEach(list::add);
-
-        return String.join(", ", list);
-    }
-
-    private static String truncate(Object o)
-    {
-        String s = String.valueOf(o);
-        return s.length() > 50 ? s.substring(0, 47) + "..." : s;
+        // Neither configuration should be null, but just in case...
+        return StringUtilsLabKey.getMapDifference(
+            null != oldConfiguration ? oldConfiguration.getLoggingProperties() : null,
+            null != newConfiguration ? newConfiguration.getLoggingProperties() : null,
+            50);
     }
 
     protected AC getFromCache(int rowId)
