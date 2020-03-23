@@ -73,4 +73,44 @@ public class TableInsertDataIteratorBuilder implements DataIteratorBuilder
         }
         return di;
     }
+
+    public DataIteratorBuilder getBuilder()
+    {
+        return builder;
+    }
+
+    public TableInfo getTable()
+    {
+        return table;
+    }
+
+    public Container getContainer()
+    {
+        return container;
+    }
+
+    public Set<String> getKeyColumns()
+    {
+        return keyColumns;
+    }
+
+    public Set<String> getAddlSkipColumns()
+    {
+        return addlSkipColumns;
+    }
+
+    public Set<String> getDontUpdate()
+    {
+        return dontUpdate;
+    }
+
+    public boolean isCommitRowsBeforeContinuing()
+    {
+        return commitRowsBeforeContinuing;
+    }
+
+    public Set<DomainProperty> getVocabularyProperties()
+    {
+        return vocabularyProperties;
+    }
 }
