@@ -17,20 +17,17 @@
 package org.labkey.experiment.controllers.exp;
 
 import org.labkey.api.view.JspView;
-import org.labkey.api.view.WebPartView;
 import org.labkey.experiment.api.ExpRunImpl;
-
-import java.io.PrintWriter;
 
 /**
  * User: jeckels
  * Date: Dec 18, 2007
  */
-public class ExperimentRunGraphView extends WebPartView<ExperimentRunGraphModel>
+public class ExperimentRunGraphView extends JspView<ExperimentRunGraphModel>
 {
     public ExperimentRunGraphView(ExpRunImpl run, boolean detail)
     {
-        super(new ExperimentRunGraphModel());
+        super("/org/labkey/experiment/controllers/exp/experimentRunGraphView.jsp", new ExperimentRunGraphModel());
         setFrame(FrameType.NONE);
 
         getModelBean().setRun(run);
@@ -46,11 +43,5 @@ public class ExperimentRunGraphView extends WebPartView<ExperimentRunGraphModel>
     public void setFocusType(String focusType)
     {
         getModelBean().setFocusType(focusType);
-    }
-
-    @Override
-    protected void renderView(ExperimentRunGraphModel model, PrintWriter out) throws Exception
-    {
-        include(new JspView<>("/org/labkey/experiment/controllers/exp/experimentRunGraphView.jsp", model));
     }
 }
