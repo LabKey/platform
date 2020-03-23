@@ -368,6 +368,11 @@ export class App extends React.Component<Props, State> {
                             model={protocolModel}
                             appPropertiesOnly={true}
                             onChange={this.onAssayPropertiesChange}
+                            panelStatus={'NONE'}
+                            validate={false}
+                            useTheme={true}
+                            controlledCollapse={false}
+                            initCollapsed={false}
                         >
                             <p>
                                 Define basic properties for this new design. These and other advanced settings can always be
