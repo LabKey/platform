@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
@@ -45,12 +46,12 @@
     if (!c.isRoot())
         siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
-    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
+    boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
 <table class="lk-fields-table">
-<%=getTroubleshooterWarning(HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
+<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -283,7 +284,7 @@
 <%
     }
 
-    if (!isTroubleshooter)
+    if (canUpdate)
     {
 %>
 <tr>
