@@ -456,11 +456,14 @@ public class ExperimentUpgradeCode implements UpgradeCode
             return;
 
         collection.forEach(ms -> {
-                    int oid = OntologyManager.ensureObject(ms.getContainer(), ms.getLSID());
-                    ms.setObjectId(oid);
-                    SQLFragment update = new SQLFragment("UPDATE exp.object SET ownerobjectid=?" +
-                            " WHERE objecturi IN (SELECT lsid from exp.material WHERE cpastype=?)",  + ms.getObjectId(), ms.getLSID());
-                    new SqlExecutor(objTable.getSchema().getScope()).execute(update);
+            int oid = OntologyManager.ensureObject(ms.getContainer(), ms.getLSID());
+            ms.setObjectId(oid);
+            LOG.info("Created object " + oid + " for " + ms.getName());
+
+            SQLFragment update = new SQLFragment("UPDATE exp.object SET ownerobjectid=?" +
+                    " WHERE objecturi IN (SELECT lsid from exp.material WHERE cpastype=?)",  + ms.getObjectId(), ms.getLSID());
+            int rowCount = new SqlExecutor(objTable.getSchema().getScope()).execute(update);
+            LOG.info("Updated ownerObjectId for " + rowCount + " materials");
         });
         SampleSetServiceImpl.get().clearMaterialSourceCache(null);
     }
