@@ -161,6 +161,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     private static TomcatVersion _tomcatVersion = null;
     private static JavaVersion _javaVersion = null;
 
+    private static final String START_MESSAGE = "Starting LabKey"
+
     private static final String BANNER = "\n" +
             "   __                                   \n" +
             "   ||  |  _ |_ |/ _     (\u00af _  _   _  _\n" +
@@ -426,6 +428,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /** Full web-server initialization */
     private void doInit(ServletContext servletCtx, boolean terminateAfterStartup) throws Exception
     {
+        _log.info(START_MESSAGE);
+
         _log.info(BANNER);
 
         _servletContext = servletCtx;
