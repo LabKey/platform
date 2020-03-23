@@ -1,9 +1,6 @@
 import React, { PureComponent } from 'react';
-
 import { Panel } from 'react-bootstrap';
-
 import { LabelHelpTip } from '@labkey/components';
-
 import FACheckBox from './FACheckBox';
 
 const ROW_TEXTS = [
@@ -25,16 +22,22 @@ const ROW_TEXTS = [
 ];
 
 interface Props {
-    SelfRegistration?: boolean;
-    SelfServiceEmailChanges?: boolean;
-    AutoCreateAccounts?: boolean;
+    globalSettings: GlobalSettingsOptions;
 
     canEdit: boolean;
     checkGlobalAuthBox: (id: string) => void;
     authCount: number;
 }
 
-export default class GlobalSettings extends PureComponent<Props, Props> {
+interface State {
+    globalSettings: GlobalSettingsOptions;
+
+    canEdit: boolean;
+    checkGlobalAuthBox: (id: string) => void;
+    authCount: number;
+}
+
+export default class GlobalSettings extends PureComponent<Props, State> {
     render() {
         let rowTexts = ROW_TEXTS;
         const { canEdit, authCount, checkGlobalAuthBox } = this.props;

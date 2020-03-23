@@ -65,6 +65,8 @@ import java.util.stream.StreamSupport;
  */
 public class DataIteratorUtil
 {
+    public static final String DATA_SOURCE = "dataSource";
+    public static final String ETL_DATA_SOURCE = "etl";
 
     private static final Logger LOG = Logger.getLogger(DataIteratorUtil.class);
 

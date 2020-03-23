@@ -16,7 +16,7 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
 import org.springframework.validation.BindException;
@@ -32,7 +32,7 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     }
 
     @Deprecated // This bypasses JspView() standard handling (addClientDependencies(), mem tracking). Instead, use getView().
-    @RemoveIn20_1
+    @RemoveIn20_7
     public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
     {
         return get((FormPage<F>) JspLoader.createPage(null, jspPath), form);

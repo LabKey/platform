@@ -35,7 +35,6 @@ import java.util.Set;
 /**
  * User: bimber
  * Date: 5/5/13
- * Time: 11:49 AM
  */
 public class SimpleButtonConfigFactory implements ButtonConfigFactory
 {
@@ -69,6 +68,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _clientDependencies = clientDependencies;
     }
 
+    @Override
     public UserDefinedButtonConfig createBtn(final TableInfo ti)
     {
         Container c = ti.getUserSchema().getContainer();
@@ -103,6 +103,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _insertPosition = insertPosition;
     }
 
+    @Override
     public NavTree create(TableInfo ti)
     {
         Container c = ti.getUserSchema().getContainer();
@@ -120,6 +121,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         return _jsHandler;
     }
 
+    @Override
     public boolean isAvailable(TableInfo ti)
     {
         return _owner == null || ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
@@ -131,6 +133,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         return true;
     }
 
+    @Override
     public Set<ClientDependency> getClientDependencies(Container c, User u)
     {
         return _clientDependencies;

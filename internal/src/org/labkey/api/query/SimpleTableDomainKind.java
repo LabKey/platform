@@ -111,6 +111,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(SimpleModule.NAMESPACE_PREFIX) ? Handler.Priority.MEDIUM : null;
     }
 
+    @Override
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
         return getDomainURI(schemaName, tableName, c, u);

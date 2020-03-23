@@ -100,7 +100,8 @@ List others = [
         "org.apache.tika:tika-core:${tikaVersion}",
         "cglib:cglib-nodep:${cglibNodepVersion}",
         "xerces:xercesImpl:${xercesImplVersion}",
-        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}"
+        "org.imca_cat.pollingwatchservice:pollingwatchservice:${pollingWatchVersion}",
+        "org.postgresql:postgresql:${postgresqlDriverVersion}"
 ]
 
 List javax = [

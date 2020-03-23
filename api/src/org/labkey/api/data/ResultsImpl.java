@@ -236,6 +236,7 @@ public class ResultsImpl implements Results, DataIterator
         return ((TableResultSet) _rs).getRowMap();
     }
 
+    @NotNull
     @Override
     public Iterator<Map<String, Object>> iterator()
     {

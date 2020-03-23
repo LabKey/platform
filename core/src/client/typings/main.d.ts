@@ -18,6 +18,8 @@ interface AuthConfig {
     details?: string;
     enabled?: boolean;
     configuration?: number;
+    headerLogoUrl?: string;
+    loginLogoUrl?: string;
 }
 
 interface AuthConfigField {
@@ -37,6 +39,12 @@ interface AuthConfigProvider {
     description: string;
     sso?: boolean;
     testLink?: string;
+}
+
+interface GlobalSettingsOptions {
+    SelfRegistration?: boolean;
+    SelfServiceEmailChanges?: boolean;
+    AutoCreateAccounts?: boolean;
 }
 
 interface InputFieldProps {

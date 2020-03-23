@@ -9,11 +9,6 @@
 LABKEY.Mothership = (function () {
     "use strict";
 
-    // When _gatherAllocation is true, a stacktrace is generated where the
-    // callback function is registered.  Generating the allocation stacktraces
-    // can reduce performance.
-    var _gatherAllocation = false;
-
     // When _generateStacktrace is true, a stacktrace is generated in the error
     // handler as a last-ditch effort to get meaningful error reporting.
     var _generateStacktrace = true;
@@ -61,16 +56,6 @@ LABKEY.Mothership = (function () {
             console.warn.apply(console, arguments);
         else
             alert(arguments);
-    }
-
-    function encodeQuery(data) {
-        var ret = '';
-        var and = '';
-        for (var i in data) {
-            ret += and + encodeURIComponent(i) + '=' + encodeURIComponent(data[i]);
-            and = '&';
-        }
-        return ret;
     }
 
     /** send an async GET message. */
@@ -160,9 +145,9 @@ LABKEY.Mothership = (function () {
         if (!fileName)
             return false;
 
-        // remove stacktrace-1.3.0.min.js and mothership.js from the stack
+        // remove stacktrace.js and mothership.js from the stack
         if (_filterStacktrace &&
-                fileName.indexOf("/stacktrace-") > -1 ||
+                fileName.indexOf("/stacktrace.min.js") > -1 ||
                 fileName.indexOf("/mothership.js") != -1)
             return false;
 
@@ -238,6 +223,28 @@ LABKEY.Mothership = (function () {
         }
     }
 
+    function _processErrorMsg(err) {
+        // Now figure out the actual error message
+        // or if it's an event, as triggered in several browsers
+        var msg = err;
+        if (err.message) {
+            msg = (err.name ? err.name + ': ' : '') + err.message;
+        }
+        else if (err.target && err.type) {
+            msg = err.type;
+        }
+
+        // Check for string error type
+        if (!msg.indexOf) {
+            var s = msg.toString();
+            if (s == '[object Object]')
+                s = JSON.stringify(msg);
+            msg = 'Other error: ' + s;
+        }
+
+        return msg;
+    }
+
     function _report(msg, file, line, column, stackTrace) {
         "use strict";
 
@@ -268,20 +275,21 @@ LABKEY.Mothership = (function () {
                 stackTrace: stackTrace || msg,
                 file: file,
                 line: line,
-                column: column,
+                // column: column,
                 browser: navigator && navigator.userAgent || "Unknown",
                 platform:  navigator && navigator.platform  || "Unknown"
             };
+
+            try {
+                send(url, o);
+                return true;
+            }
+            catch (e) {
+                // ignore error
+            }
         }
 
-        try {
-            send(url, o);
-            return true;
-        }
-        catch (e) {
-            // ignore error
-            return false;
-        }
+        return false;
     }
 
     // err is either the thrown Error object, ErrorEvent, or a string message.
@@ -291,23 +299,7 @@ LABKEY.Mothership = (function () {
         file = file || window.location.href;
         line = line || "None";
 
-        // Now figure out the actual error message
-        // or if it's an event, as triggered in several browsers
-        var msg = err;
-        if (err.message) {
-            msg = err.message;
-        }
-        else if (err.target && err.type) {
-            msg = err.type;
-        }
-
-        // Check for string error type
-        if (!msg.indexOf) {
-            var s = msg.toString();
-            if (s == '[object Object]')
-                s = JSON.stringify(msg);
-            msg = 'Other error: ' + s;
-        }
+        var msg = _processErrorMsg(err);
 
         // Filter out some errors
         if (ignore(msg, file))
@@ -320,42 +312,11 @@ LABKEY.Mothership = (function () {
             return false;
 
         var error = errorObj || err.error || err;
-        var promise = null;
-        // Sadly, IE10 doesn't support Promises and I don't care enough to add a polyfill
-        if (window.Promise) {
-            if (error instanceof Error) {
-                promise = StackTrace.fromError(error, {filter: filterTrace});
-            }
-            else if (_generateStacktrace) {
-                promise = StackTrace.get({filter: filterTrace});
-            }
-        }
-        if (!promise) {
-            // We have no Error or the browser doesn't support Promises -- just submit the message that we have
-            return _report(msg, file, line, column, null);
-        }
 
-        // wait for allocation stack
-        if (err._allocationPromise) {
-            //console.log("chaining allocationPromise");
-            promise.then(function () {
-                return err._allocationPromise;
-            });
-        }
-
-        promise.then(function (stackframes) {
-            var stackTrace = msg;
-            if (stackframes && stackframes.length) {
-                stackTrace += '\n  ' + stackframes.join('\n  ');
-            }
-
-            if (err._allocation) {
-                stackTrace += '\n\n' + err._allocation;
-            }
-
+        processStackTrace(error, function(stackTrace) {
             _report(msg, file, line, column, stackTrace);
+        }, msg);
 
-        }).catch(errback);
         return true;
     }
 
@@ -376,42 +337,65 @@ LABKEY.Mothership = (function () {
 
         function wrap() {
             //log("wrap called: ", this);
-
-            // BUGBUG: See note about collecting Promise "then" allocation stacktrace
-            //if (_gatherAllocation && this instanceof Promise) {
-            //    if (fn._allocationPromise)
-            //        this._allocationPromise = fn._allocationPromise;
-            //    if (fn._allocation)
-            //        this._allocation = fn._allocation;
-            //}
-
             try {
                 return fn.apply(this, arguments);
             }
             catch (e) {
                 //log("wrap caught error", e);
-                if (fn._allocationPromise)
-                    e._allocationPromise = fn._allocationPromise;
-                if (fn._allocation)
-                    e._allocation = fn._allocation;
                 reportError(e);
                 if (_rethrow)
                     throw e;
             }
         }
+
         fn._wrapped = wrap;
-        if (_gatherAllocation && window.Promise)
-        {
-            //log("Gathering allocation stack...");
-            fn._allocationPromise = StackTrace.get({filter: filterTrace, offline: true}).then(function (stackframes) {
-                delete fn._allocationPromise;
+
+        return wrap;
+    }
+
+    /**
+     * Process and updates a stack trace by integrating available source map information.
+     * The stack trace is processed asynchronously so the updated stack trace is returned via
+     * callback. If the stack trace could not be processed then it will return null.
+     * @param {Error} error Error from which the stack trace originates.
+     * @param {Function} cb Callback that is called with the processed stack trace.
+     * @param {String} [msg] (Optional) Preprocessed error message. This message will be prepended to the stack trace.
+     */
+    function processStackTrace(error, cb, msg) {
+        var stackTrace;
+
+        if (msg === undefined) {
+            stackTrace = _processErrorMsg(error);
+        }
+        else {
+            stackTrace = msg;
+        }
+
+        // See if browser has native support for Promises
+        var promise;
+
+        if (window.Promise) {
+            if (error instanceof Error) {
+                promise = StackTrace.fromError(error, {filter: filterTrace});
+            }
+            else if (_generateStacktrace) {
+                promise = StackTrace.get({filter: filterTrace});
+            }
+        }
+
+        if (promise) {
+            promise.then(function(stackframes) {
                 if (stackframes && stackframes.length) {
-                    fn._allocation = "Callback Allocation:\n  " + stackframes.join('\n  ');
-                    //log(fn._allocation);
+                    stackTrace += '\n  ' + stackframes.join('\n  ');
                 }
+
+                cb(stackTrace);
             }).catch(errback);
         }
-        return wrap;
+        else {
+            // Unable to process this stack trace -- return null
+            cb(null);
+        }
     }
 
     function replace_LABKEY_Ajax() {
@@ -782,22 +766,15 @@ LABKEY.Mothership = (function () {
         }
     }
 
-    function registerOnError() {
+    function initEventListeners() {
         window.addEventListener('error', report);
 
         // catch unhandled errors in promises
         // https://developer.mozilla.org/en-US/docs/Web/Events/unhandledrejection
-        if (window.hasOwnProperty("onunhandledrejection"))
-        {
+        if (window.hasOwnProperty('onunhandledrejection')) {
             window.addEventListener('unhandledrejection', function (event) {
                 //log("Unhandled Error in Promise ", event);
-                var promise = event.promise;
-                var reason = event.reason;
-
-                // BUGBUG: See note about collecting Promise "then" allocation stacktrace
-                //if (promise._allocation)
-                //    reason._allocation = promise._allocation;
-                reportError(reason);
+                reportError(event.reason);
             });
 
             window.addEventListener('rejectionhandled', function (event) {
@@ -807,18 +784,7 @@ LABKEY.Mothership = (function () {
         }
     }
 
-    function register() {
-        // Default stacktrace is only 10 frames on Google Chrome
-        Error.stackTraceLimit = 20;
-        registerOnError();
-
-        // BUGBUG: Unfortunately, I'm not sure how to collect the allocation stacktrace where the
-        // "then" callback was created. Wrapping Promise.prototype.then() doesn't seem to work.
-        //if (Promise.prototype.then)
-        //    Promise.prototype.then = createWrap(Promise.prototype.then);
-    }
-
-    register();
+    initEventListeners();
 
     return {
         /**
@@ -840,6 +806,9 @@ LABKEY.Mothership = (function () {
         /** Turn error reporting on or off (default is on). */
         enable  : function (b) { _enabled = b; },
 
+        /** Process and updates a stack trace by integrating available source map information */
+        processStackTrace : processStackTrace,
+
         /** Turn rethrowing Errors on or off (default is on). */
         setRethrow : function (b) { _rethrow = b; },
 
@@ -850,7 +819,7 @@ LABKEY.Mothership = (function () {
         setReportErrors : function (b) { _mothership = b; },
 
         /** Render a little window displaying the 10 most recent errors collected. */
-        renderLastErrors : renderLastErrors
+        renderLastErrors : renderLastErrors,
     };
 })();
 

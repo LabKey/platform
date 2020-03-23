@@ -48,6 +48,8 @@ import org.labkey.api.data.WorkbookContainerType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.files.DirectoryPattern;
@@ -79,6 +81,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -1519,6 +1522,7 @@ public class FileContentServiceImpl implements FileContentService
         private static final String PROJECT1_SUBFOLDER1 = "Subfolder1";
         private static final String PROJECT1_SUBFOLDER2 = "Subfolder2" + TRICKY_CHARACTERS_FOR_PROJECT_NAMES;
         private static final String PROJECT1_SUBSUBFOLDER = "SubSubfolder";
+        private static final String PROJECT1_SUBSUBFOLDER_SIBLING = "SubSubfolderSibling";
         private static final String PROJECT2 = "FileRootTestProject2";
 
         private static final String FILE_ROOT_SUFFIX = "_FileRootTest";
@@ -1628,6 +1632,7 @@ public class FileContentServiceImpl implements FileContentService
             _expectedPaths.put(subfolder2, null);
 
             Container subsubfolder = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER);
+            Container subsubfolderSibling = ContainerManager.createContainer(subfolder1, PROJECT1_SUBSUBFOLDER_SIBLING);
             _expectedPaths.put(subsubfolder, null);
 
             //create a test file that we will follow
@@ -1640,7 +1645,25 @@ public class FileContentServiceImpl implements FileContentService
             ExpData data = ExperimentService.get().createData(subsubfolder, new DataType("FileContentTest"));
             data.setDataFileURI(childFile.toPath().toUri());
             data.save(TestContext.get().getUser());
-            int rowId = data.getRowId();
+
+            ExpProtocol protocol = ExperimentService.get().createExpProtocol(subsubfolder, ExpProtocol.ApplicationType.ProtocolApplication, "DummyProtocol");
+            protocol = ExperimentService.get().insertSimpleProtocol(protocol, TestContext.get().getUser());
+
+            ExpRun expRun = ExperimentService.get().createExperimentRun(subsubfolder, "DummyRun");
+            expRun.setProtocol(protocol);
+            expRun.setFilePathRootPath(childFile.getParentFile().toPath());
+
+            ViewBackgroundInfo info = new ViewBackgroundInfo(subsubfolder, TestContext.get().getUser(), null);
+            ExpRun run = ExperimentService.get().saveSimpleExperimentRun(
+                    expRun,
+                    Collections.emptyMap(),
+                    Collections.singletonMap(data, "Data"),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    info,
+                    _log,
+                    false);
 
             Assert.assertTrue("File not found: " + childFile.getPath(), childFile.exists());
             ContainerManager.move(subsubfolder, subfolder2, TestContext.get().getUser());
@@ -1653,10 +1676,21 @@ public class FileContentServiceImpl implements FileContentService
             File expectedFile = new File(svc.getFileRoot(movedSubfolder, ContentType.files), TXT_FILE);
             Assert.assertTrue("File was not moved, expected: " + expectedFile.getPath(), expectedFile.exists());
 
-            ExpData movedData = ExperimentService.get().getExpData(rowId);
+            ExpData movedData = ExperimentService.get().getExpData(data.getRowId());
             Assert.assertNotNull(movedData);
 
-            assertPathsEqual("Incorrect file path", expectedFile, FileUtil.stringToPath(movedSubfolder, movedData.getDataFileUrl()).toFile());
+            // Reload the run after it's path has hopefully been updated
+            expRun = ExperimentService.get().getExpRun(expRun.getRowId());
+
+            assertPathsEqual("Incorrect data file path", expectedFile, FileUtil.stringToPath(movedSubfolder, movedData.getDataFileUrl()).toFile());
+            assertPathsEqual("Incorrect run root path", expectedFile.getParentFile(), expRun.getFilePathRoot());
+
+            // Issue 38206 - file paths get mangled with multiple folder moves
+            ContainerManager.move(subsubfolderSibling, subfolder2, TestContext.get().getUser());
+
+            // Reload the run after it's path has hopefully NOT been updated
+            expRun = ExperimentService.get().getExpRun(expRun.getRowId());
+            assertPathsEqual("Incorrect run root path", expectedFile.getParentFile(), expRun.getFilePathRoot());
         }
 
         @Test
@@ -1727,34 +1761,27 @@ public class FileContentServiceImpl implements FileContentService
             FileContentService svc = FileContentService.get();
             Assert.assertNotNull(svc);
 
-            Container project1 = ContainerManager.getForPath(PROJECT1);
-            if (project1 != null)
-            {
-                ContainerManager.deleteAll(project1, TestContext.get().getUser());
-
-                File file1 = svc.getFileRoot(project1);
-                if (file1 != null && file1.exists())
-                {
-                    FileUtil.deleteDir(file1);
-                }
-            }
-
-            Container project2 = ContainerManager.getForPath(PROJECT2);
-            if (project2 != null)
-            {
-                ContainerManager.deleteAll(project2, TestContext.get().getUser());
-
-                File file2 = svc.getFileRoot(project2);
-                if (file2 != null && file2.exists())
-                {
-                    FileUtil.deleteDir(file2);
-                }
-            }
+            deleteContainerAndFiles(svc, ContainerManager.getForPath(PROJECT1));
+            deleteContainerAndFiles(svc, ContainerManager.getForPath(PROJECT2));
 
             File testRoot = getTestRoot();
             if (testRoot.exists())
             {
                 FileUtil.deleteDir(testRoot);
+            }
+        }
+
+        private void deleteContainerAndFiles(FileContentService svc, @Nullable Container c)
+        {
+            if (c != null)
+            {
+                ContainerManager.deleteAll(c, TestContext.get().getUser());
+
+                File file1 = svc.getFileRoot(c);
+                if (file1 != null && file1.exists())
+                {
+                    FileUtil.deleteDir(file1);
+                }
             }
         }
     }

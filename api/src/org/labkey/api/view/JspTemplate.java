@@ -26,7 +26,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import java.io.StringWriter;
 
 /**
- * Executes a JSP and renders output to a string.  Useful for JSP templating of SQL queries, etc.
+ * Executes a JSP and renders output to a string. Useful for JSP templating of SQL queries, etc.
  * User: adam
  * Date: Aug 10, 2010
  */

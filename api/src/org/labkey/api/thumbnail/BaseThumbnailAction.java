@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.data.CacheableWriter;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
 
@@ -36,7 +37,11 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
-        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
+        // Issue 34825 - don't prompt for basic auth for browser requests
+        if (!HttpUtil.isBrowser(getViewContext().getRequest()))
+        {
+            setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
+        }
         super.checkPermissions();
     }
 

@@ -492,6 +492,7 @@ public class DomainUtil
         }
         ObjectMapper mapper = new ObjectMapper();
 
+        arguments = kind.processArguments(container, user, arguments);
         Object options = mapper.convertValue(arguments, kind.getTypeClass());
         Domain created = kind.createDomain(domain, options, container, user, templateInfo);
 

@@ -8,24 +8,24 @@ import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 
 import "@labkey/components/dist/components.css"
-import './authenticationConfiguration.scss';
+// import './authenticationConfiguration.scss';
 
 interface State {
-    formConfigurations?: AuthConfig[];
-    ssoConfigurations?: AuthConfig[];
-    secondaryConfigurations?: AuthConfig[];
-    primaryProviders?: AuthConfigProvider[];
-    secondaryProviders?: AuthConfigProvider[];
-    globalSettings?: {[key: string]: any;};
-    helpLink?: string;
-    canEdit?: boolean;
-    dirtinessData?: {[key: string]: AuthConfig[] };
-    dirty?: boolean;
-    modalOpen?: boolean;
-    authCount?: number;
+    formConfigurations: AuthConfig[];
+    ssoConfigurations: AuthConfig[];
+    secondaryConfigurations: AuthConfig[];
+    primaryProviders: AuthConfigProvider[];
+    secondaryProviders: AuthConfigProvider[];
+    globalSettings: {[key: string]: any;};
+    helpLink: string;
+    canEdit: boolean;
+    dirtinessData: {[key: string]: AuthConfig[] };
+    dirty: boolean;
+    modalOpen: boolean;
+    authCount: number;
 }
 
-export class App extends PureComponent<{}, State> {
+export class App extends PureComponent<{}, Partial<State>> {
     public actions: Actions;
     constructor(props) {
         super(props);
@@ -176,6 +176,8 @@ export class App extends PureComponent<{}, State> {
     };
 
     onDragEnd = (result: {[key: string]: any;}): void => {
+        const {globalSettings, dirtinessData} = this.state;
+
         if (!result.destination) {
             return;
         }
@@ -193,7 +195,7 @@ export class App extends PureComponent<{}, State> {
                 const oldOrdering = state.dirtinessData[configType];
                 return !isEquivalent(newOrdering, oldOrdering);
             });
-            const dirty = dirtyStateAreas.length > 0;
+            const dirty = dirtyStateAreas.length > 0 || !isEquivalent({...globalSettings}, dirtinessData);
 
             return {...newState, dirty};
         });
@@ -214,8 +216,8 @@ export class App extends PureComponent<{}, State> {
                 alert('Error: ' + error);
             },
             success: function() {
-                const authCount = this.state.authCount - 1;
-                this.setState({ authCount, [configType]: newState });
+                // const authCount = this.state.authCount - 1;
+                this.setState({ [configType]: newState });
             },
         });
     };
@@ -234,36 +236,55 @@ export class App extends PureComponent<{}, State> {
     render() {
         const alertText =
             'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
-        const { globalSettings, dirtinessData, dirty, authCount, modalOpen, ...restProps } = this.state;
+        const {
+            globalSettings,
+            dirty,
+            modalOpen,
+            formConfigurations,
+            ssoConfigurations,
+            secondaryConfigurations,
+            primaryProviders,
+            secondaryProviders,
+            helpLink,
+            canEdit
+        } = this.state;
 
-        if (!this.state.formConfigurations &&
-            !this.state.ssoConfigurations &&
-            !this.state.secondaryConfigurations &&
-            !this.state.primaryProviders &&
-            !this.state.secondaryProviders &&
-            !this.state.globalSettings
+        if (!formConfigurations &&
+            !ssoConfigurations &&
+            !secondaryConfigurations &&
+            !primaryProviders &&
+            !secondaryProviders &&
+            !globalSettings
         ) {
             return <LoadingSpinner/>;
         }
 
+        let authCount = formConfigurations.length + ssoConfigurations.length;
+
         return (
             <div className="parent-panel">
                 <GlobalSettings
-                    {...globalSettings}
-                    canEdit={this.state.canEdit}
+                    globalSettings={globalSettings as GlobalSettingsOptions}
+                    canEdit={canEdit}
                     checkGlobalAuthBox={this.checkGlobalAuthBox}
-                    authCount={this.state.authCount}
+                    authCount={authCount}
                 />
 
                 <AuthConfigMasterPanel
-                    {...restProps}
-                    isDragDisabled={this.state.modalOpen}
+                    formConfigurations={formConfigurations}
+                    ssoConfigurations={ssoConfigurations}
+                    secondaryConfigurations={secondaryConfigurations}
+                    primaryProviders={primaryProviders}
+                    secondaryProviders={secondaryProviders}
+                    helpLink={helpLink}
+                    canEdit={canEdit}
+                    isDragDisabled={modalOpen}
                     actions={this.actions}
                 />
 
-                {this.state.dirty && <Alert> {alertText} </Alert>}
+                {dirty && <Alert> {alertText} </Alert>}
 
-                {this.state.canEdit ?
+                {canEdit ?
                     <>
                         <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
                             Save and Finish

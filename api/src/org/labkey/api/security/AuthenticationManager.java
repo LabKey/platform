@@ -28,7 +28,7 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_1;
+import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -56,7 +56,7 @@ import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvi
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
-import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -77,6 +77,7 @@ import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -90,11 +91,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
@@ -122,16 +121,23 @@ public class AuthenticationManager
 
     public enum AuthLogoType
     {
-        HEADER("auth_header_logo", "16"),
-        LOGIN_PAGE("auth_login_page_logo", "32");
+        HEADER("header", "auth_header_logo", "16"),
+        LOGIN_PAGE("login page", "auth_login_page_logo", "32");
 
+        private final String _label;
         private final String _fileName;
         private final String _height;
 
-        AuthLogoType(String fileName, String height)
+        AuthLogoType(String label, String fileName, String height)
         {
+            _label = label;
             _fileName = fileName;
             _height = height;
+        }
+
+        public String getLabel()
+        {
+            return _label;
         }
 
         public String getFileName()
@@ -147,6 +153,15 @@ public class AuthenticationManager
         public String getOldPrefix()
         {
             return _fileName + "_";
+        }
+
+        public static @NotNull AuthLogoType getForFilename(String fileName)
+        {
+            for (AuthLogoType type : values())
+                if (type.getFileName().equals(fileName))
+                    return type;
+
+            throw new NotFoundException("Unknown logo type");
         }
     }
 
@@ -182,7 +197,7 @@ public class AuthenticationManager
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
         ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
             .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
-            .forEach(cp->setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
+            .forEach(cp-> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
     }
 
     public enum Priority { High, Low }
@@ -202,17 +217,17 @@ public class AuthenticationManager
 
     public static boolean isRegistrationEnabled()
     {
-        return getAuthConfigProperty(SELF_REGISTRATION_KEY, false);
+        return getAuthSetting(SELF_REGISTRATION_KEY, false);
     }
 
     public static boolean isAutoCreateAccountsEnabled()
     {
-        return isExternalConfigurationEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
+        return isExternalConfigurationEnabled() && getAuthSetting(AUTO_CREATE_ACCOUNTS_KEY, true);
     }
 
-    public static boolean isSelfServiceEmailChangesEnabled() { return getAuthConfigProperty(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
+    public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
-    public static boolean getAuthConfigProperty(String key, boolean defaultValue)
+    public static boolean getAuthSetting(String key, boolean defaultValue)
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String value = props.get(key);
@@ -220,13 +235,13 @@ public class AuthenticationManager
         return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
-    public static void setAuthConfigProperty(User user, String key, boolean value)
+    public static void saveAuthSetting(User user, String key, boolean value)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, Boolean.toString(value));
         props.save();
 
-        addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
+        addAuthSettingAuditEvent(user, key, value ? "enabled" : "disabled");
     }
 
     public static void saveAuthSettings(User user, Map<String, Boolean> map)
@@ -241,7 +256,7 @@ public class AuthenticationManager
         {
             changed.forEach((k, v)->{
                 props.put(k, Boolean.toString(v));
-                addConfigurationAuditEvent(user, k, v ? "enabled" : "disabled");
+                addAuthSettingAuditEvent(user, k, v ? "enabled" : "disabled");
             });
 
             props.save();
@@ -260,7 +275,7 @@ public class AuthenticationManager
                     count.increment();
                     Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Table.update() requires mutable map
                 });
-            AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " configurations were reordered");
+            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " configurations were reordered");
             event.setChanges("reordered");
             AuditLogService.get().addEvent(user, event);
             AuthenticationConfigurationCache.clear();
@@ -413,7 +428,7 @@ public class AuthenticationManager
     }
 
 
-    public static void deleteConfiguration(int rowId)
+    public static void deleteConfiguration(User user, int rowId)
     {
         // Delete any logos attached to the configuration
         AuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
@@ -421,12 +436,15 @@ public class AuthenticationManager
 
         // Delete configuration
         Table.delete(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), rowId);
+        AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + rowId + ") was deleted");
+        event.setChanges("deleted");
+        AuditLogService.get().addEvent(user, event);
         AuthenticationConfigurationCache.clear();
     }
 
-    private static void addConfigurationAuditEvent(User user, String name, String action)
+    private static void addAuthSettingAuditEvent(User user, String name, String action)
     {
-        AuthProviderConfigAuditEvent event = new AuthProviderConfigAuditEvent(ContainerManager.getRoot().getId(), name + " setting was " + action);
+        AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " setting was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
     }
@@ -489,34 +507,23 @@ public class AuthenticationManager
      */
     public static boolean isAcceptOnlyFicamProviders()
     {
-        return getAuthConfigProperty(ACCEPT_ONLY_FICAM_PROVIDERS_KEY, false);
+        return getAuthSetting(ACCEPT_ONLY_FICAM_PROVIDERS_KEY, false);
     }
 
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
-        setAuthConfigProperty(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
+        saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
         AuthenticationConfigurationCache.clear();
     }
 
-    private static final String AUTHENTICATION_CATEGORY = "Authentication";
-    private static final String PROVIDERS_KEY = "Authentication";
-    private static final String PROP_SEPARATOR = ":";
+    // leave public until upgrade from 19.3 is no longer allowed (and CoreUpgrade migration method is removed)
+    public static final String AUTHENTICATION_CATEGORY = "Authentication";
+    public static final String PROVIDERS_KEY = "Authentication";
+
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
-
-    // Provider names stored in properties; they're not necessarily all valid providers
-    public static Set<String> getActiveProviderNamesFromProperties()
-    {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String activeProviderProp = props.get(PROVIDERS_KEY);
-
-        Set<String> set = new HashSet<>();
-        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-
-        return set;
-    }
 
     /**
      * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.
@@ -1167,7 +1174,7 @@ public class AuthenticationManager
 
     private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
 
-    @RemoveIn20_1
+    @RemoveIn20_7
     private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
     {
         return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
@@ -1420,6 +1427,7 @@ public class AuthenticationManager
         Map<String, Object> map = getConfigurationMap(configuration);
         map.put("headerLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.HEADER));
         map.put("loginLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.LOGIN_PAGE));
+        map.put("autoRedirect", configuration.isAutoRedirect());
 
         return map;
     }

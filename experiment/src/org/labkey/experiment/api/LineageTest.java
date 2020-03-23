@@ -110,10 +110,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // Create two DataClasses
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null, null, null, null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null, null, null, null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null);
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
 
         // Import data with magic "DataInputs" and "MaterialInputs" columns
@@ -261,7 +261,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> dcProps = new ArrayList<>();
         dcProps.add(new GWTPropertyDescriptor("age", "int"));
         final String myDataClassName = "MyData";
-        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null, null, null, null);
+        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null);
 
         // Import data and derive from "S-1"
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -331,7 +331,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
                 -1, -1, -1, -1, null, null);
 
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("MySamples");
+        TableInfo table = schema.getTable("MySamples", null);
         QueryUpdateService svc = table.getUpdateService();
 
         // insert a sample and a derived sample
@@ -372,19 +372,24 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         // query
         TableSelector ts = QueryService.get().selector(listSchema,
                 "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
-        Results results = ts.getResults();
-        RenderContext ctx = new RenderContext(new ViewContext());
-        ctx.getViewContext().setRequest(TestContext.get().getRequest());
-        ctx.getViewContext().setUser(user);
-        ctx.getViewContext().setContainer(c);
-        ctx.getViewContext().setActionURL(new ActionURL());
-        ColumnInfo sampleId       = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
-        DisplayColumn dcSampleId  = sampleId.getRenderer();
-        ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
-        DisplayColumn dcMySampleParent = mySampleParent.getRenderer();
+        RenderContext ctx;
+        DisplayColumn dcSampleId;
+        DisplayColumn dcMySampleParent;
+        try (Results results = ts.getResults())
+        {
+            ctx = new RenderContext(new ViewContext());
+            ctx.getViewContext().setRequest(TestContext.get().getRequest());
+            ctx.getViewContext().setUser(user);
+            ctx.getViewContext().setContainer(c);
+            ctx.getViewContext().setActionURL(new ActionURL());
+            ColumnInfo sampleId = results.getColumn(results.findColumn(FieldKey.fromParts("SampleId")));
+            dcSampleId = sampleId.getRenderer();
+            ColumnInfo mySampleParent = results.getColumn(results.findColumn(FieldKey.fromParts("MySampleParent")));
+            dcMySampleParent = mySampleParent.getRenderer();
 
-        assertTrue(results.next());
-        ctx.setRow(results.getRowMap());
+            assertTrue(results.next());
+            ctx.setRow(results.getRowMap());
+        }
         assertEquals("sally", dcSampleId.getValue(ctx));
         assertEquals("bob", dcMySampleParent.getDisplayValue(ctx));
     }

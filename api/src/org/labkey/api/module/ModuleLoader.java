@@ -128,6 +128,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
@@ -302,7 +303,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         public static ExplodedModuleService newInstance(Object obj)
         {
-            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()))
+            if (!"org.labkey.bootstrap.LabKeyBootstrapClassLoader".equals(obj.getClass().getName()) && !"org.labkey.bootstrap.LabkeyServerBootstrapClassLoader".equals(obj.getClass().getName()))
                 return null;
             Class interfaces[] = new Class[] {ExplodedModuleService.class};
             return (ExplodedModuleService)java.lang.reflect.Proxy.newProxyInstance(ExplodedModuleService.class.getClassLoader(), interfaces, new _Proxy(obj));
@@ -453,12 +454,12 @@ public class ModuleLoader implements Filter, MemTrackerListener
         File webinfModulesDir = new File(_webappDir, "WEB-INF/modules");
         if (!webinfModulesDir.isDirectory() && null == service)
             throw new ConfigurationException("Could not find required class LabKeyBootstrapClassLoader. You probably need to copy labkeyBootstrap.jar into $CATALINA_HOME/lib and/or edit your " + AppProps.getInstance().getWebappConfigurationFilename() + " to include <Loader loaderClass=\"org.labkey.bootstrap.LabKeyBootstrapClassLoader\" />");
-        File[] webInfModules = webinfModulesDir.listFiles(pathname -> pathname.isDirectory());
+        File[] webInfModules = webinfModulesDir.listFiles(File::isDirectory);
         if (null != webInfModules)
         {
             Arrays.stream(webInfModules)
-                    .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
-                    .forEach(e -> explodedModuleDirs.add(e));
+                .map(m -> new AbstractMap.SimpleEntry<File,File>(m,null))
+                .forEach(explodedModuleDirs::add);
         }
 
         doInitWithSourceModule(explodedModuleDirs);
@@ -529,13 +530,15 @@ public class ModuleLoader implements Filter, MemTrackerListener
             for (ModuleContext context : getAllModuleContexts())
                 _moduleContextMap.put(context.getName(), context);
 
-            //Make sure we have a context for all modules, even ones we haven't seen before
+            // Refresh our list of modules as some may have been filtered out based on dependencies or DB platform
+            modules = getModules();
             for (Module module : modules)
             {
                 ModuleContext context = _moduleContextMap.get(module.getName());
 
                 if (null == context)
                 {
+                    // Make sure we have a context for all modules, even ones we haven't seen before
                     context = new ModuleContext(module);
                     _moduleContextMap.put(module.getName(), context);
                 }
@@ -1133,6 +1136,62 @@ public class ModuleLoader implements Filter, MemTrackerListener
         DbScope.initializeScopes(labkeyDsName, dataSources);
     }
 
+    // Verify that old JDBC drivers are not present in <tomcat>/lib -- they are now provided by the API module
+    private void verifyJdbcDrivers()
+    {
+        File lib = getTomcatLib();
+
+        if (null != lib)
+        {
+            List<String> existing = Stream.of("jtds.jar", "mysql.jar", "postgresql.jar")
+                .filter(name->new File(lib, name).exists())
+                .collect(Collectors.toList());
+
+            if (!existing.isEmpty())
+            {
+//                throw new ConfigurationException("You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing);
+                String message = "You must delete the following JDBC drivers from " + lib.getAbsolutePath() + ": " + existing;
+                _log.warn(message);
+                WarningService.get().register(new WarningProvider()
+                {
+                    @Override
+                    public void addStaticWarnings(Warnings warnings)
+                    {
+                        warnings.add(HtmlString.of(message));
+                    }
+                });
+            }
+        }
+    }
+
+    public @Nullable File getTomcatLib()
+    {
+        String classPath = System.getProperty("java.class.path", ".");
+
+        for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
+        {
+            if (path.endsWith("/bin/bootstrap.jar"))
+            {
+                path = path.substring(0, path.length() - "/bin/bootstrap.jar".length());
+                if (new File(path, "lib").isDirectory())
+                    return new File(path, "lib");
+            }
+        }
+
+        String tomcat = System.getenv("CATALINA_HOME");
+
+        if (null == tomcat)
+            tomcat = System.getenv("TOMCAT_HOME");
+
+        if (null == tomcat)
+        {
+            _log.warn("Could not find CATALINA_HOME environment variable");
+            return null;
+        }
+
+        return new File(tomcat, "lib");
+    }
+
     // For each name, look for a matching data source in labkey.xml. If found, attempt a connection and
     // create the database if it doesn't already exist, report any errors and return the name.
     public String ensureDatabase(@NotNull String primaryName, String... alternativeNames) throws NamingException, ServletException
@@ -1223,6 +1282,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
         }
 
         coreModule.initialize();
+
+        // Earliest opportunity to check, since the method adds an admin warning (and WarningService is initialized by
+        // the line above). TODO: Move this to initializeDataSources() once it throws instead of warning.
+        verifyJdbcDrivers();
 
         ModuleContext coreContext;
 

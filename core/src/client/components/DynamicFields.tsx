@@ -212,6 +212,7 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
 
 interface DynamicFieldsProps {
     fields: AuthConfigField[];
+    fieldValues: any;
     search: boolean;
     canEdit: boolean,
     modalType: AuthConfigProvider;
@@ -243,7 +244,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={this.props[field.name]}
+                            value={this.props.fieldValues[field.name]}
                             type="text"
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
@@ -255,7 +256,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <CheckBoxInput
                             key={index}
                             checkCheckBox={checkCheckBox}
-                            value={this.props[field.name]}
+                            value={this.props.fieldValues[field.name]}
                             canEdit={canEdit}
                             {...field}
                         />
@@ -268,7 +269,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={this.props[field.name]}
+                            value={this.props.fieldValues[field.name]}
                             type="password"
                             canEdit={canEdit}
                             {...field}
@@ -281,7 +282,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                             key={index}
                             onFileChange={onFileChange}
                             onFileRemoval={onFileRemoval}
-                            value={this.props[field.name]}
+                            value={this.props.fieldValues[field.name]}
                             index={index + 2} // There are two other FileAttachmentForms (from SSOFields) on modal
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
@@ -294,7 +295,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <Option
                             key={index}
                             onChange={onChange}
-                            value={this.props[field.name]}
+                            value={this.props.fieldValues[field.name]}
                             options={field.options}
                             canEdit={canEdit}
                             {...field}
