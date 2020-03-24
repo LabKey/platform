@@ -159,7 +159,8 @@ public class AssayTest extends AbstractAssayTest
         importSampleAssayData(TEST_RUN2, "S_1");
         goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
         clickAndWait(Locator.linkWithText("view results"));
-//        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change
+//        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change. Issue #40047
+
         assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
 
         log("Edit assay design and change Sample field to point back to 'All Samples'");
