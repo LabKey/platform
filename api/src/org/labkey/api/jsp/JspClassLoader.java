@@ -18,12 +18,10 @@ package org.labkey.api.jsp;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.resource.FileResource;
 import org.labkey.api.util.ConfigurationException;
 
 import javax.servlet.ServletContext;
 import java.io.File;
-import java.io.FilenameFilter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -118,9 +116,9 @@ public class JspClassLoader
             _loader.set(null);
     }
 
-    public Class loadClass(ServletContext context, String packageName, String jspFile) throws ClassNotFoundException
+    public Class loadClass(ServletContext context, String jspFile) throws ClassNotFoundException
     {
-        String className = getJspClassName(packageName, jspFile);
+        String className = getJspClassName(jspFile);
         ClassLoader loader = getClassLoader();
         Class c = loader.loadClass(className);
         if (c == null)
@@ -128,32 +126,23 @@ public class JspClassLoader
         return c;
     }
 
-    protected String getJspClassName(String packageName, String jspFile)
+    protected String getJspClassName(String jspFile)
     {
-        return JSP_PACKAGE + getCompiledJspPath(packageName, jspFile).replaceAll("/", "\\.");
+        return JSP_PACKAGE + getCompiledJspPath(jspFile).replaceAll("/", "\\.");
     }
 
-    protected String getCompiledJspPath(String packageName, String jspFile)
+    protected String getCompiledJspPath(String jspFile)
     {
         //NOTE: jasper encodes underscores and dashes in the filepath, so we account for this here
         jspFile = jspFile.replaceAll("_", "_005f");
         jspFile = jspFile.replaceAll("-", "_002d");
-        return getSourceJspPath(packageName, jspFile.replaceAll("\\.", "_"));
+        return getSourceJspPath(jspFile.replaceAll("\\.", "_"));
     }
 
-    protected String getSourceJspPath(String packageName, String jspFile)
+    protected String getSourceJspPath(String jspFile)
     {
-        StringBuilder ret = new StringBuilder();
-        if (packageName != null)
-        {
-            ret.append("/").append(packageName.replaceAll("\\.", "/")).append("/");
-        }
-        else
-        {
-            if (!jspFile.startsWith("/"))
-                throw new IllegalArgumentException("Path must start with '/' if no package defined.");
-        }
-        ret.append(jspFile);
-        return ret.toString();
+        if (!jspFile.startsWith("/"))
+            throw new IllegalArgumentException("Path must start with '/'");
+        return jspFile;
     }
 }

@@ -110,10 +110,10 @@ public class LineageTest extends ExpProvisionedTableTestHelper
 
         // Create two DataClasses
         final String firstDataClassName = "firstDataClass";
-        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null, null, null, null);
+        final ExpDataClassImpl firstDataClass = ExperimentServiceImpl.get().createDataClass(c, user, firstDataClassName, null, props, emptyList(), null);
 
         final String secondDataClassName = "secondDataClass";
-        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null, null, null, null);
+        final ExpDataClassImpl secondDataClass = ExperimentServiceImpl.get().createDataClass(c, user, secondDataClassName, null, props, emptyList(), null);
         insertRows(c, Arrays.asList(new CaseInsensitiveHashMap<>(Collections.singletonMap("name", "jimbo"))), secondDataClassName);
 
         // Import data with magic "DataInputs" and "MaterialInputs" columns
@@ -261,7 +261,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         List<GWTPropertyDescriptor> dcProps = new ArrayList<>();
         dcProps.add(new GWTPropertyDescriptor("age", "int"));
         final String myDataClassName = "MyData";
-        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null, null, null, null);
+        final ExpDataClassImpl myDataClass = ExperimentServiceImpl.get().createDataClass(c, user, myDataClassName, null, dcProps, emptyList(), null);
 
         // Import data and derive from "S-1"
         List<Map<String, Object>> rows = new ArrayList<>();

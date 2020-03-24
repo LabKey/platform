@@ -23,8 +23,10 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 
@@ -35,6 +37,8 @@ import java.util.Map;
 
 public interface SampleSetService
 {
+    String NEW_SAMPLE_SET_ALIAS_VALUE = "{{this_sample_set}}";
+    String MATERIAL_INPUTS_PREFIX = "materialInputs/";
     String MODULE_NAME = "Experiment";
 
     static SampleSetService get()
@@ -128,4 +132,8 @@ public interface SampleSetService
 
     // used by DomainKind.invalidate()
     void indexSampleSet(ExpSampleSet sampleSet);
+
+    ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
+
+    boolean parentAliasHasCorrectFormat(String parentAlias);
 }

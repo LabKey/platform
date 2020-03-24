@@ -144,7 +144,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <th style="width: 35em;"></th>
     <th></th>
 </tr>
-<%=getTroubleshooterWarning(HtmlString.unsafe("<tr>\n" +
+<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<tr>\n" +
         "        <td colspan=2>&nbsp;</td>\n" +
         "    </tr>\n" +
         "    <tr>\n" +

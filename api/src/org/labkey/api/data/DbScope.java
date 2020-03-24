@@ -853,26 +853,14 @@ public class DbScope
         return getPooledConnection(ConnectionType.Pooled, null);
     }
 
-    /**
-     *  Get a fresh read-only connection directly from the pool... not part of the current transaction, not shared with the thread, etc.
-     *  This connection should not cache ResultSet data in the JVM, making it suitable for streaming very large ResultSets. See #39753.
-     **/
-    @JsonIgnore
-    public Connection getReadOnlyConnection() throws SQLException
-    {
-        ConnectionWrapper conn = getPooledConnection(ConnectionType.Pooled, null);
-        conn.configureToDisableJdbcCaching(new SQLFragment("SELECT FakeColumn FROM FakeTable"));
-
-        return conn;
-    }
-
     /** Create a new connection that completely bypasses the connection pool. */
     @JsonIgnore
     public Connection getUnpooledConnection() throws SQLException
     {
         try
         {
-            return DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            Connection raw = DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
         {

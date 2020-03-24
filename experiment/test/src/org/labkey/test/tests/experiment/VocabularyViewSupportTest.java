@@ -20,9 +20,9 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.params.experiment.SampleSetDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -118,7 +118,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         goToProjectHome();
         SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(sampleSetName, null);
+        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName));
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;

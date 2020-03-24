@@ -387,12 +387,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // Need to resync the ParticipantVisit table too
             _participantVisitResyncRequired = true;
         }
+        // Check if the timepoint may have changed, but only if we don't already know we need to resync
         else if (!_participantVisitResyncRequired)
         {
-            // Check if the visit has changed, but only if we don't already know we need to resync
-            Object oldSequenceNum = oldRow.get("SequenceNum");
-            Object newSequenceNum = row.get("SequenceNum");
-            if (!Objects.equals(oldSequenceNum, newSequenceNum))
+            String columnName = StudyManager.getInstance().getStudy(container).getTimepointType().isVisitBased() ?
+                    "SequenceNum" : "Date";
+            Object oldTimepoint = oldRow.get(columnName);
+            Object newTimepoint = row.get(columnName);
+            if (!Objects.equals(oldTimepoint, newTimepoint))
             {
                 _participantVisitResyncRequired = true;
             }
