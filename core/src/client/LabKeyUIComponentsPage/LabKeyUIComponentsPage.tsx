@@ -50,6 +50,7 @@ import { PermissionAssignmentsPage } from "./PermissionAssignmentsPage";
 import { SiteUsersGridPanelPage } from "./SiteUsersGridPanelPage";
 
 import "@labkey/components/dist/components.css"
+import { GridPanelPage } from './GridPanelPage';
 
 const COMPONENT_NAMES = List<string>([
     {value: 'Alert'},
@@ -64,6 +65,7 @@ const COMPONENT_NAMES = List<string>([
     {value: 'EntityInsertPanel'},
     {value: 'FileAttachmentForm'},
     {value: 'Grid'},
+    {value: 'GridPanel'},
     {value: 'HeatMap'},
     {value: 'LabelHelpTip'},
     {value: 'Lineage'},
@@ -308,6 +310,9 @@ export class App extends React.Component<any, State> {
                             <Grid data={GRID_DATA} columns={GRID_COLUMNS} transpose={true} striped={false}/>
                         )}
                     </>
+                }
+                {selected === 'GridPanel' &&
+                    <GridPanelPage/>
                 }
                 {selected === 'HeatMap' &&
                     this.renderPanel('HeatMap',
