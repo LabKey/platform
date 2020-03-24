@@ -103,8 +103,6 @@ export default class AuthRow extends PureComponent<Props, State> {
                     canEdit={canEdit}
                 />
         } else {
-            console.log(authConfig);
-            console.log(configType);
 
             modal =
                 <DynamicConfigurationModal

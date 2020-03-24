@@ -235,8 +235,8 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     <AuthRow
                         draggable={false}
                         toggleModalOpen={this.toggleModalOpen}
-                        canEdit={canEdit}
                         authConfig={{description: dbAuth.description, provider: dbAuth.provider, enabled: dbAuth.enabled}}
+                        canEdit={canEdit}
                     />
                 </div>
             ) : (

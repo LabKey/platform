@@ -31,9 +31,55 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
         title="Primary"
       >
         <PrimaryTab
-          SSOTipText="These configurations let LabKey users authenticate against an external service such as a SAML identify provider or a CAS server. LabKey will render SSO logos in the header and on the login page in the order that the configurations are listed below."
+          addNewPrimaryDropdown={
+            Array [
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                0
+                 : 
+                Central Authentication Service (CAS)
+              </MenuItem>,
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                1
+                 : 
+                Uses the LDAP protocol to authenticate against an institution's directory server
+              </MenuItem>,
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                2
+                 : 
+                Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)
+              </MenuItem>,
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                3
+                 : 
+                A trivial, insecure SSO authentication provider (for test purposes only)
+              </MenuItem>,
+            ]
+          }
           canEdit={true}
-          loginFormTipText="These configurations make use of LabKey's login page to collect credentials and authenticate against either hashed credentials stored in the LabKey database or external LDAP servers. LabKey will attempt authenticating against each configuration in the order they are listed below."
           primaryTabLoginForm={
             <div>
               <DragAndDropPane
@@ -64,13 +110,219 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
                 canEdit={true}
                 configType="formConfigurations"
                 isDragDisabled={false}
+                providers={
+                  Array [
+                    Object {
+                      "description": "Central Authentication Service (CAS)",
+                      "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
+                      "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
+                      "settingsFields": Array [
+                        Object {
+                          "caption": "CAS Server URL",
+                          "defaultValue": "",
+                          "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+                          "name": "serverUrl",
+                          "required": true,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Default to CAS Login",
+                          "defaultValue": false,
+                          "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+                          "name": "autoRedirect",
+                          "required": false,
+                          "type": "checkbox",
+                        },
+                      ],
+                      "sso": true,
+                    },
+                    Object {
+                      "description": "Uses the LDAP protocol to authenticate against an institution's directory server",
+                      "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap",
+                      "saveLink": "/labkey/ldap-ldapSaveConfiguration.view?",
+                      "settingsFields": Array [
+                        Object {
+                          "caption": "LDAP server URLs",
+                          "defaultValue": "",
+                          "description": "The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org",
+                          "name": "servers",
+                          "required": true,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "LDAP domain",
+                          "defaultValue": "labkey.com",
+                          "description": "Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain.",
+                          "name": "domain",
+                          "required": true,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "LDAP principal template",
+                          "defaultValue": "\${email}",
+                          "description": "LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address.",
+                          "name": "principalTemplate",
+                          "required": true,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Use SASL authentication",
+                          "defaultValue": false,
+                          "name": "SASL",
+                          "required": false,
+                          "type": "checkbox",
+                        },
+                        Object {
+                          "caption": "Use LDAP Search",
+                          "defaultValue": false,
+                          "description": "The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address.",
+                          "dictateFieldVisibility": true,
+                          "name": "search",
+                          "required": false,
+                          "type": "checkbox",
+                        },
+                        Object {
+                          "caption": "Search DN",
+                          "defaultValue": "",
+                          "description": "Distinguished name of the LDAP user that will be used to search the LDAP directory.",
+                          "name": "username",
+                          "required": false,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Password",
+                          "defaultValue": "",
+                          "description": "Password for the LDAP user specified above.",
+                          "name": "password",
+                          "required": false,
+                          "type": "password",
+                        },
+                        Object {
+                          "caption": "Search base",
+                          "defaultValue": "",
+                          "description": "Search base to use. This could be the root of your directory or the base that contains all of your user accounts.",
+                          "name": "searchBase",
+                          "required": false,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Lookup field",
+                          "defaultValue": "sAMAccountName",
+                          "description": "User record field name to use for authenticating via LDAP. The value of this field will be substituted into the principal template to generate a DN for authenticating.",
+                          "name": "lookupField",
+                          "required": false,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Search template",
+                          "defaultValue": "(&(objectClass=user)(mail=\${email}))",
+                          "description": "Filter to apply during the LDAP search. Valid substitution patterns are \${email} and \${uid}.",
+                          "name": "searchTemplate",
+                          "required": false,
+                          "type": "input",
+                        },
+                      ],
+                      "sso": false,
+                      "testLink": "/labkey/ldap-testLdap.view?",
+                    },
+                    Object {
+                      "description": "Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)",
+                      "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml",
+                      "saveLink": "/labkey/saml-samlSaveConfiguration.view?",
+                      "settingsFields": Array [
+                        Object {
+                          "caption": "IdP Signing Certificate",
+                          "defaultValue": "",
+                          "name": "IdPSigningCertificate",
+                          "required": true,
+                          "type": "pem",
+                        },
+                        Object {
+                          "caption": "Encryption Certificate",
+                          "defaultValue": "",
+                          "description": "Encryption Certificate for Encrypted Assertion",
+                          "name": "SpEncryptCert",
+                          "required": false,
+                          "type": "pem",
+                        },
+                        Object {
+                          "caption": "SP Private Key",
+                          "defaultValue": "",
+                          "description": "Private Key for the Encryption Certificate. Required if encryption cert is used.",
+                          "name": "SpPrivateKey",
+                          "required": false,
+                          "type": "pem",
+                        },
+                        Object {
+                          "caption": "IdP SSO URL",
+                          "defaultValue": "",
+                          "description": "Target IdP URL for SSO login",
+                          "name": "IdPSsoUrl",
+                          "required": true,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "Issuer URL",
+                          "defaultValue": "",
+                          "description": "Issuer of SP SAML metadata",
+                          "name": "IssuerUrl",
+                          "required": false,
+                          "type": "input",
+                        },
+                        Object {
+                          "caption": "NameID Format",
+                          "defaultValue": "emailAddress",
+                          "description": "If IdP does not support 'Email Address' then select 'Transient'",
+                          "name": "NameIdFormat",
+                          "options": Object {
+                            "emailAddress": "Email Address",
+                            "transient": "Transient",
+                            "unspecified": "Unspecified",
+                          },
+                          "required": false,
+                          "type": "options",
+                        },
+                        Object {
+                          "caption": "Force Authorization",
+                          "defaultValue": false,
+                          "description": "Require user to login to IdP even if they already have an active SSO session.",
+                          "name": "ForceAuth",
+                          "required": false,
+                          "type": "checkbox",
+                        },
+                        Object {
+                          "caption": "EntityId",
+                          "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>.",
+                          "type": "fixedHtml",
+                        },
+                        Object {
+                          "caption": "Assertion Consumer Service (ACS) URL",
+                          "html": "This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view",
+                          "type": "fixedHtml",
+                        },
+                      ],
+                      "sso": true,
+                    },
+                    Object {
+                      "description": "A trivial, insecure SSO authentication provider (for test purposes only)",
+                      "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
+                      "saveLink": "/labkey/testsso-testSsoSaveConfiguration.view?",
+                      "settingsFields": Array [],
+                      "sso": true,
+                    },
+                  ]
+                }
               />
               <AuthRow
+                authConfig={
+                  Object {
+                    "description": "Standard database authentication",
+                    "enabled": true,
+                    "provider": "Database",
+                  }
+                }
                 canEdit={true}
-                description="Standard database authentication"
                 draggable={false}
-                enabled={true}
-                provider="Database"
                 toggleModalOpen={[Function]}
               />
             </div>
@@ -129,6 +381,208 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               canEdit={true}
               configType="ssoConfigurations"
               isDragDisabled={false}
+              providers={
+                Array [
+                  Object {
+                    "description": "Central Authentication Service (CAS)",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
+                    "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
+                    "settingsFields": Array [
+                      Object {
+                        "caption": "CAS Server URL",
+                        "defaultValue": "",
+                        "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+                        "name": "serverUrl",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Default to CAS Login",
+                        "defaultValue": false,
+                        "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+                        "name": "autoRedirect",
+                        "required": false,
+                        "type": "checkbox",
+                      },
+                    ],
+                    "sso": true,
+                  },
+                  Object {
+                    "description": "Uses the LDAP protocol to authenticate against an institution's directory server",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap",
+                    "saveLink": "/labkey/ldap-ldapSaveConfiguration.view?",
+                    "settingsFields": Array [
+                      Object {
+                        "caption": "LDAP server URLs",
+                        "defaultValue": "",
+                        "description": "The address(es) of your organization's LDAP server or servers. You can provide a list of multiple servers separated by semicolons. The general form for an LDAP server address is ldap://servername.domain.org",
+                        "name": "servers",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "LDAP domain",
+                        "defaultValue": "labkey.com",
+                        "description": "Email domain that determines which users will authenticate using this LDAP configuration. For example, if set to 'labkey.org', all users who enter xxxxxx@labkey.org will attempt authentication using this configuration. Specify '*' to attempt LDAP authentication on all email addresses entered, regardless of domain.",
+                        "name": "domain",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "LDAP principal template",
+                        "defaultValue": "\${email}",
+                        "description": "LDAP principal template that matches the DN requirements of the configured LDAP server(s). The template supports substitution syntax; include \${email} to substitute the user's full email address and \${uid} to substitute the left part of the user's email address.",
+                        "name": "principalTemplate",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Use SASL authentication",
+                        "defaultValue": false,
+                        "name": "SASL",
+                        "required": false,
+                        "type": "checkbox",
+                      },
+                      Object {
+                        "caption": "Use LDAP Search",
+                        "defaultValue": false,
+                        "description": "The LDAP Search option is rarely needed. It is useful when the LDAP server is configured to authenticate with a user name that is unrelated to the user's email address.",
+                        "dictateFieldVisibility": true,
+                        "name": "search",
+                        "required": false,
+                        "type": "checkbox",
+                      },
+                      Object {
+                        "caption": "Search DN",
+                        "defaultValue": "",
+                        "description": "Distinguished name of the LDAP user that will be used to search the LDAP directory.",
+                        "name": "username",
+                        "required": false,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Password",
+                        "defaultValue": "",
+                        "description": "Password for the LDAP user specified above.",
+                        "name": "password",
+                        "required": false,
+                        "type": "password",
+                      },
+                      Object {
+                        "caption": "Search base",
+                        "defaultValue": "",
+                        "description": "Search base to use. This could be the root of your directory or the base that contains all of your user accounts.",
+                        "name": "searchBase",
+                        "required": false,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Lookup field",
+                        "defaultValue": "sAMAccountName",
+                        "description": "User record field name to use for authenticating via LDAP. The value of this field will be substituted into the principal template to generate a DN for authenticating.",
+                        "name": "lookupField",
+                        "required": false,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Search template",
+                        "defaultValue": "(&(objectClass=user)(mail=\${email}))",
+                        "description": "Filter to apply during the LDAP search. Valid substitution patterns are \${email} and \${uid}.",
+                        "name": "searchTemplate",
+                        "required": false,
+                        "type": "input",
+                      },
+                    ],
+                    "sso": false,
+                    "testLink": "/labkey/ldap-testLdap.view?",
+                  },
+                  Object {
+                    "description": "Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml",
+                    "saveLink": "/labkey/saml-samlSaveConfiguration.view?",
+                    "settingsFields": Array [
+                      Object {
+                        "caption": "IdP Signing Certificate",
+                        "defaultValue": "",
+                        "name": "IdPSigningCertificate",
+                        "required": true,
+                        "type": "pem",
+                      },
+                      Object {
+                        "caption": "Encryption Certificate",
+                        "defaultValue": "",
+                        "description": "Encryption Certificate for Encrypted Assertion",
+                        "name": "SpEncryptCert",
+                        "required": false,
+                        "type": "pem",
+                      },
+                      Object {
+                        "caption": "SP Private Key",
+                        "defaultValue": "",
+                        "description": "Private Key for the Encryption Certificate. Required if encryption cert is used.",
+                        "name": "SpPrivateKey",
+                        "required": false,
+                        "type": "pem",
+                      },
+                      Object {
+                        "caption": "IdP SSO URL",
+                        "defaultValue": "",
+                        "description": "Target IdP URL for SSO login",
+                        "name": "IdPSsoUrl",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Issuer URL",
+                        "defaultValue": "",
+                        "description": "Issuer of SP SAML metadata",
+                        "name": "IssuerUrl",
+                        "required": false,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "NameID Format",
+                        "defaultValue": "emailAddress",
+                        "description": "If IdP does not support 'Email Address' then select 'Transient'",
+                        "name": "NameIdFormat",
+                        "options": Object {
+                          "emailAddress": "Email Address",
+                          "transient": "Transient",
+                          "unspecified": "Unspecified",
+                        },
+                        "required": false,
+                        "type": "options",
+                      },
+                      Object {
+                        "caption": "Force Authorization",
+                        "defaultValue": false,
+                        "description": "Require user to login to IdP even if they already have an active SSO session.",
+                        "name": "ForceAuth",
+                        "required": false,
+                        "type": "checkbox",
+                      },
+                      Object {
+                        "caption": "EntityId",
+                        "html": "The entityId for this server is the base server URL: http://localhost:8080<br>You can configure the base server URL on the <a href=\\"/labkey/admin-customizeSite.view?\\" target=\\"_customize\\">Customize Site page</a>.",
+                        "type": "fixedHtml",
+                      },
+                      Object {
+                        "caption": "Assertion Consumer Service (ACS) URL",
+                        "html": "This is relative to the base server URL. The ACS URL for this server is: http://localhost:8080/labkey/saml-validate.view",
+                        "type": "fixedHtml",
+                      },
+                    ],
+                    "sso": true,
+                  },
+                  Object {
+                    "description": "A trivial, insecure SSO authentication provider (for test purposes only)",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
+                    "saveLink": "/labkey/testsso-testSsoSaveConfiguration.view?",
+                    "settingsFields": Array [],
+                    "sso": true,
+                  },
+                ]
+              }
             />
           }
         />
@@ -138,6 +592,32 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
         title="Secondary"
       >
         <SecondaryTab
+          addNewSecondaryDropdown={
+            Array [
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                0
+                 : 
+                Require two-factor authentication via Duo
+              </MenuItem>,
+              <MenuItem
+                bsClass="dropdown"
+                disabled={false}
+                divider={false}
+                header={false}
+                onClick={[Function]}
+              >
+                1
+                 : 
+                Adds a trivial, insecure secondary authentication requirement (for test purposes only)
+              </MenuItem>,
+            ]
+          }
           canEdit={true}
           secondaryTabDuo={
             <DragAndDropPane
@@ -176,6 +656,60 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               canEdit={true}
               configType="secondaryConfigurations"
               isDragDisabled={false}
+              providers={
+                Array [
+                  Object {
+                    "description": "Require two-factor authentication via Duo",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
+                    "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
+                    "settingsFields": Array [
+                      Object {
+                        "caption": "Integration Key",
+                        "defaultValue": "",
+                        "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+                        "name": "integrationKey",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "Secret Key",
+                        "defaultValue": "",
+                        "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+                        "name": "secretKey",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "API Hostname",
+                        "defaultValue": "",
+                        "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
+                        "name": "apiHostname",
+                        "required": true,
+                        "type": "input",
+                      },
+                      Object {
+                        "caption": "User Identifier",
+                        "defaultValue": "UserID",
+                        "description": "Choose the way LabKey will match with Duo accounts.",
+                        "name": "userIdentifier",
+                        "options": Object {
+                          "FullEmailAddress": "Full Email Address",
+                          "UserID": "User ID",
+                          "UserName": "User Name",
+                        },
+                        "required": true,
+                        "type": "options",
+                      },
+                    ],
+                  },
+                  Object {
+                    "description": "Adds a trivial, insecure secondary authentication requirement (for test purposes only)",
+                    "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
+                    "saveLink": "/labkey/testsecondary-testSecondarySaveConfiguration.view?",
+                    "settingsFields": Array [],
+                  },
+                ]
+              }
             />
           }
         />
@@ -203,6 +737,7 @@ exports[`<AuthConfigMasterPanel/> View-only mode 1`] = `
   >
     <a
       className="configurations__help-link"
+      href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule"
     >
       Get help with authentication
     </a>

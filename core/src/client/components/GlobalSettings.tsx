@@ -41,7 +41,7 @@ interface State {
 export default class GlobalSettings extends PureComponent<Props, State> {
     render() {
         let rowTexts = ROW_TEXTS;
-        const { canEdit, authCount, checkGlobalAuthBox } = this.props;
+        const { canEdit, authCount, checkGlobalAuthBox, globalSettings } = this.props;
 
         // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
         if (authCount == 1) {
@@ -52,7 +52,7 @@ export default class GlobalSettings extends PureComponent<Props, State> {
             <div className="global-settings__text-row" key={text.id}>
                 <FACheckBox
                     key={text.id}
-                    checked={this.props[text.id]}
+                    checked={this.props.globalSettings[text.id]}
                     canEdit={canEdit}
                     onClick={() => checkGlobalAuthBox(text.id)}
                 />

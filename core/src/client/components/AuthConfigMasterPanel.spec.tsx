@@ -10,6 +10,8 @@ import {
     FORM_CONFIGURATIONS,
     SECONDARY_CONFIGURATIONS,
     HELP_LINK,
+    PRIMARY_PROVIDERS,
+    SECONDARY_PROVIDERS,
 } from '../../../test/data';
 
 import AuthConfigMasterPanel from './AuthConfigMasterPanel';
@@ -24,14 +26,16 @@ describe('<AuthConfigMasterPanel/>', () => {
             onDragEnd: onDragEnd, toggleModalOpen: toggleModalOpen,
             onDelete: onDelete, updateAuthRowsAfterSave: updateAuthRowsAfterSave
         };
+
         const component = (
             <AuthConfigMasterPanel
                 formConfigurations={FORM_CONFIGURATIONS}
                 ssoConfigurations={SSO_CONFIGURATIONS}
                 secondaryConfigurations={SECONDARY_CONFIGURATIONS}
+                primaryProviders={PRIMARY_PROVIDERS}
+                secondaryProviders={SECONDARY_PROVIDERS}
                 helpLink={HELP_LINK}
                 canEdit={true}
-                isDragDisabled={false}
                 actions={actionFns}
             />
         );
@@ -43,10 +47,14 @@ describe('<AuthConfigMasterPanel/>', () => {
     test('View-only mode', () => {
         const component = (
             <AuthConfigMasterPanel
-                canEdit={false}
-                ssoConfigurations={SSO_CONFIGURATIONS}
                 formConfigurations={FORM_CONFIGURATIONS}
+                ssoConfigurations={SSO_CONFIGURATIONS}
                 secondaryConfigurations={SECONDARY_CONFIGURATIONS}
+                primaryProviders={PRIMARY_PROVIDERS}
+                secondaryProviders={SECONDARY_PROVIDERS}
+                helpLink={HELP_LINK}
+                canEdit={false}
+                actions={{onDragEnd: jest.fn, onDelete: jest.fn, updateAuthRowsAfterSave: jest.fn, toggleModalOpen: jest.fn}}
             />
         );
 
