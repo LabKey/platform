@@ -40,7 +40,7 @@ public class VersionNumber implements Serializable
         if (null == version || version.length() == 0)
             throw new RuntimeException("Null or empty version number string!");
 
-        String versionParts[] = version.split("\\.");
+        String[] versionParts = version.split("\\.");
 
         if (versionParts.length == 0)
             throw new RuntimeException("Invalid version number string ('" + version + "')");
