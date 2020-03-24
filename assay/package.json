@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.39.1-fb-npmPackageUpdates.0"
+    "@labkey/components": "0.39.2"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
