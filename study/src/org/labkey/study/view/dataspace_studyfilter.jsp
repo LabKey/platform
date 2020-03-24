@@ -53,7 +53,7 @@
     Container project = getContainer().getProject();
     ActionURL finderURL = null;
     if (immport != null && project != null && project.getActiveModules().contains(immport))
-        finderURL = new ActionURL("immport", "dataFinder.view", project);
+        finderURL = new ActionURL("immport", "dataFinderRedirect.view", project);
     List<Study> studies = new ArrayList<>();
     if (hasStudy)
     {

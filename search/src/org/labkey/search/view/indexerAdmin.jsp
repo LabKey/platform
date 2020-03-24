@@ -46,7 +46,7 @@ else
 {
     %><p><labkey:form method="POST" action="<%=buildURL(SearchController.AdminAction.class)%>">
         <table>
-            <%=getTroubleshooterWarning(HtmlString.unsafe("<br>"))%>
+            <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
             <tr>
                 <td>Path to full-text search index:&nbsp;</td>
                 <td><input name="indexPath" size="80" value="<%=h(SearchPropertyManager.getIndexDirectory().getPath())%>"></td>

@@ -1175,7 +1175,8 @@ public class IssuesController extends SpringActionController
                 for (int curIssueId : newIssues)
                 {
                     Issue relatedIssue = ChangeSummary.relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
+                    if (null != relatedIssue)
+                        IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
                 }
 
                 // this list represents all the ids which will need related handling for dropping a relatedIssue entry

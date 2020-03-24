@@ -22,6 +22,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
@@ -37,7 +38,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -368,6 +368,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
     }
 
+    // Disallow creating a run with inputs which are also outputs
+    private void checkForCycles(Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
+    {
+        for (ExpRunItem input : inputs.keySet())
+        {
+            if (outputs.containsKey(input))
+            {
+                String role = outputs.get(input);
+                throw new ExperimentException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
+            }
+        }
+    }
+
     /**
      * Enables the implementor to decide how to save the passed in ExpRun.  The default implementation deletes the
      * run and recreates it.  A custom implementation could choose to enforce that only certain aspects of the
@@ -404,6 +417,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (material != null)
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
+
+        checkForCycles(inputData, outputData);
+        checkForCycles(inputMaterial, outputMaterial);
+
         saveExperimentRun(context, protocol, batch, run, runJsonObject, dataArray, inputData, outputData, inputMaterial, outputMaterial);
     }
 

@@ -29,26 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ApiUsageException;
-import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.LabKeyError;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReadOnlyApiAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -100,6 +81,7 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
@@ -124,6 +106,8 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineRootContainerTree;
 import org.labkey.api.pipeline.PipelineService;
@@ -169,6 +153,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.DOM;
+import org.labkey.api.util.DOM.LK;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -200,30 +185,7 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.ChooseExperimentTypeBean;
-import org.labkey.experiment.ConfirmDeleteView;
-import org.labkey.experiment.CustomPropertiesView;
-import org.labkey.experiment.DataClassWebPart;
-import org.labkey.experiment.DerivedSamplePropertyHelper;
-import org.labkey.experiment.DotGraph;
-import org.labkey.experiment.ExpDataFileListener;
-import org.labkey.experiment.ExperimentRunDisplayColumn;
-import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.LSIDRelativizer;
-import org.labkey.experiment.LineageGraphDisplayColumn;
-import org.labkey.experiment.MoveRunsBean;
-import org.labkey.experiment.NoPipelineRootSetView;
-import org.labkey.experiment.ParentChildView;
-import org.labkey.experiment.ProtocolApplicationDisplayColumn;
-import org.labkey.experiment.ProtocolDisplayColumn;
-import org.labkey.experiment.ProtocolWebPart;
-import org.labkey.experiment.RunGroupWebPart;
-import org.labkey.experiment.SampleSetDisplayColumn;
-import org.labkey.experiment.SampleSetWebPart;
-import org.labkey.experiment.StandardAndCustomPropertiesView;
-import org.labkey.experiment.XarExportPipelineJob;
-import org.labkey.experiment.XarExportType;
-import org.labkey.experiment.XarExporter;
+import org.labkey.experiment.*;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -288,12 +250,20 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
+import static org.labkey.api.exp.api.SampleSetService.MATERIAL_INPUTS_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
 import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.action;
 import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.id;
+import static org.labkey.api.util.DOM.Attribute.method;
+import static org.labkey.api.util.DOM.Attribute.name;
 import static org.labkey.api.util.DOM.Attribute.src;
+import static org.labkey.api.util.DOM.Attribute.type;
+import static org.labkey.api.util.DOM.Attribute.value;
 import static org.labkey.api.util.DOM.Attribute.width;
 import static org.labkey.api.util.DOM.IMG;
+import static org.labkey.api.util.DOM.INPUT;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.TR;
@@ -679,15 +649,6 @@ public class ExperimentController extends SpringActionController
             DomainKind domainKind = _source.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _source.getDomain()))
             {
-                ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
-                if (editURL != null)
-                {
-                    editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                    ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
-                    editTypeButton.setDisplayPermission(UpdatePermission.class);
-                    detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
-                }
-
                 if (domainKind instanceof SampleSetDomainKind)
                 {
                     ActionURL updateURL = new ActionURL(UpdateMaterialSourceAction.class, _source.getContainer());
@@ -706,6 +667,17 @@ public class ExperimentController extends SpringActionController
                     deleteButton.setURL(deleteURL);
                     deleteButton.setActionType(ActionButton.Action.LINK);
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(deleteButton);
+                }
+                else
+                {
+                    ActionURL editURL = domainKind.urlEditDefinition(_source.getDomain(), new ViewBackgroundInfo(_source.getContainer(), getUser(), getViewContext().getActionURL()));
+                    if (editURL != null)
+                    {
+                        editURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+                        ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields");
+                        editTypeButton.setDisplayPermission(UpdatePermission.class);
+                        detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
+                    }
                 }
             }
 
@@ -1236,6 +1208,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("dataClass");
             return root.addChild("Create Data Class");
         }
     }
@@ -1448,12 +1421,30 @@ public class ExperimentController extends SpringActionController
             CustomPropertiesView cpv = new CustomPropertiesView(_experimentRun.getLSID(), getContainer());
 
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, cpv));
+
+            StringBuilder updateLinks = new StringBuilder();
+            List<ExpRunEditor> runEditors = ExperimentService.get().getRunEditors();
+            for (ExpRunEditor editor : runEditors)
+            {
+                if (editor.isProtocolEditor(form.lookupRun().getProtocol()))
+                {
+                    updateLinks.append(PageFlowUtil.link("edit " + editor.getDisplayName() + " run")
+                            .href(editor.getEditUrl(getContainer()).addParameter("rowId", form.getRowId())));
+                }
+            }
+
+            if (updateLinks.length() > 0)
+            {
+                HtmlView view = new HtmlView(updateLinks.toString());
+                vbox.addView(view);
+            }
+
             VBox lowerView = createLowerView(_experimentRun, errors);
             lowerView.setFrame(WebPartView.FrameType.PORTAL);
             lowerView.setTitle("Run Details");
             NavTree tree = new NavTree("");
             File runRoot = _experimentRun.getFilePathRoot();
-            if (runRoot != null && NetworkDrive.exists(runRoot))
+            if (NetworkDrive.exists(runRoot))
             {
                 if (!runRoot.isDirectory())
                 {
@@ -1469,11 +1460,16 @@ public class ExperimentController extends SpringActionController
                     }
                 }
             }
+
+            final String exportFilesFormId = "exportFilesForm";
             NavTree downloadFiles = new NavTree("Download all files");
-
-            downloadFiles.setScript("exportFiles();");
-
+            downloadFiles.setScript("document.getElementById('" + exportFilesFormId + "').submit();");
             tree.addChild(downloadFiles);
+
+            // CONSIDER: Show modal dialog using ExperimentService.get().createRunExportView()
+            NavTree exportXarFiles = new NavTree("Export XAR");
+            exportXarFiles.setScript("LABKEY.Experiment.exportRuns({runIds: [" + _experimentRun.getRowId() + "] });");
+            tree.addChild(exportXarFiles);
 
             lowerView.setNavMenu(tree);
             lowerView.setIsWebPart(false);
@@ -1481,24 +1477,21 @@ public class ExperimentController extends SpringActionController
             vbox.addView(lowerView);
             vbox.addView(new ExperimentRunGroupsView(getUser(), getContainer(), _experimentRun, getViewContext().getActionURL(), errors));
 
-            StringBuilder html = new StringBuilder();
-            html.append("<form id=\"exportFilesForm\" method=\"POST\" action=\"");
-            html.append(new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer()));
-            html.append("\"><input type=\"hidden\" value=\"ExportSingleRun\" name=\"");
-            html.append(DataRegionSelection.DATA_REGION_SELECTION_KEY);
-            html.append("\" /><input type=\"hidden\" name=\"");
-            html.append(DataRegion.SELECT_CHECKBOX_NAME);
-            html.append("\" value=\"");
-            html.append(_experimentRun.getRowId());
-            html.append("\" /><input type=\"hidden\" name=\"zipFileName\" value=\"");
-            html.append(PageFlowUtil.filter(_experimentRun.getName()));
-            html.append(".zip\" />");
-            html.append("<input type=\"hidden\" name=\"").append(CSRFUtil.csrfName).append("\"");
-            html.append(" value=\"").append(CSRFUtil.getExpectedToken(getViewContext())).append("\"");
-            html.append("/></form>");
-            html.append("<script>function exportFiles() { document.getElementById('exportFilesForm').submit(); }</script>");
+            DOM.Renderable exportFilesForm = LK.FORM(at(
+                    id, exportFilesFormId,
+                    method, "POST",
+                    action, new ActionURL(ExportRunFilesAction.class, _experimentRun.getContainer())),
+                    INPUT(at(type, "hidden",
+                            name, DataRegionSelection.DATA_REGION_SELECTION_KEY,
+                            value, "ExportSingleRun")),
+                    INPUT(at(type, "hidden",
+                            name, DataRegion.SELECT_CHECKBOX_NAME,
+                            value, _experimentRun.getRowId())),
+                    INPUT(at(type, "hidden",
+                            name, "zipFileName",
+                            value, _experimentRun.getName() + ".zip")));
 
-            HtmlView hiddenFormView = new HtmlView(html.toString());
+            HtmlView hiddenFormView = new HtmlView(exportFilesForm);
             vbox.addView(hiddenFormView);
 
             return vbox;
@@ -3510,24 +3503,6 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignSampleSetPermission.class)
-    public class UpdateMaterialSourceApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSetImpl sampleSet = form.getSampleSet(getContainer());
-            form.updateSampleSet(getContainer(), getUser(), sampleSet);
-            return getSampleSetApiResponse(sampleSet);
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetAction extends BaseSampleSetAction
     {
         @Override
@@ -3548,23 +3523,6 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Create Sample Set");
-        }
-    }
-
-    @RequiresPermission(DesignSampleSetPermission.class)
-    public class CreateSampleSetApiAction extends MutatingApiAction<BaseSampleSetForm>
-    {
-        @Override
-        public void validateForm(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
-        @Override
-        public Object execute(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-            return getSampleSetApiResponse(sampleSet);
         }
     }
 
@@ -3627,13 +3585,14 @@ public class ExperimentController extends SpringActionController
             form.setName(source.getName());
             form.setNameExpression(source.getNameExpression());
             form.setImportAliasJSON(source.getImportAliasJson());
+            form.setDomainId(source.getDomain().getTypeId());
         }
 
         @Override
         public ModelAndView getView(BaseSampleSetForm form, boolean reshow, BindException errors) throws Exception
         {
             initForm(form);
-            return new JspView<>("/org/labkey/experiment/createSampleSet.jsp", form, errors);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
         }
 
         @Override
@@ -3655,7 +3614,7 @@ public class ExperimentController extends SpringActionController
         private Integer rowId;
         private String lsid;
 
-        public static final String NEW_SAMPLE_SET_VALUE = "{{this_sample_set}}";
+        private Integer domainId;
 
         //Parameter used by the Flow module
         private Boolean nameReadOnly = false;
@@ -3764,8 +3723,8 @@ public class ExperimentController extends SpringActionController
                 {
                     String key = getImportAliasKeys().get(i);
                     String val = getImportAliasValues().get(i);
-                    if (NEW_SAMPLE_SET_VALUE.equals(val))
-                        val = "materialInputs/" + this.getName();
+                    if (SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(val))
+                        val = MATERIAL_INPUTS_PREFIX + this.getName();
 
                     aliases.put(key, val);
                 }
@@ -3841,6 +3800,16 @@ public class ExperimentController extends SpringActionController
             {
                 throw new ExperimentException("Couldn't create sample set: ", e);
             }
+        }
+
+        public void setDomainId(Integer domainId)
+        {
+            this.domainId = domainId;
+        }
+
+        public Integer getDomainId()
+        {
+            return this.domainId;
         }
     }
 
@@ -3928,7 +3897,7 @@ public class ExperimentController extends SpringActionController
             for (String parent : importParents)
             {
                 //check if it is of the expected format or targeting the to be created sampleset
-                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || BaseSampleSetForm.NEW_SAMPLE_SET_VALUE.equals(parent)))
+                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(parent)))
                     errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
             }
         }
@@ -4248,8 +4217,8 @@ public class ExperimentController extends SpringActionController
     public static class ExportOptionsForm extends ExperimentRunListForm
     {
         private String _error;
-        private String _exportType;
-        private String _lsidOutputType;
+        private XarExportType _exportType;
+        private LSIDRelativizer _lsidOutputType;
         private String _xarFileName;
         private String _zipFileName;
         private String _fileExportType;
@@ -4268,12 +4237,12 @@ public class ExperimentController extends SpringActionController
             _error = error;
         }
 
-        public String getExportType()
+        public XarExportType getExportType()
         {
             return _exportType;
         }
 
-        public String getLsidOutputType()
+        public LSIDRelativizer getLsidOutputType()
         {
             return _lsidOutputType;
         }
@@ -4308,12 +4277,12 @@ public class ExperimentController extends SpringActionController
             _zipFileName = zipFileName;
         }
 
-        public void setExportType(String exportType)
+        public void setExportType(XarExportType exportType)
         {
             _exportType = exportType;
         }
 
-        public void setLsidOutputType(String lsidOutputType)
+        public void setLsidOutputType(LSIDRelativizer lsidOutputType)
         {
             _lsidOutputType = lsidOutputType;
         }
@@ -4397,49 +4366,27 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private ActionURL exportXAR(XarExportSelection selection, String lsidRelativizerName, String exportTypeName, String fileName)
+    private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable String fileName)
             throws ExperimentException, IOException, PipelineValidationException
     {
-        final LSIDRelativizer lsidRelativizer;
-        final XarExportType exportType;
-        if (lsidRelativizerName == null)
-        {
+        return exportXAR(selection, (LSIDRelativizer)null, (XarExportType)null, fileName);
+    }
+
+    private ActionURL exportXAR(@NotNull XarExportSelection selection, @Nullable LSIDRelativizer lsidRelativizer, @Nullable XarExportType exportType, @Nullable String fileName)
+            throws ExperimentException, IOException, PipelineValidationException
+    {
+        if (lsidRelativizer == null)
             lsidRelativizer = LSIDRelativizer.FOLDER_RELATIVE;
-        }
-        else
-        {
-            try
-            {
-                lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new NotFoundException("No such LSID relativizer available: " + lsidRelativizerName);
-            }
-        }
-        if (exportTypeName == null)
-        {
+
+        if (exportType == null)
             exportType = XarExportType.BROWSER_DOWNLOAD;
-        }
-        else
-        {
-            try
-            {
-                exportType = XarExportType.valueOf(exportTypeName);
-            }
-            catch (IllegalArgumentException e)
-            {
-                throw new NotFoundException("No such export type available: " + exportTypeName);
-            }
-        }
 
         if (fileName == null || fileName.equals(""))
-        {
             fileName = "export.xar";
-        }
+
         fileName = fixupExportName(fileName);
         String xarXmlFileName = null;
-        if (fileName.endsWith(".xar") || fileName.endsWith(".XAR") || fileName.endsWith("Xar"))
+        if (StringUtils.endsWithIgnoreCase(fileName, ".xar"))
             xarXmlFileName = fileName + ".xml";
 
         switch (exportType)
@@ -4527,7 +4474,12 @@ public class ExperimentController extends SpringActionController
 
         public List<ExpRun> lookupRuns(ExportOptionsForm form)
         {
-            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+            Set<Integer> runIds;
+            if (form.getRunIds() != null && form.getRunIds().length > 0)
+                runIds = new HashSet<>(Arrays.asList(form.getRunIds()));
+            else
+                runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), form.getDataRegionSelectionKey(), false);
+
             if (runIds.isEmpty())
             {
                 throw new NotFoundException();
@@ -4612,7 +4564,7 @@ public class ExperimentController extends SpringActionController
             }
             selection.addRuns(lookupRuns(form));
 
-            _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+            _resultURL = exportXAR(selection, form.getZipFileName());
             if (form.getDataRegionSelectionKey() != null)
                 DataRegionSelection.clearAll(getViewContext(), form.getDataRegionSelectionKey());
             return true;
@@ -4645,7 +4597,7 @@ public class ExperimentController extends SpringActionController
                 selection.setIncludeXarXml(false);
                 selection.addDataIds(dataIds);
 
-                _resultURL = exportXAR(selection, null, null, form.getZipFileName());
+                _resultURL = exportXAR(selection, form.getZipFileName());
                 return true;
             }
             catch (NumberFormatException e)
@@ -4659,6 +4611,7 @@ public class ExperimentController extends SpringActionController
     {
         private String _dataRegionSelectionKey;
         private Integer _expRowId;
+        private Integer[] _runIds;
 
         public String getDataRegionSelectionKey()
         {
@@ -4678,6 +4631,16 @@ public class ExperimentController extends SpringActionController
         public void setExpRowId(Integer expRowId)
         {
             _expRowId = expRowId;
+        }
+
+        public Integer[] getRunIds()
+        {
+            return _runIds;
+        }
+
+        public void setRunIds(Integer[] runIds)
+        {
+            _runIds = runIds;
         }
 
         public ExpExperiment lookupExperiment()
