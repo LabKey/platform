@@ -8,6 +8,7 @@ import DragAndDropPane from './DragAndDropPane';
 import AuthRow from './AuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import {LOGIN_FORM_TIP_TEXT, SSO_TIP_TEXT} from "../AuthenticationConfiguration/constants";
+import {Actions, AuthConfig, AuthConfigProvider} from "../AuthenticationConfiguration/models";
 
 interface ViewOnlyAuthConfigRowsProps {
     data: AuthConfig[];
@@ -26,7 +27,7 @@ class ViewOnlyAuthConfigRows extends PureComponent<ViewOnlyAuthConfigRowsProps> 
                         key={item.configuration}
                         canEdit={false}
                         draggable={false}
-                        modalType={{ ...providers[item.provider] }} // RP TODO
+                        modalType={{ ...providers[item.provider] }}
                     />
                 ))}
             </div>
@@ -132,7 +133,6 @@ interface Props {
     secondaryProviders: AuthConfigProvider[];
     helpLink: string;
     canEdit: boolean;
-    isDragDisabled: boolean;
     actions: Actions;
 }
 
@@ -140,6 +140,7 @@ interface State {
     primaryModalOpen?: boolean;
     secondaryModalOpen?: boolean;
     addModalType?: string | null;
+    modalOpen?: boolean;
 }
 
 export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
@@ -149,13 +150,20 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
             primaryModalOpen: false,
             secondaryModalOpen: false,
             addModalType: null,
+            modalOpen: false,
         };
     }
 
+    // Whether or not a Create New AuthConfig modal is open
     onToggleModal = (toggled: string): void => {
         this.setState(() => ({
             [toggled]: !this.state[toggled],
         }));
+    };
+
+    // Whether or not a AuthRow modal is open
+    toggleModalOpen = (modalOpen: boolean): void => {
+        this.setState({ modalOpen });
     };
 
     determineConfigType = (addModalType: string): string => {
@@ -210,12 +218,8 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
             ));
 
         const dbAuth = formConfigurations.slice(-1)[0];
+        const isDragDisabled = this.state.modalOpen;
 
-        const isDragDisabled1 = primaryModalOpen || secondaryModalOpen;
-        // console.log(primaryModalOpen ? "true1" : "false1");
-        // console.log(secondaryModalOpen ? "true2" : "false2");
-
-        const isDragDisabled = this.props.isDragDisabled;
         const primaryTabLoginForm =
             canEdit ? (
                 <div>
@@ -224,13 +228,13 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                         authConfigs={formConfigurations.slice(0, -1)} // Database config is excluded from DragAndDrop
                         providers={primaryProviders}
                         isDragDisabled={isDragDisabled}
-                        actions={actions}
+                        actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
                         canEdit={canEdit}
                     />
 
                     <AuthRow
                         draggable={false}
-                        toggleModalOpen={actions.toggleModalOpen}
+                        toggleModalOpen={this.toggleModalOpen}
                         canEdit={canEdit}
                         authConfig={{description: dbAuth.description, provider: dbAuth.provider, enabled: dbAuth.enabled}}
                     />
@@ -246,7 +250,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     authConfigs={ssoConfigurations}
                     providers={primaryProviders}
                     isDragDisabled={isDragDisabled}
-                    actions={actions}
+                    actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
                     canEdit={canEdit}
                 />
             ) : (
@@ -260,17 +264,17 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                     authConfigs={secondaryConfigurations}
                     providers={secondaryProviders}
                     isDragDisabled={isDragDisabled}
-                    actions={actions}
+                    actions={{...actions, toggleModalOpen: this.toggleModalOpen}}
                     canEdit={canEdit}
                 />
             ) : (
                 <ViewOnlyAuthConfigRows data={secondaryConfigurations} providers={secondaryProviders} />
             );
 
-        const DBAuthConfig = {description: addModalType + ' Configuration', enabled: true, provider: addModalType};
-        const dataBaseModal = (primaryModalOpen || secondaryModalOpen) &&
+        const authConfig = {description: addModalType + ' Configuration', enabled: true, provider: addModalType};
+        const addNewModal = (primaryModalOpen || secondaryModalOpen) &&
                 <DynamicConfigurationModal
-                        authConfig={DBAuthConfig}
+                        authConfig={authConfig}
                         modalType={
                             primaryModalOpen
                                 ? primaryProviders[addModalType]
@@ -284,7 +288,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                             this.onToggleModal(
                                 primaryModalOpen ? 'primaryModalOpen' : 'secondaryModalOpen'
                             );
-                            actions.toggleModalOpen(false);
+                            this.toggleModalOpen(false);
                         }}
                 />;
 
@@ -298,7 +302,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
                         Get help with authentication
                     </a>
 
-                    {dataBaseModal}
+                    {addNewModal}
 
                     <Tabs defaultActiveKey={1} id="tab-panel">
                         <Tab eventKey={1} title="Primary">

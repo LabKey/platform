@@ -8,7 +8,8 @@ import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
 
 import "@labkey/components/dist/components.css"
-// import './authenticationConfiguration.scss';
+import {AuthConfig, AuthConfigProvider, Actions, GlobalSettingsOptions} from "./models";
+import './authenticationConfiguration.scss';
 
 interface State {
     formConfigurations: AuthConfig[];
@@ -21,7 +22,6 @@ interface State {
     canEdit: boolean;
     dirtinessData: {[key: string]: AuthConfig[] };
     dirty: boolean;
-    modalOpen: boolean;
     authCount: number;
 }
 
@@ -34,7 +34,6 @@ export class App extends PureComponent<{}, Partial<State>> {
             onDragEnd: this.onDragEnd,
             onDelete: this.onDelete,
             updateAuthRowsAfterSave: this.updateAuthRowsAfterSave,
-            toggleModalOpen: this.toggleModalOpen
         };
 
         this.state = {
@@ -48,7 +47,6 @@ export class App extends PureComponent<{}, Partial<State>> {
             canEdit: false,
             dirtinessData: null,
             dirty: false,
-            modalOpen: false,
             authCount: null,
         };
     }
@@ -90,11 +88,6 @@ export class App extends PureComponent<{}, Partial<State>> {
             e.preventDefault();
             e.returnValue = 'Unsaved changes.';
         }
-    };
-
-    // controls whether or not a authrow modal is open
-    toggleModalOpen = (modalOpen: boolean): void => {
-        this.setState({ modalOpen });
     };
 
     checkGlobalAuthBox = (id: string): void => {
@@ -216,7 +209,6 @@ export class App extends PureComponent<{}, Partial<State>> {
                 alert('Error: ' + error);
             },
             success: function() {
-                // const authCount = this.state.authCount - 1;
                 this.setState({ [configType]: newState });
             },
         });
@@ -239,7 +231,6 @@ export class App extends PureComponent<{}, Partial<State>> {
         const {
             globalSettings,
             dirty,
-            modalOpen,
             formConfigurations,
             ssoConfigurations,
             secondaryConfigurations,
@@ -278,7 +269,6 @@ export class App extends PureComponent<{}, Partial<State>> {
                     secondaryProviders={secondaryProviders}
                     helpLink={helpLink}
                     canEdit={canEdit}
-                    isDragDisabled={modalOpen}
                     actions={this.actions}
                 />
 

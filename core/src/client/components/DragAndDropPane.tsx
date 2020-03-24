@@ -3,6 +3,7 @@ import React, { PureComponent } from 'react';
 import { DragDropContext, Draggable, Droppable } from 'react-beautiful-dnd';
 
 import AuthRow from './AuthRow';
+import {Actions, AuthConfig, AuthConfigProvider} from "../AuthenticationConfiguration/models";
 
 interface Props {
     configType: string;

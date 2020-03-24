@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
 import { ActionURL, Ajax } from '@labkey/api';
+import {AuthConfig, DatabasePasswordRules, DatabasePasswordSettings} from "../AuthenticationConfiguration/models";
 
 const OPTIONS_MAP = {
     Never: 'Never',
@@ -10,7 +11,7 @@ const OPTIONS_MAP = {
     OneYear: 'Every twelve months',
 };
 
-interface Props extends AuthConfig {
+interface Props {
     closeModal: Function;
     canEdit: boolean;
 }

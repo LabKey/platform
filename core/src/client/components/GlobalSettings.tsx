@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import { Panel } from 'react-bootstrap';
 import { LabelHelpTip } from '@labkey/components';
 import FACheckBox from './FACheckBox';
+import {GlobalSettingsOptions} from "../AuthenticationConfiguration/models";
 
 const ROW_TEXTS = [
     {

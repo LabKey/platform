@@ -11,6 +11,7 @@ import {
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
+import {AuthConfig, AuthConfigProvider} from "../AuthenticationConfiguration/models";
 
 interface Props{
     authConfig: AuthConfig;
@@ -51,7 +52,6 @@ export default class AuthRow extends PureComponent<Props, State> {
             configType,
             canEdit,
             draggable,
-            index,
             toggleModalOpen,
             updateAuthRowsAfterSave,
             onDelete
@@ -103,6 +103,9 @@ export default class AuthRow extends PureComponent<Props, State> {
                     canEdit={canEdit}
                 />
         } else {
+            console.log(authConfig);
+            console.log(configType);
+
             modal =
                 <DynamicConfigurationModal
                     authConfig={authConfig}

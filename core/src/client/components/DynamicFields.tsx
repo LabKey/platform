@@ -4,6 +4,7 @@ import {FileAttachmentForm, LabelHelpTip} from "@labkey/components";
 import FACheckBox from "./FACheckBox";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileAlt} from "@fortawesome/free-solid-svg-icons";
+import {AuthConfigField, AuthConfigProvider, InputFieldProps} from "../AuthenticationConfiguration/models";
 
 interface TextInputProps extends InputFieldProps {
     requiredFieldEmpty?: boolean;
@@ -225,7 +226,7 @@ interface DynamicFieldsProps {
 
 export class DynamicFields extends PureComponent<DynamicFieldsProps> {
     render() {
-        const { fields, search, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval } = this.props;
+        const { fields, search, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues } = this.props;
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
             if ('dictateFieldVisibility' in fields[i]) {
@@ -238,17 +239,22 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
         const allFields = fieldsToCreate.map((field, index) => {
             const requiredFieldEmpty = (emptyRequiredFields.indexOf(field.name) !== -1);
 
-            switch (field.type) { //RP TODO
+            switch (field.type) {
                 case 'input':
                     return (
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={this.props.fieldValues[field.name]}
-                            type="text"
+                            value={fieldValues[field.name]}
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
-                            {...field}
+
+                            defaultValue={field.defaultValue}
+                            name={field.name}
+                            caption={field.caption}
+                            description={field.description}
+                            required={field.required}
+                            type={field.type}
                         />
                     );
                 case 'checkbox':
@@ -256,9 +262,15 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <CheckBoxInput
                             key={index}
                             checkCheckBox={checkCheckBox}
-                            value={this.props.fieldValues[field.name]}
+                            value={fieldValues[field.name]}
                             canEdit={canEdit}
-                            {...field}
+
+                            defaultValue={field.defaultValue}
+                            name={field.name}
+                            caption={field.caption}
+                            description={field.description}
+                            required={field.required}
+                            type={field.type}
                         />
                     );
                 case 'password':
@@ -269,10 +281,15 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={this.props.fieldValues[field.name]}
-                            type="password"
+                            value={fieldValues[field.name]}
                             canEdit={canEdit}
-                            {...field}
+
+                            defaultValue={field.defaultValue}
+                            name={field.name}
+                            caption={field.caption}
+                            description={field.description}
+                            required={field.required}
+                            type="password"
                         />
                     );
 
@@ -282,11 +299,16 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                             key={index}
                             onFileChange={onFileChange}
                             onFileRemoval={onFileRemoval}
-                            value={this.props.fieldValues[field.name]}
+                            value={fieldValues[field.name]}
                             index={index + 2} // There are two other FileAttachmentForms (from SSOFields) on modal
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
-                            {...field}
+
+                            defaultValue={field.defaultValue}
+                            name={field.name}
+                            caption={field.caption}
+                            required={field.required}
+                            type={field.type}
                         />
                     );
 
@@ -295,15 +317,28 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <Option
                             key={index}
                             onChange={onChange}
-                            value={this.props.fieldValues[field.name]}
-                            options={field.options}
+                            value={fieldValues[field.name]}
                             canEdit={canEdit}
-                            {...field}
+
+                            options={field.options}
+                            defaultValue={field.defaultValue}
+                            name={field.name}
+                            caption={field.caption}
+                            description={field.description}
+                            required={field.required}
+                            type={field.type}
                         />
                     );
 
                 case 'fixedHtml':
-                    return <FixedHtml key={index} {...field} />;
+                    return (
+                        <FixedHtml
+                            key={index} {...field}
+                            caption={field.caption}
+                            html={field.html}
+                        />
+                    );
+
                 default:
                     return <div> Error: Invalid field type received. </div>;
             }
