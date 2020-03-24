@@ -117,7 +117,7 @@ public class AssayTest extends AbstractAssayTest
         click(Locator.tag("span").withText("manually define fields"));
         resultsPanel.addField(sampleFieldName)
                 .setType(FieldDefinition.ColumnType.Sample)
-                .setSampleTypeLookup(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
         resultsPanel.removeField(""); //remove field added by manual definition link
 
         log("Save initial assay design with sample field set to 'All Samples'");
@@ -151,8 +151,7 @@ public class AssayTest extends AbstractAssayTest
         ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
         designerPage.expandFieldsPanel("Results")
                 .getField(sampleFieldName)
-                .expand()
-                .setSampleTypeLookup(targetSetName);
+                .setSampleType(targetSetName);
         designerPage.clickFinish();
 
         log("Verify updates saved successfully");
@@ -169,8 +168,7 @@ public class AssayTest extends AbstractAssayTest
         designerPage = _assayHelper.clickEditAssayDesign();
         designerPage.expandFieldsPanel("Results")
                 .getField(sampleFieldName)
-                .expand()
-                .setSampleTypeLookup(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
         designerPage.clickFinish();
         assertEquals("Error saving updated sample field", 0, checker().errorsSinceMark());
 
