@@ -8,6 +8,8 @@ import {
 
 import { AppContext } from './util'
 
+import '@labkey/components/dist/components.css';
+
 initQueryGridState();
 
 // window['GG'] = () => {
