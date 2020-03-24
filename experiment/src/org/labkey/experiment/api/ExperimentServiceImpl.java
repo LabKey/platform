@@ -1340,7 +1340,7 @@ public class ExperimentServiceImpl implements ExperimentService
         }
 
         ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+        return rowId == null ? null : dataCache.computeIfAbsent(rowId, svc::getExpData);
     }
 
     @Override
