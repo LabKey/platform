@@ -768,6 +768,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c);
 
+    void registerRunEditor(ExpRunEditor editor);
+
+    @NotNull
+    List<ExpRunEditor> getRunEditors();
+
     /**
      * Kicks off a pipeline job to asynchronously load the XAR from disk
      *
