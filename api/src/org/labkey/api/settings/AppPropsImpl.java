@@ -540,10 +540,11 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail(true)) + "\">contact a system administrator</a>";
     }
 
+    @NotNull
     @Override
     public String getReleaseVersion()
     {
-        return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), "Unknown Release Version");
+        return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), UNKNOWN_VERSION);
     }
 
     @Override

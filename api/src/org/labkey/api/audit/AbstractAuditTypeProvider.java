@@ -29,8 +29,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
@@ -136,8 +134,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             return;
 
         Map<String, Pair<TableInfo.IndexType, List<ColumnInfo>>> existingIndices = getSchema().getTable(domain.getStorageTableName()).getAllIndices();
-        Set<PropertyStorageSpec.Index> newIndices = new HashSet<>();
-        newIndices.addAll(domainKind.getPropertyIndices(domain));
+        Set<PropertyStorageSpec.Index> newIndices = new HashSet<>(domainKind.getPropertyIndices(domain));
         Set<PropertyStorageSpec.Index> toRemove = new HashSet<>();
         for (String name : existingIndices.keySet())
         {
@@ -150,7 +147,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 columnNames[i] = columnIndex.second.get(i).getColumnName();
             }
             PropertyStorageSpec.Index existingIndex = new PropertyStorageSpec.Index(columnIndex.first == TableInfo.IndexType.Unique, columnNames);
-            Boolean foundIt = false;
+            boolean foundIt = false;
             for (PropertyStorageSpec.Index propertyIndex : newIndices)
             {
                 if (PropertyStorageSpec.Index.isSameIndex(propertyIndex, existingIndex))
@@ -330,13 +327,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if(oldCol != null)
         {
             var added = table.addColumn(new AliasedColumn(table, "OldValues", oldCol));
-            added.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(final ColumnInfo colInfo)
-                {
-                    return new DataMapColumn(colInfo);
-                }
-            });
+            added.setDisplayColumnFactory(DataMapColumn::new);
             added.setLabel(OLD_RECORD_PROP_CAPTION);
             oldCol.setHidden(true);
         }
@@ -344,14 +335,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         if(newCol != null)
         {
             var added = table.addColumn(new AliasedColumn(table, "NewValues", newCol));
-            added.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                public DisplayColumn createRenderer(final ColumnInfo colInfo)
-                {
-                    return new DataMapColumn(colInfo);
-                }
-
-            });
+            added.setDisplayColumnFactory(DataMapColumn::new);
             added.setLabel(NEW_RECORD_PROP_CAPTION);
             newCol.setHidden(true);
         }
@@ -361,6 +345,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
             table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
     }
 
+    @Override
     public ActionURL getAuditUrl()
     {
         return AuditLogService.get().getAuditUrl();

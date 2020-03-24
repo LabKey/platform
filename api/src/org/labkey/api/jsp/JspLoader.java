@@ -61,23 +61,18 @@ public class JspLoader
         });
     }
 
-
     /**
      * Create a new JSP page.
      *
-     * @param packageName Dot separated package where the JSP file was in the source tree.  May be null, in which case
-     * "jspFile" should be a full path to the page, starting with "/"
-     * @param jspFile Path to the JSP from the package in which it resides.  For JSP files that are in the same
-     * directory as their controller, pass the package name of the controller, and the filename of the JSP with no
-     * "/"
+     * @param jspFile Full path to the JSP page, starting with "/"
      * @return inited page
      */
-    public static HttpJspPage createPage(String packageName, String jspFile)
+    public static HttpJspPage createPage(String jspFile)
     {
         try
         {
             ServletContext context = ModuleLoader.getServletContext();
-            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, packageName, jspFile);
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, jspFile);
             HttpJspPage ret = clazz.getConstructor().newInstance();
             ret.init(new JspServletConfig(context));
             return ret;
@@ -93,7 +88,7 @@ public class JspLoader
         try
         {
             ServletContext context = ModuleLoader.getServletContext();
-            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, null, jspFile);
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, jspFile);
             return clazz;
         }
         catch (Exception e)
