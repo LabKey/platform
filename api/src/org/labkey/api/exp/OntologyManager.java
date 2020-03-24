@@ -131,7 +131,7 @@ public class OntologyManager
             return null;
         }
     });
-    // Cache a wrapper instead of the DomainDescriptor so we can easily cache misses
+    /** DomainURI, ContainerEntityId -> DomainDescriptor */
     private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
         String domainURI = key.first;
         Container c = ContainerManager.getForId(key.second);
@@ -141,6 +141,13 @@ public class OntologyManager
             return null;
         }
 
+        return fetchDomainDescriptorFromDB(domainURI, c);
+    });
+
+    /** Goes against the DB, bypassing the cache */
+    @Nullable
+    private static DomainDescriptor fetchDomainDescriptorFromDB(String domainURI, Container c)
+    {
         Container proj = c.getProject();
         if (null == proj)
             proj = c;
@@ -164,7 +171,8 @@ public class OntologyManager
             }
         }
         return dd;
-        });
+    }
+
     private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
     private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
     {
@@ -1727,8 +1735,16 @@ public class OntologyManager
     @NotNull
     public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
-        DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
-        String ddInContainerId = ddIn.getContainer().getId();
+        DomainDescriptor dd = null;
+        // Try to find the previous version of the domain
+        if (ddIn.getDomainId() > 0)
+        {
+            dd = new TableSelector(getTinfoDomainDescriptor()).getObject(ddIn.getDomainId(), DomainDescriptor.class);
+        }
+        if (dd == null)
+        {
+            dd = fetchDomainDescriptorFromDB(ddIn.getDomainURI(), ddIn.getContainer());
+        }
 
         if (null == dd)
         {
@@ -1750,19 +1766,14 @@ public class OntologyManager
 
         if (!dd.deepEquals(ddIn))
         {
-            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
+            DomainDescriptor ddToSave = ddIn.edit().setDomainId(dd.getDomainId()).build();
+            dd = Table.update(null, getTinfoDomainDescriptor(), ddToSave, ddToSave.getDomainId());
+            domainDescByURICache.remove(getURICacheKey(ddIn));
+            domainDescByURICache.remove(getURICacheKey(dd));
+            domainDescByIDCache.remove(dd.getDomainId());
+            domainPropertiesCache.remove(getURICacheKey(ddIn));
+            domainDescByContainerCache.clear();
         }
-        return dd;
-    }
-
-    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
-    {
-        assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescByURICache.remove(getURICacheKey(dd));
-        domainDescByIDCache.remove(dd.getDomainId());
-        domainPropertiesCache.remove(getURICacheKey(dd));
-        domainDescByContainerCache.clear();
         return dd;
     }
 
