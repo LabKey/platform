@@ -162,7 +162,7 @@ public class AssayTest extends AbstractAssayTest
 //        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change
         assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
 
-        log("Edit assay design and change Sample field to point to back to 'All Samples'");
+        log("Edit assay design and change Sample field to point back to 'All Samples'");
         goToManageAssays();
         clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
         designerPage = _assayHelper.clickEditAssayDesign();
