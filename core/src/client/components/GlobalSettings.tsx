@@ -24,7 +24,6 @@ const ROW_TEXTS = [
 
 interface Props {
     globalSettings: GlobalSettingsOptions;
-
     canEdit: boolean;
     checkGlobalAuthBox: (id: string) => void;
     authCount: number;
@@ -32,7 +31,6 @@ interface Props {
 
 interface State {
     globalSettings: GlobalSettingsOptions;
-
     canEdit: boolean;
     checkGlobalAuthBox: (id: string) => void;
     authCount: number;
@@ -52,7 +50,7 @@ export default class GlobalSettings extends PureComponent<Props, State> {
             <div className="global-settings__text-row" key={text.id}>
                 <FACheckBox
                     key={text.id}
-                    checked={this.props.globalSettings[text.id]}
+                    checked={globalSettings[text.id]}
                     canEdit={canEdit}
                     onClick={() => checkGlobalAuthBox(text.id)}
                 />

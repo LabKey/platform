@@ -26,11 +26,11 @@ interface Props{
 }
 
 interface State {
-    editModalOpen?: boolean;
-    deleteModalOpen?: boolean;
+    editModalOpen: boolean;
+    deleteModalOpen: boolean;
 }
 
-export default class AuthRow extends PureComponent<Props, State> {
+export default class AuthRow extends PureComponent<Props, Partial<State>> {
     constructor(props) {
         super(props);
         this.state = {

@@ -150,7 +150,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      search={false}
     />
     <SSOFields
       canEdit={true}
@@ -356,7 +355,6 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      search={false}
     />
     <SSOFields
       canEdit={false}
@@ -493,10 +491,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       fieldValues={
         Object {
           "apiHostname": "Api HostName",
-          "auth_header_logo": "",
-          "auth_login_page_logo": "",
-          "changedFiles": Array [],
-          "deletedLogos": Array [],
           "description": "Duo 2 Factor Configuration",
           "enabled": false,
           "integrationKey": "Key1",
@@ -594,7 +588,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      search={false}
     />
     <div
       className="modal__error-message"
@@ -735,10 +728,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       fieldValues={
         Object {
           "apiHostname": "Api HostName",
-          "auth_header_logo": "",
-          "auth_login_page_logo": "",
-          "changedFiles": Array [],
-          "deletedLogos": Array [],
           "description": "Duo 2 Factor Configuration",
           "enabled": false,
           "integrationKey": "Key1",
@@ -836,7 +825,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      search={false}
     />
     <div
       className="modal__error-message"

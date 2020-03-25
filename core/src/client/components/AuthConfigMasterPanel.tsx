@@ -12,7 +12,7 @@ import {Actions, AuthConfig, AuthConfigProvider} from "../AuthenticationConfigur
 
 interface ViewOnlyAuthConfigRowsProps {
     data: AuthConfig[];
-    providers?: AuthConfigProvider[];
+    providers: AuthConfigProvider[];
 }
 
 class ViewOnlyAuthConfigRows extends PureComponent<ViewOnlyAuthConfigRowsProps> {
@@ -137,13 +137,13 @@ interface Props {
 }
 
 interface State {
-    primaryModalOpen?: boolean;
-    secondaryModalOpen?: boolean;
-    addModalType?: string | null;
-    modalOpen?: boolean;
+    primaryModalOpen: boolean;
+    secondaryModalOpen: boolean;
+    addModalType: string | null;
+    modalOpen: boolean;
 }
 
-export default class AuthConfigMasterPanel extends PureComponent<Props, State> {
+export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<State>> {
     constructor(props) {
         super(props);
         this.state = {

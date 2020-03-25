@@ -214,7 +214,6 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
 interface DynamicFieldsProps {
     fields: AuthConfigField[];
     fieldValues: any;
-    search: boolean;
     canEdit: boolean,
     modalType: AuthConfigProvider;
     emptyRequiredFields: String[];
@@ -226,7 +225,7 @@ interface DynamicFieldsProps {
 
 export class DynamicFields extends PureComponent<DynamicFieldsProps> {
     render() {
-        const { fields, search, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues } = this.props;
+        const { fields, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues } = this.props;
         let stopPoint = fields.length;
         for (let i = 0; i < fields.length; i++) {
             if ('dictateFieldVisibility' in fields[i]) {
@@ -234,7 +233,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                 break;
             }
         }
-        const fieldsToCreate = search ? fields : fields.slice(0, stopPoint);
+        const fieldsToCreate = fieldValues.search ? fields : fields.slice(0, stopPoint);
 
         const allFields = fieldsToCreate.map((field, index) => {
             const requiredFieldEmpty = (emptyRequiredFields.indexOf(field.name) !== -1);
