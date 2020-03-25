@@ -14,5 +14,10 @@ module.exports = {
         title: 'Sample Type Designer',
         permission: 'admin', // this is admin so that direct access to this view has highest level perm, see ExperimentController.BaseSampleSetAction for main usage
         path: './src/client/SampleTypeDesigner'
+    },{
+        name: 'dataClassDesigner',
+        title: 'Data Class Designer',
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see <View Action TBD> for main usage
+        path: './src/client/DataClassDesigner'
     }]
 };

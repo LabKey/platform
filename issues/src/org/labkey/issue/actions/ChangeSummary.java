@@ -188,7 +188,7 @@ public class ChangeSummary
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Area", previous.getProperty(Issue.Prop.area), issue.getProperty(Issue.Prop.area), ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Priority", prevPriStringVal, priStringVal, ccc, newIssue);
             _appendColumnChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getProperty(Issue.Prop.milestone), issue.getProperty(Issue.Prop.milestone), ccc, newIssue);
-            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
+            _appendColumnChange(sbHTMLChanges, sbTextChanges, "Related", previous.getRelated(), issue.getRelated(), ccc, newIssue);
 
             Map<String, Object> oldProps = previous.getProperties();
             UserSchema schema = QueryService.get().getUserSchema(user, container, IssuesSchema.SCHEMA_NAME);
@@ -296,22 +296,26 @@ public class ChangeSummary
     {
         StringBuilder sb = new StringBuilder();
         Issue relatedIssue = IssueManager.getIssue(null, user, relatedIssueId);
-        Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
-        Set<Integer> newRelated = new TreeSet<>(prevRelated);
+        if (null != relatedIssue)
+        {
+            Set<Integer> prevRelated = relatedIssue.getRelatedIssues();
+            Set<Integer> newRelated = new TreeSet<>(prevRelated);
 
-        if (drop)
-            newRelated.remove(Integer.valueOf(issueId));
-        else
-            newRelated.add(issueId);
+            if (drop)
+                newRelated.remove(Integer.valueOf(issueId));
+            else
+                newRelated.add(issueId);
 
-        sb.append("<div class=\"wiki\"><table class=issues-Changes>");
-        sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
-        sb.append("</table></div>");
+            sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+            sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+            sb.append("</table></div>");
 
-        relatedIssue.addComment(user, sb.toString());
-        relatedIssue.setRelatedIssues(newRelated);
+            relatedIssue.addComment(user, sb.toString());
+            relatedIssue.setRelatedIssues(newRelated);
 
-        return relatedIssue;
+            return relatedIssue;
+        }
+        return null;
     }
 
     public void sendUpdateEmail(Container container, User user, String comment, ActionURL detailsURL, String change,

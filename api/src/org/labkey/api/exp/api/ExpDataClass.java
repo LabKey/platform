@@ -50,13 +50,19 @@ public interface ExpDataClass extends ExpObject
     @Nullable
     ExpSampleSet getSampleSet();
 
+    void setSampleSet(Integer sampleSet);
+
     Domain getDomain();
 
     void setDomain(Domain d);
 
     String getDescription();
 
+    void setDescription(String description);
+
     String getNameExpression();
+
+    void setNameExpression(String nameExpression);
 
     String getCategory();
 
