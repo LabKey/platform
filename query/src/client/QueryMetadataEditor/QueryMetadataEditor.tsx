@@ -286,16 +286,9 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onResetBtnHandler = () => {
-        const { dirty } = this.state;
-
-        if (dirty) {
-            this.setState(() => ({
-                showResetConfirmationModal: true
-            }));
-        }
-        else {
-            this.onConfirmReset();
-        }
+        this.setState(() => ({
+            showResetConfirmationModal: true
+        }));
     };
 
     renderButtons() {
