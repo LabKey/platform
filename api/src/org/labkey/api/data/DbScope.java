@@ -1876,12 +1876,12 @@ public class DbScope
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
         }
 
-        <KeyType, ValueType> Cache<KeyType, ValueType> getCache(DatabaseCache<KeyType, ValueType> cache)
+        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
-            return (Cache<KeyType, ValueType>)_caches.get(cache);
+            return (Cache<K, V>)_caches.get(cache);
         }
 
-        <KeyType, ValueType> void addCache(DatabaseCache<KeyType, ValueType> cache, Cache<KeyType, ValueType> map)
+        <K, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
         {
             _caches.put(cache, map);
         }

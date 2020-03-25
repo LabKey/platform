@@ -43,9 +43,9 @@ import java.util.Set;
  *
  * @see org.labkey.api.data.DbScope
  */
-public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueType>
+public class DatabaseCache<K, V> implements Cache<K, V>
 {
-    protected final Cache<KeyType, ValueType> _sharedCache;
+    protected final Cache<K, V> _sharedCache;
     private final DbScope _scope;
 
     public DatabaseCache(DbScope scope, int maxSize, long defaultTimeToLive, String debugName)
@@ -60,33 +60,33 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
         this(scope, maxSize, CacheManager.UNLIMITED, debugName);
     }
 
-    protected Cache<KeyType, ValueType> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
+    protected Cache<K, V> createSharedCache(int maxSize, long defaultTimeToLive, String debugName)
     {
-        return (Cache<KeyType, ValueType>)CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
+        return (Cache<K, V>)CacheManager.getStringKeyCache(maxSize, defaultTimeToLive, debugName);
     }
 
     @Override
-    public Cache<KeyType, ValueType> createTemporaryCache()
+    public Cache<K, V> createTemporaryCache()
     {
         return createTemporaryCache(getTrackingCache());
     }
 
-    protected Cache<KeyType, ValueType> createTemporaryCache(TrackingCache<KeyType, ValueType> trackingCache)
+    protected Cache<K, V> createTemporaryCache(TrackingCache<K, V> trackingCache)
     {
         return CacheManager.getTemporaryCache(trackingCache.getLimit(), trackingCache.getDefaultExpires(), "transaction cache: " + trackingCache.getDebugName(), trackingCache.getStats());
     }
 
-    private Cache<KeyType, ValueType> getCache()
+    private Cache<K, V> getCache()
     {
         DbScope.TransactionImpl t = _scope.getCurrentTransactionImpl();
 
         if (null != t)
         {
-            Cache<KeyType, ValueType> transactionCache = t.getCache(this);
+            Cache<K, V> transactionCache = t.getCache(this);
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<KeyType, ValueType>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
+                transactionCache = new TransactionCache<K, V>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
                 t.addCache(this, transactionCache);
             }
 
@@ -99,31 +99,31 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
     }
 
     @Override
-    public void put(KeyType key, ValueType value)
+    public void put(K key, V value)
     {
         getCache().put(key, value);
     }
 
     @Override
-    public void put(KeyType key, ValueType value, long timeToLive)
+    public void put(K key, V value, long timeToLive)
     {
         getCache().put(key, value, timeToLive);
     }
 
     @Override
-    public ValueType get(KeyType key)
+    public V get(K key)
     {
         return getCache().get(key);
     }
 
     @Override
-    public ValueType get(KeyType key, @Nullable Object arg, CacheLoader<KeyType, ValueType> loader)
+    public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
     {
         return getCache().get(key, arg, loader);
     }
 
     @Override
-    public void remove(final KeyType key)
+    public void remove(final K key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -135,9 +135,9 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
         getCache().remove(key);
     }
 
-    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<KeyType>
+    private class CacheKeyRemovalCommitTask extends AbstractCacheRemovalCommitTask<K>
     {
-        public CacheKeyRemovalCommitTask(KeyType key)
+        public CacheKeyRemovalCommitTask(K key)
         {
             super(key);
         }
@@ -170,7 +170,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
             return !(object != null ? !object.equals(that.object) : that.object != null);
         }
 
-        private Cache<KeyType, ValueType> getCache()
+        private Cache<K, V> getCache()
         {
             return DatabaseCache.this.getCache();
         }
@@ -212,7 +212,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
             return getCache().equals(that.getCache());
         }
 
-        private Cache<KeyType, ValueType> getCache()
+        private Cache<K, V> getCache()
         {
             return DatabaseCache.this.getCache();
         }
@@ -231,7 +231,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
 
 
     @Override
-    public int removeUsingFilter(Filter<KeyType> filter)
+    public int removeUsingFilter(Filter<K> filter)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -244,7 +244,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
     }
 
     @Override
-    public Set<KeyType> getKeys()
+    public Set<K> getKeys()
     {
         return _sharedCache.getKeys();
     }
@@ -256,7 +256,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
     }
 
     @Override
-    public TrackingCache<KeyType, ValueType> getTrackingCache()
+    public TrackingCache<K, V> getTrackingCache()
     {
         return _sharedCache.getTrackingCache();
     }
@@ -466,7 +466,7 @@ public class DatabaseCache<KeyType, ValueType> implements Cache<KeyType, ValueTy
 
     private class CachePrefixRemovalCommitTask extends AbstractCacheRemovalCommitTask<Filter>
     {
-        public CachePrefixRemovalCommitTask(Filter<KeyType> filter)
+        public CachePrefixRemovalCommitTask(Filter<K> filter)
         {
             super(filter);
         }
