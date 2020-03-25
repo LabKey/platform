@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -790,15 +791,30 @@ public class ExpDataIterators
                     _importAliases :
                     new CaseInsensitiveHashMap<>();
 
+            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
+            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
+
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
                 step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
+            dontUpdate.add("lsid");
+            CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
+            if (isSample || !context.getInsertOption().mergeRows)
+                keyColumns.add("lsid");
+            else
+            {
+                keyColumns.add("classid");
+                keyColumns.add("name");
+            }
+
             // Insert into exp.data then the provisioned table
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"))
+                    .setKeyColumns(keyColumns)
+                    .setDontUpdate(dontUpdate)
                     .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
                     .setCommitRowsBeforeContinuing(true))
                     ;
@@ -807,11 +823,9 @@ public class ExpDataIterators
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"))
+                    .setKeyColumns(keyColumns)
+                    .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(vocabularyDomainProperties));
-
-            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
-            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
 
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))

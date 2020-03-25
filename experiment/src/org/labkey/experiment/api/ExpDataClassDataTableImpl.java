@@ -25,25 +25,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedDisplayColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -317,11 +300,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         // Add the domain columns
         Collection<BaseColumnInfo> cols = new ArrayList<>(20);
+        Set skipCols = new CaseInsensitiveHashSet();
+        skipCols.add("lsid");
+        skipCols.add("rowid");
+        skipCols.add("name");
+        skipCols.add("classid");
         for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
-            if (colName.equalsIgnoreCase("lsid") || colName.equalsIgnoreCase("rowid"))
+            if (skipCols.contains(colName))
                 continue;
 
             if (colName.equalsIgnoreCase("genid"))
@@ -429,21 +417,81 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         dataCols.remove("lsid");
 
+        // all columns from dataclass property table except name and classid
+        Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
+        pCols.remove("name");
+        pCols.remove("classid");
+
         SQLFragment sql = new SQLFragment();
         sql.append("(SELECT ");
+        String comma = "";
         for (String dataCol : dataCols)
-            sql.append("d.").append(dataCol).append(", ");
-        sql.append("p.* FROM ");
+        {
+            sql.append(comma);
+            sql.append("d.").append(dataCol);
+            comma = ", ";
+        }
+
+        for (String pCol : pCols)
+        {
+            sql.append(comma);
+            sql.append("p.").append(pCol);
+        }
+        sql.append(" FROM ");
         sql.append(_rootTable, "d");
         sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
+        SQLFragment filterFrag = getAliasedFilterSQLFragment(_rootTable.getSqlDialect(), columnMap, getFilter().getClauses());
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;
     }
+
+    public SQLFragment getAliasedFilterSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap, List<SimpleFilter.FilterClause> clauses)
+    {
+        SQLFragment ret = new SQLFragment();
+
+        if (null == clauses || 0 == clauses.size())
+            return ret;
+
+        String sAND = "WHERE ";
+
+        for (SimpleFilter.FilterClause fc : clauses)
+        {
+            ret.append(sAND);
+            ret.append("(");
+            try
+            {
+                if (fc instanceof CompareType.EqualsCompareClause && fc.getFieldKeys().size() == 1 && fc.getFieldKeys().get(0).getName().equalsIgnoreCase("classid"))
+                {
+                    SQLFragment fragment = new SQLFragment("d.classid = ?");
+                    fragment.addAll(fc.getParamVals());
+                    ret.append(fragment);
+                }
+                else
+                    ret.append(fc.toSQLFragment(columnMap, dialect));
+            }
+            catch (RuntimeSQLException e)
+            {
+                // Deal with unparseable filter values - see issue 23321
+                if (e.getSQLException() instanceof SQLGenerationException)
+                {
+                    ret.append("0 = 1");
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+            ret.append(")");
+            sAND = " AND ";
+        }
+
+        return ret;
+    }
+
 
     private static final Set<String> DEFAULT_HIDDEN_COLS = new CaseInsensitiveHashSet("Container", "Created", "CreatedBy", "ModifiedBy", "Modified", "Owner", "EntityId", "RowId");
 
@@ -558,7 +606,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
-            ColumnInfo classIdCol = expData.getColumn("classId");
+            // use materialized classId so that parameter binding works for both exp.data as well as materializeed table
+            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
             // Ensure we have a cpasType column and it is of the right value
@@ -650,7 +699,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid")

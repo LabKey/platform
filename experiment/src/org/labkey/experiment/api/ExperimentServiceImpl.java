@@ -734,15 +734,16 @@ public class ExperimentServiceImpl implements ExperimentService
 
         SearchService.IndexTask task = ss.defaultTask();
 
-        Domain d = dataClass.getDomain();
-        if (d == null)
-            return; // Domain may be null if the DataClass has been deleted
-
-        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
-        if (table == null)
-            return;
-
         Runnable r = () -> {
+
+            Domain d = dataClass.getDomain();
+            if (d == null)
+                return; // Domain may be null if the DataClass has been deleted
+
+            TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+            if (table == null)
+                return;
+
             // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
             SQLFragment sql = new SQLFragment()
                     .append("SELECT * FROM ").append(getTinfoData(), "d")

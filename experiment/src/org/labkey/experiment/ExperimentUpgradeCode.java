@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -28,6 +29,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
@@ -43,6 +45,9 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.DataClassDomainKind;
+import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
@@ -50,6 +55,8 @@ import org.labkey.experiment.api.SampleSetDomainKind;
 import org.labkey.experiment.api.property.DomainImpl;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -373,4 +380,96 @@ public class ExperimentUpgradeCode implements UpgradeCode
             tx.commit();
         }
     }
+
+    /**
+     * Called from exp-???.sql
+     */
+    public static void addProvisionedDataClassNameClassId(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        try (DbScope.Transaction tx = ExperimentService.get().ensureTransaction())
+        {
+            // get all DataClass across all containers
+            TableInfo source = ExperimentServiceImpl.get().getTinfoDataClass();
+            new TableSelector(source, null, null).stream(DataClass.class)
+                    .map(ExpDataClassImpl::new)
+                    .forEach(ExperimentUpgradeCode::setDataClassNameClassId);
+
+            tx.commit();
+        }
+    }
+
+    private static void setDataClassNameClassId(ExpDataClassImpl ds)
+    {
+        Domain domain = ds.getDomain();
+        DataClassDomainKind kind = null;
+        try
+        {
+            kind = (DataClassDomainKind) domain.getDomainKind();
+        }
+        catch (IllegalArgumentException e)
+        {
+            // pass
+        }
+        if (null == kind || null == kind.getStorageSchemaName())
+            return;
+
+        DbSchema schema = kind.getSchema();
+        DbScope scope = kind.getSchema().getScope();
+
+        StorageProvisioner.ensureStorageTable(domain, kind, scope);
+        domain = PropertyService.get().getDomain(domain.getTypeId());
+        assert (null != domain.getStorageTableName());
+
+        SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
+        if (provisionedTable == null)
+        {
+            LOG.error("DataSet '" + ds.getName() + "' (" + ds.getRowId() + ") has no provisioned table");
+            return;
+        }
+
+        ColumnInfo nameCol = provisionedTable.getColumn("name");
+        if (nameCol == null)
+        {
+            PropertyStorageSpec nameProp = kind.getBaseProperties(domain).stream().filter(p -> "name".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
+            StorageProvisioner.addStorageProperties(domain, Arrays.asList(nameProp), true);
+            LOG.info("DataSet '" + ds.getName() + "' (" + ds.getRowId() + ") added 'name' column");
+        }
+
+        ColumnInfo classIdCol = provisionedTable.getColumn("classId");
+        if (classIdCol == null)
+        {
+            PropertyStorageSpec classIdProp = kind.getBaseProperties(domain).stream().filter(p -> "classId".equalsIgnoreCase(p.getName())).findFirst().orElseThrow();
+            StorageProvisioner.addStorageProperties(domain, Arrays.asList(classIdProp), true);
+            LOG.info("DataSet '" + ds.getName() + "' (" + ds.getRowId() + ") added 'classId' column");
+        }
+
+        fillNameClassId(ds, domain, scope);
+
+        //addIndex
+        Set<PropertyStorageSpec.Index> newIndices =  Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "name", "classid"))));
+        StorageProvisioner.addOrDropTableIndices(domain, newIndices, true, TableChange.IndexSizeMode.Normal);
+        LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") added unique constraint on 'name' and 'classId'");
+    }
+
+    // populate name and classId value on provisioned table
+    private static void fillNameClassId(ExpDataClassImpl ds, Domain domain, DbScope scope)
+    {
+        String tableName = domain.getStorageTableName();
+        SQLFragment update = new SQLFragment()
+                .append("UPDATE expdataclass.").append(tableName).append("\n")
+                .append("SET name = i.name, classid = i.classid\n")
+                .append("FROM (\n")
+                .append("  SELECT d.lsid, d.name, d.classid\n")
+                .append("  FROM exp.data d\n")
+                .append("  WHERE d.cpasType = ?\n").add(domain.getTypeURI())
+                .append(") AS i\n")
+                .append("WHERE i.lsid = ").append(tableName).append(".lsid");
+
+        int count = new SqlExecutor(scope).execute(update);
+        LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") updated 'name' and 'classId' column, count=" + count);
+    }
+
 }
