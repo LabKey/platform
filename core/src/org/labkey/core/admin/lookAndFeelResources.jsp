@@ -28,19 +28,20 @@
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     AdminController.LookAndFeelResourcesBean bean = ((JspView<AdminController.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
-    boolean isTroubleshooter = c.isRoot() && !c.hasPermission(getUser(), AdminOperationsPermission.class);
-    HtmlString rowSpan = HtmlString.of(isTroubleshooter ? "1" : "2");
+    boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
+    HtmlString rowSpan = HtmlString.of(!canUpdate ? "1" : "2");
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0 class="lk-fields-table">
-<%=getTroubleshooterWarning(HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
+<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -56,14 +57,14 @@
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=isTroubleshooter ? HtmlString.EMPTY_STRING : link("reset logo to default", ResetLogoAction.class).usePost()%>
+            Currently using a custom logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=canUpdate ? link("reset logo to default", ResetLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
         <% } else { %>
             Currently using the default logo.
         <% } %>
     </td>
 </tr>
 <%
-    if (!isTroubleshooter)
+    if (canUpdate)
     {
 %>
 <tr>
@@ -78,14 +79,14 @@
     <td>
         <% if (null != bean.customFavIcon)
         { %>
-            Currently using a custom favorite icon. <%=link("view icon", TemplateResourceHandler.FAVICON.getURL(c))%> <%=isTroubleshooter ? HtmlString.EMPTY_STRING : link("reset favorite icon to default", ResetFaviconAction.class).usePost()%>
+            Currently using a custom favorite icon. <%=link("view icon", TemplateResourceHandler.FAVICON.getURL(c))%> <%=canUpdate ? link("reset favorite icon to default", ResetFaviconAction.class).usePost() : HtmlString.EMPTY_STRING%>
         <% } else { %>
             Currently using the default favorite icon.
         <% } %>
     </td>
 </tr>
 <%
-    if (!isTroubleshooter)
+    if (canUpdate)
     {
 %>
 <tr>
@@ -100,14 +101,14 @@
     <td>
         <% if (null != bean.customStylesheet)
         { %>
-            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=isTroubleshooter ? HtmlString.EMPTY_STRING : link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost()%>
+            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=canUpdate ? link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost() : HtmlString.EMPTY_STRING%>
         <% } else { %>
             No custom stylesheet.
         <% } %>
     </td>
 </tr>
 <%
-    if (!isTroubleshooter)
+    if (canUpdate)
     {
 %>
 <tr>

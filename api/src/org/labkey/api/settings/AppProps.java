@@ -48,6 +48,8 @@ public interface AppProps
     String EXPERIMENTAL_STRICT_RETURN_URL = "strictReturnUrl";
     String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
 
+    String UNKNOWN_VERSION = "Unknown Release Version";
+
     static AppProps getInstance()
     {
         return _instance;
@@ -97,8 +99,10 @@ public interface AppProps
     UsageReportingLevel getUsageReportingLevel();
 
     /**
-     * Returns the core module's release version, a string such as 20.3-SNAPSHOT, 20.1.0, or 20.3.7
+     * Returns the core module's release version, a string such as "20.3-SNAPSHOT", "20.1.0", or "20.3.7".
+     * Or "Unknown Release Version".
      */
+    @NotNull
     String getReleaseVersion();
 
     /**

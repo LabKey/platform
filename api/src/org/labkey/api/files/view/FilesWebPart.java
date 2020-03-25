@@ -24,6 +24,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.FileUrls;
 import org.labkey.api.files.FilesAdminOptions;
@@ -53,12 +55,13 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavService;
 
-import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -279,6 +282,12 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             actions.add(FilesForm.actions.customize);
         }
 
+        List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
+        if (container.hasPermission(user, InsertPermission.class) && !editors.isEmpty())
+        {
+            actions.add(FilesForm.actions.createRun);
+        }
+
         return actions;
     }
 
@@ -327,6 +336,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (canDisplayPipelineActions())
         {
             form.setPipelineRoot(true);
+        }
+
+        List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
+        if (!editors.isEmpty())
+        {
+            Map<String, String> editorMap = new HashMap<>();
+            for (ExpRunEditor editor : editors)
+            {
+                editorMap.put(editor.getProtocolName(), editor.getEditUrl(getContextContainer()).getLocalURIString());
+            }
+            form.setRunEditors(editorMap);
         }
 
         List<FilesForm.actions> actions = getConfiguredActions(policy);
@@ -512,6 +532,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         private boolean _disableGeneralAdminSettings;
         private Integer _height = null;
         private boolean _isListing;
+        private Map<String, String> _runEditors;
 
         public enum actions
         {
@@ -531,6 +552,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             editFileProps,
             emailPreferences,
             auditLog,
+            createRun,
         }
 
         public boolean isAutoResize()
@@ -786,6 +808,17 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         {
             return -1 != StringUtils.indexOf(_rootPath, "@files/") ||
                    -1 != StringUtils.indexOf(_rootPath, "%40files/");
+        }
+
+        @Nullable
+        public Map<String, String> getRunEditors()
+        {
+            return _runEditors;
+        }
+
+        public void setRunEditors(Map<String, String> runEditors)
+        {
+            _runEditors = runEditors;
         }
     }
 }
