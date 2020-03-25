@@ -495,7 +495,12 @@ public class ExpDataIterators
 
                         allParts.addAll(parts);
                     }
+                    else // we have parent columns but the parent value is empty, indciating that the parents should be cleared
+                    {
+                        allParts.add(new Pair<String, String>(_parentCols.get(parentCol), ""));
+                    }
                 }
+
                 if (!allParts.isEmpty())
                     _parentNames.put(lsid, allParts);
             }
