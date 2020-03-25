@@ -6723,10 +6723,13 @@ public class QueryController extends SpringActionController
         public Object execute(QueryMetadataApiForm queryMetadataApiForm, BindException errors) throws Exception
         {
             String schemaName = queryMetadataApiForm.getSchemaName();
-            MetadataTableJSON domain = queryMetadataApiForm.getDomain().saveMetadata(schemaName, getUser(), getContainer());
+            MetadataTableJSON domain = queryMetadataApiForm.getDomain();
+            domain.setUserDefinedQuery(queryMetadataApiForm.isUserDefinedQuery());
+            MetadataTableJSON savedDomain = domain.saveMetadata(schemaName, getUser(), getContainer());
+
             ApiSimpleResponse resp = new ApiSimpleResponse();
             resp.put("success", true);
-            resp.put("domain", domain);
+            resp.put("domain", savedDomain);
             return resp;
         }
     }
@@ -6747,6 +6750,7 @@ public class QueryController extends SpringActionController
     {
         MetadataTableJSON _domain;
         String _schemaName;
+        boolean _userDefinedQuery;
 
         public MetadataTableJSON getDomain()
         {
@@ -6766,6 +6770,16 @@ public class QueryController extends SpringActionController
         public void setSchemaName(String schemaName)
         {
             _schemaName = schemaName;
+        }
+
+        public boolean isUserDefinedQuery()
+        {
+            return _userDefinedQuery;
+        }
+
+        public void setUserDefinedQuery(boolean userDefinedQuery)
+        {
+            _userDefinedQuery = userDefinedQuery;
         }
     }
 
