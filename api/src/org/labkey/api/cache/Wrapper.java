@@ -18,7 +18,8 @@ package org.labkey.api.cache;
 import java.lang.ref.WeakReference;
 
 /**
- * Thread safety need to be ensured by the caller.
+ * Thread safety needs to be ensured by the caller.
+
  * User: adam
  * Date: 1/15/12
  */
