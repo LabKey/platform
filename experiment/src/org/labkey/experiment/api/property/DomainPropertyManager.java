@@ -76,7 +76,7 @@ public class DomainPropertyManager
     }
 
     private static final ConditionalFormatLoader CONDITIONAL_FORMAT_LOADER = new ConditionalFormatLoader();
-    private static final DatabaseCache<List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "ConditionalFormats");
+    private static final DatabaseCache<String, List<ConditionalFormatWithPropertyId>> CONDITIONAL_FORMAT_CACHE = new DatabaseCache<>(getExpSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "ConditionalFormats");
 
     private DomainPropertyManager(){}
 

@@ -49,8 +49,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.ActivityService;
 import org.labkey.api.data.ColumnInfo;
@@ -277,7 +277,7 @@ public class VisualizationController extends SpringActionController
      * action.
      */
 
-    static private final StringKeyCache _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
+    static private final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)

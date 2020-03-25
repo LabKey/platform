@@ -23,9 +23,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
@@ -51,6 +52,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -95,13 +97,122 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-    private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
-    private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property descriptors");
-    private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
-    private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
-    private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
-    private static final StringKeyCache<Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
+    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
+    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 10000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
+    {
+        @Override
+        public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        {
+            String propertyURI = key.first;
+            Container c = ContainerManager.getForId(key.second);
+            Container proj = c.getProject();
+            if (null == proj)
+                proj = c;
+
+            String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
+            List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
+                    proj,
+                    _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+            if (!pdArray.isEmpty())
+            {
+                PropertyDescriptor pd = pdArray.get(0);
+
+                // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
+                // and one of the two is in the shared project, use the project-level descriptor.
+                if (pdArray.size() > 1)
+                {
+                    _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
+                    if (pd.getProject().equals(_sharedContainer))
+                        pd = pdArray.get(1);
+                }
+                return pd;
+            }
+            return null;
+        }
+    });
+    /** DomainURI, ContainerEntityId -> DomainDescriptor */
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
+        String domainURI = key.first;
+        Container c = ContainerManager.getForId(key.second);
+
+        if (c == null)
+        {
+            return null;
+        }
+
+        return fetchDomainDescriptorFromDB(domainURI, c);
+    });
+
+    /** Goes against the DB, bypassing the cache */
+    @Nullable
+    private static DomainDescriptor fetchDomainDescriptorFromDB(String domainURI, Container c)
+    {
+        Container proj = c.getProject();
+        if (null == proj)
+            proj = c;
+
+        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
+        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
+                proj,
+                ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
+        DomainDescriptor dd = null;
+        if (!ddArray.isEmpty())
+        {
+            dd = ddArray.get(0);
+
+            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
+            // and one of the two is in the shared project, use the project-level descriptor.
+            if (ddArray.size() > 1)
+            {
+                _log.debug("Multiple DomainDescriptors found for " + domainURI);
+                if (dd.getProject().equals(ContainerManager.getSharedContainer()))
+                    dd = ddArray.get(0);
+            }
+        }
+        return dd;
+    }
+
+    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
+    {
+        @Override
+        public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        {
+            String typeURI = key.first;
+            Container c = ContainerManager.getForId(key.second);
+            SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
+                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
+                    "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
+                    "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
+                    "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+
+            sql.addAll(
+                    typeURI,
+                    // protect against null project, just double-up shared project
+                    c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
+                    _sharedContainer.getProject().getId()
+            );
+            List<PropertyDescriptor> pds = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
+            //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
+            //Descriptors returned from this method come direct from DB and have correct values.
+            List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(pds.size());
+            for (PropertyDescriptor pd : pds)
+            {
+                // Be sure to stash the property in the cache in case it hadn't already been loaded
+                // Note that this can skew the cache stats, because it will count as a remove, a miss, and a get
+                propDescCache.put(getCacheKey(pd), pd);
+                if (!pd.getContainer().equals(c))
+                {
+                    // Also cache the property in its home container
+                    propDescCache.put(getCacheKey(pd.getPropertyURI(), c), pd);
+                }
+                propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
+            }
+            return Collections.unmodifiableList(propertyURIs);
+        }
+    });
+    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -1146,10 +1257,7 @@ public class OntologyManager
                     DomainDescriptor dd = getDomainDescriptor(domUri, c);
                     if (dd.getContainer().getId().equals(c.getId()))
                     {
-                        domainDescByURICache.remove(getURICacheKey(dd));
-                        domainDescByIDCache.remove(getIDCacheKey(dd));
-                        domainDescByContainerCache.remove(c.getId());
-                        domainPropertiesCache.clear();
+                        uncache(dd);
                         dd = dd.edit()
                                 .setContainer(project)
                                 .setProject(project)
@@ -1170,6 +1278,14 @@ public class OntologyManager
                 insertProperties(op.getContainer(), op.getObjectURI(), op);
             }
         }
+    }
+
+    private static void uncache(DomainDescriptor dd)
+    {
+        domainDescByURICache.remove(getURICacheKey(dd));
+        domainDescByIDCache.remove(dd.getDomainId());
+        domainPropertiesCache.remove(getURICacheKey(dd));
+        domainDescByContainerCache.remove(dd.getContainer().getId());
     }
 
 
@@ -1615,17 +1731,36 @@ public class OntologyManager
         return ensureDomainDescriptor(dd);
     }
 
+    /** Inserts or updates the domain as appropriate */
     @NotNull
-    private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
+    public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
-        DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
-        String ddInContainerId = ddIn.getContainer().getId();
+        DomainDescriptor dd = null;
+        // Try to find the previous version of the domain
+        if (ddIn.getDomainId() > 0)
+        {
+            // Try checking the cache first for a value to compare against
+            dd = getDomainDescriptor(ddIn.getDomainId());
+
+            // Since we cache mutable objects, get a fresh copy from the DB if the cache returned the same object that
+            // was passed in so we can do a diff against what's currently in the DB to see if we need to update
+            if (dd == ddIn)
+            {
+                dd = new TableSelector(getTinfoDomainDescriptor()).getObject(ddIn.getDomainId(), DomainDescriptor.class);
+            }
+        }
+        if (dd == null)
+        {
+            dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+        }
 
         if (null == dd)
         {
             try
             {
-                Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                // We may have a cached miss that we need to clear
+                uncache(dd);
                 return getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
             }
             catch (RuntimeSQLException x)
@@ -1637,60 +1772,17 @@ public class OntologyManager
             }
         }
 
-        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
-
-        if (colDiffs.size() == 0)
+        if (!dd.deepEquals(ddIn))
         {
-            // if the descriptor differs by container only and the requested descriptor is in the project fldr
-            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
-            {
-                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            }
-            return dd;
+            DomainDescriptor ddToSave = ddIn.edit().setDomainId(dd.getDomainId()).build();
+            dd = Table.update(null, getTinfoDomainDescriptor(), ddToSave, ddToSave.getDomainId());
+            domainDescByURICache.remove(getURICacheKey(ddIn));
+            domainDescByURICache.remove(getURICacheKey(dd));
+            domainDescByIDCache.remove(dd.getDomainId());
+            domainPropertiesCache.remove(getURICacheKey(ddIn));
+            domainDescByContainerCache.clear();
         }
-
-        // you are allowed to update if you are coming from the project root, or if  you are in the container
-        // in which the descriptor was created
-        boolean fUpdateIfExists = false;
-        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
-            fUpdateIfExists = true;
-
-        boolean fMajorDifference = false;
-        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-            fMajorDifference = true;
-
-        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
-                "\n\t Descriptor In: " + ddIn +
-                "\n\t Descriptor Found: " + dd;
-
-        if (fUpdateIfExists)
-        {
-            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            if (fMajorDifference)
-                _log.debug(errmsg);
-        }
-        else
-        {
-            if (fMajorDifference)
-                _log.error(errmsg);
-            else
-                _log.debug(errmsg);
-        }
-
         return dd;
-    }
-
-    private static List<String> compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd)
-    {
-        List<String> colDiffs = new ArrayList<>();
-
-        if (ddIn.getDomainId() != 0 && !(dd.getDomainId() == ddIn.getDomainId()))
-            colDiffs.add("DomainId");
-
-        if (ddIn.getName() != null && !dd.getName().equals(ddIn.getName()))
-            colDiffs.add("Name");
-
-        return colDiffs;
     }
 
     private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd)
@@ -1942,7 +2034,7 @@ public class OntologyManager
     public static void deletePropertyDescriptor(PropertyDescriptor pd)
     {
         int propId = pd.getPropertyId();
-        String key = getCacheKey(pd);
+        Pair<String, GUID> key = getCacheKey(pd);
 
         SQLFragment deleteObjPropSql = new SQLFragment("DELETE FROM " + getTinfoObjectProperty() + " WHERE PropertyId = ?", propId);
         SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", propId);
@@ -1995,43 +2087,13 @@ public class OntologyManager
     public static PropertyDescriptor getPropertyDescriptor(String propertyURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        String key = getCacheKey(propertyURI, c);
+        Pair<String, GUID> key = getCacheKey(propertyURI, c);
         PropertyDescriptor pd = propDescCache.get(key);
         if (null != pd)
             return pd;
 
         key = getCacheKey(propertyURI, _sharedContainer);
-        pd = propDescCache.get(key);
-        if (null != pd)
-            return pd;
-
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-
-        //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
-        String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-        List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
-                proj,
-                _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
-        if (!pdArray.isEmpty())
-        {
-            pd = pdArray.get(0);
-
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriiptor.
-            if (pdArray.size() > 1)
-            {
-                _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
-                if (pd.getProject().equals(_sharedContainer))
-                    pd = pdArray.get(1);
-            }
-
-            key = getCacheKey(pd);
-            propDescCache.put(key, pd);
-        }
-
-        return pd;
+        return propDescCache.get(key);
     }
 
     public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
@@ -2043,60 +2105,31 @@ public class OntologyManager
                 .collect(Collectors.toList());
     }
 
-    private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
+    private static class DomainDescriptorLoader implements CacheLoader<Integer, DomainDescriptor>
     {
         @Override
-        public DomainDescriptor load(String key, @Nullable Object argument)
+        public DomainDescriptor load(Integer key, @Nullable Object argument)
         {
-            int id = Integer.valueOf(key);
-            return new TableSelector(getTinfoDomainDescriptor()).getObject(id, DomainDescriptor.class);
+            return new TableSelector(getTinfoDomainDescriptor()).getObject(key, DomainDescriptor.class);
         }
     }
 
 
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return domainDescByIDCache.get(String.valueOf(id));
+        return domainDescByIDCache.get(id);
     }
 
+    @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        String key = getCacheKey(domainURI, c);
-        DomainDescriptor dd = domainDescByURICache.get(key);
+        DomainDescriptor dd = domainDescByURICache.get(getCacheKey(domainURI, c));
         if (null != dd)
             return dd;
 
-        key = getCacheKey(domainURI, _sharedContainer);
-        dd = domainDescByURICache.get(key);
-        if (null != dd)
-            return dd;
-
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-
-        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
-                proj,
-                _sharedContainer.getId()).getArrayList(DomainDescriptor.class);
-        if (!ddArray.isEmpty())
-        {
-            dd = ddArray.get(0);
-
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.size() > 1)
-            {
-                _log.debug("Multiple DomainDescriptors found for " + domainURI);
-                if (dd.getProject().equals(_sharedContainer))
-                    dd = ddArray.get(0);
-            }
-            key = getURICacheKey(dd);
-            domainDescByURICache.put(key, dd);
-        }
-        _log.debug("getDomainDescriptor for " + domainURI + " container= " + c.getPath());
-        return dd;
+        // Try in the /Shared container too
+        return domainDescByURICache.get(getCacheKey(domainURI, _sharedContainer));
     }
 
     /**
@@ -2165,73 +2198,33 @@ public class OntologyManager
         return dds;
     }
 
-    public static String getURICacheKey(DomainDescriptor dd)
+    public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
     {
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
 
-    public static String getIDCacheKey(DomainDescriptor dd)
-    {
-        return String.valueOf(dd.getDomainId());
-    }
-
-
-    public static String getCacheKey(PropertyDescriptor pd)
+    public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
 
 
-    public static String getCacheKey(String uri, Container c)
+    public static Pair<String, GUID> getCacheKey(String uri, Container c)
     {
         Container proj = c.getProject();
-        String projId;
+        GUID projId;
 
         if (null == proj)
-            projId = c.getId();
+            projId = c.getEntityId();
         else
-            projId = proj.getId();
+            projId = proj.getEntityId();
 
-        return uri + "|" + projId;
+        return Pair.of(uri, projId);
     }
 
     //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
-    {
-        List<PropertyDescriptor> result = getCachedPropertyDescriptorsForDomain(typeURI, c);
-        if (result != null)
-        {
-            return result;
-        }
-
-        SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
-
-        sql.addAll(
-                typeURI,
-                // protect against null project, just double-up shared project
-                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
-                _sharedContainer.getProject().getId()
-        );
-        result = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
-        //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
-        //Descriptors returned from this method come direct from DB and have correct values.
-        List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());
-        for (PropertyDescriptor pd : result)
-        {
-            propDescCache.put(getCacheKey(pd), pd);
-            propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
-        }
-        domainPropertiesCache.put(getCacheKey(typeURI, c), propertyURIs);
-
-        return result;
-    }
-
-    private static List<PropertyDescriptor> getCachedPropertyDescriptorsForDomain(String typeURI, Container c)
     {
         List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
         if (propertyURIs != null)
@@ -2421,17 +2414,6 @@ public class OntologyManager
         return pd;
     }
 
-
-    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
-    {
-        assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescByURICache.remove(getURICacheKey(dd));
-        domainDescByIDCache.remove(getIDCacheKey(dd));
-        domainPropertiesCache.remove(getURICacheKey(dd));
-        domainDescByContainerCache.clear();
-        return dd;
-    }
 
     public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject) throws ValidationException
     {
