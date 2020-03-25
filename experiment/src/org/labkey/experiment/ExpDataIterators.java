@@ -495,9 +495,9 @@ public class ExpDataIterators
 
                         allParts.addAll(parts);
                     }
-                    else // we have parent columns but the parent value is empty, indciating that the parents should be cleared
+                    else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
                     {
-                        allParts.add(new Pair<String, String>(_parentCols.get(parentCol), ""));
+                        allParts.add(new Pair<>(_parentCols.get(parentCol), null));
                     }
                 }
 
@@ -556,14 +556,14 @@ public class ExpDataIterators
                                     UploadSamplesHelper.clearSampleSourceRun(_user, sample);
                                 }
                                 currentMaterialMap = new HashMap<>();
-                                currentMaterialMap.put(sample, "Sample");
+                                currentMaterialMap.put(sample, UploadSamplesHelper.sampleRole(sample));
                             }
                             else
                             {
                                 data = ExperimentService.get().getExpData(lsid);
                                 if (null == data)
                                     continue;
-                                currentDataMap = Collections.singletonMap(data, "Data");
+                                currentDataMap = Collections.singletonMap(data, UploadSamplesHelper.dataRole(data, _user));
                             }
 
                             if (pair.first != null)
