@@ -1739,11 +1739,19 @@ public class OntologyManager
         // Try to find the previous version of the domain
         if (ddIn.getDomainId() > 0)
         {
-            dd = new TableSelector(getTinfoDomainDescriptor()).getObject(ddIn.getDomainId(), DomainDescriptor.class);
+            // Try checking the cache first for a value to compare against
+            dd = getDomainDescriptor(ddIn.getDomainId());
+
+            // Since we cache mutable objects, get a fresh copy from the DB if the cache returned the same object that
+            // was passed in so we can do a diff against what's currently in the DB to see if we need to update
+            if (dd == ddIn)
+            {
+                dd = new TableSelector(getTinfoDomainDescriptor()).getObject(ddIn.getDomainId(), DomainDescriptor.class);
+            }
         }
         if (dd == null)
         {
-            dd = fetchDomainDescriptorFromDB(ddIn.getDomainURI(), ddIn.getContainer());
+            dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
         }
 
         if (null == dd)
