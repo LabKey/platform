@@ -18,11 +18,11 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.cache.Wrapper;
 import org.labkey.api.util.ExceptionUtil;
 
@@ -35,7 +35,7 @@ public class SchemaTableInfoCache
 {
     private static final Logger LOG = Logger.getLogger(SchemaTableInfoCache.class);
 
-    private final BlockingStringKeyCache<SchemaTableInfo> _blockingCache;
+    private final BlockingCache<String, SchemaTableInfo> _blockingCache;
 
     public SchemaTableInfoCache(DbScope scope)
     {
@@ -76,7 +76,7 @@ public class SchemaTableInfoCache
             LOG.debug("remove all " + type + " schema tables: " + schemaName);
         final String prefix = type.getCacheKey(schemaName);
 
-        _blockingCache.removeUsingPrefix(prefix);
+        _blockingCache.removeUsingFilter(new Cache.StringPrefixFilter(prefix));
     }
 
 
@@ -124,7 +124,7 @@ public class SchemaTableInfoCache
         return options.getSchema().getType().getCacheTimeToLive();
     };
 
-    private static class SchemaTableInfoBlockingCache extends BlockingStringKeyCache<SchemaTableInfo>
+    private static class SchemaTableInfoBlockingCache extends BlockingCache<String, SchemaTableInfo>
     {
         private SchemaTableInfoBlockingCache(DbScope scope)
         {
@@ -134,7 +134,7 @@ public class SchemaTableInfoCache
     }
 
 
-    private static StringKeyCache<Wrapper<SchemaTableInfo>> createCache(DbScope scope)
+    private static Cache<String, Wrapper<SchemaTableInfo>> createCache(DbScope scope)
     {
         return CacheManager.getStringKeyCache(10000, CacheManager.UNLIMITED, "SchemaTableInfos for " + scope.getDisplayName());
     }

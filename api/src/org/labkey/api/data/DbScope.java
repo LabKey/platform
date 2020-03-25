@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
@@ -1851,7 +1851,7 @@ public class DbScope
         private final String id = GUID.makeGUID();
         @NotNull
         private final ConnectionWrapper _conn;
-        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
+        private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
         // Sets so that we can coalesce identical tasks and avoid duplicating the effort
         private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
@@ -1876,12 +1876,12 @@ public class DbScope
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
         }
 
-        <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
+        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
-            return (StringKeyCache<ValueType>)_caches.get(cache);
+            return (Cache<K, V>)_caches.get(cache);
         }
 
-        <ValueType> void addCache(DatabaseCache<ValueType> cache, StringKeyCache<ValueType> map)
+        <K, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
         {
             _caches.put(cache, map);
         }
@@ -2038,7 +2038,7 @@ public class DbScope
 
         private void closeCaches()
         {
-            for (StringKeyCache<?> cache : _caches.values())
+            for (Cache<?, ?> cache : _caches.values())
                 cache.close();
             _caches.clear();
         }
