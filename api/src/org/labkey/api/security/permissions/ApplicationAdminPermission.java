@@ -17,7 +17,6 @@ package org.labkey.api.security.permissions;
 
 public class ApplicationAdminPermission extends AbstractSitePermission
 {
-    @Deprecated  // this will hopefully be swapped out for more fine-grained permissions soon; try to use those instead
     public ApplicationAdminPermission()
     {
         super("Application Admin", "Allows control over non-operational administration settings.");

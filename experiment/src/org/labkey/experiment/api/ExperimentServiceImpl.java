@@ -190,6 +190,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
+    private List<ExpRunEditor> _runEditors = new ArrayList<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
@@ -6220,6 +6221,19 @@ public class ExperimentServiceImpl implements ExperimentService
     public ProtocolImplementation getProtocolImplementation(String name)
     {
         return _protocolImplementations.get(name);
+    }
+
+    @Override
+    public void registerRunEditor(ExpRunEditor editor)
+    {
+        _runEditors.add(editor);
+    }
+
+    @Override
+    @NotNull
+    public List<ExpRunEditor> getRunEditors()
+    {
+        return _runEditors;
     }
 
     @Override
