@@ -307,4 +307,10 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     {
         return new StandardMBean(this, CacheMXBean.class, true);
     }
+
+    @Override
+    public Cache<K, V> createTemporaryCache()
+    {
+        throw new UnsupportedOperationException();
+    }
 }
