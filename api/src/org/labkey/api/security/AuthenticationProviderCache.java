@@ -19,7 +19,6 @@ import org.apache.commons.collections4.SetValuedMap;
 import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 
 import java.util.Collection;
@@ -36,7 +35,7 @@ public class AuthenticationProviderCache
 {
     // We have just a single object to cache (a global AuthenticationProviderCollection), but use standard cache (blocking cache wrapping the
     // shared cache) for convenience and to ensure that configuration changes will get propagated once multiple application servers are supported.
-    private static final BlockingCache<String, AuthenticationProviderCollections> CACHE = new BlockingStringKeyCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationProviderCollections());
+    private static final BlockingCache<String, AuthenticationProviderCollections> CACHE = new BlockingCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationProviderCollections());
     private static final String CACHE_KEY = AuthenticationProviderCache.class.getName();
 
     static

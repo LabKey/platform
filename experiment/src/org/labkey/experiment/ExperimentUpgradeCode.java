@@ -52,6 +52,7 @@ import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.MaterialSource;
 import org.labkey.experiment.api.SampleSetDomainKind;
+import org.labkey.experiment.api.SampleSetServiceImpl;
 import org.labkey.experiment.api.property.DomainImpl;
 
 import java.util.Arrays;
@@ -379,6 +380,36 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
             tx.commit();
         }
+    }
+
+
+    /** NOT yet called from upgrade script, needs to be added to a script in develop (e.g. 20.7) */
+    public static void upgradeMaterialSource(ModuleContext context)
+    {
+        if (context != null && context.isNewInstall())
+            return;
+
+        TableInfo msTable = ExperimentServiceImpl.get().getTinfoMaterialSource();
+        TableInfo objTable = OntologyManager.getTinfoObject();
+        SQLFragment sql = new SQLFragment("SELECT ms.*, o.objectid FROM ")
+                .append(msTable.getFromSQL("ms"))
+                .append(" LEFT OUTER JOIN " ).append(objTable.getFromSQL("o")).append(" ON ms.lsid=o.objecturi")
+                .append(" WHERE o.objectid IS NULL");
+        var collection = new SqlSelector(msTable.getSchema().getScope(), sql).getCollection(MaterialSource.class);
+        if (collection.isEmpty())
+            return;
+
+        collection.forEach(ms -> {
+            int oid = OntologyManager.ensureObject(ms.getContainer(), ms.getLSID());
+            ms.setObjectId(oid);
+            LOG.info("Created object " + oid + " for " + ms.getName());
+
+            SQLFragment update = new SQLFragment("UPDATE exp.object SET ownerobjectid=?" +
+                    " WHERE objecturi IN (SELECT lsid from exp.material WHERE cpastype=?)",  + ms.getObjectId(), ms.getLSID());
+            int rowCount = new SqlExecutor(objTable.getSchema().getScope()).execute(update);
+            LOG.info("Updated ownerObjectId for " + rowCount + " materials");
+        });
+        SampleSetServiceImpl.get().clearMaterialSourceCache(null);
     }
 
     /**

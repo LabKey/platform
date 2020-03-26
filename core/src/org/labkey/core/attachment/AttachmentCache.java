@@ -19,9 +19,9 @@ package org.labkey.core.attachment;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
@@ -44,7 +44,7 @@ import java.util.Set;
 public class AttachmentCache
 {
     private static final Set<String> ATTACHMENT_COLUMNS = new CsvSet("Parent, Container, DocumentName, DocumentSize, DocumentType, Created, CreatedBy, LastIndexed");
-    private static final StringKeyCache<Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(100000, CacheManager.MONTH, "Attachments");
+    private static final Cache<String, Map<String, Attachment>> CACHE = CacheManager.getStringKeyCache(100000, CacheManager.MONTH, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = (key, attachmentParent) ->
     {
@@ -78,7 +78,7 @@ public class AttachmentCache
 
     static void removeAttachments(Container c)
     {
-        CACHE.removeUsingPrefix(c.getId());
+        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(c.getId()));
     }
 
 

@@ -16,8 +16,8 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.FieldKey;
@@ -187,7 +187,7 @@ public class MvUtil
         return CACHE_PREFIX + c.getId();
     }
 
-    private static StringKeyCache<Map<String, String>> getCache()
+    private static Cache<String, Map<String, String>> getCache()
     {
         return CacheManager.getSharedCache();
     }
@@ -199,7 +199,7 @@ public class MvUtil
 
     public static void clearCache(@NotNull Container c)
     {
-        getCache().removeUsingPrefix(getCacheKey(c));
+        getCache().removeUsingFilter(new Cache.StringPrefixFilter(getCacheKey(c)));
     }
 
     /**

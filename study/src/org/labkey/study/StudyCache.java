@@ -67,7 +67,7 @@ public class StudyCache
         // Don't use a BlockingCache as that can cause deadlocks when needing to do a
         // load when all other DB connections are in use in threads, including one
         // that holds the BlockingCache's lock
-        DatabaseCache<Object> cache2 = DbCache.getCacheGeneric(tinfo);
+        DatabaseCache<String, Object> cache2 = DbCache.getCacheGeneric(tinfo);
         return cache2.get(getCacheName(c, cacheKey), null, loader);
     }
 

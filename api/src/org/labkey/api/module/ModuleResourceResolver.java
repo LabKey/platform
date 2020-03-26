@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -43,7 +44,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
-    private static final BlockingStringKeyCache<Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
+    private static final BlockingCache<String, Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
 
     // This ends up one per module; Consider: single static set to track all registered listeners?
@@ -104,7 +105,7 @@ public class ModuleResourceResolver implements Resolver
     public void clear()
     {
         String prefix = _module.getName();  // Remove all entries having a key that starts with this module name
-        CACHE.removeUsingPrefix(prefix);
+        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(prefix));
         DirectoryResource.clearResourceCache(this);
     }
 

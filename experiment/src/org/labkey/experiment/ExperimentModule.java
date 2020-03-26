@@ -275,6 +275,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         // delete the default "Unspecified" SampleSet TODO: move to an upgrade script in 19.2
         SampleSetServiceImpl.get().deleteDefaultSampleSet();
 
+        // TODO move to an upgrade script
+        ExperimentUpgradeCode.upgradeMaterialSource(null);
+
         SearchService ss = SearchService.get();
         if (null != ss)
         {
