@@ -3,7 +3,7 @@ import { getGlobal } from 'reactn';
 import {
     initQueryGridState,
     LineageGraph,
-    VisGraphNode,
+    LineageURLResolvers,
 } from '@labkey/components';
 
 import { AppContext } from './util'
@@ -21,16 +21,13 @@ interface RunGraphProps {
 }
 
 export class RunGraph extends React.Component<RunGraphProps> {
-
-    navigate = (node: VisGraphNode): void => {};
-
     render() {
         return (
             <LineageGraph
                 distance={1}
                 filterIn={false}
                 lsid={this.props.context.lsid}
-                navigate={this.navigate}
+                urlResolver={LineageURLResolvers.Server}
             />
         );
     }
