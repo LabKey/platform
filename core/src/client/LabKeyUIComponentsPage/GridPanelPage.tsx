@@ -1,12 +1,12 @@
-import React, { PureComponent } from 'react';
-import { Panel } from 'react-bootstrap';
-import { GridPanel, GridPanelWithModel, SchemaQuery } from '@labkey/components';
+import React, {PureComponent} from 'react';
+import {Panel} from 'react-bootstrap';
+import {GridPanelWithModel, SchemaQuery} from '@labkey/components';
 
 export class GridPanelPage extends PureComponent {
     render() {
         const configs = {
             'model': {
-                schemaQuery: SchemaQuery.create('assay', 'assaylist'),
+                schemaQuery: SchemaQuery.create('core', 'users'),
                 maxRows: 5,
             },
         };
