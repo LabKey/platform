@@ -3903,344 +3903,48 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    /**
-     * User: jeckels
-     * Date: Jan 27, 2008
-     */
-    public static class ExperimentUrlsImpl implements ExperimentUrls
+    @RequiresPermission(InsertPermission.class)
+    public class ImportSamplesAction extends AbstractExpDataImportAction
     {
-        public ActionURL getOverviewURL(Container c)
+        @Override
+        public void validateForm(QueryForm queryForm, Errors errors)
         {
-            return new ActionURL(BeginAction.class, c);
-        }
-
-        public ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment)
-        {
-            return new ActionURL(DetailsAction.class, c).addParameter("rowId", expExperiment.getRowId());
-        }
-
-        public ActionURL getShowSampleURL(Container c, ExpMaterial material)
-        {
-            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", material.getRowId());
-        }
-
-        public ActionURL getExportProtocolURL(Container container, ExpProtocol protocol)
-        {
-            return new ActionURL(ExperimentController.ExportProtocolsAction.class, container).
-                    addParameter("protocolId", protocol.getRowId()).
-                    addParameter("xarFileName", protocol.getName() + ".xar");
-        }
-
-        public ActionURL getMoveRunsLocationURL(Container container)
-        {
-            return new ActionURL(ExperimentController.MoveRunsLocationAction.class, container);
-        }
-
-        public ActionURL getProtocolDetailsURL(ExpProtocol protocol)
-        {
-            return new ActionURL(ProtocolDetailsAction.class, protocol.getContainer()).addParameter("rowId", protocol.getRowId());
-        }
-
-        public ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app)
-        {
-            return getShowApplicationURL(app.getContainer(), app.getRowId());
-        }
-
-        public ActionURL getProtocolGridURL(Container c)
-        {
-            return new ActionURL(ShowProtocolGridAction.class, c);
-        }
-
-        public ActionURL getRunGraphDetailURL(ExpRun run)
-        {
-            return getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
-        }
-
-        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus)
-        {
-            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_DATA);
-        }
-
-        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpMaterial focus)
-        {
-            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_MATERIAL);
-        }
-
-        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpProtocolApplication focus)
-        {
-            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_PROT_APP);
-        }
-
-        private ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpObject focus, String typeCode)
-        {
-            ActionURL result = getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
-            result.addParameter("detail", "true");
-            if (focus != null)
+            _form = queryForm;
+            _form.setSchemaName("samples");
+            _insertOption = queryForm.getInsertOption();
+            super.validateForm(queryForm, errors);
+            if (queryForm.getQueryName() == null)
+                errors.reject(ERROR_MSG, "Sample set name is required");
+            else
             {
-                result.addParameter("focus", typeCode + focus.getRowId());
+                ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
+                if (sampleSet == null)
+                {
+                    errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
+                }
             }
-            return result;
-        }
-
-        public ActionURL getRunGraphURL(Container container, int runId)
-        {
-            return ExperimentController.getRunGraphURL(container, runId);
-        }
-
-        public ActionURL getRunGraphURL(ExpRun run)
-        {
-            return getRunGraphURL(run.getContainer(), run.getRowId());
-        }
-
-        public ActionURL getRunTextURL(Container c, int runId)
-        {
-            return new ActionURL(ShowRunTextAction.class, c).addParameter("rowId", runId);
-        }
-
-        public ActionURL getRunTextURL(ExpRun run)
-        {
-            return getRunTextURL(run.getContainer(), run.getRowId());
-        }
-
-        public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
-        {
-            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
-        }
-
-        public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL)
-        {
-            ActionURL result = new ActionURL(DeleteProtocolByRowIdsAction.class, protocol.getContainer());
-            result.addParameter("singleObjectRowId", protocol.getRowId());
-            if (returnURL != null)
-            {
-                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
-            }
-            return result;
-        }
-
-        public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)
-        {
-            return new ActionURL(AddRunsToExperimentAction.class, c).addParameter("expRowId", exp.getRowId());
-        }
-
-        public ActionURL getShowRunsURL(Container c, ExperimentRunType type)
-        {
-            ActionURL result = new ActionURL(ShowRunsAction.class, c);
-            result.addParameter("experimentRunFilter", type.getDescription());
-            return result;
-        }
-
-        public ActionURL getShowExperimentsURL(Container c)
-        {
-            return new ActionURL(ShowRunGroupsAction.class, c);
-        }
-
-        public ActionURL getShowSampleSetListURL(Container c)
-        {
-            return getShowSampleSetListURL(c, null);
         }
 
         @Override
-        public ActionURL getShowSampleSetURL(ExpSampleSet sampleSet)
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
-            return new ActionURL(ShowMaterialSourceAction.class, sampleSet.getContainer()).addParameter("rowId", sampleSet.getRowId());
-        }
-
-        public ActionURL getExperimentListURL(Container container)
-        {
-            return new ActionURL(ShowRunGroupsAction.class, container);
-        }
-
-
-        public ActionURL getShowSampleSetListURL(Container c, String errorMessage)
-        {
-            ActionURL url = new ActionURL(ListMaterialSourcesAction.class, c);
-            if (errorMessage != null)
-            {
-                url.addParameter("sampleSetError", errorMessage);
-            }
-            return url;
-        }
-
-        public ActionURL getDataClassListURL(Container c)
-        {
-            return new ActionURL(ListDataClassAction.class, c);
-        }
-
-        public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
-        {
-            ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
-            if (returnURL != null)
-                url.addReturnURL(returnURL);
-            return url;
-        }
-
-        public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
-        {
-            ActionURL result = new ActionURL(DeleteSelectedExperimentsAction.class, c);
-            if (returnURL != null)
-                result.addReturnURL(returnURL);
-            return result;
-        }
-
-        public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
-        {
-            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
-        }
-
-        public ActionURL getShowUpdateURL(ExpExperiment experiment)
-        {
-            return new ActionURL(ShowUpdateAction.class, experiment.getContainer()).addParameter("rowId", experiment.getRowId());
-        }
-
-        public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
-        {
-            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addReturnURL(returnURL).addParameter("expRowId", exp.getRowId());
-        }
-
-        public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
-        {
-            ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
-            if (returnURL != null)
-            {
-                result.addReturnURL(returnURL);
-            }
-            if (addSelectedRuns)
-            {
-                result.addParameter("addSelectedRuns", "true");
-            }
-            return result;
-        }
-
-
-        public static ExperimentUrlsImpl get()
-        {
-            return (ExperimentUrlsImpl) PageFlowUtil.urlProvider(ExperimentUrls.class);
-        }
-
-        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
-        {
-            ActionURL result = new ActionURL(DownloadGraphAction.class, run.getContainer());
-            result.addParameter("rowId", run.getRowId()).addParameter("detail", detail);
-            if (focus != null)
-            {
-                result.addParameter("focus", focus);
-            }
-            if (focusType != null)
-            {
-                result.addParameter("focusType", focusType);
-            }
-            return result;
-        }
-
-        public ActionURL getBeginURL(Container container)
-        {
-            return new ActionURL(BeginAction.class, container);
+            initRequest(form);
+            setHelpTopic("importSampleSets");           // page-wide help topic
+            setImportHelpTopic("importSampleSets");     // importOptions help topic
+            setShowImportOptions(true);
+            setTypeName("samples");
+            return getDefaultImportView(form, errors);
         }
 
         @Override
-        public ActionURL getDomainEditorURL(Container container, String domainURI, boolean createOrEdit)
+        public NavTree appendNavTrail(NavTree root)
         {
-            Domain domain = PropertyService.get().getDomain(container, domainURI);
-            if (domain != null)
-                return getDomainEditorURL(container, domain);
-
-            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
-            url.addParameter("domainURI", domainURI);
-            if (createOrEdit)
-                url.addParameter("createOrEdit", true);
-            return url;
-        }
-
-        @Override
-        public ActionURL getDomainEditorURL(Container container, Domain domain)
-        {
-            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
-            url.addParameter("domainId", domain.getTypeId());
-            return url;
-        }
-
-        @Override
-        public ActionURL getShowDataClassURL(Container container, int rowId)
-        {
-            ActionURL url = new ActionURL(ShowDataClassAction.class, container);
-            url.addParameter("rowId", rowId);
-            return url;
-        }
-
-        public ActionURL getShowFileURL(ExpData data, boolean inline)
-        {
-            ActionURL result = getShowFileURL(data.getContainer()).addParameter("rowId", data.getRowId());
-            if (inline)
-            {
-                result.addParameter("inline", inline);
-            }
-            return result;
-        }
-
-        public ActionURL getMaterialDetailsURL(ExpMaterial material)
-        {
-            return new ActionURL(ShowMaterialAction.class, material.getContainer()).addParameter("rowId", material.getRowId());
-        }
-
-        public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
-        {
-            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", materialRowId);
-        }
-
-        @Override
-        public ActionURL getCreateSampleSetURL(Container container)
-        {
-            return new ActionURL(CreateSampleSetAction.class, container);
-        }
-
-        @Override
-        public ActionURL getImportSamplesURL(Container container, String sampleSetName)
-        {
-            ActionURL url = new ActionURL(ImportSamplesAction.class, container);
-            url.addParameter("query.queryName", sampleSetName);
-            url.addParameter("schemaName", "exp.materials");
-            return url;
-        }
-
-        @Override
-        public ActionURL getImportDataURL(Container container, String dataClassName)
-        {
-            ActionURL url = new ActionURL(ImportDataAction.class, container);
-            url.addParameter("query.queryName", dataClassName);
-            url.addParameter("schemaName", "exp.data");
-            return url;
-        }
-
-        public ActionURL getDataDetailsURL(ExpData data)
-        {
-            return new ActionURL(ShowDataAction.class, data.getContainer()).addParameter("rowId", data.getRowId());
-        }
-
-        public ActionURL getShowFileURL(Container c)
-        {
-            return new ActionURL(ShowFileAction.class, c);
-        }
-
-        public ActionURL getSetFlagURL(Container container)
-        {
-            return new ActionURL(SetFlagAction.class, container);
-        }
-
-        public ActionURL getShowRunGraphURL(ExpRun run)
-        {
-            return ExperimentController.getRunGraphURL(run.getContainer(), run.getRowId());
-        }
-
-        public ActionURL getUploadXARURL(Container container)
-        {
-            return new ActionURL(ShowAddXarFileAction.class, container);
-        }
-
-        @Override
-        public ActionURL getRepairTypeURL(Container container)
-        {
-            return new ActionURL(TypesController.RepairAction.class, container);
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ActionURL url = _form.urlFor(QueryAction.executeQuery);
+            if (_form.getQueryName() != null && url != null)
+                root.addChild(_form.getQueryName(), url);
+            root.addChild("Import Data");
+            return root;
         }
     }
 
@@ -4318,51 +4022,6 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             root.addChild("Data Classes", ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
-            ActionURL url = _form.urlFor(QueryAction.executeQuery);
-            if (_form.getQueryName() != null && url != null)
-                root.addChild(_form.getQueryName(), url);
-            root.addChild("Import Data");
-            return root;
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class ImportSamplesAction extends AbstractExpDataImportAction
-    {
-        @Override
-        public void validateForm(QueryForm queryForm, Errors errors)
-        {
-            _form = queryForm;
-            _form.setSchemaName("samples");
-            _insertOption = queryForm.getInsertOption();
-            super.validateForm(queryForm, errors);
-            if (queryForm.getQueryName() == null)
-                errors.reject(ERROR_MSG, "Sample set name is required");
-            else
-            {
-                ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
-                if (sampleSet == null)
-                {
-                    errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
-                }
-            }
-        }
-
-        @Override
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
-        {
-            initRequest(form);
-            setHelpTopic("importSampleSets");           // page-wide help topic
-            setImportHelpTopic("importSampleSets");     // importOptions help topic
-            setShowImportOptions(true);
-            setTypeName("samples");
-            return getDefaultImportView(form, errors);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ActionURL url = _form.urlFor(QueryAction.executeQuery);
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
@@ -4479,6 +4138,29 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Upload a .xar or .xar.xml file from your browser");
+        }
+    }
+
+    @RequiresPermission(UpdatePermission.class)
+    public class ShowUpdateAction extends SimpleViewAction<ExperimentForm>
+    {
+        public ModelAndView getView(ExperimentForm form, BindException errors)
+        {
+            form.refreshFromDb();
+            Experiment exp = form.getBean();
+            if (exp == null)
+            {
+                throw new NotFoundException();
+            }
+            ensureCorrectContainer(getContainer(), ExperimentService.get().getExpExperiment(exp.getRowId()), getViewContext());
+
+            return new ExperimentUpdateView(new DataRegion(), form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            setHelpTopic("runGroups");
+            return appendRootNavTrail(root).addChild("Update Run Group");
         }
     }
 
@@ -6502,28 +6184,345 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(UpdatePermission.class)
-    public class ShowUpdateAction extends SimpleViewAction<ExperimentForm>
-    {
-        @Override
-        public ModelAndView getView(ExperimentForm form, BindException errors)
-        {
-            form.refreshFromDb();
-            Experiment exp = form.getBean();
-            if (exp == null)
-            {
-                throw new NotFoundException();
-            }
-            ensureCorrectContainer(getContainer(), ExperimentService.get().getExpExperiment(exp.getRowId()), getViewContext());
 
-            return new ExperimentUpdateView(new DataRegion(), form, errors);
+    /**
+     * User: jeckels
+     * Date: Jan 27, 2008
+     */
+    public static class ExperimentUrlsImpl implements ExperimentUrls
+    {
+        public ActionURL getOverviewURL(Container c)
+        {
+            return new ActionURL(BeginAction.class, c);
+        }
+
+        public ActionURL getExperimentDetailsURL(Container c, ExpExperiment expExperiment)
+        {
+            return new ActionURL(DetailsAction.class, c).addParameter("rowId", expExperiment.getRowId());
+        }
+
+        public ActionURL getShowSampleURL(Container c, ExpMaterial material)
+        {
+            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", material.getRowId());
+        }
+
+        public ActionURL getExportProtocolURL(Container container, ExpProtocol protocol)
+        {
+            return new ActionURL(ExperimentController.ExportProtocolsAction.class, container).
+                    addParameter("protocolId", protocol.getRowId()).
+                    addParameter("xarFileName", protocol.getName() + ".xar");
+        }
+
+        public ActionURL getMoveRunsLocationURL(Container container)
+        {
+            return new ActionURL(ExperimentController.MoveRunsLocationAction.class, container);
+        }
+
+        public ActionURL getProtocolDetailsURL(ExpProtocol protocol)
+        {
+            return new ActionURL(ProtocolDetailsAction.class, protocol.getContainer()).addParameter("rowId", protocol.getRowId());
+        }
+
+        public ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app)
+        {
+            return getShowApplicationURL(app.getContainer(), app.getRowId());
+        }
+
+        public ActionURL getProtocolGridURL(Container c)
+        {
+            return new ActionURL(ShowProtocolGridAction.class, c);
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run)
+        {
+            return getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_DATA);
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpMaterial focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_MATERIAL);
+        }
+
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpProtocolApplication focus)
+        {
+            return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_PROT_APP);
+        }
+
+        private ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpObject focus, String typeCode)
+        {
+            ActionURL result = getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
+            result.addParameter("detail", "true");
+            if (focus != null)
+            {
+                result.addParameter("focus", typeCode + focus.getRowId());
+            }
+            return result;
+        }
+
+        public ActionURL getRunGraphURL(Container container, int runId)
+        {
+            return ExperimentController.getRunGraphURL(container, runId);
+        }
+
+        public ActionURL getRunGraphURL(ExpRun run)
+        {
+            return getRunGraphURL(run.getContainer(), run.getRowId());
+        }
+
+        public ActionURL getRunTextURL(Container c, int runId)
+        {
+            return new ActionURL(ShowRunTextAction.class, c).addParameter("rowId", runId);
+        }
+
+        public ActionURL getRunTextURL(ExpRun run)
+        {
+            return getRunTextURL(run.getContainer(), run.getRowId());
+        }
+
+        public ActionURL getDeleteExperimentsURL(Container container, URLHelper returnURL)
+        {
+            return new ActionURL(DeleteSelectedExperimentsAction.class, container).addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+        }
+
+        public ActionURL getDeleteProtocolURL(@NotNull ExpProtocol protocol, URLHelper returnURL)
+        {
+            ActionURL result = new ActionURL(DeleteProtocolByRowIdsAction.class, protocol.getContainer());
+            result.addParameter("singleObjectRowId", protocol.getRowId());
+            if (returnURL != null)
+            {
+                result.addParameter(ActionURL.Param.returnUrl, returnURL.getLocalURIString());
+            }
+            return result;
+        }
+
+        public ActionURL getAddRunsToExperimentURL(Container c, ExpExperiment exp)
+        {
+            return new ActionURL(AddRunsToExperimentAction.class, c).addParameter("expRowId", exp.getRowId());
+        }
+
+        public ActionURL getShowRunsURL(Container c, ExperimentRunType type)
+        {
+            ActionURL result = new ActionURL(ShowRunsAction.class, c);
+            result.addParameter("experimentRunFilter", type.getDescription());
+            return result;
+        }
+
+        public ActionURL getShowExperimentsURL(Container c)
+        {
+            return new ActionURL(ShowRunGroupsAction.class, c);
+        }
+
+        public ActionURL getShowSampleSetListURL(Container c)
+        {
+            return getShowSampleSetListURL(c, null);
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public ActionURL getShowSampleSetURL(ExpSampleSet sampleSet)
         {
-            setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Update Run Group");
+            return new ActionURL(ShowMaterialSourceAction.class, sampleSet.getContainer()).addParameter("rowId", sampleSet.getRowId());
+        }
+
+        public ActionURL getExperimentListURL(Container container)
+        {
+            return new ActionURL(ShowRunGroupsAction.class, container);
+        }
+
+
+        public ActionURL getShowSampleSetListURL(Container c, String errorMessage)
+        {
+            ActionURL url = new ActionURL(ListMaterialSourcesAction.class, c);
+            if (errorMessage != null)
+            {
+                url.addParameter("sampleSetError", errorMessage);
+            }
+            return url;
+        }
+
+        public ActionURL getDataClassListURL(Container c)
+        {
+            return new ActionURL(ListDataClassAction.class, c);
+        }
+
+        public ActionURL getDeleteDatasURL(Container c, URLHelper returnURL)
+        {
+            ActionURL url = new ActionURL(DeleteSelectedDataAction.class, c);
+            if (returnURL != null)
+                url.addReturnURL(returnURL);
+            return url;
+        }
+
+        public ActionURL getDeleteSelectedExperimentsURL(Container c, URLHelper returnURL)
+        {
+            ActionURL result = new ActionURL(DeleteSelectedExperimentsAction.class, c);
+            if (returnURL != null)
+                result.addReturnURL(returnURL);
+            return result;
+        }
+
+        public ActionURL getDeleteSelectedExpRunsURL(Container container, URLHelper returnURL)
+        {
+            return new ActionURL(DeleteSelectedExpRunsAction.class, container).addReturnURL(returnURL);
+        }
+
+        public ActionURL getShowUpdateURL(ExpExperiment experiment)
+        {
+            return new ActionURL(ShowUpdateAction.class, experiment.getContainer()).addParameter("rowId", experiment.getRowId());
+        }
+
+        public ActionURL getRemoveSelectedExpRunsURL(Container container, URLHelper returnURL, ExpExperiment exp)
+        {
+            return new ActionURL(RemoveSelectedExpRunsAction.class, container).addReturnURL(returnURL).addParameter("expRowId", exp.getRowId());
+        }
+
+        public ActionURL getCreateRunGroupURL(Container container, URLHelper returnURL, boolean addSelectedRuns)
+        {
+            ActionURL result = new ActionURL(CreateRunGroupAction.class, container);
+            if (returnURL != null)
+            {
+                result.addReturnURL(returnURL);
+            }
+            if (addSelectedRuns)
+            {
+                result.addParameter("addSelectedRuns", "true");
+            }
+            return result;
+        }
+
+
+        public static ExperimentUrlsImpl get()
+        {
+            return (ExperimentUrlsImpl) PageFlowUtil.urlProvider(ExperimentUrls.class);
+        }
+
+        public ActionURL getDownloadGraphURL(ExpRun run, boolean detail, String focus, String focusType)
+        {
+            ActionURL result = new ActionURL(DownloadGraphAction.class, run.getContainer());
+            result.addParameter("rowId", run.getRowId()).addParameter("detail", detail);
+            if (focus != null)
+            {
+                result.addParameter("focus", focus);
+            }
+            if (focusType != null)
+            {
+                result.addParameter("focusType", focusType);
+            }
+            return result;
+        }
+
+        public ActionURL getBeginURL(Container container)
+        {
+            return new ActionURL(BeginAction.class, container);
+        }
+
+        @Override
+        public ActionURL getDomainEditorURL(Container container, String domainURI, boolean createOrEdit)
+        {
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (domain != null)
+                return getDomainEditorURL(container, domain);
+
+            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
+            url.addParameter("domainURI", domainURI);
+            if (createOrEdit)
+                url.addParameter("createOrEdit", true);
+            return url;
+        }
+
+        @Override
+        public ActionURL getDomainEditorURL(Container container, Domain domain)
+        {
+            ActionURL url = new ActionURL(PropertyController.EditDomainAction.class, container);
+            url.addParameter("domainId", domain.getTypeId());
+            return url;
+        }
+
+        @Override
+        public ActionURL getShowDataClassURL(Container container, int rowId)
+        {
+            ActionURL url = new ActionURL(ShowDataClassAction.class, container);
+            url.addParameter("rowId", rowId);
+            return url;
+        }
+
+        public ActionURL getShowFileURL(ExpData data, boolean inline)
+        {
+            ActionURL result = getShowFileURL(data.getContainer()).addParameter("rowId", data.getRowId());
+            if (inline)
+            {
+                result.addParameter("inline", inline);
+            }
+            return result;
+        }
+
+        public ActionURL getMaterialDetailsURL(ExpMaterial material)
+        {
+            return new ActionURL(ShowMaterialAction.class, material.getContainer()).addParameter("rowId", material.getRowId());
+        }
+
+        public ActionURL getMaterialDetailsURL(Container c, int materialRowId)
+        {
+            return new ActionURL(ShowMaterialAction.class, c).addParameter("rowId", materialRowId);
+        }
+
+        @Override
+        public ActionURL getCreateSampleSetURL(Container container)
+        {
+            return new ActionURL(CreateSampleSetAction.class, container);
+        }
+
+        @Override
+        public ActionURL getImportSamplesURL(Container container, String sampleSetName)
+        {
+            ActionURL url = new ActionURL(ImportSamplesAction.class, container);
+            url.addParameter("query.queryName", sampleSetName);
+            url.addParameter("schemaName", "exp.materials");
+            return url;
+        }
+
+        @Override
+        public ActionURL getImportDataURL(Container container, String dataClassName)
+        {
+            ActionURL url = new ActionURL(ImportDataAction.class, container);
+            url.addParameter("query.queryName", dataClassName);
+            url.addParameter("schemaName", "exp.data");
+            return url;
+        }
+
+        public ActionURL getDataDetailsURL(ExpData data)
+        {
+            return new ActionURL(ShowDataAction.class, data.getContainer()).addParameter("rowId", data.getRowId());
+        }
+
+        public ActionURL getShowFileURL(Container c)
+        {
+            return new ActionURL(ShowFileAction.class, c);
+        }
+
+        public ActionURL getSetFlagURL(Container container)
+        {
+            return new ActionURL(SetFlagAction.class, container);
+        }
+
+        public ActionURL getShowRunGraphURL(ExpRun run)
+        {
+            return ExperimentController.getRunGraphURL(run.getContainer(), run.getRowId());
+        }
+
+        public ActionURL getUploadXARURL(Container container)
+        {
+            return new ActionURL(ShowAddXarFileAction.class, container);
+        }
+
+        @Override
+        public ActionURL getRepairTypeURL(Container container)
+        {
+            return new ActionURL(TypesController.RepairAction.class, container);
         }
     }
 
