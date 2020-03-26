@@ -81,8 +81,19 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         return (TableInsertDataIterator)create(data, table, c, context, keyColumns, addlSkipColumns, dontUpdate, null, false);
     }
 
-    public static @Nullable Set<String> getDontUpdate(DataIterator di, TableInfo table, DataIteratorContext context, @Nullable Set<String> dontUpdate)
+    public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing)
+            //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
     {
+        // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
+        DataIterator di = data.getDataIterator(context);
+        if (null == di)
+        {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if (!context.getErrors().hasErrors())
+                throw new NullPointerException("getDataIterator() returned NULL");
+            return null;
+        }
         if (null == dontUpdate)
         {
             dontUpdate = context.getDontUpdateColumnNames();
@@ -111,25 +122,6 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
             dontUpdate.addAll(targetOnlyColumnNames);
         }
-
-        return dontUpdate;
-    }
-
-    public static DataIterator create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
-         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate, @Nullable Set<DomainProperty> vocabularyColumns , boolean commitRowsBeforeContinuing)
-            //extra param @NUllable Set<PDs/Names?CIs> VOCCOls
-    {
-        // TODO it would be better to postpone calling data.getDataIterator() until the TableInsertDataIterator.getDataIterator() is called
-        DataIterator di = data.getDataIterator(context);
-        if (null == di)
-        {
-            //noinspection ThrowableResultOfMethodCallIgnored
-            if (!context.getErrors().hasErrors())
-                throw new NullPointerException("getDataIterator() returned NULL");
-            return null;
-        }
-
-        dontUpdate = getDontUpdate(di, table, context, dontUpdate);
 
         if (null == keyColumns)
         {
@@ -161,7 +153,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     }
 
 
-    public TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
+    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
                                       @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(data, context);
@@ -311,20 +303,16 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         if (_context.supportsAutoIncrementKey())
             setAutoIncrement(INSERT.ON);
 
-        stmt = getMergeStatementUtil(constants).createStatement(_conn, _c, null);
+        StatementUtils util = new StatementUtils(StatementUtils.Operation.merge, _table)
+                    .keys(_keyColumns)
+                    .skip(_skipColumnNames)
+                    .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
+                    .noupdate(_dontUpdate)
+                    .updateBuiltinColumns(false)
+                    .selectIds(_selectIds)
+                    .constants(constants);
+        stmt = util.createStatement(_conn, _c, null);
         return stmt;
-    }
-
-    protected StatementUtils getMergeStatementUtil(Map<String, Object> constants)
-    {
-        return new StatementUtils(StatementUtils.Operation.merge, _table)
-                .keys(_keyColumns)
-                .skip(_skipColumnNames)
-                .allowSetAutoIncrement(_context.supportsAutoIncrementKey())
-                .noupdate(_dontUpdate)
-                .updateBuiltinColumns(false)
-                .selectIds(_selectIds)
-                .constants(constants);
     }
 
 
@@ -427,34 +415,8 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
         }
     }
 
-    public TableInfo getTable()
-    {
-        return _table;
-    }
-
     public void setAdhocPropColumns(Set<DomainProperty> adhocPropColumns)
     {
         _adhocPropColumns = adhocPropColumns;
     }
-
-    public boolean isSelectIds()
-    {
-        return _selectIds;
-    }
-
-    public Set<String> getSkipColumnNames()
-    {
-        return _skipColumnNames;
-    }
-
-    public Set<String> getDontUpdate()
-    {
-        return _dontUpdate;
-    }
-
-    public Set<String> getKeyColumns()
-    {
-        return _keyColumns;
-    }
-
 }

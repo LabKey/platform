@@ -792,7 +792,7 @@ public class ExpDataIterators
                     new CaseInsensitiveHashMap<>();
 
             assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
-            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
+            boolean isSample = _expTable instanceof ExpMaterialTableImpl;
 
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);

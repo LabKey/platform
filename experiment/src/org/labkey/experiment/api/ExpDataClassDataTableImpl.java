@@ -432,10 +432,11 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             comma = ", ";
         }
 
+        SqlDialect dialect = _rootTable.getSqlDialect();
         for (String pCol : pCols)
         {
             sql.append(comma);
-            sql.append("p.").append(pCol);
+            sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "d");
@@ -443,7 +444,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getAliasedFilterSQLFragment(_rootTable.getSqlDialect(), columnMap, getFilter().getClauses());
+        SQLFragment filterFrag = getAliasedFilterSQLFragment(dialect, columnMap, getFilter().getClauses());
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;
@@ -606,7 +607,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
-            // use materialized classId so that parameter binding works for both exp.data as well as materializeed table
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
             ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 

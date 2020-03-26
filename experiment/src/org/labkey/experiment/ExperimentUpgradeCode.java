@@ -382,7 +382,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Called from exp-???.sql
+     * Called from exp-20.001-20.002.sql
      */
     public static void addProvisionedDataClassNameClassId(ModuleContext context)
     {
@@ -421,7 +421,7 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         StorageProvisioner.ensureStorageTable(domain, kind, scope);
         domain = PropertyService.get().getDomain(domain.getTypeId());
-        assert (null != domain.getStorageTableName());
+        assert (null != domain && null != domain.getStorageTableName());
 
         SchemaTableInfo provisionedTable = schema.getTable(domain.getStorageTableName());
         if (provisionedTable == null)
