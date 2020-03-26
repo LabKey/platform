@@ -17,9 +17,9 @@ package org.labkey.api.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -182,7 +182,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
      CONSIDER: if there were a caching version of StudyService.get().getAllStudies(project)
      we could do away with this cache
     */
-    private static final StringKeyCache<Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", new CacheLoader<String,Set<GUID>>(){
+    private static final Cache<String, Set<GUID>> studiesCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "Dataspace study cache", new CacheLoader<String,Set<GUID>>(){
         @Override
         public Set<GUID> load(String key, @Nullable Object argument)
         {

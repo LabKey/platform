@@ -28,6 +28,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Bean class for domains (persisted in exp.DomainDescriptor). Most code shouldn't use this class directly, but should
@@ -243,6 +244,7 @@ public final class DomainDescriptor
         return Integer.valueOf(getDomainId()).hashCode();
     }
 
+    /** Compares just the IDs */
     @Override
     public boolean equals(Object obj)
     {
@@ -254,6 +256,21 @@ public final class DomainDescriptor
 
         // two domain descriptors are equal if they have the same row ID:
         return ((DomainDescriptor) obj).getDomainId() == getDomainId();
+    }
+
+    /** Compare all persisted properties */
+    public boolean deepEquals(DomainDescriptor d)
+    {
+        return (d.getDomainId() == 0 || Objects.equals(getDomainId(), d.getDomainId())) &&
+                Objects.equals(getName(), d.getName()) &&
+                Objects.equals(getStorageTableName(), d.getStorageTableName()) &&
+                Objects.equals(getStorageSchemaName(), d.getStorageSchemaName()) &&
+                Objects.equals(getProject(), d.getProject()) &&
+                Objects.equals(getTitlePropertyId(), d.getTitlePropertyId()) &&
+                Objects.equals(getDomainURI(), d.getDomainURI()) &&
+                Objects.equals(getDescription(), d.getDescription()) &&
+                Objects.equals(getContainer(), d.getContainer());
+
     }
 
     public boolean isProvisioned()
