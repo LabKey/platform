@@ -3041,7 +3041,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    private DatabaseCache<Map<String, Map<String, Object>>> _groupedValuesCache = null;
+    private DatabaseCache<String, Map<String, Map<String, Object>>> _groupedValuesCache = null;
     private class GroupedResults
     {
         public String viewName;

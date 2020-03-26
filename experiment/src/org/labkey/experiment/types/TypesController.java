@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
@@ -626,7 +626,7 @@ public class TypesController extends SpringActionController
         return conceptCount;
     }
 
-    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
+    private static final Cache<String, String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
 
     public static String[] getSemanticTypes()
     {
