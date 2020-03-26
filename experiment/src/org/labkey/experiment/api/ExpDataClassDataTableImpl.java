@@ -362,6 +362,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (null != dp && null != pd)
                 {
+                    col.setName(dp.getName());
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
                         col.setFk(PdLookupForeignKey.create(schema, pd));
