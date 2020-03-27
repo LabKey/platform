@@ -505,6 +505,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         setDefaultVisibleColumns(defaultCols);
     }
 
+    @Override
     public Domain getDomain()
     {
         return _ss == null ? null : _ss.getDomain();

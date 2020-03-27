@@ -3904,12 +3904,8 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(InsertPermission.class)
-    public class ImportSamplesAction extends AbstractQueryImportAction<QueryForm>
+    public class ImportSamplesAction extends AbstractExpDataImportAction
     {
-        private QueryForm _form;
-        private ExpSampleSetImpl _sampleSet;
-
-
         @Override
         public void validateForm(QueryForm queryForm, Errors errors)
         {
@@ -3921,13 +3917,40 @@ public class ExperimentController extends SpringActionController
                 errors.reject(ERROR_MSG, "Sample set name is required");
             else
             {
-                _sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
-                if (_sampleSet == null)
+                ExpSampleSetImpl sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), queryForm.getQueryName());
+                if (sampleSet == null)
                 {
                     errors.reject(ERROR_MSG, "Sample set '" + queryForm.getQueryName() + " not found.");
                 }
             }
         }
+
+        @Override
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            setHelpTopic("importSampleSets");           // page-wide help topic
+            setImportHelpTopic("importSampleSets");     // importOptions help topic
+            setShowImportOptions(true);
+            setTypeName("samples");
+            return getDefaultImportView(form, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
+            ActionURL url = _form.urlFor(QueryAction.executeQuery);
+            if (_form.getQueryName() != null && url != null)
+                root.addChild(_form.getQueryName(), url);
+            root.addChild("Import Data");
+            return root;
+        }
+    }
+
+    public abstract class AbstractExpDataImportAction extends AbstractQueryImportAction<QueryForm>
+    {
+        protected QueryForm _form;
 
         @Override
         protected void initRequest(QueryForm form) throws ServletException
@@ -3939,29 +3962,6 @@ public class ExperimentController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
-        }
-
-        @Override
-        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
-        {
-            initRequest(form);
-            setHelpTopic("importSampleSets");           // page wide help topic
-            setImportHelpTopic("importSampleSets");     // importOptions help topic
-            setShowImportOptions(true);
-            setTypeName("samples");
-            return getDefaultImportView(form, errors);
-        }
-
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
-            ActionURL url = _form.urlFor(QueryAction.executeQuery);
-            if (_form.getQueryName() != null && url != null)
-                root.addChild(_form.getQueryName(), url);
-            root.addChild("Import Data");
-            return root;
         }
 
         @Override
@@ -3981,20 +3981,70 @@ public class ExperimentController extends SpringActionController
 
             return renameColumns;
         }
+
+    }
+
+    @RequiresPermission(InsertPermission.class)
+    public class ImportDataAction extends AbstractExpDataImportAction
+    {
+        @Override
+        public void validateForm(QueryForm queryForm, Errors errors)
+        {
+            _form = queryForm;
+            _form.setSchemaName("exp.data");
+            _insertOption = queryForm.getInsertOption();
+            super.validateForm(queryForm, errors);
+            if (queryForm.getQueryName() == null)
+                errors.reject(ERROR_MSG, "Data class name is required");
+            else
+            {
+                ExpDataClass dataClass = ExperimentService.get().getDataClass(getContainer(), getUser(), queryForm.getQueryName());
+                if (dataClass == null)
+                {
+                    errors.reject(ERROR_MSG, "Data class '" + queryForm.getQueryName() + " not found.");
+                }
+            }
+        }
+
+        @Override
+        public ModelAndView getView(QueryForm form, BindException errors) throws Exception
+        {
+            initRequest(form);
+            setHelpTopic("dataClass");           // page wide help topic
+            setImportHelpTopic("dataClass#ui");     // importOptions help topic
+            setShowImportOptions(true);
+            setTypeName("data");
+            return getDefaultImportView(form, errors);
+        }
+
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Data Classes", ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
+            ActionURL url = _form.urlFor(QueryAction.executeQuery);
+            if (_form.getQueryName() != null && url != null)
+                root.addChild(_form.getQueryName(), url);
+            root.addChild("Import Data");
+            return root;
+        }
     }
 
     @RequiresPermission(InsertPermission.class)
     public class ShowAddXarFileAction extends FormViewAction<Object>
     {
+        @Override
         public URLHelper getSuccessURL(Object o)
         {
             return PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer());
         }
 
+        @Override
         public void validateCommand(Object target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(Object o, boolean reshow, BindException errors)
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
@@ -4084,6 +4134,7 @@ public class ExperimentController extends SpringActionController
             return true;
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return appendRootNavTrail(root).addChild("Upload a .xar or .xar.xml file from your browser");
@@ -6431,6 +6482,15 @@ public class ExperimentController extends SpringActionController
             ActionURL url = new ActionURL(ImportSamplesAction.class, container);
             url.addParameter("query.queryName", sampleSetName);
             url.addParameter("schemaName", "exp.materials");
+            return url;
+        }
+
+        @Override
+        public ActionURL getImportDataURL(Container container, String dataClassName)
+        {
+            ActionURL url = new ActionURL(ImportDataAction.class, container);
+            url.addParameter("query.queryName", dataClassName);
+            url.addParameter("schemaName", "exp.data");
             return url;
         }
 
