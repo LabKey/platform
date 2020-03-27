@@ -78,7 +78,6 @@
 
     String renderId = form.getComponentId() != null ? form.getComponentId() : "chart-wizard-report";
 %>
-<labkey:scriptDependency/>
 <div id="<%=h(renderId)%>"></div>
 <script type="text/javascript">
 
@@ -155,14 +154,16 @@
         Ext4.get(renderTo).update("<span class='labkey-error'>" + msg + "</span>");
     };
 
-    Ext4.onReady(function()
-    {
-        var renderTo = <%=q(renderId)%>,
-            reportId = <%=q(id != null ? id.toString() : null) %>,
-            canEdit = <%=canEdit%>,
-            editUrl = <%=q(editUrl != null ? editUrl.toString() : null) %>;
+    <labkey:loadClientDependencies>
+        Ext4.onReady(function()
+        {
+            var renderTo = <%=q(renderId)%>,
+                    reportId = <%=q(id != null ? id.toString() : null) %>,
+                    canEdit = <%=canEdit%>,
+                    editUrl = <%=q(editUrl != null ? editUrl.toString() : null) %>;
 
-        init(reportId, renderTo, canEdit, editUrl);
-    });
+            init(reportId, renderTo, canEdit, editUrl);
+        });
+    </labkey:loadClientDependencies>
 </script>
 

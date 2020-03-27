@@ -50,7 +50,6 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
-import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -125,6 +124,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        // leaving commented out until branch that supports merge for data classes is merged
+//        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
+//        setImportURL(new DetailsURL(url));
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
@@ -360,6 +362,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (null != dp && null != pd)
                 {
+                    col.setName(dp.getName());
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
                         col.setFk(PdLookupForeignKey.create(schema, pd));
