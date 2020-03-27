@@ -527,11 +527,13 @@ public class ParticipantGroupController extends BaseStudyController
                         else if (form.getGroupId() != -1)
                         {
                             // NOTE: this can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module
-                            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
+                            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getGroupId());
                             if (group != null)
                             {
                                 ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
                                 JSONGroup jsonGroup = new JSONGroup(group, category);
+                                if (form.includeParticipantIds())
+                                    jsonGroup.setParticipantIds(group.getParticipantSet());
                                 groups.add(jsonGroup.toJSON(getViewContext()));
                             }
                         }
