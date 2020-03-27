@@ -567,7 +567,7 @@ LABKEY.Experiment.saveBatch({
          * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
          * @static
          */
-        resolve(config)
+        resolve : function (config)
         {
             var params = {};
             if (config.lsids)
