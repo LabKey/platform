@@ -38,7 +38,7 @@ import org.labkey.api.exp.property.ExperimentProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,7 +58,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         super(protocol);
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         return null;
     }

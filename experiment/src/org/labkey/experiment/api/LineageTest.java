@@ -30,6 +30,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -464,7 +465,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(Set.of(b1, b2), lineage.getNodeChildren(run));
 
         // verify json structure
-        JSONObject json = lineage.toJSON(true);
+        JSONObject json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(false, false, false));
         assertEquals(a1Lsid.toString(), json.getString("seed"));
 
         JSONObject nodes = json.getJSONObject("nodes");

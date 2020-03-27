@@ -249,9 +249,7 @@ public class AssayManager implements AssayService
     private class ModuleAssayLsidHandlerFinder implements LsidHandlerFinder
     {
         // ExpRunLsidHandler has no state, so safe to use a singleton.
-        private final LsidHandler _fileBasedAssayLsidHandler = new ExpRunLsidHandler();
-        // AssayResultLsidHandler has no state, so safe to use a singleton.
-        private final LsidHandler _fileBasedAssayResultLsidHandler = new LsidManager.OntologyObjectLsidHandler();
+        private final ExpRunLsidHandler _fileBasedAssayLsidHandler = new ExpRunLsidHandler();
 
         @Nullable
         @Override
@@ -261,8 +259,10 @@ public class AssayManager implements AssayService
             {
                 if (getModuleAssayCollections().getRunLsidPrefixes().contains(namespacePrefix))
                     return _fileBasedAssayLsidHandler;
-                else if (getModuleAssayCollections().getResultLsidPrefixes().contains(namespacePrefix))
-                    return _fileBasedAssayResultLsidHandler;
+
+                AssayProvider provider = getModuleAssayCollections().getResultLsidPrefixes().get(namespacePrefix);
+                if (provider != null)
+                    return new LsidManager.AssayResultLsidHandler(provider);
             }
 
             return null;

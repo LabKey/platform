@@ -16,6 +16,7 @@
 
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionDataRow;
 import org.labkey.api.assay.dilution.DilutionManager;
@@ -28,6 +29,7 @@ import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.view.ActionURL;
 
 import java.util.*;
 
@@ -64,6 +66,15 @@ public class WellGroupImpl extends WellGroupTemplateImpl implements WellGroup
         _plate = plate;
         for (Map.Entry<String, Object> entry : template.getProperties().entrySet())
             setProperty(entry.getKey(), entry.getValue());
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        if (_plate == null)
+            return null;
+
+        return PlateManager.get().getDetailsURL(_plate);
     }
 
     @Override
