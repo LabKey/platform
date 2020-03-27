@@ -197,7 +197,7 @@ public class ExperimentJSONConverter
 
             // Inputs into the final output step are outputs of the entire run
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
-            jsonObject.put(DATA_OUTPUTS, serializeRunInputs(outputApp.getDataInputs(), user, settings));
+            jsonObject.put(DATA_OUTPUTS, serializeRunDataOutputs(outputApp.getDataInputs(), user, settings));
             jsonObject.put(MATERIAL_OUTPUTS, serializeRunInputs(outputApp.getMaterialInputs(), user, settings));
 
             serializeRunLevelProvenanceProperties(jsonObject, run);
@@ -262,6 +262,15 @@ public class ExperimentJSONConverter
             outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, settings));
         }
         obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
+    }
+
+    protected static JSONArray serializeRunDataOutputs(Collection<? extends ExpDataRunInput> inputs, User user, Settings settings)
+    {
+        // filter out any output data that have a file URL or aren't a DataClass
+        return serializeRunInputs(inputs.stream().filter(input -> {
+            ExpData d = input.getData();
+            return d != null && (d.getFile() != null || d.getDataClass(user) != null);
+        }).collect(Collectors.toList()), user, settings);
     }
 
     protected static JSONArray serializeRunInputs(Collection<? extends ExpRunInput> inputs, User user, Settings settings)
@@ -341,7 +350,7 @@ public class ExperimentJSONConverter
             json.put(MATERIAL_INPUTS, serializeRunInputs(protApp.getMaterialInputs(), user, settings));
 
             json.put(DATA_OUTPUTS, serializeRunInputs(protApp.getDataOutputs(), user, settings));
-            json.put(MATERIAL_INPUTS, serializeRunInputs(protApp.getMaterialOutputs(), user, settings));
+            json.put(MATERIAL_OUTPUTS, serializeRunInputs(protApp.getMaterialOutputs(), user, settings));
 
             // provenance
             provenanceMap(json, protApp);
@@ -406,16 +415,25 @@ public class ExperimentJSONConverter
         if (!outputSet.isEmpty())
         {
             obj.put(ProvenanceService.PROVENANCE_OBJECT_MAP,
-                    outputSet.stream().map(pair ->
-                            Map.of("from", serializeProvenanceObject(pair.getKey()),
-                                    "to", serializeProvenanceObject(pair.getValue()))
-                    ).collect(Collectors.toUnmodifiableList()));
+                    outputSet.stream()
+                            .map(ExperimentJSONConverter::serializeProvenancePair)
+                            .collect(Collectors.toUnmodifiableList()));
         }
+    }
+
+    private static Map<String, Object> serializeProvenancePair(Pair<String, String> pair)
+    {
+        var map = new HashMap<String, Object>();
+        if (pair.first != null)
+            map.put("from", serializeProvenanceObject(pair.first));
+        if (pair.second != null)
+            map.put("to", serializeProvenanceObject(pair.second));
+        return map;
     }
 
     // For now, just return the lsid if it isn't null
     // CONSIDER: Use LsidManager to find the object and call serialize() ?
-    public static Object serializeProvenanceObject(String objectUri)
+    private static Object serializeProvenanceObject(String objectUri)
     {
         if (objectUri == null)
             return null;
