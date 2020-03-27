@@ -53,7 +53,7 @@ export class App extends React.PureComponent<any, State> {
 
         let message;
         if (action === UPDATE_SAMPLE_SET_ACTION && !this.getRowIdParam()) {
-            message = 'RowId parameter not supplied, unable to determine which Sample Type to edit.';
+            message = 'RowId parameter not supplied. Unable to determine which Sample Set to edit.';
         }
 
         this.state = {
@@ -70,7 +70,7 @@ export class App extends React.PureComponent<any, State> {
     }
 
     componentDidMount() {
-        // if the URL has a RowId param, look p the sample type info for the edit case
+        // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
         const rowId = this.getRowIdParam();
         if (rowId) {
@@ -84,7 +84,8 @@ export class App extends React.PureComponent<any, State> {
                     this.fetchSampleTypeDomain(domainId);
                 })
                 .catch(error => {
-                    this.setState(() => ({message: error.exception, isLoading: false}));
+                    console.error(error);
+                    this.setState(() => ({message: 'Sample set does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
                 });
         }
         else {
@@ -107,7 +108,8 @@ export class App extends React.PureComponent<any, State> {
             .then( sampleType => {
                 this.setState(()=> ({sampleType, isLoading: false}));
             }).catch(error => {
-                this.setState(() => ({message: error.exception, isLoading: false}));
+                console.error(error);
+                this.setState(() => ({message: 'Sample set does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
             }
         );
     }
