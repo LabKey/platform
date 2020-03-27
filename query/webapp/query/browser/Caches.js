@@ -171,6 +171,9 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
     clear : function() {
         this.queries = undefined;
+        this.currentContainer = undefined;
+        this.totalContainers = 0;
+        this.containers = new Set();
     },
 
     getCacheKey : function(container, schemaName, queryName) {
@@ -207,31 +210,21 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
         this.queries = {};
         Ext4.each(o.dependants, function(d){
+            const key = this.getCacheKey(d.to.containerId, d.to.schemaName, d.to.name);
+            let query = this.queries[key] || this.createQuery(key, d.to);
 
-            // limit dependents to only queries in the current folder
-            //if (LABKEY.container.id === d.to.containerId){
-            if (d.to.schemaName == 'lists' && d.to.name == 'StudyVisits'){
-                let foo = 'fasdf';
-            }
-                const key = this.getCacheKey(d.to.containerId, d.to.schemaName, d.to.name);
-                let query = this.queries[key] || this.createQuery(key, d.to);
-
-                Ext4.each(d.from, function(item){
-                    query.dependents.push(item);
-                }, this);
-            //}
+            Ext4.each(d.from, function(item){
+                query.dependents.push(item);
+            }, this);
         }, this);
 
         Ext4.each(o.dependees, function(d){
-            // limit dependees to only queries in the current folder
-            //if (LABKEY.container.id === d.from.containerId) {
-                const key = this.getCacheKey(d.from.containerId, d.from.schemaName, d.from.name);
-                let query = this.queries[key] || this.createQuery(key, d.from);
+            const key = this.getCacheKey(d.from.containerId, d.from.schemaName, d.from.name);
+            let query = this.queries[key] || this.createQuery(key, d.from);
 
-                Ext4.each(d.to, function (item) {
-                    query.dependees.push(item);
-                }, this);
-            //}
+            Ext4.each(d.to, function (item) {
+                query.dependees.push(item);
+            }, this);
         }, this);
     },
 
@@ -244,8 +237,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     analyzeQueries : function(config) {
         function fixupJsonResponse(json, response, options, container) {
             var callback = LABKEY.Utils.getOnSuccess(config);
+            this.currentContainer = container;
 
-            console.log('processing ' + container);
             if (!json || !json.success) {
                 if (callback)
                     callback.call(this, json, response, options);
@@ -271,7 +264,6 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 dependantsMap[toKey].push(objects[fromKey]);
             }
 
-            //var dependeesList = [];
             for (key in dependeesMap) {
                 if (dependeesMap.hasOwnProperty(key)) {
                     let from = objects[key];
@@ -282,7 +274,6 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 }
             }
 
-            //var dependantsList = [];
             for (key in dependantsMap) {
                 if (dependantsMap.hasOwnProperty(key)) {
                     let to = objects[key];
@@ -293,13 +284,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 }
             }
 
-/*
-            if (callback)
-                callback.call(this, {success:json.success, dependants:dependantsList, dependees:dependeesList}, response, options);
-*/
             this.containers.delete(container);
             if (this.containers.size === 0){
-                console.log('finished processing query analysis');
                 if (callback)
                     callback.call(this, {success:json.success, dependants:this.dependantsList, dependees:this.dependeesList}, response, options);
             }
@@ -317,17 +303,17 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             includeSubfolders : true,
             scope : this,
             success : function(resp){
-                Ext4.each(resp.children, function(c){
+                Ext4.each(resp.children, function(c) {
                     this.addContainer(c);
                 }, this);
 
                 // analyze queries for each container
-                for (let c of this.containers){
+                this.totalContainers = this.containers.size;
+                for (let c of this.containers) {
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', c),
                         method: 'GET',
                         scope: this,
-                        //success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, this),
                         success: function(resp, options){
                             fixupJsonResponse.call(this, LABKEY.Utils.decode(resp.responseText), resp, options, c);
                         },
@@ -337,15 +323,6 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             },
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
         });
-
-/*
-        return LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api'),
-            method : 'GET',
-            success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, this),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
-        });
-*/
     },
 
     addContainer : function(container) {
@@ -353,5 +330,13 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         Ext4.each(container.children, function(c){
             this.addContainer(c);
         }, this);
+    },
+
+    // return the current progress for this loader
+    getProgress : function() {
+        return {
+            currentContainer: this.currentContainer,
+            progress: 1.0 - (this.containers.size / this.totalContainers)
+        };
     }
 });

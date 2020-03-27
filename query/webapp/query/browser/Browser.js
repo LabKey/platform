@@ -526,7 +526,7 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
             panel = Ext4.create('LABKEY.query.browser.view.Dependencies', {
                 itemId: tabId,
                 closable: true,
-                browser: browser,
+                parent: browser,
                 title: 'Cross Folder Dependencies',
                 cls: 'qbrowser-crossfolder' // tests
             });
