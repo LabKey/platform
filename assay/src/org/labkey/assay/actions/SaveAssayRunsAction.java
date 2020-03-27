@@ -10,6 +10,7 @@ import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.DefaultExperimentSaveHandler;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
@@ -56,7 +57,7 @@ public class SaveAssayRunsAction extends BaseProtocolAPIAction<SimpleApiJsonForm
 
             transaction.commit();
         }
-        return AssayJSONConverter.serializeRuns(provider, protocol, runs, getUser());
+        return AssayJSONConverter.serializeRuns(provider, protocol, runs, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
     }
 }

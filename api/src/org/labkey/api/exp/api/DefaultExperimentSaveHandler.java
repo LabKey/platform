@@ -17,6 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -304,7 +305,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
         {
-            object.setProperty(context.getUser(), entry.getKey(), entry.getValue());
+            object.setProperty(context.getUser(), entry.getKey(), entry.getValue()); // handle inputs/outputs
         }
     }
 
@@ -331,6 +332,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
     }
 
+    @NotNull
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
@@ -343,6 +345,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         return inputData;
     }
 
+    @NotNull
     protected Map<ExpMaterial, String> getInputMaterial(ViewContext context, JSONArray inputMaterialArray) throws ValidationException
     {
         Map<ExpMaterial, String> inputMaterial = new HashMap<>();

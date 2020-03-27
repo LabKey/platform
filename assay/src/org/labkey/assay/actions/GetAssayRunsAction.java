@@ -11,6 +11,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentSaveHandler;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
@@ -30,19 +31,20 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
     {
         List<JSONObject> runs = new ArrayList<>();
         JSONObject result = new JSONObject();
+        var settings = new ExperimentJSONConverter.Settings(assayRunsForm.includeProperties, assayRunsForm.includeInputsAndOutputs, assayRunsForm.includeRunSteps);
 
         if (assayRunsForm.getLsids() != null && !assayRunsForm.getLsids().isEmpty())
         {
             runs = assayRunsForm.getLsids().stream()
                     .map(this::getRun)
-                    .map(this::serializeRun)
+                    .map(run -> this.serializeRun(run, settings))
                     .collect(Collectors.toList());
         }
         else if (assayRunsForm.getRunIds() != null && !assayRunsForm.getRunIds().isEmpty())
         {
             runs = assayRunsForm.getRunIds().stream()
                     .map(this::getRun)
-                    .map(this::serializeRun)
+                    .map(run -> this.serializeRun(run, settings))
                     .collect(Collectors.toList());
         }
         else
@@ -55,12 +57,12 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
         return new ApiSimpleResponse(result);
     }
 
-    JSONObject serializeRun(@NotNull ExpRun run)
+    JSONObject serializeRun(@NotNull ExpRun run, ExperimentJSONConverter.Settings settings)
     {
         ExpProtocol protocol = run.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
-        return AssayJSONConverter.serializeRun(run, provider, run.getProtocol(), getUser());
+        return AssayJSONConverter.serializeRun(run, provider, run.getProtocol(), getUser(), settings);
     }
 
     ExpRun getRun(int runId)
@@ -89,8 +91,11 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
 
     static class AssayRunsForm
     {
-        List<String> lsids = new ArrayList<>();
-        List<Integer> runIds = new ArrayList<>();
+        private List<String> lsids = new ArrayList<>();
+        private List<Integer> runIds = new ArrayList<>();
+        private boolean includeProperties = true;
+        private boolean includeInputsAndOutputs = true;
+        private boolean includeRunSteps = false;
 
         public List<String> getLsids()
         {
@@ -110,6 +115,36 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
         public void setRunIds(List<Integer> runIds)
         {
             this.runIds = runIds;
+        }
+
+        public boolean isIncludeProperties()
+        {
+            return includeProperties;
+        }
+
+        public void setIncludeProperties(boolean includeProperties)
+        {
+            this.includeProperties = includeProperties;
+        }
+
+        public boolean isIncludeInputsAndOutputs()
+        {
+            return includeInputsAndOutputs;
+        }
+
+        public void setIncludeInputsAndOutputs(boolean includeInputsAndOutputs)
+        {
+            this.includeInputsAndOutputs = includeInputsAndOutputs;
+        }
+
+        public boolean isIncludeRunSteps()
+        {
+            return includeRunSteps;
+        }
+
+        public void setIncludeRunSteps(boolean includeRunSteps)
+        {
+            this.includeRunSteps = includeRunSteps;
         }
     }
 }

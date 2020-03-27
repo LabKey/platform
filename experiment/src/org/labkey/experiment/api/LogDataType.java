@@ -18,7 +18,7 @@ package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 public class LogDataType extends DataType
 {
@@ -26,7 +26,7 @@ public class LogDataType extends DataType
     {
         super("Log");
     }
-    public URLHelper getDetailsURL(ExpData dataObject)
+    public ActionURL getDetailsURL(ExpData dataObject)
     {
         return null;
     }

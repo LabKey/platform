@@ -36,7 +36,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,7 +61,7 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         super(app);
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         return null;
     }

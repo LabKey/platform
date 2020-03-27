@@ -17,6 +17,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Objects;
 
@@ -71,6 +73,15 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     public void setCategory(String category)
     {
         _category = category;
+    }
+
+    @Nullable
+    @Override
+    public ActionURL detailsURL()
+    {
+        ActionURL ret = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
+        ret.addParameter("rowId", getRowId());
+        return ret;
     }
 
     @Override
