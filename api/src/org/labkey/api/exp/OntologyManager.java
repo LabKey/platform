@@ -284,7 +284,8 @@ public class OntologyManager
         {
             OntologyObject objInsert = new OntologyObject();
             objInsert.setContainer(c);
-            objInsert.setOwnerObjectId(ownerObjectId);
+            if (ownerObjectId != null && ownerObjectId > 0)
+                objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<>();
             Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
@@ -770,7 +771,8 @@ public class OntologyManager
             o = new OntologyObject();
             o.setContainer(container);
             o.setObjectURI(objectURI);
-            o.setOwnerObjectId(ownerId);
+            if (ownerId != null && ownerId > 0)
+                o.setOwnerObjectId(ownerId);
             o = Table.insert(null, getTinfoObject(), o);
         }
 

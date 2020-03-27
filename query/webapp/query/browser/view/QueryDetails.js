@@ -593,6 +593,11 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             'query.queryName': queryDetails.name
         };
 
+        var metadataParams = {
+            schemaName: queryDetails.schemaName,
+            'queryName': queryDetails.name
+        };
+
         if (!queryDetails.exception) {
             children.push(this.formatQueryLink('executeQuery', params, 'view data', undefined, queryDetails.viewDataUrl));
         }
@@ -602,7 +607,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
                 children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
                 children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
-                children.push(this.formatQueryLink("metadataQuery", params, "edit metadata"));
+                children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
             }
             else {
                 children.push(this.formatQueryLink('viewQuerySource', params, 'view source'));
@@ -618,7 +623,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 }
 
                 if (queryDetails.isMetadataOverrideable) {
-                    children.push(this.formatQueryLink('metadataQuery', params, 'edit metadata'));
+                    children.push(this.formatQueryLink('metadataQuery', metadataParams, 'edit metadata'));
                 }
             }
 
