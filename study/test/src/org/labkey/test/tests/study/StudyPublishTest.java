@@ -1068,11 +1068,10 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setUnshiftedDateField(String dataset, String fieldName)
     {
         goToQueryView("study", dataset, true);
+        DomainDesignerPage designerPage = new DomainDesignerPage(getDriver());
+        designerPage.fieldsPanel().getField(fieldName).clickAdvancedSettings().enableExcludeDateShifting();
 
-        click(Locator.tagContainingText("div", fieldName));
-        checkCheckbox(Locator.name("excludeFromShifting"));
-
-        clickButton("Save", 0);
+        designerPage.clickFinish();
         waitForText("Save successful.");
     }
 
@@ -1090,7 +1089,6 @@ public class StudyPublishTest extends StudyPHIExportTest
             selectQuery(schema, query);
             waitForText("edit metadata");
             clickAndWait(Locator.linkContainingText("edit metadata"));
-            PropertiesEditor.PropertiesEditor(getDriver()).withTitle("Metadata Properties").waitFor();
         }
     }
 

@@ -19,8 +19,8 @@ package org.labkey.api.view;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.security.User;
 import org.labkey.api.util.SessionHelper;
 
@@ -43,7 +43,7 @@ public class NavTreeManager
     private static final String CACHE_PREFIX = NavTreeManager.class.getName() + "/";
     private static final String NULL_MARKER = "__null marker representing the root__";   // ConcurrentHashMap does not support null keys
 
-    private static final StringKeyCache<Collapsible> NAV_TREE_CACHE = CacheManager.getSharedCache();
+    private static final Cache<String, Collapsible> NAV_TREE_CACHE = CacheManager.getSharedCache();
     
     public static void expandCollapsePath(ViewContext viewContext, String navTreeId, @Nullable String path, boolean collapse)
     {
@@ -135,7 +135,7 @@ public class NavTreeManager
      */
     public static void uncacheTree(String treeId)
     {
-        NAV_TREE_CACHE.removeUsingPrefix(getCacheKey(treeId, null));
+        NAV_TREE_CACHE.removeUsingFilter(new Cache.StringPrefixFilter(getCacheKey(treeId, null)));
     }
 
     public static void uncacheTree(String treeId, User user)
@@ -172,6 +172,6 @@ public class NavTreeManager
 
     public static void uncacheAll()
     {
-        NAV_TREE_CACHE.removeUsingPrefix(CACHE_PREFIX);
+        NAV_TREE_CACHE.removeUsingFilter(new Cache.StringPrefixFilter(CACHE_PREFIX));
     }
 }

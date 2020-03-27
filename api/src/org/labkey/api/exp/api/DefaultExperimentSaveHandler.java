@@ -17,11 +17,13 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
@@ -37,7 +39,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -304,7 +305,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
         {
-            object.setProperty(context.getUser(), entry.getKey(), entry.getValue());
+            object.setProperty(context.getUser(), entry.getKey(), entry.getValue()); // handle inputs/outputs
         }
     }
 
@@ -331,6 +332,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
     }
 
+    @NotNull
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
@@ -343,6 +345,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         return inputData;
     }
 
+    @NotNull
     protected Map<ExpMaterial, String> getInputMaterial(ViewContext context, JSONArray inputMaterialArray) throws ValidationException
     {
         Map<ExpMaterial, String> inputMaterial = new HashMap<>();
@@ -364,6 +367,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (data.getDataFileUrl() == null)
             {
                 data.delete(context.getUser(), false);
+            }
+        }
+    }
+
+    // Disallow creating a run with inputs which are also outputs
+    private void checkForCycles(Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
+    {
+        for (ExpRunItem input : inputs.keySet())
+        {
+            if (outputs.containsKey(input))
+            {
+                String role = outputs.get(input);
+                throw new ExperimentException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
             }
         }
     }
@@ -404,6 +420,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (material != null)
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
+
+        checkForCycles(inputData, outputData);
+        checkForCycles(inputMaterial, outputMaterial);
+
         saveExperimentRun(context, protocol, batch, run, runJsonObject, dataArray, inputData, outputData, inputMaterial, outputMaterial);
     }
 

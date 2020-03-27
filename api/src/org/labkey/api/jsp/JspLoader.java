@@ -61,12 +61,6 @@ public class JspLoader
         });
     }
 
-    @Deprecated // Temporary -- keep org.scharp.atlas.peptide.PeptideController building
-    public static HttpJspPage createPage(String ignored, String jspFile)
-    {
-        return createPage(jspFile);
-    }
-
     /**
      * Create a new JSP page.
      *

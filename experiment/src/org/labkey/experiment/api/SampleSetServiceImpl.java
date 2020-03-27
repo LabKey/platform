@@ -24,8 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -111,9 +111,9 @@ public class SampleSetServiceImpl implements SampleSetService
     private static final Logger LOG = Logger.getLogger(SampleSetServiceImpl.class);
 
     // SampleSet -> Container cache
-    private StringKeyCache<String> sampleSetCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleSetToContainer");
+    private Cache<String, String> sampleSetCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleSetToContainer");
 
-    private StringKeyCache<SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    private Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -123,7 +123,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
     });
 
-    StringKeyCache<SortedSet<MaterialSource>> getMaterialSourceCache()
+    Cache<String, SortedSet<MaterialSource>> getMaterialSourceCache()
     {
         return materialSourceCache;
     }
@@ -651,9 +651,7 @@ public class SampleSetServiceImpl implements SampleSetService
             {
                 if (lowerReservedNames.contains(propertyName))
                 {
-                    if (pd.getLabel() == null)
-                        pd.setLabel(pd.getName());
-                    pd.setName("Property_" + pd.getName());
+                    throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
                 }
 
                 DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
