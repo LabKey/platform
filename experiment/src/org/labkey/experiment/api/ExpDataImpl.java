@@ -44,11 +44,14 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
@@ -131,16 +134,29 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     @Override
     @Nullable
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         DataType dataType = getDataType();
         if (dataType != null)
         {
             return dataType.getDetailsURL(this);
         }
-        ActionURL ret = new ActionURL(ExperimentController.ShowDataAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+
+        return _object.detailsURL();
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        DataType type = getDataType();
+        if (type != null)
+            return type.getQueryRowReference(this);
+
+        ExpDataClassImpl dc = getDataClass();
+        if (dc != null)
+            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+        else
+            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
     @Override

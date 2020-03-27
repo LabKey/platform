@@ -16,6 +16,10 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.materialsource table. Referred to as sample sets within the UI.
@@ -125,6 +129,14 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
     public void setMaterialParentImportAliasMap(String materialParentImportAliasMap)
     {
         _materialParentImportAliasMap = materialParentImportAliasMap;
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
+        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return ret;
     }
 
     @Override

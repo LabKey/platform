@@ -16,6 +16,9 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.material table.
@@ -27,6 +30,14 @@ public class Material extends RunItem
     public Material()
     {
         setCpasType(ExpMaterial.DEFAULT_CPAS_TYPE);
+    }
+
+    @Override
+    public ActionURL detailsURL()
+    {
+        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
+        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return ret;
     }
 
     public boolean equals(Object o)

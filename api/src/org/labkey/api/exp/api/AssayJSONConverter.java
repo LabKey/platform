@@ -19,6 +19,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -29,8 +31,6 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayProvider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,14 +59,14 @@ public class AssayJSONConverter
     // Run properties
     public static final String DATA_ROWS = "dataRows";
 
-    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user)
+    public static JSONObject serializeBatch(ExpExperiment batch, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null);
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRunGroup(batch, provider != null ? provider.getBatchDomain(protocol) : null, settings);
 
         JSONArray runsArray = new JSONArray();
         for (ExpRun run : batch.getRuns())
         {
-            runsArray.put(serializeRun(run, provider, protocol, user));
+            runsArray.put(serializeRun(run, provider, protocol, user, settings));
         }
         jsonObject.put(RUNS, runsArray);
 
@@ -111,9 +111,15 @@ public class AssayJSONConverter
         return dataRows;
     }
 
+    @Deprecated(forRemoval = true)
     public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user)
     {
-        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null, user);
+        return serializeRun(run, provider, protocol, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
+    }
+
+    public static JSONObject serializeRun(ExpRun run, AssayProvider provider, ExpProtocol protocol, User user, ExperimentJSONConverter.Settings settings)
+    {
+        JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider != null ? provider.getRunDomain(protocol) : null, user, settings);
 
         JSONArray dataRows = new JSONArray();
         if (provider != null)
@@ -139,16 +145,16 @@ public class AssayJSONConverter
         return jsonObject;
     }
 
-    public static ApiResponse serializeRuns(AssayProvider provider, ExpProtocol protocol, List<ExpRun> runs, User user)
+    public static ApiResponse serializeRuns(AssayProvider provider, ExpProtocol protocol, List<ExpRun> runs, User user, ExperimentJSONConverter.Settings settings)
     {
         JSONObject result = new JSONObject();
         result.put(ASSAY_ID, protocol.getRowId());
 
         JSONArray runsArray = new JSONArray();
 
-       for(ExpRun run: runs)
+       for (ExpRun run: runs)
        {
-           runsArray.put(serializeRun(run, provider, protocol, user));
+           runsArray.put(serializeRun(run, provider, protocol, user, settings));
        }
 
         result.put(RUNS, runsArray);
@@ -165,7 +171,7 @@ public class AssayJSONConverter
 
         if (batch != null)
         {
-            batchObject = serializeBatch(batch, provider, protocol, user);
+            batchObject = serializeBatch(batch, provider, protocol, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
         }
         else
         {
@@ -185,7 +191,7 @@ public class AssayJSONConverter
 
         for (ExpExperiment batch : batches)
         {
-            batchesArray.put(serializeBatch(batch, provider, protocol, user));
+            batchesArray.put(serializeBatch(batch, provider, protocol, user, ExperimentJSONConverter.DEFAULT_SETTINGS));
         }
 
         result.put(BATCHES, batchesArray);
