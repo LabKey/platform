@@ -235,6 +235,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         fields = list;
     }
 
+    public FieldType getFieldByName(String name)
+    {
+        for (FieldType field : getFields())
+        {
+            if (field.getName() != null && field.getName().equalsIgnoreCase(name))
+                return field;
+        }
+        return null;
+    }
+
     public List<GWTIndex> getIndices()
     {
         return indices;
