@@ -66,6 +66,11 @@ query/resources/views/queryMetadataEditor.view.xml
 query/resources/views/queryMetadataEditorDev.html
 query/resources/views/queryMetadataEditorDev.view.xml
 
+study/resources/views/datasetDesigner.html
+study/resources/views/datasetDesigner.view.xml
+study/resources/views/datasetDesignerDev.html
+study/resources/views/datasetDesignerDev.view.xml
+
 list/resources/web/list/gen
 list/resources/views/designer.html
 list/resources/views/designer.view.xml
