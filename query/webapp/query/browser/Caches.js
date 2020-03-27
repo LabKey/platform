@@ -163,8 +163,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDetails', {
 Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
     singleton: true,
 
-    constructor : function(config) {
-        this.callParent([config]);
+    constructor : function() {
+        this.callParent();
 
         this.queries = undefined;
     },
@@ -173,18 +173,19 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         this.queries = undefined;
     },
 
-    getCacheKey : function(schemaName, queryName) {
-        return schemaName + '.' + queryName;
+    getCacheKey : function(container, schemaName, queryName) {
+        return container + '.' + schemaName + '.' + queryName;
     },
 
-    getDependencies : function(schemaName, queryName) {
-        return this.queries[this.getCacheKey(schemaName, queryName)];
+    getDependencies : function(container, schemaName, queryName) {
+        return this.queries[this.getCacheKey(container, schemaName, queryName)];
     },
 
-    load : function(success, failure, scope) {
+    load : function(containerPath, success, failure, scope) {
 
         if (!this.queries) {
             this.analyzeQueries({
+                containerPath : containerPath,
                 success : function(resp){
                     this.processDependencies(resp);
                     if (Ext4.isFunction(success)){
@@ -206,21 +207,31 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
 
         this.queries = {};
         Ext4.each(o.dependants, function(d){
-            const key = this.getCacheKey(d.to.schemaName, d.to.name);
-            let query = this.queries[key] || this.createQuery(key, d.to);
 
-            Ext4.each(d.from, function(item){
-                query.dependents.push(item);
-            }, this);
+            // limit dependents to only queries in the current folder
+            //if (LABKEY.container.id === d.to.containerId){
+            if (d.to.schemaName == 'lists' && d.to.name == 'StudyVisits'){
+                let foo = 'fasdf';
+            }
+                const key = this.getCacheKey(d.to.containerId, d.to.schemaName, d.to.name);
+                let query = this.queries[key] || this.createQuery(key, d.to);
+
+                Ext4.each(d.from, function(item){
+                    query.dependents.push(item);
+                }, this);
+            //}
         }, this);
 
         Ext4.each(o.dependees, function(d){
-            const key = this.getCacheKey(d.from.schemaName, d.from.name);
-            let query = this.queries[key] || this.createQuery(key, d.from);
+            // limit dependees to only queries in the current folder
+            //if (LABKEY.container.id === d.from.containerId) {
+                const key = this.getCacheKey(d.from.containerId, d.from.schemaName, d.from.name);
+                let query = this.queries[key] || this.createQuery(key, d.from);
 
-            Ext4.each(d.to, function(item){
-                query.dependees.push(item);
-            }, this);
+                Ext4.each(d.to, function (item) {
+                    query.dependees.push(item);
+                }, this);
+            //}
         }, this);
     },
 
@@ -229,11 +240,12 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         return this.queries[cacheKey];
     },
 
-    // hit's the server enpoint (premium only) to create the dependency graph
+    // hit's the server endpoint (premium only) to create the dependency graph
     analyzeQueries : function(config) {
-        function fixupJsonResponse(json, response, options) {
+        function fixupJsonResponse(json, response, options, container) {
             var callback = LABKEY.Utils.getOnSuccess(config);
 
+            console.log('processing ' + container);
             if (!json || !json.success) {
                 if (callback)
                     callback.call(this, json, response, options);
@@ -259,27 +271,87 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 dependantsMap[toKey].push(objects[fromKey]);
             }
 
-            var dependeesList = [];
+            //var dependeesList = [];
             for (key in dependeesMap) {
-                if (dependeesMap.hasOwnProperty(key))
-                    dependeesList.push({from:objects[key], to:dependeesMap[key]});
+                if (dependeesMap.hasOwnProperty(key)) {
+                    let from = objects[key];
+                    // limit dependants to only queries in the current folder
+                    if (LABKEY.container.id === from.containerId) {
+                        this.dependeesList.push({from: from, to: dependeesMap[key]});
+                    }
+                }
             }
 
-            var dependantsList = [];
+            //var dependantsList = [];
             for (key in dependantsMap) {
-                if (dependantsMap.hasOwnProperty(key))
-                    dependantsList.push({to:objects[key], from:dependantsMap[key]});
+                if (dependantsMap.hasOwnProperty(key)) {
+                    let to = objects[key];
+                    // limit dependants to only queries in the current folder
+                    if (LABKEY.container.id === to.containerId) {
+                        this.dependantsList.push({to:to, from:dependantsMap[key]});
+                    }
+                }
             }
 
+/*
             if (callback)
                 callback.call(this, {success:json.success, dependants:dependantsList, dependees:dependeesList}, response, options);
+*/
+            this.containers.delete(container);
+            if (this.containers.size === 0){
+                console.log('finished processing query analysis');
+                if (callback)
+                    callback.call(this, {success:json.success, dependants:this.dependantsList, dependees:this.dependeesList}, response, options);
+            }
         }
 
-        return LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', config.containerPath),
-            method : 'GET',
-            success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+        // initialize class data structures
+        this.dependantsList = [];
+        this.dependeesList = [];
+        this.containers = new Set();
+        this.containers.add(config.containerPath || LABKEY.container.path);
+
+        // get the collection of container paths including child containers
+        LABKEY.Security.getContainers({
+            containerPath : config.containerPath,
+            includeSubfolders : true,
+            scope : this,
+            success : function(resp){
+                Ext4.each(resp.children, function(c){
+                    this.addContainer(c);
+                }, this);
+
+                // analyze queries for each container
+                for (let c of this.containers){
+                    LABKEY.Ajax.request({
+                        url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', c),
+                        method: 'GET',
+                        scope: this,
+                        //success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, this),
+                        success: function(resp, options){
+                            fixupJsonResponse.call(this, LABKEY.Utils.decode(resp.responseText), resp, options, c);
+                        },
+                        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+                    });
+                }
+            },
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
         });
+
+/*
+        return LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api'),
+            method : 'GET',
+            success: LABKEY.Utils.getCallbackWrapper(fixupJsonResponse, this),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
+        });
+*/
+    },
+
+    addContainer : function(container) {
+        this.containers.add(container.path);
+        Ext4.each(container.children, function(c){
+            this.addContainer(c);
+        }, this);
     }
 });

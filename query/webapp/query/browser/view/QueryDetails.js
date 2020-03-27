@@ -362,7 +362,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
 
     formatDependencies : function () {
 
-        const dependencies = this.queriesCache.getDependencies(this.schemaName, this.queryName);
+        const dependencies = this.queriesCache.getDependencies(LABKEY.container.id, this.schemaName, this.queryName);
         if (dependencies){
             let tpl = new Ext4.XTemplate(
                 '<h3 style="padding-top: 1.0em">Dependency Report</h3>',
@@ -687,7 +687,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                     scope : this,
                     fn : function(cmp){
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(function(){this.setQueryDependencies(cmp)}, this.onLoadError, this);
+                        this.queriesCache.load(null, function(){this.setQueryDependencies(cmp)}, this.onLoadError, this);
                     }
                 }
             }
@@ -703,7 +703,15 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         if (dependencies)
             this.add({
                 xtype : 'box',
-                html : dependencies
+                html : dependencies,
+                listeners : {
+                    afterrender : {
+                        scope : this,
+                        fn : function(cmp){
+                            this.registerEventHandlers(cmp.getEl());
+                        }
+                    }
+                }
             });
     },
 

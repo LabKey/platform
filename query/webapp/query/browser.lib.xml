@@ -8,6 +8,7 @@
         <script path="query/browser/view/QueryDetails.js"/>
         <script path="query/browser/view/SchemaDetails.js"/>
         <script path="query/browser/view/Validate.js"/>
+        <script path="query/browser/view/Dependencies.js"/>
         <script path="query/browser/Browser.js"/>
     </library>
     <dependencies>
