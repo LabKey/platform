@@ -17,12 +17,12 @@
 import {buildURL, DomainDesign} from "@labkey/components";
 import {Ajax, Utils} from "@labkey/api";
 
-export function fetchQueryMetadata(schemaName: string, queryName: string): Promise<DomainDesign> {
+export function fetchQueryMetadata(schemaName: string, queryName: string): Promise<any> {
     return new Promise((resolve, reject) => {
         Ajax.request({
             url: buildURL('query', 'getQueryEditorMetadata.api'),
             method: 'POST',
-            success: Utils.getCallbackWrapper((data) => resolve(DomainDesign.create(data.domainDesign ? data.domainDesign : data, undefined))),
+            success: Utils.getCallbackWrapper((data) => resolve(data)),
             failure: Utils.getCallbackWrapper((error) => reject(error)),
             params : {
                 schemaName : schemaName,
@@ -32,7 +32,7 @@ export function fetchQueryMetadata(schemaName: string, queryName: string): Promi
     });
 }
 
-export function saveQueryMetadata(domain: DomainDesign, schemaName: string): Promise<void> {
+export function saveQueryMetadata(domain: DomainDesign, schemaName: string, userDefinedQuery: boolean): Promise<void> {
     return new Promise((resolve, reject) => {
         Ajax.request({
             url: buildURL('query', 'saveQueryMetadata.api'),
@@ -41,7 +41,8 @@ export function saveQueryMetadata(domain: DomainDesign, schemaName: string): Pro
             failure: Utils.getCallbackWrapper((error) => reject(error)),
             jsonData: {
                 domain: DomainDesign.serialize(domain),
-                schemaName: schemaName
+                schemaName: schemaName,
+                userDefinedQuery: userDefinedQuery
             }
         });
     });
