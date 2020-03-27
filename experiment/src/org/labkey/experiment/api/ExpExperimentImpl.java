@@ -26,8 +26,14 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 
@@ -55,7 +61,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public ActionURL detailsURL()
     {
-        return null;
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(getContainer(), this);
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.RunGroups.name(), FieldKey.fromParts(ExpExperimentTable.Column.RowId.name()), getRowId());
     }
 
     public int getRowId()

@@ -15,18 +15,12 @@
  */
 package org.labkey.api.exp.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import java.util.List;
-
 /**
  * Captures options for doing an lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
-public class ExpLineageOptions
+public class ExpLineageOptions extends ResolveLsidsForm
 {
-    private boolean _singleSeedRequested = false;
-    private List<String> _lsids;
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
@@ -34,7 +28,6 @@ public class ExpLineageOptions
     private String _cpasType;
     private boolean _forLookup = false;
     private boolean _useObjectIds = false;
-    private boolean _includeProperties = false;
 
     public ExpLineageOptions()
     {
@@ -55,28 +48,6 @@ public class ExpLineageOptions
     public void setDepth(int depth)
     {
         _depth = depth;
-    }
-
-    public void setLsid(String lsid)
-    {
-        _lsids = List.of(lsid);
-        _singleSeedRequested = true;
-    }
-
-    public List<String> getLsids()
-    {
-        return _lsids;
-    }
-
-    public void setLsids(List<String> lsids)
-    {
-        _lsids = lsids;
-    }
-
-    @JsonIgnore
-    public boolean isSingleSeedRequested()
-    {
-        return _singleSeedRequested;
     }
 
     public boolean isParents()
@@ -142,13 +113,4 @@ public class ExpLineageOptions
         _useObjectIds = useObjectIds;
     }
 
-    public boolean isIncludeProperties()
-    {
-        return _includeProperties;
-    }
-
-    public void setIncludeProperties(boolean includeProperties)
-    {
-        _includeProperties = includeProperties;
-    }
 }

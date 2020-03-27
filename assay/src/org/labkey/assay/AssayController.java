@@ -778,7 +778,7 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
-                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), true);
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
                 {
@@ -1037,44 +1037,8 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, Lsid assayResultRowLsid)
+        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId)
         {
-            assert provider.getResultRowLSIDPrefix().equals(assayResultRowLsid.getNamespacePrefix());
-            String namespaceSuffix = assayResultRowLsid.getNamespaceSuffix();
-
-            // LSID namespace suffix format expected to be: "Protocol-" + <protocol-row-id>
-            ExpProtocol protocol = null;
-            if (namespaceSuffix.startsWith("Protocol-"))
-            {
-                try
-                {
-                    int protocolId = Integer.parseInt(namespaceSuffix.substring("Protocol-".length()));
-                    if (protocolId > 0)
-                        protocol = ExperimentService.get().getExpProtocol(protocolId);
-                }
-                catch (NumberFormatException ex)
-                {
-                    // ignore
-                }
-            }
-
-            if (protocol == null)
-                return null;
-
-            // LSID object id expected to be rowId
-            int rowId = -1;
-            try
-            {
-                rowId = Integer.parseInt(assayResultRowLsid.getObjectId());
-            }
-            catch (NumberFormatException ex)
-            {
-                // ignore
-            }
-
-            if (rowId <= 0)
-                return null;
-
             ActionURL resultsURL = getAssayResultsURL(container, protocol);
             resultsURL.addFilter("Data", FieldKey.fromParts("rowId"), CompareType.EQUAL, rowId);
             return resultsURL;

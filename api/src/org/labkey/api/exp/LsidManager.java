@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
@@ -29,12 +30,14 @@ import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.HashMap;
@@ -68,9 +71,9 @@ public class LsidManager
         return INSTANCE;
     }
 
-    public interface LsidHandler
+    public interface LsidHandler<O extends Identifiable>
     {
-        Identifiable getObject(Lsid lsid);
+        O getObject(Lsid lsid);
 
         @Nullable
         ActionURL getDisplayURL(Lsid lsid);
@@ -80,13 +83,13 @@ public class LsidManager
         boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm);
     }
 
-    public abstract static class ExpObjectLsidHandler implements LsidHandler
+    public abstract static class ExpObjectLsidHandler<O extends ExpObject> implements LsidHandler<O>
     {
-        public abstract ExpObject getObject(Lsid lsid);
+        public abstract O getObject(Lsid lsid);
 
         public Container getContainer(Lsid lsid)
         {
-            ExpObject run = getObject(lsid);
+            O run = getObject(lsid);
             return run == null ? null : run.getContainer();
         }
 
@@ -97,7 +100,7 @@ public class LsidManager
         }
     }
 
-    public static class ExpRunLsidHandler extends ExpObjectLsidHandler
+    public static class ExpRunLsidHandler extends ExpObjectLsidHandler<ExpRun>
     {
         public ExpRun getObject(Lsid lsid)
         {
@@ -124,27 +127,22 @@ public class LsidManager
 
     // This is different from ExpObjectLsidHandler in that it supports generic
     // OntologyObjects that don't fit into the ExpObject class hierarchy.
-    public static class OntologyObjectLsidHandler implements LsidHandler
+    public static class OntologyObjectLsidHandler<O extends IdentifiableBase> implements LsidHandler<O>
     {
         @Override
-        public Identifiable getObject(Lsid lsid)
+        public O getObject(Lsid lsid)
         {
             OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
             if (oo == null)
                 return null;
 
-            return new IdentifiableBase(oo, getDisplayURL(oo));
-        }
-
-        protected @Nullable ActionURL getDisplayURL(@NotNull OntologyObject oo)
-        {
-            return null;
+            return (O)new IdentifiableBase(oo);
         }
 
         @Override
         public final @Nullable ActionURL getDisplayURL(Lsid lsid)
         {
-            Identifiable obj = getObject(lsid);
+            O obj = getObject(lsid);
             return obj == null ? null : obj.detailsURL();
         }
 
@@ -166,7 +164,52 @@ public class LsidManager
         }
     }
 
-    public static class AssayResultLsidHandler extends OntologyObjectLsidHandler
+    /**
+     * Represents a single row in the assay results table.
+     */
+    public static class AssayResultIdentifiable extends IdentifiableBase
+    {
+        private final AssayProvider _provider;
+        private final ExpProtocol _protocol;
+        private int _rowId;
+
+        public AssayResultIdentifiable(AssayProvider provider, OntologyObject oo, ExpProtocol protocol, int rowId)
+        {
+            super(oo);
+            _provider = provider;
+
+            Pair<ExpProtocol, Integer> pair = provider.getAssayResultRowIdFromLsid(oo.getContainer(), new Lsid(oo.getObjectURI()));
+            if (pair != null)
+            {
+                _protocol = pair.first;
+                _rowId = pair.second;
+            }
+            else
+            {
+                _protocol = null;
+                _rowId = 0;
+            }
+        }
+
+        @Override
+        public @Nullable ActionURL detailsURL()
+        {
+            var urls = PageFlowUtil.urlProvider(AssayUrls.class);
+            if (urls == null)
+                return null;
+
+            return urls.getAssayResultRowURL(_provider, getContainer(), _protocol, _rowId);
+        }
+
+        @Override
+        public @Nullable QueryRowReference getQueryRowReference()
+        {
+            var schemaKey = AssayProtocolSchema.schemaName(_provider, _protocol);
+            return new QueryRowReference(getContainer(), schemaKey, AssayProtocolSchema.DATA_TABLE_NAME, FieldKey.fromParts("rowId"), _rowId);
+        }
+    }
+
+    public static class AssayResultLsidHandler extends OntologyObjectLsidHandler<AssayResultIdentifiable>
     {
         private final AssayProvider _provider;
 
@@ -177,17 +220,20 @@ public class LsidManager
         }
 
         @Override
-        public Identifiable getObject(Lsid lsid)
+        public AssayResultIdentifiable getObject(Lsid lsid)
         {
             assert _provider.getResultRowLSIDPrefix().equals(lsid.getNamespacePrefix());
-            return super.getObject(lsid);
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            Pair<ExpProtocol, Integer> pair = _provider.getAssayResultRowIdFromLsid(oo.getContainer(), lsid);
+            if (pair == null)
+                return null;
+
+            return new AssayResultIdentifiable(_provider, oo, pair.first, pair.second);
         }
 
-        @Override
-        protected @Nullable ActionURL getDisplayURL(@NotNull OntologyObject oo)
-        {
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(_provider, oo.getContainer(), new Lsid(oo.getObjectURI()));
-        }
     }
 
     public void registerHandlerFinder(LsidHandlerFinder finder)

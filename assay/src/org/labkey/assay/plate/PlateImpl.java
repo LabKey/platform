@@ -21,8 +21,9 @@ import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.view.ActionURL;
+import org.labkey.assay.PlateController;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -71,6 +72,12 @@ public class PlateImpl extends PlateTemplateImpl implements Plate
         for (WellGroupTemplateImpl groupTemplate : template.getWellGroupTemplates(null))
             addWellGroup(new WellGroupImpl(this, groupTemplate));
         setContainer(template.getContainer());
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        return PlateManager.get().getDetailsURL(this);
     }
 
 

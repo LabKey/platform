@@ -268,6 +268,9 @@ LABKEY.Experiment.loadBatch({
          * @param config An object that contains the following configuration parameters
          * @param {Array} config.lsids. The list of run lsids.
          * @param {Array} config.runIds The list of run ids.
+         * @param {Boolean} config.includeProperties Include properties set on the experiment objects.
+         * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
+         * @param {Boolean} config.includeRunSteps Include run steps.
          * @param {function} config.success The function to call when the function finishes successfully.
          * This function will be called with a the parameters:
          * <ul>
@@ -296,16 +299,25 @@ LABKEY.Experiment.loadBatch({
                 return runs;
             }
 
+            var jsonData = {};
+            if (config.runIds)
+                jsonData.runIds = config.runIds;
+            if (config.lsids)
+                jsonData.lsids = config.lsids;
+            if (config.includeProperties !== undefined)
+                jsonData.includeProperties = config.includeProperties;
+            if (config.includeInputsAndOutputs !== undefined)
+                jsonData.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.includeRunSteps !== undefined)
+                jsonData.includeRunSteps = config.includeRunSteps;
+
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 scope: config.scope,
-                jsonData : {
-                    runIds: config.runIds,
-                    lsids: config.lsids
-                },
+                jsonData : jsonData,
                 headers : {
                     'Content-Type' : 'application/json'
                 }
@@ -526,6 +538,50 @@ LABKEY.Experiment.saveBatch({
             LABKEY.Ajax.request({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL("experiment", "lineage.api"),
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope
+            });
+        },
+
+        /**
+         * Resolve LSIDs.
+         * @param config An object that contains the following configuration parameters
+         * @param {Array} config.lsids. The list of run lsids.
+         * @param {Boolean} config.includeProperties Include properties set on the experiment objects.
+         * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
+         * @param {Boolean} config.includeRunSteps Include run steps.
+         * @param {function} config.success The function to call when the function finishes successfully.
+         * This function will be called with a the parameters:
+         * <ul>
+         * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
+         */
+        resolve(config)
+        {
+            var params = {};
+            if (config.lsids)
+                params.lsids = config.lsids;
+            if (config.includeProperties !== undefined)
+                params.includeProperties = config.includeProperties;
+            if (config.includeInputsAndOutputs !== undefined)
+                params.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.includeRunSteps !== undefined)
+                params.includeRunSteps = config.includeRunSteps;
+
+            LABKEY.Ajax.request({
+                method: 'GET',
+                url: LABKEY.ActionURL.buildURL("experiment", "resolve.api"),
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),

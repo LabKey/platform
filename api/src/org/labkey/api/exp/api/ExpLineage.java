@@ -319,7 +319,7 @@ public class ExpLineage
         return datas;
     }
 
-    public JSONObject toJSON(User user, boolean requestedWithSingleSeed, boolean includeProperties)
+    public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
     {
         Map<String, Identifiable> nodeMeta = processNodes();
         Map<String, Object> values = new HashMap<>();
@@ -329,7 +329,7 @@ public class ExpLineage
         {
             for (Identifiable seed : _seeds)
             {
-                nodes.put(seed.getLSID(), nodeToJSON(seed, user, new JSONArray(), new JSONArray(), includeProperties));
+                nodes.put(seed.getLSID(), nodeToJSON(seed, user, new JSONArray(), new JSONArray(), settings));
             }
         }
         else
@@ -346,7 +346,7 @@ public class ExpLineage
                     children.put(edge.toChildJSON());
 
                 Identifiable obj = nodeMeta.get(node.getKey());
-                nodes.put(node.getKey(), nodeToJSON(obj, user, parents, children, includeProperties));
+                nodes.put(node.getKey(), nodeToJSON(obj, user, parents, children, settings));
             }
         }
 
@@ -366,14 +366,13 @@ public class ExpLineage
         return new JSONObject(values);
     }
 
-    private JSONObject nodeToJSON(Identifiable node, User user, JSONArray parents, JSONArray children, boolean includeProperties)
+    private JSONObject nodeToJSON(Identifiable node, User user, JSONArray parents, JSONArray children, ExperimentJSONConverter.Settings settings)
     {
         JSONObject json = new JSONObject();
 
         if (node != null)
         {
-            // TODO: get rowId and maybe cpasType and schemaName/queryName for assay result row type
-            json = ExperimentJSONConverter.serialize(node, user, includeProperties);
+            json = ExperimentJSONConverter.serialize(node, user, settings);
 
             json.put("type", node.getLSIDNamespacePrefix());
         }

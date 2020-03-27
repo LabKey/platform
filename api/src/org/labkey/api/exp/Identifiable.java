@@ -17,6 +17,7 @@ package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -42,4 +43,8 @@ public interface Identifiable
         return null;
     }
 
+    default @Nullable QueryRowReference getQueryRowReference()
+    {
+        return null;
+    }
 }

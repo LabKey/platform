@@ -17,7 +17,9 @@
 package org.labkey.api.exp.api;
 
 import com.google.common.base.MoreObjects;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -39,6 +41,11 @@ public class DataType
     }
 
     public ActionURL getDetailsURL(ExpData dataObject)
+    {
+        return null;
+    }
+
+    public @Nullable QueryRowReference getQueryRowReference(ExpData dataObject)
     {
         return null;
     }

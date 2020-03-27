@@ -29,7 +29,26 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.LabKeyError;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.actions.UploadWizardAction;
@@ -87,6 +106,7 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.ResolveLsidsForm;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.form.DeleteForm;
 import org.labkey.api.exp.property.Domain;
@@ -185,7 +205,30 @@ import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.experiment.*;
+import org.labkey.experiment.ChooseExperimentTypeBean;
+import org.labkey.experiment.ConfirmDeleteView;
+import org.labkey.experiment.CustomPropertiesView;
+import org.labkey.experiment.DataClassWebPart;
+import org.labkey.experiment.DerivedSamplePropertyHelper;
+import org.labkey.experiment.DotGraph;
+import org.labkey.experiment.ExpDataFileListener;
+import org.labkey.experiment.ExperimentRunDisplayColumn;
+import org.labkey.experiment.ExperimentRunGraph;
+import org.labkey.experiment.LSIDRelativizer;
+import org.labkey.experiment.LineageGraphDisplayColumn;
+import org.labkey.experiment.MoveRunsBean;
+import org.labkey.experiment.NoPipelineRootSetView;
+import org.labkey.experiment.ParentChildView;
+import org.labkey.experiment.ProtocolApplicationDisplayColumn;
+import org.labkey.experiment.ProtocolDisplayColumn;
+import org.labkey.experiment.ProtocolWebPart;
+import org.labkey.experiment.RunGroupWebPart;
+import org.labkey.experiment.SampleSetDisplayColumn;
+import org.labkey.experiment.SampleSetWebPart;
+import org.labkey.experiment.StandardAndCustomPropertiesView;
+import org.labkey.experiment.XarExportPipelineJob;
+import org.labkey.experiment.XarExportType;
+import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
@@ -249,6 +292,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toList;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.exp.api.SampleSetService.MATERIAL_INPUTS_PREFIX;
 import static org.labkey.api.exp.query.ExpSchema.TableType.DataInputs;
@@ -1758,7 +1802,7 @@ public class ExperimentController extends SpringActionController
 
             DataRegion dr = new DataRegion();
             dr.setTable(table);
-            List<ColumnInfo> cols = table.getColumns().stream().filter(ColumnInfo::isShownInDetailsView).collect(Collectors.toList());
+            List<ColumnInfo> cols = table.getColumns().stream().filter(ColumnInfo::isShownInDetailsView).collect(toList());
             dr.addColumns(cols);
             dr.removeColumns("RowId", "Created", "CreatedBy", "Modified", "ModifiedBy", "DataFileUrl", "Run", "LSID", "CpasType", "SourceApplicationId", "Folder", "Generated");
             dr.addDisplayColumn(new ExperimentRunDisplayColumn(run, "Source Experiment Run"));
@@ -3250,7 +3294,7 @@ public class ExperimentController extends SpringActionController
 
         protected List<Map<String, Object>> toKeys(List<ExpData> datas)
         {
-            return datas.stream().map(d -> CaseInsensitiveHashMap.<Object>of("rowId", d.getRowId())).collect(Collectors.toList());
+            return datas.stream().map(d -> CaseInsensitiveHashMap.<Object>of("rowId", d.getRowId())).collect(toList());
         }
 
         @Override
@@ -4719,7 +4763,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-
     public static ActionURL getResolveLsidURL(Container c, @NotNull String type, @NotNull String lsid)
     {
         ActionURL url = new ActionURL(ResolveLSIDAction.class, c);
@@ -5537,7 +5580,7 @@ public class ExperimentController extends SpringActionController
                         @Override
                         protected List<ExpMaterial> getExpObject(List<Map<String, Object>> insertedRows)
                         {
-                            List<Integer> rowIds = insertedRows.stream().map(r -> (Integer) r.get("rowid")).collect(Collectors.toList());
+                            List<Integer> rowIds = insertedRows.stream().map(r -> (Integer) r.get("rowid")).collect(toList());
                             List<? extends ExpMaterial> output = ExperimentService.get().getExpMaterials(rowIds);
                             return (List<ExpMaterial>) output;
                         }
@@ -5565,7 +5608,7 @@ public class ExperimentController extends SpringActionController
                         @Override
                         protected List<ExpData> getExpObject(List<Map<String, Object>> insertedRows)
                         {
-                            List<String> lsids = insertedRows.stream().map(r -> (String) r.get("lsid")).collect(Collectors.toList());
+                            List<String> lsids = insertedRows.stream().map(r -> (String) r.get("lsid")).collect(toList());
                             List<? extends ExpData> output = ExperimentService.get().getExpDatasByLSID(lsids);
                             return (List<ExpData>) output;
                         }
@@ -5591,9 +5634,9 @@ public class ExperimentController extends SpringActionController
 
                 JSONObject ret;
                 if (run != null)
-                    ret = ExperimentJSONConverter.serializeRun(run, null, getUser());
+                    ret = ExperimentJSONConverter.serializeRun(run, null, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                 else
-                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet(), getUser());
+                    ret = ExperimentJSONConverter.serializeRunOutputs(outputData.keySet(), outputMaterials.keySet(), getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 return success(successMessage.toString(), ret);
             }
@@ -6475,18 +6518,17 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class LineageAction extends ReadOnlyApiAction<ExpLineageOptions>
+    private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>
     {
-        private Set<Identifiable> _seeds;
+        protected Set<Identifiable> _seeds;
 
         @Override
-        public void validateForm(ExpLineageOptions options, Errors errors)
+        public void validateForm(F form, Errors errors)
         {
-            if (null != options.getLsids())
+            if (null != form.getLsids())
             {
-                _seeds = new LinkedHashSet<>(options.getLsids().size());
-                for (String lsid : options.getLsids())
+                _seeds = new LinkedHashSet<>(form.getLsids().size());
+                for (String lsid : form.getLsids())
                 {
                     Identifiable id = LsidManager.get().getObject(lsid);
                     if (id == null)
@@ -6504,12 +6546,30 @@ public class ExperimentController extends SpringActionController
                 throw new ApiUsageException("Starting lsids required");
             }
         }
+    }
 
+    @RequiresPermission(ReadPermission.class)
+    public class ResolveAction extends BaseResolveLsidApiAction<ResolveLsidsForm>
+    {
+        @Override
+        public Object execute(ResolveLsidsForm form, BindException errors) throws Exception
+        {
+            var settings = new ExperimentJSONConverter.Settings(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps());
+            var data = _seeds.stream().map(n -> ExperimentJSONConverter.serialize(n, getUser(), settings)).collect(toList());
+            return new ApiSimpleResponse("data", data);
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    public class LineageAction extends BaseResolveLsidApiAction<ExpLineageOptions>
+    {
         @Override
         public Object execute(ExpLineageOptions options, BindException errors)
         {
             ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
-            return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), options.isIncludeProperties()));
+            var settings = new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps());
+            return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), settings));
         }
     }
 
@@ -6561,7 +6621,7 @@ public class ExperimentController extends SpringActionController
                         SearchService.SearchHit hit = search.find(docId);
                         if (hit == null)
                         {
-                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), true);
+                            Map<String, Object> props = ExperimentJSONConverter.serializeData(d, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
                             props.put("docid", docId);
                             notInIndex.add(props);
                         }
@@ -6589,18 +6649,18 @@ public class ExperimentController extends SpringActionController
                 var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromObjectId, toObjectId FROM exp.Edge")
                         .resultSetStream()
                         .map(r -> { try { return new Pair<>(r.getInt(1), r.getInt(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
-                        .collect(Collectors.toList());
+                        .collect(toList());
                 var cycles = (new GraphAlgorithms<Integer>()).detectCycleInDirectedGraph(edges);
-                result = cycles.stream().map(e -> new Integer[]{e.first, e.second}).collect(Collectors.toList());
+                result = cycles.stream().map(e -> new Integer[]{e.first, e.second}).collect(toList());
             }
             else
             {
                 var edges = new SqlSelector(ExperimentService.get().getSchema(), "SELECT fromLsid, toLsid FROM exp.Edge")
                         .resultSetStream()
                         .map(r -> { try { return new Pair<>(r.getString(1), r.getString(2)); } catch (SQLException x) { throw new RuntimeException(x); } })
-                        .collect(Collectors.toList());
+                        .collect(toList());
                 var cycles = (new GraphAlgorithms<String>()).detectCycleInDirectedGraph(edges);
-                result = cycles.stream().map(e -> new String[]{e.first, e.second}).collect(Collectors.toList());
+                result = cycles.stream().map(e -> new String[]{e.first, e.second}).collect(toList());
             }
 
             JSONObject ret = new JSONObject();
