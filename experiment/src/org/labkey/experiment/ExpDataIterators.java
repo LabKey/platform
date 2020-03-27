@@ -815,7 +815,7 @@ public class ExpDataIterators
             // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
                     .setKeyColumns(Collections.singleton("lsid"))
-                    .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0; Issue 40083: ignore runId or we remove it if the column is not provided
                     .setCommitRowsBeforeContinuing(true))
                     ;
 
