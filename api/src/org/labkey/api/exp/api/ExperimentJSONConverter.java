@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.FilterInfo;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
@@ -168,21 +167,21 @@ public class ExperimentJSONConverter
         else if (node instanceof ExpData)
             return serializeData((ExpData)node, user, settings);
         else if (node instanceof ExpObject)
-            return serializeStandardProperties((ExpObject)node, null, settings);
+            return serializeExpObject((ExpObject)node, null, settings);
         else
-            return serializeIdentifiable(node);
+            return serializeIdentifiable(node, settings);
     }
 
     public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeStandardProperties(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
+        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
         jsonObject.put(COMMENT, runGroup.getComments());
         return jsonObject;
     }
 
     public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties(), settings);
+        JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings);
         if (settings.isIncludeProperties())
         {
             jsonObject.put(COMMENT, run.getComments());
@@ -235,7 +234,7 @@ public class ExperimentJSONConverter
 
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
-        JSONObject jsonObject = serializeBaseProperties(protocol);
+        JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false));
         return jsonObject;
     }
 
@@ -297,7 +296,7 @@ public class ExperimentJSONConverter
 
             if (settings.isIncludeProperties())
             {
-                JSONObject edgeProperties = serializeCustomProperties(runInput, null, settings);
+                JSONObject edgeProperties = serializeOntologyProperties(runInput, null, settings);
                 if (!edgeProperties.isEmpty())
                 {
                     JSONObject edgeJson = new JSONObject();
@@ -323,7 +322,7 @@ public class ExperimentJSONConverter
 
     protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, ExpRun run, User user, Settings settings)
     {
-        JSONObject json = serializeStandardProperties(protApp, null, settings);
+        JSONObject json = serializeExpObject(protApp, null, settings);
 
         json.put(ACTION_SEQUENCE, protApp.getActionSequence());
         json.put(APPLICATION_TYPE, protApp.getApplicationType().toString());
@@ -441,9 +440,10 @@ public class ExperimentJSONConverter
         return objectUri;
     }
 
-    // CONSIDER: Include OntologyObject properties for non-ExpObject Identifiable types
-    @NotNull
-    public static JSONObject serializeIdentifiable(@NotNull Identifiable obj)
+    /**
+     * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
+     */
+    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj)
     {
         JSONObject json = new JSONObject();
 
@@ -463,12 +463,38 @@ public class ExperimentJSONConverter
         return json;
     }
 
-    // Serialize only the base properties -- does not include object properties
+    /**
+     * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
+     * as well as any object properties for the object.
+     */
     @NotNull
-    public static JSONObject serializeBaseProperties(@NotNull ExpObject object)
+    public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
     {
-        // Standard properties on all experiment objects
-        JSONObject jsonObject = serializeIdentifiable(object);
+        JSONObject json = serializeIdentifiableBean(obj);
+
+        if (settings.isIncludeProperties())
+        {
+            Set<String> seenPropertyURIs = new HashSet<>();
+            JSONObject propertiesObject = new JSONObject();
+            Map<String, ObjectProperty> objectProps = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getLSID());
+            serializeOntologyProperties(propertiesObject, obj.getContainer(), seenPropertyURIs, objectProps, settings);
+            if (!propertiesObject.isEmpty())
+                json.put(PROPERTIES, propertiesObject);
+        }
+
+        return json;
+    }
+
+    /**
+     * Serialize ExpObject java bean properties (ID, CreatedBy, Comment) and include object properties and the optional domain properties.
+     */
+    @NotNull
+    public static JSONObject serializeExpObject(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull Settings settings)
+    {
+        // While serializeIdentifiable can include object properties, we call serializeIdentifiableBean
+        // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
+        // fetched using ExpObject.getProperty().
+        JSONObject jsonObject = serializeIdentifiableBean(object);
         int rowId = object.getRowId();
         if (rowId != 0)
         {
@@ -488,34 +514,22 @@ public class ExperimentJSONConverter
         if (comment != null)
             jsonObject.put(COMMENT, object.getComment());
 
-        return jsonObject;
-    }
-
-    // Serialize standard properties including object properties and the optional domain properties
-    @NotNull
-    public static JSONObject serializeStandardProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull Settings settings)
-    {
-        JSONObject jsonObject;
         if (settings.isIncludeProperties())
         {
-            jsonObject = serializeBaseProperties(object);
-
-            JSONObject propertiesObject = serializeCustomProperties(object, properties, settings);
+            JSONObject propertiesObject = serializeOntologyProperties(object, properties, settings);
             if (!propertiesObject.isEmpty())
                 jsonObject.put(PROPERTIES, propertiesObject);
         }
-        else
-        {
-            jsonObject = serializeBaseProperties(object);
-        }
 
         return jsonObject;
     }
 
+    /**
+     * Serialize the custom ontology properties associated with the object.
+     */
     @NotNull
-    private static JSONObject serializeCustomProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull ExperimentJSONConverter.Settings settings)
+    private static JSONObject serializeOntologyProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull ExperimentJSONConverter.Settings settings)
     {
-        // Add the custom properties
         Set<String> seenPropertyURIs = new HashSet<>();
         JSONObject propertiesObject = new JSONObject();
         if (properties != null)
@@ -524,46 +538,65 @@ public class ExperimentJSONConverter
             {
                 seenPropertyURIs.add(dp.getPropertyURI());
                 Object value = object.getProperty(dp);
-                if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK && value instanceof File)
-                {
-                    // We need to return files not as simple string properties with the path, but as an Exp.Data object
-                    // with multiple values
-                    File f = (File) value;
-                    ExpData data = ExperimentService.get().getExpDataByURL(f, object.getContainer());
-                    if (data != null)
-                    {
-                        // If we can find a row in the data table, return that
-                        value = serializeData(data, null, settings);
-                    }
-                    else
-                    {
-                        // Otherwise, return a subset of all the data fields that we know about
-                        JSONObject jsonFile = new JSONObject();
-                        jsonFile.put(ABSOLUTE_PATH, f.getAbsolutePath());
-                        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(object.getContainer());
-                        if (pipeRoot != null)
-                        {
-                            jsonFile.put(PIPELINE_PATH, pipeRoot.relativePath(f));
-                        }
-                        value = jsonFile;
-                    }
-                }
+                value = serializePropertyValue(object.getContainer(), dp.getPropertyDescriptor().getPropertyType(), settings, value);
                 propertiesObject.put(dp.getName(), value);
             }
         }
 
         var objectProps = object.getObjectProperties();
+        serializeOntologyProperties(propertiesObject, object.getContainer(), seenPropertyURIs, objectProps, settings);
+
+        return propertiesObject;
+    }
+
+    private static void serializeOntologyProperties(JSONObject json, Container c,
+                                                    Set<String> seenPropertyURIs, Map<String, ObjectProperty> objectProps,
+                                                    Settings settings)
+    {
         for (var propPair : objectProps.entrySet())
         {
             String propertyURI = propPair.getKey();
             if (seenPropertyURIs.contains(propertyURI))
                 continue;
             seenPropertyURIs.add(propertyURI);
+
             ObjectProperty op = propPair.getValue();
-            propertiesObject.put(propertyURI, op.value());
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(op.getPropertyURI(), c);
+            PropertyType type = pd != null ? pd.getPropertyType() : op.getPropertyType();
+
+            Object value = serializePropertyValue(c, type, settings, op.value());
+            json.put(propertyURI, op.value());
+        }
+    }
+
+    private static Object serializePropertyValue(Container container, PropertyType type, Settings settings, Object value)
+    {
+        if (type == PropertyType.FILE_LINK && value instanceof File)
+        {
+            // We need to return files not as simple string properties with the path, but as an Exp.Data object
+            // with multiple values
+            File f = (File) value;
+            ExpData data = ExperimentService.get().getExpDataByURL(f, container);
+            if (data != null)
+            {
+                // If we can find a row in the data table, return that
+                value = serializeData(data, null, settings);
+            }
+            else
+            {
+                // Otherwise, return a subset of all the data fields that we know about
+                JSONObject jsonFile = new JSONObject();
+                jsonFile.put(ABSOLUTE_PATH, f.getAbsolutePath());
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);
+                if (pipeRoot != null)
+                {
+                    jsonFile.put(PIPELINE_PATH, pipeRoot.relativePath(f));
+                }
+                value = jsonFile;
+            }
         }
 
-        return propertiesObject;
+        return value;
     }
 
 
@@ -579,13 +612,13 @@ public class ExperimentJSONConverter
     {
         final ExpDataClass dc = data.getDataClass(user);
 
-        JSONObject jsonObject = serializeStandardProperties(data, null, settings);
+        JSONObject jsonObject = serializeExpObject(data, null, settings);
 
         if (settings.isIncludeProperties())
         {
             if (dc != null)
             {
-                JSONObject dataClassJsonObject = serializeStandardProperties(dc, null, settings.withIncludeProperties(false));
+                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false));
                 if (dc.getCategory() != null)
                     dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
                 jsonObject.put(DATA_CLASS, dataClassJsonObject);
@@ -626,11 +659,11 @@ public class ExperimentJSONConverter
         JSONObject jsonObject;
         if (sampleSet == null)
         {
-            jsonObject = serializeStandardProperties(material, null, settings);
+            jsonObject = serializeExpObject(material, null, settings);
         }
         else
         {
-            jsonObject = serializeStandardProperties(material, sampleSet.getDomain().getProperties(), settings);
+            jsonObject = serializeExpObject(material, sampleSet.getDomain().getProperties(), settings);
             if (sampleSet.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
@@ -642,7 +675,7 @@ public class ExperimentJSONConverter
 
             if (settings.isIncludeProperties())
             {
-                JSONObject sampleSetJson = serializeStandardProperties(sampleSet, null, settings.withIncludeProperties(false));
+                JSONObject sampleSetJson = serializeExpObject(sampleSet, null, settings.withIncludeProperties(false));
                 jsonObject.put(SAMPLE_SET, sampleSetJson);
             }
         }

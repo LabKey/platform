@@ -316,7 +316,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (sampleSet == null)
                         return null;
 
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleSet, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                     //Need to map to proper Icon
                     properties.put("type", "sampleSet");

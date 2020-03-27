@@ -17,12 +17,7 @@ package org.labkey.api.exp.api;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 

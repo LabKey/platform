@@ -167,7 +167,7 @@ LABKEY.Experiment = new function()
          * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchId The batch id.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.
          * <li><b>response</b> The original response
@@ -217,7 +217,7 @@ LABKEY.Experiment.loadBatch({
          * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchIds The list of batch ids.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>batches</b> The list of {@link LABKEY.Exp.RunGroup} objects.
          * <li><b>response</b> The original response
@@ -272,7 +272,7 @@ LABKEY.Experiment.loadBatch({
          * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
          * @param {Boolean} config.includeRunSteps Include run steps.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
          * <li><b>response</b> The original response
@@ -553,7 +553,7 @@ LABKEY.Experiment.saveBatch({
          * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
          * @param {Boolean} config.includeRunSteps Include run steps.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
          * <li><b>response</b> The original response

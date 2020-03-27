@@ -71,9 +71,9 @@ public class LsidManager
         return INSTANCE;
     }
 
-    public interface LsidHandler<O extends Identifiable>
+    public interface LsidHandler<I extends Identifiable>
     {
-        O getObject(Lsid lsid);
+        I getObject(Lsid lsid);
 
         @Nullable
         ActionURL getDisplayURL(Lsid lsid);
@@ -83,13 +83,13 @@ public class LsidManager
         boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm);
     }
 
-    public abstract static class ExpObjectLsidHandler<O extends ExpObject> implements LsidHandler<O>
+    public abstract static class ExpObjectLsidHandler<I extends ExpObject> implements LsidHandler<I>
     {
-        public abstract O getObject(Lsid lsid);
+        public abstract I getObject(Lsid lsid);
 
         public Container getContainer(Lsid lsid)
         {
-            O run = getObject(lsid);
+            I run = getObject(lsid);
             return run == null ? null : run.getContainer();
         }
 
@@ -127,22 +127,22 @@ public class LsidManager
 
     // This is different from ExpObjectLsidHandler in that it supports generic
     // OntologyObjects that don't fit into the ExpObject class hierarchy.
-    public static class OntologyObjectLsidHandler<O extends IdentifiableBase> implements LsidHandler<O>
+    public static class OntologyObjectLsidHandler<I extends IdentifiableBase> implements LsidHandler<I>
     {
         @Override
-        public O getObject(Lsid lsid)
+        public I getObject(Lsid lsid)
         {
             OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
             if (oo == null)
                 return null;
 
-            return (O)new IdentifiableBase(oo);
+            return (I)new IdentifiableBase(oo);
         }
 
         @Override
         public final @Nullable ActionURL getDisplayURL(Lsid lsid)
         {
-            O obj = getObject(lsid);
+            I obj = getObject(lsid);
             return obj == null ? null : obj.detailsURL();
         }
 

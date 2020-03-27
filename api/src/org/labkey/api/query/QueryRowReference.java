@@ -3,7 +3,6 @@ package org.labkey.api.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.FilterInfo;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -13,7 +12,7 @@ import java.util.stream.Collectors;
 import static org.labkey.api.util.PageFlowUtil.encode;
 
 /**
- * Reference a single row within a table by it's query coordinates: container, schemaName, queryName, and a set of pk filters.
+ * Reference a single row within a table by its query coordinates: container, schemaName, queryName, and a set of pk filters.
  */
 public class QueryRowReference
 {
