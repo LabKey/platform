@@ -234,8 +234,10 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
                     }
                     else
                     {
-                        // It's not an expected column. Is it an MV indicator column?
-                        if (!settings.isAllowUnexpectedColumns() && !mvIndicatorColumns.contains(column.name))
+                        // It's not an expected column. Is it an MV indicator column or prov:objectInput column?
+                        if (!settings.isAllowUnexpectedColumns() &&
+                                !mvIndicatorColumns.contains(column.name) &&
+                                !column.name.equalsIgnoreCase(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
                         {
                             column.load = false;
                         }

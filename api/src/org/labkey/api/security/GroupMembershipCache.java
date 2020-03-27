@@ -16,9 +16,9 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -43,7 +43,7 @@ public class GroupMembershipCache
     private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
     private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final StringKeyCache<int[]> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group Memberships");
+    private static final Cache<String, int[]> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group Memberships");
 
     static
     {
@@ -108,7 +108,7 @@ public class GroupMembershipCache
 
         // invalidate all computed group lists (getAllGroups())
         if (principal instanceof Group)
-            CACHE.removeUsingPrefix(ALL_GROUP_MEMBERSHIPS_PREFIX);
+            CACHE.removeUsingFilter(new Cache.StringPrefixFilter(ALL_GROUP_MEMBERSHIPS_PREFIX));
     }
 
 

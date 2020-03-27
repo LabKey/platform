@@ -5,7 +5,6 @@ import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.TableSelector;
@@ -25,7 +24,7 @@ public class AuthenticationConfigurationCache
 {
     // We have just a single object to cache (a global AuthenticationConfigurationCollections), but use standard cache (blocking cache wrapping the
     // shared cache) for convenience and to ensure that configuration changes will get propagated once multiple application servers are supported.
-    private static final BlockingCache<String, AuthenticationConfigurationCollections> CACHE = new BlockingStringKeyCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationConfigurationCollections());
+    private static final BlockingCache<String, AuthenticationConfigurationCollections> CACHE = new BlockingCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationConfigurationCollections());
     private static final String CACHE_KEY = AuthenticationConfigurationCache.class.getName();
 
     static

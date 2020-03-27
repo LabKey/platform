@@ -15,7 +15,7 @@
  */
 package org.labkey.api.attachments;
 
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CacheableWriter;
@@ -23,7 +23,7 @@ import org.labkey.api.util.Pair;
 
 public class PortalBackgroundImageCache
 {
-    private static final BlockingStringKeyCache<CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Background Images", null);
+    private static final BlockingCache<String, CacheableWriter> _cache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.YEAR, "Background Images", null);
     private static final ImageLoader _dynamicLoader = new ImageLoader();
 
     public static CacheableWriter getImageWriter(AttachmentParent parent, String imageName)

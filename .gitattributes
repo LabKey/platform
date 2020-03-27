@@ -1263,7 +1263,6 @@ api/src/org/labkey/api/security/AuthenticationLogoType.java -text
 api/src/org/labkey/api/security/AuthenticationManager.java -text
 api/src/org/labkey/api/security/AuthenticationProvider.java -text
 api/src/org/labkey/api/security/AuthenticationProviderCache.java -text
-api/src/org/labkey/api/security/AuthenticationProviderConfigAuditTypeProvider.java -text
 api/src/org/labkey/api/security/AuthNotify.java -text
 api/src/org/labkey/api/security/AvatarThumbnailProvider.java -text
 api/src/org/labkey/api/security/AvatarType.java -text
@@ -2341,7 +2340,6 @@ experiment/src/org/labkey/experiment/controllers/exp/RunInputOutputBean.java -te
 experiment/src/org/labkey/experiment/controllers/property/DomainForm.java -text
 experiment/src/org/labkey/experiment/controllers/property/PropertyController.java -text
 experiment/src/org/labkey/experiment/controllers/property/templateUpdate.jsp -text
-experiment/src/org/labkey/experiment/createSampleSet.jsp -text
 experiment/src/org/labkey/experiment/customizeRunWebPart.jsp -text
 experiment/src/org/labkey/experiment/CustomProperties.java -text
 experiment/src/org/labkey/experiment/CustomProperties.jsp -text

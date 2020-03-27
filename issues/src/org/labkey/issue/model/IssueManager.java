@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -199,6 +199,7 @@ public class IssueManager
         return issue;
     }
 
+    @Nullable
     public static Issue getIssue(@Nullable Container c, User user, int issueId)
     {
         Issue issue = _getIssue(c, issueId);
@@ -454,7 +455,7 @@ public class IssueManager
     }
 
 
-    private static final StringKeyCache<Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
+    private static final Cache<String, Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.

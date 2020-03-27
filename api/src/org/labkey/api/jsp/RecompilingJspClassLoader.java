@@ -64,9 +64,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final String DB_SCRIPT_PATH = "/schemas/dbscripts";
 
     @Override
-    public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
+    public Class loadClass(ServletContext context, String jspFilename) throws ClassNotFoundException
     {
-        String compiledJspPath = getCompiledJspPath(packageName, jspFilename);
+        String compiledJspPath = getCompiledJspPath(jspFilename);
         Collection<ResourceFinder> finders = ModuleLoader.getInstance().getResourceFindersForPath(compiledJspPath);
 
         for (ResourceFinder finder : finders)
@@ -76,20 +76,20 @@ public class RecompilingJspClassLoader extends JspClassLoader
             File classFile = new File(jspClassesFileBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
             File sourceFile = null;
             if (null != finder.getSourcePath())
-                sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(packageName, jspFilename)));
+                sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(jspFilename)));
 
             if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
-                return getCompiledClassFile(classFile, jspJavaFileBuildDirectory, jspClassesFileBuildDirectory, finder, packageName, jspFilename);
+                return getCompiledClassFile(classFile, jspJavaFileBuildDirectory, jspClassesFileBuildDirectory, finder, jspFilename);
         }
 
-        return super.loadClass(context, packageName, jspFilename);
+        return super.loadClass(context, jspFilename);
     }
 
 
     @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
-    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String packageName, String jspFileName)
+    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String jspFileName)
     {
-        String relativePath = getSourceJspPath(packageName, jspFileName);
+        String relativePath = getSourceJspPath(jspFileName);
         // Create File object for JSP source
         String sourcePath = getCompleteSourcePath(finder.getSourcePath(), relativePath);
         File sourceFile = new File(sourcePath);
@@ -97,7 +97,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         Collection<ResourceFinder> apiResourceFinders = ModuleLoader.getInstance().getResourceFindersForPath("/org/labkey/api/");
         try
         {
-            String className = getJspClassName(packageName, jspFileName);
+            String className = getJspClassName(jspFileName);
 
             synchronized(_classLoaders)
             {

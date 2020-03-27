@@ -48,6 +48,22 @@ public interface Cache<K, V>
      */
     int removeUsingFilter(Filter<K> filter);
 
+    class StringPrefixFilter implements Filter<String>
+    {
+        private final String _prefix;
+
+        public StringPrefixFilter(String prefix)
+        {
+            _prefix = prefix;
+        }
+
+        @Override
+        public boolean accept(String s)
+        {
+            return s.startsWith(_prefix);
+        }
+    }
+
     Set<K> getKeys();
 
     void clear();
@@ -60,4 +76,6 @@ public interface Cache<K, V>
 
     // Get the underlying implementation cache
     TrackingCache getTrackingCache();
+
+    Cache<K, V> createTemporaryCache();
 }

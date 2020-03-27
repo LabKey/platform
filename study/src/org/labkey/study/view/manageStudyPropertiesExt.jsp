@@ -444,8 +444,9 @@ function renderFormPanel(data, editable){
     // the original form didn't include these, but we can decide later
     items.push({
         xtype : 'radiogroup',
-        fieldLabel : 'Timepoint Type: <%=helpPopup(null, "Studies can assign data to timepoints based on explicit visit assignments (visit-based), calculated dates relative to a start date (date-based), or skip visit bookkeeping completely (continuous). Toggling an existing study will delete any current visit assignments")%>',
+        fieldLabel : 'Timepoint Type:<%=helpPopup(null, "Studies can assign data to timepoints based on explicit visit assignments (visit-based), calculated dates relative to a start date (date-based), or skip visit bookkeeping completely (continuous). Toggling an existing study will delete any current visit assignments")%>',
         labelWidth : 160,
+        labelSeparator: '',
         width : 500,
         columns : 3,
         vertical : true,

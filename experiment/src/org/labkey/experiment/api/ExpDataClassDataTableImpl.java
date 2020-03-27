@@ -25,32 +25,14 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.MultiValuedDisplayColumn;
-import org.labkey.api.data.MultiValuedForeignKey;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.LoggingDataIterator;
 import org.labkey.api.dataiterator.NameExpressionDataIteratorBuilder;
-import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -125,6 +107,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        // leaving commented out until branch that supports merge for data classes is merged
+//        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
+//        setImportURL(new DetailsURL(url));
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
@@ -317,11 +302,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         // Add the domain columns
         Collection<BaseColumnInfo> cols = new ArrayList<>(20);
+        Set skipCols = new CaseInsensitiveHashSet();
+        skipCols.add("lsid");
+        skipCols.add("rowid");
+        skipCols.add("name");
+        skipCols.add("classid");
         for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
-            if (colName.equalsIgnoreCase("lsid") || colName.equalsIgnoreCase("rowid"))
+            if (skipCols.contains(colName))
                 continue;
 
             if (colName.equalsIgnoreCase("genid"))
@@ -360,6 +350,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (null != dp && null != pd)
                 {
+                    col.setName(dp.getName());
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
                         col.setFk(PdLookupForeignKey.create(schema, pd));
@@ -429,13 +420,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         dataCols.remove("lsid");
 
+        // all columns from dataclass property table except name and classid
+        Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
+        pCols.remove("name");
+        pCols.remove("classid");
+
         SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM\n");
         sql.append("(SELECT ");
+        String comma = "";
         for (String dataCol : dataCols)
-            sql.append("d.").append(dataCol).append(", ");
-        sql.append("p.* FROM ");
+        {
+            sql.append(comma);
+            sql.append("d.").append(dataCol);
+            comma = ", ";
+        }
+
+        SqlDialect dialect = _rootTable.getSqlDialect();
+        for (String pCol : pCols)
+        {
+            sql.append(comma);
+            sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
+        }
+        sql.append(" FROM ");
         sql.append(_rootTable, "d");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
+        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid) ");
+        String subAlias = alias + "_dc_sub";
+        sql.append(subAlias);
+        sql.append("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
@@ -558,7 +570,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
-            ColumnInfo classIdCol = expData.getColumn("classId");
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
+            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
             // Ensure we have a cpasType column and it is of the right value
@@ -650,7 +663,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid")

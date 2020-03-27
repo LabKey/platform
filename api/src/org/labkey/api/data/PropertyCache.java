@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -28,7 +29,7 @@ import org.labkey.api.security.User;
  */
 public class PropertyCache
 {
-    private final DatabaseCache<PropertyManager.PropertyMap> _blockingCache;
+    private final DatabaseCache<String, PropertyManager.PropertyMap> _blockingCache;
     private final CacheLoader<String, PropertyManager.PropertyMap> _loader;
 
     PropertyCache(String name, CacheLoader<String, PropertyManager.PropertyMap> propertyLoader)
@@ -51,7 +52,7 @@ public class PropertyCache
 
     void removeAll(Container c)
     {
-        _blockingCache.removeUsingPrefix(c.getId());
+        _blockingCache.removeUsingFilter(new Cache.StringPrefixFilter(c.getId()));
     }
 
     private static String getCacheKey(Container c, User user, String category)

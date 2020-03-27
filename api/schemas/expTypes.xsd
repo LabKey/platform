@@ -230,6 +230,18 @@
 					<xs:attribute ref="rdf:parseType" fixed="Collection"/>
 				</xs:complexType>
 			</xs:element>
+			<xs:element name="ProvenanceMap" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="ObjectRefs" minOccurs="0" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:attribute name="from" type="string" use="optional"/>
+								<xs:attribute name="to" type="string" use="optional"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
 			<xs:element name="Properties" type="exp:PropertyCollectionType" minOccurs="0"/>
 		</xs:sequence>
 		<xs:attribute ref="rdf:about" use="required"/>
