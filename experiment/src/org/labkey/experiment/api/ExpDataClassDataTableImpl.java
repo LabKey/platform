@@ -423,6 +423,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         pCols.remove("classid");
 
         SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM\n");
         sql.append("(SELECT ");
         String comma = "";
         for (String dataCol : dataCols)
@@ -440,59 +441,18 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         }
         sql.append(" FROM ");
         sql.append(_rootTable, "d");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
+        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid) ");
+        String subAlias = alias + "_dc_sub";
+        sql.append(subAlias);
+        sql.append("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
-        SQLFragment filterFrag = getAliasedFilterSQLFragment(dialect, columnMap, getFilter().getClauses());
+        SQLFragment filterFrag = getFilter().getSQLFragment(_rootTable.getSqlDialect(), columnMap);
         sql.append("\n").append(filterFrag).append(") ").append(alias);
 
         return sql;
     }
-
-    public SQLFragment getAliasedFilterSQLFragment(SqlDialect dialect, Map<FieldKey, ? extends ColumnInfo> columnMap, List<SimpleFilter.FilterClause> clauses)
-    {
-        SQLFragment ret = new SQLFragment();
-
-        if (null == clauses || 0 == clauses.size())
-            return ret;
-
-        String sAND = "WHERE ";
-
-        for (SimpleFilter.FilterClause fc : clauses)
-        {
-            ret.append(sAND);
-            ret.append("(");
-            try
-            {
-                if (fc instanceof CompareType.EqualsCompareClause && fc.getFieldKeys().size() == 1 && fc.getFieldKeys().get(0).getName().equalsIgnoreCase("classid"))
-                {
-                    SQLFragment fragment = new SQLFragment("d.classid = ?");
-                    fragment.addAll(fc.getParamVals());
-                    ret.append(fragment);
-                }
-                else
-                    ret.append(fc.toSQLFragment(columnMap, dialect));
-            }
-            catch (RuntimeSQLException e)
-            {
-                // Deal with unparseable filter values - see issue 23321
-                if (e.getSQLException() instanceof SQLGenerationException)
-                {
-                    ret.append("0 = 1");
-                }
-                else
-                {
-                    throw e;
-                }
-            }
-            ret.append(")");
-            sAND = " AND ";
-        }
-
-        return ret;
-    }
-
 
     private static final Set<String> DEFAULT_HIDDEN_COLS = new CaseInsensitiveHashSet("Container", "Created", "CreatedBy", "ModifiedBy", "Modified", "Owner", "EntityId", "RowId");
 
