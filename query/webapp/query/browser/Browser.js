@@ -136,7 +136,7 @@ Ext4.define('LABKEY.query.browser.Browser', {
             scope: this
         }];
 
-        if (this.hasQueryAnalysisService && LABKEY.Security.currentUser.isAdmin){
+        if (this.hasQueryAnalysisService && LABKEY.Security.currentUser.isSystemAdmin){
             tbar.push({
                 xtype: 'querybutton',
                 text: 'Cross Folder Dependencies',
