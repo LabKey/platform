@@ -34,7 +34,6 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWarningsDisplayColumn;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
@@ -1161,6 +1160,16 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     sb.append(HtmlString.unsafe(PageFlowUtil.jsString(msgBox.toString())));
                     sb.append(HtmlString.unsafe(");return false;\">Too many errors to display (click to show all).<a><br>"));
                 }
+                return sb.getHtmlString();
+            }
+            else if (errors != null && "main".equals(paramName) && errors.getFieldError("transform") != null)
+            {
+                HtmlStringBuilder sb = HtmlStringBuilder.of(HtmlString.unsafe("<font class=\"labkey-error\">"));
+                sb.append(HtmlString.unsafe("<div>Transform Script Error</div>"));
+                sb.append(HtmlString.unsafe("<br>"));
+                sb.append(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()));
+                sb.append(HtmlString.unsafe("</font>"));
+                sb.append(HtmlString.unsafe("<br><br>"));
                 return sb.getHtmlString();
             }
             else
