@@ -45,7 +45,8 @@ interface IAppState {
     showEditSourceConfirmationModal: boolean,
     showResetConfirmationModal: boolean,
     showViewDataConfirmationModal: boolean,
-    navigateAfterSave: boolean
+    navigateAfterSave: boolean,
+    userDefinedQuery: boolean
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -74,7 +75,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             showEditSourceConfirmationModal: false,
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
-            navigateAfterSave: false
+            navigateAfterSave: false,
+            userDefinedQuery: false
         };
     }
 
@@ -83,7 +85,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         if (schemaName && queryName) {
             fetchQueryMetadata(schemaName, queryName)
-                .then((domain) => this.setState(() => ({domain})))
+                .then((data) => {
+                    const domain = DomainDesign.create(data.domainDesign ? data.domainDesign : data, undefined);
+                    this.setState(() => ({
+                        domain: domain,
+                        userDefinedQuery: data.userDefinedQuery
+                    }))
+                })
                 .catch((error) => {
                     this.setState(() => ({
                         messages: messages.set(0, {message: error.exception, messageType: 'danger'})
@@ -191,8 +199,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onSaveBtnHandler = (onSaveNavigation) => {
-        const { domain, schemaName, messages, navigateAfterSave } = this.state;
-        saveQueryMetadata(domain, schemaName)
+        const { domain, schemaName, messages, navigateAfterSave, userDefinedQuery } = this.state;
+        saveQueryMetadata(domain, schemaName, userDefinedQuery)
             .then(() => {
                 this.showMessage("Save Successful", 'success', 0);
 
@@ -278,24 +286,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onResetBtnHandler = () => {
-        const { dirty } = this.state;
-
-        if (dirty) {
-            this.setState(() => ({
-                showResetConfirmationModal: true
-            }));
-        }
-        else {
-            this.onConfirmReset();
-        }
+        this.setState(() => ({
+            showResetConfirmationModal: true
+        }));
     };
 
     renderButtons() {
-        const { showSave } = this.state;
+        const { showSave, userDefinedQuery } = this.state;
 
         return (
             <div className={'domain-form-panel query-metadata-editor-buttons'}>
-                <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>
+                { !userDefinedQuery && <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button> }
                 <Button bsStyle='primary' className='pull-right' disabled={!showSave} onClick={this.onSaveBtnHandler}>Save</Button>
                 <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
                 <Button onClick={this.viewDataBtnHandler}>View Data</Button>

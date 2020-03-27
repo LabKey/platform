@@ -382,13 +382,13 @@ public class ExpGeneratorHelper
 
     static private Lsid createOutputProtocolLSID(Lsid parentProtocolLSID)
     {
-        Lsid result = new Lsid.LsidBuilder(parentProtocolLSID).setObjectId(parentProtocolLSID.getObjectId() + ".Output").build();
+        Lsid result = parentProtocolLSID.edit().setObjectId(parentProtocolLSID.getObjectId() + ".Output").build();
         return result;
     }
 
     static private ExpProtocol ensureProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsidIn, String description)
     {
-        Lsid.LsidBuilder lsid = new Lsid.LsidBuilder(lsidIn);
+        Lsid.LsidBuilder lsid = lsidIn.edit();
         int version = 1;
         while (true)
         {

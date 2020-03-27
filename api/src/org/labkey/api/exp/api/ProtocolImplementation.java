@@ -17,6 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 
 import java.util.List;
@@ -57,5 +58,10 @@ public class ProtocolImplementation
      */
     public void onRunDeleted(Container container, User user)
     {
+    }
+
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpRun run)
+    {
+        return null;
     }
 }

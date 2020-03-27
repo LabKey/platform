@@ -21,6 +21,8 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -30,9 +32,12 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URIUtil;
 
 import java.io.File;
@@ -43,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Serializes and deserializes experiment objects to and from JSON.
@@ -60,12 +66,18 @@ public class ExperimentJSONConverter
     public static final String MODIFIED_BY = "modifiedBy";
     public static final String NAME = "name";
     public static final String LSID = "lsid";
+    public static final String CPAS_TYPE = "cpasType";
+    public static final String URL = "url";
     public static final String PROPERTIES = "properties";
     public static final String COMMENT = "comment";
     public static final String DATA_FILE_URL = "dataFileURL";
     public static final String ABSOLUTE_PATH = "absolutePath";
     public static final String PIPELINE_PATH = "pipelinePath"; //path relative to pipeline root
     public static final String PROTOCOL_NAME = "protocolName"; // non-assay backed protocol name
+
+    public static final String SCHEMA_NAME = QueryParam.schemaName.name();
+    public static final String QUERY_NAME = QueryParam.queryName.name();
+    public static final String PK_FILTERS = "pkFilters";
 
     // Run properties
     public static final String PROTOCOL = "protocol";
@@ -74,6 +86,7 @@ public class ExperimentJSONConverter
     public static final String ROLE = "role";
     public static final String DATA_OUTPUTS = "dataOutputs";
     public static final String MATERIAL_OUTPUTS = "materialOutputs";
+    public static final String STEPS = "steps";
 
     // Material properties
     public static final String SAMPLE_SET = "sampleSet";
@@ -81,40 +94,135 @@ public class ExperimentJSONConverter
     // Data properties
     public static final String DATA_CLASS = "dataClass";
     public static final String DATA_CLASS_CATEGORY = "category";
+    public static final String EDGE = "edge";
+    public static final String PROTOCOL_INPUT = "protocolInput";
+
+    // Protocol Application properties
+    public static final String APPLICATION_TYPE = "applicationType";
+    public static final String ACTION_SEQUENCE = "activitySequence";
+    public static final String ACTIVITY_DATE = "activityDate";
+    public static final String START_TIME = "startTime";
+    public static final String END_TIME = "endTime";
+    public static final String RECORD_COUNT = "recordCount";
+    public static final String PARAMETERS = "parameters";
 
     // Domain kinds
     public static final String VOCABULARY_DOMAIN = "Vocabulary";
 
-    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain)
+    public static final Settings DEFAULT_SETTINGS = new Settings();
+
+    public static class Settings
     {
-        JSONObject jsonObject = serializeStandardProperties(runGroup, domain != null ? domain.getProperties() : Collections.emptyList());
+        private final boolean includeProperties;
+        private final boolean includeInputsAndOutputs;
+        private final boolean includeRunSteps;
+
+        public Settings()
+        {
+            this(true, true, false);
+        }
+
+        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
+        {
+            this.includeProperties = includeProperties;
+            this.includeInputsAndOutputs = includeInputsAndOutputs;
+            this.includeRunSteps = includeRunSteps;
+        }
+
+        public boolean isIncludeProperties()
+        {
+            return includeProperties;
+        }
+
+        public boolean isIncludeInputsAndOutputs()
+        {
+            return includeInputsAndOutputs;
+        }
+
+        public boolean isIncludeRunSteps()
+        {
+            return includeRunSteps;
+        }
+
+        public Settings withIncludeProperties(boolean b)
+        {
+            return new Settings(b, includeInputsAndOutputs, includeRunSteps);
+        }
+
+        public Settings withIncludeInputsAndOutputs(boolean b)
+        {
+            return new Settings(includeProperties, b, includeRunSteps);
+        }
+    }
+
+    @NotNull
+    public static JSONObject serialize(@NotNull Identifiable node, @NotNull User user, @NotNull Settings settings)
+    {
+        if (node instanceof ExpExperiment)
+            return serializeRunGroup((ExpExperiment)node, null, settings);
+        else if (node instanceof ExpRun)
+            return serializeRun((ExpRun)node, null, user, settings);
+        else if (node instanceof ExpMaterial)
+            return serializeMaterial((ExpMaterial)node, settings);
+        else if (node instanceof ExpData)
+            return serializeData((ExpData)node, user, settings);
+        else if (node instanceof ExpObject)
+            return serializeExpObject((ExpObject)node, null, settings);
+        else
+            return serializeIdentifiable(node, settings);
+    }
+
+    public static JSONObject serializeRunGroup(ExpExperiment runGroup, Domain domain, @NotNull Settings settings)
+    {
+        JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
         jsonObject.put(COMMENT, runGroup.getComments());
         return jsonObject;
     }
 
-    public static JSONObject serializeRun(ExpRun run, Domain domain, User user)
+    public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
-        JSONObject jsonObject = serializeStandardProperties(run, domain == null ? null : domain.getProperties());
-        jsonObject.put(COMMENT, run.getComments());
-        jsonObject.put(PROTOCOL, serializeProtocol(run.getProtocol(), user));
-
-        JSONArray inputDataArray = new JSONArray();
-        for (ExpData data : run.getDataInputs().keySet())
+        JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings);
+        if (settings.isIncludeProperties())
         {
-            inputDataArray.put(ExperimentJSONConverter.serializeData(data, user));
+            jsonObject.put(COMMENT, run.getComments());
+            jsonObject.put(PROTOCOL, serializeProtocol(run.getProtocol(), user));
         }
-        jsonObject.put(DATA_INPUTS, inputDataArray);
 
-        JSONArray inputMaterialArray = new JSONArray();
-        for (ExpMaterial material : run.getMaterialInputs().keySet())
+        if (settings.isIncludeInputsAndOutputs())
         {
-            JSONObject jsonMaterial = ExperimentJSONConverter.serializeMaterial(material);
-            jsonMaterial.put(ROLE, run.getMaterialInputs().get(material));
-            inputMaterialArray.put(jsonMaterial);
-        }
-        jsonObject.put(MATERIAL_INPUTS, inputMaterialArray);
+            ExpProtocolApplication inputApp = run.getInputProtocolApplication();
+            jsonObject.put(DATA_INPUTS, serializeRunInputs(inputApp.getDataInputs(), user, settings));
+            jsonObject.put(MATERIAL_INPUTS, serializeRunInputs(inputApp.getMaterialInputs(), user, settings));
 
-        serializeRunOutputs(jsonObject, run.getDataOutputs(), run.getMaterialOutputs(), user);
+            // Inputs into the final output step are outputs of the entire run
+            ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+            jsonObject.put(DATA_OUTPUTS, serializeRunDataOutputs(outputApp.getDataInputs(), user, settings));
+            jsonObject.put(MATERIAL_OUTPUTS, serializeRunInputs(outputApp.getMaterialInputs(), user, settings));
+
+            serializeRunLevelProvenanceProperties(jsonObject, run);
+        }
+
+        ExpProtocol protocol = run.getProtocol();
+        if (protocol != null)
+        {
+            jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+
+        if (settings.isIncludeRunSteps())
+        {
+            JSONArray steps = new JSONArray();
+            for (ExpProtocolApplication protApp : run.getProtocolApplications())
+            {
+                // We can skip the initial input and final steps ince we've already included the run-level inputs and
+                // outputs and there aren't usually any interesting properties on the initial and final steps.
+                if (protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun || protApp.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRunOutput)
+                    continue;
+
+                JSONObject step = serializeRunProtocolApplication(protApp, run, user, settings);
+                steps.put(step);
+            }
+            jsonObject.put(STEPS, steps);
+        }
 
         return jsonObject;
     }
@@ -126,44 +234,272 @@ public class ExperimentJSONConverter
 
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
-        JSONObject jsonObject = serializeStandardProperties(protocol);
+        JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false));
         return jsonObject;
     }
 
-    public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials, User user)
+    public static JSONObject serializeRunOutputs(Collection<ExpData> data, Collection<ExpMaterial> materials, User user, @NotNull Settings settings)
     {
         JSONObject obj = new JSONObject();
-        serializeRunOutputs(obj, data, materials, user);
+        serializeRunOutputs(obj, data, materials, user, settings);
         return obj;
     }
 
-    protected static void serializeRunOutputs(@NotNull JSONObject obj, Collection<ExpData> data, Collection<ExpMaterial> materials, User user)
+    protected static void serializeRunOutputs(@NotNull JSONObject obj, Collection<ExpData> data, Collection<ExpMaterial> materials, User user, @NotNull Settings settings)
     {
         JSONArray outputDataArray = new JSONArray();
         for (ExpData d : data)
         {
             if (null != d.getFile() || null != d.getDataClass(user))
-                outputDataArray.put(ExperimentJSONConverter.serializeData(d, user));
+                outputDataArray.put(ExperimentJSONConverter.serializeData(d, user, settings));
         }
         obj.put(DATA_OUTPUTS, outputDataArray);
 
         JSONArray outputMaterialArray = new JSONArray();
         for (ExpMaterial material : materials)
         {
-            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material));
+            outputMaterialArray.put(ExperimentJSONConverter.serializeMaterial(material, settings));
         }
         obj.put(MATERIAL_OUTPUTS, outputMaterialArray);
     }
 
-    // Serialize only the base properties -- does not include object properties
-    public static JSONObject serializeStandardProperties(ExpObject object)
+    protected static JSONArray serializeRunDataOutputs(Collection<? extends ExpDataRunInput> inputs, User user, Settings settings)
     {
-        JSONObject jsonObject = new JSONObject();
+        // filter out any output data that have a file URL or aren't a DataClass
+        return serializeRunInputs(inputs.stream().filter(input -> {
+            ExpData d = input.getData();
+            return d != null && (d.getFile() != null || d.getDataClass(user) != null);
+        }).collect(Collectors.toList()), user, settings);
+    }
 
-        // Standard properties on all experiment objects
-        jsonObject.put(NAME, object.getName());
-        jsonObject.put(LSID, object.getLSID());
-        jsonObject.put(ID, object.getRowId());
+    protected static JSONArray serializeRunInputs(Collection<? extends ExpRunInput> inputs, User user, Settings settings)
+    {
+        JSONArray jsonArray = new JSONArray();
+
+        for (ExpRunInput runInput : inputs)
+        {
+            JSONObject json;
+            if (runInput instanceof ExpDataRunInput)
+            {
+                json = ExperimentJSONConverter.serializeData(((ExpDataRunInput)runInput).getData(), user, settings);
+            }
+            else if (runInput instanceof ExpMaterialRunInput)
+            {
+                json = ExperimentJSONConverter.serializeMaterial(((ExpMaterialRunInput)runInput).getMaterial(), settings);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Unknown run input: " + runInput);
+            }
+
+            json.put(ROLE, runInput.getRole());
+
+            if (settings.isIncludeProperties())
+            {
+                JSONObject edgeProperties = serializeOntologyProperties(runInput, null, settings);
+                if (!edgeProperties.isEmpty())
+                {
+                    JSONObject edgeJson = new JSONObject();
+                    // NOTE: The standard properties aren't interesting for the MaterialInput/DataInput edge
+                    edgeJson.put(LSID, runInput.getLSID());
+                    edgeJson.put(PROPERTIES, edgeProperties);
+                    json.put(EDGE, edgeJson);
+                }
+            }
+
+            ExpProtocolInput protocolInput = runInput.getProtocolInput();
+            if (protocolInput != null)
+            {
+                Lsid lsid = Lsid.parse(protocolInput.getLSID());
+                json.put(PROTOCOL_INPUT, lsid.getObjectId());
+            }
+
+            jsonArray.put(json);
+        }
+
+        return jsonArray;
+    }
+
+    protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, ExpRun run, User user, Settings settings)
+    {
+        JSONObject json = serializeExpObject(protApp, null, settings);
+
+        json.put(ACTION_SEQUENCE, protApp.getActionSequence());
+        json.put(APPLICATION_TYPE, protApp.getApplicationType().toString());
+        if (protApp.getComments() != null)
+            json.put(COMMENT, protApp.getComments());
+
+        if (protApp.getActivityDate() != null)
+            json.put(ACTIVITY_DATE, protApp.getActivityDate());
+
+        if (protApp.getStartTime() != null)
+            json.put(START_TIME, protApp.getStartTime());
+
+        if (protApp.getEndTime() != null)
+            json.put(END_TIME, protApp.getEndTime());
+
+        if (protApp.getRecordCount() != null)
+            json.put(RECORD_COUNT, protApp.getRecordCount());
+
+        json.put(PROTOCOL, serializeProtocol(protApp.getProtocol(), user));
+
+        if (settings.isIncludeInputsAndOutputs())
+        {
+            json.put(DATA_INPUTS, serializeRunInputs(protApp.getDataInputs(), user, settings));
+            json.put(MATERIAL_INPUTS, serializeRunInputs(protApp.getMaterialInputs(), user, settings));
+
+            json.put(DATA_OUTPUTS, serializeRunInputs(protApp.getDataOutputs(), user, settings));
+            json.put(MATERIAL_OUTPUTS, serializeRunInputs(protApp.getMaterialOutputs(), user, settings));
+
+            // provenance
+            provenanceMap(json, protApp);
+        }
+
+        // CONSIDER: parameters
+//        List<ProtocolApplicationParameter> parameters = ExperimentService.get().getProtocolApplicationParameters(application.getRowId());
+//        if (!parameters.isEmpty())
+//        {
+//            json.put(PARAMETERS, parameters.stream().map());
+//        }
+
+        return json;
+    }
+
+    public static void serializeRunLevelProvenanceProperties(@NotNull JSONObject obj, ExpRun run)
+    {
+        ProvenanceService svc = ProvenanceService.get();
+        if (svc == null)
+            return;
+
+        // Include provenance inputs of the run in this format:
+        // {
+        //   objectInputs: [ "urn:lsid:lsid1", "urn:lsid:lsid" ]
+        // }
+        ExpProtocolApplication inputApp = run.getInputProtocolApplication();
+        if (inputApp != null)
+        {
+            var inputSet = svc.getProvenanceObjectUris(inputApp.getRowId());
+            if (!inputSet.isEmpty())
+            {
+                obj.put(ProvenanceService.PROVENANCE_OBJECT_INPUTS,
+                        inputSet.stream()
+                                .map(Pair::getKey)
+                                .map(ExperimentJSONConverter::serializeProvenanceObject)
+                                .collect(Collectors.toUnmodifiableList()));
+            }
+        }
+
+        ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
+        if (outputApp != null)
+        {
+            provenanceMap(obj, outputApp);
+        }
+    }
+
+    // Include provenance object mapping for the run in this format:
+    // {
+    //   provenanceMap: [{
+    //     from: 'urn:lsid:input1', to: 'urn:lsid:output1'
+    //   },{
+    //     from: 'urn:lsid:input2', to: 'urn:lsid:output1'
+    //   }]
+    // }
+    public static void provenanceMap(@NotNull JSONObject obj, ExpProtocolApplication app)
+    {
+        ProvenanceService svc = ProvenanceService.get();
+        if (svc == null)
+            return;
+
+        var outputSet = svc.getProvenanceObjectUris(app.getRowId());
+        if (!outputSet.isEmpty())
+        {
+            obj.put(ProvenanceService.PROVENANCE_OBJECT_MAP,
+                    outputSet.stream()
+                            .map(ExperimentJSONConverter::serializeProvenancePair)
+                            .collect(Collectors.toUnmodifiableList()));
+        }
+    }
+
+    private static Map<String, Object> serializeProvenancePair(Pair<String, String> pair)
+    {
+        var map = new HashMap<String, Object>();
+        if (pair.first != null)
+            map.put("from", serializeProvenanceObject(pair.first));
+        if (pair.second != null)
+            map.put("to", serializeProvenanceObject(pair.second));
+        return map;
+    }
+
+    // For now, just return the lsid if it isn't null
+    // CONSIDER: Use LsidManager to find the object and call serialize() ?
+    private static Object serializeProvenanceObject(String objectUri)
+    {
+        if (objectUri == null)
+            return null;
+
+        return objectUri;
+    }
+
+    /**
+     * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
+     */
+    private static JSONObject serializeIdentifiableBean(@NotNull Identifiable obj)
+    {
+        JSONObject json = new JSONObject();
+
+        json.put(NAME, obj.getName());
+        json.put(LSID, obj.getLSID());
+        var url = obj.detailsURL();
+        if (url != null)
+            json.put(URL, url);
+
+        QueryRowReference rowRef = obj.getQueryRowReference();
+        if (rowRef != null)
+        {
+            json.put(SCHEMA_NAME, rowRef.getSchemaKey().toString());
+            json.put(QUERY_NAME, rowRef.getQueryName());
+            json.put(PK_FILTERS, rowRef.getPkFilters().stream().map(f -> Map.of("fieldKey", f.first.toString(), "value", f.second)).collect(Collectors.toList()));
+        }
+        return json;
+    }
+
+    /**
+     * Serialize {@link Identifiable} java bean properties (Name, LSID, URL, and schema/query/pkFilters)
+     * as well as any object properties for the object.
+     */
+    @NotNull
+    public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
+    {
+        JSONObject json = serializeIdentifiableBean(obj);
+
+        if (settings.isIncludeProperties())
+        {
+            Set<String> seenPropertyURIs = new HashSet<>();
+            JSONObject propertiesObject = new JSONObject();
+            Map<String, ObjectProperty> objectProps = OntologyManager.getPropertyObjects(obj.getContainer(), obj.getLSID());
+            serializeOntologyProperties(propertiesObject, obj.getContainer(), seenPropertyURIs, objectProps, settings);
+            if (!propertiesObject.isEmpty())
+                json.put(PROPERTIES, propertiesObject);
+        }
+
+        return json;
+    }
+
+    /**
+     * Serialize ExpObject java bean properties (ID, CreatedBy, Comment) and include object properties and the optional domain properties.
+     */
+    @NotNull
+    public static JSONObject serializeExpObject(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull Settings settings)
+    {
+        // While serializeIdentifiable can include object properties, we call serializeIdentifiableBean
+        // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
+        // fetched using ExpObject.getProperty().
+        JSONObject jsonObject = serializeIdentifiableBean(object);
+        int rowId = object.getRowId();
+        if (rowId != 0)
+        {
+            jsonObject.put(ID, rowId);
+        }
         if (object.getCreatedBy() != null)
         {
             jsonObject.put(CREATED_BY, object.getCreatedBy().getEmail());
@@ -178,15 +514,22 @@ public class ExperimentJSONConverter
         if (comment != null)
             jsonObject.put(COMMENT, object.getComment());
 
+        if (settings.isIncludeProperties())
+        {
+            JSONObject propertiesObject = serializeOntologyProperties(object, properties, settings);
+            if (!propertiesObject.isEmpty())
+                jsonObject.put(PROPERTIES, propertiesObject);
+        }
+
         return jsonObject;
     }
 
-    // Serialize standard properties including object properties and the optional domain properties
-    public static JSONObject serializeStandardProperties(ExpObject object, @Nullable List<? extends DomainProperty> properties)
+    /**
+     * Serialize the custom ontology properties associated with the object.
+     */
+    @NotNull
+    private static JSONObject serializeOntologyProperties(@NotNull ExpObject object, @Nullable List<? extends DomainProperty> properties, @NotNull ExperimentJSONConverter.Settings settings)
     {
-        JSONObject jsonObject = serializeStandardProperties(object);
-
-        // Add the custom properties
         Set<String> seenPropertyURIs = new HashSet<>();
         JSONObject propertiesObject = new JSONObject();
         if (properties != null)
@@ -195,57 +538,93 @@ public class ExperimentJSONConverter
             {
                 seenPropertyURIs.add(dp.getPropertyURI());
                 Object value = object.getProperty(dp);
-                if (dp.getPropertyDescriptor().getPropertyType() == PropertyType.FILE_LINK && value instanceof File)
-                {
-                    // We need to return files not as simple string properties with the path, but as an Exp.Data object
-                    // with multiple values
-                    File f = (File)value;
-                    ExpData data = ExperimentService.get().getExpDataByURL(f, object.getContainer());
-                    if (data != null)
-                    {
-                        // If we can find a row in the data table, return that
-                        value = serializeData(data, null);
-                    }
-                    else
-                    {
-                        // Otherwise, return a subset of all the data fields that we know about
-                        JSONObject jsonFile = new JSONObject();
-                        jsonFile.put(ABSOLUTE_PATH, f.getAbsolutePath());
-                        PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(object.getContainer());
-                        if (pipeRoot != null)
-                        {
-                            jsonFile.put(PIPELINE_PATH, pipeRoot.relativePath(f));
-                        }
-                        value = jsonFile;
-                    }
-                }
+                value = serializePropertyValue(object.getContainer(), dp.getPropertyDescriptor().getPropertyType(), settings, value);
                 propertiesObject.put(dp.getName(), value);
             }
         }
 
-
         var objectProps = object.getObjectProperties();
+        serializeOntologyProperties(propertiesObject, object.getContainer(), seenPropertyURIs, objectProps, settings);
+
+        return propertiesObject;
+    }
+
+    private static void serializeOntologyProperties(JSONObject json, Container c,
+                                                    Set<String> seenPropertyURIs, Map<String, ObjectProperty> objectProps,
+                                                    Settings settings)
+    {
         for (var propPair : objectProps.entrySet())
         {
             String propertyURI = propPair.getKey();
             if (seenPropertyURIs.contains(propertyURI))
                 continue;
             seenPropertyURIs.add(propertyURI);
+
             ObjectProperty op = propPair.getValue();
-            propertiesObject.put(propertyURI, op.value());
+            PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(op.getPropertyURI(), c);
+            PropertyType type = pd != null ? pd.getPropertyType() : op.getPropertyType();
+
+            Object value = serializePropertyValue(c, type, settings, op.value());
+            json.put(propertyURI, op.value());
+        }
+    }
+
+    private static Object serializePropertyValue(Container container, PropertyType type, Settings settings, Object value)
+    {
+        if (type == PropertyType.FILE_LINK && value instanceof File)
+        {
+            // We need to return files not as simple string properties with the path, but as an Exp.Data object
+            // with multiple values
+            File f = (File) value;
+            ExpData data = ExperimentService.get().getExpDataByURL(f, container);
+            if (data != null)
+            {
+                // If we can find a row in the data table, return that
+                value = serializeData(data, null, settings);
+            }
+            else
+            {
+                // Otherwise, return a subset of all the data fields that we know about
+                JSONObject jsonFile = new JSONObject();
+                jsonFile.put(ABSOLUTE_PATH, f.getAbsolutePath());
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(container);
+                if (pipeRoot != null)
+                {
+                    jsonFile.put(PIPELINE_PATH, pipeRoot.relativePath(f));
+                }
+                value = jsonFile;
+            }
         }
 
-
-        if (!propertiesObject.isEmpty())
-            jsonObject.put(PROPERTIES, propertiesObject);
-
-        return jsonObject;
+        return value;
     }
 
 
-    public static JSONObject serializeData(ExpData data, @Nullable User user)
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user)
     {
-        JSONObject jsonObject = serializeStandardProperties(data, null);
+        return serializeData(data, user, DEFAULT_SETTINGS);
+    }
+
+    @NotNull
+    public static JSONObject serializeData(@NotNull ExpData data, @Nullable User user, @NotNull Settings settings)
+    {
+        final ExpDataClass dc = data.getDataClass(user);
+
+        JSONObject jsonObject = serializeExpObject(data, null, settings);
+
+        if (settings.isIncludeProperties())
+        {
+            if (dc != null)
+            {
+                JSONObject dataClassJsonObject = serializeExpObject(dc, null, settings.withIncludeProperties(false));
+                if (dc.getCategory() != null)
+                    dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
+                jsonObject.put(DATA_CLASS, dataClassJsonObject);
+            }
+        }
+
         jsonObject.put(DATA_FILE_URL, data.getDataFileUrl());
         File f = data.getFile();
         if (f != null)
@@ -258,29 +637,33 @@ public class ExperimentJSONConverter
             }
         }
 
-        ExpDataClass dc = data.getDataClass(user);
-        if (dc != null)
-        {
-            JSONObject dataClassJsonObject = serializeStandardProperties(dc, null);
-            if (dc.getCategory() != null)
-                dataClassJsonObject.put(DATA_CLASS_CATEGORY, dc.getCategory());
-            jsonObject.put(DATA_CLASS, dataClassJsonObject);
-        }
+        jsonObject.put(CPAS_TYPE, data.getCpasType());
+
         return jsonObject;
     }
 
-    public static JSONObject serializeMaterial(ExpMaterial material)
+    @Deprecated(forRemoval = true)
+    @NotNull
+    public static JSONObject serializeMaterial(@NotNull ExpMaterial material)
+    {
+        return serializeMaterial(material, DEFAULT_SETTINGS);
+    }
+
+    // TODO: Include MaterialInput edge properties (role and properties)
+    // TODO: Include protocol input
+    @NotNull
+    public static JSONObject serializeMaterial(@NotNull ExpMaterial material, @NotNull Settings settings)
     {
         ExpSampleSet sampleSet = material.getSampleSet();
 
         JSONObject jsonObject;
         if (sampleSet == null)
         {
-            jsonObject = serializeStandardProperties(material, null);
+            jsonObject = serializeExpObject(material, null, settings);
         }
         else
         {
-            jsonObject = serializeStandardProperties(material, sampleSet.getDomain().getProperties());
+            jsonObject = serializeExpObject(material, sampleSet.getDomain().getProperties(), settings);
             if (sampleSet.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);
@@ -290,13 +673,19 @@ public class ExperimentJSONConverter
                 jsonObject.put(ExperimentJSONConverter.PROPERTIES, properties);
             }
 
-            JSONObject sampleSetJson = serializeStandardProperties(sampleSet, null);
-            jsonObject.put(SAMPLE_SET, sampleSetJson);
+            if (settings.isIncludeProperties())
+            {
+                JSONObject sampleSetJson = serializeExpObject(sampleSet, null, settings.withIncludeProperties(false));
+                jsonObject.put(SAMPLE_SET, sampleSetJson);
+            }
         }
+
+        jsonObject.put(CPAS_TYPE, material.getCpasType());
 
         return jsonObject;
     }
 
+    @NotNull
     public static Map<PropertyDescriptor, Object> convertProperties(Map<String, ? extends Object> propertiesJsonObject, List<? extends DomainProperty> dps, Container container, boolean ignoreMissingProperties) throws ValidationException
     {
         Map<PropertyDescriptor, Object> properties = new HashMap<>();
@@ -325,9 +714,17 @@ public class ExperimentJSONConverter
                 value = convertProperty(value, dp, container);
                 properties.put(dp.getPropertyDescriptor(), value);
             }
-            // resolve propName by PropertyURI if propName looks like a URI
+//            else if (propName.equals(ProvenanceService.PROVENANCE_INPUT_PROPERTY))
+//            {
+//                // handle inputs
+//            }
+//            else if (propName.equals(ProvenanceService.PROVENANCE_OUTPUT_PROPERTY))
+//            {
+//                // handle outputs
+//            }
             else if (URIUtil.hasURICharacters(propName))
             {
+                // resolve propName by PropertyURI if propName looks like a URI
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propName, container);
 
                 //ask OM to get the list of domains and check the domains (vocabulary domain)
@@ -338,7 +735,7 @@ public class ExperimentJSONConverter
                     boolean propertyInVocabulary = domainsForPropertyDescriptor.stream().anyMatch(domain -> domain.getDomainKind().getKindName().equals(VOCABULARY_DOMAIN));
 
                     //only properties that exist in any vocabulary in this container are saved in the batch
-                    if(propertyInVocabulary)
+                    if (propertyInVocabulary)
                     {
                         value = convertProperty(value, pd, container);
                         properties.put(pd, value);

@@ -627,6 +627,16 @@ public class ViewServlet extends HttpServlet
         }
     }
 
+    /**
+     * Returns true for mock requests. The Rhino trigger script enviornment uses
+     * mock requests when issuing API calls back into the server.
+     * See core/resources/scripts/labkey/adapter/bridge.js
+     */
+    public static boolean isMockRequest(HttpServletRequest request)
+    {
+        return request instanceof MockRequest;
+    }
+
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);

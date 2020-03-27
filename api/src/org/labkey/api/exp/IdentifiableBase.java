@@ -39,13 +39,11 @@ public class IdentifiableBase implements Identifiable, Serializable
 
     public IdentifiableBase(String lsid)
     {
-        this();
         _lsid = lsid;
     }
 
     public IdentifiableBase(OntologyObject oo)
     {
-        this();
         _lsid = oo.getObjectURI();
         objectId = oo.getObjectId();
         container = oo.getContainer();
@@ -96,6 +94,7 @@ public class IdentifiableBase implements Identifiable, Serializable
     {
         this.container = container;
     }
+
 
     @Override
     public boolean equals(Object o)

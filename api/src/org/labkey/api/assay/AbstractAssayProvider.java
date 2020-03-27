@@ -1534,9 +1534,55 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
+    public Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid)
+    {
+        assert getResultRowLSIDPrefix().equals(assayResultRowLsid.getNamespacePrefix());
+        String namespaceSuffix = assayResultRowLsid.getNamespaceSuffix();
+
+        // LSID namespace suffix format expected to be: "Protocol-" + <protocol-row-id>
+        ExpProtocol protocol = null;
+        if (namespaceSuffix.startsWith("Protocol-"))
+        {
+            try
+            {
+                int protocolId = Integer.parseInt(namespaceSuffix.substring("Protocol-".length()));
+                if (protocolId > 0)
+                    protocol = ExperimentService.get().getExpProtocol(protocolId);
+            }
+            catch (NumberFormatException ex)
+            {
+                // ignore
+            }
+        }
+
+        if (protocol == null)
+            return null;
+
+        // LSID object id expected to be rowId
+        int rowId = -1;
+        try
+        {
+            rowId = Integer.parseInt(assayResultRowLsid.getObjectId());
+        }
+        catch (NumberFormatException ex)
+        {
+            // ignore
+        }
+
+        if (rowId <= 0)
+            return null;
+
+        return Pair.of(protocol, rowId);
+    }
+
+    @Override
     public @Nullable ActionURL getResultRowURL(Container container, Lsid lsid)
     {
-        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, lsid);
+        var pair = getAssayResultRowIdFromLsid(container, lsid);
+        if (pair == null)
+            return null;
+
+        return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultRowURL(this, container, pair.first, pair.second);
     }
 
     @Override
