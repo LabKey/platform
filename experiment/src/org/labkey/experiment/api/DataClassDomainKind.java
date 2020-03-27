@@ -20,6 +20,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -79,7 +80,9 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
+                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
+                new PropertyStorageSpec("classid", JdbcType.INTEGER)
         )));
 
 
@@ -92,9 +95,8 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Data", "LSID", null, false)
         )));
 
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
-        )));
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name", "classid"))));
     }
 
     public DataClassDomainKind()
@@ -213,10 +215,15 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return PROVISIONED_SCHEMA_NAME;
     }
 
+    public DbSchema getSchema()
+    {
+        return DbSchema.get(PROVISIONED_SCHEMA_NAME, DbSchemaType.Provisioned);
+    }
+
     @Override
     public DbScope getScope()
     {
-        return ExperimentService.get().getSchema().getScope();
+        return getSchema().getScope();
     }
 
     @Override
