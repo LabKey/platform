@@ -15,10 +15,7 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.PortalHelper;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.List;
 
 @Category({DailyA.class})
@@ -82,14 +79,14 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
         table.clickInsertNewRow();
         setFormElement(Locator.name("quf_ParticipantId"), "P1");
-        setFormElement(Locator.name("quf_date"), getDate());
-        setFormElement(Locator.name("quf_TestDate"), getDate());
+        setFormElement(Locator.name("quf_date"), "2020-03-10");
+        setFormElement(Locator.name("quf_TestDate"), "2020-03-10");
         clickButton("Submit");
 
     }
 
     @Test
-    public void testSteps()
+    public void testVisitWithAllTimepointTypes()
     {
         log("Changing the timepoint to date");
         goToProjectHome();
@@ -99,7 +96,6 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         goToProjectHome();
         clickAndWait(Locator.linkWithText(datasetName));
         DataRegionTable table = new DataRegionTable("Dataset", getDriver());
-        table = new DataRegionTable("Dataset", getDriver());
         CustomizeView tableCustomizeView = table.getCustomizeView();
         tableCustomizeView.openCustomizeViewPanel();
         waitForText("Available Fields");
@@ -205,10 +201,10 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         waitForText("Available Fields");
         tableCustomizeView.addColumn(new String[]{"ParticipantVisit", "Visit"});
         tableCustomizeView.saveDefaultView();
+        // TODO: 39822: Visit calculations are not as expected in the published child Date study 
         checker().verifyEquals("Visit field is not blank when study is changed to date", Arrays.asList("20200310.0000"),
                 table.getColumnDataAsText("ParticipantVisit/Visit")); //Needs to be updated when related bug is fixed.
     }
-
 
     private void changeTimepointType(String type)
     {
@@ -219,11 +215,4 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         clickAndWait(Ext4Helper.Locators.ext4Button("Submit"));
         goToProjectHome();
     }
-
-    private String getDate()
-    {
-        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
-        return format.format(Calendar.getInstance().getTime());
-    }
-
 }
