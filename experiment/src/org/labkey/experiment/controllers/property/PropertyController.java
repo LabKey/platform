@@ -18,11 +18,8 @@ package org.labkey.experiment.controllers.property;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -59,7 +56,6 @@ import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
@@ -97,7 +93,6 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.writer.PrintWriters;
-import org.labkey.experiment.api.GWTDomainMixin;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.multipart.MultipartFile;
@@ -244,7 +239,7 @@ public class PropertyController extends SpringActionController
         @Override
         public void validateForm(DomainApiForm form, Errors errors)
         {
-            form.validate(getContainer(), getUser(), false);
+            form.validate(getContainer(), getUser());
         }
 
         @Override
@@ -450,7 +445,7 @@ public class PropertyController extends SpringActionController
             if (newDomain.getDomainId() == -1 || newDomain.getDomainURI() == null)
                 throw new IllegalArgumentException("DomainId and domainURI are required in updated domainDesign.");
 
-            form.validate(getContainer(), getUser(), true);
+            form.validate(getContainer(), getUser());
         }
 
         public Object execute(DomainApiForm form, BindException errors)
@@ -703,7 +698,7 @@ public class PropertyController extends SpringActionController
          * Method to validate form
          */
         @JsonIgnore
-        public void validate(Container container, User user, boolean isUpdate)
+        public void validate(Container container, User user)
         {
             // Issue 39995: validate form options for non-template case
             if (getDomainGroup() != null)
@@ -739,7 +734,7 @@ public class PropertyController extends SpringActionController
             ObjectMapper mapper = new ObjectMapper();
             Object options = mapper.convertValue(this.getOptionsProperties(), kind.getTypeClass());
 
-            kind.validateOptions(container, user, options, name, domain, isUpdate);
+            kind.validateOptions(container, user, options, name, domain, design);
         }
     }
 

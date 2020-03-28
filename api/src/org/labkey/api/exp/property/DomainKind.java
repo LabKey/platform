@@ -319,11 +319,13 @@ abstract public class DomainKind<T>  implements Handler<String>
      * @param user executing service call
      * @param options map to check
      * @param name of design
-     * @param domain
-     * @param isUpdate flag indicating if this a creation or update action
+     * @param domain the existing domain object for the create/save action
+     * @param updatedDomainDesign the updated domain design being sent for the create/save action
      */
-    public void validateOptions(Container container, User user, T options, String name, Domain domain, boolean isUpdate)
+    public void validateOptions(Container container, User user, T options, String name, Domain domain, GWTDomain updatedDomainDesign)
     {
+        boolean isUpdate = domain != null;
+
         if (!isUpdate && !this.canCreateDefinition(user, container))
             throw new UnauthorizedException("You don't have permission to create a new domain");
 

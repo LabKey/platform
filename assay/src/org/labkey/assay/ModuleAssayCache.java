@@ -65,7 +65,7 @@ public class ModuleAssayCache
         private final List<AssayProvider> _assayProviders = new LinkedList<>();
         private final Map<String, PipelineProvider> _pipelineProviders = new HashMap<>();
         private final Set<String> _runLsidPrefixes = new HashSet<>();
-        private final Set<String> _resultLsidPrefixes = new HashSet<>();
+        private final Map<String, AssayProvider> _resultLsidPrefixes = new HashMap<>();
 
         private ModuleAssayCollections()
         {
@@ -93,7 +93,7 @@ public class ModuleAssayCache
                     }
                     _runLsidPrefixes.add(provider.getRunLSIDPrefix());
                     if (provider.getResultRowLSIDPrefix() != null)
-                        _resultLsidPrefixes.add(provider.getResultRowLSIDPrefix());
+                        _resultLsidPrefixes.put(provider.getResultRowLSIDPrefix(), provider);
                 }
             }
         }
@@ -113,7 +113,7 @@ public class ModuleAssayCache
             return _runLsidPrefixes;
         }
 
-        public Set<String> getResultLsidPrefixes()
+        public Map<String, AssayProvider> getResultLsidPrefixes()
         {
             return _resultLsidPrefixes;
         }
