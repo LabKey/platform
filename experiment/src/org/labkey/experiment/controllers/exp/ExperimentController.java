@@ -6569,15 +6569,6 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class SampleSetServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new GwtSampleSetServiceImpl(getViewContext());
-        }
-    }
-
     private static abstract class BaseResolveLsidApiAction<F extends ResolveLsidsForm> extends ReadOnlyApiAction<F>
     {
         protected Set<Identifiable> _seeds;

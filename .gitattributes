@@ -72,8 +72,6 @@ api/gwtsrc/org/labkey/api/gwt/client/assay/AssayServiceAsync.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTPropertyDescriptorMixin.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
-api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTRun.java -text
-api/gwtsrc/org/labkey/api/gwt/client/assay/SampleChooserUtils.java -text
 api/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/DefaultValueType.java -text
@@ -88,7 +86,6 @@ api/gwtsrc/org/labkey/api/gwt/client/model/GWTIndex.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTMaterial.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTSampleSet.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/PropertyValidatorType.java -text
 api/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineConfig.java -text
 api/gwtsrc/org/labkey/api/gwt/client/pipeline/GWTPipelineTask.java -text
@@ -1406,7 +1403,6 @@ api/src/org/labkey/api/study/assay/FileLinkDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitImpl.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/ParticipantVisitResolverType.java -text
-api/src/org/labkey/api/study/assay/SampleChooserDisplayColumn.java -text
 api/src/org/labkey/api/study/assay/SampleMetadataInputFormat.java -text
 api/src/org/labkey/api/study/assay/SpecimenForeignKey.java -text
 api/src/org/labkey/api/study/assay/SpecimenPropertyColumnDecorator.java -text
@@ -2230,12 +2226,6 @@ devtools/src/org/labkey/devtools/view/buttons.jsp -text
 devtools/src/org/labkey/devtools/view/complex.jsp -text
 devtools/src/org/labkey/devtools/view/form.jsp -text
 devtools/src/org/labkey/devtools/view/tags.jsp -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleCache.java -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleChooser.java -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleInfo.java -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetService.java -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/client/SampleSetServiceAsync.java -text
-experiment/gwtsrc/org/labkey/experiment/samplechooser/SampleChooser.gwt.xml -text
 experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
@@ -2332,7 +2322,6 @@ experiment/src/org/labkey/experiment/controllers/exp/ExperimentRunGroupsView.jav
 experiment/src/org/labkey/experiment/controllers/exp/ExperimentUpdateView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/exportSampleSetAsXar.jsp -text
 experiment/src/org/labkey/experiment/controllers/exp/GraphMoreGrid.java -text
-experiment/src/org/labkey/experiment/controllers/exp/GwtSampleSetServiceImpl.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolListView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolParametersView.java -text
 experiment/src/org/labkey/experiment/controllers/exp/ProtocolSuccessorPredecessorView.java -text
