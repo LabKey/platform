@@ -268,10 +268,10 @@ LABKEY.Experiment.loadBatch({
          * @param config An object that contains the following configuration parameters
          * @param {Array} config.lsids. The list of run lsids.
          * @param {Array} config.runIds The list of run ids.
-         * @param {Boolean} config.includeProperties Include properties set on the experiment objects.
-         * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
-         * @param {Boolean} config.includeRunSteps Include run steps.
-         * @param {function} config.success The function to call when the function finishes successfully.
+         * @param {Boolean} [config.includeProperties] Include properties set on the experiment objects.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.
+         * @param {function} [config.success] The function to call when the function finishes successfully.
          * This function will be called with the parameters:
          * <ul>
          * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
@@ -507,6 +507,8 @@ LABKEY.Experiment.saveBatch({
          * @param {String} [config.expType] Optional experiment type to filter response -- either "Data", "Material", or "ExperimentRun".  Defaults to include all.
          * @param {String} [config.cpasType] Optional LSID of a SampleSet or DataClass to filter the response.  Defaults to include all.
          * @param {Boolean} [config.includeProperties] Include node properties in the lineage response.  Defaults to false.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.  Defaults to false.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.  Defaults to false.
          * @static
          */
         lineage : function (config)
@@ -529,6 +531,10 @@ LABKEY.Experiment.saveBatch({
                 params.depth = config.depth;
             if (config.hasOwnProperty('includeProperties'))
                 params.includeProperties = config.includeProperties;
+            if (config.hasOwnProperty('includeInputsAndOutputs'))
+                params.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.hasOwnProperty('includeRunSteps'))
+                params.includeRunSteps = config.includeRunSteps;
 
             if (config.expType)
                 params.expType = config.expType;
@@ -549,13 +555,13 @@ LABKEY.Experiment.saveBatch({
          * Resolve LSIDs.
          * @param config An object that contains the following configuration parameters
          * @param {Array} config.lsids. The list of run lsids.
-         * @param {Boolean} config.includeProperties Include properties set on the experiment objects.
-         * @param {Boolean} config.includeInputsAndOutputs Include run and step inputs and outputs.
-         * @param {Boolean} config.includeRunSteps Include run steps.
-         * @param {function} config.success The function to call when the function finishes successfully.
+         * @param {Boolean} [config.includeProperties] Include properties set on the experiment objects.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.
+         * @param {function} [config.success] The function to call when the function finishes successfully.
          * This function will be called with the parameters:
          * <ul>
-         * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
+         * <li><b>data</b> The list of resolved objects.
          * <li><b>response</b> The original response
          * </ul>
          * @param {function} [config.failure] The function to call if this function encounters an error.
