@@ -113,6 +113,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.FONT;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtml;
 
 /**
  * User: brittp
@@ -1164,13 +1169,14 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             }
             else if (errors != null && "main".equals(paramName) && errors.getFieldError("transform") != null)
             {
-                HtmlStringBuilder sb = HtmlStringBuilder.of(HtmlString.unsafe("<font class=\"labkey-error\">"));
-                sb.append(HtmlString.unsafe("<div>Transform Script Error</div>"));
-                sb.append(HtmlString.unsafe("<br>"));
-                sb.append(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()));
-                sb.append(HtmlString.unsafe("</font>"));
-                sb.append(HtmlString.unsafe("<br><br>"));
-                return sb.getHtmlString();
+                return createHtml(
+                        DIV(
+                            FONT(cl("labkey-error"),
+                                DIV("Transform Script Error"),
+                                BR(),
+                                DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))),
+                                BR()));
+
             }
             else
             {
