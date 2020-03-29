@@ -191,13 +191,19 @@ public class ExperimentJSONConverter
         if (settings.isIncludeInputsAndOutputs())
         {
             ExpProtocolApplication inputApp = run.getInputProtocolApplication();
-            jsonObject.put(DATA_INPUTS, serializeRunInputs(inputApp.getDataInputs(), user, settings));
-            jsonObject.put(MATERIAL_INPUTS, serializeRunInputs(inputApp.getMaterialInputs(), user, settings));
+            if (inputApp != null)
+            {
+                jsonObject.put(DATA_INPUTS, serializeRunInputs(inputApp.getDataInputs(), user, settings));
+                jsonObject.put(MATERIAL_INPUTS, serializeRunInputs(inputApp.getMaterialInputs(), user, settings));
+            }
 
             // Inputs into the final output step are outputs of the entire run
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
-            jsonObject.put(DATA_OUTPUTS, serializeRunDataOutputs(outputApp.getDataInputs(), user, settings));
-            jsonObject.put(MATERIAL_OUTPUTS, serializeRunInputs(outputApp.getMaterialInputs(), user, settings));
+            if (outputApp != null)
+            {
+                jsonObject.put(DATA_OUTPUTS, serializeRunDataOutputs(outputApp.getDataInputs(), user, settings));
+                jsonObject.put(MATERIAL_OUTPUTS, serializeRunInputs(outputApp.getMaterialInputs(), user, settings));
+            }
 
             serializeRunLevelProvenanceProperties(jsonObject, run);
         }
