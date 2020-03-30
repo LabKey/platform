@@ -61,6 +61,7 @@ assay/resources/views/assayDesigner.view.xml
 assay/resources/views/assayDesignerDev.html
 assay/resources/views/assayDesignerDev.view.xml
 
+query/resources/web/query/gen
 query/resources/views/queryMetadataEditor.html
 query/resources/views/queryMetadataEditor.view.xml
 query/resources/views/queryMetadataEditorDev.html
