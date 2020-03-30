@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
@@ -107,7 +107,7 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
+    private static final BlockingCache<String, PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
         (key, argument) -> new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class));
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)

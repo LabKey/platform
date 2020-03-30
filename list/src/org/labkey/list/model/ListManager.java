@@ -30,7 +30,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -98,7 +98,7 @@ public class ListManager implements SearchService.DocumentProvider
     public static final String EXPERIMENTAL_GWT_LIST_DESIGNER = "experimental-gwtlistdesigner"; //TODO: Remove once automated test conversion of new list designer is complete
 
 
-    private final Cache<String, List<ListDef>> _listDefCache = new BlockingStringKeyCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
+    private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;
 
     private class ListDefCacheLoader implements CacheLoader<String,List<ListDef>>
     {

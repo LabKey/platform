@@ -16,7 +16,7 @@
 
 package org.labkey.filecontent;
 
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -38,7 +38,7 @@ public class FileRootManager
 {
     public static final String FILECONTENT_SCHEMA_NAME = "filecontent";
     private static final FileRootManager _instance = new FileRootManager();
-    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", (key, c) -> {
+    private static final BlockingCache<String, FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "FileRoots", (key, c) -> {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
 
         return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
