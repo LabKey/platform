@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Filter;
@@ -33,12 +34,17 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.query.ExpProtocolTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,9 +64,15 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         super(protocol);
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        return null;
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(this);
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), FieldKey.fromParts(ExpProtocolTable.Column.RowId.name()), getRowId());
     }
 
     public ApplicationType getApplicationType()

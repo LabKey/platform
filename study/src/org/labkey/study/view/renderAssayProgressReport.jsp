@@ -50,18 +50,19 @@
     }
 %>
 <labkey:errors/>
-<labkey:scriptDependency/>
 <labkey:panel>
     <div id=<%=h(renderId)%>></div>
 </labkey:panel>
 <script type="text/javascript">
-    Ext4.onReady(function(){
+    <labkey:loadClientDependencies>
+        Ext4.onReady(function(){
 
-        new LABKEY.ext4.AssayProgressReport({
-            renderTo        : <%=q(renderId)%>,
-            reportId        : <%=q(form.getId().toString())%>,
-            assays          : <%=text(jsonMapper.writeValueAsString(assays))%>,
-            legend          : <%=text(jsonMapper.writeValueAsString(legend))%>
+            new LABKEY.ext4.AssayProgressReport({
+                renderTo        : <%=q(renderId)%>,
+                reportId        : <%=q(form.getId().toString())%>,
+                assays          : <%=text(jsonMapper.writeValueAsString(assays))%>,
+                legend          : <%=text(jsonMapper.writeValueAsString(legend))%>
+            });
         });
-    });
+    </labkey:loadClientDependencies>
 </script>

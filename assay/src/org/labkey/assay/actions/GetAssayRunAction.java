@@ -10,6 +10,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.api.AssayJSONConverter;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -35,7 +36,7 @@ public class GetAssayRunAction extends ReadOnlyApiAction<GetAssayRunAction.LoadA
         ExpProtocol protocol = run.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(protocol);
 
-        result.put("run", AssayJSONConverter.serializeRun(run, provider, protocol, getUser()));
+        result.put("run", AssayJSONConverter.serializeRun(run, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS));
 
         return new ApiSimpleResponse(result);
 

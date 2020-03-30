@@ -38,6 +38,4 @@ public interface AssayServiceAsync extends LookupServiceAsync
     void updateDomainDescriptor(GWTDomain orig, GWTDomain update, AsyncCallback<List<String>> async);
 
     void getAssayTemplate(String providerName, AsyncCallback<GWTProtocol> asyncCallback);
-
-    void getStudyContainers(AsyncCallback<List<GWTContainer>> asyncCallback);
 }

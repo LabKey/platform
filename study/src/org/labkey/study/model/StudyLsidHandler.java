@@ -20,40 +20,26 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
-import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.security.User;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.StudyController;
-
-import java.math.BigDecimal;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
 * User: adam
 * Date: 2/1/13
-* Time: 10:41 PM
 */
-public class StudyLsidHandler implements LsidManager.LsidHandler
+public class StudyLsidHandler implements LsidManager.LsidHandler<Identifiable>
 {
     public Identifiable getObject(Lsid lsid)
     {

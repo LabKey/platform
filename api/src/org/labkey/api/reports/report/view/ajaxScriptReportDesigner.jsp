@@ -162,10 +162,7 @@
 
 <script type="text/javascript">
 
-    /**
-     * Callback to run the script report panel after all dependent scripts are loaded. Issue : 25130
-     */
-    function createScriptReportPanel() {
+    <labkey:loadClientDependencies>
 
         Ext4.onReady(function(){
 
@@ -223,10 +220,9 @@
                 }
             });
         });
-    }
+    </labkey:loadClientDependencies>
 </script>
 
-<labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
 <div id="script-report-editor-msg" class="text-warning"></div>
 <div id="<%= h(renderId)%>" class="script-report-editor"></div>
 

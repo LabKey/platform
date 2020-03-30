@@ -387,13 +387,13 @@ public abstract class UploadSamplesHelper
         return Pair.of(parents, children);
     }
 
-    private static String sampleRole(ExpMaterial material)
+    public static String sampleRole(ExpMaterial material)
     {
         ExpSampleSet ss = material.getSampleSet();
         return ss != null ? ss.getName() : "Sample";
     }
 
-    private static String dataRole(ExpData data, User user)
+    public static String dataRole(ExpData data, User user)
     {
         ExpDataClass dc = data.getDataClass(user);
         return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;

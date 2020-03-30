@@ -41,14 +41,17 @@ import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -109,14 +112,21 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
-        return ret;
+        return _object.detailsURL();
     }
 
 
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        ExpSampleSet ss = getSampleSet();
+        if (ss != null)
+            return new QueryRowReference(getContainer(), SamplesSchema.SCHEMA_SAMPLES, ss.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+        else
+            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Materials.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+    }
 
     @Nullable @Override
     public ExpSampleSet getSampleSet()
