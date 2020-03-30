@@ -15,7 +15,14 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 /**
  * Bean class for the exp.experimentrun table.
@@ -99,6 +106,13 @@ public class ExperimentRun extends IdentifiableEntity
     public void setBatchId(Integer batchId)
     {
         _batchId = batchId;
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        Container c = getContainer();
+        return ExperimentController.getRunGraphURL(getContainer(), getRowId());
     }
 
     public boolean equals(Object o)

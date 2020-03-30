@@ -157,7 +157,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                 handler : function(btn) {
                     var url = LABKEY.ActionURL.buildURL('query', 'metadataQuery', null, {
                         schemaName : this.query.schema,
-                        'query.queryName' : this.query.query
+                        queryName : this.query.query
                     });
                     window.location = url;
                 },

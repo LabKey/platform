@@ -693,7 +693,7 @@ public class Lsid
             assertEquals(b.toString(), lsid3.toString());
             Lsid lsid4 = b.setObjectId("OBJ").build();
 
-            Lsid.LsidBuilder t = new Lsid.LsidBuilder(lsid1);
+            Lsid.LsidBuilder t = lsid1.edit();
             assertEquals(lsid1,t.build());
             assertEquals(lsid1.toString(),t.toString());
             t.setVersion("3");

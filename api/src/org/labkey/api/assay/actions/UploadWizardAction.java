@@ -34,7 +34,6 @@ import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.assay.AssayWarningsDisplayColumn;
 import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.assay.DefaultAssayRunCreator;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ButtonBar;
@@ -114,6 +113,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.FONT;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtml;
 
 /**
  * User: brittp
@@ -1162,6 +1166,17 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                     sb.append(HtmlString.unsafe(");return false;\">Too many errors to display (click to show all).<a><br>"));
                 }
                 return sb.getHtmlString();
+            }
+            else if (errors != null && "main".equals(paramName) && errors.getFieldError("transform") != null)
+            {
+                return createHtml(
+                        DIV(
+                            FONT(cl("labkey-error"),
+                                DIV("Transform Script Error"),
+                                BR(),
+                                DIV(HtmlString.unsafe(errors.getFieldError("transform").getDefaultMessage()))),
+                                BR()));
+
             }
             else
             {

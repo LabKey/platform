@@ -108,10 +108,6 @@
     {
         Integer runCount = plateTemplateRunCount.get(template);
 
-        ActionURL editUrl = new ActionURL(PlateController.DesignerAction.class, getContainer())
-                .addParameter("templateName", template.getName())
-                .addParameter("plateId", template.getRowId());
-
         Link.LinkBuilder editLink = new Link.LinkBuilder("edit");
         if (runCount > 0)
         {
@@ -121,7 +117,7 @@
         }
         else
         {
-            editLink.href(editUrl);
+            editLink.href(template.detailsURL());
         }
 %>
     <tr class="<%=getShadeRowClass(index)%>">

@@ -67,6 +67,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
+import org.labkey.assay.PlateController;
 import org.labkey.assay.TsvAssayProvider;
 import org.labkey.assay.query.AssayDbSchema;
 
@@ -838,30 +839,28 @@ public class PlateManager implements PlateService
         return _plateTypeHandlers.get(plateTypeName);
     }
 
-    private static class PlateLsidHandler implements LsidManager.LsidHandler
+    private static class PlateLsidHandler implements LsidManager.LsidHandler<Plate>
     {
-        protected PlateImpl getPlate(Lsid lsid)
-        {
-            return PlateManager.get().getPlate(lsid.toString());
-        }
-
         @Nullable
         public ActionURL getDisplayURL(Lsid lsid)
         {
-            PlateImpl plate = getPlate(lsid);
+            Plate plate = getObject(lsid);
             if (plate == null)
                 return null;
-            return PlateManager.get().getDetailsURL(plate);
+            return plate.detailsURL();
         }
 
-        public ExpObject getObject(Lsid lsid)
+        public Plate getObject(Lsid lsid)
         {
-            throw new UnsupportedOperationException("Not Yet Implemented.");
+            if (lsid == null)
+                return null;
+
+            return PlateManager.get().getPlate(lsid.toString());
         }
 
         public Container getContainer(Lsid lsid)
         {
-            PlateImpl plate = getPlate(lsid);
+            Plate plate = getObject(lsid);
             if (plate == null)
                 return null;
             return plate.getContainer();
@@ -876,32 +875,27 @@ public class PlateManager implements PlateService
         }
     }
 
-    private static class WellGroupLsidHandler implements LsidManager.LsidHandler
+    private static class WellGroupLsidHandler implements LsidManager.LsidHandler<WellGroup>
     {
-        protected WellGroup getWellGroup(Lsid lsid)
-        {
-            return PlateManager.get().getWellGroup(lsid.toString());
-        }
-
         @Nullable
         public ActionURL getDisplayURL(Lsid lsid)
         {
-            if (lsid == null)
-                return null;
-            WellGroup wellGroup = getWellGroup(lsid);
+            WellGroup wellGroup = getObject(lsid);
             if (wellGroup == null)
                 return null;
-            return PlateManager.get().getDetailsURL(wellGroup.getPlate());
+            return wellGroup.detailsURL();
         }
 
-        public ExpObject getObject(Lsid lsid)
+        public WellGroup getObject(Lsid lsid)
         {
-            throw new UnsupportedOperationException("Not Yet Implemented.");
+            if (lsid == null)
+                return null;
+            return PlateManager.get().getWellGroup(lsid.toString());
         }
 
         public Container getContainer(Lsid lsid)
         {
-            WellGroup wellGroup = getWellGroup(lsid);
+            WellGroup wellGroup = getObject(lsid);
             if (wellGroup == null)
                 return null;
             return wellGroup.getContainer();

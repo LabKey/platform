@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 LabKey Corporation
+ * Copyright (c) 2009 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.experiment.api;
+package org.labkey.query;
 
-public class MaterialProtocolInput extends AbstractProtocolInput
+import java.io.Serializable;
+
+/**
+ * User: jeckels
+ * Date: Oct 6, 2009
+ */
+public class MetadataUnavailableException extends Exception implements Serializable
 {
-    protected Integer _materialSourceId;
-
-    public Integer getMaterialSourceId()
+    public MetadataUnavailableException()
     {
-        return _materialSourceId;
+        super();
     }
 
-    public void setMaterialSourceId(Integer materialSourceId)
+    public MetadataUnavailableException(String message)
     {
-        _materialSourceId = materialSourceId;
-    }
-
-    @Override
-    public String getObjectType()
-    {
-        return ExpMaterialImpl.DEFAULT_CPAS_TYPE;
+        super(message);
     }
 }
