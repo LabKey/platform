@@ -65,7 +65,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     private static final String SEARCH_CATEGORY_NAME = "dataClass";
     public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects");
 
-
     private Domain _domain;
 
     // For serialization
@@ -347,7 +346,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         identifiersHi.add(getName());
 
         props.put(SearchService.PROPERTY.categories.toString(), SEARCH_CATEGORY.toString());
-        props.put(SearchService.PROPERTY.title.toString(), "Data Class - " + getName());
+        props.put(SearchService.PROPERTY.title.toString(), getDocumentTitle());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
 
         props.put(SearchService.PROPERTY.keywordsLo.toString(), "Data Class Source");
@@ -369,6 +368,15 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         };
 
         indexTask.addResource(sdr, SearchService.PRIORITY.item);
+    }
+
+    public String getDocumentTitle()
+    {
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(getCategory())
+        if (categoryType == ExpSchema.DataClassCategoryType.sources)
+            return "Source Type - " + getName();
+        else
+            return "Data Class - " + getName();
     }
 
     public String getDocumentId()
