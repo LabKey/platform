@@ -308,7 +308,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
                 }
             });
-            ss.addResourceResolver("dataclass", new SearchService.ResourceResolver(){
+            ss.addResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName(), new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
@@ -328,7 +328,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return properties;
                 }
             });
-            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
+            ss.addResourceResolver(ExpSampleSetImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
