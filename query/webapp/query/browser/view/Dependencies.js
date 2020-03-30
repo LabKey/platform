@@ -19,7 +19,7 @@ Ext4.define('LABKEY.query.browser.view.Dependencies', {
         this.dependencyCache = LABKEY.query.browser.cache.QueryDependencies;
         this.items = [{
             xtype: 'box',
-            cls: 'lk-sb-instructions',
+            cls: 'lk-cf-instructions',
             width: '75%',
             html: 'This will allow an administrator to perform a query dependency analysis across folders. The user has ' +
                     'the option to analyze at the site wide level which will include all folders on the server or at the project level. ' +

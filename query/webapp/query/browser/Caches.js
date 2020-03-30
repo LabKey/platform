@@ -296,16 +296,19 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         this.dependeesList = [];
         this.containers = new Set();
         this.containers.add(config.containerPath || LABKEY.container.path);
+        let includeSubfolders = config.containerPath != null;
 
         // get the collection of container paths including child containers
         LABKEY.Security.getContainers({
             containerPath : config.containerPath,
-            includeSubfolders : true,
+            includeSubfolders : includeSubfolders,
             scope : this,
             success : function(resp){
-                Ext4.each(resp.children, function(c) {
-                    this.addContainer(c);
-                }, this);
+                if (includeSubfolders) {
+                    Ext4.each(resp.children, function(c) {
+                        this.addContainer(c, config.containerPath != null);
+                    }, this);
+                }
 
                 // analyze queries for each container
                 this.totalContainers = this.containers.size;
