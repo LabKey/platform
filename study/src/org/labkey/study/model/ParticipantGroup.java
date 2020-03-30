@@ -26,6 +26,9 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
+import java.beans.Transient;
+import java.util.Set;
+
 
 /**
  * User: klum
@@ -84,6 +87,13 @@ public class ParticipantGroup extends AbstractParticipantGroup<String>
         }
 
         return false;
+    }
+
+    // mark transient so we don't serialize both getParticipantSet and getParticipantIds in JSON response
+    @Override @Transient
+    public Set<String> getParticipantSet()
+    {
+        return super.getParticipantSet();
     }
 
     @Override

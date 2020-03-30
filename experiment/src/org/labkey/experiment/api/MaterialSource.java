@@ -17,7 +17,11 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -137,6 +141,12 @@ public class MaterialSource extends IdentifiableEntity implements Comparable<Mat
         ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
         ret.addParameter("rowId", Integer.toString(getRowId()));
         return ret;
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.SampleSets.name(), FieldKey.fromParts(ExpSampleSetTable.Column.RowId.name()), getRowId());
     }
 
     @Override

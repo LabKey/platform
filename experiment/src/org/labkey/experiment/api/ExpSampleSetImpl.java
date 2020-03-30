@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
@@ -101,6 +102,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ActionURL detailsURL()
     {
         return _object.detailsURL();
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return _object.getQueryRowReference();
     }
 
     @Override

@@ -527,18 +527,6 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    @Deprecated
-    public ForeignKey getDataIdForeignKey()
-    {
-        return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.Data, null);
-            }
-        };
-    }
-
     public ForeignKey getDataIdForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
