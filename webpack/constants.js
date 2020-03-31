@@ -67,6 +67,7 @@ module.exports = {
                             [
                                 "@babel/preset-env",
                                 {
+                                    // support async/await
                                     "targets": {
                                         "node": "10"
                                     }
@@ -97,6 +98,7 @@ module.exports = {
                             [
                                 "@babel/preset-env",
                                 {
+                                    // support async/await
                                     "targets": {
                                         "node": "10"
                                     }
