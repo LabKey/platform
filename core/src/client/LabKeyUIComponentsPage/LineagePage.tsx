@@ -2,16 +2,15 @@
  * Copyright (c) 2019 LabKey Corporation. All rights reserved. No portion of this work may be reproduced in
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
-import React from 'react'
-import {List} from 'immutable'
-import { Col, FormControl, Row, Tab, Tabs } from "react-bootstrap";
+import React, { PureComponent } from 'react'
+import { FormControl, Tab, Tabs } from "react-bootstrap";
 import {Alert, LINEAGE_GROUPING_GENERATIONS, LineageFilter, LineageGraph, LineageGrid, VisGraphNode} from "@labkey/components";
 
 interface StateProps {
     lsid: string
 }
 
-export class LineagePage extends React.Component<any, StateProps> {
+export class LineagePage extends PureComponent<any, StateProps> {
 
     constructor(props: any) {
         super(props);
@@ -48,7 +47,7 @@ export class LineagePage extends React.Component<any, StateProps> {
                             <LineageGraph
                                 lsid={lsid}
                                 grouping={{generations: LINEAGE_GROUPING_GENERATIONS.Specific}}
-                                filters={List([new LineageFilter('type', ['Sample', 'Data'])])}
+                                filters={[new LineageFilter('type', ['Sample', 'Data'])]}
                                 navigate={this.onLineageNodeDblClick}
                             />
                         </div>
