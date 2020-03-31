@@ -375,6 +375,10 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(getCategory());
         if (categoryType == ExpSchema.DataClassCategoryType.sources)
             return "Source Type - " + getName();
+        else if (categoryType == ExpSchema.DataClassCategoryType.registry)
+            return "Registry - " + getName();
+        else if (categoryType == ExpSchema.DataClassCategoryType.media)
+            return "Media - " + getName();
         else
             return "Data Class - " + getName();
     }
