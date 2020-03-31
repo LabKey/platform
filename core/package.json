@@ -77,7 +77,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.41.4-fb-smSourceAlias",
+    "@labkey/components": "0.41.4-fb-smSourceAlias.1",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },
