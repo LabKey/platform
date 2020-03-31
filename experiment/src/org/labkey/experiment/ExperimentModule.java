@@ -592,6 +592,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
 
+        // Clear the last indexed time on all data classes
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoDataClass() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
         // Clear the last indexed time on all materials
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterial() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
