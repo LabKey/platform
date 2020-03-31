@@ -794,7 +794,7 @@ public class ExperimentServiceImpl implements ExperimentService
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoDataClass(), "dc")
                 .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
-                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ? OR (dc.modified IS NOT NULL AND dc.lastIndexed < ms.modified))")
+                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ? OR (dc.modified IS NOT NULL AND dc.lastIndexed < dc.modified))")
                 .add(expDataClass.getModified());
 
         DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
