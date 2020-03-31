@@ -23,6 +23,11 @@ export class RunGraph extends React.Component<RunGraphProps> {
                 filterIn={false}
                 lsid={this.props.context.lsid}
                 urlResolver={LineageURLResolvers.Server}
+                navigate={(node) => {
+                    if (node && node.lineageNode && node.lineageNode.links.lineage) {
+                        window.location.href = node.lineageNode.links.lineage;
+                    }
+                }}
             />
         );
     }
