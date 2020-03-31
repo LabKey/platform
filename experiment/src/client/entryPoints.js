@@ -22,7 +22,7 @@ module.exports = {
     },{
         name: 'runGraph',
         title: 'Experiment Run Graph',
-        permission: 'read',
-        path: './src/client/RunGraph'
+        path: './src/client/RunGraph',
+        generateViews: false // used by experimentRunGraphView.jsp
     }]
 };
