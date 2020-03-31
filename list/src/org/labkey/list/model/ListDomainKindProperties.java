@@ -4,7 +4,7 @@ import org.labkey.api.exp.list.ListDefinition;
 
 import java.util.Date;
 
-/* This is GWTList equivalent bean*/
+/* Java bean used in marshalling and unmarshalling*/
 public class ListDomainKindProperties implements Cloneable
 {
     protected int listId;

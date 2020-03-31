@@ -95,7 +95,6 @@ public class ListManager implements SearchService.DocumentProvider
 
     public static final String LIST_AUDIT_EVENT = "ListAuditEvent";
     public static final String LISTID_FIELD_NAME = "listId";
-    public static final String EXPERIMENTAL_GWT_LIST_DESIGNER = "experimental-gwtlistdesigner"; //TODO: Remove once automated test conversion of new list designer is complete
 
 
     private final Cache<String, List<ListDef>> _listDefCache = new BlockingCache<>(new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, "listdef cache"), new ListDefCacheLoader()) ;

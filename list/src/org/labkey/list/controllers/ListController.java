@@ -22,8 +22,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.Action;
-import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
@@ -96,7 +94,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.JspView;
@@ -111,7 +108,6 @@ import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
 import org.labkey.list.model.ListDomainKindProperties;
-import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
@@ -131,7 +127,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -270,7 +265,6 @@ public class ListController extends SpringActionController
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
-        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_GWT_LIST_DESIGNER); //TODO: Remove enabling via experimentalFlag once automated test conversion of new list designer is complete.
         String listDesignerHeader = "List Designer";
 
         @Override
@@ -281,28 +275,7 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-            if(!experimentalFlagEnabled)
-            {
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
-            }
-            else
-             {
-
-                Map<String, String> props = new HashMap<>();
-
-                URLHelper returnURL = form.getReturnURLHelper();
-
-                props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-                props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-                props.put("allowFileLinkProperties", "0");
-                props.put("allowAttachmentProperties", "1");
-                props.put("showDefaultValueSettings", "1");
-                props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-                props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-                props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-                props.put("loading", "Loading...");
-                return new GWTView("org.labkey.list.Designer", props);
-            }
         }
 
         @Override
@@ -310,33 +283,15 @@ public class ListController extends SpringActionController
         {
             if (null == _list)
             {
-                if (!experimentalFlagEnabled)
-                    root.addChild(listDesignerHeader);
-                else
-                    root.addChild("Create new List");
+                root.addChild(listDesignerHeader);
             }
             else
             {
-                if (!experimentalFlagEnabled)
-                    appendListNavTrail(root, _list, listDesignerHeader);
-                else
-                    appendListNavTrail(root, _list, null);
+                appendListNavTrail(root, _list, listDesignerHeader);
             }
             return root;
         }
     }
-
-
-    @RequiresPermission(DesignListPermission.class)
-    @Action(ActionType.SelectMetaData.class)
-    public class ListEditorServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new ListEditorServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresPermission(DesignListPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
