@@ -372,7 +372,7 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
 
     public String getDocumentTitle()
     {
-        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(getCategory())
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(getCategory());
         if (categoryType == ExpSchema.DataClassCategoryType.sources)
             return "Source Type - " + getName();
         else
