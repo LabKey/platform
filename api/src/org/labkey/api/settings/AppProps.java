@@ -181,6 +181,7 @@ public interface AppProps
 
     String getBLASTServerBaseURL();
 
+    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - typically ROOT.xml or labkey.xml */
     String getWebappConfigurationFilename();
 
     /**
