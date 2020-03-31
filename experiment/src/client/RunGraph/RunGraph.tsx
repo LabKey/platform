@@ -1,5 +1,4 @@
 import React from 'react';
-import { getGlobal } from 'reactn';
 import {
     initQueryGridState,
     LineageGraph,
@@ -11,10 +10,6 @@ import { AppContext } from './util'
 import '@labkey/components/dist/components.css';
 
 initQueryGridState();
-
-// window['GG'] = () => {
-//     return getGlobal()['QueryGrid_lineageResults'].toJS();
-// };
 
 interface RunGraphProps {
     context: AppContext
