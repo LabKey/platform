@@ -36,6 +36,7 @@ import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.QueryMetadataEditorPage;
 import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
@@ -1068,11 +1069,13 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setUnshiftedDateField(String dataset, String fieldName)
     {
         goToQueryView("study", dataset, true);
-        DomainDesignerPage designerPage = new DomainDesignerPage(getDriver());
-        designerPage.fieldsPanel().getField(fieldName).clickAdvancedSettings().enableExcludeDateShifting();
+        QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
+        designerPage.fieldsPanel()
+                .getField(fieldName)
+                .setDateShift(true);
 
         designerPage.clickFinish();
-        waitForText("Save successful.");
+        waitForText("Save Successful");
     }
 
     private void goToQueryView(String schema, String query, boolean viewMetadata)
