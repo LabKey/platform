@@ -596,3 +596,21 @@ CREATE TABLE core.QCState
   CONSTRAINT PK_QCState PRIMARY KEY (RowId),
   CONSTRAINT UQ_QCState_Label UNIQUE(Label, Container)
 );
+
+/* core-17.30-18.10.sql */
+
+CREATE TABLE core.APIKeys
+(
+    CreatedBy USERID,
+    Created TIMESTAMP,
+    Crypt VARCHAR(100),
+    Expiration TIMESTAMP NULL,
+
+    CONSTRAINT PK_APIKeys PRIMARY KEY (Crypt)
+);
+
+ALTER TABLE core.APIKeys
+    ADD COLUMN RowId SERIAL,
+    DROP CONSTRAINT PK_APIKeys,
+    ADD CONSTRAINT PK_APIKeys PRIMARY KEY (RowId),
+    ADD CONSTRAINT UQ_CRYPT UNIQUE (Crypt);
