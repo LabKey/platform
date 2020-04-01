@@ -913,8 +913,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
                 "Use @labkey/api on the client-side",
-                "Serve @labkey/api as the default client-side implementation of JavaScript API. Requires restart or clear caches.",
-                true);
+                "Serve @labkey/api as the default client-side implementation of JavaScript API.",
+                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
