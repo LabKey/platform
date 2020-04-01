@@ -310,6 +310,7 @@ public abstract class UploadSamplesHelper
 
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
+        boolean isMerge = runItem != null;
 
         for (Pair<String, String> pair : parentNames)
         {
@@ -345,7 +346,8 @@ public abstract class UploadSamplesHelper
 
                     if (isEmptyParent)
                     {
-                        parentSampleTypesToRemove.add(namePart);
+                        if (isMerge)
+                            parentSampleTypesToRemove.add(namePart);
                     }
                     else
                     {
@@ -374,7 +376,8 @@ public abstract class UploadSamplesHelper
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", namePart);
                     if (isEmptyParent)
                     {
-                        parentDataTypesToRemove.add(parentValue);
+                        if (isMerge)
+                            parentDataTypesToRemove.add(parentValue);
                     }
                     else
                     {
@@ -400,7 +403,7 @@ public abstract class UploadSamplesHelper
         }
 
 
-        if (runItem != null)
+        if (isMerge)
         {
             Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = ExperimentService.get().getParents(c, user, runItem);
             if (currentParents.first != null)
