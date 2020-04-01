@@ -36,7 +36,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
@@ -741,12 +740,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             SequenceNumImportHelper.SequenceNumTest.class,
             SpecimenWriter.TestCase.class
         );
-    }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new StudyUpgradeCode();
     }
 
     @Override

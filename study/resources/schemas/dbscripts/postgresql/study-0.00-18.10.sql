@@ -1519,7 +1519,3 @@ SELECT core.fn_dropifexists('ParticipantVisit', 'study', 'INDEX', 'ix_participan
 --For Resync perf
 CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (container, participantid, sequencenum, ParticipantSequenceNum);
 CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
-
-/* study-17.30-18.10.sql */
-
-SELECT core.executeJavaUpgradeCode('updateSpecimenHash');

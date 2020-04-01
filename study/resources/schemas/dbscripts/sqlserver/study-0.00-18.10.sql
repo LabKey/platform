@@ -1587,7 +1587,3 @@ CREATE INDEX ix_participantvisit_sequencenum ON study.participantvisit (containe
 
 -- Adding as an explicit index because it got lost on postgresql as an include column
 CREATE INDEX ix_participantvisit_visitrowid ON study.participantvisit (visitrowid);
-
-/* study-17.30-18.10.sql */
-
-EXEC core.executeJavaUpgradeCode 'updateSpecimenHash';
