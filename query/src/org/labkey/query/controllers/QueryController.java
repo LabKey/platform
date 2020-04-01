@@ -6686,6 +6686,28 @@ public class QueryController extends SpringActionController
     public class GetQueryEditorMetadataAction extends ReadOnlyApiAction<QueryForm>
     {
         @Override
+        protected ObjectMapper createRequestObjectMapper()
+        {
+            PropertyService propertyService = PropertyService.get();
+            if (null != propertyService)
+            {
+                ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
+                propertyService.configureObjectMapper(mapper, null);
+                return mapper;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        @Override
+        protected ObjectMapper createResponseObjectMapper()
+        {
+            return this.createRequestObjectMapper();
+        }
+
+        @Override
         public Object execute(QueryForm queryForm, BindException errors) throws Exception
         {
             QueryDefinition queryDef = queryForm.getQueryDef();

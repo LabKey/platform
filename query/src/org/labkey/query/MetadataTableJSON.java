@@ -333,6 +333,23 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetUrl();
             }
 
+            // Set the ImportAliases
+            Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
+            if (metadataColumnJSON.getImportAliases() != null && importAliasSet.isEmpty())
+            {
+                ColumnType.ImportAliases importAliasesXml = xmlColumn.addNewImportAliases();
+                importAliasesXml.addImportAlias(metadataColumnJSON.getImportAliases());
+            }
+            else if (metadataColumnJSON.getImportAliases() != null && !importAliasSet.contains(metadataColumnJSON.getImportAliases()))
+            {
+                xmlColumn.getImportAliases().removeImportAlias(0); // always replacing the first and only element
+                xmlColumn.getImportAliases().addImportAlias(metadataColumnJSON.getImportAliases());
+            }
+            else if (xmlColumn.isSetImportAliases())
+            {
+                xmlColumn.unsetImportAliases();
+            }
+
             // Set the FK
             if (!metadataColumnJSON.isLookupCustom() && metadataColumnJSON.getLookupQuery() != null && metadataColumnJSON.getLookupSchema() != null)
             {
@@ -583,6 +600,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         {
                             // Omit columns that are in the XML but are no longer in the underlying table/query
                             break;
+                        }
+                        if (column.isSetImportAliases())
+                        {
+                            // Displaying first and the only element
+                            metadataColumnJSON.setImportAliases(column.getImportAliases().getImportAliasArray(0));
                         }
                         if (column.isSetColumnTitle())
                         {
