@@ -525,8 +525,6 @@ public class ExpDataIterators
                         String lsid = entry.getKey();
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
-                        Set<Pair<String, String>> nonEmptyParentNames = parentNames.stream().filter((pair) -> !StringUtils.isEmpty(pair.second)).collect(Collectors.toSet());
-
                         ExpRunItem runItem = _isSample ? ExperimentService.get().getExpMaterial(lsid) : ExperimentService.get().getExpData(lsid);
                         if (runItem == null) // nothing to do if the item does not exist
                             continue;
@@ -562,7 +560,7 @@ public class ExpDataIterators
                             {
                                 ExpMaterial sample = (ExpMaterial) runItem;
 
-                               if (_context.getInsertOption().mergeRows)
+                                if (_context.getInsertOption().mergeRows)
                                 {
                                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
