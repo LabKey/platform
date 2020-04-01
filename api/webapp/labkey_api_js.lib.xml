@@ -1,0 +1,6 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <!-- This is copied into platform/core/web by platform/core/build.js -->
+        <script path="clientapi/labkey-api-js-core.min.js"/>
+    </library>
+</libraries>
