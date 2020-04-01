@@ -67,10 +67,8 @@ public class LibClientDependency extends FilePathClientDependency
             Map<String,String> namespaceMap = new HashMap<>();
             namespaceMap.put("", "http://labkey.org/clientLibrary/xml/");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
-
             LibrariesDocument libDoc = LibrariesDocument.Factory.parse(_resource.getInputStream(), xmlOptions);
-            boolean hasJsToCompile = false;
-            boolean hasCssToCompile = false;
+
             if (libDoc != null && libDoc.getLibraries() != null)
             {
                 //dependencies first
@@ -105,12 +103,13 @@ public class LibClientDependency extends FilePathClientDependency
                 // <library> is an optional parameter
                 if (library != null)
                 {
+                    boolean hasJsToCompile = false;
+                    boolean hasCssToCompile = false;
                     boolean compileInProductionMode = !library.isSetCompileInProductionMode() || library.getCompileInProductionMode();
 
                     for (DependencyType s : library.getScriptArray())
                     {
-                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
-                                compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
+                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
                         ClientDependency cr = fromPath(s.getPath(), mode);
 
                         if (!TYPE.lib.equals(cr.getPrimaryType()))
@@ -126,19 +125,19 @@ public class LibClientDependency extends FilePathClientDependency
                                 hasCssToCompile = true;
                         }
                     }
-                }
 
-                //add paths to the compiled scripts we expect to have created in the build.  these are production mode only
-                if (hasJsToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
-                }
+                    //add paths to the compiled scripts we expect to have created in the build. these are production mode only
+                    if (hasJsToCompile)
+                    {
+                        String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
+                        _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                    }
 
-                if (hasCssToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                    if (hasCssToCompile)
+                    {
+                        String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
+                        _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                    }
                 }
             }
         }

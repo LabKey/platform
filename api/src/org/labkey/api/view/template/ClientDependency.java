@@ -27,6 +27,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
@@ -51,7 +52,7 @@ import java.util.function.Function;
 public abstract class ClientDependency
 {
     private static final Logger LOG = Logger.getLogger(ClientDependency.class);
-    private static final Cache<String, ClientDependency> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.MONTH, "Client dependencies", null);
+    static final Cache<String, ClientDependency> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
 
     public enum TYPE
     {
@@ -208,7 +209,7 @@ public abstract class ClientDependency
 
         String key = getCacheKey(path.toString(), mode);
 
-        return CACHE.get(key, null, new ClientDependencyCacheLoader(CACHE, path, mode));
+        return CACHE.get(key, Pair.of(path, mode), null);
     }
 
     protected static String getCacheKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
