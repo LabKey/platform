@@ -46,6 +46,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -525,33 +526,44 @@ public class ExpDataIterators
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
                         Set<Pair<String, String>> nonEmptyParentNames = parentNames.stream().filter((pair) -> !StringUtils.isEmpty(pair.second)).collect(Collectors.toSet());
-                        if (_isSample && _context.getInsertOption().mergeRows && nonEmptyParentNames.isEmpty())
+
+                        ExpRunItem runItem = _isSample ? ExperimentService.get().getExpMaterial(lsid) : ExperimentService.get().getExpData(lsid);
+                        if (runItem == null) // nothing to do if the item does not exist
+                            continue;
+
+                        Pair<RunInputOutputBean, RunInputOutputBean> pair;
+                        if (_isSample && _context.getInsertOption().mergeRows)
                         {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
-                            if (null == sample)
-                                continue;
-                            UploadSamplesHelper.clearSampleSourceRun(_user, sample);
+                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache);
+
                         }
                         else
                         {
-                            Pair<RunInputOutputBean, RunInputOutputBean> pair =
-                                    UploadSamplesHelper.resolveInputsAndOutputs(_user, _container, nonEmptyParentNames, null, cache, materialCache, dataCache);
+                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache);
 
-                            if (pair.first == null && pair.second == null)
-                                continue;
+                        }
 
+                        if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
+                            continue;
+
+                        // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
+                        if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())
+                        {
+                            UploadSamplesHelper.clearSampleSourceRun(_user, (ExpMaterial) runItem);
+                        }
+                        else
+                        {
                             Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                            ExpData data;
+                            
                             Map<ExpData, String> currentDataMap = Collections.emptyMap();
                             if (_isSample)
                             {
-                                ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
-                                if (null == sample)
-                                    continue;
+                                ExpMaterial sample = (ExpMaterial) runItem;
 
-                                if (_context.getInsertOption().mergeRows)
+                               if (_context.getInsertOption().mergeRows)
                                 {
-                                    // TODO only call this for existing rows
                                     // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
                                     // Since this entry was (maybe) already in the database, we may need to delete old derivation info
                                     UploadSamplesHelper.clearSampleSourceRun(_user, sample);
@@ -561,9 +573,7 @@ public class ExpDataIterators
                             }
                             else
                             {
-                                data = ExperimentService.get().getExpData(lsid);
-                                if (null == data)
-                                    continue;
+                                ExpData data = (ExpData) runItem;
                                 currentDataMap = Collections.singletonMap(data, UploadSamplesHelper.dataRole(data, _user));
                             }
 
