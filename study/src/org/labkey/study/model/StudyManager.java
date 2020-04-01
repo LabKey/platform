@@ -191,6 +191,7 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
+    public static final String EXPERIMENTAL_DATASET_DESIGNER = "experimental-reactdesigner";
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
@@ -2441,7 +2442,7 @@ public class StudyManager
 
 
     @Nullable
-    public DatasetDefinition getDatasetDefinition(Study s, int id)
+    public DatasetDefinition getDatasetDefinition(Study s, int id) // bookmark
     {
         DatasetDefinition ds = _datasetHelper.get(s.getContainer(), id);
         // update old rows w/o entityid

@@ -16,6 +16,7 @@
 
 import React, {PureComponent} from "react";
 import {LoadingSpinner} from "@labkey/components";
+import { ActionURL, Ajax, Utils } from "@labkey/api";
 
 
 export class App extends PureComponent<any, any> {
@@ -24,6 +25,22 @@ export class App extends PureComponent<any, any> {
     }
 
     render() {
+        const datasetId = 5004;
+        Ajax.request({
+            url: ActionURL.buildURL('study', 'GetDataset'),
+            method: 'GET',
+            params: {datasetId},
+            scope: this,
+            success: Utils.getCallbackWrapper((data) => {
+                console.log("success", data);
+                // resolve(console.log("success", data));
+            }),
+            failure: Utils.getCallbackWrapper((error) => {
+                console.log("failure", error);
+                // reject(error);
+            })
+        });
+
         return (
             <LoadingSpinner/>
         )

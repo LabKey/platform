@@ -28,6 +28,8 @@ import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.QuerySchema;
@@ -87,6 +89,13 @@ public interface StudyService
      * Create new Dataset in the Study container.
      */
     Dataset createDataset(Container container, User user, String name, @Nullable Integer datasetId, boolean isDemographic);
+
+    // todo RP
+//    ValidationException updateDataset(@NotNull Container c, @NotNull User u, @NotNull Dataset dataset,
+//                                      @Nullable DatasetDomainKindProperties options,
+//                                      GWTDomain<? extends GWTPropertyDescriptor> original,
+//                                      GWTDomain<? extends GWTPropertyDescriptor> update);
+//
 
     /**
      * Finds a study by either Container id or study label.

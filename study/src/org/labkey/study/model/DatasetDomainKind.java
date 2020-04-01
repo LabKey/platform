@@ -30,35 +30,45 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
+import org.labkey.api.security.SettingsField;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
+import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
+import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +79,7 @@ import java.util.stream.Collectors;
  * Date: May 4, 2007
  * Time: 1:01:43 PM
  */
-public abstract class DatasetDomainKind extends BaseAbstractDomainKind
+public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomainKindProperties>
 {
     public final static String LSID_PREFIX = "StudyDataset";
 
@@ -244,7 +254,7 @@ public abstract class DatasetDomainKind extends BaseAbstractDomainKind
 
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
-        return StudyManager.getInstance().getDatasetDefinition(domainURI);
+        return StudyManager.getInstance().getDatasetDefinition(domainURI); // bookmark
     }
 
 
@@ -433,6 +443,119 @@ public abstract class DatasetDomainKind extends BaseAbstractDomainKind
         {
             throw new RuntimeException(e);
         }
+    }
+
+    // todo rp: should these two helper functions be moved somewhere else?
+    private ValidationException checkCanUpdate(Dataset ds, ValidationException exception, Container container, int datasetId, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
+    {
+        if (!container.hasPermission(user, AdminPermission.class))
+            return exception.addGlobalError("Unauthorized");
+
+        Study study = StudyService.get().getStudy(container);
+        if (null == study)
+            return exception.addGlobalError("Study not found in current container");
+
+        DatasetDefinition def = (DatasetDefinition)study.getDataset(datasetId);
+        if (null == def)
+            return exception.addGlobalError("Dataset not found");
+
+        if (!def.canUpdateDefinition(user))
+            return exception.addGlobalError("Shared dataset can not be edited in this folder.");
+
+
+        Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
+        if (null == d)
+            return exception.addGlobalError("Domain not found: " + update.getDomainURI());
+
+        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
+            !ds.getTypeURI().equals(update.getDomainURI()))
+            return exception.addGlobalError("Illegal Argument");
+
+        return exception;
+    }
+
+//  in progress
+//    private ValidationException updateDataset(Dataset ds, String domainURI)
+//    {
+//        try
+//        {
+//            DatasetDefinition def = ds
+//
+//        }
+//    }
+
+    @Override
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
+    {
+        assert original.getDomainURI().equals(update.getDomainURI());
+        ValidationException exception;
+
+        int datasetId = StudyService.get().getDatasetIdByName(container, original.getName());
+        Dataset ds = StudyService.get().getDataset(container, datasetId);
+
+        // temp notes: error checking -- from checkCanUpdate and updateDatasetDefinition
+        exception = new ValidationException();
+        if (checkCanUpdate(ds, exception, container, datasetId, user, original, update).hasGlobalErrors())
+            return exception;
+
+        // Remove any fields that are duplicates of the default dataset fields.
+        // e.g. participantid, etc.
+
+        List<? extends GWTPropertyDescriptor> updatedProps = update.getFields();
+
+        for (Iterator<? extends GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
+        {
+            // in progress
+//            GWTPropertyDescriptor prop = iter.next();
+//            if (DatasetDefinition.isDefaultFieldName(prop.getName(), study)) // oh boy
+//                iter.remove();
+//            else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
+//                prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
+        }
+//        update.setFields(updatedProps); // oh boy
+
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            if (ds instanceof DatasetDefinition)
+            {
+                //
+                DatasetDefinition dsd = (DatasetDefinition) ds;
+
+//                if (!exception.hasErrors())
+//                    ds.getSt
+//
+//                DatasetDefinition def =
+//
+//                transaction.commit();
+
+            }
+
+
+            return exception;
+        }
+
+
+
+
+
+
+
+        // DatasetServiceImpl datasetService = new DatasetServiceImpl()
+
+
+
+
+        // check for errors. Can use ListDomainKind.updateDomain() and ExperimentServiceImp.updateDataClass() as examples for errors to catch.
+        // if there are any errors, return the exception instead of continuing with save.
+
+        // update properties -- if it's not null, pass to an updateDatasetProperties helper function, which will fetch the existing properties from the table,
+        // merge the properties to obtain the updated ListDomainKindProperties, and then call DatasetManager's update(). (Use ListManager.update as example)
+
+        // update domain design. List has example in ListDomainKind, line 511. Don't really understand how it's happening in Dataclass, while looking at updateDataClass()
+
+
+
     }
 
     @Override

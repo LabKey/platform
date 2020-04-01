@@ -31,25 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.FormApiAction;
-import org.labkey.api.action.FormHandlerAction;
-import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
-import org.labkey.api.action.HasViewContext;
-import org.labkey.api.action.Marshal;
-import org.labkey.api.action.Marshaller;
-import org.labkey.api.action.MutatingApiAction;
-import org.labkey.api.action.QueryViewAction;
-import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleErrorView;
-import org.labkey.api.action.SimpleRedirectAction;
-import org.labkey.api.action.SimpleViewAction;
-import org.labkey.api.action.SpringActionController;
+import org.labkey.api.action.*;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
@@ -76,6 +58,8 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -138,6 +122,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -420,10 +405,18 @@ public class StudyController extends BaseStudyController
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private Dataset _def;
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER);
         @Override
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            if (experimentalFlagEnabled)
+            {
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
+            }
+            else
+            {
+                return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            }
         }
 
         @Override
@@ -495,17 +488,33 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
+    {
+        @Override
+        public Object execute(DatasetForm form, BindException errors) throws Exception
+        {
+            DatasetDomainKindProperties properties = DatasetManager.get().getDatasetDomainKindProperties(getContainer(), form.getDatasetId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("Dataset does not exist in this container for datasetId " + form.getDatasetIdStr() + ".");
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
     {
         private Dataset _def;
+        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER);
 
         @Override
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            DatasetDefinition def = study.getDataset(form.getDatasetId());
+            DatasetDefinition def = study.getDataset(form.getDatasetId()); //bookmark
             _def = def;
             if (null == def)
             {
@@ -516,31 +525,38 @@ public class StudyController extends BaseStudyController
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
-            if (null == def.getTypeURI())
+            if (experimentalFlagEnabled)
             {
-                def = def.createMutable();
-                String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), getUser(), def);
-                OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
-                def.setTypeURI(domainURI);
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
             }
-            Map<String,String> props = PageFlowUtil.map(
-                    "studyId", ""+study.getRowId(),
-                    "datasetId", ""+form.getDatasetId(),
-                    "typeURI", def.getTypeURI(),
-                    "timepointType", ""+study.getTimepointType(),
-                    ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
+            else
+            {
+                if (null == def.getTypeURI())
+                {
+                    def = def.createMutable();
+                    String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), getUser(), def);
+                    OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
+                    def.setTypeURI(domainURI);
+                }
+                Map<String,String> props = PageFlowUtil.map(
+                        "studyId", ""+study.getRowId(),
+                        "datasetId", ""+form.getDatasetId(),
+                        "typeURI", def.getTypeURI(),
+                        "timepointType", ""+study.getTimepointType(),
+                        ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
-            if (cancelUrl != null)
-                props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
+                String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
+                if (cancelUrl != null)
+                    props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
 
-            HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-            HttpView view = new StudyGWTView(Designer.class, props);
+                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
+                HttpView view = new StudyGWTView(Designer.class, props);
 
-            // hack for 4404 : Lookup picker performance is terrible when there are many containers
-            ContainerManager.getAllChildren(ContainerManager.getRoot());
+                // hack for 4404 : Lookup picker performance is terrible when there are many containers
+                ContainerManager.getAllChildren(ContainerManager.getRoot());
 
-            return new VBox(text, view);
+                return new VBox(text, view);
+            }
         }
 
         @Override
