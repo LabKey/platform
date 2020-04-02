@@ -413,7 +413,7 @@
         </fk>
       </column>
         <column columnName="LastIndexed">
-            <description>Contains the time this material source was last updated in the search index</description>
+            <description>Contains the time this data class was last updated in the search index</description>
             <isUserEditable>false</isUserEditable>
             <isHidden>true</isHidden>
         </column>
