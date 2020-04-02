@@ -39,6 +39,7 @@ public interface AppProps
     AppProps _instance = new AppPropsImpl();
 
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
+    String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
@@ -181,6 +182,7 @@ public interface AppProps
 
     String getBLASTServerBaseURL();
 
+    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - typically ROOT.xml or labkey.xml */
     String getWebappConfigurationFilename();
 
     /**

@@ -141,10 +141,6 @@ public class ListModule extends SpringModule
             ss.addSearchCategory(ListManager.listCategory);
         }
 
-        //TODO: Remove once automated test conversion of new list designer is complete
-        AdminConsole.addExperimentalFeatureFlag(ListManager.EXPERIMENTAL_GWT_LIST_DESIGNER, "Pre-20.3 List Designer",
-                "Uses the GWT List Designer (version from prior to 20.3) to create and edit lists.", false);
-
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->
         {
             // Only need read permissions to view manage lists page
