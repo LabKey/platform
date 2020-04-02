@@ -226,7 +226,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
     }
 
     // idCols all null, nameExpression not null, has 'name' property -- ok
-//    @Test
+    @Test
     public void idColsUnset_nameExpression_hasNameProperty() throws Exception
     {
         final User user = TestContext.get().getUser();
@@ -468,7 +468,7 @@ public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 
 
     // Issue 33682: Calling insertRows on SampleSet with empty values will not insert new samples
-//    @Test
+    @Test
     public void testBlankRows() throws Exception
     {
         final User user = TestContext.get().getUser();
