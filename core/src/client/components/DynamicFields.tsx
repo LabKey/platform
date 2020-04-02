@@ -20,12 +20,7 @@ export class TextInput extends PureComponent<TextInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                <LabelHelpTip
-                    title="Tip"
-                    body={() => {
-                        return <div> {description} </div>;
-                    }}
-                />
+                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
 
@@ -48,12 +43,13 @@ export class TextInput extends PureComponent<TextInputProps> {
     }
 }
 
-interface CheckBoxInputProps extends InputFieldProps {
-    checked?: boolean | string;
+interface CheckBoxInputProps extends AuthConfigField {
     checkCheckBox?: Function;
+    value: boolean;
+    canEdit: boolean;
 }
 
-export class CheckBoxInput extends PureComponent<any> {
+export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
     render() {
         const { caption, description, name, value, required } = this.props;
         return (
@@ -62,12 +58,7 @@ export class CheckBoxInput extends PureComponent<any> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                <LabelHelpTip
-                    title="Tip"
-                    body={() => {
-                        return <div> {description} </div>;
-                    }}
-                />
+                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 <span className="modal__input">
                     {this.props.canEdit ? (
@@ -80,7 +71,7 @@ export class CheckBoxInput extends PureComponent<any> {
                         }}
                     />
                     ) : (
-                        <FACheckBox name={name} checked={value == 'true'} canEdit={false} onClick={null} />
+                        <FACheckBox name={name} checked={value} canEdit={false} onClick={null} />
                     )}
                 </span>
             </div>
@@ -101,12 +92,7 @@ export class Option extends PureComponent<OptionInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                <LabelHelpTip
-                    title="Tip"
-                    body={() => {
-                        return <div> {description} </div>;
-                    }}
-                />
+                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {canEdit ? (
                     <div className="modal__option-input">
@@ -133,7 +119,6 @@ export class Option extends PureComponent<OptionInputProps> {
 interface FixedHtmlProps {
     caption: string;
     html?: string;
-    key: number;
 }
 
 export class FixedHtml extends PureComponent<FixedHtmlProps> {
@@ -169,12 +154,7 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
                     {caption} {required ? '*' : null}
                 </span>
 
-                <LabelHelpTip
-                    title="Tip"
-                    body={() => {
-                        return <div> {description} </div>;
-                    }}
-                />
+                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {requiredFieldEmpty && (
                     <div className="modal__tiny-error--small-file-input"> This file is required </div>
@@ -226,17 +206,15 @@ interface DynamicFieldsProps {
 export class DynamicFields extends PureComponent<DynamicFieldsProps> {
     render() {
         const { fields, emptyRequiredFields, canEdit, onChange, checkCheckBox, onFileChange, onFileRemoval, fieldValues } = this.props;
-        let stopPoint = fields.length;
-        for (let i = 0; i < fields.length; i++) {
-            if ('dictateFieldVisibility' in fields[i]) {
-                stopPoint = i + 1;
-                break;
-            }
+        let stopPoint = fields.findIndex((field) => 'dictateFieldVisibility' in field) + 1;
+        if (stopPoint === 0) {
+            stopPoint = fields.length;
         }
         const fieldsToCreate = fieldValues.search ? fields : fields.slice(0, stopPoint);
 
         const allFields = fieldsToCreate.map((field, index) => {
             const requiredFieldEmpty = (emptyRequiredFields.indexOf(field.name) !== -1);
+            const name = fieldValues[field.name];
 
             switch (field.type) {
                 case 'input':
@@ -244,10 +222,9 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={fieldValues[field.name]}
+                            value={name}
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
-
                             defaultValue={field.defaultValue}
                             name={field.name}
                             caption={field.caption}
@@ -261,9 +238,8 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <CheckBoxInput
                             key={index}
                             checkCheckBox={checkCheckBox}
-                            value={fieldValues[field.name]}
+                            value={name}
                             canEdit={canEdit}
-
                             defaultValue={field.defaultValue}
                             name={field.name}
                             caption={field.caption}
@@ -280,9 +256,8 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <TextInput
                             key={index}
                             onChange={onChange}
-                            value={fieldValues[field.name]}
+                            value={name}
                             canEdit={canEdit}
-
                             defaultValue={field.defaultValue}
                             name={field.name}
                             caption={field.caption}
@@ -298,11 +273,10 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                             key={index}
                             onFileChange={onFileChange}
                             onFileRemoval={onFileRemoval}
-                            value={fieldValues[field.name]}
+                            value={name}
                             index={index + 2} // There are two other FileAttachmentForms (from SSOFields) on modal
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
-
                             defaultValue={field.defaultValue}
                             name={field.name}
                             caption={field.caption}
@@ -316,9 +290,8 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                         <Option
                             key={index}
                             onChange={onChange}
-                            value={fieldValues[field.name]}
+                            value={name}
                             canEdit={canEdit}
-
                             options={field.options}
                             defaultValue={field.defaultValue}
                             name={field.name}
@@ -330,13 +303,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                     );
 
                 case 'fixedHtml':
-                    return (
-                        <FixedHtml
-                            key={index} {...field}
-                            caption={field.caption}
-                            html={field.html}
-                        />
-                    );
+                    return  <FixedHtml key={index} caption={field.caption} html={field.html}/>;
 
                 default:
                     return <div> Error: Invalid field type received. </div>;

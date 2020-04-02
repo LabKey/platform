@@ -167,20 +167,14 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
     };
 
     determineConfigType = (addModalType: string): string => {
-        const {primaryProviders} = this.props;
-        let authType;
-        if (addModalType in primaryProviders) {
-            const authInfo = primaryProviders[addModalType];
+        const { primaryProviders } = this.props;
+        const authInfo = primaryProviders[addModalType];
 
-            if (authInfo.sso) {
-                authType = 'ssoConfigurations';
-            } else {
-                authType = 'formConfigurations';
-            }
-        } else {
-            authType = 'secondaryConfigurations';
+        if (authInfo) {
+            return authInfo.sso ? 'ssoConfigurations' : 'formConfigurations';
         }
-        return authType;
+
+        return 'secondaryConfigurations';
     };
 
     render() {
@@ -196,8 +190,6 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
         } = this.props;
 
         const {primaryModalOpen, secondaryModalOpen, addModalType} = this.state;
-
-        const authenticationDocsLink = helpLink;
 
         const addNewPrimaryDropdown =
             Object.keys(primaryProviders).map(authOption => (
@@ -235,7 +227,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
                     <AuthRow
                         draggable={false}
                         toggleModalOpen={this.toggleModalOpen}
-                        authConfig={{description: dbAuth.description, provider: dbAuth.provider, enabled: dbAuth.enabled}}
+                        authConfig={dbAuth}
                         canEdit={canEdit}
                     />
                 </div>
@@ -298,7 +290,7 @@ export default class AuthConfigMasterPanel extends PureComponent<Props, Partial<
                     <span className="bold-text"> Configurations </span>
                 </Panel.Heading>
                 <Panel.Body>
-                    <a className="configurations__help-link" href={authenticationDocsLink}>
+                    <a className="configurations__help-link" href={helpLink}>
                         Get help with authentication
                     </a>
 

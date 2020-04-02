@@ -34,7 +34,7 @@ export default class DragAndDropPane extends PureComponent<Props> {
                             draggable={true}
                             modalType={providers ? providers[authConfig.provider] : null }
                             configType={configType}
-                            onDelete={onDelete}
+                            onDelete={() => onDelete(authConfig.configuration, configType)}
                             toggleModalOpen={toggleModalOpen}
                             updateAuthRowsAfterSave={updateAuthRowsAfterSave}
                         />

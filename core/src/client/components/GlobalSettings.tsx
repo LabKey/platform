@@ -29,14 +29,7 @@ interface Props {
     authCount: number;
 }
 
-interface State {
-    globalSettings: GlobalSettingsOptions;
-    canEdit: boolean;
-    checkGlobalAuthBox: (id: string) => void;
-    authCount: number;
-}
-
-export default class GlobalSettings extends PureComponent<Props, State> {
+export default class GlobalSettings extends PureComponent<Props> {
     render() {
         let rowTexts = ROW_TEXTS;
         const { canEdit, authCount, checkGlobalAuthBox, globalSettings } = this.props;

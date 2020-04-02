@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
 import { ActionURL, Ajax } from '@labkey/api';
-import {AuthConfig, DatabasePasswordRules, DatabasePasswordSettings} from "../AuthenticationConfiguration/models";
+import { DatabasePasswordRules, DatabasePasswordSettings} from "../AuthenticationConfiguration/models";
 
 const OPTIONS_MAP = {
     Never: 'Never',
@@ -76,8 +76,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     render() {
         const { canEdit } = this.props;
         const { currentSettings } = this.state;
-        const passwordStrength = currentSettings.strength;
-        const expiration = currentSettings.expiration;
+        const { strength, expiration } = currentSettings;
 
         return (
             <Modal show={true} onHide={this.props.closeModal}>
@@ -96,14 +95,14 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                 <Button
                                     value="Weak"
                                     name="strength"
-                                    active={passwordStrength == 'Weak'}
+                                    active={strength == 'Weak'}
                                     disabled={!canEdit}>
                                     Weak
                                 </Button>
                                 <Button
                                     value="Strong"
                                     name="strength"
-                                    active={passwordStrength == 'Strong'}
+                                    active={strength == 'Strong'}
                                     disabled={!canEdit}>
                                     Strong
                                 </Button>

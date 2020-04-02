@@ -56,7 +56,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
             updateAuthRowsAfterSave,
             onDelete
         } = this.props;
-        const isDatabaseAuth = (authConfig.provider == 'Database');
+        const isDatabaseAuth = authConfig.provider == 'Database';
 
         const handle = draggable && canEdit ? <LightupHandle /> : null;
 
@@ -112,7 +112,9 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
                     canEdit={canEdit}
                     closeModal={() => {
                         this.onToggleModal("editModalOpen", this.state.editModalOpen);
-                        canEdit && toggleModalOpen(false);
+                        if (canEdit) {
+                            toggleModalOpen(false);
+                        }
                     }}
                     updateAuthRowsAfterSave={updateAuthRowsAfterSave}
                 />
@@ -132,7 +134,7 @@ export default class AuthRow extends PureComponent<Props, Partial<State>> {
 
                     <Button
                         className="labkey-button primary auth-row__confirm-delete"
-                        onClick={() => onDelete(authConfig.configuration, configType)}
+                        onClick={onDelete}
                     >
                         Yes
                     </Button>

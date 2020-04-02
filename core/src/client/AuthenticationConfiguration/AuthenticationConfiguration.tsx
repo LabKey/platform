@@ -12,6 +12,7 @@ import {AuthConfig, AuthConfigProvider, Actions, GlobalSettingsOptions} from "./
 import './authenticationConfiguration.scss';
 
 interface State {
+    loading: boolean;
     formConfigurations: AuthConfig[];
     ssoConfigurations: AuthConfig[];
     secondaryConfigurations: AuthConfig[];
@@ -37,6 +38,7 @@ export class App extends PureComponent<{}, Partial<State>> {
         };
 
         this.state = {
+            loading: true,
             formConfigurations: null,
             ssoConfigurations: null,
             secondaryConfigurations: null,
@@ -78,7 +80,8 @@ export class App extends PureComponent<{}, Partial<State>> {
                     secondaryConfigurations,
                 };
                 const authCount = formConfigurations.length + ssoConfigurations.length;
-                this.setState({ ...response, dirtinessData, authCount });
+                const loading = false;
+                this.setState({ ...response, dirtinessData, authCount, loading });
             },
         });
     };
@@ -195,11 +198,6 @@ export class App extends PureComponent<{}, Partial<State>> {
     };
 
     onDelete = (configuration: number, configType: string): void => {
-        const prevState = this.state[configType];
-        const newState = prevState.filter(auth => {
-            return auth.configuration !== configuration;
-        });
-
         Ajax.request({
             url: ActionURL.buildURL('login', 'deleteConfiguration'),
             method: 'POST',
@@ -209,7 +207,9 @@ export class App extends PureComponent<{}, Partial<State>> {
                 alert('Error: ' + error);
             },
             success: function() {
-                this.setState({ [configType]: newState });
+                this.setState((state) => ({
+                    [configType]: state[configType].filter(auth => auth.configuration !== configuration)
+                }))
             },
         });
     };
@@ -229,6 +229,7 @@ export class App extends PureComponent<{}, Partial<State>> {
         const alertText =
             'You have unsaved changes to your authentication configurations. Click "Save and Finish" to apply these changes.';
         const {
+            loading,
             globalSettings,
             dirty,
             formConfigurations,
@@ -240,13 +241,7 @@ export class App extends PureComponent<{}, Partial<State>> {
             canEdit
         } = this.state;
 
-        if (!formConfigurations &&
-            !ssoConfigurations &&
-            !secondaryConfigurations &&
-            !primaryProviders &&
-            !secondaryProviders &&
-            !globalSettings
-        ) {
+        if (loading) {
             return <LoadingSpinner/>;
         }
 
