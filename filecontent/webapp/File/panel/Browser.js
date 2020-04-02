@@ -2154,7 +2154,10 @@ Ext4.define('File.panel.Browser', {
         var param = selection.data;
 
         var files = this.getGridSelection();
-        var url = Object.values(this.runEditors)[0];  // Right now we're just handling one editor
+
+        // Right now we're just handling one editor. runEditors will always be defined at this point, checking out of
+        // abundance of caution.
+        var url = this.runEditors ? Object.values(this.runEditors)[0] : '';  
 
         if (files.length === 0) {
             window.location = url;

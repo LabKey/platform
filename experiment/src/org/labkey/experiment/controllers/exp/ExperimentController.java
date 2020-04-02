@@ -3520,26 +3520,6 @@ public class ExperimentController extends SpringActionController
     public class UpdateMaterialSourceAction extends BaseSampleSetAction
     {
         @Override
-        public boolean handlePost(BaseSampleSetForm form, BindException errors)
-        {
-            try
-            {
-                form.updateSampleSet(getContainer(), getUser(), form.getSampleSet(getContainer()));
-            }
-            catch (IOException e)
-            {
-                errors.reject("Unable to update SampleSet: ", e.getMessage());
-            }
-            return true;
-        }
-
-        public ActionURL getSuccessURL(BaseSampleSetForm form)
-        {
-            setHelpTopic("sampleSets");
-            return form.getReturnActionURL(ExperimentUrlsImpl.get().getShowSampleSetURL(SampleSetService.get().getSampleSet(form.getRowId())));
-        }
-
-        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             return root.addChild("Update Sample Set");
@@ -3549,20 +3529,6 @@ public class ExperimentController extends SpringActionController
     @RequiresPermission(DesignSampleSetPermission.class)
     public class CreateSampleSetAction extends BaseSampleSetAction
     {
-        @Override
-        public boolean handlePost(BaseSampleSetForm form, BindException errors) throws Exception
-        {
-            ExpSampleSet sampleSet = form.createSampleSet(getContainer(), getUser());
-
-            Domain domain = sampleSet.getDomain();
-            DomainKind kind = domain.getDomainKind();
-            _successUrl = kind.urlEditDefinition(domain, getViewContext());
-            URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
-            _successUrl.addReturnURL(Objects.requireNonNullElseGet(returnUrl, () -> getContainer().getStartURL(getUser())));
-
-            return true;
-        }
-
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
@@ -3604,16 +3570,8 @@ public class ExperimentController extends SpringActionController
         return new ApiSimpleResponse(Map.of("sampleSet", sampleSet, "success", true));
     }
 
-    private abstract class BaseSampleSetAction extends FormViewAction<BaseSampleSetForm>
+    private abstract class BaseSampleSetAction extends SimpleViewAction<BaseSampleSetForm>
     {
-        ActionURL _successUrl;
-
-        @Override
-        public void validateCommand(BaseSampleSetForm form, Errors errors)
-        {
-            validateSampleSetForm(form, errors);
-        }
-
         private void initForm(BaseSampleSetForm form)
         {
             if (form.getRowId() == null)
@@ -3633,16 +3591,11 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public ModelAndView getView(BaseSampleSetForm form, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(BaseSampleSetForm form, BindException errors) throws Exception
         {
+            setHelpTopic("sampleSets");
             initForm(form);
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "sampleTypeDesigner");
-        }
-
-        @Override
-        public URLHelper getSuccessURL(BaseSampleSetForm form)
-        {
-            return _successUrl;
         }
 
         @Override
@@ -3815,37 +3768,6 @@ public class ExperimentController extends SpringActionController
             return sampleSet;
         }
 
-        public void updateSampleSet(Container container, User user, ExpSampleSetImpl sampleSet) throws IOException
-        {
-            sampleSet.setDescription(getDescription());
-            sampleSet.setNameExpression(getNameExpression());
-            sampleSet.setImportAliasMap(getAliasMap());
-            sampleSet.save(user);
-
-            SampleSetServiceImpl.get().clearMaterialSourceCache(container);
-        }
-
-        public ExpSampleSet createSampleSet(Container container, User user) throws ExperimentException, SQLException
-        {
-            List<GWTPropertyDescriptor> properties = new ArrayList<>();
-
-            GWTPropertyDescriptor descriptor = new GWTPropertyDescriptor();
-            descriptor.setName(ExpMaterialTable.Column.Name.name());
-            properties.add(descriptor);
-
-            try
-            {
-                return SampleSetService.get().createSampleSet(container, user, getName(), getDescription(),
-                        properties, Collections.emptyList(), -1, -1, -1, -1, getNameExpression(),
-                        null, getAliasMap()
-                );
-            }
-            catch (IOException e)
-            {
-                throw new ExperimentException("Couldn't create sample set: ", e);
-            }
-        }
-
         public void setDomainId(Integer domainId)
         {
             this.domainId = domainId;
@@ -3854,96 +3776,6 @@ public class ExperimentController extends SpringActionController
         public Integer getDomainId()
         {
             return this.domainId;
-        }
-    }
-
-    private void validateSampleSetForm(BaseSampleSetForm form, Errors errors)
-    {
-        // when this is a new sample set creation, we have some extra checks for the name
-        if (!form.isUpdate())
-        {
-            if (StringUtils.isEmpty(form.getName()))
-            {
-                errors.reject(ERROR_MSG, "You must supply a name for the sample set.");
-            }
-            else
-            {
-                ExpSampleSet ss = ExperimentService.get().getSampleSet(getContainer(), getUser(), form.getName());
-                if (ss != null)
-                    errors.reject(ERROR_MSG, "A sample set with that name already exists.");
-            }
-        }
-
-        // verify the length of the Name and NameExpression values
-        TableInfo ti = ExperimentService.get().getTinfoMaterialSource();
-        int nameMax = ti.getColumn("Name").getScale();
-        if (!StringUtils.isEmpty(form.getName()) && form.getName().length() > nameMax)
-            errors.reject(ERROR_MSG, "Value for Name field may not exceed " + nameMax + " characters.");
-        int nameExpMax = ti.getColumn("NameExpression").getScale();
-        if (!StringUtils.isEmpty(form.getNameExpression()) && form.getNameExpression().length() > nameExpMax)
-            errors.reject(ERROR_MSG, "Value for Name Expression field may not exceed " + nameExpMax + " characters.");
-
-        //Verify Aliases
-        Collection<String> importHeadings = form.getImportAliasKeys();
-        Collection<String> importParents = form.getImportAliasValues();
-        if (importHeadings != null && importParents != null)
-        {
-            if (importHeadings.contains(null))
-                errors.reject(ERROR_MSG, "Import alias heading cannot be blank");
-
-            if(importParents.contains(null) || importParents.size() < importHeadings.size())  //Can happen if Alias is created and then target Parent is subsequently deleted
-            {
-                String msg = "Import parent alias cannot be blank";
-                if (importParents.size() < importHeadings.size())
-                    msg += ", targeted parent may have been deleted.";
-                errors.reject(ERROR_MSG, msg);
-            }
-
-            //check if alias header is unique and isn't a field/reserved name
-            DomainKind sampleSetDomainKind = PropertyService.get().getDomainKindByName(SampleSetDomainKind.NAME);
-            ExpSampleSet sampleSet = form.getRowId() != null ? ExperimentService.get().getSampleSet(getContainer(), form.getRowId()) : null;
-            Domain domain = sampleSet != null ? sampleSet.getDomain() : null;
-
-            // Contains both existingAliases and reserved property names
-            Set<String> reservedNames = new CaseInsensitiveHashSet(sampleSetDomainKind.getReservedPropertyNames(domain));
-            Set<String> existingAliases = new CaseInsensitiveHashSet();
-            try
-            {
-                if (sampleSet != null)
-                    existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
-            }
-            catch (IOException e)
-            {
-                errors.reject(ERROR_MSG, String.format("Unable to process existing aliases for SampleSet"));
-            }
-
-            for (String heading : importHeadings)
-            {
-                //Skip if alias was added previously
-                if (existingAliases.contains(heading))
-                    continue;
-
-                if (reservedNames.contains(heading))
-                    errors.reject(ERROR_MSG, String.format("Parent alias header is reserved: %1$s", heading));
-
-                if (domain != null && domain.getPropertyByName(heading) != null)
-                    errors.reject(ERROR_MSG, String.format("A sample set property already exists with parent alias header: %1$s", heading));
-            }
-
-            //Check for duplicates
-            Set<String> dupes = new HashSet<>();
-            for (String heading : importHeadings)
-            {
-                if (!dupes.add(heading))
-                    errors.reject(ERROR_UNIQUE, String.format("Duplicate parent alias header found: %1$s", heading));
-            }
-
-            for (String parent : importParents)
-            {
-                //check if it is of the expected format or targeting the to be created sampleset
-                if (!(UploadSamplesHelper.isInputOutputHeader(parent) || SampleSetService.NEW_SAMPLE_SET_ALIAS_VALUE.equals(parent)))
-                    errors.reject(ERROR_MSG, String.format("Invalid parent alias header: %1$s", parent));
-            }
         }
     }
 
