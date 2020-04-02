@@ -323,7 +323,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                     //Need to map to proper Icon
-                    properties.put("type", "dataClass");
+                    properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
 
                     return properties;
                 }
