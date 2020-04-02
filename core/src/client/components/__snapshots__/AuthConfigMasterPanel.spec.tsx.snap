@@ -316,7 +316,9 @@ exports[`<AuthConfigMasterPanel/> Editable mode 1`] = `
               <AuthRow
                 authConfig={
                   Object {
+                    "configuration": 0,
                     "description": "Standard database authentication",
+                    "details": null,
                     "enabled": true,
                     "provider": "Database",
                   }
