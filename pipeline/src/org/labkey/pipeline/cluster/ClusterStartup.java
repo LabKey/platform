@@ -16,19 +16,41 @@
 
 package org.labkey.pipeline.cluster;
 
+import org.apache.commons.lang3.SystemUtils;
+import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.reader.Readers;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.writer.PrintWriters;
+import org.labkey.bootstrap.ClusterBootstrap;
 import org.labkey.pipeline.AbstractPipelineStartup;
+import org.labkey.pipeline.mule.test.DummyPipelineJob;
 import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 
+import javax.annotation.Nullable;
+import javax.validation.constraints.AssertTrue;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -52,23 +74,39 @@ public class ClusterStartup extends AbstractPipelineStartup
         if (args.length < 1)
         {
             System.out.println("No job file provided, exiting");
-            System.exit(0);
+            System.exit(1);
         }
 
-        String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
-        File file = new File(new URI(localFile));
-        if (!file.isFile())
-        {
-            throw new IllegalArgumentException("Could not find file " + file.getAbsolutePath());
-        }
-
-        doSharedStartup(moduleFiles);
-
-        String hostName = InetAddress.getLocalHost().getHostName();
-        UMOManager manager = setupMuleConfig("org/labkey/pipeline/mule/config/clusterRemoteMuleConfig.xml", factories, hostName);
-
+        UMOManager manager = null;
         try
         {
+            String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
+            URI uri = null;
+            try
+            {
+                uri = new URI(localFile);
+            }
+            catch (URISyntaxException e)
+            {
+                throw new IllegalArgumentException("Invalid URI, Could not find serialized job file: " + localFile, e);
+            }
+
+            if (!uri.isAbsolute() || !"file".equals(uri.getScheme()))
+            {
+                throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + localFile);
+            }
+
+            File file = new File(uri);
+            if (!file.isFile())
+            {
+                throw new IllegalArgumentException("Could not find serialized job file: " + localFile);
+            }
+
+            doSharedStartup(moduleFiles);
+
+            String hostName = InetAddress.getLocalHost().getHostName();
+            manager = setupMuleConfig("org/labkey/pipeline/mule/config/clusterRemoteMuleConfig.xml", factories, hostName);
+
             PipelineJob job = PipelineJob.readFromFile(file);
 
             System.out.println("Starting to run task for job " + job + " on host: " + hostName);
@@ -126,5 +164,106 @@ public class ClusterStartup extends AbstractPipelineStartup
         }
 
         //System.exit(0);
+    }
+
+    public static class TestCase
+    {
+        private File _tempDir;
+
+        @Before
+        public void setup() throws IOException
+        {
+            _tempDir = File.createTempFile("testJobDir", "dir");
+            if (!_tempDir.delete())
+            {
+                throw new RuntimeException("Failed to delete file " + _tempDir);
+            }
+            if (!_tempDir.mkdir())
+            {
+                throw new RuntimeException("Failed to create dir " + _tempDir);
+            }
+        }
+
+        @After
+        public void cleanup()
+        {
+            FileUtil.deleteDir(_tempDir);
+        }
+
+        @Test
+        public void testSuccess() throws IOException, InterruptedException
+        {
+            DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.success);
+            String output = executeJobRemote(createArgs(job), 0);
+            String jobLog = PageFlowUtil.getFileContentsAsString(job.getLogFile());
+            Assert.assertTrue("Couldn't find logging", jobLog.contains("Successful worker!"));
+            Assert.assertTrue("Couldn't find logging", output.contains("Exploding module archives"));
+        }
+
+        @Test
+        public void testFailure() throws IOException, InterruptedException
+        {
+            DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.failure);
+            executeJobRemote(createArgs(job), 1);
+            String jobLog = PageFlowUtil.getFileContentsAsString(job.getLogFile());
+            Assert.assertTrue("Couldn't find logging", jobLog.contains("Oopsies"));
+            Assert.assertTrue("Couldn't find logging", jobLog.contains("java.lang.UnsupportedOperationException"));
+        }
+
+        @Test
+        public void testBadPath() throws IOException, InterruptedException
+        {
+            DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.failure);
+            List<String> args = createArgs(job);
+            // Last argument is supposed to be the URI to the serialized job's file, hack it to something else
+            args.set(args.size() - 1, "NotAValidURI.json");
+            String output = executeJobRemote(args, 1);
+            Assert.assertTrue("Couldn't find logging", output.contains("Could not find serialized job file"));
+        }
+
+        protected String executeJobRemote(List<String> args, int expectedExitCode) throws IOException, InterruptedException
+        {
+            ProcessBuilder pb = new ProcessBuilder(args);
+            pb.directory(_tempDir);
+            pb.redirectErrorStream(true);
+            Process proc = pb.start();
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
+            {
+                String line;
+                while ((line = procReader.readLine()) != null)
+                {
+                    sb.append(line);
+                    sb.append("\n");
+                }
+            }
+            proc.waitFor();
+            Assert.assertEquals("Wrong exit code", expectedExitCode, proc.exitValue());
+            return sb.toString();
+        }
+
+        @NotNull
+        private List<String> createArgs(PipelineJob job) throws IOException
+        {
+            // Serialize to a file
+            File serializedJob = new File(_tempDir, "job.json");
+            File log = new File(_tempDir, "job.log");
+            job.setLogFile(log);
+            job.writeToFile(serializedJob);
+
+            List<String> args = new ArrayList<>();
+            args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
+            File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
+
+            // Uncomment this line if you want to debug the forked process
+//            args.add("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=*:5005");
+            args.add("-cp");
+            args.add(labkeyBootstrap.getPath());
+            args.add(ClusterBootstrap.class.getName());
+            args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
+
+            args.add(serializedJob.toURI().toString());
+            return args;
+        }
     }
 }

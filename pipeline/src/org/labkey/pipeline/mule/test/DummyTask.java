@@ -26,15 +26,22 @@ import org.labkey.api.pipeline.RecordedActionSet;
  */
 public class DummyTask extends PipelineJob.Task
 {
-    public DummyTask(PipelineJob job)
+    public DummyTask(DummyPipelineJob job)
     {
         super(null, job);
+    }
+
+    @Override
+    public DummyPipelineJob getJob()
+    {
+        return (DummyPipelineJob)super.getJob();
     }
 
     @NotNull
     @Override
     public RecordedActionSet run()
     {
+        getJob().getWorker().run(getJob().getLogger());
         return new RecordedActionSet();
     }
 }
