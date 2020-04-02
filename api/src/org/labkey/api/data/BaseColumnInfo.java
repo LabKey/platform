@@ -73,7 +73,6 @@ import java.util.Set;
 public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements ColumnInfo
 {
     private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
-    private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
 
     private FieldKey _fieldKey;
     private String _name;
@@ -350,7 +349,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         setDefaultValueType(col.getDefaultValueType());
         setDefaultValue(col.getDefaultValue());
         setImportAliasesSet(col.getImportAliasSet());
-        setShownInDetailsView(col.isShownInDetailsView());
+        if (((BaseColumnInfo) col)._shownInDetailsView != null)
+            setShownInDetailsView(col.isShownInDetailsView());
         setShownInInsertView(col.isShownInInsertView());
         setShownInUpdateView(col.isShownInUpdateView());
         setConditionalFormats(col.getConditionalFormats());
@@ -1603,9 +1603,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
                     col._label = reader.getLabel();
                     col._description = reader.getDescription();
 
-                    if (NON_EDITABLE_COL_NAMES.contains(col.getPropertyName()))
-                        col.setUserEditable(false);
-
                     colMap.put(col.getName(), col);
                 }
             }
@@ -1709,6 +1706,25 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
             col.setShownInInsertView(false);
             col.setShownInUpdateView(false);
             col.setReadOnly(true);
+        }
+
+        if (NON_EDITABLE_COL_NAMES.contains(colName))
+        {
+            col.setUserEditable(false);
+            col.setShownInDetailsView(false);
+            col.setShownInInsertView(false);
+            col.setShownInUpdateView(false);
+        }
+
+        if (colName.equalsIgnoreCase("entityid") || colName.equalsIgnoreCase("lsid") ||
+                colName.equalsIgnoreCase("lastindexed") ||
+                SqlDialect.isGUIDType(col.getSqlTypeName()))
+        {
+            col.setHidden(true);
+            col.setUserEditable(false);
+            col.setShownInDetailsView(false);
+            col.setShownInInsertView(false);
+            col.setShownInUpdateView(false);
         }
 
         if (JdbcType.INTEGER == col.getJdbcType() &&

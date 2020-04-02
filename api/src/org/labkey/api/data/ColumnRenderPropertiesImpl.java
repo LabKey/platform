@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Sort.SortDirection;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -25,6 +26,7 @@ import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -40,6 +42,10 @@ import java.util.regex.Pattern;
  */
 public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperties
 {
+    protected static final Set<String> NON_EDITABLE_COL_NAMES = Collections.unmodifiableSet(new CaseInsensitiveHashSet(
+            "created", "createdBy", "modified", "modifiedBy",
+            "_ts", "entityId", "container", "lsid", "lastIndexed"));
+
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
     protected int _inputLength = -1;
@@ -70,7 +76,7 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     protected DefaultScaleType _defaultScale = DefaultScaleType.LINEAR;
     protected boolean _shownInInsertView = true;
     protected boolean _shownInUpdateView = true;
-    protected boolean _shownInDetailsView = true;
+    protected Boolean _shownInDetailsView;
     protected StringExpression _url;
     protected String _urlTargetWindow;
     protected String _urlCls;
@@ -299,7 +305,22 @@ public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperti
     @Override
     public boolean isShownInDetailsView()
     {
-        return _shownInDetailsView;
+        if (_shownInDetailsView != null)
+            return _shownInDetailsView;
+
+        return inferShownInDetailsView();
+    }
+
+    // CONSIDER: Refactor BaseColumnInfo.inferMetadata() to use infer metadata methods?
+    protected boolean inferShownInDetailsView()
+    {
+        if (isAutoIncrement())
+            return false;
+
+        if (NON_EDITABLE_COL_NAMES.contains(getName()))
+            return false;
+
+        return true;
     }
 
     public void setShownInDetailsView(boolean shownInDetailsView)

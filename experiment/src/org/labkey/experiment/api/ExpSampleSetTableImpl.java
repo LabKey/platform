@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -26,7 +27,10 @@ import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -44,6 +48,16 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         super(name, ExperimentServiceImpl.get().getTinfoMaterialSource(), schema, new ExpSampleSetImpl(new MaterialSource()), cf);
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        // Allow DetailsView to render
+        if (ReadPermission.class.isAssignableFrom(perm) && getUserSchema().getContainer().hasPermission(user, perm))
+            return true;
+
+        return super.hasPermission(user, perm);
     }
 
     public BaseColumnInfo createColumn(String alias, Column column)
@@ -76,6 +90,9 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                     " m WHERE m.CpasType = " + ExprColumn.STR_TABLE_ALIAS + ".LSID)");
                 ExprColumn sampleCountColumnInfo = new ExprColumn(this, "SampleCount", sql, JdbcType.INTEGER);
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
+                sampleCountColumnInfo.setShownInDetailsView(false);
+                sampleCountColumnInfo.setShownInInsertView(false);
+                sampleCountColumnInfo.setShownInUpdateView(false);
                 return sampleCountColumnInfo;
             }
             case Properties:

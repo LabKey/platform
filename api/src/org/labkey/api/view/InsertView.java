@@ -70,7 +70,7 @@ public class InsertView extends DataView
     @Override
     protected boolean isColumnIncluded(ColumnInfo col)
     {
-        return col.isShownInInsertView();
+        return col.isUserEditable() && col.isShownInInsertView();
     }
 
     public void setInitialValues(Map<String, Object> initialValues)

@@ -340,6 +340,9 @@
       <column columnName="MaterialLSIDPrefix">
           <isReadOnly>true</isReadOnly>
           <description>Contains the LSID prefix for all materials that are part of this sample set</description>
+          <shownInDetailsView>false</shownInDetailsView>
+          <shownInInsertView>false</shownInInsertView>
+          <shownInUpdateView>false</shownInUpdateView>
       </column>
       <column columnName="Description">
           <description>Contains an optional description about the contents or purpose of this sample set</description>
