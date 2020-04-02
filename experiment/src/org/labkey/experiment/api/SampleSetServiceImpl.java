@@ -852,7 +852,10 @@ public class SampleSetServiceImpl implements SampleSetService
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
 
             if (!errors.hasErrors())
+            {
+                transaction.addCommitTask(() -> clearMaterialSourceCache(container), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
+            }
         }
 
         return errors;
