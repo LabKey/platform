@@ -790,11 +790,11 @@ public class ExperimentServiceImpl implements ExperimentService
 
     private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
     {
-        // Index all Data classes that have never been indexed OR where the data class has changed since last indexed
+        // Index the data class if it has never been indexed OR it has changed since it was last indexed
         SQLFragment sql = new SQLFragment("SELECT * FROM ")
                 .append(getTinfoDataClass(), "dc")
                 .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
-                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ? OR (dc.modified IS NOT NULL AND dc.lastIndexed < dc.modified))")
+                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
                 .add(expDataClass.getModified());
 
         DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
