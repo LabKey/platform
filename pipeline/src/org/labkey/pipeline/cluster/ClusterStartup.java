@@ -26,15 +26,12 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.Readers;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.writer.PrintWriters;
 import org.labkey.bootstrap.ClusterBootstrap;
 import org.labkey.pipeline.AbstractPipelineStartup;
 import org.labkey.pipeline.mule.test.DummyPipelineJob;
@@ -42,11 +39,9 @@ import org.mule.umo.manager.UMOManager;
 import org.springframework.beans.factory.BeanFactory;
 
 import javax.annotation.Nullable;
-import javax.validation.constraints.AssertTrue;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -65,41 +60,43 @@ public class ClusterStartup extends AbstractPipelineStartup
     /**
      * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
      */
-    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, URISyntaxException, PipelineJobException
+    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, PipelineJobException
     {
         Map<String, BeanFactory> factories = initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.RemoteExecutionEngine);
 
-        // First arg should be URI to XML file, based on the web server's file system
-        // Passing no args could be used to explode the modules and exit, preparing for future jobs
+        // First arg is URI to serialized job's JSON file, based on the web server's file system
         if (args.length < 1)
         {
-            System.out.println("No job file provided, exiting");
-            System.exit(1);
+            // Passing no args is used to explode the modules and exit, preparing for future jobs
+            System.out.println("No job file provided, exiting after extracting modules");
+            System.exit(0);
         }
 
         UMOManager manager = null;
         try
         {
-            String localFile = PipelineJobService.get().getPathMapper().remoteToLocal(args[0]);
-            URI uri = null;
+            String originalURI = args[0];
+
+            URI localURI;
+            // Translate from the web server's path to the local file version
             try
             {
-                uri = new URI(localFile);
+                localURI = PipelineJobService.get().getPathMapper().remoteToLocal(new URI(originalURI));
             }
             catch (URISyntaxException e)
             {
-                throw new IllegalArgumentException("Invalid URI, Could not find serialized job file: " + localFile, e);
+                throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + args[0], e);
             }
 
-            if (!uri.isAbsolute() || !"file".equals(uri.getScheme()))
+            if (!localURI.isAbsolute() || !"file".equals(localURI.getScheme()))
             {
-                throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + localFile);
+                throw new IllegalArgumentException("Invalid URI. Could not find serialized job file: " + localURI);
             }
 
-            File file = new File(uri);
+            File file = new File(localURI);
             if (!file.isFile())
             {
-                throw new IllegalArgumentException("Could not find serialized job file: " + localFile);
+                throw new IllegalArgumentException("Could not find serialized job file: " + localURI);
             }
 
             doSharedStartup(moduleFiles);
@@ -211,6 +208,14 @@ public class ClusterStartup extends AbstractPipelineStartup
         }
 
         @Test
+        public void testExtractOnly() throws IOException, InterruptedException
+        {
+            List<String> args = createArgs(null);
+            String output = executeJobRemote(args, 0);
+            Assert.assertTrue("Couldn't find logging", output.contains("Exploding module archives"));
+        }
+
+        @Test
         public void testBadPath() throws IOException, InterruptedException
         {
             DummyPipelineJob job = new DummyPipelineJob(JunitUtil.getTestContainer(), TestContext.get().getUser(), DummyPipelineJob.Worker.failure);
@@ -243,14 +248,8 @@ public class ClusterStartup extends AbstractPipelineStartup
         }
 
         @NotNull
-        private List<String> createArgs(PipelineJob job) throws IOException
+        private List<String> createArgs(@Nullable PipelineJob job) throws IOException
         {
-            // Serialize to a file
-            File serializedJob = new File(_tempDir, "job.json");
-            File log = new File(_tempDir, "job.log");
-            job.setLogFile(log);
-            job.writeToFile(serializedJob);
-
             List<String> args = new ArrayList<>();
             args.add(System.getProperty("java.home") + "/bin/java" + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""));
             File labkeyBootstrap = new File(new File(new File(System.getProperty("catalina.home")), "lib"), "labkeyBootstrap.jar");
@@ -262,7 +261,16 @@ public class ClusterStartup extends AbstractPipelineStartup
             args.add(ClusterBootstrap.class.getName());
             args.add("-webappdir=" + ModuleLoader.getServletContext().getRealPath(""));
 
-            args.add(serializedJob.toURI().toString());
+            if (job != null)
+            {
+                // Serialize to a file
+                File serializedJob = new File(_tempDir, "job.json");
+                File log = new File(_tempDir, "job.log");
+                job.setLogFile(log);
+                job.writeToFile(serializedJob);
+                args.add(serializedJob.toURI().toString());
+            }
+
             return args;
         }
     }
