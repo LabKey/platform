@@ -233,6 +233,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpDataClass getDataClass(@NotNull String lsid);
 
     /**
+     * Get a DataClass by RowId
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     */
+    ExpDataClass getDataClass(int rowId);
+
+    /**
      * Get materials with the given names, optionally within the provided sample set.
      * If the materials don't exist, throw an exception if <code>throwIfMissing</code> is true
      * or create new materials if <code>createIfMissing</code> is true, otherwise missing samples
