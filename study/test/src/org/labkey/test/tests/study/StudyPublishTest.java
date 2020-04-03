@@ -36,6 +36,7 @@ import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.QueryMetadataEditorPage;
 import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
@@ -1068,11 +1069,13 @@ public class StudyPublishTest extends StudyPHIExportTest
     private void setUnshiftedDateField(String dataset, String fieldName)
     {
         goToQueryView("study", dataset, true);
-        DomainDesignerPage designerPage = new DomainDesignerPage(getDriver());
-        designerPage.fieldsPanel().getField(fieldName).clickAdvancedSettings().enableExcludeDateShifting();
+        QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
+        designerPage.fieldsPanel()
+                .getField(fieldName)
+                .setDateShift(true).setDateShift(false); // TODO: 40106: UX Query Metadata Editor - doesn't look to be showing initial state as expected for various domain field row properties 
 
         designerPage.clickFinish();
-        waitForText("Save successful.");
+        waitForText("Save Successful");
     }
 
     private void goToQueryView(String schema, String query, boolean viewMetadata)

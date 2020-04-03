@@ -205,9 +205,6 @@ public class ListManagerSchema extends UserSchema
                 {
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
-                        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(ListManager.EXPERIMENTAL_GWT_LIST_DESIGNER);
-                        String text = !experimentalFlagEnabled ? "Design" : "View Design";
-
                         SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
                         {
                             @Override
@@ -216,7 +213,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink(text, designUrl));
+                                out.write(PageFlowUtil.textLink("Design", designUrl));
                             }
                         };
                         ret.add(designColumn);
