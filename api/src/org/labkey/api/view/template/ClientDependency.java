@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 
 /**
@@ -140,7 +141,7 @@ public abstract class ClientDependency
     @NotNull
     public static ClientDependency fromModule(Module m)
     {
-        //noinspection ConstantConditions
+        //noinspection
         return fromCache(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
@@ -162,21 +163,47 @@ public abstract class ClientDependency
         return set;
     }
 
+    @NotNull
+    public static Supplier<ClientDependency> supplierFromXML(DependencyType type)
+    {
+        if (null == type || null == type.getPath())
+            return () -> null;
+
+        if (type.isSetMode())
+            return supplierFromPath(type.getPath(), type.getMode());
+
+        return supplierFromPath(type.getPath(), ModeTypeEnum.BOTH);
+    }
+
+    @Deprecated // Callers are holding onto ClientDependencies, which could get stale. Instead, they should hold a supplier
+    // and dereference just in time.
     @Nullable
     public static ClientDependency fromXML(DependencyType type)
     {
-        if (null == type || null == type.getPath())
-            return null;
-
-        if (type.isSetMode())
-            return fromPath(type.getPath(), type.getMode());
-
-        return fromPath(type.getPath());
+        return supplierFromXML(type).get();
     }
 
     public static ClientDependency fromPath(String path)
     {
         return fromPath(path, ModeTypeEnum.BOTH);
+    }
+
+    public static Supplier<ClientDependency> supplierFromPath(String path, @NotNull ModeTypeEnum.Enum mode)
+    {
+        Supplier<ClientDependency> supplier;
+
+        if (isExternalDependency(path))
+        {
+            var dependency = new ExternalClientDependency(path, mode);
+            supplier = () -> dependency;
+        }
+        else
+        {
+            var pair = getPair(path, mode);
+            supplier = () -> fromCache(pair);
+        }
+
+        return supplier;
     }
 
     public static ClientDependency fromPath(String path, @NotNull ModeTypeEnum.Enum mode)
@@ -191,7 +218,7 @@ public abstract class ClientDependency
         return cd;
     }
 
-    protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable Pair<Path, ModeTypeEnum.Enum> getPair(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
         requestedPath = requestedPath.replaceAll("^/", "");
 
@@ -207,9 +234,22 @@ public abstract class ClientDependency
             return null;
         }
 
-        String key = getCacheKey(path.toString(), mode);
+        return Pair.of(path, mode);
+    }
 
-        return CACHE.get(key, Pair.of(path, mode), null);
+    protected static @NotNull ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    {
+        return fromCache(getPair(requestedPath, mode));
+    }
+
+    protected static @Nullable ClientDependency fromCache(@Nullable Pair<Path, ModeTypeEnum.Enum> pair)
+    {
+        return null != pair ? CACHE.get(getCacheKey(pair), pair, null) : null;
+    }
+
+    protected static String getCacheKey(@NotNull Pair<Path, ModeTypeEnum.Enum> pair)
+    {
+        return getCacheKey(pair.first.toString(), pair.second);
     }
 
     protected static String getCacheKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)

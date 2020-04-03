@@ -33,7 +33,10 @@ import org.labkey.clientLibrary.xml.RequiredModuleType;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Parses and holds dependencies from a LabKey client library (lib.xml) file, which typically reference multiple JS and/or CSS files.
@@ -43,7 +46,7 @@ public class LibClientDependency extends FilePathClientDependency
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
 
     private final Resource _resource;
-    private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
+    private final LinkedHashSet<Supplier<ClientDependency>> _suppliers = new LinkedHashSet<>();
 
     public LibClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r)
     {
@@ -55,7 +58,10 @@ public class LibClientDependency extends FilePathClientDependency
     @Override
     protected Set<ClientDependency> getUniqueDependencySet(Container c)
     {
-        return _children;
+        return _suppliers.stream()
+            .map(Supplier::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     @Override
@@ -77,11 +83,13 @@ public class LibClientDependency extends FilePathClientDependency
                 {
                     for (DependencyType s : dependencies.getDependencyArray())
                     {
-                        ClientDependency cd = fromXML(s);
-                        if (cd != null)
-                            _children.add(cd);
-                        else
-                            _log.error("Unable to load <dependencies> in library " + _filePath.getName());
+                        var supplier = supplierFromXML(s);
+                        _suppliers.add(() -> {
+                            var cd = supplier.get();
+                            if (null == cd)
+                                _log.error("Unable to load <dependencies> in library " + _filePath.getName());
+                            return cd;
+                        });
                     }
                 }
 
@@ -90,11 +98,15 @@ public class LibClientDependency extends FilePathClientDependency
                 {
                     for (RequiredModuleType mt : libDoc.getLibraries().getRequiredModuleContext().getModuleArray())
                     {
-                        Module m = ModuleLoader.getInstance().getModule(mt.getName());
-                        if (m == null)
+                        String moduleName = mt.getName();
+                        _suppliers.add(() -> {
+                            Module m = ModuleLoader.getInstance().getModule(moduleName);
+                            if (m != null)
+                                return ClientDependency.fromModule(m);
+
                             _log.error("Unable to find module: '" + mt.getName() + "' in library " + _filePath.getName());
-                        else
-                            _children.add(ClientDependency.fromModule(m));
+                            return null;
+                        });
                     }
                 }
 
@@ -110,18 +122,19 @@ public class LibClientDependency extends FilePathClientDependency
                     for (DependencyType s : library.getScriptArray())
                     {
                         ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                        ClientDependency cr = fromPath(s.getPath(), mode);
+                        var supplier = supplierFromPath(s.getPath(), mode);
+                        TYPE primaryType = supplier.get().getPrimaryType();
 
-                        if (!TYPE.lib.equals(cr.getPrimaryType()))
-                            _children.add(cr);
+                        if (TYPE.lib != primaryType)
+                            _suppliers.add(supplier);
                         else
                             _log.warn("Libraries cannot include other libraries: " + _filePath);
 
                         if (compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
                         {
-                            if (TYPE.js.equals(cr.getPrimaryType()))
+                            if (TYPE.js == primaryType)
                                 hasJsToCompile = true;
-                            if (TYPE.css.equals(cr.getPrimaryType()))
+                            if (TYPE.css == primaryType)
                                 hasCssToCompile = true;
                         }
                     }
@@ -130,13 +143,15 @@ public class LibClientDependency extends FilePathClientDependency
                     if (hasJsToCompile)
                     {
                         String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                        _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                        var pair = getPair(path, ModeTypeEnum.PRODUCTION);
+                        _suppliers.add(() -> fromCache(pair));
                     }
 
                     if (hasCssToCompile)
                     {
                         String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                        _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                        var pair = getPair(path, ModeTypeEnum.PRODUCTION);
+                        _suppliers.add(() -> fromCache(pair));
                     }
                 }
             }
