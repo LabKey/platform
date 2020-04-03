@@ -251,16 +251,16 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
 
 
     // Parent -> map(name->shortcut,index)
-    Map<Path,Map<String,Pair<Path,String>>> shortcuts = new HashMap<>();
+    private final Map<Path, Map<String, Pair<Path, String>>> shortcuts = new HashMap<>();
 
 
     @NotNull
-    public Map<String,Pair<Path,String>> getShortcuts(Path collection)
+    public Map<String, Pair<Path, String>> getShortcuts(Path collection)
     {
         synchronized (shortcuts)
         {
-            HashMap<String,Pair<Path,String>> ret = new HashMap<>();
-            Map<String,Pair<Path,String>> map = shortcuts.get(collection);
+            HashMap<String, Pair<Path, String>> ret = new HashMap<>();
+            Map<String, Pair<Path, String>> map = shortcuts.get(collection);
             if (null != map)
                 ret.putAll(map);
             return ret;
@@ -611,19 +611,29 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
         public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
         {
             if (isCollection())
-            {
-                File dir = getFile();
+                registerListener(getFile(), watcher, listener, events);
+        }
 
-                if (null != dir)
+        @SafeVarargs
+        @Override
+        public final void registerListenerOnParent(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+        {
+            if (null != getFile())
+                registerListener(getFile().getParentFile(), watcher, listener, events);
+        }
+
+        @SafeVarargs
+        private void registerListener(File dir, FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+        {
+            if (null != dir)
+            {
+                try
                 {
-                    try
-                    {
-                        watcher.addListener(dir.toPath(), listener, events);
-                    }
-                    catch (IOException e)
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
+                    watcher.addListener(dir.toPath(), listener, events);
+                }
+                catch (IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
             }
         }

@@ -120,12 +120,11 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
             return;
 
         String name = r.getName();
-        Resource parent = r.parent();
 
-        if (parent instanceof SupportsFileSystemWatcher)
+        if (r instanceof SupportsFileSystemWatcher)
         {
             //noinspection unchecked
-            ((SupportsFileSystemWatcher) parent).registerListener(FileSystemWatchers.get(), new FileSystemDirectoryListener()
+            ((SupportsFileSystemWatcher) r).registerListenerOnParent(FileSystemWatchers.get(), new FileSystemDirectoryListener()
             {
                 @Override
                 public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
