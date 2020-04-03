@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.43.0-fb-rungraph-lineage.1"
+    "@labkey/components": "0.44.0-fb-rungraph-lineage.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",

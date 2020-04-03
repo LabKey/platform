@@ -78,7 +78,7 @@
   },
   "dependencies": {
     "@labkey/api": "0.0.43",
-    "@labkey/components": "0.42.1",
+    "@labkey/components": "0.44.0-fb-rungraph-lineage.0",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },
