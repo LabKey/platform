@@ -174,6 +174,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                         _jobLog.debug("Skipping copy of file that was already copied as an expected output: " + workFile);
                         int attempts = 0;
                         boolean deleted = false;
+                        // Issue 40138 - large files not deleting immediately, so retry and log
                         while (workFile.exists() && attempts < 6)
                         {
                             if (attempts > 0)
@@ -551,6 +552,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         _jobLog.debug("discarding file: " + fileWork.getPath());
         ensureDescendant(fileWork);
         int attempts = 0;
+        // Issue 40138 - large files not deleting immediately, so retry and log
         while (fileWork.exists() && attempts < 6)
         {
             attempts++;
