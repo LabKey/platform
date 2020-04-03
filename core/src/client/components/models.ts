@@ -1,18 +1,5 @@
 
-type LabKey = {
-    defaultHeaders: any
-    devMode: boolean
-    container: any
-    contextPath: string
-    moduleContext: any
-    user: any
-    vis: any
-};
-
-/* App globals */
-declare const LABKEY: LabKey;
-
-interface AuthConfig {
+export interface AuthConfig {
     provider?: string;
     description?: string;
     details?: string;
@@ -20,7 +7,7 @@ interface AuthConfig {
     configuration?: number;
 }
 
-interface AuthConfigField {
+export interface AuthConfigField {
     defaultValue?: any;
     name?: string;
     caption: string;
@@ -30,7 +17,7 @@ interface AuthConfigField {
     options?: Record<string, string>;
 }
 
-interface AuthConfigProvider {
+export interface AuthConfigProvider {
     helpLink: string;
     saveLink: string;
     settingsFields: AuthConfigField[];
@@ -39,7 +26,7 @@ interface AuthConfigProvider {
     testLink?: string;
 }
 
-interface InputFieldProps {
+export interface InputFieldProps {
     defaultValue?: any;
     name?: string;
     caption: string;
@@ -52,17 +39,17 @@ interface InputFieldProps {
     key?: number;
 }
 
-interface DatabasePasswordRules {
+export interface DatabasePasswordRules {
     Weak: string;
     Strong: string;
 }
 
-interface DatabasePasswordSettings {
+export interface DatabasePasswordSettings {
     strength: string;
     expiration: string;
 }
 
-interface Actions {
+export interface Actions {
     onDragEnd: (result: {[key:string]: any}) => void;
     onDelete: (configuration: number, configType: string) => void;
     updateAuthRowsAfterSave: (config: string, configType: string) => void;

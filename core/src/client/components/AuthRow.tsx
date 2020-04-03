@@ -11,6 +11,7 @@ import {
 
 import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
+import { AuthConfig, AuthConfigProvider } from "./models";
 
 interface Props extends AuthConfig {
     index?: string;

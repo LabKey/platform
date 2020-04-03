@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
 import { ActionURL, Ajax } from '@labkey/api';
+import { AuthConfig, DatabasePasswordRules, DatabasePasswordSettings } from "./models";
 
 const OPTIONS_MAP = {
     Never: 'Never',

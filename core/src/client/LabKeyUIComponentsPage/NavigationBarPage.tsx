@@ -5,6 +5,7 @@
 import React from 'react'
 import { List, Map, fromJS } from 'immutable'
 import { AppURL, imageURL, LoadingSpinner, User, MenuSectionConfig, ProductMenuModel, NavigationBar } from "@labkey/components";
+import { getServerContext } from "@labkey/api";
 
 const PRODUCT_KEY = "sampleManager"; // TODO change this to a user select or input
 
@@ -78,12 +79,12 @@ export class  NavigationBarPage extends React.Component<any, State> {
         return (
             <NavigationBar
                 brand={<img src={brandIcon}  height="38px" width="38px"/>}
-                projectName={LABKEY.container.title}
+                projectName={getServerContext().container.title}
                 menuSectionConfigs={menuSectionConfigs}
                 model={model}
                 showSearchBox={true}
                 onSearch={this.onSearch}
-                user={new User(LABKEY.user)}
+                user={new User(getServerContext().user)}
             />
         )
     }
