@@ -377,7 +377,7 @@ public abstract class UploadSamplesHelper
                     if (isEmptyParent)
                     {
                         if (isMerge)
-                            parentDataTypesToRemove.add(parentValue);
+                            parentDataTypesToRemove.add(namePart);
                     }
                     else
                     {
@@ -408,21 +408,27 @@ public abstract class UploadSamplesHelper
             Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = ExperimentService.get().getParents(c, user, runItem);
             if (currentParents.first != null)
             {
+                Map<ExpData, String> existingParentData = new HashMap<>();
                 currentParents.first.forEach((dataParent) -> {
                     ExpDataClass dataClass = dataParent.getDataClass(user);
-                    if (dataClass != null && !parentData.containsValue(dataClass.getName()) && !parentDataTypesToRemove.contains(dataClass.getName()))
+                    String role = dataRole(dataParent, user);
+                    if (dataClass != null && !parentData.containsValue(role) && !parentDataTypesToRemove.contains(role))
                     {
-                        parentData.put(dataParent, dataRole(dataParent, user));
+                        existingParentData.put(dataParent, role);
                     }
                 });
+                parentData.putAll(existingParentData);
             }
             if (currentParents.second != null)
             {
+                Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
                 currentParents.second.forEach((materialParent) -> {
                     ExpSampleSet sampleSet = materialParent.getSampleSet();
-                    if (sampleSet != null && !parentMaterials.containsValue(sampleSet.getName()) && !parentSampleTypesToRemove.contains(sampleSet.getName()))
-                        parentMaterials.put(materialParent, sampleRole(materialParent));
+                    String role = sampleRole(materialParent);
+                    if (sampleSet != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
+                        existingParentMaterials.put(materialParent, role);
                 });
+                parentMaterials.putAll(existingParentMaterials);
             }
         }
 
