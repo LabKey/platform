@@ -341,7 +341,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
 
             if (trimmedValue == null)
             {
-                throw new IllegalArgumentException("Import parent alias cannot be blank, targeted parent may have been deleted.");
+                throw new IllegalArgumentException("You must specify a valid parent type for the import alias.");
             }
 
             if (reservedNames.contains(trimmedKey))

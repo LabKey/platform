@@ -1,0 +1,16 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <!--
+    <library> tag not declared!
+
+    Our gradle "compressClientLibs" task expects all resources in a <library>
+    to be available at the beginning of compilation. The files for @labkey/api
+    are copied from node_modules and are thus not available until after npm has been run.
+
+    The workaround is to declare the files as <dependencies> only.
+    -->
+    <dependencies>
+        <!-- @labkey/api - see core/package.json for version -->
+        <!-- This is copied into platform/core/web by platform/core/build.js -->
+        <dependency path="clientapi/labkey-api-js-core.min.js"/>
+    </dependencies>
+</libraries>

@@ -14,67 +14,65 @@
  * limitations under the License.
  */
 
-/* pipeline-0.00-10.10.sql */
+/* pipeline-0.00-10.20.sql */
 
 CREATE SCHEMA pipeline;
-GO
 
 CREATE TABLE pipeline.StatusFiles
 (
-    _ts TIMESTAMP,
+    _ts TIMESTAMP DEFAULT now(),
     CreatedBy USERID,
-    Created DATETIME DEFAULT GETDATE(),
+    Created TIMESTAMP DEFAULT now(),
     ModifiedBy USERID,
-    Modified DATETIME DEFAULT GETDATE(),
+    Modified TIMESTAMP DEFAULT now(),
 
     Container ENTITYID NOT NULL,
     EntityId ENTITYID NOT NULL,
 
-    RowId INT IDENTITY(1,1) NOT NULL,
-    Status NVARCHAR(100),
-    Info NVARCHAR(1024),
-    FilePath NVARCHAR(1024),
-    Email NVARCHAR(255),
+    RowId SERIAL,
+    Status VARCHAR(100),
+    Info VARCHAR(1024),
+    FilePath VARCHAR(1024),
+    Email VARCHAR(255),
 
-    Description NVARCHAR(255),
-    DataUrl NVARCHAR(1024),
-    Job UNIQUEIDENTIFIER,
-    Provider NVARCHAR(255),
-    HadError BIT NOT NULL DEFAULT 0,
+    Description VARCHAR(255),
+    DataUrl VARCHAR(1024),
+    Job VARCHAR(36),
+    Provider VARCHAR(255),
 
-    JobParent UNIQUEIDENTIFIER,
-    JobStore NTEXT,
-    ActiveTaskId NVARCHAR(255),
+    HadError BOOLEAN NOT NULL DEFAULT FALSE,
+    JobParent VARCHAR(36),
+    JobStore TEXT,
+    ActiveTaskId VARCHAR(255),
 
+    CONSTRAINT PK_StatusFiles PRIMARY KEY (RowId),
     CONSTRAINT FK_StatusFiles_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
     CONSTRAINT UQ_StatusFiles_FilePath UNIQUE (FilePath),
-    CONSTRAINT PK_StatusFiles PRIMARY KEY NONCLUSTERED (RowId),  -- Clustered on Container below
     CONSTRAINT UQ_StatusFiles_Job UNIQUE (Job),
     CONSTRAINT FK_StatusFiles_JobParent FOREIGN KEY (JobParent) REFERENCES pipeline.StatusFiles(Job)
 );
-CREATE CLUSTERED INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container ASC, JobParent ASC);
+CREATE INDEX IX_StatusFiles_Container_JobParent ON pipeline.StatusFiles (Container, JobParent);
 
 CREATE TABLE pipeline.PipelineRoots
 (
-    _ts TIMESTAMP,
+    _ts TIMESTAMP DEFAULT now(),
     CreatedBy USERID,
-    Created DATETIME DEFAULT GETDATE(),
+    Created TIMESTAMP DEFAULT now(),
     ModifiedBy USERID,
-    Modified DATETIME DEFAULT GETDATE(),
+    Modified TIMESTAMP DEFAULT now(),
 
     Container ENTITYID NOT NULL,
     EntityId ENTITYID NOT NULL,
 
-    PipelineRootId INT IDENTITY(1,1) NOT NULL,
-    Path NVARCHAR(300) NOT NULL,
+    PipelineRootId SERIAL,
+    Path VARCHAR(300) NOT NULL,
     Providers VARCHAR(100),
-    Type NVARCHAR(255) NOT NULL DEFAULT 'PRIMARY',
 
-    KeyBytes IMAGE,
-    CertBytes IMAGE,
-    KeyPassword NVARCHAR(32),
-
-    Searchable BIT NOT NULL DEFAULT 0,
+    KeyBytes BYTEA,
+    CertBytes BYTEA,
+    KeyPassword VARCHAR(32),
+    Type VARCHAR(255) NOT NULL DEFAULT 'PRIMARY',
+    Searchable BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT PK_PipelineRoots PRIMARY KEY (PipelineRootId)
 );
@@ -82,11 +80,11 @@ CREATE TABLE pipeline.PipelineRoots
 /* pipeline-10.20-10.30.sql */
 
 ALTER TABLE pipeline.PipelineRoots
-    ADD SupplementalPath NVARCHAR(300);
+    ADD SupplementalPath VARCHAR(300);
 
 /* pipeline-14.10-14.20.sql */
 
-ALTER TABLE pipeline.StatusFiles ADD ActiveHostName NVARCHAR(255) NULL;
+ALTER TABLE pipeline.StatusFiles ADD ActiveHostName VARCHAR(255) NULL;
 
 /* pipeline-15.30-16.10.sql */
 
@@ -106,22 +104,26 @@ ALTER TABLE pipeline.PipelineRoots ADD
 
 CREATE TABLE pipeline.TriggerConfigurations
 (
-  RowId INT IDENTITY(1, 1) NOT NULL,
+  RowId SERIAL NOT NULL,
   Container ENTITYID NOT NULL,
-  Created DATETIME,
+  Created TIMESTAMP,
   CreatedBy USERID,
-  Modified DATETIME,
+  Modified TIMESTAMP,
   ModifiedBy USERID,
 
-  Name NVARCHAR(255) NOT NULL,
-  Description NVARCHAR(MAX),
-  Type NVARCHAR(255) NOT NULL,
-  Enabled BIT,
-  Configuration NVARCHAR(MAX),
-  PipelineId NVARCHAR(255) NOT NULL,
-  LastChecked DATETIME,
+  Name VARCHAR(255) NOT NULL,
+  Description TEXT,
+  Type VARCHAR(255) NOT NULL,
+  Enabled BOOLEAN,
+  Configuration TEXT,
+  PipelineId VARCHAR(255) NOT NULL,
+  LastChecked TIMESTAMP,
 
   CONSTRAINT PK_TriggerConfigurations PRIMARY KEY (RowId),
   CONSTRAINT FK_TriggerConfigurations_Container FOREIGN KEY (Container) REFERENCES core.Containers (ENTITYID),
   CONSTRAINT UQ_TriggerConfigurations_Name UNIQUE (Container, Name)
 );
+
+/* pipeline-17.30-18.10.sql */
+
+ALTER TABLE pipeline.TriggerConfigurations ADD COLUMN customConfiguration TEXT;

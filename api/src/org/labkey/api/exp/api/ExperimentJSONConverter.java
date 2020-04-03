@@ -196,6 +196,12 @@ public class ExperimentJSONConverter
                 jsonObject.put(DATA_INPUTS, serializeRunInputs(inputApp.getDataInputs(), user, settings));
                 jsonObject.put(MATERIAL_INPUTS, serializeRunInputs(inputApp.getMaterialInputs(), user, settings));
             }
+            else
+            {
+                jsonObject.put(DATA_INPUTS, new JSONArray());
+                jsonObject.put(MATERIAL_INPUTS, new JSONArray());
+            }
+
 
             // Inputs into the final output step are outputs of the entire run
             ExpProtocolApplication outputApp = run.getOutputProtocolApplication();
@@ -203,6 +209,11 @@ public class ExperimentJSONConverter
             {
                 jsonObject.put(DATA_OUTPUTS, serializeRunDataOutputs(outputApp.getDataInputs(), user, settings));
                 jsonObject.put(MATERIAL_OUTPUTS, serializeRunInputs(outputApp.getMaterialInputs(), user, settings));
+            }
+            else
+            {
+                jsonObject.put(DATA_OUTPUTS, new JSONArray());
+                jsonObject.put(MATERIAL_OUTPUTS, new JSONArray());
             }
 
             serializeRunLevelProvenanceProperties(jsonObject, run);
@@ -298,7 +309,11 @@ public class ExperimentJSONConverter
                 throw new IllegalArgumentException("Unknown run input: " + runInput);
             }
 
-            json.put(ROLE, runInput.getRole());
+            // Workaround for Issue 40119: Only include "role" for materials for now.  Including "role" for
+            // ExpData will break ModuleAssayTransformTest due to the the old transform data file still being attached
+            // with the "ImportedData" role.
+            if (runInput instanceof ExpMaterialRunInput)
+                json.put(ROLE, runInput.getRole());
 
             if (settings.isIncludeProperties())
             {

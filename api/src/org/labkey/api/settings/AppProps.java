@@ -39,6 +39,7 @@ public interface AppProps
     AppProps _instance = new AppPropsImpl();
 
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
+    String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
