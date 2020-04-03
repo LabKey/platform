@@ -6,6 +6,7 @@ import { ActionURL, Ajax } from '@labkey/api';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput} from './DynamicFields';
+import { AuthConfigProvider } from "./models";
 
 interface Props {
     modalType?: AuthConfigProvider;

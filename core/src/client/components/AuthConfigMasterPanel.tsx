@@ -1,12 +1,10 @@
 import React, { PureComponent } from 'react';
-
 import { Panel, DropdownButton, MenuItem, Tab, Tabs } from 'react-bootstrap';
-
 import { LabelHelpTip } from '@labkey/components';
-
 import DragAndDropPane from './DragAndDropPane';
 import AuthRow from './AuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
+import { Actions, AuthConfig, AuthConfigProvider } from "./models";
 
 interface ViewOnlyAuthConfigRowsProps {
     data: AuthConfig[];

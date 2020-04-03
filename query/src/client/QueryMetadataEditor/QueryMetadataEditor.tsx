@@ -26,12 +26,12 @@ import {
     IBannerMessage,
     LoadingSpinner
 } from "@labkey/components";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, getServerContext} from "@labkey/api";
+import {AliasFieldModal} from "./components/AliaseFieldModal";
+import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
 import "@labkey/components/dist/components.css"
 import "./queryMetadataEditor.scss";
-import {AliasFieldModal} from "./components/AliaseFieldModal";
-import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
 interface IAppState {
     dirty: boolean,
@@ -183,7 +183,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName } = this.state;
 
         this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
+            window.location.href =  ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName});
         });
     };
 
@@ -230,7 +230,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName } = this.state;
 
         this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
+            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
         });
     };
 
