@@ -5,6 +5,7 @@ import { Ajax, ActionURL } from '@labkey/api';
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
+import { AuthConfig, AuthConfigProvider } from "../components/models";
 
 import "@labkey/components/dist/components.css"
 import './authenticationConfiguration.scss';

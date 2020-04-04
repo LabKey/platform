@@ -1,7 +1,7 @@
-import * as React from 'react';
+import React from 'react';
 import { Button, ButtonToolbar, Panel } from "react-bootstrap";
 import {Map, List, fromJS} from 'immutable';
-import {ActionURL, Security, Utils} from '@labkey/api'
+import {ActionURL, Security, Utils, getServerContext} from '@labkey/api'
 import {
     Alert,
     Cards,
@@ -56,7 +56,7 @@ export class App extends React.Component<Props, State> {
         super(props);
 
         this.state = {
-            user: new User(LABKEY.user),
+            user: new User(getServerContext().user),
             selected: undefined,
             assays: undefined,
             isSubmitting: false
