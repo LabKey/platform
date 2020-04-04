@@ -6697,7 +6697,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                return null;
+                throw new RuntimeException("Could not serialize request object");
             }
         }
 
@@ -6731,7 +6731,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                return null;
+                throw new RuntimeException("Could not serialize request object");
             }
         }
 
