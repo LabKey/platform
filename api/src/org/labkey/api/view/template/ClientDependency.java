@@ -34,13 +34,18 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
+import org.labkey.clientLibrary.xml.RequiredModuleType;
 
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -175,12 +180,77 @@ public abstract class ClientDependency
         return supplierFromPath(type.getPath(), ModeTypeEnum.BOTH);
     }
 
-    @Deprecated // Callers are holding onto ClientDependencies, which could get stale. Instead, they should hold a supplier
-    // and dereference just in time.
-    @Nullable
-    public static ClientDependency fromXML(DependencyType type)
+    /**
+     * Map an array of DependencyTypes (likely coming from a lib, html view, or module property XML file) to a set of client
+     * dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold onto suppliers
+     * not resolved ClientDependency objects.
+     * @param dependencyTypes An array of DependencyTypes
+     * @param name Name of the source of the module types, to provide useful error messages
+     * @return An ordered set of client dependency suppliers
+     */
+    public static Set<Supplier<ClientDependency>> getSuppliers(DependencyType[] dependencyTypes, String name)
     {
-        return supplierFromXML(type).get();
+        return Arrays.stream(dependencyTypes)
+            .map(dt->{
+                var supplier = supplierFromXML(dt);
+                return (Supplier<ClientDependency>) ()->{
+                    var cd = supplier.get();
+                    if (null == cd)
+                        LOG.error("Unable to load <dependency> in " + name);
+                    return cd;
+                };
+            })
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Map an array of RequiredModuleTypes (likely coming from a lib, html view, or module property XML file) to a set of client
+     * dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold onto suppliers
+     * not resolved ClientDependency objects.
+     * @param moduleTypes An array of RequireModuleTypes
+     * @param name Name of the source of the module types, to provide useful error messages
+     * @param moduleNameFilter A Predicate that allows for validation and filtering out unwanted modules
+     * @return An ordered set of client dependency suppliers
+     */
+    public static Set<Supplier<ClientDependency>> getSuppliers(RequiredModuleType[] moduleTypes, String name, Predicate<String> moduleNameFilter)
+    {
+        return Arrays.stream(moduleTypes)
+            .map(RequiredModuleType::getName)
+            .filter(moduleNameFilter)
+            .map(moduleName-> (Supplier<ClientDependency>) ()->{
+                Module m = ModuleLoader.getInstance().getModule(moduleName);
+                if (m != null)
+                    return ClientDependency.fromModule(m);
+
+                LOG.error("Unable to find module: '" + moduleName + "' referenced in " + name);
+                return null;
+            })
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /**
+     * Standard method for resolving a set of client dependency suppliers into a stream of ClientDependency objects.
+     * Invoke this at the point the dependencies are going to be rendered into a page.
+     * @param suppliers A set of client dependency suppliers
+     * @return A stream of ClientDependency objects
+     */
+    public static Stream<ClientDependency> getClientDependencyStream(Set<Supplier<ClientDependency>> suppliers)
+    {
+        return suppliers.stream()
+            .map(Supplier::get)
+            .filter(Objects::nonNull);
+    }
+
+    /**
+     * Standard method for resolving a set of client dependency suppliers into a set of ClientDependency objects.
+     * Invoke this at the point the dependencies are going to be rendered into a page.
+     * @param suppliers A set of client dependency suppliers
+     * @return A LinkedHashSet of ClientDependency objects
+     */
+    public static LinkedHashSet<ClientDependency> getClientDependencySet(Set<Supplier<ClientDependency>> suppliers)
+    {
+        return getClientDependencyStream(suppliers)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static ClientDependency fromPath(String path)
@@ -265,9 +335,9 @@ public abstract class ClientDependency
         return _primaryType;
     }
 
-    protected @NotNull Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected @NotNull Stream<ClientDependency> getDependencyStream(Container c)
     {
-        return Collections.emptySet();
+        return Stream.empty();
     }
 
     private @NotNull Set<String> getProductionScripts(Container c, TYPE type)
@@ -286,9 +356,9 @@ public abstract class ClientDependency
         if (_primaryType != null && _primaryType == type && path != null)
             scripts.add(path);
 
-        Set<ClientDependency> cd = getUniqueDependencySet(c);
-        for (ClientDependency r : cd)
-            scripts.addAll(function.apply(r));
+        getDependencyStream(c)
+            .map(function)
+            .forEach(scripts::addAll);
 
         return scripts;
     }
@@ -334,12 +404,10 @@ public abstract class ClientDependency
 
     public @NotNull Set<Module> getRequiredModuleContexts(Container c)
     {
-        Set<Module> modules = new HashSet<>();
-
-        for (ClientDependency r : getUniqueDependencySet(c))
-            modules.addAll(r.getRequiredModuleContexts(c));
-
-        return modules;
+        return getDependencyStream(c)
+            .map(cd->cd.getRequiredModuleContexts(c))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet());
     }
 
     @Override

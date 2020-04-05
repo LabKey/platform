@@ -19,24 +19,19 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
-import org.labkey.clientLibrary.xml.DependenciesType;
 import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.clientLibrary.xml.LibrariesDocument;
 import org.labkey.clientLibrary.xml.LibraryType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
-import org.labkey.clientLibrary.xml.RequiredModuleType;
 
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Parses and holds dependencies from a LabKey client library (lib.xml) file, which typically reference multiple JS and/or CSS files.
@@ -46,7 +41,7 @@ public class LibClientDependency extends FilePathClientDependency
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
 
     private final Resource _resource;
-    private final LinkedHashSet<Supplier<ClientDependency>> _suppliers = new LinkedHashSet<>();
+    private final Set<Supplier<ClientDependency>> _suppliers = new LinkedHashSet<>();
 
     public LibClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r)
     {
@@ -56,12 +51,9 @@ public class LibClientDependency extends FilePathClientDependency
 
     @NotNull
     @Override
-    protected Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected Stream<ClientDependency> getDependencyStream(Container c)
     {
-        return _suppliers.stream()
-            .map(Supplier::get)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+        return getClientDependencyStream(_suppliers);
     }
 
     @Override
@@ -78,37 +70,12 @@ public class LibClientDependency extends FilePathClientDependency
             if (libDoc != null && libDoc.getLibraries() != null)
             {
                 //dependencies first
-                DependenciesType dependencies = libDoc.getLibraries().getDependencies();
-                if (dependencies != null)
-                {
-                    for (DependencyType s : dependencies.getDependencyArray())
-                    {
-                        var supplier = supplierFromXML(s);
-                        _suppliers.add(() -> {
-                            var cd = supplier.get();
-                            if (null == cd)
-                                _log.error("Unable to load <dependencies> in library " + _filePath.getName());
-                            return cd;
-                        });
-                    }
-                }
+                if (libDoc.getLibraries().isSetDependencies())
+                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getDependencies().getDependencyArray(), _filePath.getName()));
 
                 //module contexts
                 if (libDoc.getLibraries().isSetRequiredModuleContext())
-                {
-                    for (RequiredModuleType mt : libDoc.getLibraries().getRequiredModuleContext().getModuleArray())
-                    {
-                        String moduleName = mt.getName();
-                        _suppliers.add(() -> {
-                            Module m = ModuleLoader.getInstance().getModule(moduleName);
-                            if (m != null)
-                                return ClientDependency.fromModule(m);
-
-                            _log.error("Unable to find module: '" + mt.getName() + "' in library " + _filePath.getName());
-                            return null;
-                        });
-                    }
-                }
+                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getRequiredModuleContext().getModuleArray(), _filePath.getName(), x->true));
 
                 LibraryType library = libDoc.getLibraries().getLibrary();
 
