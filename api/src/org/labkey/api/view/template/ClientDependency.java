@@ -181,9 +181,9 @@ public abstract class ClientDependency
     }
 
     /**
-     * Map an array of DependencyTypes (likely coming from a lib, html view, or module property XML file) to a set of client
-     * dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold onto suppliers
-     * not resolved ClientDependency objects.
+     * Map an array of DependencyTypes (likely coming from a lib, html view, report, or module property XML file) to a set
+     * of client dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold
+     * onto suppliers not resolved ClientDependency objects. #40118
      * @param dependencyTypes An array of DependencyTypes
      * @param name Name of the source of the module types, to provide useful error messages
      * @return An ordered set of client dependency suppliers
@@ -204,9 +204,9 @@ public abstract class ClientDependency
     }
 
     /**
-     * Map an array of RequiredModuleTypes (likely coming from a lib, html view, or module property XML file) to a set of client
-     * dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold onto suppliers
-     * not resolved ClientDependency objects.
+     * Map an array of RequiredModuleTypes (likely coming from a lib, html view, or module property XML file) to a set of
+     * client dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold
+     * onto suppliers not resolved ClientDependency objects. #40118
      * @param moduleTypes An array of RequireModuleTypes
      * @param name Name of the source of the module types, to provide useful error messages
      * @param moduleNameFilter A Predicate that allows for validation and filtering out unwanted modules
