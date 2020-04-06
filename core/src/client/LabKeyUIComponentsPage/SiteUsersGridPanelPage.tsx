@@ -3,7 +3,7 @@
  * any form or by any electronic or mechanical means without written permission from LabKey Corporation.
  */
 import React from 'react'
-import { Utils } from '@labkey/api'
+import { getServerContext, Utils } from '@labkey/api'
 import {
     Alert,
     LoadingSpinner,
@@ -39,7 +39,7 @@ class SiteUsersGridPanelPageImpl extends React.PureComponent<Props, State> {
     }
 
     componentDidMount() {
-        fetchContainerSecurityPolicy(LABKEY.container.id, this.props.principalsById)
+        fetchContainerSecurityPolicy(getServerContext().container.id, this.props.principalsById)
             .then((policy) => {
                 this.setState(() => ({loading: false, policy}));
             })

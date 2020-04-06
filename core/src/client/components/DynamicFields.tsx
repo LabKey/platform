@@ -2,9 +2,9 @@ import React, {PureComponent} from "react";
 import { FormControl } from 'react-bootstrap';
 import {FileAttachmentForm, LabelHelpTip} from "@labkey/components";
 import FACheckBox from "./FACheckBox";
+import { AuthConfigField, AuthConfigProvider, InputFieldProps } from "./models";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 import {faFileAlt} from "@fortawesome/free-solid-svg-icons";
-import {AuthConfigField, AuthConfigProvider, InputFieldProps} from "../AuthenticationConfiguration/models";
 
 interface TextInputProps extends InputFieldProps {
     requiredFieldEmpty?: boolean;

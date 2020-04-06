@@ -6,7 +6,7 @@ import { ActionURL, Ajax } from '@labkey/api';
 
 import { SSOFields } from './SSOFields';
 import { DynamicFields, TextInput} from './DynamicFields';
-import {AuthConfig, AuthConfigProvider} from "../AuthenticationConfiguration/models";
+import { AuthConfig, AuthConfigProvider } from "./models";
 
 interface Props {
     authConfig: AuthConfig;
@@ -29,7 +29,7 @@ export default class DynamicConfigurationModal extends PureComponent<Props, Part
         super(props);
 
         const {authConfig, modalType} = this.props;
-        const fieldValues = {} as any;
+        const fieldValues: any = {};
         this.props.modalType.settingsFields.forEach(field => {
             fieldValues[field.name] = field.name in this.props.authConfig ? this.props.authConfig[field.name] : field.defaultValue;
         });

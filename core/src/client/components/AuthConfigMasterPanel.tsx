@@ -1,14 +1,11 @@
 import React, { PureComponent } from 'react';
-
 import { Panel, DropdownButton, MenuItem, Tab, Tabs } from 'react-bootstrap';
-
 import { LabelHelpTip } from '@labkey/components';
-
 import DragAndDropPane from './DragAndDropPane';
 import AuthRow from './AuthRow';
 import DynamicConfigurationModal from './DynamicConfigurationModal';
+import { Actions, AuthConfig, AuthConfigProvider } from "./models";
 import {LOGIN_FORM_TIP_TEXT, SSO_TIP_TEXT} from "../AuthenticationConfiguration/constants";
-import {Actions, AuthConfig, AuthConfigProvider} from "../AuthenticationConfiguration/models";
 
 interface ViewOnlyAuthConfigRowsProps {
     data: AuthConfig[];

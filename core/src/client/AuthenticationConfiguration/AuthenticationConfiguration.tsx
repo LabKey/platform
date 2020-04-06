@@ -6,9 +6,9 @@ import { LoadingSpinner } from "@labkey/components";
 import GlobalSettings from '../components/GlobalSettings';
 import AuthConfigMasterPanel from '../components/AuthConfigMasterPanel';
 import { reorder, isEquivalent, addOrUpdateAnAuthConfig } from './utils';
+import {Actions, AuthConfig, AuthConfigProvider, GlobalSettingsOptions} from "../components/models";
 
 import "@labkey/components/dist/components.css"
-import {AuthConfig, AuthConfigProvider, Actions, GlobalSettingsOptions} from "./models";
 import './authenticationConfiguration.scss';
 
 interface State {

@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from 'react'
+import React from 'react'
 import {Panel} from "react-bootstrap";
-import {ActionURL, Security, Utils} from "@labkey/api";
+import {ActionURL, Security, Utils, getServerContext} from "@labkey/api";
 import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -61,7 +61,7 @@ export class App extends React.Component<any, State> {
 
         // query to find out if the user has permission to save assay designs
         Security.getUserPermissions({
-            containerPath: LABKEY.container.path,
+            containerPath: getServerContext().container.path,
             success: (data) => {
                 this.setState(() => ({
                     hasDesignAssayPerm: data.container.effectivePermissions.indexOf(PermissionTypes.DesignAssay) > -1
@@ -120,11 +120,11 @@ export class App extends React.Component<any, State> {
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('project', 'begin', LABKEY.container.path));
+        this.navigate(ActionURL.buildURL('project', 'begin', getServerContext().container.path));
     };
 
     onComplete = (model: AssayProtocolModel) => {
-        this.navigate(ActionURL.buildURL('assay', 'assayBegin', LABKEY.container.path, {rowId: model.protocolId}));
+        this.navigate(ActionURL.buildURL('assay', 'assayBegin', getServerContext().container.path, {rowId: model.protocolId}));
     };
 
     onChange = (model: AssayProtocolModel) => {
