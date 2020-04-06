@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -25,6 +26,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -33,16 +35,25 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.springframework.web.servlet.mvc.Controller;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * User: kevink
@@ -51,6 +62,8 @@ import java.util.List;
 public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> implements ExpDataClass
 {
     protected static final String NAMESPACE_PREFIX = "DataClass";
+    private static final String SEARCH_CATEGORY_NAME = "dataClass";
+    public static final SearchService.SearchCategory SEARCH_CATEGORY = new SearchService.SearchCategory(SEARCH_CATEGORY_NAME, "Collection of data objects");
 
     private Domain _domain;
 
@@ -60,6 +73,11 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public ExpDataClassImpl(DataClass dataClass)
     {
         super(dataClass);
+    }
+
+    public static List<ExpDataClassImpl> fromDataClasses(List<DataClass> dataClasses)
+    {
+        return dataClasses.stream().map((ExpDataClassImpl::new)).collect(Collectors.toList());
     }
 
     @Override
@@ -290,6 +308,84 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
         ActionURL ret = new ActionURL(actionClass, c);
         ret.addParameter("rowId", getRowId());
         return ret;
+    }
+
+    public void index(SearchService.IndexTask task)
+    {
+        if (task == null)
+        {
+            SearchService ss = SearchService.get();
+            if (null == ss)
+                return;
+            task = ss.defaultTask();
+        }
+
+        final SearchService.IndexTask indexTask = task;
+        final ExpDataClassImpl me = this;
+        indexTask.addRunnable(
+                () -> me.indexDataClass(indexTask)
+                , SearchService.PRIORITY.bulk
+        );
+    }
+
+    private void indexDataClass(SearchService.IndexTask indexTask)
+    {
+        ExperimentUrls urlProvider = PageFlowUtil.urlProvider(ExperimentUrls.class);
+        ActionURL url = null;
+
+        if (urlProvider != null)
+        {
+            url = urlProvider.getShowDataClassURL(getContainer(), getRowId());
+            url.setExtraPath(getContainer().getId());
+        }
+
+        Map<String, Object> props = new HashMap<>();
+        Set<String> identifiersHi = new HashSet<>();
+
+        // Name is identifier with highest weight
+        identifiersHi.add(getName());
+
+        props.put(SearchService.PROPERTY.categories.toString(), SEARCH_CATEGORY.toString());
+        props.put(SearchService.PROPERTY.title.toString(), getDocumentTitle());
+        props.put(SearchService.PROPERTY.summary.toString(), getDescription());
+
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Data Class Source");
+        props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
+
+        String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
+        SimpleDocumentResource sdr = new SimpleDocumentResource(new Path(getDocumentId()), getDocumentId(),
+                getContainer().getId(), "text/plain",
+                body, url,
+                getCreatedBy(), getCreated(),
+                getModifiedBy(), getModified(),
+                props)
+        {
+            @Override
+            public void setLastIndexed(long ms, long modified)
+            {
+                ExperimentServiceImpl.get().setDataClassLastIndexed(getRowId(), ms);
+            }
+        };
+
+        indexTask.addResource(sdr, SearchService.PRIORITY.item);
+    }
+
+    public String getDocumentTitle()
+    {
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(getCategory());
+        if (categoryType == ExpSchema.DataClassCategoryType.sources)
+            return "Source Type - " + getName();
+        else if (categoryType == ExpSchema.DataClassCategoryType.registry)
+            return "Registry - " + getName();
+        else if (categoryType == ExpSchema.DataClassCategoryType.media)
+            return "Media - " + getName();
+        else
+            return "Data Class - " + getName();
+    }
+
+    public String getDocumentId()
+    {
+        return SEARCH_CATEGORY_NAME + ":" + getRowId();
     }
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, Security, Domain } from "@labkey/api";
+import { ActionURL, Security, Domain, getServerContext } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -59,7 +59,7 @@ export class App extends React.Component<{}, State>
         const { listId } = this.state;
 
         Security.getUserPermissions({
-            containerPath: LABKEY.container.path,
+            containerPath: getServerContext().container.path,
             success: (data) => {
                 this.setState(() => ({
                     hasDesignListPermission: data.container.effectivePermissions.indexOf(PermissionTypes.DesignList) > -1
@@ -113,7 +113,7 @@ export class App extends React.Component<{}, State>
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('list', 'begin', LABKEY.container.path));
+        this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
     };
 
     onComplete = (model: ListModel, fileImportError?: string) => {
@@ -128,19 +128,19 @@ export class App extends React.Component<{}, State>
     navigateOnComplete(model: ListModel) {
         // if the model comes back to here without the newly saved listId, query to get it
         if (model.listId && model.listId > 0) {
-            this.navigate(ActionURL.buildURL('list', 'grid', LABKEY.container.path, {listId: model.listId}));
+            this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, {listId: model.listId}));
         }
         else {
             Domain.getDomainDetails({
-                containerPath: LABKEY.container.path,
+                containerPath: getServerContext().container.path,
                 domainId: model.domain.domainId,
                 success: (data) => {
                     const newModel = ListModel.create(data);
-                    this.navigate(ActionURL.buildURL('list', 'grid', LABKEY.container.path, {listId: newModel.listId}));
+                    this.navigate(ActionURL.buildURL('list', 'grid', getServerContext().container.path, {listId: newModel.listId}));
                 },
                 failure: (error) => {
                     // bail out and go to the list-begin page
-                    this.navigate(ActionURL.buildURL('list', 'begin', LABKEY.container.path));
+                    this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));
                 }
             });
         }

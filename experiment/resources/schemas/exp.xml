@@ -412,6 +412,11 @@
             <fkColumnName>category</fkColumnName>
         </fk>
       </column>
+        <column columnName="LastIndexed">
+            <description>Contains the time this data class was last updated in the search index</description>
+            <isUserEditable>false</isUserEditable>
+            <isHidden>true</isHidden>
+        </column>
     </columns>
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">
