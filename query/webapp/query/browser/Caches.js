@@ -173,7 +173,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         this.queries = undefined;
         this.currentContainer = undefined;
         this.totalContainers = 0;
-        this.containers = new Set();
+        this.containers = [];
     },
 
     getCacheKey : function(container, schemaName, queryName) {
@@ -233,7 +233,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         return this.queries[cacheKey];
     },
 
-    // hit's the server endpoint (premium only) to create the dependency graph
+    // hits the server endpoint (premium only) to create the dependency graph
     analyzeQueries : function(config) {
         function fixupJsonResponse(json, response, options, container) {
             var callback = LABKEY.Utils.getOnSuccess(config);
@@ -284,8 +284,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 }
             }
 
-            this.containers.delete(container);
-            if (this.containers.size === 0){
+            this.removeContainer(container);
+            if (this.containers.length === 0){
                 if (callback)
                     callback.call(this, {success:json.success, dependants:this.dependantsList, dependees:this.dependeesList}, response, options);
             }
@@ -294,8 +294,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
         // initialize class data structures
         this.dependantsList = [];
         this.dependeesList = [];
-        this.containers = new Set();
-        this.containers.add(config.containerPath || LABKEY.container.path);
+        this.containers = [];
+        this.containers.push(config.containerPath || LABKEY.container.path);
         let includeSubfolders = config.containerPath != null;
 
         // get the collection of container paths including child containers
@@ -311,8 +311,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                 }
 
                 // analyze queries for each container
-                this.totalContainers = this.containers.size;
-                for (let c of this.containers) {
+                this.totalContainers = this.containers.length;
+                Ext4.each(this.containers, function(c){
                     LABKEY.Ajax.request({
                         url: LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', c),
                         method: 'GET',
@@ -322,24 +322,31 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                         },
                         failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
                     });
-                }
+                }, this);
             },
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), this, true)
         });
     },
 
     addContainer : function(container) {
-        this.containers.add(container.path);
+        this.containers.push(container.path);
         Ext4.each(container.children, function(c){
             this.addContainer(c);
         }, this);
+    },
+
+    removeContainer : function(container) {
+        let idx = this.containers.indexOf(container);
+        if (idx != -1) {
+            this.containers.splice(idx, 1);
+        }
     },
 
     // return the current progress for this loader
     getProgress : function() {
         return {
             currentContainer: this.currentContainer,
-            progress: 1.0 - (this.containers.size / this.totalContainers)
+            progress: 1.0 - (this.containers.length / this.totalContainers)
         };
     }
 });
