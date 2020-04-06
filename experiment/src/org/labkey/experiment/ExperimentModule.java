@@ -93,6 +93,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -354,6 +355,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().registerAuditType(new DomainPropertyAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
+        AuditLogService.get().registerAuditType(new SampleTimelineAuditProvider());
 
         FileContentService fileContentService = FileContentService.get();
         if (null != fileContentService)
