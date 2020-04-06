@@ -674,12 +674,14 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         Set<String> identifiersMed = new HashSet<>();
         Set<String> identifiersLo = new HashSet<>();
 
+        StringBuilder body = new StringBuilder();
+
         // Name is an identifier with highest weight
         identifiersHi.add(getName());
 
         // Description is added as a keywordsLo -- in Biologics it is common for the description to
         // contain names of other DataClasses, e.g., "Mature desK of PS-10", which would will be tokenized as
-        // [mature, desk, ps, 10] if added it as a keyword so we lower it's priority to avoid useless results.
+        // [mature, desk, ps, 10] if added it as a keyword so we lower its priority to avoid useless results.
         // CONSIDER: tokenize the description and extract identifiers
         if (null != getDescription())
             keywordsLo.add(getDescription());
@@ -709,6 +711,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
+            body.append(dc.getName());
         }
 
 
@@ -754,7 +757,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 docId,
                 getContainer().getId(),
                 "text/plain",
-                null,
+                body.toString(),
                 view,
                 props,
                 getCreatedBy(),

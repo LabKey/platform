@@ -49,7 +49,7 @@ LABKEY.Experiment = new function()
 
     function _saveBatches(config, createExps)
     {
-        LABKEY.Ajax.request({
+        return LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
             method: 'POST',
             jsonData: {
@@ -147,7 +147,8 @@ LABKEY.Experiment = new function()
             {
                 throw "Either the runIds or the selectionKey config parameter is required.";
             }
-            LABKEY.Ajax.request(
+
+            return LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
@@ -192,7 +193,7 @@ LABKEY.Experiment.loadBatch({
                 return new LABKEY.Exp.RunGroup(json.batch);
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -244,7 +245,7 @@ LABKEY.Experiment.loadBatch({
                 return batches;
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatches", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -311,7 +312,7 @@ LABKEY.Experiment.loadBatch({
             if (config.includeRunSteps !== undefined)
                 jsonData.includeRunSteps = config.includeRunSteps;
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -390,11 +391,11 @@ LABKEY.Experiment.saveBatch({
          */
         saveBatch : function (config)
         {
-            _saveBatches(getSaveBatchesConfig(config), function(json) {
+            return _saveBatches(getSaveBatchesConfig(config), function(json) {
                 if (json.batches) {
                     return new LABKEY.Exp.RunGroup(json.batches[0])
                 }
-             });
+            });
         },
 
         saveRuns: function (config)
@@ -410,7 +411,7 @@ LABKEY.Experiment.saveBatch({
                 return runs;
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "saveAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -453,7 +454,7 @@ LABKEY.Experiment.saveBatch({
          */
         saveBatches : function (config)
         {
-            _saveBatches(getSaveBatchesConfig(config), function(json){
+            return _saveBatches(getSaveBatchesConfig(config), function(json) {
                 var batches = [];
                 if (json.batches) {
                     for (var i = 0; i < json.batches.length; i++) {
@@ -487,7 +488,7 @@ LABKEY.Experiment.saveBatch({
          */
         saveMaterials : function (config)
         {
-            LABKEY.Query.insertRows({
+            return LABKEY.Query.insertRows({
                 schemaName: 'Samples',
                 queryName: config.name,
                 rows: config.materials,
@@ -541,7 +542,7 @@ LABKEY.Experiment.saveBatch({
             if (config.cpasType)
                 params.cpasType = config.cpasType;
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL("experiment", "lineage.api"),
                 params: params,
@@ -585,7 +586,7 @@ LABKEY.Experiment.saveBatch({
             if (config.includeRunSteps !== undefined)
                 params.includeRunSteps = config.includeRunSteps;
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL("experiment", "resolve.api"),
                 params: params,

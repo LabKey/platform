@@ -19,5 +19,10 @@ module.exports = {
         title: 'Data Class Designer',
         permission: 'admin', // this is admin so that direct access to this view has highest level perm, see <View Action TBD> for main usage
         path: './src/client/DataClassDesigner'
+    },{
+        name: 'runGraph',
+        title: 'Experiment Run Graph',
+        path: './src/client/RunGraph',
+        generateViews: false // used by experimentRunGraphView.jsp
     }]
 };

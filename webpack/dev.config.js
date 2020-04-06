@@ -75,12 +75,6 @@ module.exports = {
     },
 
     plugins: [
-        // enable HMR globally
-        new webpack.HotModuleReplacementPlugin(),
-
-        // prints more readable modules names in the browser console on HMR updates
-        new webpack.NamedModulesPlugin(),
-
         // do not emit compiled assets that include errors
         new webpack.NoEmitOnErrorsPlugin()
     ]

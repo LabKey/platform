@@ -19,6 +19,11 @@ for (let i = 0; i < entryPoints.apps.length; i++) {
 
     entries[entryPoint.name] = entryPoint.path + '/app.tsx';
 
+    // Skip generation of module views for apps that do not need it
+    if (entryPoint.generateViews === false) {
+        continue;
+    }
+
     plugins = plugins.concat([
         new HtmlWebpackPlugin({
             inject: false,
