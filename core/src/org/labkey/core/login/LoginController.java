@@ -376,13 +376,6 @@ public class LoginController extends SpringActionController
         return false;
     }
 
-    public static boolean deauthenticate(User user, ViewContext context)
-    {
-        SecurityManager.logoutUser(context.getRequest(), user);
-
-        return true;
-    }
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -1399,7 +1392,8 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
-            return deauthenticate(getUser(), getViewContext());
+            SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
+            return true;
         }
 
         @Override
@@ -1448,7 +1442,8 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors)
         {
-            return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
+            SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
+            return new ApiSimpleResponse("success", true);
         }
     }
 
