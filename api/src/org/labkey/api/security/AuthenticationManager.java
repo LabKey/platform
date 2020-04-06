@@ -46,6 +46,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
@@ -94,7 +95,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -116,8 +116,6 @@ public class AuthenticationManager
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
-    // Map of user id to login provider. This is needed to handle clean up on logout.
-    private static final Map<Integer, PrimaryAuthenticationProvider<?>> _userProviders = new ConcurrentHashMap<>();
 
     public enum AuthLogoType
     {
@@ -895,7 +893,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getProvider().getName() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getConfiguration().getDescription() + ". Login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -916,7 +914,6 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        _userProviders.put(user.getUserId(), response.getProvider());  // TODO: This should go into session (handle in caller)!
         addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getProvider().getName() + " authentication.");
 
         return new PrimaryAuthenticationResult(user, response);
@@ -1049,25 +1046,35 @@ public class AuthenticationManager
     }
 
 
-    public static void logout(@NotNull User user, HttpServletRequest request)
+    public static URLHelper logout(@NotNull User user, HttpServletRequest request, URLHelper returnURL)
     {
-        PrimaryAuthenticationProvider<?> provider = _userProviders.get(user.getUserId());
+        URLHelper ret = null;
+        HttpSession session = request.getSession(false);
 
-        if (null != provider)
-            provider.logout(request);
-
-        if (!user.isGuest())
+        if (null != session && !user.isGuest())
         {
             // notify websocket clients associated with this http session, the user has logged out
-            HttpSession session = request.getSession(false);
             NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
 
             // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
-            if (session != null)
-                NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
+            NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
 
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
+
+            Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
+
+            if (null != configurationId)
+            {
+                PrimaryAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(PrimaryAuthenticationConfiguration.class, configurationId);
+
+                if (null != configuration)
+                {
+                    ret = configuration.logout(request, returnURL);
+                }
+            }
         }
+
+        return ret;
     }
 
 
@@ -1289,7 +1296,7 @@ public class AuthenticationManager
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         // Prep the new session and set the user attribute
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser, true);
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse().getConfiguration(), primaryAuthUser, true);
 
         if (session.isNew() && !primaryAuthUser.isGuest())
         {

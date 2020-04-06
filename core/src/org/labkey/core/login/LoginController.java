@@ -1384,6 +1384,8 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
+        private URLHelper _redirectURL = null;
+
         @Override
         public void validateCommand(ReturnUrlForm target, Errors errors)
         {
@@ -1392,14 +1394,14 @@ public class LoginController extends SpringActionController
         @Override
         public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
         {
-            SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
+            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), returnUrlForm.getReturnURLHelper());
             return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
+            return null != _redirectURL ? _redirectURL : form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
     }
 
@@ -1429,7 +1431,6 @@ public class LoginController extends SpringActionController
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
-
     }
 
 
@@ -1437,13 +1438,16 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class LogoutApiAction extends MutatingApiAction
+    public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
-        public Object execute(Object o, BindException errors)
+        public Object execute(ReturnUrlForm form, BindException errors)
         {
-            SecurityManager.logoutUser(getViewContext().getRequest(), getUser());
-            return new ApiSimpleResponse("success", true);
+            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper());
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            if (null != redirectURL)
+                response.put("redirectUrl", redirectURL);
+            return response;
         }
     }
 

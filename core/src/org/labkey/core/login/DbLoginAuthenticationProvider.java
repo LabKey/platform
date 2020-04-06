@@ -104,10 +104,10 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         User user = UserManager.getUser(email);
 
         if (null == hash || null == user)
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.userDoesNotExist);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.badPassword);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
 
         // Password is correct for this user; now check password rules and expiration.
 
@@ -116,7 +116,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         if (!rule.isValidForLogin(password, user, messages))
         {
-            return getChangePasswordResponse(user, returnURL, FailureReason.complexity);
+            return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
         }
         else
         {
@@ -124,11 +124,11 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
             if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
             {
-                return getChangePasswordResponse(user, returnURL, FailureReason.expired);
+                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
             }
         }
 
-        return AuthenticationResponse.createSuccessResponse(this, email);
+        return AuthenticationResponse.createSuccessResponse(configuration, email);
     }
 
     @Override
@@ -161,7 +161,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
-    private AuthenticationResponse getChangePasswordResponse(User user, URLHelper returnURL, FailureReason failureReason)
+    private AuthenticationResponse getChangePasswordResponse(DbLoginConfiguration configuration, User user, URLHelper returnURL, FailureReason failureReason)
     {
         ActionURL redirectURL = null;
 
@@ -191,6 +191,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
+        return AuthenticationResponse.createFailureResponse(configuration, failureReason, redirectURL);
     }
 }
