@@ -13,12 +13,10 @@ import DynamicConfigurationModal from './DynamicConfigurationModal';
 import DatabaseConfigurationModal from './DatabaseConfigurationModal';
 import { AuthConfig, AuthConfigProvider } from "./models";
 
-interface Props extends AuthConfig {
+interface Props{
+    authConfig: AuthConfig;
     index?: string;
     modalType?: AuthConfigProvider;
-    description?: string,
-    details?: string,
-    provider?: string,
     configType?: string;
     canEdit: boolean;
     draggable: boolean;
@@ -28,11 +26,11 @@ interface Props extends AuthConfig {
 }
 
 interface State {
-    editModalOpen?: boolean;
-    deleteModalOpen?: boolean;
+    editModalOpen: boolean;
+    deleteModalOpen: boolean;
 }
 
-export default class AuthRow extends PureComponent<Props, State> {
+export default class AuthRow extends PureComponent<Props, Partial<State>> {
     constructor(props) {
         super(props);
         this.state = {
@@ -48,12 +46,21 @@ export default class AuthRow extends PureComponent<Props, State> {
     };
 
     render() {
-        const { canEdit, draggable, provider, toggleModalOpen } = this.props;
-        const isDatabaseAuth = (provider == 'Database');
+        const {
+            authConfig,
+            modalType,
+            configType,
+            canEdit,
+            draggable,
+            toggleModalOpen,
+            updateAuthRowsAfterSave,
+            onDelete
+        } = this.props;
+        const isDatabaseAuth = authConfig.provider == 'Database';
 
         const handle = draggable && canEdit ? <LightupHandle /> : null;
 
-        const enabledField = this.props.enabled ? (
+        const enabledField = authConfig.enabled ? (
             <>
                 <FontAwesomeIcon icon={faCircle} color="#75B666" /> &nbsp; Enabled
             </>
@@ -96,14 +103,20 @@ export default class AuthRow extends PureComponent<Props, State> {
                     canEdit={canEdit}
                 />
         } else {
+
             modal =
                 <DynamicConfigurationModal
-                    {...this.props}
+                    authConfig={authConfig}
+                    configType={configType}
+                    modalType={modalType}
+                    canEdit={canEdit}
                     closeModal={() => {
                         this.onToggleModal("editModalOpen", this.state.editModalOpen);
-                        canEdit && toggleModalOpen(false);
+                        if (canEdit) {
+                            toggleModalOpen(false);
+                        }
                     }}
-                    updateAuthRowsAfterSave={this.props.updateAuthRowsAfterSave}
+                    updateAuthRowsAfterSave={updateAuthRowsAfterSave}
                 />
         }
 
@@ -116,12 +129,12 @@ export default class AuthRow extends PureComponent<Props, State> {
                 </Modal.Header>
                 <div className={"auth-row__delete-modal"}>
                     <div>
-                        {`Are you sure you want to delete authentication configuration ${this.props.description}?`}
+                        {`Are you sure you want to delete authentication configuration ${authConfig.description}?`}
                     </div>
 
                     <Button
                         className="labkey-button primary auth-row__confirm-delete"
-                        onClick={() => this.props.onDelete(this.props.configuration, this.props.configType)}
+                        onClick={onDelete}
                     >
                         Yes
                     </Button>
@@ -137,13 +150,13 @@ export default class AuthRow extends PureComponent<Props, State> {
                         <div className="domain-row-main">
                             <Col xs={9} className="domain-row-base-fields">
                                 <Col xs={4} className="description auth-row__field">
-                                    {this.props.description}
+                                    {authConfig.description}
                                 </Col>
                                 <Col xs={4} className="details auth-row__field">
-                                    {this.props.details}
+                                    {authConfig.details}
                                 </Col>
                                 <Col xs={3} className="provider auth-row__field">
-                                    {this.props.provider}
+                                    {authConfig.provider}
                                 </Col>
                             </Col>
 

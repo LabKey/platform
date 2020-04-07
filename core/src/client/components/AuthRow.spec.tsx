@@ -3,7 +3,7 @@ import React from 'react';
 import renderer from 'react-test-renderer';
 import { mount, shallow } from 'enzyme';
 
-import { CAS_MODAL_TYPE } from '../../../test/data';
+import { CAS_MODAL_TYPE, CAS_CONFIG } from '../../../test/data';
 
 import AuthRow from './AuthRow';
 
@@ -13,13 +13,14 @@ describe('<AuthRow/>', () => {
     beforeEach(() => {
         component = (
             <AuthRow
-                description="My Configuration Name"
-                details="Some Url"
-                provider="CAS"
-                enabled={true}
                 draggable={true}
-                modalType={CAS_MODAL_TYPE}
+                authConfig={CAS_CONFIG}
                 canEdit={true}
+                configType={"ssoConfigurations"}
+                modalType={CAS_MODAL_TYPE}
+                toggleModalOpen={jest.fn}
+                updateAuthRowsAfterSave={jest.fn}
+                onDelete={jest.fn}
             />
         );
     });

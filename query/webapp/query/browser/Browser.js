@@ -136,6 +136,17 @@ Ext4.define('LABKEY.query.browser.Browser', {
             scope: this
         }];
 
+        if (this.hasQueryAnalysisService && LABKEY.Security.currentUser.isSystemAdmin){
+            tbar.push({
+                xtype: 'querybutton',
+                text: 'Cross Folder Dependencies',
+                fontCls: 'fa-check-circle',
+                tooltip: 'Opens the cross folder tab where you can initiate a dependency check of queries across all folders on this server.',
+                handler: function() { this.showPanel('lk-cfd-panel'); },
+                scope: this
+            });
+        }
+
         if (LABKEY.Security.currentUser.isAdmin) {
             tbar.push({
                 xtype: 'querybutton',
@@ -509,6 +520,15 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
                     queryclick: browser.onLookupClick,
                     scope: browser
                 }
+            });
+        }
+        else if (tabId === 'lk-cfd-panel'){
+            panel = Ext4.create('LABKEY.query.browser.view.Dependencies', {
+                itemId: tabId,
+                closable: true,
+                parent: browser,
+                title: 'Cross Folder Dependencies',
+                cls: 'qbrowser-crossfolder' // tests
             });
         }
         else if (browser.qdpPrefix === tabId.substring(0, browser.qdpPrefix.length)) {
