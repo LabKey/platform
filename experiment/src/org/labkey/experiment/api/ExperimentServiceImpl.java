@@ -696,6 +696,15 @@ public class ExperimentServiceImpl implements ExperimentService
         return ExpDataImpl.fromDatas(new SqlSelector(getSchema(), sql).getArrayList(Data.class));
     }
 
+    public List<ExpDataClassImpl> getIndexableDataClasses(Container container, @Nullable Date modifiedSince)
+    {
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoDataClass() + " WHERE Container = ?").add(container.getId());
+        SQLFragment modifiedSQL = new SearchService.LastIndexedClause(getTinfoDataClass(), modifiedSince, null).toSQLFragment(null, null);
+        if (!modifiedSQL.isEmpty())
+            sql.append(" AND ").append(modifiedSQL);
+        return ExpDataClassImpl.fromDataClasses(new SqlSelector(getSchema(), sql).getArrayList(DataClass.class));
+    }
+
     public Collection<ExpSampleSetImpl> getIndexableSampleSets(Container container, @Nullable Date modifiedSince)
     {
         SQLFragment sql = new SQLFragment("SELECT * FROM " + getTinfoMaterialSource() + " WHERE Container = ?").add(container.getId());
@@ -708,6 +717,11 @@ public class ExperimentServiceImpl implements ExperimentService
     public void setDataLastIndexed(int rowId, long ms)
     {
         setLastIndexed(getTinfoData(), rowId, ms);
+    }
+
+    public void setDataClassLastIndexed(int rowId, long ms)
+    {
+        setLastIndexed(getTinfoDataClass(), rowId, ms);
     }
 
     public void setMaterialLastIndexed(int rowId, long ms)
@@ -745,27 +759,51 @@ public class ExperimentServiceImpl implements ExperimentService
             if (table == null)
                 return;
 
-            // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
-            SQLFragment sql = new SQLFragment()
-                    .append("SELECT * FROM ").append(getTinfoData(), "d")
-                    .append(", ").append(table, "t")
-                    .append(" WHERE t.lsid = d.lsid")
-                    .append(" AND d.classId = ?").add(dataClass.getRowId())
-                    .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
-                    .add(dataClass.getModified());
+            indexDataClass(dataClass, task);
+            indexDataClassData(dataClass, task);
 
-            new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(batch -> {
-                for (Data data : batch)
-                {
-                    ExpDataImpl impl = new ExpDataImpl(data);
-                    impl.index(task);
-                }
-            }, Data.class, 1000);
         };
 
         task.addRunnable(r, SearchService.PRIORITY.bulk);
     }
 
+    private void indexDataClassData(ExpDataClass dataClass, SearchService.IndexTask task)
+    {
+        TableInfo table = ((ExpDataClassImpl) dataClass).getTinfo();
+        // Index all ExpData that have never been indexed OR where either the ExpDataClass definition or ExpData itself has changed since last indexed
+        SQLFragment sql = new SQLFragment()
+                .append("SELECT * FROM ").append(getTinfoData(), "d")
+                .append(", ").append(table, "t")
+                .append(" WHERE t.lsid = d.lsid")
+                .append(" AND d.classId = ?").add(dataClass.getRowId())
+                .append(" AND (d.lastIndexed IS NULL OR d.lastIndexed < ? OR (d.modified IS NOT NULL AND d.lastIndexed < d.modified))")
+                .add(dataClass.getModified());
+
+        new SqlSelector(table.getSchema().getScope(), sql).forEachBatch(batch -> {
+            for (Data data : batch)
+            {
+                ExpDataImpl impl = new ExpDataImpl(data);
+                impl.index(task);
+            }
+        }, Data.class, 1000);
+    }
+
+    private void indexDataClass(ExpDataClass expDataClass, SearchService.IndexTask task)
+    {
+        // Index the data class if it has never been indexed OR it has changed since it was last indexed
+        SQLFragment sql = new SQLFragment("SELECT * FROM ")
+                .append(getTinfoDataClass(), "dc")
+                .append(" WHERE dc.LSID = ?").add(expDataClass.getLSID())
+                .append(" AND (dc.lastIndexed IS NULL OR dc.lastIndexed < ?)")
+                .add(expDataClass.getModified());
+
+        DataClass dClass = new SqlSelector(getExpSchema().getScope(), sql).getObject(DataClass.class);
+        if (dClass != null)
+        {
+            ExpDataClassImpl impl = new ExpDataClassImpl(dClass);
+            impl.index(task);
+        }
+    }
 
     @Override
     public ExpExperimentImpl getExpExperiment(int rowid)
@@ -1226,6 +1264,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     // Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+    @Override
     public ExpDataClassImpl getDataClass(int rowId)
     {
         DataClass dataClass = new TableSelector(getTinfoDataClass()).getObject(rowId, DataClass.class);
@@ -4812,7 +4851,7 @@ public class ExperimentServiceImpl implements ExperimentService
 
     public void deleteDataClass(int rowId, Container c, User user) throws ExperimentException
     {
-        ExpDataClass dataClass = getDataClass(rowId);
+        ExpDataClassImpl dataClass = getDataClass(rowId);
         if (null == dataClass)
         {
             // this can happen if the DataClass wasn't created completely
@@ -4846,6 +4885,16 @@ public class ExperimentServiceImpl implements ExperimentService
 
         SchemaKey expDataSchema = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME, ExpSchema.NestedSchemas.data.toString());
         QueryService.get().fireQueryDeleted(user, c, null, expDataSchema, singleton(dataClass.getName()));
+
+        // remove DataClass from search index
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            try (Timing t = MiniProfiler.step("search docs"))
+            {
+                ss.deleteResource(dataClass.getDocumentId());
+            }
+        }
     }
 
     private void deleteUnusedAliases()

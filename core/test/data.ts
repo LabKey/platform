@@ -317,8 +317,7 @@ export const PROVIDERS = [{
         "sso" : true
 }];
 
-export const PRIMARY_PROVIDERS = {
-    "CAS" : {
+export const PRIMARY_PROVIDERS = [{
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
         "saveLink" : "/labkey/casclient-casSaveConfiguration.view?",
         "settingsFields" : [ {
@@ -338,8 +337,7 @@ export const PRIMARY_PROVIDERS = {
         } ],
         "description" : "Central Authentication Service (CAS)",
         "sso" : true
-    },
-    "LDAP" : {
+    }, {
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configLdap",
         "saveLink" : "/labkey/ldap-ldapSaveConfiguration.view?",
         "settingsFields" : [ {
@@ -416,8 +414,7 @@ export const PRIMARY_PROVIDERS = {
         "description" : "Uses the LDAP protocol to authenticate against an institution's directory server",
         "testLink" : "/labkey/ldap-testLdap.view?",
         "sso" : false
-    },
-    "SAML" : {
+    }, {
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=saml",
         "saveLink" : "/labkey/saml-samlSaveConfiguration.view?",
         "settingsFields" : [ {
@@ -484,18 +481,16 @@ export const PRIMARY_PROVIDERS = {
         } ],
         "description" : "Acts as a service provider (SP) to authenticate against a SAML 2.0 Identity Provider (IdP)",
         "sso" : true
-    },
-    "TestSSO" : {
+    }, {
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
         "saveLink" : "/labkey/testsso-testSsoSaveConfiguration.view?",
         "settingsFields" : [ ],
         "description" : "A trivial, insecure SSO authentication provider (for test purposes only)",
         "sso" : true
     }
-};
+];
 
-export const SECONDARY_PROVIDERS = {
-    "Duo 2 Factor" : {
+export const SECONDARY_PROVIDERS = [{
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
         "saveLink" : "/labkey/duo-duoSaveConfiguration.view?",
         "settingsFields" : [ {
@@ -533,14 +528,13 @@ export const SECONDARY_PROVIDERS = {
             "required" : true
         } ],
         "description" : "Require two-factor authentication via Duo"
-    },
-    "TestSecondary" : {
+    }, {
         "helpLink" : "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule",
         "saveLink" : "/labkey/testsecondary-testSecondarySaveConfiguration.view?",
         "settingsFields" : [ ],
         "description" : "Adds a trivial, insecure secondary authentication requirement (for test purposes only)"
     }
-};
+];
 
 export const HELP_LINK = "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=authenticationModule";
 
@@ -548,4 +542,27 @@ export const GLOBAL_SETTINGS = {
     "SelfRegistration" : true,
     "SelfServiceEmailChanges" : false,
     "AutoCreateAccounts" : true
+};
+
+export const CAS_CONFIG = {
+    provider: "CAS",
+    configuration: 143,
+    headerLogoUrl: null,
+    loginLogoUrl: null,
+    serverUrl: "https://www.labkey.org/cas",
+    description: "CAS Configuration1",
+    details: "https://www.labkey.org/cas",
+    autoRedirect: false,
+    enabled: true
+};
+
+export const DUO_CONFIG = {
+    provider: "Duo 2 Factor",
+    configuration: 127,
+    userIdentifier: "UserID",
+    description: "Duo 2 Factor Configuration",
+    details: "Api HostName",
+    apiHostname: "Api HostName",
+    enabled: false,
+    integrationKey: "Key1",
 };

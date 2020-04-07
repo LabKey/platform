@@ -12,6 +12,7 @@ import {
     PermissionsProviderProps,
     SecurityPolicy
 } from "@labkey/components";
+import { getServerContext } from "@labkey/api";
 
 type Props = PermissionsProviderProps;
 
@@ -40,7 +41,7 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<Props, State> {
     }
 
     loadSecurityPolicy() {
-        fetchContainerSecurityPolicy(LABKEY.container.id, this.props.principalsById)
+        fetchContainerSecurityPolicy(getServerContext().container.id, this.props.principalsById)
             .then((policy) => {
                 this.setState(() => ({loading: false, policy}));
             })
@@ -79,7 +80,7 @@ class PermissionAssignmentsPageImpl extends React.PureComponent<Props, State> {
                 <PermissionAssignments
                     {...this.props}
                     {...this.state}
-                    containerId={LABKEY.container.id}
+                    containerId={getServerContext().container.id}
                     onChange={this.onChange}
                     onSuccess={this.onSuccess}
                 />

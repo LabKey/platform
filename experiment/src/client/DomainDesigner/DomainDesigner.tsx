@@ -16,11 +16,10 @@
 
 import React from 'react'
 import {Button, Panel} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
+import { ActionURL, getServerContext } from "@labkey/api";
 import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain} from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
-import "./domainDesigner.scss";
 
 interface IAppState {
     dirty: boolean
@@ -164,7 +163,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
         });
     };
 
@@ -191,7 +190,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         });
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
-        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+        const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';
         const suggestion = (
             <p>
                 See the following documentation page for further details: <br/>
