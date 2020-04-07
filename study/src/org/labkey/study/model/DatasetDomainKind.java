@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.BaseColumnInfo;
@@ -25,6 +26,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
@@ -42,10 +44,10 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.security.SettingsField;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Dataset;
@@ -53,13 +55,12 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
-import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.assay.AssayPublishManager;
-import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.StudyQuerySchema;
@@ -73,6 +74,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.labkey.study.controllers.BaseStudyController.getStudy;
 
 /**
  * User: matthewb
@@ -168,6 +171,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     abstract public String getKindName();
 
+    @Override
+    public Class<DatasetDomainKindProperties> getTypeClass()
+    {
+        return DatasetDomainKindProperties.class;
+    }
     
     public String getTypeLabel(Domain domain)
     {
@@ -324,7 +332,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return container.hasPermission(user, AdminPermission.class);
     }
 
-    @Override
     public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user,
         @Nullable TemplateInfo templateInfo)
     {
@@ -446,7 +453,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     // todo rp: should these two helper functions be moved somewhere else?
-    private ValidationException checkCanUpdate(Dataset ds, ValidationException exception, Container container, int datasetId, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
+    private ValidationException checkCanUpdate(Dataset ds, ValidationException exception, Container container, User user,
+                                               GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         if (!container.hasPermission(user, AdminPermission.class))
             return exception.addGlobalError("Unauthorized");
@@ -455,13 +463,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == study)
             return exception.addGlobalError("Study not found in current container");
 
-        DatasetDefinition def = (DatasetDefinition)study.getDataset(datasetId);
+        DatasetDefinition def = (DatasetDefinition)study.getDataset(ds.getDatasetId());
         if (null == def)
             return exception.addGlobalError("Dataset not found");
 
         if (!def.canUpdateDefinition(user))
-            return exception.addGlobalError("Shared dataset can not be edited in this folder.");
-
+            return exception.addGlobalError("Shared dataset can not be edited in this folder");
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
         if (null == d)
@@ -474,88 +481,181 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return exception;
     }
 
+    private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                       Container container, User user, DatasetDefinition def)
+    {
+        ValidationException exception = new ValidationException();
+        if (def == null)
+            exception.addGlobalError("Could not find dataset: " + original.getName());
+
+        try
+        {
+            List<String> allErrors = DomainUtil.updateDomainDescriptor(original, update, container, user).getAllErrors();
+            for (String str : allErrors) {
+                exception.addGlobalError(str);
+            }
+            return exception;
+        }
+        finally
+        {
+            StudyManager.getInstance().uncache(def);
+        }
+    }
+
+    // getdomainkindproperties (or something) should exist here and is the analogy to DatasetServiceImpl.getDataset
+
 //  in progress
-//    private ValidationException updateDataset(Dataset ds, String domainURI)
-//    {
-//        try
-//        {
-//            DatasetDefinition def = ds
-//
-//        }
-//    }
+    private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def)
+    {
+        try
+        {
+            if (null == def)
+                return exception.addGlobalError("Dataset not found");
+
+            // Q: So, I believe the original is validating for, if isDemoData has been toggled on, the ds obeys the constraints of demo ds.
+            // RP Q: Do we have the old isDemoData in def?
+            if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
+            {
+                return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
+                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
+            }
+
+            if (datasetProperties.isDemographicData())
+            {
+                datasetProperties.setKeyPropertyName(null);
+                datasetProperties.setKeyPropertyManaged(false);
+            }
+
+            /* IGNORE illegal shareDataset values */
+            if (!study.getShareVisitDefinitions())
+                datasetProperties.setDataSharing("NONE");
+
+            // Default is no key management
+            Dataset.KeyManagementType keyType = Dataset.KeyManagementType.None;
+            String keyPropertyName = null;
+            boolean useTimeKeyField = false;
+
+            DatasetDefinition updated = def.createMutable();
+            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
+            updated.setCategoryId(null);
+
+            // Use Time as Key Field
+            if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
+            {
+                datasetProperties.setKeyPropertyName(null);
+                useTimeKeyField = true;
+            }
+            // RP temp notes: copy everything from datasetProperties into updated. Maybe ask if there's a helper for this
+            BeanUtils.copyProperties(updated, datasetProperties);
+
+            if (datasetProperties.getKeyPropertyName() != null)
+            {
+                Domain domain = PropertyService.get().getDomain(container, domainURI);
+
+                // RP Q: how to guard against this nullpointer?
+                for (DomainProperty dp : domain.getProperties())
+                {
+                    if (dp.getName().equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
+                    {
+                        keyPropertyName = dp.getName();
+                        // Be sure that the user really wants a managed key, not just that disabled select box still had a value
+
+                        if (datasetProperties.isKeyPropertyManaged())
+                        {
+                            keyType = Dataset.KeyManagementType.getManagementTypeFromProp(dp.getPropertyDescriptor().getPropertyType());
+                        }
+                        break;
+                    }
+                }
+            }
+            updated.setKeyPropertyName(keyPropertyName);
+            updated.setKeyManagementType(keyType);
+            updated.setUseTimeKeyField(useTimeKeyField);
+
+            if (!def.getLabel().equals(updated.getLabel()))
+            {
+                Dataset existing = studyManager.getDatasetDefinitionByLabel(study, updated.getLabel());
+                if (existing != null && existing.getDatasetId() != datasetProperties.getDatasetId())
+                    return exception.addGlobalError("A Dataset or Query already exists with the name \"" + updated.getName() +"\"");
+            }
+
+            if (!def.getName().equals(updated.getName()))
+            {
+                // issue 17766: check if dataset or query exist with this name
+                Dataset existing = studyManager.getDatasetDefinitionByName(study, updated.getName());
+                if ((null != existing && existing.getDatasetId() != datasetProperties.getDatasetId())
+                        || null != QueryService.get().getQueryDef(user, container, "study", updated.getName()))
+                {
+                    return exception.addGlobalError("A Dataset or Query already exists with the name \"" + updated.getName() +"\"");
+                }
+            }
+
+            List<String> errors = new ArrayList<>();
+            studyManager.updateDatasetDefinition(user, updated, errors);
+            for (String errorMsg: errors)
+            {
+                exception.addGlobalError(errorMsg);  // RP TODO: will have to see what these errors are. Perhaps globalError will be inappropriate
+            }
+
+            return exception;
+        }
+        catch (RuntimeSQLException e)
+        {
+            return exception.addGlobalError("Additional key column must have unique values.");
+        }
+        catch (Exception x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
+    }
 
     @Override
     public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                             DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
-        ValidationException exception;
+        ValidationException exception = new ValidationException();
 
+        // RP Q: how to do null checks for this scenario? Where is the potential null happening, if the .get() is unsuccessful..?
         int datasetId = StudyService.get().getDatasetIdByName(container, original.getName());
-        Dataset ds = StudyService.get().getDataset(container, datasetId);
 
-        // temp notes: error checking -- from checkCanUpdate and updateDatasetDefinition
-        exception = new ValidationException();
-        if (checkCanUpdate(ds, exception, container, datasetId, user, original, update).hasGlobalErrors())
+        // RP TODO: Some of these initializations may error out. You should check for them and add to exception.
+        DatasetDefinition def = new DatasetDefinition(getStudy(container), datasetId);
+//        RP Q: Below adds check, but this wouldn't address the potential nullpointer that is flagged
+//        if (datasetId == -1)
+//            return exception.addGlobalError("Something to the effect that a dataset of that name does not exist here?");
+        StudyImpl study = new StudyImpl(container, container.getTitle());
+        StudyManager studyManager = new StudyManager();
+
+        if (checkCanUpdate(def, exception, container, user, original, update).hasGlobalErrors())
             return exception;
 
+        // Temp note RP: comment carried over from DatasetServiceImpl.java
         // Remove any fields that are duplicates of the default dataset fields.
         // e.g. participantid, etc.
 
         List<? extends GWTPropertyDescriptor> updatedProps = update.getFields();
-
         for (Iterator<? extends GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
         {
-            // in progress
-//            GWTPropertyDescriptor prop = iter.next();
-//            if (DatasetDefinition.isDefaultFieldName(prop.getName(), study)) // oh boy
-//                iter.remove();
-//            else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
-//                prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
+            GWTPropertyDescriptor prop = iter.next();
+            if (DatasetDefinition.isDefaultFieldName(prop.getName(), study))
+                iter.remove();
+            else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
+                prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
         }
-//        update.setFields(updatedProps); // oh boy
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
-            if (ds instanceof DatasetDefinition)
+            exception = updateDomainDescriptor(original, update, container, user, def);
+            if (!exception.hasErrors())
             {
-                //
-                DatasetDefinition dsd = (DatasetDefinition) ds;
-
-//                if (!exception.hasErrors())
-//                    ds.getSt
-//
-//                DatasetDefinition def =
-//
-//                transaction.commit();
-
+                // RP Q: This feels like a lot of params. Should I be putting some in the instance variables, like DatasetServiceImpl does?
+                exception = updateDataset(datasetProperties, original.getDomainURI(), exception, studyManager, study, container, user, def);
+                if (!exception.hasErrors())
+                    transaction.commit();
             }
-
-
-            return exception;
         }
-
-
-
-
-
-
-
-        // DatasetServiceImpl datasetService = new DatasetServiceImpl()
-
-
-
-
-        // check for errors. Can use ListDomainKind.updateDomain() and ExperimentServiceImp.updateDataClass() as examples for errors to catch.
-        // if there are any errors, return the exception instead of continuing with save.
-
-        // update properties -- if it's not null, pass to an updateDatasetProperties helper function, which will fetch the existing properties from the table,
-        // merge the properties to obtain the updated ListDomainKindProperties, and then call DatasetManager's update(). (Use ListManager.update as example)
-
-        // update domain design. List has example in ListDomainKind, line 511. Don't really understand how it's happening in Dataclass, while looking at updateDataClass()
-
-
-
+        return exception;
     }
 
     @Override

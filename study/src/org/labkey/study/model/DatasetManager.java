@@ -61,11 +61,11 @@ public class DatasetManager
 
 //             create DatasetDomainKindProperties from what is found
             StudyImpl study = StudyManager.getInstance().getStudy(container);
-            Dataset fuck = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
 
 
-            return new DatasetDomainKindProperties(fuck);
+            return new DatasetDomainKindProperties(ds);
         }
 
     }

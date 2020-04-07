@@ -14,7 +14,7 @@ public class DatasetDomainKindProperties
     protected String _typeURI;
     protected String _visitDatePropertyName;
     protected String _keyPropertyName;
-    protected Dataset.KeyManagementType _keyPropertyManaged;
+    protected Boolean _keyPropertyManaged;
     protected boolean _isDemographicData;
     protected int _cohortId;
     protected String _tag;
@@ -23,10 +23,14 @@ public class DatasetDomainKindProperties
     protected String _sourceAssayUrl;
     protected String _dataSharing; // todo RP: to finalize
 
+    // read-only
+    public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
+
     public DatasetDomainKindProperties()
     {
     }
 
+    // wait. Do I need this at all?
     public DatasetDomainKindProperties(Dataset ds)
     {
         _datasetId = ds.getDatasetId();
@@ -35,24 +39,18 @@ public class DatasetDomainKindProperties
         _category = ds.getViewCategory();
         _label = ds.getLabel();
         _typeURI = ds.getTypeURI();
-        _visitDatePropertyName = ds.getKeyPropertyName(); // Check if this is correct
         _keyPropertyName = ds.getKeyPropertyName();
-        _keyPropertyManaged = ds.getKeyManagementType(); // what is this?
         _isDemographicData = ds.isDemographicData();
+        _cohortId = ds.getCohortId();
 
-        _cohortId = 1;
-        _tag = ""; // what is this?
-        _showByDefault = true; // make this
-        _sourceAssayName = "name";
-        _sourceAssayUrl = "url";
-        _dataSharing = "whelp";
-
-//        _cohortId = ds.getCohortId();
-//        _tag = ds._tag; // what is this?
-//        _showByDefault = ds._showByDefault; // make this
-//        _sourceAssayName = ds._sourceAssayName;
-//        _sourceAssayUrl = ds._sourceAssayUrl;
-//        _dataSharing = ds.getData;
+        // RP TODO: Have to figure out these, because they don't come from ds. Pending understanding of what this constructor is for
+        _visitDatePropertyName = "";
+        _keyPropertyManaged = false;
+        _tag = "";
+        _showByDefault = true;
+        _sourceAssayName = "";
+        _sourceAssayUrl = "";
+        _dataSharing = "";
     }
 
     public int getDatasetId()
@@ -135,12 +133,12 @@ public class DatasetDomainKindProperties
         _keyPropertyName = keyPropertyName;
     }
 
-    public Dataset.KeyManagementType isKeyPropertyManaged()
+    public boolean isKeyPropertyManaged()
     {
         return _keyPropertyManaged;
     }
 
-    public void setKeyPropertyManaged(Dataset.KeyManagementType keyPropertyManaged)
+    public void setKeyPropertyManaged(Boolean keyPropertyManaged)
     {
         _keyPropertyManaged = keyPropertyManaged;
     }
