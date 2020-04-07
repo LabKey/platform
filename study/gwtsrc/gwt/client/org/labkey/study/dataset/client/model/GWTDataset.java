@@ -35,7 +35,7 @@ public class GWTDataset implements IsSerializable
     private StringProperty _typeURI = new StringProperty();
     private StringProperty _category = new StringProperty();
     private StringProperty _visitDatePropertyName = new StringProperty();
-    private StringProperty _keyPropertyName = new StringProperty();oDCDKP
+    private StringProperty _keyPropertyName = new StringProperty();
     private BooleanProperty _keyPropertyManaged = new BooleanProperty();
     private BooleanProperty _isDemographicData = new BooleanProperty();
     private StringProperty _label = new StringProperty();
