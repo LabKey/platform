@@ -51,9 +51,9 @@ public class LibClientDependency extends FilePathClientDependency
 
     @NotNull
     @Override
-    protected Stream<ClientDependency> getDependencyStream(Container c)
+    protected Stream<Supplier<ClientDependency>> getDependencyStream(Container c)
     {
-        return getClientDependencyStream(_suppliers);
+        return _suppliers.stream();
     }
 
     @Override

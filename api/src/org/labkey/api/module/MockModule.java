@@ -49,6 +49,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * A module that does nothing. Used for unit and integration tests.
@@ -463,7 +464,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c)
+    public @NotNull LinkedHashSet<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
         return new LinkedHashSet<>();
     }

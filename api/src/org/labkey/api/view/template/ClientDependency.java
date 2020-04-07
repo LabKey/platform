@@ -38,7 +38,9 @@ import org.labkey.clientLibrary.xml.RequiredModuleType;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -133,14 +135,35 @@ public abstract class ClientDependency
     @NotNull
     public static ClientDependency fromModuleName(String mn)
     {
+        Module m = getModule(mn);
+
+        return ClientDependency.fromModule(m);
+    }
+
+    @NotNull
+    public static Supplier<ClientDependency> supplierFromModuleName(String mn)
+    {
+        Module m = getModule(mn);
+
+        return ClientDependency.supplierFromModule(m);
+    }
+
+    @NotNull
+    private static Module getModule(String mn)
+    {
         Module m = ModuleLoader.getInstance().getModule(mn);
 
         if (m == null)
         {
             throw new IllegalArgumentException("Module '" + mn + "' not found, unable to create client resource");
         }
+        return m;
+    }
 
-        return ClientDependency.fromModule(m);
+    @NotNull
+    public static Supplier<ClientDependency> supplierFromModule(Module m)
+    {
+        return supplierFromPath(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
     @NotNull
@@ -234,7 +257,7 @@ public abstract class ClientDependency
      * @param suppliers A set of client dependency suppliers
      * @return A stream of ClientDependency objects
      */
-    public static Stream<ClientDependency> getClientDependencyStream(Set<Supplier<ClientDependency>> suppliers)
+    public static Stream<ClientDependency> getClientDependencyStream(List<Supplier<ClientDependency>> suppliers)
     {
         return suppliers.stream()
             .map(Supplier::get)
@@ -247,7 +270,7 @@ public abstract class ClientDependency
      * @param suppliers A set of client dependency suppliers
      * @return A LinkedHashSet of ClientDependency objects
      */
-    public static LinkedHashSet<ClientDependency> getClientDependencySet(Set<Supplier<ClientDependency>> suppliers)
+    public static LinkedHashSet<ClientDependency> getClientDependencySet(List<Supplier<ClientDependency>> suppliers)
     {
         return getClientDependencyStream(suppliers)
             .collect(Collectors.toCollection(LinkedHashSet::new));
@@ -256,6 +279,11 @@ public abstract class ClientDependency
     public static ClientDependency fromPath(String path)
     {
         return fromPath(path, ModeTypeEnum.BOTH);
+    }
+
+    public static Supplier<ClientDependency> supplierFromPath(String path)
+    {
+        return supplierFromPath(path, ModeTypeEnum.BOTH);
     }
 
     public static Supplier<ClientDependency> supplierFromPath(String path, @NotNull ModeTypeEnum.Enum mode)
@@ -335,22 +363,22 @@ public abstract class ClientDependency
         return _primaryType;
     }
 
-    protected @NotNull Stream<ClientDependency> getDependencyStream(Container c)
+    protected @NotNull Stream<Supplier<ClientDependency>> getDependencyStream(Container c)
     {
         return Stream.empty();
     }
 
     private @NotNull Set<String> getProductionScripts(Container c, TYPE type)
     {
-        return getScripts(c, type, _prodModePath, cd -> cd.getProductionScripts(c, type));
+        return getScripts(c, type, _prodModePath, cd -> cd.get().getProductionScripts(c, type));
     }
 
     private @NotNull Set<String> getDevModeScripts(Container c, TYPE type)
     {
-        return getScripts(c, type, _devModePath, cd -> cd.getDevModeScripts(c, type));
+        return getScripts(c, type, _devModePath, cd -> cd.get().getDevModeScripts(c, type));
     }
 
-    private @NotNull Set<String> getScripts(Container c, TYPE type, String path, Function<ClientDependency, Set<String>> function)
+    private @NotNull Set<String> getScripts(Container c, TYPE type, String path, Function<Supplier<ClientDependency>, Set<String>> function)
     {
         Set<String> scripts = new LinkedHashSet<>();
         if (_primaryType != null && _primaryType == type && path != null)
@@ -405,7 +433,7 @@ public abstract class ClientDependency
     public @NotNull Set<Module> getRequiredModuleContexts(Container c)
     {
         return getDependencyStream(c)
-            .map(cd->cd.getRequiredModuleContexts(c))
+            .map(cd->cd.get().getRequiredModuleContexts(c))
             .flatMap(Collection::stream)
             .collect(Collectors.toSet());
     }

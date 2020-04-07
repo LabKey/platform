@@ -41,10 +41,12 @@ import org.labkey.data.xml.view.ViewType;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -63,7 +65,7 @@ public class ModuleHtmlViewDefinition
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";
 
     private final String _name;
-    private final Set<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedHashSet<>();
+    private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new ArrayList<>();
     private final Set<Class<? extends Permission>> _requiredPermissionClasses = new HashSet<>();
 
     private String _html;
