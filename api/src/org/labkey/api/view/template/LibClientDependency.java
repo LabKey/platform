@@ -27,11 +27,10 @@ import org.labkey.clientLibrary.xml.LibraryType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * Parses and holds dependencies from a LabKey client library (lib.xml) file, which typically reference multiple JS and/or CSS files.
@@ -41,7 +40,7 @@ public class LibClientDependency extends FilePathClientDependency
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
 
     private final Resource _resource;
-    private final Set<Supplier<ClientDependency>> _suppliers = new LinkedHashSet<>();
+    private final List<Supplier<ClientDependency>> _suppliers = new LinkedList<>();
 
     public LibClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r)
     {
@@ -51,9 +50,9 @@ public class LibClientDependency extends FilePathClientDependency
 
     @NotNull
     @Override
-    protected Stream<Supplier<ClientDependency>> getDependencyStream(Container c)
+    protected List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
-        return _suppliers.stream();
+        return _suppliers;
     }
 
     @Override
@@ -90,12 +89,17 @@ public class LibClientDependency extends FilePathClientDependency
                     {
                         ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
                         var supplier = supplierFromPath(s.getPath(), mode);
-                        TYPE primaryType = supplier.get().getPrimaryType();
+                        ClientDependency cd = supplier.get();
+
+                        if (null == cd)
+                            continue;
+
+                        TYPE primaryType = cd.getPrimaryType();
 
                         if (TYPE.lib != primaryType)
                             _suppliers.add(supplier);
                         else
-                            _log.warn("Libraries cannot include other libraries: " + _filePath);
+                            _log.error("Libraries cannot include other libraries: " + _filePath);
 
                         if (compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
                         {
@@ -110,15 +114,13 @@ public class LibClientDependency extends FilePathClientDependency
                     if (hasJsToCompile)
                     {
                         String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                        var pair = getPair(path, ModeTypeEnum.PRODUCTION);
-                        _suppliers.add(() -> fromCache(pair));
+                        _suppliers.add(supplierFromPath(path, ModeTypeEnum.PRODUCTION));
                     }
 
                     if (hasCssToCompile)
                     {
                         String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                        var pair = getPair(path, ModeTypeEnum.PRODUCTION);
-                        _suppliers.add(() -> fromCache(pair));
+                        _suppliers.add(supplierFromPath(path, ModeTypeEnum.PRODUCTION));
                     }
                 }
             }

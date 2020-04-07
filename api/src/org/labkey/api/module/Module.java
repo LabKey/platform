@@ -47,7 +47,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -407,7 +406,7 @@ public interface Module extends Comparable<Module>
      */
     JSONObject getPageContextJson(ContainerUser context);
 
-    @NotNull LinkedHashSet<Supplier<ClientDependency>> getClientDependencies(Container c);
+    @NotNull List<Supplier<ClientDependency>> getClientDependencies(Container c);
 
     @JsonIgnore
     @Nullable UpgradeCode getUpgradeCode();

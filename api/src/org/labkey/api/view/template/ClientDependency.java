@@ -47,7 +47,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 
 /**
@@ -132,7 +131,7 @@ public abstract class ClientDependency
         return path != null && (path.startsWith("http://") || path.startsWith("https://"));
     }
 
-    @NotNull
+    @Nullable
     public static ClientDependency fromModuleName(String mn)
     {
         Module m = getModule(mn);
@@ -166,7 +165,7 @@ public abstract class ClientDependency
         return supplierFromPath(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
-    @NotNull
+    @Nullable
     public static ClientDependency fromModule(Module m)
     {
         //noinspection
@@ -211,7 +210,7 @@ public abstract class ClientDependency
      * @param name Name of the source of the module types, to provide useful error messages
      * @return An ordered set of client dependency suppliers
      */
-    public static Set<Supplier<ClientDependency>> getSuppliers(DependencyType[] dependencyTypes, String name)
+    public static List<Supplier<ClientDependency>> getSuppliers(DependencyType[] dependencyTypes, String name)
     {
         return Arrays.stream(dependencyTypes)
             .map(dt->{
@@ -223,7 +222,7 @@ public abstract class ClientDependency
                     return cd;
                 };
             })
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+            .collect(Collectors.toList());
     }
 
     /**
@@ -235,7 +234,7 @@ public abstract class ClientDependency
      * @param moduleNameFilter A Predicate that allows for validation and filtering out unwanted modules
      * @return An ordered set of client dependency suppliers
      */
-    public static Set<Supplier<ClientDependency>> getSuppliers(RequiredModuleType[] moduleTypes, String name, Predicate<String> moduleNameFilter)
+    public static List<Supplier<ClientDependency>> getSuppliers(RequiredModuleType[] moduleTypes, String name, Predicate<String> moduleNameFilter)
     {
         return Arrays.stream(moduleTypes)
             .map(RequiredModuleType::getName)
@@ -248,20 +247,7 @@ public abstract class ClientDependency
                 LOG.error("Unable to find module: '" + moduleName + "' referenced in " + name);
                 return null;
             })
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-    }
-
-    /**
-     * Standard method for resolving a set of client dependency suppliers into a stream of ClientDependency objects.
-     * Invoke this at the point the dependencies are going to be rendered into a page.
-     * @param suppliers A set of client dependency suppliers
-     * @return A stream of ClientDependency objects
-     */
-    public static Stream<ClientDependency> getClientDependencyStream(List<Supplier<ClientDependency>> suppliers)
-    {
-        return suppliers.stream()
-            .map(Supplier::get)
-            .filter(Objects::nonNull);
+            .collect(Collectors.toList());
     }
 
     /**
@@ -272,7 +258,9 @@ public abstract class ClientDependency
      */
     public static LinkedHashSet<ClientDependency> getClientDependencySet(List<Supplier<ClientDependency>> suppliers)
     {
-        return getClientDependencyStream(suppliers)
+        return suppliers.stream()
+            .map(Supplier::get)
+            .filter(Objects::nonNull)
             .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
@@ -328,14 +316,14 @@ public abstract class ClientDependency
 
         if (path == null)
         {
-            LOG.warn("Invalid client dependency path: " + requestedPath);
+            LOG.error("Invalid client dependency path: " + requestedPath);
             return null;
         }
 
         return Pair.of(path, mode);
     }
 
-    protected static @NotNull ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
         return fromCache(getPair(requestedPath, mode));
     }
@@ -363,9 +351,9 @@ public abstract class ClientDependency
         return _primaryType;
     }
 
-    protected @NotNull Stream<Supplier<ClientDependency>> getDependencyStream(Container c)
+    protected @NotNull List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
-        return Stream.empty();
+        return Collections.emptyList();
     }
 
     private @NotNull Set<String> getProductionScripts(Container c, TYPE type)
@@ -384,7 +372,8 @@ public abstract class ClientDependency
         if (_primaryType != null && _primaryType == type && path != null)
             scripts.add(path);
 
-        getDependencyStream(c)
+        getDependencySuppliers(c)
+            .stream()
             .map(function)
             .forEach(scripts::addAll);
 
@@ -432,7 +421,8 @@ public abstract class ClientDependency
 
     public @NotNull Set<Module> getRequiredModuleContexts(Container c)
     {
-        return getDependencyStream(c)
+        return getDependencySuppliers(c)
+            .stream()
             .map(cd->cd.get().getRequiredModuleContexts(c))
             .flatMap(Collection::stream)
             .collect(Collectors.toSet());

@@ -20,9 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * Handles a module context reference
@@ -44,9 +44,9 @@ public class ContextClientDependency extends ClientDependency
 
     @NotNull
     @Override
-    protected Stream<Supplier<ClientDependency>> getDependencyStream(Container c)
+    protected List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
-        return _module.getClientDependencies(c).stream();
+        return _module.getClientDependencies(c);
     }
 
     @NotNull

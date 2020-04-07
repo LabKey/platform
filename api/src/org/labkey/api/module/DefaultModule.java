@@ -120,7 +120,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
     private Set<Module> _resolvedModuleDependencies;
     private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
-    private final LinkedHashSet<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedHashSet<>();
+    private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedList<>();
 
     private Collection<WebPartFactory> _webPartFactories;
     private ModuleResourceResolver _resolver;
@@ -1576,7 +1576,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public LinkedHashSet<Supplier<ClientDependency>> getClientDependencies(Container c)
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
         return _clientDependencySuppliers;
     }

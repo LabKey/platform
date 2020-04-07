@@ -23,10 +23,9 @@ import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportType;
 
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Supplier;
 
 /**
@@ -35,7 +34,7 @@ import java.util.function.Supplier;
  */
 public class ModuleReportDependenciesResource extends ModuleReportResource
 {
-    private final List<Supplier<ClientDependency>> _dependencySuppliers = new ArrayList<>();
+    private final List<Supplier<ClientDependency>> _dependencySuppliers = new LinkedList<>();
 
     public ModuleReportDependenciesResource(ReportDescriptor reportDescriptor, Resource sourceFile)
     {
