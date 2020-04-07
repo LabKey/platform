@@ -85,7 +85,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
@@ -177,7 +176,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
@@ -514,7 +512,7 @@ public class QueryController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public static class DataSourceAdminAction extends SimpleViewAction
+    public static class DataSourceAdminAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -660,7 +658,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public static class BrowseAction extends SimpleViewAction
+    public static class BrowseAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors)
         {
@@ -688,7 +686,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(QueryForm form, BindException errors)
         {
-            JspView view = new JspView<>("/org/labkey/query/view/browse.jsp", form);
+            var view = new JspView<>("/org/labkey/query/view/browse.jsp", form);
             view.setFrame(WebPartView.FrameType.NONE);
             return view;
         }
@@ -1559,7 +1557,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public static class ExportRowsExcelAction extends _ExportQuery
+    public static class ExportRowsExcelAction extends _ExportQuery<ExportQueryForm>
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
@@ -1569,7 +1567,7 @@ public class QueryController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
-    public static class ExportRowsXLSXAction extends _ExportQuery
+    public static class ExportRowsXLSXAction extends _ExportQuery<ExportQueryForm>
     {
         void _export(ExportQueryForm form, QueryView view) throws Exception
         {
@@ -3305,7 +3303,7 @@ public class QueryController extends SpringActionController
                 // query the table/view for the aggregate results
                 Collection<ColumnInfo> columns = Collections.singleton(displayColumn.getColumnInfo());
                 TableSelector selector = new TableSelector(view.getTable(), columns, filter, null).setNamedParameters(form.getQuerySettings().getQueryParameters());
-                Map<String, List<Aggregate.Result>> aggResults = selector.getAggregates(new ArrayList(colAggregates));
+                Map<String, List<Aggregate.Result>> aggResults = selector.getAggregates(new ArrayList<>(colAggregates));
 
                 // create a response object mapping the analytics providers to their relevant aggregate results
                 Map<String, Map<String, Object>> aggregateResults = new HashMap<>();
@@ -6621,7 +6619,7 @@ public class QueryController extends SpringActionController
 
     // could make this requires(ReadPermission), but it could be pretty easy to abuse, or maybe RequiresLogin && ReadPermission
     @RequiresLogin
-    public static class TestSQLAction extends SimpleViewAction
+    public static class TestSQLAction extends SimpleViewAction<Object>
     {
         @Override
         public ModelAndView getView(Object o, BindException errors)
@@ -6640,7 +6638,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermission(ReadPermission.class)
-    public static class AnalyzeQueriesAction extends ReadOnlyApiAction
+    public static class AnalyzeQueriesAction extends ReadOnlyApiAction<Object>
     {
         @Override
         public Object execute(Object o, BindException errors) throws Exception

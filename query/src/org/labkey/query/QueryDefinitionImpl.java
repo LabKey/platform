@@ -184,6 +184,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public boolean canEdit(User user)
     {
+        if (!getDefinitionContainer().equals(getContainer()))
+            return false;
         return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 

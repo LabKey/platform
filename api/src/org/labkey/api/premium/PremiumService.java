@@ -55,18 +55,21 @@ public interface PremiumService
     boolean isRemoteREnabled();
 
     @Nullable
+    @Deprecated // moved to ModuleEditorService
     default ActionURL getUpdateModuleURL(String module)
     {
         return null;
     }
 
     @Nullable
+    @Deprecated // moved to ModuleEditorService
     default ActionURL getCreateModuleURL()
     {
         return null;
     }
 
     @Nullable
+    @Deprecated // moved to ModuleEditorService
     default ActionURL getDeleteModuleURL(String module)
     {
         return null;

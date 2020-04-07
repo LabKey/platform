@@ -105,6 +105,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -8143,7 +8144,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getDeleteURL(String name)
         {
-            ActionURL url = PremiumService.get().getDeleteModuleURL(name);
+            ActionURL url = ModuleEditorService.get().getDeleteModuleURL(name);
             if (null != url)
                 return url;
             url = new ActionURL(DeleteModuleAction.class, ContainerManager.getRoot());
@@ -8153,7 +8154,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getUpdateURL(String name)
         {
-            ActionURL url = PremiumService.get().getUpdateModuleURL(name);
+            ActionURL url = ModuleEditorService.get().getUpdateModuleURL(name);
             if (null != url)
                 return url;
             url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
@@ -8163,7 +8164,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getCreateURL()
         {
-            ActionURL url = PremiumService.get().getCreateModuleURL();
+            ActionURL url = ModuleEditorService.get().getCreateModuleURL();
             if (null != url)
                 return url;
             url = new ActionURL(CreateModuleAction.class, ContainerManager.getRoot());
