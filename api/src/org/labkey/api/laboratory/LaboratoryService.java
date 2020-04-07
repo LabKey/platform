@@ -104,7 +104,7 @@ abstract public class LaboratoryService
 
     abstract public void registerClientDependency(Supplier<ClientDependency> cd, Module owner);
 
-    abstract public Set<Supplier<ClientDependency>> getRegisteredClientDependencies(Container c);
+    abstract public List<Supplier<ClientDependency>> getRegisteredClientDependencies(Container c);
 
     abstract public String getDefaultWorkbookFolderType(Container c);
 
