@@ -413,6 +413,28 @@ public class LoginController extends SpringActionController
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
+    public class SuccessAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            PageConfig config = getPageConfig();
+            config.setTitle("Success");
+            config.setTemplate(PageConfig.Template.Dialog);
+            config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "success");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     public class RegisterUserAction extends MutatingApiAction<RegisterForm>
     {

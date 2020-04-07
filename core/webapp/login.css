@@ -76,7 +76,7 @@ ul.sso-list > li {
 }
 
 .labkey-button {
-    width: 75px;
+    min-width: 75px;
     margin-right: 25px;
 }
 
