@@ -2607,6 +2607,7 @@ public class LoginController extends SpringActionController
             res.put("displayName", user.getDisplayName(user));
             res.put("email", user.getEmail());
             res.put("CSRF", CSRFUtil.getExpectedToken(getViewContext()));
+            res.put("impersonated", user.isImpersonated());
             res.put("success", true);
             return res;
         }
