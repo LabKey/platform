@@ -372,11 +372,6 @@ public interface AuthenticationProvider
             return _configuration;
         }
 
-        public PrimaryAuthenticationProvider<?> getProvider()
-        {
-            return _configuration.getAuthenticationProvider();
-        }
-
         public @Nullable ActionURL getRedirectURL()
         {
             return _redirectURL;

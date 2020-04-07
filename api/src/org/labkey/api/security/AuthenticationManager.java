@@ -28,7 +28,6 @@ import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.notification.NotificationService;
-import org.labkey.api.annotations.RemoveIn20_7;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
@@ -914,7 +913,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getProvider().getName() + " authentication.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getConfiguration().getDescription() + " authentication.");
 
         return new PrimaryAuthenticationResult(user, response);
     }
@@ -1157,13 +1156,13 @@ public class AuthenticationManager
     public static void setPrimaryAuthenticationResult(HttpServletRequest request, PrimaryAuthenticationResult result)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class), result);
+        session.setAttribute(getAuthenticationProcessSessionKey(), result);
     }
 
 
     public static @Nullable PrimaryAuthenticationResult getPrimaryAuthenticationResult(HttpSession session)
     {
-        return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class));
+        return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey());
     }
 
 
@@ -1181,15 +1180,14 @@ public class AuthenticationManager
 
     private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
 
-    @RemoveIn20_7
-    private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
+    private static String getAuthenticationProcessSessionKey()
     {
-        return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
+        return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationProvider.class.getName();
     }
 
     private static String getAuthenticationProcessSessionKey(int configurationId)
     {
-        return AUTHENTICATION_PROCESS_PREFIX + configurationId + "$User";
+        return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationConfiguration.class.getName() + "$" + configurationId;
     }
 
 
