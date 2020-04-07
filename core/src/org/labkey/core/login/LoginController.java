@@ -118,6 +118,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1392,16 +1393,28 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), returnUrlForm.getReturnURLHelper());
+            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
             return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            return null != _redirectURL ? _redirectURL : form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
+            if (null != _redirectURL)
+            {
+                try
+                {
+                    getViewContext().getResponse().sendRedirect(_redirectURL.getURIString());
+                    return null;
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+            return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
     }
 
