@@ -96,7 +96,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     protected AbstractWebdavResource(Path folder, String name, WebdavResolver resolver)
     {
-        super(folder, name, resolver);
+        this(folder.append(name), resolver);
     }
 
     protected AbstractWebdavResource(Resource folder, String name)
@@ -282,6 +282,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ret;
     }
 
+    @Override
     public Map<String, Object> getMutableProperties()
     {
         if (null == _properties)

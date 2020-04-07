@@ -361,7 +361,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
 
-
     @Override
     public final void deleteContainer(final String id)
     {
@@ -374,7 +373,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.background));
     }
-
 
     @Override
     public void clearLastIndexed()
