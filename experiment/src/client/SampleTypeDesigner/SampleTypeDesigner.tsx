@@ -14,73 +14,65 @@
  * limitations under the License.
  */
 
-import { List, Map } from "immutable";
-import * as React from 'react'
-import { ActionURL } from "@labkey/api";
+import React from 'react'
+import { Map } from "immutable";
+import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
+    BeforeUnload,
+    DomainDesign,
     DomainDetails,
     getSampleSet,
     getSampleTypeDetails,
-    IBannerMessage,
+    LoadingSpinner,
     SampleTypeDesigner,
-    SchemaQuery
+    SampleTypeModel
 } from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
-import "./sampleTypeDesigner.scss";
 
-interface IAppState {
-    dirty: boolean
-    sampleType: DomainDetails
-    rowId: number
-    domainId?: number
-    messages?: List<IBannerMessage>,
-    queryName: string
-    returnUrl: string
-    schemaName: string
-    showConfirm: boolean
-    submitting: boolean
-    includeWarnings: boolean
-    showWarnings: boolean
-    badDomain: DomainDetails
+interface State {
+    sampleType?: DomainDetails
+    isLoading: boolean,
+    message?: string
     name?: string
     nameReadOnly?: boolean
 }
 
-const CREATE_SAMPLE_SET_ACTION = 'createSampleSet';
+const UPDATE_SAMPLE_SET_ACTION = 'updateMaterialSource';
 
-export class App extends React.PureComponent<any, Partial<IAppState>> {
+export class App extends React.PureComponent<any, State> {
+
+    private _dirty = false;
 
     constructor(props) {
         super(props);
 
-        const { RowId, schemaName, queryName, domainId, returnUrl, name, nameReadOnly } = ActionURL.getParameters();
+        const { name, nameReadOnly } = ActionURL.getParameters();
         const action = ActionURL.getAction();
 
-        let messages = (action !== CREATE_SAMPLE_SET_ACTION) ?
-            this.checkUpdateActionParameters( RowId,) :
-            List<IBannerMessage>();
+        let message;
+        if (action === UPDATE_SAMPLE_SET_ACTION && !this.getRowIdParam()) {
+            message = 'RowId parameter not supplied. Unable to determine which Sample Set to edit.';
+        }
 
         this.state = {
-            schemaName,
-            queryName,
-            domainId,
-            rowId: RowId,
-            returnUrl,
-            submitting: false,
-            messages,
-            showConfirm: false,
-            dirty: false,
-            includeWarnings: true,
+            isLoading: true,
+            message,
             name,
             nameReadOnly,
         };
     }
 
-    componentDidMount() {
-        const { rowId, messages } = this.state;
+    getRowIdParam(): number {
+        const { RowId, rowId } = ActionURL.getParameters();
+        return RowId || rowId;
+    }
 
+    componentDidMount() {
+        // if the URL has a RowId param, look up the sample type info for the edit case
+        // else we are in the create new sample type case
+        const rowId = this.getRowIdParam();
         if (rowId) {
             //Get SampleType from experiment service
             getSampleSet({rowId})
@@ -92,129 +84,90 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     this.fetchSampleTypeDomain(domainId);
                 })
                 .catch(error => {
-                    this.setState(() => ({
-                        messages: messages.set(0, {message: error.exception, messageType: 'danger'})
-                    }));
+                    console.error(error);
+                    this.setState(() => ({message: 'Sample set does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
                 });
         }
         else {
             //Creating a new Sample Type
             this.setState(()=>({
+                isLoading: false,
                 sampleType: DomainDetails.create(Map<string, any> ({
                     domainDesign: {name: this.state.name},
                     nameReadOnly: this.state.nameReadOnly
                 }))
             }));
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
-
-    /**
-     * Verify that the needed parameters are supplied either
-     * @param rowId of sample type
-     * @returns List of error messages
-     */
-    private checkUpdateActionParameters = ( rowId: number): List<IBannerMessage> => {
-        let messages = List<IBannerMessage>();
-
-        if ( !rowId) {
-            let msg =  'RowId parameter not supplied, unable to determine which Sample Type to edit.';
-            let msgType = 'danger';
-            let bannerMsg ={message: msg, messageType: msgType};
-            messages = messages.push(bannerMsg);
-        }
-
-        return messages;
-    };
 
     /**
      * Look up full Sample Type domain, including fields
      **/
-    private fetchSampleTypeDomain = (domainId, schemaName?, queryName?): void => {
-        getSampleTypeDetails( SchemaQuery.create(schemaName, queryName), domainId)
+    fetchSampleTypeDomain(domainId) {
+        getSampleTypeDetails(undefined, domainId)
             .then( sampleType => {
-                this.setState(()=> ({sampleType}));
+                this.setState(()=> ({sampleType, isLoading: false}));
             }).catch(error => {
-                const {messages} = this.state;
-
-                this.setState(() => ({
-                    messages: messages.set(0, {message: error.exception, messageType: 'danger'})
-                }));
+                console.error(error);
+                this.setState(() => ({message: 'Sample set does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
             }
         );
-    };
+    }
 
-    handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+    handleWindowBeforeUnload = (event: any) => {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
+    onChange = (model: SampleTypeModel) => {
+        this._dirty = true;
+    };
+
+    onComplete = (response: DomainDesign) => {
+        const rowId = this.getRowIdParam();
+        const url = rowId
+            ? ActionURL.buildURL('experiment', 'showMaterialSource', getServerContext().container.path, {rowId: rowId})
+            : ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path);
+
+        this.navigate(url);
+    };
+
+    onCancel = () => {
+        this.navigate(ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path));
+    };
+
+    navigate(defaultUrl: string) {
+        this._dirty = false;
+
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || defaultUrl;
     }
 
-    submitAndNavigate = (response: any) => {
-        this.setState(() => ({
-            submitting: false,
-            dirty: false
-        }));
-
-        this.showMessage("Save Successful", 'success', 0);
-
-        this.navigate();
-    };
-
-    dismissAlert = (index: any) => {
-        this.setState(() => ({
-            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
-        }));
-    };
-
-    showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
-        const { messages } = this.state;
-
-        this.setState(Object.assign({}, additionalState, {
-            messages : messages.set(index, {message: message, messageType: messageType})
-        }));
-    };
-
-    onCancelBtnHandler = () => {
-        this.navigate();
-    };
-
-    navigate = () => {
-        const { returnUrl } = this.state;
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
-        });
-    };
-
-    beforeFinish = ():void => {};
-
     render() {
-        const { sampleType, messages } = this.state;
+        const { isLoading, message, sampleType } = this.state;
+
+        if (message) {
+            return <Alert>{message}</Alert>
+        }
+
+        if (isLoading) {
+            return <LoadingSpinner/>
+        }
 
         return (
-            <>
-                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
-                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
-                }
-
-                {sampleType &&
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 <SampleTypeDesigner
                     initModel={sampleType}
-                    beforeFinish={this.beforeFinish}
-                    onComplete={this.submitAndNavigate}
-                    onCancel={this.onCancelBtnHandler}
+                    onComplete={this.onComplete}
+                    onCancel={this.onCancel}
+                    onChange={this.onChange}
                     includeDataClasses={true}
                     useTheme={true}
                     appPropertiesOnly={false}
                     successBsStyle={'primary'}
                 />
-                }
-            </>
+            </BeforeUnload>
         )
     }
 }

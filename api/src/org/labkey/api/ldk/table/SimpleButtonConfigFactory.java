@@ -27,10 +27,13 @@ import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: bimber
@@ -44,7 +47,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     private String _jsHandler = null;
     private Integer _insertPosition = null;
     private Class<? extends Permission> _permission = null;
-    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private List<Supplier<ClientDependency>> _clientDependencies = new ArrayList<>();
 
     public SimpleButtonConfigFactory(Module owner, String text, DetailsURL url)
     {
@@ -60,7 +63,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _jsHandler = handler;
     }
 
-    public SimpleButtonConfigFactory(Module owner, String text, String handler, LinkedHashSet<ClientDependency> clientDependencies)
+    public SimpleButtonConfigFactory(Module owner, String text, String handler, List<Supplier<ClientDependency>> clientDependencies)
     {
         _owner = owner;
         _text = text;
@@ -134,18 +137,18 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     }
 
     @Override
-    public Set<ClientDependency> getClientDependencies(Container c, User u)
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c, User u)
     {
         return _clientDependencies;
     }
 
-    public void setClientDependencies(ClientDependency... clientDependencies)
+    @SafeVarargs
+    public final void setClientDependencies(Supplier<ClientDependency>... clientDependencies)
     {
-        for (ClientDependency cd : clientDependencies)
-            _clientDependencies.add(cd);
+        setClientDependencies(Arrays.asList(clientDependencies));
     }
 
-    public void setClientDependencies(Collection<ClientDependency> clientDependencies)
+    public void setClientDependencies(Collection<Supplier<ClientDependency>> clientDependencies)
     {
         _clientDependencies.addAll(clientDependencies);
     }

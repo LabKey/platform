@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL } from "@labkey/api";
+import { ActionURL, getServerContext } from "@labkey/api";
 import { Alert, BeforeUnload, DataClassDesigner, DataClassModel, fetchDataClass, LoadingSpinner } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -70,11 +70,11 @@ export class App extends React.Component<any, State> {
     }
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('experiment', 'listDataClass', LABKEY.container.path));
+        this.navigate(ActionURL.buildURL('experiment', 'listDataClass', getServerContext().container.path));
     };
 
     onComplete = (model: DataClassModel) => {
-        this.navigate(ActionURL.buildURL('experiment', 'showDataClass', LABKEY.container.path, {name: model.name}));
+        this.navigate(ActionURL.buildURL('experiment', 'showDataClass', getServerContext().container.path, {name: model.name}));
     };
 
     onChange = (model: DataClassModel) => {

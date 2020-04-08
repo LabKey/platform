@@ -527,11 +527,13 @@ public class ParticipantGroupController extends BaseStudyController
                         else if (form.getGroupId() != -1)
                         {
                             // NOTE: this can expose the participant group information to a user that can't otherwise see it via the standard UI in the study module
-                            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getGroupId());
+                            ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroup(getContainer(), getUser(), form.getGroupId());
                             if (group != null)
                             {
                                 ParticipantCategoryImpl category = ParticipantGroupManager.getInstance().getParticipantCategory(getContainer(), getUser(), group.getCategoryId());
                                 JSONGroup jsonGroup = new JSONGroup(group, category);
+                                if (form.includeParticipantIds())
+                                    jsonGroup.setParticipantIds(group.getParticipantSet());
                                 groups.add(jsonGroup.toJSON(getViewContext()));
                             }
                         }
@@ -546,7 +548,12 @@ public class ParticipantGroupController extends BaseStudyController
                         {
                             // omit orphaned categories
                             if (category.getGroups().length > 0)
-                                groups.add(category.toJSON());
+                            {
+                                JSONObject j = category.toJSON();
+                                if (!form.includeParticipantIds())
+                                    j.remove("participantIds");
+                                groups.add(j);
+                            }
                         }
                         break;
                     case cohort:
@@ -1408,20 +1415,21 @@ public class ParticipantGroupController extends BaseStudyController
                     }
                     else if (!group.isSession())
                     {
-                        group = new ParticipantGroup();
-                        group.setSession(true);
-                        group.setCategoryId(group.getCategoryId());
-                        group.setCategoryLabel(group.getCategoryLabel());
-                        group.setDescription(group.getDescription());
-                        group.setFilters(group.getFilters());
-                        group.setLabel(group.getLabel());
-                        group.setParticipantIds(group.getParticipantIds());
-                        group.setParticipantSet(group.getParticipantSet());
-                        group.setContainerId(group.getContainerId());
-                        group.setCreated(group.getCreated());
-                        group.setCreatedBy(group.getCreatedBy());
-                        group.setModified(group.getModified());
-                        group.setModifiedBy(group.getModifiedBy());
+                        ParticipantGroup copy = new ParticipantGroup();
+                        copy.setSession(true);
+                        copy.setCategoryId(copy.getCategoryId());
+                        copy.setCategoryLabel(copy.getCategoryLabel());
+                        copy.setDescription(copy.getDescription());
+                        copy.setFilters(copy.getFilters());
+                        copy.setLabel(copy.getLabel());
+                        copy.setParticipantIds(copy.getParticipantIds());
+                        copy.setParticipantSet(copy.getParticipantSet());
+                        copy.setContainerId(copy.getContainerId());
+                        copy.setCreated(copy.getCreated());
+                        copy.setCreatedBy(copy.getCreatedBy());
+                        copy.setModified(copy.getModified());
+                        copy.setModifiedBy(copy.getModifiedBy());
+                        group = copy;
                         ParticipantGroupManager.getInstance().setSessionParticipantGroup(getContainer(), getUser(), getViewContext().getRequest(), group);
                     }
 

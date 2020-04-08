@@ -42,12 +42,12 @@ exports[`<AuthRow/> Editable 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration Name
+            CAS Configuration1
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            Some Url
+            https://www.labkey.org/cas
           </div>
           <div
             className="provider auth-row__field col-xs-3"
@@ -185,12 +185,12 @@ exports[`<AuthRow/> Non-draggable 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration Name
+            CAS Configuration1
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            Some Url
+            https://www.labkey.org/cas
           </div>
           <div
             className="provider auth-row__field col-xs-3"
@@ -328,12 +328,12 @@ exports[`<AuthRow/> View-only 1`] = `
           <div
             className="description auth-row__field col-xs-4"
           >
-            My Configuration Name
+            CAS Configuration1
           </div>
           <div
             className="details auth-row__field col-xs-4"
           >
-            Some Url
+            https://www.labkey.org/cas
           </div>
           <div
             className="provider auth-row__field col-xs-3"

@@ -26,12 +26,12 @@ import {
     IBannerMessage,
     LoadingSpinner
 } from "@labkey/components";
-import {ActionURL} from "@labkey/api";
+import {ActionURL, getServerContext} from "@labkey/api";
+import {AliasFieldModal} from "./components/AliaseFieldModal";
+import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
 import "@labkey/components/dist/components.css"
 import "./queryMetadataEditor.scss";
-import {AliasFieldModal} from "./components/AliaseFieldModal";
-import {fetchQueryMetadata, resetQueryMetadata, saveQueryMetadata} from "./actions";
 
 interface IAppState {
     dirty: boolean,
@@ -45,7 +45,8 @@ interface IAppState {
     showEditSourceConfirmationModal: boolean,
     showResetConfirmationModal: boolean,
     showViewDataConfirmationModal: boolean,
-    navigateAfterSave: boolean
+    navigateAfterSave: boolean,
+    userDefinedQuery: boolean
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
@@ -74,7 +75,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             showEditSourceConfirmationModal: false,
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
-            navigateAfterSave: false
+            navigateAfterSave: false,
+            userDefinedQuery: false
         };
     }
 
@@ -83,7 +85,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
 
         if (schemaName && queryName) {
             fetchQueryMetadata(schemaName, queryName)
-                .then((domain) => this.setState(() => ({domain})))
+                .then((data) => {
+                    const domain = DomainDesign.create(data.domainDesign ? data.domainDesign : data, undefined);
+                    this.setState(() => ({
+                        domain: domain,
+                        userDefinedQuery: data.userDefinedQuery
+                    }))
+                })
                 .catch((error) => {
                     this.setState(() => ({
                         messages: messages.set(0, {message: error.exception, messageType: 'danger'})
@@ -175,7 +183,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName } = this.state;
 
         this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'executeQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName});
+            window.location.href =  ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName});
         });
     };
 
@@ -191,8 +199,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onSaveBtnHandler = (onSaveNavigation) => {
-        const { domain, schemaName, messages, navigateAfterSave } = this.state;
-        saveQueryMetadata(domain, schemaName)
+        const { domain, schemaName, messages, navigateAfterSave, userDefinedQuery } = this.state;
+        saveQueryMetadata(domain, schemaName, userDefinedQuery)
             .then(() => {
                 this.showMessage("Save Successful", 'success', 0);
 
@@ -222,7 +230,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { schemaName, queryName } = this.state;
 
         this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', LABKEY.container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
+            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
         });
     };
 
@@ -278,24 +286,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onResetBtnHandler = () => {
-        const { dirty } = this.state;
-
-        if (dirty) {
-            this.setState(() => ({
-                showResetConfirmationModal: true
-            }));
-        }
-        else {
-            this.onConfirmReset();
-        }
+        this.setState(() => ({
+            showResetConfirmationModal: true
+        }));
     };
 
     renderButtons() {
-        const { showSave } = this.state;
+        const { showSave, userDefinedQuery } = this.state;
 
         return (
             <div className={'domain-form-panel query-metadata-editor-buttons'}>
-                <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button>
+                { !userDefinedQuery && <Button onClick={this.aliasFieldBtnHandler}>Alias Field</Button> }
                 <Button bsStyle='primary' className='pull-right' disabled={!showSave} onClick={this.onSaveBtnHandler}>Save</Button>
                 <Button onClick={this.editSourceBtnHandler}>Edit Source</Button>
                 <Button onClick={this.viewDataBtnHandler}>View Data</Button>

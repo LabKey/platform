@@ -16,13 +16,13 @@
 
 package org.labkey.experiment.api;
 
-import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.Lsid;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.security.User;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExpObject;
+import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
 
@@ -89,7 +89,7 @@ public class ExpChildObjectImpl extends ExpObjectImpl
         throw new UnsupportedOperationException();
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         return null;
     }

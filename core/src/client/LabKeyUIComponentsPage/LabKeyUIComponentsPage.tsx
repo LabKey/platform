@@ -36,6 +36,7 @@ import {
     UserDetailHeader,
     SelectInput
 } from '@labkey/components';
+import { getServerContext } from "@labkey/api";
 import { CREATE_ROW, GRID_COLUMNS, GRID_DATA, SEARCH_RESULT_HITS } from './constants';
 import { QueryGridPage } from "./QueryGridPage";
 import { QueriesListingPage } from "./QueriesListingPage";
@@ -375,7 +376,7 @@ export class App extends React.Component<any, State> {
                 {selected === 'PageDetailHeader' &&
                     this.renderPanel('PageDetailHeader',
                         <PageDetailHeader
-                            user={new User(LABKEY.user)}
+                            user={new User(getServerContext().user)}
                             iconDir={'_images'}
                             title={'Page Detail Header'}
                             subTitle={'With a subtitle'}
@@ -456,15 +457,15 @@ export class App extends React.Component<any, State> {
                     this.renderPanel('UserDetailHeader',
                         <>
                             <UserDetailHeader
-                                title={'Welcome, ' + LABKEY.user.displayName}
-                                user={new User(LABKEY.user)}
+                                title={'Welcome, ' + getServerContext().user.displayName}
+                                user={new User(getServerContext().user)}
                                 userProperties={fromJS({})}
-                                dateFormat={LABKEY.container.formats.dateFormat.toUpperCase()}
+                                dateFormat={getServerContext().container.formats.dateFormat.toUpperCase()}
                                 renderButtons={() => <Button onClick={this.toggleChangePassword} disabled={showChangePassword}>Change Password</Button>}
                             />
                             {showChangePassword &&
                             <ChangePasswordModal
-                                    user={new User(LABKEY.user)}
+                                    user={new User(getServerContext().user)}
                                     onSuccess={() => {
                                         alert('Your password has been changed.');
                                     }}
@@ -475,7 +476,7 @@ export class App extends React.Component<any, State> {
                     )
                 }
                 {selected === 'UserProfile' &&
-                    <UserProfilePage user={new User(LABKEY.user)}/>
+                    <UserProfilePage user={new User(getServerContext().user)}/>
                 }
                 {selected === 'WizardNavButtons' &&
                     this.renderPanel('WizardNavButtons',

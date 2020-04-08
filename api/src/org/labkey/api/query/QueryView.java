@@ -2222,8 +2222,9 @@ public class QueryView extends WebPartView<Object>
             // TODO: Until the "More" menu is dynamically populated the "Print" button has been moved back to the bar.
             // Print button is rendered separately to respect ordering -- we want it rendering after all custom buttons
             // added by overrides of populateButtonBar().
-            bb.add(createPrintButton());
-//        bar.add(populateMoreMenu());
+            // bar.add(populateMoreMenu());
+            if (showExportButtons())
+                bb.add(createPrintButton());
         }
         rgn.setButtonBar(bb);
 

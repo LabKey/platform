@@ -55,7 +55,6 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -67,7 +66,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
-import org.labkey.list.client.ListEditorService;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -96,6 +94,7 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private ListDefinitionImpl _list;
+    private final static int MAX_NAME_LENGTH = 64;
 
     static
     {
@@ -359,8 +358,8 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
 
         if (StringUtils.isEmpty(name))
             throw new ApiUsageException("List name must not be null");
-        if (name.length() > ListEditorService.MAX_NAME_LENGTH)
-            throw new ApiUsageException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
+        if (name.length() > MAX_NAME_LENGTH)
+            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
         if (ListService.get().getList(container, name) != null)
             throw new ApiUsageException("The name '" + name + "' is already in use.");
         if (StringUtils.isEmpty(keyName))
@@ -477,9 +476,9 @@ public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindPr
             //handle name change
             if (!original.getName().equals(update.getName()))
             {
-                if (update.getName().length() > ListEditorService.MAX_NAME_LENGTH)
+                if (update.getName().length() > MAX_NAME_LENGTH)
                 {
-                    return exception.addGlobalError("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters.");
+                    return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
                 }
                 else if (ListService.get().getList(container, update.getName()) != null)
                 {

@@ -16,9 +16,13 @@
 
 package org.labkey.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.PlateService;
+import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.plate.Position;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +57,20 @@ public class WellGroupTemplateImpl extends PropertySetImpl implements WellGroupT
         _plateId = owner.getRowId() != null ? owner.getRowId() : null;
         _positions = sortPositions(positions);
     }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        if (_plateId == null)
+            return null;
+
+        PlateTemplate template = PlateService.get().getPlateTemplate(getContainer(), _plateId);
+        if (template == null)
+            return null;
+
+        return template.detailsURL();
+    }
+
 
     private static List<? extends Position> sortPositions(List<? extends Position> positions)
     {

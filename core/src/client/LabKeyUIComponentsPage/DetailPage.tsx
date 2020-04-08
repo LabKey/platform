@@ -15,6 +15,7 @@ import {
     DetailEditing,
     gridInvalidate
 } from "@labkey/components";
+import { getServerContext } from "@labkey/api";
 
 interface Props {
     editable: boolean
@@ -109,7 +110,7 @@ export class DetailPage extends React.Component<Props, State> {
                 <br/>
                 {message && <Alert>{message}</Alert>}
                 {queryModel && !editable && <Detail queryModel={queryModel} asPanel={true}/>}
-                {queryModel && editable && <DetailEditing queryModel={queryModel} canUpdate={LABKEY.user.canUpdate} onUpdate={this.onUpdate}/>}
+                {queryModel && editable && <DetailEditing queryModel={queryModel} canUpdate={getServerContext().user.canUpdate} onUpdate={this.onUpdate}/>}
             </>
         )
     }

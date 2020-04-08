@@ -651,9 +651,7 @@ public class SampleSetServiceImpl implements SampleSetService
             {
                 if (lowerReservedNames.contains(propertyName))
                 {
-                    if (pd.getLabel() == null)
-                        pd.setLabel(pd.getName());
-                    pd.setName("Property_" + pd.getName());
+                    throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
                 }
 
                 DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
@@ -854,7 +852,10 @@ public class SampleSetServiceImpl implements SampleSetService
             errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
 
             if (!errors.hasErrors())
+            {
+                transaction.addCommitTask(() -> clearMaterialSourceCache(container), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
                 transaction.commit();
+            }
         }
 
         return errors;

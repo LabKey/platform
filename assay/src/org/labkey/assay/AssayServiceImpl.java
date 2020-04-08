@@ -559,32 +559,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
     }
 
-    @Override
-    public List<GWTContainer> getStudyContainers()
-    {
-        List<GWTContainer> result = new ArrayList<>();
-        AssayPublishService aps = AssayPublishService.get();
-
-        if (null != aps)
-        {
-            // Use a tree set so they're sorted nicely
-            Set<Container> containers = new TreeSet<>();
-            Set<Study> publishTargets = aps.getValidPublishTargets(getUser(), ReadPermission.class);
-
-            for (Study study : publishTargets)
-            {
-                containers.add(study.getContainer());
-            }
-
-            for (Container container : containers)
-            {
-                result.add(convertToGWTContainer(container));
-            }
-        }
-
-        return result;
-    }
-
     public boolean canUpdateProtocols()
     {
         Container c = getContainer();

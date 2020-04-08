@@ -274,13 +274,14 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     }
 
     @Override
-    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, boolean isUpdate)
+    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
     {
-        super.validateOptions(container, user, options, name, domain, isUpdate);
+        super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
 
         // verify and NameExpression values
         TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
 
+        boolean isUpdate = domain != null;
         if (!isUpdate)
         {
             if (name == null)
@@ -340,7 +341,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
 
             if (trimmedValue == null)
             {
-                throw new IllegalArgumentException("Import parent alias cannot be blank, targeted parent may have been deleted.");
+                throw new IllegalArgumentException("You must specify a valid parent type for the import alias.");
             }
 
             if (reservedNames.contains(trimmedKey))
@@ -348,7 +349,7 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
                 throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
             }
 
-            if (domain != null && !finalExistingAliases.contains(trimmedKey) && domain.getPropertyByName(trimmedKey) != null)
+            if (updatedDomainDesign != null && !finalExistingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
             {
                 throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
             }

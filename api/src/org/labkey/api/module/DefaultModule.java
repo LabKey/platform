@@ -67,13 +67,11 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.data.xml.PermissionType;
 import org.labkey.moduleProperties.xml.ModuleDocument;
 import org.labkey.moduleProperties.xml.ModuleType;
 import org.labkey.moduleProperties.xml.OptionsListType;
 import org.labkey.moduleProperties.xml.PropertyType;
-import org.labkey.moduleProperties.xml.RequiredModuleType;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -100,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Standard base class for modules, supplies no-op implementations for many optional methods.
@@ -121,7 +120,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
     private Set<Module> _resolvedModuleDependencies;
     private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
-    private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedList<>();
 
     private Collection<WebPartFactory> _webPartFactories;
     private ModuleResourceResolver _resolver;
@@ -1124,7 +1123,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 }
 
                 ModuleType mt = moduleDoc.getModule();
-                if (null != mt && mt.getProperties() != null)
+                assert null != mt : "\"module\" element is required";
+                if (mt.isSetProperties())
                 {
                     for (PropertyType pt : mt.getProperties().getPropertyDescriptorArray())
                     {
@@ -1179,35 +1179,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                     }
                 }
 
-                if (mt.getClientDependencies() != null && mt.getClientDependencies().getDependencyArray() != null)
-                {
-                    for (DependencyType rt : mt.getClientDependencies().getDependencyArray())
-                    {
-                        String path = rt.getPath();
-                        if (path != null)
-                        {
-                            ClientDependency cd = ClientDependency.fromXML(rt);
-                            if (cd != null)
-                                _clientDependencies.add(cd);
-                            else
-                                _log.error("Unable to parse <dependency> in XML for module: " + getName());
-                        }
-                    }
-                }
+                if (mt.isSetClientDependencies())
+                    _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getClientDependencies().getDependencyArray(), "module.xml of " + getName()));
 
-                if (mt.getRequiredModuleContext() != null && mt.getRequiredModuleContext().getRequiredModuleArray() != null)
-                {
-                    for (RequiredModuleType rmt : mt.getRequiredModuleContext().getRequiredModuleArray())
-                    {
-                        if (rmt.getName() != null)
-                        {
-                            if(rmt.getName().equalsIgnoreCase(getName()))
-                                _log.error("Module " + getName() + " lists itself as a dependency in module.xml");
-                            else
-                                _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
-                        }
-                    }
-                }
+                if (mt.isSetRequiredModuleContext())
+                    _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getRequiredModuleContext().getRequiredModuleArray(), "module.xml of " + getName(),
+                        moduleName -> {
+                            if (getName().equalsIgnoreCase(moduleName))
+                            {
+                                _log.error("Module " + getName() + " lists itself as a dependency in its module.xml!");
+                                return false;
+                            }
+
+                            return true;
+                        }));
 
                 if (mt.getEnableOptions() != null && mt.getEnableOptions().isSetRequireSitePermission())
                 {
@@ -1591,9 +1576,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     @Override
     @NotNull
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c)
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
-        return _clientDependencies;
+        return _clientDependencySuppliers;
     }
 
     @Override

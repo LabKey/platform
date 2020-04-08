@@ -312,6 +312,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
     @Nullable String getResultRowLSIDExpression();
 
     /**
+     * Extract the ExpProtocol and rowId from an assay result row LSID.
+     */
+    @Nullable
+    Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid);
+
+    /**
      * Get the URL for an assay result row's LSID.
      */
     @Nullable ActionURL getResultRowURL(Container container, Lsid lsid);

@@ -35,7 +35,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       bsClass="modal-title"
       componentClass="h4"
     >
-      Configure undefined
+      Configure CAS Configuration1
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -83,18 +83,24 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       required={true}
       requiredFieldEmpty={false}
       type="text"
+      value="CAS Configuration1"
     />
     <DynamicFields
-      SASL=""
-      auth_header_logo=""
-      auth_login_page_logo=""
-      autoRedirect={false}
       canEdit={true}
-      changedFiles={Array []}
       checkCheckBox={[Function]}
-      deletedLogos={Array []}
       emptyRequiredFields={Array []}
-      errorMessage=""
+      fieldValues={
+        Object {
+          "auth_header_logo": "",
+          "auth_login_page_logo": "",
+          "autoRedirect": false,
+          "changedFiles": Array [],
+          "deletedLogos": Array [],
+          "description": "CAS Configuration1",
+          "enabled": true,
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
       fields={
         Array [
           Object {
@@ -144,14 +150,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      principalTemplate=""
-      search={false}
-      serverUrl=""
-      servers=""
     />
     <SSOFields
       canEdit={true}
       handleDeleteLogo={[Function]}
+      headerLogoUrl={null}
+      loginLogoUrl={null}
       onFileChange={[Function]}
     />
     <div
@@ -236,7 +240,7 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       bsClass="modal-title"
       componentClass="h4"
     >
-      Configure undefined
+      Configure CAS Configuration1
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -284,18 +288,24 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       required={true}
       requiredFieldEmpty={false}
       type="text"
+      value="CAS Configuration1"
     />
     <DynamicFields
-      SASL=""
-      auth_header_logo=""
-      auth_login_page_logo=""
-      autoRedirect={false}
       canEdit={false}
-      changedFiles={Array []}
       checkCheckBox={[Function]}
-      deletedLogos={Array []}
       emptyRequiredFields={Array []}
-      errorMessage=""
+      fieldValues={
+        Object {
+          "auth_header_logo": "",
+          "auth_login_page_logo": "",
+          "autoRedirect": false,
+          "changedFiles": Array [],
+          "deletedLogos": Array [],
+          "description": "CAS Configuration1",
+          "enabled": true,
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
       fields={
         Array [
           Object {
@@ -345,14 +355,12 @@ exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      principalTemplate=""
-      search={false}
-      serverUrl=""
-      servers=""
     />
     <SSOFields
       canEdit={false}
       handleDeleteLogo={[Function]}
+      headerLogoUrl={null}
+      loginLogoUrl={null}
       onFileChange={[Function]}
     />
     <div
@@ -426,7 +434,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       bsClass="modal-title"
       componentClass="h4"
     >
-      Configure undefined
+      Configure Duo 2 Factor Configuration
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -442,7 +450,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
          Configuration Status 
       </span>
       <ReactBootstrapToggle
-        active={true}
+        active={false}
         className="modal__enable-toggle"
         disabled={false}
         handleClassName=""
@@ -474,18 +482,22 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       required={true}
       requiredFieldEmpty={false}
       type="text"
+      value="Duo 2 Factor Configuration"
     />
     <DynamicFields
-      SASL=""
-      apiHostname=""
-      auth_header_logo=""
-      auth_login_page_logo=""
       canEdit={true}
-      changedFiles={Array []}
       checkCheckBox={[Function]}
-      deletedLogos={Array []}
       emptyRequiredFields={Array []}
-      errorMessage=""
+      fieldValues={
+        Object {
+          "apiHostname": "Api HostName",
+          "description": "Duo 2 Factor Configuration",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "secretKey": "",
+          "userIdentifier": "UserID",
+        }
+      }
       fields={
         Array [
           Object {
@@ -527,7 +539,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
           },
         ]
       }
-      integrationKey=""
       modalType={
         Object {
           "description": "Require two-factor authentication via Duo",
@@ -577,11 +588,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      principalTemplate=""
-      search={false}
-      secretKey=""
-      servers=""
-      userIdentifier="UserID"
     />
     <div
       className="modal__error-message"
@@ -665,7 +671,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       bsClass="modal-title"
       componentClass="h4"
     >
-      Configure undefined
+      Configure Duo 2 Factor Configuration
     </ModalTitle>
   </ModalHeader>
   <ModalBody
@@ -681,7 +687,7 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
          Configuration Status 
       </span>
       <ReactBootstrapToggle
-        active={true}
+        active={false}
         className="modal__enable-toggle"
         disabled={true}
         handleClassName=""
@@ -713,18 +719,22 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       required={true}
       requiredFieldEmpty={false}
       type="text"
+      value="Duo 2 Factor Configuration"
     />
     <DynamicFields
-      SASL=""
-      apiHostname=""
-      auth_header_logo=""
-      auth_login_page_logo=""
       canEdit={false}
-      changedFiles={Array []}
       checkCheckBox={[Function]}
-      deletedLogos={Array []}
       emptyRequiredFields={Array []}
-      errorMessage=""
+      fieldValues={
+        Object {
+          "apiHostname": "Api HostName",
+          "description": "Duo 2 Factor Configuration",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "secretKey": "",
+          "userIdentifier": "UserID",
+        }
+      }
       fields={
         Array [
           Object {
@@ -766,7 +776,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
           },
         ]
       }
-      integrationKey=""
       modalType={
         Object {
           "description": "Require two-factor authentication via Duo",
@@ -816,11 +825,6 @@ exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
       onChange={[Function]}
       onFileChange={[Function]}
       onFileRemoval={[Function]}
-      principalTemplate=""
-      search={false}
-      secretKey=""
-      servers=""
-      userIdentifier="UserID"
     />
     <div
       className="modal__error-message"
