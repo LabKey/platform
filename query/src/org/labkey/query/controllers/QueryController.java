@@ -6176,97 +6176,6 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetQueryAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
-    {
-        @Override
-        public Object execute(AuditChangesForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, form.getAuditRowId());
-
-            if (event != null)
-            {
-                response.put("comment", event.getComment());
-                response.put("eventUserId", event.getCreatedBy().getUserId());
-                response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
-
-                String oldRecord = event.getOldRecordMap();
-                String newRecord = event.getNewRecordMap();;
-
-                if (oldRecord != null || newRecord != null)
-                {
-                    response.put("oldData", QueryExportAuditProvider.decodeFromDataMap(oldRecord));
-                    response.put("newData", QueryExportAuditProvider.decodeFromDataMap(newRecord));
-                }
-
-                response.put("success", true);
-                return response;
-            }
-
-            response.put("success", false);
-            return response;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public static class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
-    {
-        @Override
-        public ModelAndView getView(AuditChangesForm form, BindException errors)
-        {
-            int auditRowId = form.getAuditRowId();
-            String comment = null;
-            String oldRecord = null;
-            String newRecord = null;
-
-            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
-
-            if (event != null)
-            {
-                comment = event.getComment();
-                oldRecord = event.getOldRecordMap();
-                newRecord = event.getNewRecordMap();
-            }
-
-            if (oldRecord != null || newRecord != null)
-            {
-                Map<String,String> oldData = QueryExportAuditProvider.decodeFromDataMap(oldRecord);
-                Map<String,String> newData = QueryExportAuditProvider.decodeFromDataMap(newRecord);
-
-                return new AuditChangesView(comment, oldData, newData);
-            }
-            return new NoRecordView();
-        }
-
-        private static class NoRecordView extends HttpView
-        {
-            @Override
-            protected void renderInternal(Object model, PrintWriter out)
-            {
-                out.write("<p>No current record found</p>");
-            }
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Audit Details");
-        }
-    }
-
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class AuditChangesForm
-    {
-        private int auditRowId;
-
-        public int getAuditRowId() {return auditRowId;}
-
-        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
     public static class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
@@ -6845,7 +6754,6 @@ public class QueryController extends SpringActionController
                 new ValidateQueryMetadataAction(),
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
-                new QueryAuditChangesAction(),
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()

@@ -135,7 +135,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         };
         appendValueMapColumns(table);
 
-        DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
+        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + QUERY_UPDATE_AUDIT_EVENT);
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
 

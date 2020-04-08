@@ -105,7 +105,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         };
         appendValueMapColumns(table);
 
-        DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
+        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + EVENT_TYPE);
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
         return table;
