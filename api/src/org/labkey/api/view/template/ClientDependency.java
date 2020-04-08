@@ -51,11 +51,15 @@ import java.util.stream.Collectors;
 
 
 /**
- * Base class for handling client dependencies
+ * Base class for handling client-side dependencies, such as JavaScript and CSS files. May be referenced as individual
+ * files or as a library of multiple related files.
+ *
+ * ClientDependencies should not be cached directly, as they may become stale if their contents change on disk.
+ * Instead, use the Supplier variants, which will resolve the latest version of the resource when a page is being
+ * rendered. See issue 40118 for more details.
  *
  * User: bbimber
  * Date: 6/13/12
- * Time: 5:25 PM
  */
 public abstract class ClientDependency
 {
