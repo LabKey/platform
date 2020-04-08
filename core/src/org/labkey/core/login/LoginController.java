@@ -1478,7 +1478,7 @@ public class LoginController extends SpringActionController
         @Override
         public Object execute(ReturnUrlForm form, BindException errors)
         {
-            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper());
+            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             if (null != redirectURL)
                 response.put("redirectUrl", redirectURL);
