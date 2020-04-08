@@ -94,7 +94,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
 
-    private boolean _dirty;
+    protected boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
 
