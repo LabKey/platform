@@ -47,7 +47,7 @@ interface InputFieldProps {
     required?: boolean;
     canEdit: boolean;
     type: string;
-    value?: string;
+    value?: any;
     onChange?: Function;
     key?: number;
 }
