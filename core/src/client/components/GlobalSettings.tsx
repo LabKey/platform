@@ -1,10 +1,8 @@
 import React, { PureComponent } from 'react';
-
 import { Panel } from 'react-bootstrap';
-
 import { LabelHelpTip } from '@labkey/components';
-
 import FACheckBox from './FACheckBox';
+import {GlobalSettingsOptions} from "./models";
 
 const ROW_TEXTS = [
     {
@@ -25,19 +23,16 @@ const ROW_TEXTS = [
 ];
 
 interface Props {
-    SelfRegistration?: boolean;
-    SelfServiceEmailChanges?: boolean;
-    AutoCreateAccounts?: boolean;
-
+    globalSettings: GlobalSettingsOptions;
     canEdit: boolean;
     checkGlobalAuthBox: (id: string) => void;
     authCount: number;
 }
 
-export default class GlobalSettings extends PureComponent<Props, Props> {
+export default class GlobalSettings extends PureComponent<Props> {
     render() {
         let rowTexts = ROW_TEXTS;
-        const { canEdit, authCount, checkGlobalAuthBox } = this.props;
+        const { canEdit, authCount, checkGlobalAuthBox, globalSettings } = this.props;
 
         // If there are no user-created auth configs, there is no need to show the auto-create users checkbox
         if (authCount == 1) {
@@ -48,7 +43,7 @@ export default class GlobalSettings extends PureComponent<Props, Props> {
             <div className="global-settings__text-row" key={text.id}>
                 <FACheckBox
                     key={text.id}
-                    checked={this.props[text.id]}
+                    checked={globalSettings[text.id]}
                     canEdit={canEdit}
                     onClick={() => checkGlobalAuthBox(text.id)}
                 />

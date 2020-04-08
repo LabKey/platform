@@ -15,7 +15,7 @@
             <xsd:element name="permissions" type="vw:permissionsListType" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="permissionClasses" type="vw:permissionClassListType" minOccurs="0" maxOccurs="1"/>
             <xsd:element name="dependencies" type="vw:dependenciesType" minOccurs="0" maxOccurs="1"/>
-            <xsd:element name="requiredModuleContext" type="vw:moduleContextType" minOccurs="0" maxOccurs="1"/>
+            <xsd:element name="requiredModuleContext" type="cl:moduleContextType" minOccurs="0" maxOccurs="1"/>
         </xsd:sequence>
         <xsd:attribute name="title" type="xsd:string"/>
         <xsd:attribute name="frame" type="vw:frameType"/>
@@ -82,15 +82,5 @@
             <xsd:enumeration value="app"/>
         </xsd:restriction>
     </xsd:simpleType>
-
-    <xsd:complexType name="moduleContextType">
-        <xsd:sequence minOccurs="0" maxOccurs="unbounded">
-            <xsd:element name="requiredModule" type="vw:requiredModuleType"/>
-        </xsd:sequence>
-    </xsd:complexType>
-
-    <xsd:complexType name="requiredModuleType">
-        <xsd:attribute name="name" type="xsd:string" use="required"/>
-    </xsd:complexType>
 
 </xsd:schema>

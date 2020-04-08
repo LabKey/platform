@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { Button, ButtonGroup, FormControl, Modal } from 'react-bootstrap';
 import { ActionURL, Ajax } from '@labkey/api';
+import { DatabasePasswordRules, DatabasePasswordSettings } from "./models";
 
 const OPTIONS_MAP = {
     Never: 'Never',
@@ -10,7 +11,7 @@ const OPTIONS_MAP = {
     OneYear: 'Every twelve months',
 };
 
-interface Props extends AuthConfig {
+interface Props {
     closeModal: Function;
     canEdit: boolean;
 }
@@ -25,10 +26,7 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
     constructor(props) {
         super(props);
         this.state = {
-            passwordRules: {
-                Weak: '',
-                Strong: '',
-            },
+            passwordRules: { Weak: '', Strong: '' },
             helpLink: null,
             currentSettings: { strength: '', expiration: '' },
         };
@@ -77,8 +75,8 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
 
     render() {
         const { canEdit } = this.props;
-        const passwordStrength = this.state.currentSettings && this.state.currentSettings.strength;
-        const expiration = this.state.currentSettings && this.state.currentSettings.expiration;
+        const { currentSettings } = this.state;
+        const { strength, expiration } = currentSettings;
 
         return (
             <Modal show={true} onHide={this.props.closeModal}>
@@ -97,14 +95,14 @@ export default class DatabaseConfigurationModal extends PureComponent<Props, Sta
                                 <Button
                                     value="Weak"
                                     name="strength"
-                                    active={passwordStrength == 'Weak'}
+                                    active={strength == 'Weak'}
                                     disabled={!canEdit}>
                                     Weak
                                 </Button>
                                 <Button
                                     value="Strong"
                                     name="strength"
-                                    active={passwordStrength == 'Strong'}
+                                    active={strength == 'Strong'}
                                     disabled={!canEdit}>
                                     Strong
                                 </Button>

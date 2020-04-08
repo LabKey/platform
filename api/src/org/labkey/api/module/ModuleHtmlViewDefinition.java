@@ -32,25 +32,22 @@ import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.view.template.PageConfig;
-import org.labkey.clientLibrary.xml.DependencyType;
-import org.labkey.data.xml.view.DependenciesType;
-import org.labkey.data.xml.view.ModuleContextType;
 import org.labkey.data.xml.view.PermissionClassListType;
 import org.labkey.data.xml.view.PermissionClassType;
 import org.labkey.data.xml.view.PermissionType;
 import org.labkey.data.xml.view.PermissionsListType;
-import org.labkey.data.xml.view.RequiredModuleType;
 import org.labkey.data.xml.view.ViewDocument;
 import org.labkey.data.xml.view.ViewType;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Metadata for a file-based html view in a module, supplied by a .view.xml file in a module's ./resources/views directory.
@@ -66,12 +63,12 @@ public class ModuleHtmlViewDefinition
     public static final String VIEW_METADATA_EXTENSION = ".view.xml";
 
     private final String _name;
+    private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedList<>();
+    private final Set<Class<? extends Permission>> _requiredPermissionClasses = new HashSet<>();
 
     private String _html;
     private int _requiredPerms = ACL.PERM_READ;  //8550: Default perms for simple module views should be read
-    private Set<Class<? extends Permission>> _requiredPermissionClasses = new HashSet<>();
     private boolean _requiresLogin = false;
-    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
     private ViewType _viewDef = null;
 
     public ModuleHtmlViewDefinition(Resource r)
@@ -131,10 +128,8 @@ public class ModuleHtmlViewDefinition
                     calculatePermissions();
                     // We will reload to pick up changes, so don't just keep adding to the same set of dependencies.
                     // Start over each time and flip the collection all at once.
-                    Set<ClientDependency> newClientDependencies = new LinkedHashSet<>();
-                    newClientDependencies.addAll(addResources());
-                    newClientDependencies.addAll(addModuleContext());
-                    _clientDependencies = newClientDependencies;
+                    addResources();
+                    addModuleContext();
                 }
             }
             catch(Exception e)
@@ -201,45 +196,16 @@ public class ModuleHtmlViewDefinition
         }
     }
 
-    protected Set<ClientDependency> addResources()
+    protected void addResources()
     {
-        DependenciesType resourcesList = _viewDef.getDependencies();
-        if (null == resourcesList)
-            return Collections.emptySet();
-
-        DependencyType[] resources = resourcesList.getDependencyArray();
-        if (null == resources)
-            return Collections.emptySet();
-
-        Set<ClientDependency> result = new LinkedHashSet<>();
-        for (DependencyType r : resources)
-        {
-            ClientDependency cr = ClientDependency.fromXML(r);
-            if (cr != null)
-                result.add(cr);
-            else
-                _log.error("Unable to process <dependency> for file: " + getName());
-        }
-        return result;
+        if (_viewDef.isSetDependencies())
+            _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(_viewDef.getDependencies().getDependencyArray(), getName()));
     }
 
-    protected Set<ClientDependency> addModuleContext()
+    protected void addModuleContext()
     {
-        ModuleContextType modulesList = _viewDef.getRequiredModuleContext();
-        if (null == modulesList)
-            return Collections.emptySet();
-
-        RequiredModuleType[] modules = modulesList.getRequiredModuleArray();
-        if (null == modules)
-            return Collections.emptySet();
-
-        Set<ClientDependency> result = new HashSet<>();
-        for (RequiredModuleType mn : modules)
-        {
-            ClientDependency cr = ClientDependency.fromModuleName(mn.getName());
-            result.add(cr);
-        }
-        return result;
+        if (_viewDef.isSetRequiredModuleContext())
+            _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(_viewDef.getRequiredModuleContext().getModuleArray(), _name, x->true));
     }
 
     public String getName()
@@ -286,6 +252,6 @@ public class ModuleHtmlViewDefinition
 
     public Set<ClientDependency> getClientDependencies()
     {
-        return _clientDependencies;
+        return ClientDependency.getClientDependencySet(_clientDependencySuppliers);
     }
 }

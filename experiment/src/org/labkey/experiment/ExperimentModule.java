@@ -36,6 +36,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -132,7 +133,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public Double getSchemaVersion()
     {
-        return 20.002;
+        return 20.003;
     }
 
     @Nullable
@@ -307,7 +308,27 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
                 }
             });
-            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
+            ss.addResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName(), new SearchService.ResourceResolver(){
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(ExpDataClassImpl.SEARCH_CATEGORY.getName() + ":", ""));
+                    if (rowId == 0)
+                        return null;
+
+                    ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
+                    if (dataClass == null)
+                        return null;
+
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                    //Need to map to proper Icon
+                    properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
+
+                    return properties;
+                }
+            });
+            ss.addResourceResolver(ExpSampleSetImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
@@ -551,8 +572,15 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         }, SearchService.PRIORITY.bulk);
 
         task.addRunnable(() -> {
-            List<ExpDataImpl> datas = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
-            task.addResourceList(datas, 100, ExpDataImpl::createDocument);
+            for (ExpDataClassImpl dataClass : ExperimentServiceImpl.get().getIndexableDataClasses(c, modifiedSince))
+            {
+                dataClass.index(task);
+            }
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> {
+            List<ExpDataImpl> dataObjects = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
+            task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
         }, SearchService.PRIORITY.bulk);
     }
 
@@ -562,6 +590,10 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         // Clear the last indexed time on all material sources
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
+        // Clear the last indexed time on all data classes
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoDataClass() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
 
         // Clear the last indexed time on all materials

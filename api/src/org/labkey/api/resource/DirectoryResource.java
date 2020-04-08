@@ -23,7 +23,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
-import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.files.SupportsFileSystemWatcher;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -44,7 +43,6 @@ import java.util.Map;
 public class DirectoryResource extends AbstractResourceCollection implements SupportsFileSystemWatcher
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "DirectoryResource Cache", null);
-    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
 
     private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;
@@ -56,7 +54,7 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         {
             Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
 
-            if (null != _dir & _dir.isDirectory())
+            if (null != _dir && _dir.isDirectory())
             {
                 File[] files = _dir.listFiles();
                 if (files != null)
@@ -154,48 +152,34 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         return _dir;
     }
 
-    private class DirectoryResourceListener implements FileSystemDirectoryListener
-    {
-        @Override
-        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void overflow()
-        {
-            clearChildren();
-        }
-    }
-
-    // Listen for events in all directories associated with this resource
+    // Listen for events in the directory associated with this resource
     @SafeVarargs
     @Override
     public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
     {
         if (isCollection())
         {
-            try
-            {
-                watcher.addListener(_dir.toPath(), listener, events);
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            registerListener(_dir.toPath(), watcher, listener, events);
+        }
+    }
+
+    @SafeVarargs
+    @Override
+    public final void registerListenerOnParent(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+    {
+        registerListener(_dir.toPath().getParent(), watcher, listener, events);
+    }
+
+    @SafeVarargs
+    private static void registerListener(java.nio.file.Path path, FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+    {
+        try
+        {
+            watcher.addListener(path, listener, events);
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 }

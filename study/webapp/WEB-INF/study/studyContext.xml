@@ -172,6 +172,7 @@
                         <list>
                             <ref bean="zipFileType"/>
                             <ref bean="tsvFileType"/>
+                            <ref bean="specimensFileType"/>
                         </list>
                     </property>
                     <property name="taskProgressionSpec">
@@ -201,6 +202,9 @@
     </bean>
     <bean id="zipFileType" class="org.labkey.api.util.FileType">
         <constructor-arg value=".zip"/>
+    </bean>
+    <bean id="specimensFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".specimens"/>
     </bean>
 
 </beans>

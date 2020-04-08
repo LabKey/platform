@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from 'react';
 import {Col, Form, FormControl, Row} from "react-bootstrap";
 
 import {FORM_IDS} from "./constants";

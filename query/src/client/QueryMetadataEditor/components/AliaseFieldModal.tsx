@@ -1,5 +1,5 @@
 import React, {PureComponent} from "react";
-import {Button, Modal} from "react-bootstrap";
+import {Button, Modal, Row, Col} from "react-bootstrap";
 import {List} from "immutable";
 import {DomainField, SelectInput} from "@labkey/components";
 
@@ -68,18 +68,25 @@ export class AliasFieldModal extends PureComponent<AliasFieldModalProps, AliasFi
 
         return (
             <>
-                <div>Field Options</div>
-                <SelectInput
-                    onChange={this.handleChange}
-                    value={domainFields.get(0)}
-                    options={domainFields.toArray()}
-                    inputClass="" // This attr is necessary for proper styling
-                    valueKey="name"
-                    labelKey="label"
-                    formsy={false}
-                    multiple={false}
-                    required={false}
-                />
+                <Row>
+                    <Col xs={3}>
+                        Field Options
+                    </Col>
+                    <Col xs={9}>
+                        <SelectInput
+                            onChange={this.handleChange}
+                            value={domainFields.get(0)}
+                            options={domainFields.toArray()}
+                            inputClass={'col-xs-12'}
+                            valueKey="name"
+                            labelKey="label"
+                            formsy={false}
+                            multiple={false}
+                            required={false}
+                            clearable={false}
+                        />
+                    </Col>
+                </Row>
             </>
         )
 
@@ -101,13 +108,15 @@ export class AliasFieldModal extends PureComponent<AliasFieldModalProps, AliasFi
                     </div>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button onClick={this.handleClose} className='domain-adv-footer domain-adv-cancel-btn'>
-                        Cancel
-                    </Button>
+                    <div className={'domain-designer-buttons'}>
+                        <Button onClick={this.handleClose} className='domain-adv-footer domain-adv-cancel-btn'>
+                            Cancel
+                        </Button>
 
-                    <Button onClick={this.handleOK} className='domain-adv-footer domain-adv-apply-btn'>
-                        OK
-                    </Button>
+                        <Button onClick={this.handleOK} className='domain-adv-footer domain-adv-apply-btn' bsStyle={'primary'}>
+                            OK
+                        </Button>
+                    </div>
                 </Modal.Footer>
             </Modal>
         );

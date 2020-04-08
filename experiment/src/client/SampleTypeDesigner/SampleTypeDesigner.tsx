@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import { Map } from "immutable";
 import React from 'react'
-import { ActionURL } from "@labkey/api";
+import { Map } from "immutable";
+import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
     BeforeUnload,
@@ -127,14 +127,14 @@ export class App extends React.PureComponent<any, State> {
     onComplete = (response: DomainDesign) => {
         const rowId = this.getRowIdParam();
         const url = rowId
-            ? ActionURL.buildURL('experiment', 'showMaterialSource', LABKEY.container.path, {rowId: rowId})
-            : ActionURL.buildURL('experiment', 'listMaterialSources', LABKEY.container.path);
+            ? ActionURL.buildURL('experiment', 'showMaterialSource', getServerContext().container.path, {rowId: rowId})
+            : ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path);
 
         this.navigate(url);
     };
 
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('experiment', 'listMaterialSources', LABKEY.container.path));
+        this.navigate(ActionURL.buildURL('experiment', 'listMaterialSources', getServerContext().container.path));
     };
 
     navigate(defaultUrl: string) {

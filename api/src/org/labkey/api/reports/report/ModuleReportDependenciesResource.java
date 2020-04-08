@@ -19,12 +19,14 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.view.template.ClientDependency;
-import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportType;
 
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * User: nick
@@ -32,9 +34,7 @@ import java.util.LinkedHashSet;
  */
 public class ModuleReportDependenciesResource extends ModuleReportResource
 {
-    private static final Logger _log = Logger.getLogger(ModuleReportDependenciesResource.class);
-
-    private LinkedHashSet<ClientDependency> _dependencies;
+    private final List<Supplier<ClientDependency>> _dependencySuppliers = new LinkedList<>();
 
     public ModuleReportDependenciesResource(ReportDescriptor reportDescriptor, Resource sourceFile)
     {
@@ -58,21 +58,11 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
         {
             try
             {
-                if (d.getReportType() != null)
+                if (d.isSetReportType())
                 {
-                    _dependencies = new LinkedHashSet<>();
                     DependenciesType xmlDependencies = getXmlDependencies(d.getReportType());
                     if (xmlDependencies != null)
-                    {
-                        for (DependencyType depend : xmlDependencies.getDependencyArray())
-                        {
-                            ClientDependency cd = ClientDependency.fromXML(depend);
-                            if (cd != null)
-                                _dependencies.add(cd);
-                            else
-                                _log.error("Unable to parse <dependency> tag for: " + getSourceFile().getName());
-                        }
-                    }
+                        _dependencySuppliers.addAll(ClientDependency.getSuppliers(xmlDependencies.getDependencyArray(), getSourceFile().getName()));
                 }
             }
             catch(XmlException e)
@@ -87,9 +77,6 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
-        if (_dependencies == null)
-            return new LinkedHashSet<>();
-
-        return _dependencies;
+        return ClientDependency.getClientDependencySet(_dependencySuppliers);
     }
 }
