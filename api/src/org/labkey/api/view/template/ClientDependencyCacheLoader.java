@@ -18,7 +18,6 @@ package org.labkey.api.view.template;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
@@ -29,6 +28,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
@@ -44,25 +44,23 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
     private static final Logger LOG = Logger.getLogger(ClientDependencyCacheLoader.class);
     private static final Set<String> EXISTING_LISTENERS = new ConcurrentHashSet<>();
 
-    private final Cache<String, ClientDependency> _cache;
-    private final Path _path;
-    private final ModeTypeEnum.Enum _mode;
-
-    public ClientDependencyCacheLoader(@NotNull Cache<String, ClientDependency> cache, @NotNull Path path, @NotNull ModeTypeEnum.Enum mode)
+    public ClientDependencyCacheLoader()
     {
-        _cache = cache;
-        _path = path;
-        _mode = mode;
     }
 
     @Override
-    public @Nullable ClientDependency load(@NotNull String key, @Nullable Object argument)
+    public @Nullable ClientDependency load(@NotNull String key, Object argument)
     {
-        ClientDependency.TYPE primaryType = ClientDependency.TYPE.fromPath(_path);
+        @SuppressWarnings("unchecked")
+        Pair<Path, ModeTypeEnum.Enum> pair = (Pair<Path, ModeTypeEnum.Enum>)argument;
+        Path path = pair.first;
+        ModeTypeEnum.Enum mode = pair.second;
+
+        ClientDependency.TYPE primaryType = ClientDependency.TYPE.fromPath(path);
 
         if (primaryType == null)
         {
-            LOG.warn("Client dependency type not recognized: " + _path);
+            LOG.warn("Client dependency type not recognized: " + path);
             return null;
         }
 
@@ -70,42 +68,42 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
 
         if (ClientDependency.TYPE.context == primaryType)
         {
-            String moduleName = FileUtil.getBaseName(_path.getName());
+            String moduleName = FileUtil.getBaseName(path.getName());
             Module m = ModuleLoader.getInstance().getModule(moduleName);
 
             if (m == null)
             {
-                ClientDependency.logError("Module \"" + moduleName + "\" not found, skipping script file \"" + _path + "\".");
+                ClientDependency.logError("Module \"" + moduleName + "\" not found, skipping script file \"" + path + "\".");
                 return null;
             }
 
-            cr = new ContextClientDependency(m, _mode);
+            cr = new ContextClientDependency(m, mode);
         }
         else
         {
-            Resource r = WebdavService.get().getRootResolver().lookup(_path);
+            Resource r = WebdavService.get().getRootResolver().lookup(path);
             //TODO: can we connect this resource back to a module, and load that module's context by default?
 
             if (r == null || !r.exists())
             {
                 // Allows you to run in dev mode without having the concatenated scripts built
-                if (!AppProps.getInstance().isDevMode() || !_mode.equals(ModeTypeEnum.PRODUCTION))
+                if (!AppProps.getInstance().isDevMode() || !mode.equals(ModeTypeEnum.PRODUCTION))
                 {
-                    ClientDependency.logError("ClientDependency \"" + _path + "\" not found, skipping.");
+                    ClientDependency.logError("ClientDependency \"" + path + "\" not found, skipping.");
                     return null;
                 }
             }
 
             if (ClientDependency.TYPE.lib == primaryType)
             {
-                cr = new LibClientDependency(_path, _mode, r);
+                cr = new LibClientDependency(path, mode, r);
 
                 if (null != r)
                     ensureListener(key, r);
             }
             else
             {
-                cr = new FilePathClientDependency(_path, _mode, primaryType);
+                cr = new FilePathClientDependency(path, mode, primaryType);
             }
         }
 
@@ -122,12 +120,11 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
             return;
 
         String name = r.getName();
-        Resource parent = r.parent();
 
-        if (parent instanceof SupportsFileSystemWatcher)
+        if (r instanceof SupportsFileSystemWatcher)
         {
             //noinspection unchecked
-            ((SupportsFileSystemWatcher) parent).registerListener(FileSystemWatchers.get(), new FileSystemDirectoryListener()
+            ((SupportsFileSystemWatcher) r).registerListenerOnParent(FileSystemWatchers.get(), new FileSystemDirectoryListener()
             {
                 @Override
                 public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -150,7 +147,7 @@ public class ClientDependencyCacheLoader implements CacheLoader<String, ClientDe
                 private void process(java.nio.file.Path entry)
                 {
                     if (entry.toString().equals(name))
-                        _cache.remove(key);
+                        ClientDependency.CACHE.remove(key);
                 }
 
                 @Override
