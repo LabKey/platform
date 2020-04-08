@@ -39,7 +39,7 @@ public class DummyTaskFactory extends AbstractTaskFactory
     @Override
     public PipelineJob.Task createTask(PipelineJob job)
     {
-        return new DummyTask(job);
+        return new DummyTask((DummyPipelineJob)job);
     }
 
     @Override
