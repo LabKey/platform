@@ -432,7 +432,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.INSERT, result);
 
         return result;
     }
@@ -585,7 +585,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             throw errors;
 
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.UPDATE, oldRows, result);
 
         return result;
     }
@@ -649,7 +649,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.DELETE, result);
 
         return result;
     }
@@ -675,7 +675,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.TRUNCATE);
 
         return result;
     }

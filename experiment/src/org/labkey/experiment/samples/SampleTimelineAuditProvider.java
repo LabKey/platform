@@ -2,16 +2,19 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,7 +28,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_TYPE_COLUMN_NAME = "SampleType";
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
-    public static final String SAMPLE_ID_COLUMN_NAME = "SampleID"; // ??? LSID instead or in addition ???
+    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? LSID instead or in addition ???
 
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -37,8 +40,9 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_COLUMN_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_NAME_COLUMN_NAME));
-        defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_ID_COLUMN_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_LSID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -80,9 +84,9 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             @Override
             protected void initColumn(BaseColumnInfo col)
             {
-                if (SAMPLE_ID_COLUMN_NAME.equalsIgnoreCase(col.getName()))
+                if (SAMPLE_LSID_COLUMN_NAME.equalsIgnoreCase(col.getName()))
                 {
-                    col.setLabel("Sample ID");
+                    col.setLabel("Sample LSID");
                 }
                 else if (SAMPLE_NAME_COLUMN_NAME.equalsIgnoreCase(col.getName()))
                 {
@@ -109,23 +113,31 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     }
 
 
-    public static class SampleTimelineAuditEvent extends AuditTypeEvent
+    public static class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
-        private String _sampleId;
+        private String _sampleLsid;
         private String _sampleName;
         private String _sampleType;
-        private String _sampleTypeId;
-        private String _oldRecordMap;
-        private String _newRecordMap;
+        private int _sampleTypeId;
 
-        public String getSampleId()
+        public SampleTimelineAuditEvent()
         {
-            return _sampleId;
+            super();
         }
 
-        public void setSampleId(String sampleId)
+        public SampleTimelineAuditEvent(String container, String comment)
         {
-            _sampleId = sampleId;
+            super(EVENT_TYPE, container, comment);
+        }
+
+        public String getSampleLsid()
+        {
+            return _sampleLsid;
+        }
+
+        public void setSampleLsid(String sampleLsid)
+        {
+            _sampleLsid = sampleLsid;
         }
 
         public String getSampleName()
@@ -148,41 +160,21 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             _sampleType = sampleType;
         }
 
-        public String getSampleTypeId()
+        public int getSampleTypeId()
         {
             return _sampleTypeId;
         }
 
-        public void setSampleTypeId(String sampleTypeId)
+        public void setSampleTypeId(int sampleTypeId)
         {
             _sampleTypeId = sampleTypeId;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("sampleId", getSampleId());
+            elements.put("sampleId", getSampleLsid());
             elements.put("sampleName", getSampleName());
             elements.put("sampleType", getSampleType());
             elements.put("sampleTypeId", getSampleTypeId());
@@ -203,7 +195,11 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             super(EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
-
+            fields.add(createPropertyDescriptor(SAMPLE_TYPE_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_TYPE_ID_COLUMN_NAME, PropertyType.INTEGER));
+            fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
+            _fields = Collections.unmodifiableSet(fields);
         }
 
         @Override

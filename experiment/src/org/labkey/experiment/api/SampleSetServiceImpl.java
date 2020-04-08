@@ -24,9 +24,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.ServiceWithDetailedAuditing;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -75,6 +78,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -97,10 +101,12 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singleton;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleSetServiceImpl implements SampleSetService
+public class SampleSetServiceImpl extends ServiceWithDetailedAuditing implements SampleSetService
 {
     public static SampleSetServiceImpl get()
     {
@@ -869,5 +875,45 @@ public class SampleSetServiceImpl implements SampleSetService
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;
+    }
+
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, String comment, @Nullable Map<String, Object> row)
+    {
+        SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(c.getId(), comment);
+
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+
+        if (row != null)
+        {
+            if (row.containsKey(CPAS_TYPE))
+            {
+                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(String.valueOf(row.get(CPAS_TYPE)), c);
+                if (sampleSet != null)
+                {
+                    event.setSampleType(sampleSet.getName());
+                    event.setSampleTypeId(sampleSet.getRowId());
+                }
+            }
+            if (row.containsKey(LSID))
+            {
+                event.setSampleLsid(String.valueOf(row.get(LSID)));
+            }
+//            FieldKey rowPk = tInfo.getAuditRowPk();
+//            if (rowPk != null)
+//            {
+//                if (row.containsKey(rowPk.toString()))
+//                {
+//                    Object pk = row.get(rowPk.toString());
+//                    event.setSampleLsid(String.valueOf(pk));
+//                }
+//            }
+            if (row.containsKey("Name"))
+            {
+                event.setSampleName(String.valueOf(row.get("Name")));
+            }
+        }
+
+        return event;
     }
 }

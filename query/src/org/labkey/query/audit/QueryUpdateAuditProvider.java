@@ -19,6 +19,7 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -188,13 +189,11 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-    public static class QueryUpdateAuditEvent extends AuditTypeEvent
+    public static class QueryUpdateAuditEvent extends DetailedAuditTypeEvent
     {
         private String _rowPk;
         private String _schemaName;
         private String _queryName;
-        private String _oldRecordMap;
-        private String _newRecordMap;
 
         public QueryUpdateAuditEvent()
         {
@@ -234,26 +233,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override

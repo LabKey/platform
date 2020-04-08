@@ -142,7 +142,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.DELETE);
 
         return new ArrayList<>();
     }
@@ -404,7 +404,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
 
         if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, rows);
+            QueryService.get().addAuditEvent(user, container, getQueryTable(), null, QueryService.AuditAction.UPDATE, rows);
 
         return getRows(user, container, newKeys);
     }

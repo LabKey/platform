@@ -20,6 +20,8 @@ import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -38,6 +40,10 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
  */
 public class DetailedAuditLogDataIterator extends AbstractDataIterator
 {
+    public enum AuditConfigs {
+        AuditLevel;
+    }
+
     final DataIterator _data;
     final User _user;
     final Container _container;
@@ -77,8 +83,13 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
             AuditConfigurable auditConfigurable = (AuditConfigurable) _table;
             AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
 
-            if (auditType == DETAILED)
-                QueryService.get().addAuditEvent(_user, _container, _table, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+            if (auditType == DETAILED || _context.getConfigParameter(AuditConfigs.AuditLevel) == DETAILED)
+            {
+                if (_table.getPublicSchemaName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+                    SampleSetService.get().addAuditEvent(_user, _container, _table, DETAILED, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+                else
+                    QueryService.get().addAuditEvent(_user, _container, _table, DETAILED, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+            }
         }
 
         return true;
