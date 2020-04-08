@@ -31,6 +31,10 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.query.ModuleQueryDef.FILE_EXTENSION;
+import static org.labkey.query.ModuleQueryDef.META_FILE_EXTENSION;
+
 /*
 * User: Dave
 * Date: Jan 16, 2009
@@ -39,31 +43,55 @@ import java.util.Collections;
 public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
 {
     private final String _moduleName;
-    private final File _resourceFile;
+    private final File _resourceSqlFile;
+    private final File _resourceQueryXmlFile;
 
     public ModuleCustomQueryDefinition(ModuleQueryDef moduleQueryDef, SchemaKey schemaKey, User user, Container container)
     {
         super(user, container, moduleQueryDef.toQueryDef(container, schemaKey));
         _moduleName = moduleQueryDef.getModule().getName();
-        _resourceFile = ModuleEditorService.get().getFileForModuleResource(moduleQueryDef.getModule(), moduleQueryDef.getPath());
+
+        File queryXML = null;
+        File querySQL = ModuleEditorService.get().getFileForModuleResource(moduleQueryDef.getModule(), moduleQueryDef.getPath());
+
+        if (null == querySQL || !querySQL.getName().endsWith(FILE_EXTENSION))
+        {
+            querySQL = null;
+        }
+        else
+        {
+            //public static final String META_FILE_EXTENSION))
+            if (null != moduleQueryDef.getMetadataDef())
+                queryXML = ModuleEditorService.get().getFileForModuleResource(moduleQueryDef.getModule(), moduleQueryDef.getMetadataDef().getPath());
+            if (null == queryXML)
+            {
+                String path = querySQL.getPath();
+                queryXML = new File(path.substring(0, path.length()-FILE_EXTENSION.length()) + META_FILE_EXTENSION);
+            }
+        }
+        _resourceSqlFile = querySQL;
+        _resourceQueryXmlFile = queryXML;
     }
 
     @Override
     public boolean isSqlEditable()
     {
-        return null != _resourceFile;
+        return null != _resourceSqlFile && _resourceSqlFile.canWrite();
     }
 
     @Override
     public boolean isMetadataEditable()
     {
-        return false;
+        return null != _resourceQueryXmlFile && (
+                _resourceQueryXmlFile.exists() ?
+                        _resourceQueryXmlFile.canWrite() :
+                        _resourceQueryXmlFile.getParentFile().canWrite());
     }
 
     @Override
     public boolean canEdit(User user)
     {
-        return null != _resourceFile && user.isPlatformDeveloper();
+        return user.isPlatformDeveloper() && isSqlEditable();
     }
 
     @Override
@@ -90,6 +118,12 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
         if (!_dirty)
             return null;
 
+        // no transactions here, so double check that we think this will work
+        if (!isSqlEditable())
+            throw new RuntimeException("File is not writable: " + _resourceSqlFile.toPath());
+        if (!isMetadataEditable())
+            throw new RuntimeException("File is not writable: " + _resourceQueryXmlFile.toPath());
+
         if (isNew())
         {
             throw new UnsupportedOperationException("Module-based queries can not be created.");
@@ -102,10 +136,25 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
                 throw new UnsupportedOperationException("Can't change property: " + change.getProperty());
             }
 
-            try (var fw = new FileWriter(_resourceFile))
+            try (var fwSql = new FileWriter(_resourceSqlFile))
             {
-                IOUtils.write(_queryDef.getSql(), fw);
+                IOUtils.write(_queryDef.getSql(), fwSql);
                 // CONSIDER: QueryService.clearCachedQueryDefs(module, _resourceFile);
+
+                if (isBlank(_queryDef.getMetaData()))
+                {
+                    if (_resourceQueryXmlFile.exists())
+                        _resourceQueryXmlFile.delete();
+                }
+                else
+                {
+                    if (!_resourceQueryXmlFile.exists())
+                        _resourceQueryXmlFile.createNewFile();
+                    try (var fwXml = new FileWriter(_resourceQueryXmlFile))
+                    {
+                        IOUtils.write(_queryDef.getMetaData(), fwXml);
+                    }
+                }
             }
             catch (IOException x)
             {
