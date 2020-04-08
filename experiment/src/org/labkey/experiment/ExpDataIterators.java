@@ -827,7 +827,7 @@ public class ExpDataIterators
             }
 
             // Insert into exp.data then the provisioned table
-            // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
+            // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
                     .setKeyColumns(keyColumns)
                     .setDontUpdate(dontUpdate)
