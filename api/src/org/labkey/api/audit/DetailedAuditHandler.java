@@ -18,6 +18,16 @@ public abstract class DetailedAuditHandler
 {
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tIfo, String comment, @Nullable Map<String, Object> row);
 
+    protected String getCommentSummary(QueryService.AuditAction action)
+    {
+        return action.getCommentSummary();
+    }
+
+    protected String getCommentDetailed(QueryService.AuditAction action)
+    {
+        return action.getCommentDetailed();
+    }
+
     public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, QueryService.AuditAction action, List<Map<String, Object>>... params)
     {
         if (table.supportsAuditTracking())
@@ -36,8 +46,7 @@ public abstract class DetailedAuditHandler
 
                     case SUMMARY:
                     case DETAILED:
-                        String comment = QueryService.AuditAction.TRUNCATE.getCommentSummary();
-                        AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, null);
+                        AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, getCommentSummary(action), null);
                         AuditLogService.get().addEvent(user, event);
                         return;
                 }
@@ -53,7 +62,7 @@ public abstract class DetailedAuditHandler
                     assert (params.length > 0);
 
                     List<Map<String, Object>> rows = params[0];
-                    String comment = String.format(action.getCommentSummary(), rows.size());
+                    String comment = String.format(getCommentSummary(action), rows.size());
                     AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, rows.get(0));
 
                     AuditLogService.get().addEvent(user, event);
@@ -67,7 +76,7 @@ public abstract class DetailedAuditHandler
                     for (int i=0; i < rows.size(); i++)
                     {
                         Map<String, Object> row = rows.get(i);
-                        String comment = String.format(action.getCommentDetailed(), row.size());
+                        String comment = String.format(getCommentDetailed(action), row.size());
 
                         DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, row);
 

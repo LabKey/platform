@@ -877,6 +877,24 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
         return true;
     }
 
+    @Override
+    protected String getCommentDetailed(QueryService.AuditAction action)
+    {
+        switch (action) {
+            case INSERT:
+                return "Sample registered";
+            case DELETE:
+            case TRUNCATE:
+                return "Sample deleted";
+            case MERGE:
+                return "Sample registered or updated";
+            case UPDATE:
+                return "Sample updated";
+        }
+        return action.getCommentDetailed();
+    }
+
+    @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, String comment, @Nullable Map<String, Object> row)
     {
         SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(c.getId(), comment);
