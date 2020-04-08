@@ -32,7 +32,7 @@ import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.ServiceWithDetailedAuditing;
+import org.labkey.api.audit.DetailedAuditHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -144,7 +144,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 
-public class QueryServiceImpl extends ServiceWithDetailedAuditing implements QueryService
+public class QueryServiceImpl extends DetailedAuditHandler implements QueryService
 {
     private static final Logger LOG = Logger.getLogger(QueryServiceImpl.class);
     private static final ResourceRootProvider QUERY_AND_ASSAY_PROVIDER = new ResourceRootProvider()

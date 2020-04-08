@@ -59,7 +59,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private String _queryViewActionURL;
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
-    private AuditBehaviorType _auditLevel = null;
+    private AuditBehaviorType _auditBehavior = null;
 
     // Allow URL parameters to bind schemaName, queryName, viewName, and dataRegionName.
     // If a derived class explicitly sets a schemaName and/or queryName (e.g. ListQueryForm or ChooseRunsToAnalyzeForm)
@@ -137,14 +137,14 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         assert MemTracker.getInstance().put(this);
     }
 
-    public AuditBehaviorType getAuditLevel()
+    public AuditBehaviorType getAuditBehavior()
     {
-        return _auditLevel;
+        return _auditBehavior;
     }
 
-    public void setAuditLevel(AuditBehaviorType auditLevel)
+    public void setAuditBehavior(AuditBehaviorType auditBehavior)
     {
-        _auditLevel = auditLevel;
+        _auditBehavior = auditBehavior;
     }
 
     @Override

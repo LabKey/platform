@@ -538,7 +538,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (auditBehaviorType != null)
             {
                 Map<Enum, Object> configParameters = new HashMap<>();
-                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditLevel, auditBehaviorType);
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
                 context.setConfigParameters(configParameters);
             }
             if (_importIdentity)

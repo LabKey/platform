@@ -3359,7 +3359,7 @@ public class QueryController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
-            _auditBehaviorType = form.getAuditLevel();
+            _auditBehaviorType = form.getAuditBehavior();
         }
 
         @Override
@@ -3707,17 +3707,17 @@ public class QueryController extends SpringActionController
                 extraContext = new CaseInsensitiveHashMap<>();
 
             Map<Enum, Object> configParameters = new HashMap<>();
-            String auditLevel = json.getString("auditLevel");
-            if (!StringUtils.isEmpty(auditLevel))
+            String auditBehavior = json.getString("auditBehavior");
+            if (!StringUtils.isEmpty(auditBehavior))
             {
                 try
                 {
-                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditLevel);
-                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditLevel, behaviorType);
+                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
                 }
                 catch (IllegalArgumentException ignored)
                 {
-                    logger.warn("Unknown log level type " + auditLevel + " ignored.");
+                    logger.warn("Unknown log level type " + auditBehavior + " ignored.");
                 }
             }
 

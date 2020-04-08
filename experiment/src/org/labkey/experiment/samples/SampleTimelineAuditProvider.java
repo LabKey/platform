@@ -10,6 +10,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 
@@ -103,6 +104,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             }
         };
         appendValueMapColumns(table);
+
+        DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
+        url.setStrictContainerContextEval(true);
+        table.setDetailsURL(url);
         return table;
     }
 

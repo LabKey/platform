@@ -41,7 +41,7 @@ import static org.labkey.api.gwt.client.AuditBehaviorType.DETAILED;
 public class DetailedAuditLogDataIterator extends AbstractDataIterator
 {
     public enum AuditConfigs {
-        AuditLevel;
+        AuditBehavior;
     }
 
     final DataIterator _data;
@@ -81,14 +81,18 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
         if (_table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable) _table;
-            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
 
-            if (auditType == DETAILED || _context.getConfigParameter(AuditConfigs.AuditLevel) == DETAILED)
+            // configParameter value overrides value from the tableInfo
+            AuditBehaviorType auditType = (AuditBehaviorType) _context.getConfigParameter(AuditConfigs.AuditBehavior);
+            if (auditType == null)
+                auditType = auditConfigurable.getAuditBehavior();
+
+            if (auditType == DETAILED)
             {
                 if (_table.getPublicSchemaName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-                    SampleSetService.get().addAuditEvent(_user, _container, _table, DETAILED, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+                    SampleSetService.get().addAuditEvent(_user, _container, _table, auditType, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
                 else
-                    QueryService.get().addAuditEvent(_user, _container, _table, DETAILED, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
+                    QueryService.get().addAuditEvent(_user, _container, _table, auditType, _auditAction, Collections.singletonList(((MapDataIterator) _data).getMap()));
             }
         }
 

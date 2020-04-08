@@ -14,7 +14,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class ServiceWithDetailedAuditing
+public abstract class DetailedAuditHandler
 {
     protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tIfo, String comment, @Nullable Map<String, Object> row);
 

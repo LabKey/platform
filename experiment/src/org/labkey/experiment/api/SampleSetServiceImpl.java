@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
-import org.labkey.api.audit.ServiceWithDetailedAuditing;
+import org.labkey.api.audit.DetailedAuditHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
@@ -106,7 +106,7 @@ import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleSetServiceImpl extends ServiceWithDetailedAuditing implements SampleSetService
+public class SampleSetServiceImpl extends DetailedAuditHandler implements SampleSetService
 {
     public static SampleSetServiceImpl get()
     {
@@ -886,9 +886,14 @@ public class SampleSetServiceImpl extends ServiceWithDetailedAuditing implements
 
         if (row != null)
         {
+            String sampleSetLsid = null;
             if (row.containsKey(CPAS_TYPE))
+                sampleSetLsid =  String.valueOf(row.get(CPAS_TYPE));
+            if (sampleSetLsid == null && row.containsKey("sampleset"))
+                sampleSetLsid = String.valueOf(row.get("sampleset"));
+            if (sampleSetLsid != null)
             {
-                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(String.valueOf(row.get(CPAS_TYPE)), c);
+                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(sampleSetLsid, c);
                 if (sampleSet != null)
                 {
                     event.setSampleType(sampleSet.getName());
