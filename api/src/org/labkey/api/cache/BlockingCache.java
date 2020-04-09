@@ -275,20 +275,20 @@ public class BlockingCache<K, V> implements Cache<K, V>
         {
             _cache = new Cache<>()
             {
-                @Override public void put(Integer key, Wrapper<Integer> value)
+                @Override public void put(@NotNull Integer key, Wrapper<Integer> value)
                 {
                     _map.put(key, value);
                 }
-                @Override public void put(Integer key, Wrapper<Integer> value, long timeToLive)
+                @Override public void put(@NotNull Integer key, Wrapper<Integer> value, long timeToLive)
                 {
                     _map.put(key, value);
                 }
-                @Override public Wrapper<Integer> get(Integer key)
+                @Override public Wrapper<Integer> get(@NotNull Integer key)
                 {
                     return _map.get(key);
                 }
-                @Override public Wrapper<Integer> get(Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
-                @Override public void remove(Integer key) { throw new UnsupportedOperationException(); }
+                @Override public Wrapper<Integer> get(@NotNull Integer key, @Nullable Object arg, CacheLoader<Integer, Wrapper<Integer>> loader) { throw new UnsupportedOperationException(); }
+                @Override public void remove(@NotNull Integer key) { throw new UnsupportedOperationException(); }
                 @Override public int removeUsingFilter(Filter<Integer> filter) { throw new UnsupportedOperationException(); }
                 @Override public Set<Integer> getKeys() { throw new UnsupportedOperationException(); }
                 @Override public void clear() { throw new UnsupportedOperationException(); }
