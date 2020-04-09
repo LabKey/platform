@@ -51,6 +51,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -922,15 +923,6 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
             {
                 event.setSampleLsid(String.valueOf(row.get(LSID)));
             }
-//            FieldKey rowPk = tInfo.getAuditRowPk();
-//            if (rowPk != null)
-//            {
-//                if (row.containsKey(rowPk.toString()))
-//                {
-//                    Object pk = row.get(rowPk.toString());
-//                    event.setSampleLsid(String.valueOf(pk));
-//                }
-//            }
             if (row.containsKey("Name"))
             {
                 event.setSampleName(String.valueOf(row.get("Name")));
