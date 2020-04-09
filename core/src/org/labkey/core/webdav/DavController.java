@@ -3900,7 +3900,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileMovedEvent(WebdavResource dest, WebdavResource src, Collection<? extends WebdavResource> movedChildren)
+    private void fireFileMovedEvent(@NotNull WebdavResource dest, @NotNull WebdavResource src, @Nullable Collection<? extends WebdavResource> movedChildren)
     {
         long start = System.currentTimeMillis();
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());

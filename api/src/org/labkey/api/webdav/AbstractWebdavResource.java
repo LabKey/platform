@@ -96,7 +96,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     protected AbstractWebdavResource(Path folder, String name, WebdavResolver resolver)
     {
-        this(folder.append(name), resolver);
+        super(folder.append(name), resolver);
     }
 
     protected AbstractWebdavResource(Resource folder, String name)
