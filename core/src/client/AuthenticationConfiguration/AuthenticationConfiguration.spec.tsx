@@ -45,6 +45,7 @@ describe('<AuthenticationConfiguration/>', () => {
 
     test('Cancel button triggers', () => {
         window.location.assign = jest.fn();
+        wrapper.setState({loading: false});
 
         const cancelButton = wrapper.find('.parent-panel__cancel-button').at(0);
         cancelButton.simulate('click');
@@ -53,6 +54,8 @@ describe('<AuthenticationConfiguration/>', () => {
     });
 
     test('Making global checkbox fields dirty sets dirtiness flag, brings up alert message', () => {
+        wrapper.setState({loading: false});
+
         let checkbox = wrapper.find(".fa-check-square").at(0);
         checkbox.simulate('click');
 

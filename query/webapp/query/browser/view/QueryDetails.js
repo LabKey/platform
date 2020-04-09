@@ -105,9 +105,9 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
                 html: 'Loading...'
             }
         }];
-
         this.callParent();
         this.on('afterrender', this.loadQueryDetails, this, {single: true});
+        this.parent.on('dependencychanged', this.refreshQueryDependencies, this);
     },
 
     loadQueryDetails : function(){
@@ -362,7 +362,7 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
 
     formatDependencies : function () {
 
-        const dependencies = this.queriesCache.getDependencies(this.schemaName, this.queryName);
+        const dependencies = this.queriesCache.getDependencies(LABKEY.container.id, this.schemaName, this.queryName);
         if (dependencies){
             let tpl = new Ext4.XTemplate(
                 '<h3 style="padding-top: 1.0em">Dependency Report</h3>',
@@ -687,12 +687,13 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         this.add({
             xtype : 'box',
             height : 100,
+            itemId : 'lk-dependency-report',
             listeners : {
                 render : {
                     scope : this,
                     fn : function(cmp){
                         cmp.getEl().mask('loading dependencies');
-                        this.queriesCache.load(function(){this.setQueryDependencies(cmp)}, this.onLoadError, this);
+                        this.queriesCache.load(null, function(){this.refreshQueryDependencies()}, this.onLoadError, this);
                     }
                 }
             }
@@ -702,13 +703,26 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
     /**
      * Swap in query dependency report from the placeholder component.
      */
-    setQueryDependencies : function(cmp){
-        this.remove(cmp);
-        var dependencies = this.formatDependencies();
+    refreshQueryDependencies : function(){
+        let dep = this.getComponent('lk-dependency-report');
+        if (dep) {
+            this.remove(dep);
+        }
+
+        let dependencies = this.formatDependencies();
         if (dependencies)
             this.add({
                 xtype : 'box',
-                html : dependencies
+                itemId : 'lk-dependency-report',
+                html : dependencies,
+                listeners : {
+                    afterrender : {
+                        scope : this,
+                        fn : function(cmp){
+                            this.registerEventHandlers(cmp.getEl());
+                        }
+                    }
+                }
             });
     },
 

@@ -22,7 +22,9 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Used to wire up customized buttons to standard LabKey data grids, like QueryWebPart will render.
@@ -49,5 +51,5 @@ public interface ButtonConfigFactory
      */
     boolean isVisible(TableInfo ti);
 
-    Set<ClientDependency> getClientDependencies(Container c, User u);
+    List<Supplier<ClientDependency>> getClientDependencies(Container c, User u);
 }

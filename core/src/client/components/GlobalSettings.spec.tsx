@@ -5,6 +5,7 @@ import renderer from 'react-test-renderer';
 
 import GlobalSettings from './GlobalSettings';
 import FACheckBox from './FACheckBox';
+import {GLOBAL_SETTINGS} from '../../../test/data';
 
 describe('<GlobalSettings/>', () => {
     test('Clicking a checkbox toggles the checkbox', () => {
@@ -12,16 +13,15 @@ describe('<GlobalSettings/>', () => {
 
         const component =
             <GlobalSettings
-                SelfRegistration={true}
-                SelfServiceEmailChanges={true}
-                AutoCreateAccounts={false}
+                globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
                 checkGlobalAuthBox={checkGlobalAuthBox}
             />;
         const wrapper = mount(component);
 
-        expect(wrapper.props()).toHaveProperty('SelfRegistration', true);
+        const value = {"AutoCreateAccounts": true, "SelfRegistration": true, "SelfServiceEmailChanges": false};
+        expect(wrapper.props()).toHaveProperty('globalSettings', value);
 
         // Click self registration checkbox
         const firstCheckBox = wrapper.find(FACheckBox).first();
@@ -35,9 +35,7 @@ describe('<GlobalSettings/>', () => {
         const checkGlobalAuthBox = jest.fn(() => wrapper.setProps({ SelfRegistration: false }));
         const component =
             <GlobalSettings
-                SelfRegistration={true}
-                SelfServiceEmailChanges={true}
-                AutoCreateAccounts={false}
+                globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
                 checkGlobalAuthBox={checkGlobalAuthBox}
@@ -54,9 +52,7 @@ describe('<GlobalSettings/>', () => {
         const checkGlobalAuthBox = (id: string): void => {};
         const component =
             <GlobalSettings
-                SelfRegistration={true}
-                SelfServiceEmailChanges={true}
-                AutoCreateAccounts={false}
+                globalSettings={GLOBAL_SETTINGS}
                 canEdit={true}
                 authCount={3}
                 checkGlobalAuthBox={checkGlobalAuthBox}

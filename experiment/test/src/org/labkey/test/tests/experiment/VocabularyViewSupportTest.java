@@ -35,6 +35,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.hamcrest.CoreMatchers.hasItem;
+
 @Category({DailyC.class})
 public class VocabularyViewSupportTest extends BaseWebDriverTest
 {
@@ -171,10 +173,10 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
                                  prop1Value + " " + prop2Value + " " + cityName;
 
         List<String> rowData = drt.getRowDataAsText(0);
-        Assert.assertTrue("Row data does not contain color property value.", rowData.contains(prop1Value));
-        Assert.assertTrue("Row data does not contain year property value.", rowData.contains(String.valueOf(prop2Value)));
-        Assert.assertTrue("Row data does not contain list property value.", rowData.contains(cityName));
-        Assert.assertTrue("Row data does not contain properties property value.", rowData.contains(propertiesValue));
+        Assert.assertThat("Row data does not contain color property value.", rowData, hasItem(prop1Value));
+        Assert.assertThat("Row data does not contain year property value.", rowData, hasItem(String.valueOf(prop2Value)));
+        Assert.assertThat("Row data does not contain list property value.", rowData, hasItem(cityName));
+        Assert.assertThat("Row data does not contain properties property value.", rowData, hasItem(propertiesValue));
     }
 
     @Test

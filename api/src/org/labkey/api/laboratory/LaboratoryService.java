@@ -37,6 +37,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: bimber
@@ -101,9 +102,9 @@ abstract public class LaboratoryService
 
     abstract public void sortNavItems(List<? extends NavItem> navItems);
 
-    abstract public void registerClientDependency(ClientDependency cd, Module owner);
+    abstract public void registerClientDependency(Supplier<ClientDependency> cd, Module owner);
 
-    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c);
+    abstract public List<Supplier<ClientDependency>> getRegisteredClientDependencies(Container c);
 
     abstract public String getDefaultWorkbookFolderType(Container c);
 
