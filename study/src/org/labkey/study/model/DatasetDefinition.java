@@ -1773,8 +1773,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     @Override
     public Integer getCohortId()
     {
-//        return _cohortId;
-        return null;
+        return _cohortId;
     }
 
     public void setCohortId(Integer cohortId)

@@ -48,7 +48,6 @@ public class DatasetManager
         return INSTANCE;
     }
 
-    // todo rp
     public DatasetDomainKindProperties getDatasetDomainKindProperties(Container container, Integer datasetId)
     {
         if (datasetId == null || datasetId == 0 )

@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.BaseColumnInfo;
@@ -332,7 +333,17 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return container.hasPermission(user, AdminPermission.class);
     }
 
-//     TODO RP: Check if this works as desired
+    @Nullable
+    @Override
+    public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    {
+//        RP Q: is this the correct approach here? How to guard against these nullpointers?
+        int id = StudyService.get().getDatasetIdByName(container, domain.getName());
+        Dataset ds = StudyService.get().getDataset(container, id);
+        return new DatasetDomainKindProperties(ds);
+    }
+
+    //     TODO RP: Check if this works as desired
     @Override
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
@@ -487,9 +498,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == d)
             return exception.addGlobalError("Domain not found: " + update.getDomainURI());
 
-        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
-            !ds.getTypeURI().equals(update.getDomainURI()))
-            return exception.addGlobalError("Illegal Argument");
+        // TODO RP: ds.getTypeURI is returning as null, which is probably not desired behavior.
+//        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
+//            !ds.getTypeURI().equals(update.getDomainURI()))
+//            return exception.addGlobalError("Illegal Argument");
 
         return exception;
     }
@@ -559,7 +571,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 datasetProperties.setKeyPropertyName(null);
                 useTimeKeyField = true;
             }
-            // RP temp notes: copy everything from datasetProperties into updated. Maybe ask if there's a helper for this
             BeanUtils.copyProperties(updated, datasetProperties);
 
             if (datasetProperties.getKeyPropertyName() != null)
@@ -638,6 +649,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 //        RP Q: Below adds check, but this wouldn't address the potential nullpointer that is flagged
 //        if (datasetId == -1)
 //            return exception.addGlobalError("Something to the effect that a dataset of that name does not exist here?");
+
+//        There is probably something wrong in how you're summoning this study... many properties are null
         StudyImpl study = new StudyImpl(container, container.getTitle());
         StudyManager studyManager = new StudyManager();
 

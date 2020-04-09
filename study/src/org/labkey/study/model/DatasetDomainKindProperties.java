@@ -14,7 +14,7 @@ public class DatasetDomainKindProperties
     protected String _name;
     protected String _description;
     protected String _category;
-    protected Integer _categoryId; // Is it a bad idea to add this here?
+    protected Integer _categoryId; // To check: Should add this here? Not a field element, but necessary for other processing
     protected String _label;
 
     protected String _typeURI;
@@ -53,7 +53,7 @@ public class DatasetDomainKindProperties
         if (ds.getViewCategory() != null)
         {
             _category = ds.getViewCategory().getLabel();
-            _categoryId = ds.getViewCategory().getRowId(); // Is this the correct id
+            _categoryId = ds.getViewCategory().getRowId(); // To check: Is this the correct id
         }
         _label = ds.getLabel();
         _typeURI = ds.getTypeURI();

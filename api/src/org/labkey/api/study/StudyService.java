@@ -90,13 +90,6 @@ public interface StudyService
      */
     Dataset createDataset(Container container, User user, String name, @Nullable Integer datasetId, boolean isDemographic);
 
-    // todo RP
-//    ValidationException updateDataset(@NotNull Container c, @NotNull User u, @NotNull Dataset dataset,
-//                                      @Nullable DatasetDomainKindProperties options,
-//                                      GWTDomain<? extends GWTPropertyDescriptor> original,
-//                                      GWTDomain<? extends GWTPropertyDescriptor> update);
-//
-
     /**
      * Finds a study by either Container id or study label.
      * @param studyReference Container instance, GUID instance, or String representing container id, container path, or study label.
