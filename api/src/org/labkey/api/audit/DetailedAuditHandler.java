@@ -8,6 +8,7 @@ import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,16 +17,18 @@ import java.util.Set;
 
 public abstract class DetailedAuditHandler
 {
-    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tIfo, String comment, @Nullable Map<String, Object> row);
+    protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row);
 
-    protected String getCommentSummary(QueryService.AuditAction action)
-    {
-        return action.getCommentSummary();
-    }
+    protected abstract DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow);
 
-    protected String getCommentDetailed(QueryService.AuditAction action)
+    /**
+     * Allow for adding fields that may be present in the updated row but not represented in the original row
+     * @param modifiedRow the data from the updated row that has changed
+     * @param updatedRow the row that has been updated, which may include fields that have not changed
+     */
+    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
     {
-        return action.getCommentDetailed();
+        // do nothing extra by default
     }
 
     public void addAuditEvent(User user, Container c, TableInfo table, @Nullable AuditBehaviorType auditType, QueryService.AuditAction action, List<Map<String, Object>>... params)
@@ -46,7 +49,7 @@ public abstract class DetailedAuditHandler
 
                     case SUMMARY:
                     case DETAILED:
-                        AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, getCommentSummary(action), null);
+                        AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, 0, null);
                         AuditLogService.get().addEvent(user, event);
                         return;
                 }
@@ -62,8 +65,7 @@ public abstract class DetailedAuditHandler
                     assert (params.length > 0);
 
                     List<Map<String, Object>> rows = params[0];
-                    String comment = String.format(getCommentSummary(action), rows.size());
-                    AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, rows.get(0));
+                    AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, rows.size(), rows.get(0));
 
                     AuditLogService.get().addEvent(user, event);
                     break;
@@ -73,12 +75,13 @@ public abstract class DetailedAuditHandler
                     assert (params.length > 0);
 
                     List<Map<String, Object>> rows = params[0];
+                    List<Map<String, Object>> updatedRows = params.length > 1 ? params[1] : Collections.emptyList();
+
                     for (int i=0; i < rows.size(); i++)
                     {
                         Map<String, Object> row = rows.get(i);
-                        String comment = String.format(getCommentDetailed(action), row.size());
-
-                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, row);
+                        Map<String, Object> updatedRow = updatedRows.isEmpty() ? Collections.emptyMap() : updatedRows.get(i);
+                        DetailedAuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, action, row, updatedRow);
 
                         switch (action)
                         {
@@ -98,11 +101,6 @@ public abstract class DetailedAuditHandler
                             }
                             case UPDATE:
                             {
-                                assert (params.length >= 2);
-
-                                List<Map<String, Object>> updatedRows = params[1];
-                                Map<String, Object> updatedRow = updatedRows.get(i);
-
                                 // record modified fields
                                 Map<String, Object> originalRow = new HashMap<>();
                                 Map<String, Object> modifiedRow = new HashMap<>();
@@ -129,6 +127,8 @@ public abstract class DetailedAuditHandler
                                         modifiedRow.put(entry.getKey(), entry.getValue());
                                     }
                                 }
+                                // allow for adding fields that may be present in the updated row but not represented in the original row
+                                addDetailedModifiedFields(modifiedRow, updatedRow);
 
                                 String oldRecord = AbstractAuditTypeProvider.encodeForDataMap(c, originalRow);
                                 if (oldRecord != null)

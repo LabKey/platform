@@ -394,7 +394,7 @@ public interface QueryService
         TRUNCATE("Table was truncated.",
                 "All rows were deleted.",
                 "deleted"),
-        MERGE("Row was inserted or updated.",
+        MERGE("A row was inserted or updated.",
                 "%s row(s) were inserted or updated.",
                 "inserted or updated");
 

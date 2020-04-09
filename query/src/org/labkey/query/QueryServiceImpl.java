@@ -2868,8 +2868,7 @@ public class QueryServiceImpl extends DetailedAuditHandler implements QueryServi
 
             if (auditType == SUMMARY)
             {
-                String comment = String.format(action.getCommentSummary(), dataRowCount);
-                AuditTypeEvent event = createDetailedAuditRecord(user, c, auditConfigurable, comment, null);
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, dataRowCount, null);
 
                 AuditLogService.get().addEvent(user, event);
             }
@@ -2877,7 +2876,19 @@ public class QueryServiceImpl extends DetailedAuditHandler implements QueryServi
     }
 
     @Override
-    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
+    }
+
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), row);
+    }
+
+
+    private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
 

@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditHandler;
 import org.labkey.api.cache.Cache;
@@ -51,6 +52,7 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -93,6 +95,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -878,30 +881,57 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
         return true;
     }
 
-    @Override
     protected String getCommentDetailed(QueryService.AuditAction action)
     {
         switch (action) {
             case INSERT:
-                return "Sample registered";
+                return "Sample was registered.";
             case DELETE:
             case TRUNCATE:
-                return "Sample deleted";
+                return "Sample was deleted.";
             case MERGE:
-                return "Sample registered or updated";
+                return "Sample was registered or updated.";
             case UPDATE:
-                return "Sample updated";
+                return "Sample was updated.";
         }
         return action.getCommentDetailed();
     }
 
     @Override
-    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, String comment, @Nullable Map<String, Object> row)
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow);
+    }
+
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), row, null);
+    }
+
+    @Override
+    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    {
+        // we want to include the fields that indicate parent lineage has changed.
+        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
+        updatedRow.forEach((fieldName, value) -> {
+            if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
+                modifiedRow.put(fieldName, value);
+        });
+    }
+
+    private SampleTimelineAuditProvider.SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
         SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(c.getId(), comment);
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
+
+        if (updatedRow != null)
+        {
+            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+        }
 
         if (row != null)
         {
@@ -930,5 +960,22 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
         }
 
         return event;
+    }
+
+    // TODO add event with metadata changes
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> data)
+    {
+        SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(container.getId(), comment);
+        if (container.getProject() != null)
+            event.setProjectId(container.getProject().getId());
+        event.setSampleName(sample.getName());
+        event.setSampleLsid(sample.getLSID());
+        ExpSampleSet type = sample.getSampleSet();
+        if (type != null)
+        {
+            event.setSampleType(type.getName());
+            event.setSampleTypeId(type.getRowId());
+        }
+
     }
 }

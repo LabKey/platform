@@ -29,7 +29,8 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_TYPE_COLUMN_NAME = "SampleType";
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
-    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? LSID instead or in addition ???
+    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? TODO replace with id once we are generating ids
+    public static final String IS_LINEAGE_UPDATE_COLUMN_NAME = "IsLineageUpdate";
 
 
     static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
@@ -38,12 +39,12 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
-        defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_PROJECT_ID));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CONTAINER));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_NAME_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_LSID_COLUMN_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(IS_LINEAGE_UPDATE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
 
@@ -101,6 +102,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Sample Type ID");
                 }
+                else if (IS_LINEAGE_UPDATE_COLUMN_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Lineage Update?");
+                }
             }
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
@@ -125,6 +130,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         private String _sampleName;
         private String _sampleType;
         private int _sampleTypeId;
+        private boolean _isLineageUpdate;
 
         public SampleTimelineAuditEvent()
         {
@@ -176,6 +182,16 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             _sampleTypeId = sampleTypeId;
         }
 
+        public boolean getIsLineageUpdate()
+        {
+            return _isLineageUpdate;
+        }
+
+        public void setLineageUpdate(boolean lineageUpdate)
+        {
+            _isLineageUpdate = lineageUpdate;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -184,6 +200,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             elements.put("sampleName", getSampleName());
             elements.put("sampleType", getSampleType());
             elements.put("sampleTypeId", getSampleTypeId());
+            elements.put("isLineageUpdate", getIsLineageUpdate());
             elements.putAll(super.getAuditLogMessageElements());
             return elements;
         }
@@ -205,6 +222,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(SAMPLE_TYPE_ID_COLUMN_NAME, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             _fields = Collections.unmodifiableSet(fields);
