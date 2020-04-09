@@ -103,7 +103,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
-    private static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
+    static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();

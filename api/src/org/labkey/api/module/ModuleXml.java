@@ -2,6 +2,9 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
@@ -16,6 +19,7 @@ import org.labkey.moduleProperties.xml.OptionsListType;
 import org.labkey.moduleProperties.xml.PropertyType;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -33,17 +37,22 @@ public class ModuleXml
     private static final Logger LOG = Logger.getLogger(ModuleXml.class);
     private static final String XML_FILENAME = "module.xml";
 
-    private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
-    private final List<Supplier<ClientDependency>> _clientDependencySuppliers = new LinkedList<>();
+    private final Map<String, ModuleProperty> _moduleProperties;
+    private final List<Supplier<ClientDependency>> _clientDependencySuppliers;
 
     private boolean _requireSitePermission = false;
 
     public ModuleXml()
     {
+        _moduleProperties = Collections.emptyMap();
+        _clientDependencySuppliers = Collections.emptyList();
     }
 
     public ModuleXml(Module module, Resource r)
     {
+        Map<String, ModuleProperty> moduleProperties = new LinkedHashMap<>();
+        List<Supplier<ClientDependency>> clientDependencySuppliers = new LinkedList<>();
+
         try
         {
             XmlOptions xmlOptions = new XmlOptions();
@@ -117,15 +126,15 @@ public class ModuleXml
                     }
 
                     if (mp.getName() != null)
-                        _moduleProperties.put(mp.getName(), mp);
+                        moduleProperties.put(mp.getName(), mp);
                 }
             }
 
             if (mt.isSetClientDependencies())
-                _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getClientDependencies().getDependencyArray(), "module.xml of " + module.getName()));
+                clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getClientDependencies().getDependencyArray(), "module.xml of " + module.getName()));
 
             if (mt.isSetRequiredModuleContext())
-                _clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getRequiredModuleContext().getRequiredModuleArray(), "module.xml of " + module.getName(),
+                clientDependencySuppliers.addAll(ClientDependency.getSuppliers(mt.getRequiredModuleContext().getModuleArray(), "module.xml of " + module.getName(),
                     moduleName -> {
                         if (module.getName().equalsIgnoreCase(moduleName))
                         {
@@ -145,6 +154,9 @@ public class ModuleXml
         {
             LOG.error("Error trying to read and parse the metadata XML for module " + module.getName() + " from " + r.getPath(), e);
         }
+
+        _moduleProperties = Collections.unmodifiableMap(moduleProperties);
+        _clientDependencySuppliers = Collections.unmodifiableList(clientDependencySuppliers);
     }
 
     public Map<String, ModuleProperty> getModuleProperties()
@@ -172,6 +184,38 @@ public class ModuleXml
                 .findFirst()
                 .map(r->new ModuleXml(module, r))
                 .orElseGet(ModuleXml::new);
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testModuleResourceCache()
+        {
+            // Load all the ModuleXml definitions to ensure no exceptions
+            long nonTrivial = DefaultModule.MODULE_XML_CACHE.streamAllResourceMaps()
+                .filter(mx->!mx.getClientDependencySuppliers().isEmpty() || !mx.getModuleProperties().isEmpty())
+                .count();
+
+            LOG.info(nonTrivial + " non-trivial ModuleXml objects");
+
+            // Make sure the cache retrieves the expected ModuleXml for simpletest and restrictedModule modules, if present
+
+            Module simpleTest = ModuleLoader.getInstance().getModule("simpletest");
+
+            if (null != simpleTest)
+            {
+                assertEquals("Module properties defined in the simpletest module", 6, DefaultModule.MODULE_XML_CACHE.getResourceMap(simpleTest).getModuleProperties().size());
+                assertEquals("Client dependencies defined in the simpletest module", 2, simpleTest.getClientDependencies(ContainerManager.getRoot()).size());
+            }
+
+            Module restrictedModule = ModuleLoader.getInstance().getModule("restrictedModule");
+
+            if (null != restrictedModule)
+            {
+                assertEquals("Module properties defined in the restrictedModule module", 2, DefaultModule.MODULE_XML_CACHE.getResourceMap(restrictedModule).getModuleProperties().size());
+                assertEquals("Client dependencies defined in the restrictedModule module", 2, restrictedModule.getClientDependencies(ContainerManager.getRoot()).size());
+            }
         }
     }
 }
