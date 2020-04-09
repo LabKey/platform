@@ -1070,11 +1070,11 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         goToQueryView("study", dataset, true);
         QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
-        designerPage.fieldsPanel()
+        designerPage.getFieldsPanel()
                 .getField(fieldName)
                 .setExcludeFromDateShifting(false); // TODO: 40106: UX Query Metadata Editor - doesn't look to be showing initial state as expected for various domain field row properties
 
-        designerPage.clickFinish();
+        designerPage.clickSave();
         waitForText("Save Successful");
     }
 
