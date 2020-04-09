@@ -51,23 +51,16 @@ public class DatasetManager
     // todo rp
     public DatasetDomainKindProperties getDatasetDomainKindProperties(Container container, Integer datasetId)
     {
-        if (null == datasetId)
+        if (datasetId == null || datasetId == 0 )
         {
             return new DatasetDomainKindProperties();
         }
         else
         {
-//             filter for our given datasetId
-
-//             create DatasetDomainKindProperties from what is found
             StudyImpl study = StudyManager.getInstance().getStudy(container);
             Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-
-
-
             return new DatasetDomainKindProperties(ds);
         }
-
     }
 
     public interface DatasetListener

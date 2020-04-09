@@ -332,18 +332,31 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return container.hasPermission(user, AdminPermission.class);
     }
 
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user,
-        @Nullable TemplateInfo templateInfo)
+//     TODO RP: Check if this works as desired
+    @Override
+    public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
+                               @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        Integer datasetId = arguments.containsKey("datasetId") ? (Integer)arguments.get("datasetId") : null;
-        Integer categoryId = arguments.containsKey("categoryId") ? (Integer)arguments.get("categoryId") : null;
-        String categoryName = arguments.containsKey("categoryName") ? (String)arguments.get("categoryName") : null;
-        boolean demographics = arguments.containsKey("demographics") ? (Boolean)arguments.get("demographics") : false;
-        String keyPropertyName = arguments.containsKey("keyPropertyName") ? (String)arguments.get("keyPropertyName") : null;
-        boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
-        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
-        boolean isManagedField = arguments.containsKey("isManagedField") ? (Boolean)arguments.get("isManagedField") : false;
+        Integer datasetId = arguments.getDatasetId();
+        Integer categoryId = arguments.getCategoryId();
+        String categoryName = arguments.getCategory();
+        boolean demographics = arguments.isDemographicData();
+        String keyPropertyName = arguments.getKeyPropertyName();
+
+        // RP TODO: Looks like this exists on DatasetDefinition and defaults to false. Is it determinable from DatasetDomainKindProperties..?
+        // Maybe whether the additional key column name is time..? Or..?
+//        boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
+        boolean useTimeKeyField = false;
+
+        // RP TODO: Not sure where this should come from
+//        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
+        boolean strictFieldValidation = true;
+
+//        RP TODO: Check if this is accurate
+//        boolean isManagedField = arguments.containsKey("isManagedField") ? (Boolean)arguments.get("isManagedField") : false;
+        boolean isManagedField = arguments.isKeyPropertyManaged();
+
 
         if (name == null)
             throw new IllegalArgumentException("Dataset name must not be null");
@@ -504,7 +517,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     // getdomainkindproperties (or something) should exist here and is the analogy to DatasetServiceImpl.getDataset
 
-//  in progress
+//  in progress (has questions)
+    // This is the fn that overrides the updateDomain
     private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def)
     {
         try

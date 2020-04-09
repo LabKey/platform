@@ -6142,7 +6142,7 @@ public class StudyController extends BaseStudyController
     {
         private String _name;
         private String _label;
-        private int _datasetId;
+        private Integer _datasetId;
         private String _category;
         private boolean _showByDefault;
         private String _visitDatePropertyName;
@@ -6197,12 +6197,12 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        public int getDatasetId()
+        public Integer getDatasetId()
         {
             return _datasetId;
         }
 
-        public void setDatasetId(int datasetId)
+        public void setDatasetId(Integer datasetId)
         {
             _datasetId = datasetId;
         }

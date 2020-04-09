@@ -166,12 +166,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private boolean _useTimeKeyField = false;
 
 
-    public enum DataSharing
-    {
-        NONE,
-        ALL,
-        PTID
-    }
+
 
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
@@ -492,6 +487,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             throw new IllegalStateException();
     }
 
+    @Override
     public DataSharing getDataSharingEnum()
     {
         if (!isDemographicData())
@@ -537,6 +533,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         modifiedDates.remove(def.getEntityId());
     }
 
+    @Override
     public String getTag()
     {
         return _tag;
@@ -794,7 +791,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return count;
     }
 
-
+    @Override
     public boolean isDemographicData()
     {
         return _demographicData;
@@ -1108,7 +1105,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _visitDatePropertyName;
     }
 
-
+    @Override
     public String getVisitDatePropertyName()
     {
         return _visitDatePropertyName;
@@ -1120,12 +1117,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _visitDatePropertyName = visitDatePropertyName;
     }
 
-    
+    @Override
     public String getKeyPropertyName()
     {
         return _keyPropertyName;
     }
 
+    @Override
     public void setKeyPropertyName(String keyPropertyName)
     {
         verifyMutability();
@@ -1772,9 +1770,11 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return true;
     }
 
+    @Override
     public Integer getCohortId()
     {
-        return _cohortId;
+//        return _cohortId;
+        return null;
     }
 
     public void setCohortId(Integer cohortId)
@@ -1783,6 +1783,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Nullable
+    @Override
     public CohortImpl getCohort()
     {
         if (_cohortId == null)
@@ -1795,6 +1796,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _protocolId;
     }
 
+    @Override
     public ExpProtocol getAssayProtocol()
     {
         return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());

@@ -1,64 +1,86 @@
 package org.labkey.study.model;
 
+import org.labkey.api.assay.AssayUrls;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.util.PageFlowUtil;
+
+import java.util.Map;
 
 public class DatasetDomainKindProperties
 {
-    protected int _datasetId;
+    protected Integer _datasetId;
     protected String _name;
     protected String _description;
-    protected ViewCategory _category;
+    protected String _category;
+    protected Integer _categoryId; // Is it a bad idea to add this here?
     protected String _label;
 
     protected String _typeURI;
     protected String _visitDatePropertyName;
     protected String _keyPropertyName;
-    protected Boolean _keyPropertyManaged;
-    protected boolean _isDemographicData;
-    protected int _cohortId;
+    protected boolean _keyPropertyManaged = false;
+    protected boolean _isDemographicData = false;
+    protected Integer _cohortId;
     protected String _tag;
-    protected boolean _showByDefault = true;
-    protected  String _sourceAssayName;
+    protected boolean _showByDefault = true; // Temp note RP: This is the 'showInOverview' property
+    protected String _sourceAssayName;
     protected String _sourceAssayUrl;
-    protected String _dataSharing; // todo RP: to finalize
+    protected String _dataSharing;
 
-    // read-only
+    // read-only (not changed in the editor)
+    private boolean _definitionIsShared = false;
+    private boolean _visitMapShared = false;
+
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
+    public static final String TIME_KEY_FIELD_DISPLAY = "Time (from Date/Time)";
+
+    private Map<String, String> _cohortMap;
+
+    private Map<String, String> _visitDateMap;
 
     public DatasetDomainKindProperties()
     {
+        // This does not give a default typeURI, or dataSharing value, or datasetId, as GWTDataset does in getDataset()
     }
 
-    // wait. Do I need this at all?
     public DatasetDomainKindProperties(Dataset ds)
     {
         _datasetId = ds.getDatasetId();
         _name = ds.getName();
         _description = ds.getDescription();
-        _category = ds.getViewCategory();
+        if (ds.getViewCategory() != null)
+        {
+            _category = ds.getViewCategory().getLabel();
+            _categoryId = ds.getViewCategory().getRowId(); // Is this the correct id
+        }
         _label = ds.getLabel();
         _typeURI = ds.getTypeURI();
         _keyPropertyName = ds.getKeyPropertyName();
         _isDemographicData = ds.isDemographicData();
+        _showByDefault = ds.isShowByDefault();
         _cohortId = ds.getCohortId();
+        _visitDatePropertyName = ds.getVisitDatePropertyName();
+        _tag = ds.getTag();
+        _dataSharing = ds.getDataSharingEnum().name();
 
-        // RP TODO: Have to figure out these, because they don't come from ds. Pending understanding of what this constructor is for
-        _visitDatePropertyName = "";
-        _keyPropertyManaged = false;
-        _tag = "";
-        _showByDefault = true;
-        _sourceAssayName = "";
-        _sourceAssayUrl = "";
-        _dataSharing = "";
+        // Might have to verify below
+        _keyPropertyManaged = (ds.getKeyManagementType() != Dataset.KeyManagementType.None);
+        ExpProtocol protocol = ds.getAssayProtocol();
+        if (protocol != null)
+        {
+            _sourceAssayName = protocol.getName();
+            _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol).getLocalURIString();
+        }
     }
 
-    public int getDatasetId()
+    public Integer getDatasetId()
     {
         return _datasetId;
     }
 
-    public void setDatasetId(int datasetId)
+    public void setDatasetId(Integer datasetId)
     {
         _datasetId = datasetId;
     }
@@ -83,12 +105,12 @@ public class DatasetDomainKindProperties
         _description = description;
     }
 
-    public ViewCategory getCategory()
+    public String getCategory()
     {
         return _category;
     }
 
-    public void setCategory(ViewCategory category)
+    public void setCategory(String category)
     {
         _category = category;
     }
@@ -138,7 +160,7 @@ public class DatasetDomainKindProperties
         return _keyPropertyManaged;
     }
 
-    public void setKeyPropertyManaged(Boolean keyPropertyManaged)
+    public void setKeyPropertyManaged(boolean keyPropertyManaged)
     {
         _keyPropertyManaged = keyPropertyManaged;
     }
@@ -153,7 +175,7 @@ public class DatasetDomainKindProperties
         _isDemographicData = demographicData;
     }
 
-    public int getCohortId()
+    public Integer getCohortId()
     {
         return _cohortId;
     }
@@ -211,5 +233,10 @@ public class DatasetDomainKindProperties
     public void setDataSharing(String dataSharing)
     {
         _dataSharing = dataSharing;
+    }
+
+    public Integer getCategoryId()
+    {
+        return _categoryId;
     }
 }
