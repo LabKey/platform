@@ -999,7 +999,7 @@ public class PipelineJobServiceImpl implements PipelineJobService
             {
                 Container c = JunitUtil.getTestContainer();
 
-                PipelineJob job = new DummyPipelineJob(c, TestContext.get().getUser());
+                PipelineJob job = new DummyPipelineJob(c, TestContext.get().getUser(), DummyPipelineJob.Worker.success);
 
                 PipelineService.get().queueJob(job);
 

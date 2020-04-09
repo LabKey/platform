@@ -40,12 +40,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
+import java.util.function.Supplier;
 
 
 /**
@@ -771,6 +773,11 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
     public void addClientDependencies(Set<ClientDependency> resources)
     {
         _clientDependencies.addAll(resources);
+    }
+
+    public void addClientDependencies(List<Supplier<ClientDependency>> resources)
+    {
+        _clientDependencies.addAll(ClientDependency.getClientDependencySet(resources));
     }
 
     public List<ModelAndView> getViews()
