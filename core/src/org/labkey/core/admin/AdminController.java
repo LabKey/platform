@@ -114,7 +114,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
