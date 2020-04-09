@@ -1168,8 +1168,7 @@ public class IssuesController extends SpringActionController
                 Set<Integer> newRelatedIds = issue.getRelatedIssues();
 
                 // this list represents all the ids which will need related handling for a creating a relatedIssue entry
-                Collection<Integer> newIssues = new ArrayList<>();
-                newIssues.addAll(newRelatedIds);
+                List<Integer> newIssues = new ArrayList<>(newRelatedIds);
                 newIssues.removeAll(prevRelatedIds);
 
                 for (int curIssueId : newIssues)
@@ -1182,8 +1181,7 @@ public class IssuesController extends SpringActionController
                 // this list represents all the ids which will need related handling for dropping a relatedIssue entry
                 if (!prevRelatedIds.equals(newRelatedIds))
                 {
-                    Collection<Integer> prevIssues = new ArrayList<>();
-                    prevIssues.addAll(prevRelatedIds);
+                    List<Integer> prevIssues = new ArrayList<>(prevRelatedIds);
                     prevIssues.removeAll(newRelatedIds);
                     for (int curIssueId : prevIssues)
                     {
