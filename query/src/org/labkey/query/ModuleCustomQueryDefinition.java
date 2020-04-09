@@ -73,6 +73,16 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
         _resourceQueryXmlFile = queryXML;
     }
 
+    public File getSqlFile()
+    {
+        return _resourceSqlFile;
+    }
+
+    public File getModuleXmlFile()
+    {
+        return _resourceQueryXmlFile;
+    }
+
     @Override
     public boolean isSqlEditable()
     {
