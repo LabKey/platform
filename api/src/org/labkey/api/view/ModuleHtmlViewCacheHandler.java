@@ -22,7 +22,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

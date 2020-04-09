@@ -62,7 +62,7 @@ public class ContextClientDependency extends ClientDependency
     @Override
     protected String getUniqueKey()
     {
-        return getCacheKey("moduleContext|" + _module.toString(), _mode);
+        return getUniqueKey("moduleContext|" + _module.toString(), _mode);
     }
 
     @Override
