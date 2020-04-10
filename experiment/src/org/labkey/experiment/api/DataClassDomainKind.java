@@ -164,11 +164,21 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return true;
     }
 
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateDataClassURL(container);
+    }
+
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpDataClass dataClass = getDataClass(domain);
+        if (dataClass == null)
+            return null;
+
+        return dataClass.urlEditDefinition(containerUser);
     }
 
     @Override

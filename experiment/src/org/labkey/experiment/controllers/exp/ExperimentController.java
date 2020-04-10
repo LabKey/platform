@@ -6247,6 +6247,12 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
+        public ActionURL getCreateDataClassURL(Container container)
+        {
+            return new ActionURL(EditDataClassAction.class, container);
+        }
+
+        @Override
         public ActionURL getShowDataClassURL(Container container, int rowId)
         {
             ActionURL url = new ActionURL(ShowDataClassAction.class, container);
