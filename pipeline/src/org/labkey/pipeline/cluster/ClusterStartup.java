@@ -48,6 +48,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
@@ -242,7 +243,11 @@ public class ClusterStartup extends AbstractPipelineStartup
                     sb.append("\n");
                 }
             }
-            proc.waitFor();
+            if (!proc.waitFor(90, TimeUnit.SECONDS))
+            {
+                proc.destroy();
+                Assert.fail("Process did not complete. Output:\n" + sb.toString());
+            }
             Assert.assertEquals("Wrong exit code", expectedExitCode, proc.exitValue());
             return sb.toString();
         }
