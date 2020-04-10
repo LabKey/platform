@@ -75,7 +75,7 @@ public interface Cache<K, V>
     void close();
 
     // Get the underlying implementation cache
-    TrackingCache getTrackingCache();
+    TrackingCache<K, V> getTrackingCache();
 
     Cache<K, V> createTemporaryCache();
 }
