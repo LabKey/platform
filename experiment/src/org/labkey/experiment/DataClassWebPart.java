@@ -17,6 +17,7 @@ package org.labkey.experiment;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.TableInfo;
@@ -27,10 +28,18 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.experiment.controllers.exp.ExperimentController;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.PrintWriter;
 
 /**
  * User: kevink
@@ -38,6 +47,7 @@ import org.labkey.api.view.ViewContext;
  */
 public class DataClassWebPart extends QueryView
 {
+    private String _errorMessage;
     private final boolean _narrow;
 
     public DataClassWebPart(boolean narrow, ViewContext context, @Nullable Portal.WebPart webPart)
@@ -55,8 +65,13 @@ public class DataClassWebPart extends QueryView
         setTitle("Data Classes");
         setTitleHref(PageFlowUtil.urlProvider(ExperimentUrls.class).getDataClassListURL(context.getContainer()));
         setShowDetailsColumn(false);
-        // Use default delete button, but without showing the confirmation text -- DeleteDataClassAction will show a confirmation page.
-        setShowDeleteButtonConfirmationText(false);
+
+        // hide all of the default insert/update/delete buttons for this grid,
+        // those will be added separately in the populateButtonBar method below
+        setShowUpdateColumn(false);
+        setShowDeleteButton(false);
+        setShowInsertNewButton(false);
+        setShowImportDataButton(false);
 
         if (_narrow)
         {
@@ -94,9 +109,43 @@ public class DataClassWebPart extends QueryView
     }
 
     @Override
-    public boolean showImportDataButton()
+    protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        return false;
+        super.populateButtonBar(view, bar);
+
+        ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, getContainer());
+        deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+
+        ActionButton deleteButton = new ActionButton(ExperimentController.DeleteDataClassAction.class, "Delete", ActionButton.Action.GET);
+        deleteButton.setDisplayPermission(DesignDataClassPermission.class);
+        deleteButton.setIconCls("trash");
+        deleteButton.setURL(deleteURL);
+        deleteButton.setActionType(ActionButton.Action.POST);
+        deleteButton.setRequiresSelection(true);
+        bar.add(deleteButton);
+
+        ActionURL urlInsert = new ActionURL(ExperimentController.EditDataClassAction.class, getContainer());
+        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        ActionButton createNewButton = new ActionButton(ExperimentController.EditDataClassAction.class, "New Data Class", ActionButton.Action.LINK);
+        createNewButton.setDisplayPermission(DesignDataClassPermission.class);
+        createNewButton.setURL(urlInsert);
+        bar.add(createNewButton);
+    }
+
+    @Override
+    protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        PrintWriter out = response.getWriter();
+        if (_errorMessage != null)
+        {
+            out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_errorMessage) + "</font><br>");
+        }
+        super.renderView(model, request, response);
+    }
+
+    public void setErrorMessage(String errorMessage)
+    {
+        _errorMessage = errorMessage;
     }
 
 }

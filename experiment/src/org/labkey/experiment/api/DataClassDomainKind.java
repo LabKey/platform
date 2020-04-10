@@ -47,7 +47,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -229,7 +229,19 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
     }
 
     @Override

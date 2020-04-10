@@ -91,7 +91,7 @@
   },
   "dependencies": {
     "@labkey/api": "0.1.1",
-    "@labkey/components": "0.47.0",
+    "@labkey/components": "0.48.0-fb-lksDataClassDesigner.0",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },

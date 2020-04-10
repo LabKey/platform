@@ -21,8 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -90,10 +90,11 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setShownInUpdateView(false);
 
+                // TODO the ShowDataClassAction does work with RowId so this isn't needed anymore
                 // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
                 // a parameter for the table's detailsURL.  However, we can use it as the url for this column.
-                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
-                        Collections.singletonMap("name", "Name")));
+//                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
+//                        Collections.singletonMap("name", "Name")));
                 return c;
             }
 
@@ -173,8 +174,8 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
         setDetailsURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId")));
 
-        setDeleteURL(new DetailsURL(new ActionURL(ExperimentController.DeleteDataClassAction.class, _userSchema.getContainer())));
-        setInsertURL(new DetailsURL(new ActionURL(ExperimentController.InsertDataClassAction.class, _userSchema.getContainer())));
+        setImportURL(AbstractTableInfo.LINK_DISABLER);
+        setUpdateURL(AbstractTableInfo.LINK_DISABLER);
     }
 
     @Override
