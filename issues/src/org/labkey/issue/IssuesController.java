@@ -1168,10 +1168,10 @@ public class IssuesController extends SpringActionController
                 Set<Integer> newRelatedIds = issue.getRelatedIssues();
 
                 // this list represents all the ids which will need related handling for a creating a relatedIssue entry
-                List<Integer> newIssues = new ArrayList<>(newRelatedIds);
-                newIssues.removeAll(prevRelatedIds);
+                List<Integer> newAddedRelatedIssues = new ArrayList<>(newRelatedIds);
+                newAddedRelatedIssues.removeAll(prevRelatedIds);
 
-                for (int curIssueId : newIssues)
+                for (int curIssueId : newAddedRelatedIssues)
                 {
                     Issue relatedIssue = ChangeSummary.relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
                     if (null != relatedIssue)
