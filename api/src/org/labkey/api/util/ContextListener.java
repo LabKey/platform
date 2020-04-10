@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.view.ViewServlet;
 import org.springframework.web.context.ContextLoaderListener;
@@ -35,6 +36,7 @@ public class ContextListener implements ServletContextListener
     private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
     private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
+    private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
 
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
@@ -157,5 +159,26 @@ public class ContextListener implements ServletContextListener
     {
         for (NewInstallCompleteListener listener : _newInstallCompleteListeners)
             listener.onNewInstallComplete();
+    }
+
+
+    public static void addModuleChangeListener(ModuleChangeListener l)
+    {
+        _moduleChangeListeners.add(l);
+    }
+
+    public static void fireModuleChangeEvent(Module m)
+    {
+        for (var l : _moduleChangeListeners.toArray(new ModuleChangeListener[0]))
+        {
+            try
+            {
+                l.onModuleChanged(m);
+            }
+            catch (Throwable t)
+            {
+                ExceptionUtil.logExceptionToMothership(null, t);
+            }
+        }
     }
 }

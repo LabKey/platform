@@ -63,6 +63,7 @@ import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -334,7 +335,7 @@ public abstract class UploadSamplesHelper
             }
             if (parts.length == 2)
             {
-                String namePart = parts[1];
+                String namePart = QueryKey.decodePart(parts[1]);
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
                     if (!findMaterialSource(c, user, namePart))
