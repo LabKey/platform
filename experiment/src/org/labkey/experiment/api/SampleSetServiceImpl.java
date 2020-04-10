@@ -24,6 +24,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditHandler;
@@ -962,8 +964,8 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
         return event;
     }
 
-    // TODO add event with metadata changes
-    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> data)
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
         SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
@@ -976,6 +978,7 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
             event.setSampleType(type.getName());
             event.setSampleTypeId(type.getRowId());
         }
-
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        AuditLogService.get().addEvent(user, event);
     }
 }

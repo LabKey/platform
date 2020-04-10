@@ -30,6 +30,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
     public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? TODO replace with id once we are generating ids
+    public static final String METADATA_COLUMN_NAME = "Metadata";
     public static final String IS_LINEAGE_UPDATE_COLUMN_NAME = "IsLineageUpdate";
 
 
@@ -131,6 +132,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         private String _sampleType;
         private int _sampleTypeId;
         private boolean _isLineageUpdate;
+        private String _metadata;
 
         public SampleTimelineAuditEvent()
         {
@@ -192,6 +194,16 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             _isLineageUpdate = lineageUpdate;
         }
 
+        public String getMetadata()
+        {
+            return _metadata;
+        }
+
+        public void setMetadata(String metadata)
+        {
+            _metadata = metadata;
+        }
+
         @Override
         public Map<String, Object> getAuditLogMessageElements()
         {
@@ -223,6 +235,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
+            fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(OLD_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             fields.add(createPropertyDescriptor(NEW_RECORD_PROP_NAME, PropertyType.STRING, -1));        // varchar max
             _fields = Collections.unmodifiableSet(fields);

@@ -141,4 +141,6 @@ public interface SampleSetService
     boolean parentAliasHasCorrectFormat(String parentAlias);
 
     void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
+
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
 }
