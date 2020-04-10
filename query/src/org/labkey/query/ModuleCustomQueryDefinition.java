@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.commons.io.IOUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
@@ -24,6 +25,7 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.persist.QueryDef;
+import org.labkey.query.persist.QueryManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -180,6 +182,7 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
                     QueryService.get().fireQueryChanged(user, container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
                 }
             }
+            QueryServiceImpl.get().uncacheModuleResources(ModuleLoader.getInstance().getModule(_moduleName));
         }
 
         Collection<QueryChangeListener.QueryPropertyChange> changes = _changes;
