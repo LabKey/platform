@@ -82,6 +82,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         // update the base table, but only some columns StudyPropertiesTable
         CaseInsensitiveHashMap<Object> updateRow = new CaseInsensitiveHashMap<>();
         boolean recomputeStartDates = false;
+        Date originalStartDate = null;
         boolean recalculateTimepoints = false;
         for (Map.Entry<String,Object> entry : row.entrySet())
         {
@@ -123,8 +124,16 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
                     if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate"))
                     {
+                        // Translate both values to new Date objects to avoid Timestamp/Date comparison problems - issue 40166
                         Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
-                        recomputeStartDates = !study.getStartDate().equals(newDate);
+                        Date oldDate = new Date(study.getStartDate().getTime());
+                        recomputeStartDates = !oldDate.equals(newDate);
+
+                        if (recomputeStartDates)
+                        {
+                            // Stash the original value to use later
+                            originalStartDate = study.getStartDate();
+                        }
                     }
                 }
             }
@@ -157,7 +166,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
         {
             // Only recalculate relative to the start date
             RelativeDateVisitManager visitManager = (RelativeDateVisitManager) StudyManager.getInstance().getVisitManager(study);
-            visitManager.recomputeDates(study.getStartDate(), user);
+            visitManager.recomputeDates(originalStartDate, user);
         }
 
         return getRow(user, container, null);
