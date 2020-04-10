@@ -530,21 +530,24 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     // getdomainkindproperties (or something) should exist here and is the analogy to DatasetServiceImpl.getDataset
 
 //  in progress (has questions)
-    // This is the fn that overrides the updateDomain
-    private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def)
+    private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def1)
     {
         try
         {
+            // new, better def?
+            DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
             if (null == def)
                 return exception.addGlobalError("Dataset not found");
 
             // Q: So, I believe the original is validating for, if isDemoData has been toggled on, the ds obeys the constraints of demo ds.
             // RP Q: Do we have the old isDemoData in def?
-            if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
-            {
-                return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
-                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
-            }
+
+//            TODO RP: Throwing a null pointer. Check that your def is well-formed?
+//            if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def)) //nullpointer
+//            {
+//                return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
+//                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
+//            }
 
             if (datasetProperties.isDemographicData())
             {
@@ -616,7 +619,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             List<String> errors = new ArrayList<>();
-            studyManager.updateDatasetDefinition(user, updated, errors);
+            studyManager.updateDatasetDefinition(user, updated, errors); // Issue here is with cohortId=0
             for (String errorMsg: errors)
             {
                 exception.addGlobalError(errorMsg);  // RP TODO: will have to see what these errors are. Perhaps globalError will be inappropriate
@@ -650,8 +653,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 //        if (datasetId == -1)
 //            return exception.addGlobalError("Something to the effect that a dataset of that name does not exist here?");
 
-//        There is probably something wrong in how you're summoning this study... many properties are null
-        StudyImpl study = new StudyImpl(container, container.getTitle());
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyManager studyManager = new StudyManager();
 
         if (checkCanUpdate(def, exception, container, user, original, update).hasGlobalErrors())

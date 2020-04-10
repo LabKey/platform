@@ -22,7 +22,7 @@ public class DatasetDomainKindProperties
     protected String _keyPropertyName;
     protected boolean _keyPropertyManaged = false;
     protected boolean _isDemographicData = false;
-    protected Integer _cohortId;
+    protected Integer _cohortId = null;
     protected String _tag;
     protected boolean _showByDefault = true; // Temp note RP: This is the 'showInOverview' property
     protected String _sourceAssayName;
