@@ -42,7 +42,6 @@ import java.util.Map;
 /**
  * User: jgarms
  * Date: Aug 11, 2008
- * Time: 1:10:49 PM
  */
 public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 {
