@@ -247,8 +247,21 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
@@ -6913,7 +6926,14 @@ public class AdminController extends SpringActionController
                         return false;
                     }
                     Container source = ContainerManager.getForId(targetProject);
-                    assert source != null;
+                    if (source == null)
+                    {
+                        source = ContainerManager.getForPath(targetProject);
+                    }
+                    if (source == null)
+                    {
+                        throw new NotFoundException("An unknown project was specified to copy permissions from.");
+                    }
 
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 
