@@ -45,7 +45,7 @@ public class FilePathClientDependency extends ClientDependency
     protected String getUniqueKey()
     {
         assert _filePath != null;
-        return getCacheKey(_filePath.toString(), _mode);
+        return getUniqueKey(_filePath.toString(), _mode);
     }
 
     @Override

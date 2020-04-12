@@ -87,7 +87,7 @@
 
     <xsd:complexType name="moduleContextType">
         <xsd:sequence minOccurs="0" maxOccurs="unbounded">
-            <xsd:element name="requiredModule" type="cl:requiredModuleType"/>
+            <xsd:element name="module" type="cl:requiredModuleType"/>
         </xsd:sequence>
     </xsd:complexType>
 
