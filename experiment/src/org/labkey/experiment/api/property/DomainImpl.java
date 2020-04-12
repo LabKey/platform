@@ -111,21 +111,25 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
-        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
-        _properties = new ArrayList<>(pds.size());
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
-        for (PropertyDescriptor pd : pds)
+
+        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
+        _properties = new ArrayList<>();
+        if (pds != null)
         {
-            List<ConditionalFormat> formats = new ArrayList<>();
-            for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
+            for (PropertyDescriptor pd : pds)
             {
-                if (format.getPropertyId() == pd.getPropertyId())
+                List<ConditionalFormat> formats = new ArrayList<>();
+                for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
                 {
-                    formats.add(format);
+                    if (format.getPropertyId() == pd.getPropertyId())
+                    {
+                        formats.add(format);
+                    }
                 }
+                DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
+                _properties.add(property);
             }
-            DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
-            _properties.add(property);
         }
     }
 

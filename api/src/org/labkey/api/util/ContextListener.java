@@ -31,13 +31,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ContextListener implements ServletContextListener
 {
-    private static final Logger _log = Logger.getLogger(ContextListener.class);
-    private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
-    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
-    private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
-    private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
-    private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
-
     // this is among the earliest classes loaded (except for classes loaded via annotations @ClientEndpoint @ServerEndpoint etc)
 
     // IMPORTANT see also LabKeyBootstrapClassLoader/PipelineBootstrapConfig which duplicates this code, keep them consistent
@@ -57,7 +50,13 @@ public class ContextListener implements ServletContextListener
             System.setProperty(LOG_HOME_PROPERTY_NAME, System.getProperty("catalina.base") + "/logs");
     }
 
-
+    // NOTE: this line of code with Logger.getLogger() has to happen after System.setProperty(LOG_HOME_PROPERTY_NAME)
+    private static final Logger _log = Logger.getLogger(ContextListener.class);
+    private static final List<ShutdownListener> _shutdownListeners = new CopyOnWriteArrayList<>();
+    private static final List<StartupListener> _startupListeners = new CopyOnWriteArrayList<>();
+    private static final ContextLoaderListener _springContextListener = new ContextLoaderListener();
+    private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
+    private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
 
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {

@@ -69,7 +69,6 @@ announcements/webapp/announcements/EditTour.js -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayException.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayService.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/AssayServiceAsync.java -text
-api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTBatch.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTPropertyDescriptorMixin.java -text
 api/gwtsrc/org/labkey/api/gwt/client/assay/model/GWTProtocol.java -text
 api/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
@@ -83,7 +82,6 @@ api/gwtsrc/org/labkey/api/gwt/client/model/GWTConditionalFormat.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTContainer.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTDomain.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTIndex.java -text
-api/gwtsrc/org/labkey/api/gwt/client/model/GWTMaterial.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyDescriptor.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/GWTPropertyValidator.java -text
 api/gwtsrc/org/labkey/api/gwt/client/model/PropertyValidatorType.java -text
@@ -100,13 +98,11 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/domain/CancellationException.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/domain/ImportStatus.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/DomainProvider.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/FontButton.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/FormUtil.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LabKeyLinkHTML.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LookupEditorPanel.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/LookupListener.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LookupService.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LookupServiceAsync.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/PropertiesEditor.java -text
@@ -137,7 +133,6 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/TestUtil.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/TextBoxDialogBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/Tooltip.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/TypePicker.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WidgetUpdatable.java -text
@@ -389,7 +384,6 @@ api/src/org/labkey/api/audit/query/DefaultAuditSchema.java -text
 api/src/org/labkey/api/audit/query/DefaultAuditTypeTable.java -text
 api/src/org/labkey/api/audit/query/SimpleAuditColumnFactory.java -text
 api/src/org/labkey/api/audit/view/AuditChangesView.java -text
-api/src/org/labkey/api/cache/BlockingStringKeyCache.java -text
 api/src/org/labkey/api/cache/Cache.java -text
 api/src/org/labkey/api/cache/CacheListener.java -text
 api/src/org/labkey/api/cache/CacheManager.java -text
@@ -405,8 +399,6 @@ api/src/org/labkey/api/cache/ehcache/SafeCacheManager.java -text
 api/src/org/labkey/api/cache/NoopCacheProvider.java -text
 api/src/org/labkey/api/cache/SimpleCache.java -text
 api/src/org/labkey/api/cache/Stats.java -text
-api/src/org/labkey/api/cache/StringKeyCache.java -text
-api/src/org/labkey/api/cache/StringKeyCacheWrapper.java -text
 api/src/org/labkey/api/cache/Throttle.java -text
 api/src/org/labkey/api/cache/Tracking.java -text
 api/src/org/labkey/api/cache/TrackingCache.java -text
@@ -854,7 +846,6 @@ api/src/org/labkey/api/jsp/taglib/ErrorsTag.java -text
 api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
 api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
 api/src/org/labkey/api/jsp/taglib/RadioTag.java -text
-api/src/org/labkey/api/jsp/taglib/ScriptDependenciesTag.java -text
 api/src/org/labkey/api/jsp/taglib/SimpleTagBase.java -text
 api/src/org/labkey/api/laboratory/AbstractDataProvider.java -text
 api/src/org/labkey/api/laboratory/AbstractNavItem.java -text
@@ -2206,13 +2197,11 @@ devtools/src/org/labkey/devtools/view/tags.jsp -text
 experiment/module.properties -text
 experiment/resources/queries/exp/RunGroups/NameOnly.qview.xml -text
 experiment/resources/queries/exp/SampleSets/NameOnly.qview.xml -text
-experiment/resources/schemas/dbscripts/postgresql/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.10-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-18.20-18.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
-experiment/resources/schemas/dbscripts/sqlserver/exp-17.30-18.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.10-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.11-18.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-18.20-18.30.sql -text
@@ -2804,11 +2793,6 @@ issues/src/org/labkey/issue/view/updateView.jsp -text
 issues/webapp/issues/createIssueDef.js -text
 issues/webapp/issues/createRelated.js -text
 issues/webapp/issues/move.js -text
-list/gwtsrc/org/labkey/list/client/GWTList.java -text
-list/gwtsrc/org/labkey/list/client/ListDesigner.java -text
-list/gwtsrc/org/labkey/list/client/ListEditorService.java -text
-list/gwtsrc/org/labkey/list/client/ListEditorServiceAsync.java -text
-list/gwtsrc/org/labkey/list/Designer.gwt.xml -text
 list/module.properties -text
 list/resources/schemas/dbscripts/postgresql/list-0.00-14.10.sql -text
 list/resources/schemas/dbscripts/sqlserver/list-0.00-14.10.sql -text
@@ -2875,8 +2859,6 @@ pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerRegistry.java -t
 pipeline/api-src/org/labkey/api/pipeline/trigger/PipelineTriggerType.java -text
 pipeline/module.properties -text
 pipeline/resources/credits/jars.txt -text
-pipeline/resources/schemas/dbscripts/postgresql/pipeline-17.30-18.10.sql -text
-pipeline/resources/schemas/dbscripts/sqlserver/pipeline-17.30-18.10.sql -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/analysis/AnalysisController.java -text
 pipeline/src/org/labkey/pipeline/analysis/analyze.jsp -text
@@ -2979,15 +2961,6 @@ pipeline/webapp/pipeline/ImportAdvancedOptions.js -text
 pipeline/webapp/pipeline/importAdvancedOptions.lib.xml -text
 pipeline/webapp/pipeline/StatusUpdate.js -text
 pipeline/webapp/WEB-INF/pipeline/pipelineContext.xml -text
-query/gwtsrc/org/labkey/query/metadata/client/GWTColumnInfo.java -text
-query/gwtsrc/org/labkey/query/metadata/client/GWTTableInfo.java -text
-query/gwtsrc/org/labkey/query/metadata/client/MetadataEditor.java -text
-query/gwtsrc/org/labkey/query/metadata/client/MetadataService.java -text
-query/gwtsrc/org/labkey/query/metadata/client/MetadataServiceAsync.java -text
-query/gwtsrc/org/labkey/query/metadata/client/MetadataUnavailableException.java -text
-query/gwtsrc/org/labkey/query/metadata/client/TablePropertiesEditor.java -text
-query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
-query/gwtsrc/org/labkey/query/metadata/MetadataEditor.gwt.xml -text
 query/module.properties -text
 query/resources/credits/jars.txt -text
 query/resources/schemas/query.xml -text
@@ -3039,7 +3012,6 @@ query/src/org/labkey/query/EditQueriesPermission.java -text
 query/src/org/labkey/query/ExternalSchemaDefImporterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDefWriterFactory.java -text
 query/src/org/labkey/query/ExternalSchemaDocumentProvider.java -text
-query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/ModuleCustomQueryDefinition.java -text
 query/src/org/labkey/query/ModuleCustomView.java -text
 query/src/org/labkey/query/ModuleCustomViewDef.java -text
@@ -3292,11 +3264,9 @@ study/gwtsrc/gwt/client/org/labkey/study/designer/client/VaccinePanel.java -text
 study/gwtsrc/gwt/public/org/labkey/study/designer/Designer.html -text
 study/gwtsrc/gwt/StudyApplication.gwt.xml -text
 study/module.properties -text
-study/resources/schemas/dbscripts/postgresql/study-17.30-18.10.sql -text
 study/resources/schemas/dbscripts/postgresql/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
-study/resources/schemas/dbscripts/sqlserver/study-17.30-18.10.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-18.20-18.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
@@ -3667,7 +3637,6 @@ study/src/org/labkey/study/StudyMacroProvider.java -text
 study/src/org/labkey/study/StudyModule.java -text
 study/src/org/labkey/study/StudySchema.java -text
 study/src/org/labkey/study/StudyUnionTableInfo.java -text
-study/src/org/labkey/study/StudyUpgradeCode.java -text
 study/src/org/labkey/study/view/assayProgressReport.jsp -text
 study/src/org/labkey/study/view/BaseStudyPage.java -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text

@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -40,12 +39,11 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -56,8 +54,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -67,13 +63,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.clientLibrary.xml.DependencyType;
-import org.labkey.data.xml.PermissionType;
-import org.labkey.moduleProperties.xml.ModuleDocument;
-import org.labkey.moduleProperties.xml.ModuleType;
-import org.labkey.moduleProperties.xml.OptionsListType;
-import org.labkey.moduleProperties.xml.PropertyType;
-import org.labkey.moduleProperties.xml.RequiredModuleType;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -100,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Standard base class for modules, supplies no-op implementations for many optional methods.
@@ -109,20 +99,19 @@ import java.util.Set;
 public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
-    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
+    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
     private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
-    private static final String XML_FILENAME = "module.xml";
+    static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
-    private Set<Module> _resolvedModuleDependencies;
     private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
-    private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
+    private Set<Module> _resolvedModuleDependencies;
     private Collection<WebPartFactory> _webPartFactories;
     private ModuleResourceResolver _resolver;
     private String _name = null;
@@ -152,9 +141,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _enlistmentId = null;
     private File _explodedPath = null;
     private File _zippedPath = null;
-    protected String _resourcePath = null;
-    private boolean _requireSitePermission = false;
-
     private Boolean _manageVersion = null;
     private String _releaseVersion = null;
 
@@ -162,6 +148,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private boolean _sourcePathMatched = false;
     private boolean _sourceEnlistmentIdMatched = false;
 
+    protected String _resourcePath = null;
 
     protected DefaultModule()
     {
@@ -259,10 +246,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     final public void startup(ModuleContext moduleContext)
     {
-        Resource xml = getModuleResolver().lookup(Path.parse(XML_FILENAME));
-        if (xml != null)
-            loadXmlFile(xml);
-
         doStartup(moduleContext);
     }
 
@@ -1099,128 +1082,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
     }
 
-    protected final void loadXmlFile(Resource r)
-    {
-        if (r.exists())
-        {
-            try
-            {
-                XmlOptions xmlOptions = new XmlOptions();
-                Map<String,String> namespaceMap = new HashMap<>();
-                namespaceMap.put("", "http://labkey.org/moduleProperties/xml/");
-                xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
-
-                ModuleDocument moduleDoc = ModuleDocument.Factory.parse(r.getInputStream(), xmlOptions);
-                if (AppProps.getInstance().isDevMode())
-                {
-                    try
-                    {
-                        XmlBeansUtil.validateXmlDocument(moduleDoc, getName());
-                    }
-                    catch (XmlValidationException e)
-                    {
-                        _log.error("Module XML file failed validation for module: " + getName() + ". Error: " + e.getDetails());
-                    }
-                }
-
-                ModuleType mt = moduleDoc.getModule();
-                if (null != mt && mt.getProperties() != null)
-                {
-                    for (PropertyType pt : mt.getProperties().getPropertyDescriptorArray())
-                    {
-                        ModuleProperty mp;
-                        if (pt.isSetName())
-                            mp = new ModuleProperty(this, pt.getName());
-                        else
-                            continue;
-
-                        if (pt.isSetLabel())
-                            mp.setLabel(pt.getLabel());
-                        if (pt.isSetCanSetPerContainer())
-                            mp.setCanSetPerContainer(pt.getCanSetPerContainer());
-                        if (pt.isSetExcludeFromClientContext())
-                            mp.setExcludeFromClientContext(pt.getExcludeFromClientContext());
-                        if (pt.isSetDefaultValue())
-                            mp.setDefaultValue(pt.getDefaultValue());
-                        if (pt.isSetDescription())
-                            mp.setDescription(pt.getDescription());
-                        if (pt.isSetShowDescriptionInline())
-                            mp.setShowDescriptionInline(pt.getShowDescriptionInline());
-                        if (pt.isSetInputFieldWidth())
-                            mp.setInputFieldWidth(pt.getInputFieldWidth());
-                        if (pt.isSetInputType())
-                            mp.setInputType(ModuleProperty.InputType.valueOf(pt.getInputType().toString()));
-                        if (pt.isSetOptions())
-                        {
-                            List<ModuleProperty.Option> options = new ArrayList<>();
-                            for (OptionsListType.Option option : pt.getOptions().getOptionArray())
-                            {
-                                options.add(new ModuleProperty.Option(option.getDisplay(), option.getValue()));
-                            }
-                            mp.setOptions(options);
-                        }
-                        if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
-                        {
-                            List<Class<? extends Permission>> editPermissions = new ArrayList<>();
-                            for (PermissionType.Enum permEntry : pt.getEditPermissions().getPermissionArray())
-                            {
-                                SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
-                                Class<? extends Permission> permClass = perm.getPermission();
-                                if (permClass != null)
-                                    editPermissions.add(permClass);
-                            }
-
-                            if (editPermissions.size() > 0)
-                                mp.setEditPermissions(editPermissions);
-                        }
-
-                        if (mp.getName() != null)
-                            _moduleProperties.put(mp.getName(), mp);
-                    }
-                }
-
-                if (mt.getClientDependencies() != null && mt.getClientDependencies().getDependencyArray() != null)
-                {
-                    for (DependencyType rt : mt.getClientDependencies().getDependencyArray())
-                    {
-                        String path = rt.getPath();
-                        if (path != null)
-                        {
-                            ClientDependency cd = ClientDependency.fromXML(rt);
-                            if (cd != null)
-                                _clientDependencies.add(cd);
-                            else
-                                _log.error("Unable to parse <dependency> in XML for module: " + getName());
-                        }
-                    }
-                }
-
-                if (mt.getRequiredModuleContext() != null && mt.getRequiredModuleContext().getRequiredModuleArray() != null)
-                {
-                    for (RequiredModuleType rmt : mt.getRequiredModuleContext().getRequiredModuleArray())
-                    {
-                        if (rmt.getName() != null)
-                        {
-                            if(rmt.getName().equalsIgnoreCase(getName()))
-                                _log.error("Module " + getName() + " lists itself as a dependency in module.xml");
-                            else
-                                _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
-                        }
-                    }
-                }
-
-                if (mt.getEnableOptions() != null && mt.getEnableOptions().isSetRequireSitePermission())
-                {
-                    _requireSitePermission = true;
-                }
-            }
-            catch(Exception e)
-            {
-                _log.error("Error trying to read and parse the metadata XML for module " + getName() + " from " + r.getPath(), e);
-            }
-        }
-    }
-
     @Override
     public final Resolver getModuleResolver()
     {
@@ -1562,17 +1423,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public Map<String, ModuleProperty> getModuleProperties()
-    {
-        return _moduleProperties;
-    }
-
-    protected void addModuleProperty(ModuleProperty property)
-    {
-        _moduleProperties.put(property.getName(), property);
-    }
-
-    @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
         return new JSONObject(getDefaultPageContextJson(context.getContainer()));
@@ -1589,17 +1439,36 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
+    private ModuleXml getModuleXml()
+    {
+        return MODULE_XML_CACHE.getResourceMap(this);
+    }
+
+    @Override
+    public Map<String, ModuleProperty> getModuleProperties()
+    {
+        Map<String, ModuleProperty> map = new LinkedHashMap<>(getModuleXml().getModuleProperties());
+        map.putAll(_moduleProperties);
+
+        return map;
+    }
+
+    protected void addModuleProperty(ModuleProperty property)
+    {
+        _moduleProperties.put(property.getName(), property);
+    }
+
     @Override
     @NotNull
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c)
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
-        return _clientDependencies;
+        return getModuleXml().getClientDependencySuppliers();
     }
 
     @Override
     public boolean getRequireSitePermission()
     {
-        return _requireSitePermission;
+        return getModuleXml().getRequireSitePermission();
     }
 
     @Override

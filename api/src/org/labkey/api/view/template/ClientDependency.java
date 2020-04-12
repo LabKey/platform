@@ -28,31 +28,43 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
+import org.labkey.clientLibrary.xml.RequiredModuleType;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 /**
- * Base class for handling client dependencies
+ * Base class for handling client-side dependencies, such as JavaScript and CSS files. May be referenced as individual
+ * files or as a library of multiple related files.
+ *
+ * ClientDependencies should not be cached directly, as they may become stale if their contents change on disk.
+ * Instead, use the Supplier variants, which will resolve the latest version of the resource when a page is being
+ * rendered. See issue 40118 for more details.
  *
  * User: bbimber
  * Date: 6/13/12
- * Time: 5:25 PM
  */
 public abstract class ClientDependency
 {
     private static final Logger LOG = Logger.getLogger(ClientDependency.class);
-    private static final Cache<String, ClientDependency> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.MONTH, "Client dependencies", null);
+    static final Cache<Pair<Path, ModeTypeEnum.Enum>, ClientDependency> CACHE = CacheManager.getBlockingCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
 
     static
     {
@@ -129,8 +141,24 @@ public abstract class ClientDependency
         return path != null && (path.startsWith("http://") || path.startsWith("https://"));
     }
 
-    @NotNull
+    @Nullable
     public static ClientDependency fromModuleName(String mn)
+    {
+        Module m = getModule(mn);
+
+        return ClientDependency.fromModule(m);
+    }
+
+    @NotNull
+    public static Supplier<ClientDependency> supplierFromModuleName(String mn)
+    {
+        Module m = getModule(mn);
+
+        return ClientDependency.supplierFromModule(m);
+    }
+
+    @NotNull
+    private static Module getModule(String mn)
     {
         Module m = ModuleLoader.getInstance().getModule(mn);
 
@@ -138,14 +166,19 @@ public abstract class ClientDependency
         {
             throw new IllegalArgumentException("Module '" + mn + "' not found, unable to create client resource");
         }
-
-        return ClientDependency.fromModule(m);
+        return m;
     }
 
     @NotNull
+    public static Supplier<ClientDependency> supplierFromModule(Module m)
+    {
+        return supplierFromPath(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
+    }
+
+    @Nullable
     public static ClientDependency fromModule(Module m)
     {
-        //noinspection ConstantConditions
+        //noinspection
         return fromCache(m.getName() + TYPE.context.getExtension(), ModeTypeEnum.BOTH);
     }
 
@@ -167,21 +200,106 @@ public abstract class ClientDependency
         return set;
     }
 
-    @Nullable
-    public static ClientDependency fromXML(DependencyType type)
+    @NotNull
+    public static Supplier<ClientDependency> supplierFromXML(DependencyType type)
     {
         if (null == type || null == type.getPath())
-            return null;
+            return () -> null;
 
         if (type.isSetMode())
-            return fromPath(type.getPath(), type.getMode());
+            return supplierFromPath(type.getPath(), type.getMode());
 
-        return fromPath(type.getPath());
+        return supplierFromPath(type.getPath(), ModeTypeEnum.BOTH);
+    }
+
+    /**
+     * Map an array of DependencyTypes (likely coming from a lib, html view, report, or module property XML file) to a set
+     * of client dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold
+     * onto suppliers not resolved ClientDependency objects. #40118
+     * @param dependencyTypes An array of DependencyTypes
+     * @param name Name of the source of the module types, to provide useful error messages
+     * @return An ordered set of client dependency suppliers
+     */
+    public static List<Supplier<ClientDependency>> getSuppliers(DependencyType[] dependencyTypes, String name)
+    {
+        return Arrays.stream(dependencyTypes)
+            .map(dt->{
+                var supplier = supplierFromXML(dt);
+                return (Supplier<ClientDependency>) ()->{
+                    var cd = supplier.get();
+                    if (null == cd)
+                        LOG.error("Unable to load <dependency> in " + name);
+                    return cd;
+                };
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Map an array of RequiredModuleTypes (likely coming from a lib, html view, or module property XML file) to a set of
+     * client dependency suppliers. Client dependencies can change, so cached and other long-lived objects should hold
+     * onto suppliers not resolved ClientDependency objects. #40118
+     * @param moduleTypes An array of RequireModuleTypes
+     * @param name Name of the source of the module types, to provide useful error messages
+     * @param moduleNameFilter A Predicate that allows for validation and filtering out unwanted modules
+     * @return An ordered set of client dependency suppliers
+     */
+    public static List<Supplier<ClientDependency>> getSuppliers(RequiredModuleType[] moduleTypes, String name, Predicate<String> moduleNameFilter)
+    {
+        return Arrays.stream(moduleTypes)
+            .map(RequiredModuleType::getName)
+            .filter(moduleNameFilter)
+            .map(moduleName-> (Supplier<ClientDependency>) ()->{
+                Module m = ModuleLoader.getInstance().getModule(moduleName);
+                if (m != null)
+                    return ClientDependency.fromModule(m);
+
+                LOG.error("Unable to find module: '" + moduleName + "' referenced in " + name);
+                return null;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Standard method for resolving a set of client dependency suppliers into a set of ClientDependency objects.
+     * Invoke this at the point the dependencies are going to be rendered into a page.
+     * @param suppliers A set of client dependency suppliers
+     * @return A LinkedHashSet of ClientDependency objects
+     */
+    public static LinkedHashSet<ClientDependency> getClientDependencySet(List<Supplier<ClientDependency>> suppliers)
+    {
+        return suppliers.stream()
+            .map(Supplier::get)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     public static ClientDependency fromPath(String path)
     {
         return fromPath(path, ModeTypeEnum.BOTH);
+    }
+
+    public static Supplier<ClientDependency> supplierFromPath(String path)
+    {
+        return supplierFromPath(path, ModeTypeEnum.BOTH);
+    }
+
+    public static Supplier<ClientDependency> supplierFromPath(String path, @NotNull ModeTypeEnum.Enum mode)
+    {
+        Supplier<ClientDependency> supplier;
+
+        if (isExternalDependency(path))
+        {
+            var dependency = new ExternalClientDependency(path, mode);
+            supplier = () -> dependency;
+        }
+        else
+        {
+            var pair = getPair(path, mode);
+            supplier = () -> fromCache(pair);
+        }
+
+        return supplier;
     }
 
     public static ClientDependency fromPath(String path, @NotNull ModeTypeEnum.Enum mode)
@@ -196,7 +314,7 @@ public abstract class ClientDependency
         return cd;
     }
 
-    protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable Pair<Path, ModeTypeEnum.Enum> getPair(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
     {
         requestedPath = requestedPath.replaceAll("^/", "");
 
@@ -216,16 +334,24 @@ public abstract class ClientDependency
 
         if (path == null)
         {
-            LOG.warn("Invalid client dependency path: " + requestedPath);
+            LOG.error("Invalid client dependency path: " + requestedPath);
             return null;
         }
 
-        String key = getCacheKey(path.toString(), mode);
-
-        return CACHE.get(key, null, new ClientDependencyCacheLoader(CACHE, path, mode));
+        return Pair.of(path, mode);
     }
 
-    protected static String getCacheKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
+    protected static @Nullable ClientDependency fromCache(String requestedPath, @NotNull ModeTypeEnum.Enum mode)
+    {
+        return fromCache(getPair(requestedPath, mode));
+    }
+
+    protected static @Nullable ClientDependency fromCache(@Nullable Pair<Path, ModeTypeEnum.Enum> pair)
+    {
+        return null != pair ? CACHE.get(pair) : null;
+    }
+
+    protected static String getUniqueKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
         return identifier.toLowerCase() + "|" + mode.toString();
     }
@@ -238,30 +364,31 @@ public abstract class ClientDependency
         return _primaryType;
     }
 
-    protected @NotNull Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected @NotNull List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
-        return Collections.emptySet();
+        return Collections.emptyList();
     }
 
     private @NotNull Set<String> getProductionScripts(Container c, TYPE type)
     {
-        return getScripts(c, type, _prodModePath, cd -> cd.getProductionScripts(c, type));
+        return getScripts(c, type, _prodModePath, cd -> cd.get().getProductionScripts(c, type));
     }
 
     private @NotNull Set<String> getDevModeScripts(Container c, TYPE type)
     {
-        return getScripts(c, type, _devModePath, cd -> cd.getDevModeScripts(c, type));
+        return getScripts(c, type, _devModePath, cd -> cd.get().getDevModeScripts(c, type));
     }
 
-    private @NotNull Set<String> getScripts(Container c, TYPE type, String path, Function<ClientDependency, Set<String>> function)
+    private @NotNull Set<String> getScripts(Container c, TYPE type, String path, Function<Supplier<ClientDependency>, Set<String>> function)
     {
         Set<String> scripts = new LinkedHashSet<>();
         if (_primaryType != null && _primaryType == type && path != null)
             scripts.add(path);
 
-        Set<ClientDependency> cd = getUniqueDependencySet(c);
-        for (ClientDependency r : cd)
-            scripts.addAll(function.apply(r));
+        getDependencySuppliers(c)
+            .stream()
+            .map(function)
+            .forEach(scripts::addAll);
 
         return scripts;
     }
@@ -307,12 +434,11 @@ public abstract class ClientDependency
 
     public @NotNull Set<Module> getRequiredModuleContexts(Container c)
     {
-        Set<Module> modules = new HashSet<>();
-
-        for (ClientDependency r : getUniqueDependencySet(c))
-            modules.addAll(r.getRequiredModuleContexts(c));
-
-        return modules;
+        return getDependencySuppliers(c)
+            .stream()
+            .map(cd->cd.get().getRequiredModuleContexts(c))
+            .flatMap(Collection::stream)
+            .collect(Collectors.toSet());
     }
 
     @Override

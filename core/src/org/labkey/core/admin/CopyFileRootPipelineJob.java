@@ -321,15 +321,6 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         setStatus(TaskStatus.running, "Copying files");
                         info("Copying file  '" + pathString + "'");
 
-                        if (matchesCopyFailureSimulatorRegex("FileRootCopyExpectedFailureSimulator", sourceChild.getFileName().toString()))
-                        {
-                            throw new IOException("Simulating an I/O failure copying " + sourceChild);
-                        }
-                        if (matchesCopyFailureSimulatorRegex("FileRootCopyUnexpectedFailureSimulator", sourceChild.getFileName().toString()))
-                        {
-                            throw new NullPointerException("Simulating an unexpected error copying " + sourceChild);
-                        }
-
                         long sourceSize = Files.size(sourceChild);
                         boolean retainExisting = false;
 

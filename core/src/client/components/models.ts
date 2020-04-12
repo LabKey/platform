@@ -1,20 +1,23 @@
-
 export interface AuthConfig {
-    provider?: string;
-    description?: string;
+    enabled: boolean;
+    description: string;
+    provider: string;
     details?: string;
-    enabled?: boolean;
     configuration?: number;
+    headerLogoUrl?: string;
+    loginLogoUrl?: string;
 }
 
+// Specifies possible attributes of one field
 export interface AuthConfigField {
     defaultValue?: any;
     name?: string;
     caption: string;
-    description: string;
+    description?: string;
     type: string;
     required?: boolean;
     options?: Record<string, string>;
+    html?: string;
 }
 
 export interface AuthConfigProvider {
@@ -26,17 +29,16 @@ export interface AuthConfigProvider {
     testLink?: string;
 }
 
-export interface InputFieldProps {
-    defaultValue?: any;
-    name?: string;
-    caption: string;
-    description?: string;
-    required?: boolean;
+export interface GlobalSettingsOptions {
+    SelfRegistration?: boolean;
+    SelfServiceEmailChanges?: boolean;
+    AutoCreateAccounts?: boolean;
+}
+
+export interface InputFieldProps extends AuthConfigField{
     canEdit: boolean;
-    type: string;
     value?: string;
     onChange?: Function;
-    key?: number;
 }
 
 export interface DatabasePasswordRules {
@@ -53,5 +55,5 @@ export interface Actions {
     onDragEnd: (result: {[key:string]: any}) => void;
     onDelete: (configuration: number, configType: string) => void;
     updateAuthRowsAfterSave: (config: string, configType: string) => void;
-    toggleModalOpen: (modalOpen: boolean) => void;
+    toggleModalOpen?: (modalOpen: boolean) => void;
 }
