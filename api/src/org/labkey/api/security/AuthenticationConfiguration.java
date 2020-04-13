@@ -13,6 +13,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +56,10 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
 
     interface PrimaryAuthenticationConfiguration<AP extends PrimaryAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {
+        default @Nullable URLHelper logout(HttpServletRequest request, @Nullable URLHelper returnURL)
+        {
+            return null;
+        }
     }
 
     interface LoginFormAuthenticationConfiguration<AP extends LoginFormAuthenticationProvider<?>> extends PrimaryAuthenticationConfiguration<AP>
