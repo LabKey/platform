@@ -26,7 +26,6 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.components.labkey.ui.samples.SampleTypeDesigner;
 import org.labkey.test.pages.ReactAssayDesignerPage;
 import org.labkey.test.pages.assay.AssayBeginPage;
 import org.labkey.test.params.FieldDefinition;
@@ -37,7 +36,6 @@ import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.SampleSetHelper;
 import org.labkey.test.util.StudyHelper;
-import org.labkey.test.util.exp.SampleSetAPIHelper;
 
 import java.io.File;
 import java.util.ArrayList;
