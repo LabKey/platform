@@ -1073,7 +1073,7 @@ public class StatementUtils
                 ret.setObjectIdIndex(selectIndex++);
         }
 
-        if (Operation.merge == _operation)
+        if (_selectObjectUri && null != objectURIVar)
             ret.setObjectUriIndex(selectIndex);
 
         return ret;

@@ -48,6 +48,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -82,6 +83,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
@@ -121,7 +123,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
 
 /**
  * Responsible for user authentication, creating or modifying groups, and similar user/group operations.
@@ -152,6 +153,7 @@ public class SecurityManager
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
+    public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
 
     static
     {
@@ -531,7 +533,7 @@ public class SecurityManager
                     }
 
                     // Now logout the session user
-                    logoutUser(request, sessionUser);
+                    logoutUser(request, sessionUser, null);
                     sessionUser = null;
                 }
             }
@@ -633,7 +635,7 @@ public class SecurityManager
     }
 
 
-    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user, boolean invalidate)
+    public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
     {
         SessionHelper.clearSession(request, invalidate, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
@@ -643,14 +645,18 @@ public class SecurityManager
         newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
 
+        if (null != configuration)
+            newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
+
         return newSession;
     }
 
 
-    public static void logoutUser(HttpServletRequest request, User user)
+    public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnURL)
     {
-        AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
+        URLHelper ret = AuthenticationManager.logout(user, request, returnURL);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
         SessionHelper.clearSession(request, true);
+        return ret;
     }
 
 

@@ -37,7 +37,7 @@ export interface GlobalSettingsOptions {
 
 export interface InputFieldProps extends AuthConfigField{
     canEdit: boolean;
-    value?: string;
+    value?: any;
     onChange?: Function;
 }
 
