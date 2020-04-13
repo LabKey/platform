@@ -305,8 +305,8 @@ public abstract class UploadSamplesHelper
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
         Map<ExpData, String> parentData = new HashMap<>();
-        Set<String> parentDataTypesToRemove = new HashSet<>();
-        Set<String> parentSampleTypesToRemove = new HashSet<>();
+        Set<String> parentDataTypesToRemove = new CaseInsensitiveHashSet();
+        Set<String> parentSampleTypesToRemove = new CaseInsensitiveHashSet();
 
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
