@@ -180,7 +180,7 @@ public class DatasetDomainKindProperties
         return _cohortId;
     }
 
-    public void setCohortId(int cohortId)
+    public void setCohortId(Integer cohortId)
     {
         _cohortId = cohortId;
     }

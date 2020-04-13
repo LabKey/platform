@@ -245,7 +245,7 @@ public class DatasetServiceImpl extends DomainEditorServiceBase implements Datas
                 ds.setKeyPropertyName(null);
                 useTimeKeyField = true;
             }
-            BeanUtils.copyProperties(updated, ds);
+            BeanUtils.copyProperties(updated, ds); // updated already has displayOrder, entityId, but not category or categoryId. Category exists on ds
 
             if (ds.getKeyPropertyName() != null)
             {

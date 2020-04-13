@@ -549,6 +549,23 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 //                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
 //            }
 
+            // Temp note: Taken from study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java, starting line 1120
+            if (datasetProperties.getName() == null || datasetProperties.getName().length() == 0)
+                exception.addFieldError("Name", "Dataset name cannot be empty.");
+
+            if (datasetProperties.getLabel() == null || datasetProperties.getLabel().length() == 0)
+                exception.addFieldError("Label", "Dataset label cannot be empty.");
+
+            if ("".equals(datasetProperties.getKeyPropertyName()))
+                exception.addFieldError("Additional Key Field", "Please select a field name for the additional key.");
+
+            // TODO RP: Make sure this covers intended cases
+            if (datasetProperties.isKeyPropertyManaged() && (datasetProperties.getKeyPropertyName() == null || datasetProperties.getName().length() == 0))
+                exception.addFieldError("Additional Key Field", "Please select a field name for the additional key.");
+
+            if (exception.hasErrors())
+                return exception;
+
             if (datasetProperties.isDemographicData())
             {
                 datasetProperties.setKeyPropertyName(null);
@@ -648,12 +665,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         int datasetId = StudyService.get().getDatasetIdByName(container, original.getName());
 
         // RP TODO: Some of these initializations may error out. You should check for them and add to exception.
-        DatasetDefinition def = new DatasetDefinition(getStudy(container), datasetId);
+//        DatasetDefinition def = new DatasetDefinition(getStudy(container), datasetId);
 //        RP Q: Below adds check, but this wouldn't address the potential nullpointer that is flagged
 //        if (datasetId == -1)
 //            return exception.addGlobalError("Something to the effect that a dataset of that name does not exist here?");
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
+        DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
         StudyManager studyManager = new StudyManager();
 
         if (checkCanUpdate(def, exception, container, user, original, update).hasGlobalErrors())
