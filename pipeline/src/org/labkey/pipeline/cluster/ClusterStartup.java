@@ -243,7 +243,7 @@ public class ClusterStartup extends AbstractPipelineStartup
                     sb.append("\n");
                 }
             }
-            if (!proc.waitFor(90, TimeUnit.SECONDS))
+            if (!proc.waitFor(25, TimeUnit.SECONDS))
             {
                 proc.destroy();
                 Assert.fail("Process did not complete. Output:\n" + sb.toString());
