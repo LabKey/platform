@@ -30,11 +30,18 @@ public class RunInputOutputBean
 {
     private final Map<ExpMaterial, String> _materials;
     private final Map<ExpData, String> _datas;
+    private final boolean _doUpdate;
 
     public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas)
     {
+        this(materials, datas, false);
+    }
+
+    public RunInputOutputBean(@NotNull Map<ExpMaterial, String> materials, @NotNull Map<ExpData, String> datas, boolean doUpdate)
+    {
         _materials = materials;
         _datas = datas;
+        _doUpdate = doUpdate;
     }
 
     @NotNull
@@ -47,5 +54,10 @@ public class RunInputOutputBean
     public Map<ExpData, String> getDatas()
     {
         return _datas;
+    }
+
+    public boolean doClear()
+    {
+        return _materials.isEmpty() && _datas.isEmpty() && _doUpdate;
     }
 }

@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
 public abstract class ClientDependency
 {
     private static final Logger LOG = Logger.getLogger(ClientDependency.class);
-    static final Cache<String, ClientDependency> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
+    static final Cache<Pair<Path, ModeTypeEnum.Enum>, ClientDependency> CACHE = CacheManager.getBlockingCache(10000, CacheManager.MONTH, "Client dependencies", new ClientDependencyCacheLoader());
 
     static
     {
@@ -348,15 +348,10 @@ public abstract class ClientDependency
 
     protected static @Nullable ClientDependency fromCache(@Nullable Pair<Path, ModeTypeEnum.Enum> pair)
     {
-        return null != pair ? CACHE.get(getCacheKey(pair), pair, null) : null;
+        return null != pair ? CACHE.get(pair) : null;
     }
 
-    protected static String getCacheKey(@NotNull Pair<Path, ModeTypeEnum.Enum> pair)
-    {
-        return getCacheKey(pair.first.toString(), pair.second);
-    }
-
-    protected static String getCacheKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
+    protected static String getUniqueKey(@NotNull String identifier, @NotNull ModeTypeEnum.Enum mode)
     {
         return identifier.toLowerCase() + "|" + mode.toString();
     }
