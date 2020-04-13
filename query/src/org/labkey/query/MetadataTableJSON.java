@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -51,6 +52,8 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -333,6 +336,22 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                 xmlColumn.unsetUrl();
             }
 
+            // Set the ImportAliases
+            Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
+            if (metadataColumnJSON.getImportAliases() != null && importAliasSet.isEmpty())
+            {
+                addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
+            }
+            else if (metadataColumnJSON.getImportAliases() != null && !importAliasSet.contains(metadataColumnJSON.getImportAliases()))
+            {
+                xmlColumn.unsetImportAliases();
+                addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
+            }
+            else if (xmlColumn.isSetImportAliases())
+            {
+                xmlColumn.unsetImportAliases();
+            }
+
             // Set the FK
             if (!metadataColumnJSON.isLookupCustom() && metadataColumnJSON.getLookupQuery() != null && metadataColumnJSON.getLookupSchema() != null)
             {
@@ -426,6 +445,13 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
         }
 
         return getMetadata(schemaName, this.getName(), user, container);
+    }
+
+    private void addImportAliases(ColumnType xmlColumn, String importAliases)
+    {
+        Set<String> aliasesSet = ColumnRenderPropertiesImpl.convertToSet(importAliases);
+        ColumnType.ImportAliases importAliasesXml = xmlColumn.addNewImportAliases();
+        aliasesSet.forEach(importAliasesXml::addImportAlias);
     }
 
     private static TableType getTableType(String name, TablesDocument doc)
@@ -583,6 +609,11 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         {
                             // Omit columns that are in the XML but are no longer in the underlying table/query
                             break;
+                        }
+                        if (column.isSetImportAliases())
+                        {
+                            String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<String>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
+                            metadataColumnJSON.setImportAliases(importAliases);
                         }
                         if (column.isSetColumnTitle())
                         {
