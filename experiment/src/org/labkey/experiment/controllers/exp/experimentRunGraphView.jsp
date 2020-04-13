@@ -41,7 +41,6 @@
 <%
     ViewContext context = getViewContext();
     ExperimentRunGraphModel model = (ExperimentRunGraphModel)HttpView.currentModel();
-    boolean isSummaryView = !model.isDetail();
 
     String uniqueId = "" + UniqueID.getServerSessionScopedUID();
     String appId = "run-graph-app-" + uniqueId;
@@ -61,9 +60,6 @@
                                                                                              model.isDetail(),
                                                                                              model.getFocus(),
                                                                                              model.getFocusType());
-
-        if (isSummaryView)
-        {
 %>
 <%=button("Toggle Beta Graph (new!)").id(toggleBtnId).style("display: inline-block; float: right;")%>
 <ul id="run-graph-tab-bar" class="nav nav-tab" role="tablist" style="display: none;">
@@ -72,9 +68,6 @@
 </ul>
 <div class="tab-content">
     <div class="tab-pane active" id="<%=h(graphTabId)%>">
-<%
-        }
-%>
 <p>Click on a node in the graph below for details. Run outputs have a bold outline.</p>
 <img alt="Run Graph" src="<%=imgSrc%>" usemap="#graphmap"/>
 <%
@@ -107,9 +100,6 @@
 <pre><%=h(e.getMessage())%></pre>
 <%
     }
-
-    if (isSummaryView)
-    {
 %>
     </div>
     <div class="tab-pane" id="<%=h(graphTabBetaId)%>">
@@ -145,6 +135,3 @@
         });
     })(jQuery);
 </script>
-<%
-    }
-%>
