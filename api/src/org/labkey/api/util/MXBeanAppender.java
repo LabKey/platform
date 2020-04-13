@@ -44,7 +44,7 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
         @Override
         public Date getTime()
         {
-            return new Date(_event.getTimeStamp());
+            return new Date(_event.timeStamp);
         }
 
         @Override
@@ -92,7 +92,7 @@ public class MXBeanAppender extends org.apache.log4j.AppenderSkeleton implements
     private synchronized void clean()
     {
         long yesterday = HeartBeat.currentTimeMillis() - TimeUnit.DAYS.toMillis(1);
-        while (_events.size() > 100 || !_events.isEmpty() && _events.getLast()._event.getTimeStamp() < yesterday)
+        while (_events.size() > 100 || !_events.isEmpty() && _events.getLast()._event.timeStamp < yesterday)
             _events.removeLast();
     }
 

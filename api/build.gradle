@@ -65,7 +65,7 @@ List caching = [
 ]
 
 List logging = [
-        "log4j:log4j:${log4jVersion}"
+        "org.apache.logging.log4j:log4j-core:${log4jVersion}"
 ]
 
 List r = [

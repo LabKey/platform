@@ -7626,13 +7626,14 @@ public class AdminController extends SpringActionController
             ArrayList<Map<String, Object>> list = new ArrayList<>(events.length);
             for (LoggingEvent e : events)
             {
-                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
+                // TODO - find replacement - maybe a ThreadLocal using a WeakHashMap of Event->EventId?
+//                if (eventId==0 || eventId<Integer.parseInt(e.getProperty("eventId")))
+                if (eventId==0)
                 {
                     HashMap<String, Object> m = new HashMap<>();
-                    m.put("eventId", e.getProperty("eventId"));
                     m.put("level", e.getLevel().toString());
                     m.put("message", e.getMessage());
-                    m.put("timestamp", new Date(e.getTimeStamp()));
+                    m.put("timestamp", new Date(e.timeStamp));
                     list.add(m);
                 }
             }

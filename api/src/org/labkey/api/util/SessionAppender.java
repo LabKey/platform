@@ -54,7 +54,8 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
             return;
         synchronized (info.list)
         {
-            event.setProperty("eventId", String.valueOf(++info.eventId));
+            // TODO - find replacement - maybe a ThreadLocal using a WeakHashMap of Event->EventId?
+            //            event.setProperty("eventId", String.valueOf(++info.eventId));
             info.list.add(event);
             if (info.list.size() > 1000)
                 info.list.remove(0);
