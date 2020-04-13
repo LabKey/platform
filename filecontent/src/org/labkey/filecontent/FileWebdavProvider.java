@@ -62,6 +62,9 @@ public class FileWebdavProvider implements WebdavService.Provider
         WebdavResolverImpl.WebFolderResource folder = (WebdavResolverImpl.WebFolderResource) target;
         Container c = folder.getContainer();
 
+        if (c.isRoot())
+            return null;
+
         FileContentService svc = FileContentService.get();
         if (svc == null)
         {

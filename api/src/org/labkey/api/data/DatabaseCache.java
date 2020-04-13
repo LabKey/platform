@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -86,7 +87,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
             if (null == transactionCache)
             {
-                transactionCache = new TransactionCache<K, V>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
+                transactionCache = new TransactionCache<>(_sharedCache, createTemporaryCache(_sharedCache.getTrackingCache()));
                 t.addCache(this, transactionCache);
             }
 
@@ -99,31 +100,31 @@ public class DatabaseCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public void put(K key, V value)
+    public void put(@NotNull K key, V value)
     {
         getCache().put(key, value);
     }
 
     @Override
-    public void put(K key, V value, long timeToLive)
+    public void put(@NotNull K key, V value, long timeToLive)
     {
         getCache().put(key, value, timeToLive);
     }
 
     @Override
-    public V get(K key)
+    public V get(@NotNull K key)
     {
         return getCache().get(key);
     }
 
     @Override
-    public V get(K key, @Nullable Object arg, CacheLoader<K, V> loader)
+    public V get(@NotNull K key, @Nullable Object arg, CacheLoader<K, V> loader)
     {
         return getCache().get(key, arg, loader);
     }
 
     @Override
-    public void remove(final K key)
+    public void remove(@NotNull final K key)
     {
         DbScope.Transaction t = _scope.getCurrentTransaction();
 
@@ -223,6 +224,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             return getCache().hashCode();
         }
 
+        @Override
         public void run()
         {
             getCache().clear();
@@ -287,7 +289,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             for (int i = 0; i < values.length; i++)
                 values[i] = "value_" + i;
 
-            TrackingCache trackingCache = cache.getCache().getTrackingCache();
+            TrackingCache<String, String> trackingCache = cache.getCache().getTrackingCache();
 
             for (int i = 1; i <= 20; i++)
             {
@@ -327,7 +329,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             for (int i = 21; i <= 25; i++)
                 cache.put("key_" + i, values[i]);
 
-            assertTrue(trackingCache.size() == 10);
+            assertEquals(10, trackingCache.size());
             correctCount = 0;
 
             for (int i = 11; i <= 15; i++)
@@ -350,7 +352,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
 
                     // Make sure key_11 is in the cache
                     cache.put("key_11", values[11]);
-                    assertTrue(cache.get("key_11") == values[11]);
+                    assertSame(cache.get("key_11"), values[11]);
                     break;
                 default:
                     fail("Unknown cache type");
@@ -362,20 +364,20 @@ public class DatabaseCache<K, V> implements Cache<K, V>
                 assertTrue(scope.isTransactionActive());
 
                 // Test read-through transaction cache
-                assertTrue(cache.get("key_11") == values[11]);
+                assertSame(cache.get("key_11"), values[11]);
 
                 cache.remove("key_11");
-                assertTrue(null == cache.get("key_11"));
+                assertNull(cache.get("key_11"));
 
                 // imitate another thread: toggle transaction and test
                 scope.setOverrideTransactionActive(Boolean.FALSE);
-                assertTrue(cache.get("key_11") == values[11]);
+                assertSame(cache.get("key_11"), values[11]);
                 scope.setOverrideTransactionActive(null);
 
                 // This should close the transaction caches
                 transaction.commit();
                 // Test that remove got applied to shared cache
-                assertTrue(null == cache.get("key_11"));
+                assertNull(cache.get("key_11"));
 
                 cache.removeUsingFilter(new Cache.StringPrefixFilter("key"));
                 assert trackingCache.size() == 0;
@@ -430,6 +432,7 @@ public class DatabaseCache<K, V> implements Cache<K, V>
             }
 
 
+            @Override
             public boolean isTransactionActive()
             {
                 if (null != overrideTransactionActive)

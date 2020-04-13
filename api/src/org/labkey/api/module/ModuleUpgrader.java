@@ -41,6 +41,12 @@ public class ModuleUpgrader
             {
                 runnable.run();
             }
+
+            @Override
+            String getLogMessage()
+            {
+                return "all modules have been upgraded and initialized";
+            }
         },
         Asynchronous
         {
@@ -50,9 +56,17 @@ public class ModuleUpgrader
                 Thread thread = new Thread(runnable, "Module Upgrade");
                 thread.start();
             }
+
+            @Override
+            String getLogMessage()
+            {
+                return "modules are being upgraded and initialized in the background";
+            }
         };
 
-        abstract void run(Runnable runnable);}
+        abstract void run(Runnable runnable);
+        abstract String getLogMessage();
+    }
 
     ModuleUpgrader(List<Module> modules)
     {
