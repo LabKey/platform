@@ -29,7 +29,8 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static final String SAMPLE_TYPE_COLUMN_NAME = "SampleType";
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
-    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? TODO replace with id once we are generating ids
+    public static final String SAMPLE_LSID_COLUMN_NAME = "SampleLSID"; // ??? TODO remove once we have RowId always available
+    public static final String SAMPLE_ID_COLUMN_NAME = "SampleID";
     public static final String METADATA_COLUMN_NAME = "Metadata";
     public static final String IS_LINEAGE_UPDATE_COLUMN_NAME = "IsLineageUpdate";
 
@@ -45,6 +46,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_NAME_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_LSID_COLUMN_NAME));
+        defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(IS_LINEAGE_UPDATE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));
     }
@@ -91,6 +93,10 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                 {
                     col.setLabel("Sample LSID");
                 }
+                else if (SAMPLE_ID_COLUMN_NAME.equalsIgnoreCase(col.getName()))
+                {
+                    col.setLabel("Sample ID");
+                }
                 else if (SAMPLE_NAME_COLUMN_NAME.equalsIgnoreCase(col.getName()))
                 {
                     col.setLabel("Sample Name");
@@ -128,6 +134,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     public static class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     {
         private String _sampleLsid;
+        private int _sampleId;
         private String _sampleName;
         private String _sampleType;
         private int _sampleTypeId;
@@ -152,6 +159,16 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         public void setSampleLsid(String sampleLsid)
         {
             _sampleLsid = sampleLsid;
+        }
+
+        public int getSampleId()
+        {
+            return _sampleId;
+        }
+
+        public void setSampleId(int sampleId)
+        {
+            _sampleId = sampleId;
         }
 
         public String getSampleName()
@@ -208,7 +225,8 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         public Map<String, Object> getAuditLogMessageElements()
         {
             Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("sampleId", getSampleLsid());
+            elements.put("sampleLsid", getSampleLsid());
+            elements.put("sampleId", getSampleId());
             elements.put("sampleName", getSampleName());
             elements.put("sampleType", getSampleType());
             elements.put("sampleTypeId", getSampleTypeId());
@@ -233,6 +251,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
             fields.add(createPropertyDescriptor(SAMPLE_TYPE_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(SAMPLE_TYPE_ID_COLUMN_NAME, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(SAMPLE_NAME_COLUMN_NAME, PropertyType.STRING));
+            fields.add(createPropertyDescriptor(SAMPLE_ID_COLUMN_NAME, PropertyType.INTEGER));
             fields.add(createPropertyDescriptor(SAMPLE_LSID_COLUMN_NAME, PropertyType.STRING));
             fields.add(createPropertyDescriptor(IS_LINEAGE_UPDATE_COLUMN_NAME, PropertyType.BOOLEAN));
             fields.add(createPropertyDescriptor(METADATA_COLUMN_NAME, PropertyType.STRING, -1));        // varchar max

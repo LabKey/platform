@@ -109,6 +109,8 @@ import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
@@ -952,13 +954,11 @@ public class SampleSetServiceImpl extends DetailedAuditHandler implements Sample
                 }
             }
             if (row.containsKey(LSID))
-            {
                 event.setSampleLsid(String.valueOf(row.get(LSID)));
-            }
-            if (row.containsKey("Name"))
-            {
-                event.setSampleName(String.valueOf(row.get("Name")));
-            }
+            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
+                event.setSampleId((Integer) row.get(ROW_ID));
+            if (row.containsKey(NAME))
+                event.setSampleName(String.valueOf(row.get(NAME)));
         }
 
         return event;
