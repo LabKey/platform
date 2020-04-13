@@ -6919,7 +6919,7 @@ public class AdminController extends SpringActionController
                     }
                     if (source == null)
                     {
-                        throw new NotFoundException("An unknown project was specified to copy permissions from.");
+                        throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
                     }
 
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
