@@ -17,10 +17,12 @@ export class TextInput extends PureComponent<TextInputProps> {
         return (
             <div className="modal__text-input">
                 <span className="modal__field-label">
-                    {caption} {required ? '*' : null}
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
+                    )}
+                    {required ? ' *' : null}
                 </span>
-
-                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {requiredFieldEmpty && <div className="modal__tiny-error"> This field is required </div>}
 
@@ -52,13 +54,16 @@ interface CheckBoxInputProps extends AuthConfigField {
 export class CheckBoxInput extends PureComponent<CheckBoxInputProps> {
     render() {
         const { caption, description, name, value, required } = this.props;
+
         return (
             <div className="modal__field">
                 <span className="modal__field-label">
-                    {caption} {required ? '*' : null}
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
+                    )}
+                    {required ? ' *' : null}
                 </span>
-
-                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 <span className="modal__input">
                     {this.props.canEdit ? (
@@ -89,10 +94,12 @@ export class Option extends PureComponent<OptionInputProps> {
         return (
             <div className="modal__option-field">
                 <span className="modal__field-label">
-                    {caption} {required ? '*' : null}
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
+                    )}
+                    {required ? ' *' : null}
                 </span>
-
-                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {canEdit ? (
                     <div className="modal__option-input">
@@ -151,10 +158,12 @@ export class SmallFileUpload extends PureComponent<SmallFileInputProps> {
         return (
             <div className="modal__compact-file-upload-field">
                 <span className="modal__field-label">
-                    {caption} {required ? '*' : null}
+                    {caption}
+                    {description && (
+                        <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
+                    )}
+                    {required ? ' *' : null}
                 </span>
-
-                <LabelHelpTip title="Tip" body={() => <div> {description} </div>} />
 
                 {requiredFieldEmpty && (
                     <div className="modal__tiny-error--small-file-input"> This file is required </div>

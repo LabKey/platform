@@ -1,0 +1,21 @@
+<div class="auth-form register-form">
+    <div id="success-header" class="auth-header"></div>
+    <div id="success-content" class="auth-form-body"></div>
+</div>
+
+<script type="application/javascript">
+    var type = LABKEY.ActionURL.getParameter('type');
+    var product = LABKEY.ActionURL.getParameter('product');
+    var startHref = LABKEY.ActionURL.buildURL('project', 'start');
+    var header = 'Success';
+    var content = '';
+
+    if (type === 'signout') {
+        header = 'Sign Out Successful';
+        content = '<p>Thank you for using LabKey ' + (product ? product : 'Server') + '! Hope to see you again soon.</p>'
+    }
+
+    document.getElementById('success-header').innerHTML = header;
+    document.getElementById('success-content').innerHTML = content
+        + (LABKEY.user.isGuest ? '<a class="labkey-button primary" href="' + startHref + '">Return to Application</a>' : '');
+</script>

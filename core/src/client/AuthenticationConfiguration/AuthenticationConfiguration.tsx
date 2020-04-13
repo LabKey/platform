@@ -271,15 +271,14 @@ export class App extends PureComponent<{}, Partial<State>> {
 
                 {canEdit ?
                     <>
-                        <Button className="labkey-button primary parent-panel__save-button" onClick={this.saveChanges}>
-                            Save and Finish
-                        </Button>
-
                         <Button
                             className="labkey-button parent-panel__cancel-button"
                             onClick={this.onCancel}
                         >
                             Cancel
+                        </Button>
+                        <Button className="labkey-button primary parent-panel__save-button pull-right" onClick={this.saveChanges}>
+                            Save and Finish
                         </Button>
                     </>
                     :

@@ -118,6 +118,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -376,13 +377,6 @@ public class LoginController extends SpringActionController
         return false;
     }
 
-    public static boolean deauthenticate(User user, ViewContext context)
-    {
-        SecurityManager.logoutUser(context.getRequest(), user);
-
-        return true;
-    }
-
     @SuppressWarnings("unused")
     @RequiresNoPermission
     @IgnoresTermsOfUse
@@ -407,6 +401,28 @@ public class LoginController extends SpringActionController
             view.setFrame(WebPartView.FrameType.NONE);
             jsp.setView("registerView", view);
             return jsp;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    public class SuccessAction extends SimpleViewAction<Object>
+    {
+        public ModelAndView getView(Object form, BindException errors)
+        {
+            PageConfig config = getPageConfig();
+            config.setTitle("Success");
+            config.setTemplate(PageConfig.Template.Dialog);
+            config.setIncludeLoginLink(false);
+            config.setIncludeSearch(false);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getCoreModule(), "success");
         }
 
         @Override
@@ -1391,20 +1407,35 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LogoutAction extends FormHandlerAction<ReturnUrlForm>
     {
+        private URLHelper _redirectURL = null;
+
         @Override
         public void validateCommand(ReturnUrlForm target, Errors errors)
         {
         }
 
         @Override
-        public boolean handlePost(ReturnUrlForm returnUrlForm, BindException errors) throws Exception
+        public boolean handlePost(ReturnUrlForm form, BindException errors) throws Exception
         {
-            return deauthenticate(getUser(), getViewContext());
+            _redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
+            if (null != _redirectURL)
+            {
+                try
+                {
+                    getViewContext().getResponse().sendRedirect(_redirectURL.getURIString());
+                    return null;
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
     }
@@ -1435,7 +1466,6 @@ public class LoginController extends SpringActionController
         {
             return form.getReturnURLHelper(AuthenticationManager.getWelcomeURL());
         }
-
     }
 
 
@@ -1443,12 +1473,16 @@ public class LoginController extends SpringActionController
     @RequiresNoPermission
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
-    public class LogoutApiAction extends MutatingApiAction
+    public class LogoutApiAction extends MutatingApiAction<ReturnUrlForm>
     {
         @Override
-        public Object execute(Object o, BindException errors)
+        public Object execute(ReturnUrlForm form, BindException errors)
         {
-            return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
+            URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
+            ApiSimpleResponse response = new ApiSimpleResponse("success", true);
+            if (null != redirectURL)
+                response.put("redirectUrl", redirectURL);
+            return response;
         }
     }
 
