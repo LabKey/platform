@@ -1051,26 +1051,13 @@ public class ExperimentController extends SpringActionController
             ButtonBar bb = new ButtonBar();
             bb.setStyle(ButtonBar.Style.separateButtons);
 
-            // TODO shouldn't this require more then UpdatePermission perm?
-//            if (table.hasPermission(getUser(), UpdatePermission.class))
             DomainKind domainKind = _dataClass.getDomain().getDomainKind();
             if (domainKind != null && domainKind.canEditDefinition(getUser(), _dataClass.getDomain()))
             {
-                ActionURL updateUrl = _dataClass.urlUpdate(getUser(), getContainer(), getViewContext().getActionURL());
-                updateUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                ActionButton editButton = new ActionButton("Edit (remove me)", updateUrl);
-                bb.add(editButton);
-
-                ActionURL editFields = _dataClass.urlEditDefinition(getViewContext());
-                editFields.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                ActionButton editFieldsButton = new ActionButton("Edit Fields (remove me)", editFields);
-                bb.add(editFieldsButton);
-
                 ActionURL updateURL = new ActionURL(EditDataClassAction.class, _dataClass.getContainer());
                 updateURL.addParameter("rowId", _dataClass.getRowId());
-//                updateURL.addParameter("name", _dataClass.getName()); // TODO just use rowId
                 updateURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-                ActionButton updateButton = new ActionButton(updateURL, "Edit Data Class", ActionButton.Action.LINK);
+                ActionButton updateButton = new ActionButton(updateURL, "Edit", ActionButton.Action.LINK);
                 updateButton.setDisplayPermission(DesignDataClassPermission.class);
                 updateButton.setPrimary(true);
                 bb.add(updateButton);
@@ -1078,7 +1065,7 @@ public class ExperimentController extends SpringActionController
                 ActionURL deleteURL = new ActionURL(ExperimentController.DeleteDataClassAction.class, _dataClass.getContainer());
                 deleteURL.addParameter("singleObjectRowId", _dataClass.getRowId());
                 deleteURL.addParameter(ActionURL.Param.returnUrl, ExperimentUrlsImpl.get().getDataClassListURL(getContainer()).toString());
-                ActionButton deleteButton = new ActionButton(deleteURL, "Delete Data Class", ActionButton.Action.LINK);
+                ActionButton deleteButton = new ActionButton(deleteURL, "Delete", ActionButton.Action.LINK);
                 deleteButton.setDisplayPermission(DesignDataClassPermission.class);
                 bb.add(deleteButton);
             }
@@ -1235,39 +1222,36 @@ public class ExperimentController extends SpringActionController
     }
 
     @RequiresPermission(DesignDataClassPermission.class)
-    public class InsertDataClassAction extends FormViewAction<InsertDataClassForm> // TODO re-use this for the create from template case
+    public class CreateDataClassFromTemplateAction extends FormViewAction<CreateDataClassFromTemplateForm>
     {
         private ActionURL _successUrl;
         private Map<String, DomainTemplate> _domainTemplates;
 
         @Override
-        public void validateCommand(InsertDataClassForm form, Errors errors)
+        public void validateCommand(CreateDataClassFromTemplateForm form, Errors errors)
         {
-            String name = form.getName();
+            String name = null;
+            _domainTemplates = DomainTemplateGroup.getAllTemplates(getContainer());
 
-            if (form.isUseTemplate())
+            if (!_domainTemplates.containsKey(form.getDomainTemplate()))
             {
-                Set<String> messages = new HashSet<>();
-                _domainTemplates = DomainTemplateGroup.getAllTemplates(getContainer());
-
-                if (!_domainTemplates.containsKey(form.getDomainTemplate()))
-                    errors.reject(ERROR_MSG, "Unknown template selected: " + form.getDomainTemplate());
-                else
-                {
-                    DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
-                    name = template.getTemplateName();
-                }
+                errors.reject(ERROR_MSG, "Unknown template selected: " + form.getDomainTemplate());
+            }
+            else
+            {
+                DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
+                name = template.getTemplateName();
             }
 
             if (StringUtils.isBlank(name))
-                errors.reject(ERROR_MSG, "DataClass name or template selection is required.");
+                errors.reject(ERROR_MSG, "DataClass template selection is required.");
             else if (ExperimentService.get().getDataClass(getContainer(), getUser(), name) != null)
                 errors.reject(ERROR_MSG, "DataClass '" + name + "' already exists.");
 
         }
 
         @Override
-        public ModelAndView getView(InsertDataClassForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(CreateDataClassFromTemplateForm form, boolean reshow, BindException errors)
         {
             Set<String> messages = new HashSet<>();
             Set<String> templates = new TreeSet<>();
@@ -1279,40 +1263,25 @@ public class ExperimentController extends SpringActionController
                 templates.addAll(g.getTemplates().keySet());
             }
 
+            // TODO this should be filtered for DataClassTemplateType
             form.setAvailableDomainTemplateNames(templates);
             form.setXmlParseErrors(messages);
 
-            return new JspView<>("/org/labkey/experiment/insertDataClass.jsp", form, errors);
+            return new JspView<>("/org/labkey/experiment/createDataClassFromTemplate.jsp", form, errors);
         }
 
         @Override
-        public boolean handlePost(InsertDataClassForm form, BindException errors) throws Exception
+        public boolean handlePost(CreateDataClassFromTemplateForm form, BindException errors) throws Exception
         {
-            if (form.isUseTemplate())
-            {
-                DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
-                Domain domain = DomainUtil.createDomain(template, getContainer(), getUser(), form.getName());
+            DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
+            Domain domain = DomainUtil.createDomain(template, getContainer(), getUser(), form.getName());
 
-                _successUrl = domain.getDomainKind().urlShowData(domain, getViewContext());
-            }
-            else
-            {
-                ExpDataClass dataClass = ExperimentService.get().createDataClass(
-                        getContainer(), getUser(), form.getName(), form.getDescription(),
-                        Collections.emptyList(), Collections.emptyList(), form.getMaterialSourceId(), form.getNameExpression(),
-                        null, form.getCategory()
-                );
-
-                Domain domain = dataClass.getDomain();
-                DomainKind kind = domain.getDomainKind();
-                _successUrl = kind.urlEditDefinition(domain, getViewContext());
-            }
-
+            _successUrl = domain.getDomainKind().urlShowData(domain, getViewContext());
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(InsertDataClassForm form)
+        public URLHelper getSuccessURL(CreateDataClassFromTemplateForm form)
         {
             return _successUrl;
         }
@@ -1321,27 +1290,16 @@ public class ExperimentController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
-            return root.addChild("Create Data Class");
+            return root.addChild("Create Data Class from Template");
         }
     }
 
-    public static class InsertDataClassForm extends DataClass
+    public static class CreateDataClassFromTemplateForm extends DataClass
     {
-        private boolean _useTemplate;
         private String _domainTemplate;
         private Set<String> _availableDomainTemplateNames;
         private Set<String> _xmlParseErrors;
         private final ReturnUrlForm _returnUrlForm = new ReturnUrlForm();
-
-        public boolean isUseTemplate()
-        {
-            return _useTemplate;
-        }
-
-        public void setUseTemplate(boolean useTemplate)
-        {
-            _useTemplate = useTemplate;
-        }
 
         public String getDomainTemplate()
         {

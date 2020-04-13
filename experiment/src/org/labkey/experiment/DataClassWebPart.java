@@ -20,6 +20,7 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpSchema;
@@ -33,6 +34,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -124,12 +126,20 @@ public class DataClassWebPart extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
+        MenuButton createMenuButton = new MenuButton("New Data Class");
+        createMenuButton.setDisplayPermission(DesignDataClassPermission.class);
+
         ActionURL urlInsert = new ActionURL(ExperimentController.EditDataClassAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-        ActionButton createNewButton = new ActionButton(ExperimentController.EditDataClassAction.class, "New Data Class", ActionButton.Action.LINK);
-        createNewButton.setDisplayPermission(DesignDataClassPermission.class);
-        createNewButton.setURL(urlInsert);
-        bar.add(createNewButton);
+        NavTree insertItem = createMenuButton.addMenuItem("Design Manually", urlInsert);
+        insertItem.setId("NewDataClass:fromDesigner");
+
+        ActionURL urlTemplate = new ActionURL(ExperimentController.CreateDataClassFromTemplateAction.class, getContainer());
+        urlTemplate.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        NavTree templateItem = createMenuButton.addMenuItem("Create from Template", urlTemplate);
+        templateItem.setId("NewDataClass:fromTemplate");
+
+        bar.add(createMenuButton);
     }
 
     @Override
