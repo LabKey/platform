@@ -51,6 +51,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
@@ -242,6 +243,7 @@ public class ApiModule extends CodeOnlyModule
             MarkdownService.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
+            ModuleXml.TestCase.class,
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,

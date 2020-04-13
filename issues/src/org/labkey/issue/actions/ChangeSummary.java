@@ -306,11 +306,15 @@ public class ChangeSummary
             else
                 newRelated.add(issueId);
 
-            sb.append("<div class=\"wiki\"><table class=issues-Changes>");
-            sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
-            sb.append("</table></div>");
+            if (!prevRelated.equals(newRelated))
+            {
+                sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+                sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+                sb.append("</table></div>");
 
-            relatedIssue.addComment(user, sb.toString());
+                relatedIssue.addComment(user, sb.toString());
+            }
+
             relatedIssue.setRelatedIssues(newRelated);
 
             return relatedIssue;
