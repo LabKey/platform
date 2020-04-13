@@ -43,9 +43,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
@@ -66,8 +65,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     protected ExpDataClassTableImpl(String name, UserSchema schema, ContainerFilter cf)
     {
         super(name, ExperimentServiceImpl.get().getTinfoDataClass(), schema, new ExpDataClassImpl(new DataClass()), cf);
-        addAllowablePermission(InsertPermission.class);
-        addAllowablePermission(UpdatePermission.class);
+        addAllowablePermission(DesignDataClassPermission.class);
     }
 
     @Override
@@ -90,11 +88,10 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 c.setShownInUpdateView(false);
 
-                // TODO the ShowDataClassAction does work with RowId so this isn't needed anymore
                 // Since the 'Name' column isn't a real PK column, we can't use the ShowDataClassAction with 'Name' as
                 // a parameter for the table's detailsURL.  However, we can use it as the url for this column.
-//                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
-//                        Collections.singletonMap("name", "Name")));
+                c.setURL(new DetailsURL(new ActionURL(ExperimentController.ShowDataClassAction.class, _userSchema.getContainer()),
+                        Collections.singletonMap("name", "Name")));
                 return c;
             }
 
