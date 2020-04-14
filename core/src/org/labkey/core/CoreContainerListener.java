@@ -106,10 +106,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
             {
                 if (c.isSearchable())
                 {
-                    SearchService ss = SearchService.get();
-
                     //Clear old documents as the container name may be used in paths & Urls. Issue #39696
-                    ss.deleteContainer(c.getId());
+                    SearchService.get().reindexContainer(c);
                 }
 
                 String oldValue = (String) evt.getOldValue();

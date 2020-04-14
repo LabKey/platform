@@ -5343,8 +5343,8 @@ public class DavController extends SpringActionController
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
             {
-            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-            if (null != filename)
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                if (null != filename)
                 {
                     if (!p.isDirectory())
                     {
