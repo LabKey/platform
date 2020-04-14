@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'datasetDesigner',
         title: 'Dataset Designer',
-        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see StudyController.<TODO: Action Name>Action for main usage
+        permission: 'admin', // this is admin so that direct access to this view has highest level perm, see StudyController.EditTypeAction for main usage
         path: './src/client/DatasetDesigner'
     }]
 };
