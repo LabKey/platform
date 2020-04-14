@@ -15,34 +15,107 @@
  */
 
 import React, {PureComponent} from "react";
-import {LoadingSpinner} from "@labkey/components";
-import { ActionURL, Ajax, Utils } from "@labkey/api";
+import {Alert, DatasetDesignerPanels, fetchDatasetDesign, getDatasetProperties, LoadingSpinner} from "@labkey/components";
+import { ActionURL, getServerContext } from "@labkey/api";
+import {DatasetModel} from "@labkey/components/dist/components/domainproperties/dataset/models";
 
+import "@labkey/components/dist/components.css"
 
-export class App extends PureComponent<any, any> {
+interface State {
+    datasetId: number,
+    model: DatasetModel,
+    isLoadingModel: boolean,
+    message?: string,
+    dirty: boolean,
+    hasDatasetDesignPermission?: boolean,
+    returnUrl: string,
+}
+
+export class App extends PureComponent<any, State> {
     constructor(props) {
         super(props);
+
+        this.state = {
+            model: undefined,
+            datasetId : undefined,
+            returnUrl : undefined,
+            isLoadingModel: true,
+            dirty: false
+        };
     }
 
-    render() {
-        const datasetId = 5004;
-        Ajax.request({
-            url: ActionURL.buildURL('study', 'GetDataset'),
-            method: 'GET',
-            params: {datasetId},
-            scope: this,
-            success: Utils.getCallbackWrapper((data) => {
-                console.log("success", data);
-                // resolve(console.log("success", data));
-            }),
-            failure: Utils.getCallbackWrapper((error) => {
-                console.log("failure", error);
-                // reject(error);
+    componentDidMount() {
+        const { datasetId } = this.state;
+
+        if (datasetId) {
+            this.loadExistingDataset();
+        }
+        else {
+            this.createNewDataset();
+        }
+    }
+
+    handleWindowBeforeUnload = (event) => {
+        if (this.state.dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    };
+
+    loadExistingDataset() {
+        const { datasetId } = this.state;
+
+        fetchDatasetDesign(datasetId)
+            .then((model: DatasetModel) => {
+                this.setState(() => ({model, isLoadingModel: false}));
             })
+            .catch((error) => {
+                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            });
+    }
+
+    createNewDataset() {
+        getDatasetProperties()
+            .then((model: DatasetModel) => {
+                this.setState(() => ({model, isLoadingModel: false}))
+            })
+            .catch((error) => {
+                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            })
+    }
+
+    navigate(defaultUrl: string) {
+        const { returnUrl } = this.state;
+
+        this.setState(() => ({dirty: false}), () => {
+            window.location.href = returnUrl || defaultUrl;
         });
+    }
+
+    onCancel = () => {
+        this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
+    };
+
+    render() {
+        const { isLoadingModel, message, model } = this.state;
+
+        if (message) {
+            return <Alert>{message}</Alert>
+        }
+
+        if (isLoadingModel) {
+            return <LoadingSpinner/>
+        }
 
         return (
-            <LoadingSpinner/>
+            <>
+                <DatasetDesignerPanels
+                    initModel={model}
+                    onCancel={this.onCancel}
+                    showDataSpace={false}
+                    showVisitDate={true}
+                    useTheme={true}
+                />
+            </>
         )
     }
 }
