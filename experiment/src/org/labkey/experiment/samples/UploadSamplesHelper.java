@@ -411,7 +411,7 @@ public abstract class UploadSamplesHelper
                 Map<ExpData, String> existingParentData = new HashMap<>();
                 currentParents.first.forEach((dataParent) -> {
                     ExpDataClass dataClass = dataParent.getDataClass(user);
-                    String role = dataRole(dataParent, user).toLowerCase();
+                    String role = dataRole(dataParent, user);
                     if (dataClass != null && !parentData.containsValue(role) && !parentDataTypesToRemove.contains(role))
                     {
                         existingParentData.put(dataParent, role);
