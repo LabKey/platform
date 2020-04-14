@@ -19,7 +19,6 @@ package org.labkey.study.model;
 import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -37,7 +36,6 @@ import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
-import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
@@ -68,6 +66,7 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -338,12 +337,52 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
 //        RP Q: is this the correct approach here? How to guard against these nullpointers?
+//        temp note: read-only properties set, code as seen in DatasetServiceImpl.getDataset()
         int id = StudyService.get().getDatasetIdByName(container, domain.getName());
         Dataset ds = StudyService.get().getDataset(container, id);
-        return new DatasetDomainKindProperties(ds);
+
+        DatasetDomainKindProperties datasetProperties = new DatasetDomainKindProperties(ds);
+
+
+        if (container.isProject() && StudyService.get().getStudy(container).isDataspaceStudy())
+        {
+            datasetProperties.setDefinitionIsShared(true);
+            if (StudyService.get().getStudy(container).getShareVisitDefinitions())
+                datasetProperties.setVisitMapShared(true);
+        }
+
+        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
+        Map<String, String> cohortMap = new HashMap<>();
+        if (cohorts != null && cohorts.size() > 0)
+        {
+            cohortMap.put("All", "");
+            for (CohortImpl cohort : cohorts)
+                cohortMap.put(cohort.getLabel(), String.valueOf(cohort.getRowId()));
+        }
+        datasetProperties.setCohortMap(cohortMap);
+
+        Map<String, String> visitDateMap = new HashMap<>();
+        TableInfo tinfo = ds.getTableInfo(user, false);
+        for (ColumnInfo col : tinfo.getColumns())
+        {
+            if (!Date.class.isAssignableFrom(col.getJavaClass()))
+                continue;
+            if (col.getName().equalsIgnoreCase("visitdate"))
+                continue;
+            if (col.getName().equalsIgnoreCase("modified"))
+                continue;
+            if (col.getName().equalsIgnoreCase("created"))
+                continue;
+            if (visitDateMap.isEmpty())
+                visitDateMap.put("", "");
+            visitDateMap.put(col.getName(), col.getName());
+        }
+        datasetProperties.setVisitDateMap(visitDateMap);
+
+        return datasetProperties;
     }
 
-    //     TODO RP: Check if this works as desired
+    // TODO RP: Test thoroughly
     @Override
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
@@ -364,10 +403,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 //        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
         boolean strictFieldValidation = true;
 
-//        RP TODO: Check if this is accurate
-//        boolean isManagedField = arguments.containsKey("isManagedField") ? (Boolean)arguments.get("isManagedField") : false;
         boolean isManagedField = arguments.isKeyPropertyManaged();
-
 
         if (name == null)
             throw new IllegalArgumentException("Dataset name must not be null");
@@ -498,10 +534,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == d)
             return exception.addGlobalError("Domain not found: " + update.getDomainURI());
 
-        // TODO RP: ds.getTypeURI is returning as null, which is probably not desired behavior.
-//        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
-//            !ds.getTypeURI().equals(update.getDomainURI()))
-//            return exception.addGlobalError("Illegal Argument");
+        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
+            !ds.getTypeURI().equals(update.getDomainURI()))
+            return exception.addGlobalError("Illegal Argument");
 
         return exception;
     }
@@ -527,29 +562,25 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    // getdomainkindproperties (or something) should exist here and is the analogy to DatasetServiceImpl.getDataset
-
 //  in progress (has questions)
     private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def1)
     {
         try
         {
-            // new, better def?
             DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
             if (null == def)
                 return exception.addGlobalError("Dataset not found");
 
             // Q: So, I believe the original is validating for, if isDemoData has been toggled on, the ds obeys the constraints of demo ds.
             // RP Q: Do we have the old isDemoData in def?
-
-//            TODO RP: Throwing a null pointer. Check that your def is well-formed?
-//            if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def)) //nullpointer
-//            {
-//                return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
-//                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
-//            }
+            if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
+            {
+                return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
+                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
+            }
 
             // Temp note: Taken from study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java, starting line 1120
+            // RP Q: These exceptions are tied to specific fields, but when exercising the update through the API I don't see any field information returned. Is it appropriate to use addFieldError here?
             if (datasetProperties.getName() == null || datasetProperties.getName().length() == 0)
                 exception.addFieldError("Name", "Dataset name cannot be empty.");
 
@@ -636,7 +667,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             List<String> errors = new ArrayList<>();
-            studyManager.updateDatasetDefinition(user, updated, errors); // Issue here is with cohortId=0
+            studyManager.updateDatasetDefinition(user, updated, errors);
             for (String errorMsg: errors)
             {
                 exception.addGlobalError(errorMsg);  // RP TODO: will have to see what these errors are. Perhaps globalError will be inappropriate

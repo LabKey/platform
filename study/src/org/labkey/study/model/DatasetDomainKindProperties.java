@@ -14,7 +14,7 @@ public class DatasetDomainKindProperties
     protected String _name;
     protected String _description;
     protected String _category;
-    protected Integer _categoryId; // To check: Should add this here? Not a field element, but necessary for other processing
+    protected Integer _categoryId;
     protected String _label;
 
     protected String _typeURI;
@@ -53,7 +53,7 @@ public class DatasetDomainKindProperties
         if (ds.getViewCategory() != null)
         {
             _category = ds.getViewCategory().getLabel();
-            _categoryId = ds.getViewCategory().getRowId(); // To check: Is this the correct id
+            _categoryId = ds.getViewCategory().getRowId();
         }
         _label = ds.getLabel();
         _typeURI = ds.getTypeURI();
@@ -65,7 +65,6 @@ public class DatasetDomainKindProperties
         _tag = ds.getTag();
         _dataSharing = ds.getDataSharingEnum().name();
 
-        // Might have to verify below
         _keyPropertyManaged = (ds.getKeyManagementType() != Dataset.KeyManagementType.None);
         ExpProtocol protocol = ds.getAssayProtocol();
         if (protocol != null)
@@ -73,6 +72,46 @@ public class DatasetDomainKindProperties
             _sourceAssayName = protocol.getName();
             _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol).getLocalURIString();
         }
+    }
+
+    public Map<String, String> getVisitDateMap()
+    {
+        return _visitDateMap;
+    }
+
+    public void setVisitDateMap(Map<String, String> visitDateMap)
+    {
+        _visitDateMap = visitDateMap;
+    }
+
+    public boolean isVisitMapShared()
+    {
+        return _visitMapShared;
+    }
+
+    public void setVisitMapShared(boolean visitMapShared)
+    {
+        _visitMapShared = visitMapShared;
+    }
+
+    public boolean isDefinitionIsShared()
+    {
+        return _definitionIsShared;
+    }
+
+    public void setDefinitionIsShared(boolean definitionIsShared)
+    {
+        _definitionIsShared = definitionIsShared;
+    }
+
+    public Map<String, String> getCohortMap()
+    {
+        return _cohortMap;
+    }
+
+    public void setCohortMap(Map<String, String> cohortMap)
+    {
+        _cohortMap = cohortMap;
     }
 
     public Integer getDatasetId()
