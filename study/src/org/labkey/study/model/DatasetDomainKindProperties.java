@@ -2,7 +2,6 @@ package org.labkey.study.model;
 
 import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 

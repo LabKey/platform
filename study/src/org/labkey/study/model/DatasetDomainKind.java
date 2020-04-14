@@ -75,8 +75,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.labkey.study.controllers.BaseStudyController.getStudy;
-
 /**
  * User: matthewb
  * Date: May 4, 2007
@@ -336,13 +334,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     @Override
     public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
-//        RP Q: is this the correct approach here? How to guard against these nullpointers?
 //        temp note: read-only properties set, code as seen in DatasetServiceImpl.getDataset()
-        int id = StudyService.get().getDatasetIdByName(container, domain.getName());
-        Dataset ds = StudyService.get().getDataset(container, id);
 
+        Dataset ds = getDatasetDefinition(domain.getDomainURI());
         DatasetDomainKindProperties datasetProperties = new DatasetDomainKindProperties(ds);
-
 
         if (container.isProject() && StudyService.get().getStudy(container).isDataspaceStudy())
         {
@@ -394,12 +389,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         boolean demographics = arguments.isDemographicData();
         String keyPropertyName = arguments.getKeyPropertyName();
 
-        // RP TODO: Looks like this exists on DatasetDefinition and defaults to false. Is it determinable from DatasetDomainKindProperties..?
-        // Maybe whether the additional key column name is time..? Or..?
-//        boolean useTimeKeyField = arguments.containsKey("useTimeKeyField") ? (Boolean)arguments.get("useTimeKeyField") : false;
-        boolean useTimeKeyField = false;
+        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
 
-        // RP TODO: Not sure where this should come from
+            // RP TODO: Not sure where this should come from
 //        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
         boolean strictFieldValidation = true;
 
@@ -512,9 +504,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    // todo rp: should these two helper functions be moved somewhere else?
-    private ValidationException checkCanUpdate(Dataset ds, ValidationException exception, Container container, User user,
-                                               GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
+    private ValidationException validateDatasetProperties(Dataset ds, ValidationException exception, Container container, User user,
+                                                          GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         if (!container.hasPermission(user, AdminPermission.class))
             return exception.addGlobalError("Unauthorized");
@@ -562,17 +553,14 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-//  in progress (has questions)
-    private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception, StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def1)
+    private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception,
+                                              StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def)
     {
         try
         {
-            DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
             if (null == def)
                 return exception.addGlobalError("Dataset not found");
 
-            // Q: So, I believe the original is validating for, if isDemoData has been toggled on, the ds obeys the constraints of demo ds.
-            // RP Q: Do we have the old isDemoData in def?
             if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
             {
                 return exception.addGlobalError("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
@@ -580,19 +568,18 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             // Temp note: Taken from study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java, starting line 1120
-            // RP Q: These exceptions are tied to specific fields, but when exercising the update through the API I don't see any field information returned. Is it appropriate to use addFieldError here?
             if (datasetProperties.getName() == null || datasetProperties.getName().length() == 0)
-                exception.addFieldError("Name", "Dataset name cannot be empty.");
+                exception.addGlobalError("Dataset name cannot be empty.");
 
             if (datasetProperties.getLabel() == null || datasetProperties.getLabel().length() == 0)
-                exception.addFieldError("Label", "Dataset label cannot be empty.");
+                exception.addGlobalError("Dataset label cannot be empty.");
 
             if ("".equals(datasetProperties.getKeyPropertyName()))
-                exception.addFieldError("Additional Key Field", "Please select a field name for the additional key.");
+                exception.addGlobalError("Please select a field name for the additional key.");
 
             // TODO RP: Make sure this covers intended cases
             if (datasetProperties.isKeyPropertyManaged() && (datasetProperties.getKeyPropertyName() == null || datasetProperties.getName().length() == 0))
-                exception.addFieldError("Additional Key Field", "Please select a field name for the additional key.");
+                exception.addGlobalError("Please select a field name for the additional key.");
 
             if (exception.hasErrors())
                 return exception;
@@ -628,7 +615,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             {
                 Domain domain = PropertyService.get().getDomain(container, domainURI);
 
-                // RP Q: how to guard against this nullpointer?
                 for (DomainProperty dp : domain.getProperties())
                 {
                     if (dp.getName().equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
@@ -670,9 +656,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             studyManager.updateDatasetDefinition(user, updated, errors);
             for (String errorMsg: errors)
             {
-                exception.addGlobalError(errorMsg);  // RP TODO: will have to see what these errors are. Perhaps globalError will be inappropriate
+                exception.addGlobalError(errorMsg);
             }
-
             return exception;
         }
         catch (RuntimeSQLException e)
@@ -692,23 +677,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         assert original.getDomainURI().equals(update.getDomainURI());
         ValidationException exception = new ValidationException();
 
-        // RP Q: how to do null checks for this scenario? Where is the potential null happening, if the .get() is unsuccessful..?
-        int datasetId = StudyService.get().getDatasetIdByName(container, original.getName());
-
-        // RP TODO: Some of these initializations may error out. You should check for them and add to exception.
-//        DatasetDefinition def = new DatasetDefinition(getStudy(container), datasetId);
-//        RP Q: Below adds check, but this wouldn't address the potential nullpointer that is flagged
-//        if (datasetId == -1)
-//            return exception.addGlobalError("Something to the effect that a dataset of that name does not exist here?");
-
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
         StudyManager studyManager = new StudyManager();
 
-        if (checkCanUpdate(def, exception, container, user, original, update).hasGlobalErrors())
+        if (validateDatasetProperties(def, exception, container, user, original, update).hasGlobalErrors())
             return exception;
 
-        // Temp note RP: comment carried over from DatasetServiceImpl.java
         // Remove any fields that are duplicates of the default dataset fields.
         // e.g. participantid, etc.
 
@@ -727,7 +702,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             exception = updateDomainDescriptor(original, update, container, user, def);
             if (!exception.hasErrors())
             {
-                // RP Q: This feels like a lot of params. Should I be putting some in the instance variables, like DatasetServiceImpl does?
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, studyManager, study, container, user, def);
                 if (!exception.hasErrors())
                     transaction.commit();
