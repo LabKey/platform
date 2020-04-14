@@ -223,6 +223,7 @@ import org.labkey.experiment.XarExportPipelineJob;
 import org.labkey.experiment.XarExportType;
 import org.labkey.experiment.XarExporter;
 import org.labkey.experiment.api.DataClass;
+import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.api.ExpDataClassAttachmentParent;
 import org.labkey.experiment.api.ExpDataClassImpl;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -1253,18 +1254,13 @@ public class ExperimentController extends SpringActionController
         @Override
         public ModelAndView getView(CreateDataClassFromTemplateForm form, boolean reshow, BindException errors)
         {
-            Set<String> messages = new HashSet<>();
-            Set<String> templates = new TreeSet<>();
-            Map<String, DomainTemplateGroup> groups = DomainTemplateGroup.getAllGroups(getContainer());
-
-            for (DomainTemplateGroup g : groups.values())
-            {
-                messages.addAll(g.getErrors());
-                templates.addAll(g.getTemplates().keySet());
-            }
-
-            // TODO this should be filtered for DataClassTemplateType
+            Set<String> templates = DomainTemplateGroup.getTemplatesForDomainKind(getContainer(), DataClassDomainKind.NAME);
             form.setAvailableDomainTemplateNames(templates);
+
+            Set<String> messages = new HashSet<>();
+            Map<String, DomainTemplateGroup> groups = DomainTemplateGroup.getAllGroups(getContainer());
+            for (DomainTemplateGroup g : groups.values())
+                messages.addAll(g.getErrors());
             form.setXmlParseErrors(messages);
 
             return new JspView<>("/org/labkey/experiment/createDataClassFromTemplate.jsp", form, errors);
@@ -1276,7 +1272,7 @@ public class ExperimentController extends SpringActionController
             DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
             Domain domain = DomainUtil.createDomain(template, getContainer(), getUser(), form.getName());
 
-            _successUrl = domain.getDomainKind().urlShowData(domain, getViewContext());
+            _successUrl = domain.getDomainKind().urlEditDefinition(domain, getViewContext());
             return true;
         }
 

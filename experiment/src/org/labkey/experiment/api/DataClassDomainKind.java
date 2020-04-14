@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
  */
 public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
+    public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -106,7 +107,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public String getKindName()
     {
-        return "DataClass";
+        return NAME;
     }
 
     @Override

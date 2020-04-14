@@ -23,6 +23,7 @@ import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParam;
@@ -37,11 +38,13 @@ import org.labkey.api.view.DataView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.experiment.api.DataClassDomainKind;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.PrintWriter;
+import java.util.Set;
 
 /**
  * User: kevink
@@ -126,20 +129,31 @@ public class DataClassWebPart extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
-        MenuButton createMenuButton = new MenuButton("New Data Class");
-        createMenuButton.setDisplayPermission(DesignDataClassPermission.class);
-
         ActionURL urlInsert = new ActionURL(ExperimentController.EditDataClassAction.class, getContainer());
         urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-        NavTree insertItem = createMenuButton.addMenuItem("Design Manually", urlInsert);
-        insertItem.setId("NewDataClass:fromDesigner");
+        Set<String> templates = DomainTemplateGroup.getTemplatesForDomainKind(getContainer(), DataClassDomainKind.NAME);
+        if (templates.size() > 0)
+        {
+            MenuButton createMenuButton = new MenuButton("New Data Class");
+            createMenuButton.setDisplayPermission(DesignDataClassPermission.class);
 
-        ActionURL urlTemplate = new ActionURL(ExperimentController.CreateDataClassFromTemplateAction.class, getContainer());
-        urlTemplate.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-        NavTree templateItem = createMenuButton.addMenuItem("Create from Template", urlTemplate);
-        templateItem.setId("NewDataClass:fromTemplate");
+            NavTree insertItem = createMenuButton.addMenuItem("Design Manually", urlInsert);
+            insertItem.setId("NewDataClass:fromDesigner");
 
-        bar.add(createMenuButton);
+            ActionURL urlTemplate = new ActionURL(ExperimentController.CreateDataClassFromTemplateAction.class, getContainer());
+            urlTemplate.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+            NavTree templateItem = createMenuButton.addMenuItem("Create from Template", urlTemplate);
+            templateItem.setId("NewDataClass:fromTemplate");
+
+            bar.add(createMenuButton);
+        }
+        else
+        {
+            ActionButton createNewButton = new ActionButton(urlInsert, "New Data Class", ActionButton.Action.LINK);
+            createNewButton.setDisplayPermission(DesignDataClassPermission.class);
+            createNewButton.setURL(urlInsert);
+            bar.add(createNewButton);
+        }
     }
 
     @Override
