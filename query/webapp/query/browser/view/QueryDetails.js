@@ -606,7 +606,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             if (queryDetails.canEdit && !queryDetails.isInherited) {
                 children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
                 children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-                children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
+                if (queryDetails.canDelete)
+                    children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
                 children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
             }
             else {

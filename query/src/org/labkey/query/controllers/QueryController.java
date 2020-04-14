@@ -1212,6 +1212,11 @@ public class QueryController extends SpringActionController
             if (null == _queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
 
+            if (!_queryDef.canDelete(getUser()))
+            {
+                errors.reject(ERROR_MSG, "Sorry, this query can not be deleted");
+            }
+
             return new JspView<>("/org/labkey/query/view/deleteQuery.jsp", this, errors);
         }
 

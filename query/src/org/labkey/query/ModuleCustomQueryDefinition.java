@@ -23,9 +23,9 @@ import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.query.persist.QueryDef;
-import org.labkey.query.persist.QueryManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -62,7 +62,6 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
         }
         else
         {
-            //public static final String META_FILE_EXTENSION))
             if (null != moduleQueryDef.getMetadataDef())
                 queryXML = ModuleEditorService.get().getFileForModuleResource(moduleQueryDef.getModule(), moduleQueryDef.getMetadataDef().getPath());
             if (null == queryXML)
@@ -103,7 +102,14 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
     @Override
     public boolean canEdit(User user)
     {
-        return user.isPlatformDeveloper() && isSqlEditable();
+        return super.canEdit(user) && user.hasRootPermission(EditModuleResourcesPermission.class) && isSqlEditable();
+    }
+
+    @Override
+    public boolean canDelete(User user)
+    {
+        // NYI
+        return false;
     }
 
     @Override

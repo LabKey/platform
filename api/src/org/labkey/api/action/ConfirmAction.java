@@ -86,7 +86,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 ModelAndView confirmView = getConfirmView(form, errors);
-                JspView<ConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this);
+                JspView<ConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this, errors);
                 confirmWrapper.setBody(confirmView);
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
