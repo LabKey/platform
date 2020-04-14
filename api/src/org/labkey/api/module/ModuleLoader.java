@@ -227,11 +227,17 @@ public class ModuleLoader implements Filter, MemTrackerListener
     @Override
     public void init(FilterConfig filterConfig)
     {
-        // terminateAfterStartup flag allows "headless" install/upgrade
+        // terminateAfterStartup flag allows "headless" install/upgrade where Tomcat terminates after all modules are upgraded,
+        // started, and initialized. This flag implies synchronousStartup=true.
         boolean terminateAfterStartup = Boolean.valueOf(System.getProperty("terminateAfterStartup"));
+        // synchronousStartup=true ensures that all modules are upgraded, started, and initialized before Tomcat startup is
+        // complete. No webapp requests will be processed until startup is complete, unlike the usual asynchronous upgrade mode.
+        boolean synchronousStartup = Boolean.valueOf(System.getProperty("synchronousStartup"));
+        Execution execution = terminateAfterStartup || synchronousStartup ? Execution.Synchronous : Execution.Asynchronous;
+
         try
         {
-            doInit(filterConfig.getServletContext(), terminateAfterStartup);
+            doInit(filterConfig.getServletContext(), execution);
         }
         catch (Throwable t)
         {
@@ -424,7 +430,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
     }
 
     /** Full web-server initialization */
-    private void doInit(ServletContext servletCtx, boolean terminateAfterStartup) throws Exception
+    private void doInit(ServletContext servletCtx, Execution execution) throws Exception
     {
         _log.info(BANNER);
 
@@ -599,12 +605,9 @@ public class ModuleLoader implements Filter, MemTrackerListener
         if (!modulesRequiringUpgrade.isEmpty() || !additionalSchemasRequiringUpgrade.isEmpty())
             setUpgradeState(UpgradeState.UpgradeRequired);
 
-        // terminateAfterStartup flag allows "headless" install/upgrade
-        Execution execution = terminateAfterStartup ? Execution.Synchronous : Execution.Asynchronous;
-
         startNonCoreUpgradeAndStartup(User.getSearchUser(), execution, coreRequiredUpgrade);  // TODO: Change search user to system user
 
-        _log.info("LabKey Server startup is complete; " + (Execution.Synchronous == execution ? "all modules have been upgraded and initialized" : "modules are being upgraded and initialized in the background"));
+        _log.info("LabKey Server startup is complete; " + execution.getLogMessage());
     }
 
     // If in production mode then make sure this isn't a development build, #21567

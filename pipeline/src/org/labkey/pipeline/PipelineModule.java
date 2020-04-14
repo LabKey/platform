@@ -70,6 +70,7 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 import org.labkey.pipeline.api.PipelineStatusManager;
 import org.labkey.pipeline.api.ScriptTaskFactory;
 import org.labkey.pipeline.api.properties.ApplicationPropertiesSiteSettings;
+import org.labkey.pipeline.cluster.ClusterStartup;
 import org.labkey.pipeline.importer.FolderImportProvider;
 import org.labkey.pipeline.mule.EPipelineContextListener;
 import org.labkey.pipeline.mule.EPipelineQueueImpl;
@@ -269,7 +270,8 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
             PipelineJobServiceImpl.IntegrationTestCase.class,
             PipelineQueueImpl.TestCase.class,
             PipelineServiceImpl.TestCase.class,
-            StatusController.TestCase.class
+            StatusController.TestCase.class,
+            ClusterStartup.TestCase.class
         );
     }
 

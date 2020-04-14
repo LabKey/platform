@@ -361,7 +361,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
 
-
     @Override
     public final void deleteContainer(final String id)
     {
@@ -374,7 +373,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.background));
     }
-
 
     @Override
     public void clearLastIndexed()
@@ -399,7 +397,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
-    
+    public void reindexContainer(Container c)
+    {
+        deleteContainer(c.getId());
+
+        //Recrawl documents/files as the container name may be used in paths & Urls. Issue #39696
+        DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getId()), true);
+    }
+
     private void queueItem(Item i)
     {
         // UNDONE: this is not 100% correct, consider passing in a scope with Item

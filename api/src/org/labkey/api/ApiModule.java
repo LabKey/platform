@@ -17,6 +17,7 @@ package org.labkey.api;
 
 import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
@@ -51,6 +52,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
@@ -66,6 +68,7 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
@@ -82,6 +85,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -242,6 +246,7 @@ public class ApiModule extends CodeOnlyModule
             MarkdownService.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
+            ModuleXml.TestCase.class,
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
@@ -278,5 +283,15 @@ public class ApiModule extends CodeOnlyModule
         return super.getJarFilenames().stream()
             .filter(fn->!fn.startsWith("labkey-client-api-"))
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        if (config != null)
+            json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+        return json;
     }
 }

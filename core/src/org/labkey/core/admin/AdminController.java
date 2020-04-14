@@ -6913,7 +6913,14 @@ public class AdminController extends SpringActionController
                         return false;
                     }
                     Container source = ContainerManager.getForId(targetProject);
-                    assert source != null;
+                    if (source == null)
+                    {
+                        source = ContainerManager.getForPath(targetProject);
+                    }
+                    if (source == null)
+                    {
+                        throw new NotFoundException("An unknown project was specified to copy permissions from: " + targetProject);
+                    }
 
                     Map<UserPrincipal, UserPrincipal> groupMap = GroupManager.copyGroupsToContainer(source, c);
 

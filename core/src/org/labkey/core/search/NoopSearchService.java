@@ -194,6 +194,11 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public void reindexContainer(Container c)
+    {
+    }
+
+    @Override
     public void addPathToCrawl(Path path, Date d)
     {
     }
