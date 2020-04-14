@@ -282,6 +282,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ret;
     }
 
+    @Override
     public Map<String, Object> getMutableProperties()
     {
         if (null == _properties)

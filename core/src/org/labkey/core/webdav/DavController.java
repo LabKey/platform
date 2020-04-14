@@ -3819,6 +3819,11 @@ public class DavController extends SpringActionController
                 }
             }
 
+            //Remember source children prior to move so we can remove from index
+            Collection<? extends WebdavResource> movedChildren = null;
+            if (src.isCollection())
+                movedChildren = src.list();
+
             // File based
             File srcFile = src.getFile();
             File destFile = dest.getFile();
@@ -3884,7 +3889,7 @@ public class DavController extends SpringActionController
             }
             else
             {
-                fireFileMovedEvent(dest, src);
+                fireFileMovedEvent(dest, src, movedChildren);
             }
 
             // Removing any lock-null resource which would be present at
@@ -3895,7 +3900,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
+    private void fireFileMovedEvent(@NotNull WebdavResource dest, @NotNull WebdavResource src, @Nullable Collection<? extends WebdavResource> movedChildren)
     {
         long start = System.currentTimeMillis();
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
@@ -3911,7 +3916,13 @@ public class DavController extends SpringActionController
         }
 
         removeFromIndex(src);
+        if (movedChildren != null)
+            movedChildren.forEach(this::removeFromIndex);
+
         addToIndex(dest);
+        if (dest.isCollection() && dest.list() != null)
+            dest.list().forEach(this::addToIndex);
+
         _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
 
@@ -5332,8 +5343,8 @@ public class DavController extends SpringActionController
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
             {
-            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-            if (null != filename)
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                if (null != filename)
                 {
                     if (!p.isDirectory())
                     {
