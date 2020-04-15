@@ -5,25 +5,22 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.util.PageFlowUtil;
 
-import java.util.Map;
-
 public class DatasetDomainKindProperties implements Cloneable
 {
     protected Integer _datasetId;
     protected String _name;
     protected String _description;
     protected String _category;
-    protected Integer categoryId;
+    protected Integer _categoryId;
     protected String _label;
 
-//    protected String _typeURI;
     protected String _visitDatePropertyName;
     protected String _keyPropertyName;
     protected boolean _keyPropertyManaged = false;
     protected boolean _isDemographicData = false;
     protected Integer _cohortId = null;
     protected String _tag;
-    protected boolean _showByDefault = true; // Temp note RP: This is the 'showInOverview' property
+    protected boolean _showByDefault = true;
     protected String _sourceAssayName;
     protected String _sourceAssayUrl;
     protected String _dataSharing;
@@ -39,7 +36,6 @@ public class DatasetDomainKindProperties implements Cloneable
 
     public DatasetDomainKindProperties()
     {
-        // This does not give a default typeURI, or dataSharing value, or datasetId, as GWTDataset does in getDataset()
     }
 
     public DatasetDomainKindProperties(Dataset ds)
@@ -50,10 +46,9 @@ public class DatasetDomainKindProperties implements Cloneable
         if (ds.getViewCategory() != null)
         {
             _category = ds.getViewCategory().getLabel();
-            categoryId = ds.getViewCategory().getRowId();
+            _categoryId = ds.getViewCategory().getRowId();
         }
         _label = ds.getLabel();
-//        _typeURI = ds.getTypeURI();
         _keyPropertyName = ds.getKeyPropertyName();
         _isDemographicData = ds.isDemographicData();
         _showByDefault = ds.isShowByDefault();
@@ -144,16 +139,6 @@ public class DatasetDomainKindProperties implements Cloneable
     {
         _label = label;
     }
-
-//    public String getTypeURI()
-//    {
-//        return _typeURI;
-//    }
-//
-//    public void setTypeURI(String typeURI)
-//    {
-//        _typeURI = typeURI;
-//    }
 
     public String getVisitDatePropertyName()
     {
@@ -257,7 +242,7 @@ public class DatasetDomainKindProperties implements Cloneable
 
     public Integer getCategoryId()
     {
-        return categoryId;
+        return _categoryId;
     }
 
     public int getDomainId()
