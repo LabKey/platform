@@ -96,6 +96,12 @@ public interface SearchService
         ServiceRegistry.get().registerService(SearchService.class, impl);
     }
 
+    /**
+     * Delete the index for the container then index it again
+     * @param c
+     */
+    void reindexContainer(Container c);
+
     enum PRIORITY
     {
         commit,
