@@ -15,10 +15,8 @@
  */
 
 import React, {PureComponent} from "react";
-import {Alert, DatasetDesignerPanels, fetchDatasetDesign, getDatasetProperties, LoadingSpinner} from "@labkey/components";
-import { ActionURL, getServerContext } from "@labkey/api";
-import {DatasetModel} from "@labkey/components/dist/components/domainproperties/dataset/models";
-
+import {Alert, DatasetDesignerPanels, DatasetModel, fetchDatasetDesign, getDatasetProperties, LoadingSpinner} from "@labkey/components";
+import { ActionURL, Domain, getServerContext } from "@labkey/api";
 import "@labkey/components/dist/components.css"
 
 interface State {
@@ -29,6 +27,7 @@ interface State {
     dirty: boolean,
     hasDatasetDesignPermission?: boolean,
     returnUrl: string,
+    fileImportError: string
 }
 
 export class App extends PureComponent<any, State> {
@@ -42,7 +41,8 @@ export class App extends PureComponent<any, State> {
             datasetId : datasetId,
             returnUrl : undefined,
             isLoadingModel: true,
-            dirty: false
+            dirty: false,
+            fileImportError: undefined
         };
     }
 
@@ -93,6 +93,36 @@ export class App extends PureComponent<any, State> {
         });
     }
 
+    navigateOnComplete(model: DatasetModel) {
+        // if the model comes back to here without the newly saved datasetId, query to get it
+        if (model.datasetId && model.datasetId > 0) {
+            this.navigate(ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {id: model.datasetId}));
+        }
+        else {
+            Domain.getDomainDetails({
+                containerPath: getServerContext().container.path,
+                domainId: model.domain.domainId,
+                success: (data) => {
+                    const newModel = DatasetModel.create(undefined, data);
+                    this.navigate(ActionURL.buildURL('study', 'datasetDetails', getServerContext().container.path, {id: newModel.datasetId}));
+                },
+                failure: (error) => {
+                    // bail out and go to the study-begin page
+                    this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
+                }
+            });
+        }
+    }
+
+    onComplete = (model: DatasetModel, fileImportError?: string) => {
+        if (fileImportError) {
+            this.setState(() => ({fileImportError, model}));
+        }
+        else {
+            this.navigateOnComplete(model);
+        }
+    };
+
     onCancel = () => {
         this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
     };
@@ -116,6 +146,7 @@ export class App extends PureComponent<any, State> {
                     showDataSpace={false}
                     showVisitDate={true}
                     useTheme={true}
+                    onComplete={this.onComplete}
                 />
             </>
         )

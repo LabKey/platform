@@ -7,16 +7,16 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Map;
 
-public class DatasetDomainKindProperties
+public class DatasetDomainKindProperties implements Cloneable
 {
     protected Integer _datasetId;
     protected String _name;
     protected String _description;
     protected String _category;
-    protected Integer _categoryId;
+    protected Integer categoryId;
     protected String _label;
 
-    protected String _typeURI;
+//    protected String _typeURI;
     protected String _visitDatePropertyName;
     protected String _keyPropertyName;
     protected boolean _keyPropertyManaged = false;
@@ -54,10 +54,10 @@ public class DatasetDomainKindProperties
         if (ds.getViewCategory() != null)
         {
             _category = ds.getViewCategory().getLabel();
-            _categoryId = ds.getViewCategory().getRowId();
+            categoryId = ds.getViewCategory().getRowId();
         }
         _label = ds.getLabel();
-        _typeURI = ds.getTypeURI();
+//        _typeURI = ds.getTypeURI();
         _keyPropertyName = ds.getKeyPropertyName();
         _isDemographicData = ds.isDemographicData();
         _showByDefault = ds.isShowByDefault();
@@ -169,15 +169,15 @@ public class DatasetDomainKindProperties
         _label = label;
     }
 
-    public String getTypeURI()
-    {
-        return _typeURI;
-    }
-
-    public void setTypeURI(String typeURI)
-    {
-        _typeURI = typeURI;
-    }
+//    public String getTypeURI()
+//    {
+//        return _typeURI;
+//    }
+//
+//    public void setTypeURI(String typeURI)
+//    {
+//        _typeURI = typeURI;
+//    }
 
     public String getVisitDatePropertyName()
     {
@@ -281,7 +281,7 @@ public class DatasetDomainKindProperties
 
     public Integer getCategoryId()
     {
-        return _categoryId;
+        return categoryId;
     }
 
     public int getDomainId()
