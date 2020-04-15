@@ -942,6 +942,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
             String sampleSetLsid = null;
             if (row.containsKey(CPAS_TYPE))
                 sampleSetLsid =  String.valueOf(row.get(CPAS_TYPE));
+            // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
             if (sampleSetLsid == null && row.containsKey("sampleset"))
                 sampleSetLsid = String.valueOf(row.get("sampleset"));
             if (sampleSetLsid != null)
