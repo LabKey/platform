@@ -17,7 +17,7 @@ public class DatasetDomainKindProperties implements Cloneable
     protected String _visitDatePropertyName;
     protected String _keyPropertyName;
     protected boolean _keyPropertyManaged = false;
-    protected boolean _isDemographicData = false;
+    protected boolean _demographicData = false;
     protected Integer _cohortId = null;
     protected String _tag;
     protected boolean _showByDefault = true;
@@ -32,7 +32,6 @@ public class DatasetDomainKindProperties implements Cloneable
     private boolean _visitMapShared = false;
 
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
-    public static final String TIME_KEY_FIELD_DISPLAY = "Time (from Date/Time)";
 
     public DatasetDomainKindProperties()
     {
@@ -50,7 +49,7 @@ public class DatasetDomainKindProperties implements Cloneable
         }
         _label = ds.getLabel();
         _keyPropertyName = ds.getKeyPropertyName();
-        _isDemographicData = ds.isDemographicData();
+        _demographicData = ds.isDemographicData();
         _showByDefault = ds.isShowByDefault();
         _cohortId = ds.getCohortId();
         _visitDatePropertyName = ds.getVisitDatePropertyName();
@@ -172,12 +171,12 @@ public class DatasetDomainKindProperties implements Cloneable
 
     public boolean isDemographicData()
     {
-        return _isDemographicData;
+        return _demographicData;
     }
 
     public void setDemographicData(boolean demographicData)
     {
-        _isDemographicData = demographicData;
+        _demographicData = demographicData;
     }
 
     public Integer getCohortId()

@@ -361,6 +361,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         String label = arguments.getLabel();
         boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
 
+        if (useTimeKeyField)
+            keyPropertyName = null;
+
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Dataset name must not be empty");
 
@@ -381,10 +384,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Category ID and category name cannot both be specified");
 
         if (isManagedField && keyPropertyName == null)
-            throw new IllegalArgumentException("KeyPropertyName must be specified if isManagedField is true");
+            throw new IllegalArgumentException("Additional Key Column must be specified if it is a managed field");
 
-        if (null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
-            throw new IllegalArgumentException("\"KeyPropertyName \"" + keyPropertyName +"\" must be the name of a column");
+        if (!useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
+            throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column");
+
+        if (demographics && (isManagedField || keyPropertyName != null))
+            throw new IllegalArgumentException("There can not be an Additional Key Column if the dataset is Demographic Data");
 
         // make sure the domain matches the timepoint type
         TimepointType timepointType = study.getTimepointType();
@@ -552,6 +558,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             if (datasetProperties.isKeyPropertyManaged() && (datasetProperties.getKeyPropertyName() == null || datasetProperties.getName().length() == 0))
                 exception.addGlobalError("Please select a field name for the additional key.");
+
+            if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName()) && datasetProperties.isKeyPropertyManaged())
+                exception.addGlobalError("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time)");
 
             if (exception.hasErrors())
                 return exception;
