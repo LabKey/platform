@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public abstract class DetailedAuditHandler
+public abstract class AuditHandler
 {
     protected abstract AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row);
 
@@ -36,7 +36,8 @@ public abstract class DetailedAuditHandler
         if (table.supportsAuditTracking())
         {
             AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            auditType = auditType == null ? auditConfigurable.getAuditBehavior() : auditType;
+            if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
+                auditType = auditConfigurable.getAuditBehavior();
 
             // Truncate audit event doesn't accept any params
             if (action == QueryService.AuditAction.TRUNCATE)
@@ -86,6 +87,7 @@ public abstract class DetailedAuditHandler
                         switch (action)
                         {
                             case INSERT:
+                            case MERGE:
                             {
                                 String newRecord = AbstractAuditTypeProvider.encodeForDataMap(c, row);
                                 if (newRecord != null)

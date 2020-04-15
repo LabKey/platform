@@ -84,7 +84,7 @@ public class DetailedAuditLogDataIterator extends AbstractDataIterator
 
             // configParameter value overrides value from the tableInfo
             AuditBehaviorType auditType = (AuditBehaviorType) _context.getConfigParameter(AuditConfigs.AuditBehavior);
-            if (auditType == null)
+            if (auditType == null || auditConfigurable.getXmlAuditBehaviorType() != null)
                 auditType = auditConfigurable.getAuditBehavior();
 
             if (auditType == DETAILED)
