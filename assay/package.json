@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.48.3-fb-10-query.0"
+    "@labkey/components": "0.48.4-fb-10-query.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
