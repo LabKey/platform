@@ -334,8 +334,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     @Override
     public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
-//        temp note: read-only properties set, code as seen in DatasetServiceImpl.getDataset()
-
         Dataset ds = getDatasetDefinition(domain.getDomainURI());
         DatasetDomainKindProperties datasetProperties = new DatasetDomainKindProperties(ds);
 
@@ -346,38 +344,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 datasetProperties.setVisitMapShared(true);
         }
 
-        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(container, user);
-        Map<String, String> cohortMap = new HashMap<>();
-        if (cohorts != null && cohorts.size() > 0)
-        {
-            cohortMap.put("All", "");
-            for (CohortImpl cohort : cohorts)
-                cohortMap.put(cohort.getLabel(), String.valueOf(cohort.getRowId()));
-        }
-        datasetProperties.setCohortMap(cohortMap);
-
-        Map<String, String> visitDateMap = new HashMap<>();
-        TableInfo tinfo = ds.getTableInfo(user, false);
-        for (ColumnInfo col : tinfo.getColumns())
-        {
-            if (!Date.class.isAssignableFrom(col.getJavaClass()))
-                continue;
-            if (col.getName().equalsIgnoreCase("visitdate"))
-                continue;
-            if (col.getName().equalsIgnoreCase("modified"))
-                continue;
-            if (col.getName().equalsIgnoreCase("created"))
-                continue;
-            if (visitDateMap.isEmpty())
-                visitDateMap.put("", "");
-            visitDateMap.put(col.getName(), col.getName());
-        }
-        datasetProperties.setVisitDateMap(visitDateMap);
-
         return datasetProperties;
     }
 
-    // TODO RP: Test thoroughly
     @Override
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
@@ -388,27 +357,34 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
         String keyPropertyName = arguments.getKeyPropertyName();
-
+        boolean isManagedField = arguments.isKeyPropertyManaged();
+        String label = arguments.getLabel();
         boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
 
-            // RP TODO: Not sure where this should come from
-//        boolean strictFieldValidation = arguments.containsKey("strictFieldValidation") ? (Boolean)arguments.get("strictFieldValidation") : true;
-        boolean strictFieldValidation = true;
-
-        boolean isManagedField = arguments.isKeyPropertyManaged();
-
-        if (name == null)
-            throw new IllegalArgumentException("Dataset name must not be null");
+        if (name == null || name.length() == 0)
+            throw new IllegalArgumentException("Dataset name must not be empty");
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study == null)
             throw new IllegalArgumentException("A study does not exist for this folder");
+
+        if (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name))
+            throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\"");
+
+        if (null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
+            throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\"");
+
+        if (null != datasetId && null != study.getDataset(datasetId))
+            throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\"");
 
         if (categoryId != null && categoryName != null)
             throw new IllegalArgumentException("Category ID and category name cannot both be specified");
 
         if (isManagedField && keyPropertyName == null)
             throw new IllegalArgumentException("KeyPropertyName must be specified if isManagedField is true");
+
+        if (null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
+            throw new IllegalArgumentException("\"KeyPropertyName \"" + keyPropertyName +"\" must be the name of a column");
 
         // make sure the domain matches the timepoint type
         TimepointType timepointType = study.getTimepointType();
@@ -476,8 +452,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
                         {
-                            if (strictFieldValidation)
-                                throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
+                            throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
                         }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
@@ -504,7 +479,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    private ValidationException validateDatasetProperties(Dataset ds, ValidationException exception, Container container, User user,
+    private ValidationException validateDatasetProperties(DatasetDefinition def, ValidationException exception, Container container, User user,
                                                           GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         if (!container.hasPermission(user, AdminPermission.class))
@@ -514,7 +489,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == study)
             return exception.addGlobalError("Study not found in current container");
 
-        DatasetDefinition def = (DatasetDefinition)study.getDataset(ds.getDatasetId());
         if (null == def)
             return exception.addGlobalError("Dataset not found");
 
@@ -525,8 +499,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null == d)
             return exception.addGlobalError("Domain not found: " + update.getDomainURI());
 
-        if (!ds.getTypeURI().equals(original.getDomainURI()) ||
-            !ds.getTypeURI().equals(update.getDomainURI()))
+        if (!def.getTypeURI().equals(original.getDomainURI()) ||
+            !def.getTypeURI().equals(update.getDomainURI()))
             return exception.addGlobalError("Illegal Argument");
 
         return exception;
@@ -567,7 +541,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                         ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
             }
 
-            // Temp note: Taken from study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java, starting line 1120
             if (datasetProperties.getName() == null || datasetProperties.getName().length() == 0)
                 exception.addGlobalError("Dataset name cannot be empty.");
 
@@ -577,7 +550,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if ("".equals(datasetProperties.getKeyPropertyName()))
                 exception.addGlobalError("Please select a field name for the additional key.");
 
-            // TODO RP: Make sure this covers intended cases
             if (datasetProperties.isKeyPropertyManaged() && (datasetProperties.getKeyPropertyName() == null || datasetProperties.getName().length() == 0))
                 exception.addGlobalError("Please select a field name for the additional key.");
 

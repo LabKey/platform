@@ -37,10 +37,6 @@ public class DatasetDomainKindProperties implements Cloneable
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
     public static final String TIME_KEY_FIELD_DISPLAY = "Time (from Date/Time)";
 
-    private Map<String, String> _cohortMap;
-
-    private Map<String, String> _visitDateMap;
-
     public DatasetDomainKindProperties()
     {
         // This does not give a default typeURI, or dataSharing value, or datasetId, as GWTDataset does in getDataset()
@@ -79,16 +75,6 @@ public class DatasetDomainKindProperties implements Cloneable
         }
     }
 
-    public Map<String, String> getVisitDateMap()
-    {
-        return _visitDateMap;
-    }
-
-    public void setVisitDateMap(Map<String, String> visitDateMap)
-    {
-        _visitDateMap = visitDateMap;
-    }
-
     public boolean isVisitMapShared()
     {
         return _visitMapShared;
@@ -107,16 +93,6 @@ public class DatasetDomainKindProperties implements Cloneable
     public void setDefinitionIsShared(boolean definitionIsShared)
     {
         _definitionIsShared = definitionIsShared;
-    }
-
-    public Map<String, String> getCohortMap()
-    {
-        return _cohortMap;
-    }
-
-    public void setCohortMap(Map<String, String> cohortMap)
-    {
-        _cohortMap = cohortMap;
     }
 
     public Integer getDatasetId()

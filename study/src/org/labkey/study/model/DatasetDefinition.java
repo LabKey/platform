@@ -166,9 +166,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private boolean _useTimeKeyField = false;
 
 
-
-
-
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
     {
         "Container",
