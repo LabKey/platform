@@ -973,6 +973,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
             event.setProjectId(container.getProject().getId());
         event.setSampleName(sample.getName());
         event.setSampleLsid(sample.getLSID());
+        event.setSampleId(sample.getRowId());
         ExpSampleSet type = sample.getSampleSet();
         if (type != null)
         {
