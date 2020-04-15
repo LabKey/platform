@@ -35,9 +35,11 @@ export class App extends PureComponent<any, State> {
     constructor(props) {
         super(props);
 
+        const { datasetId } = ActionURL.getParameters();
+
         this.state = {
             model: undefined,
-            datasetId : undefined,
+            datasetId : datasetId,
             returnUrl : undefined,
             isLoadingModel: true,
             dirty: false

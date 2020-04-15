@@ -28,6 +28,8 @@ public class DatasetDomainKindProperties
     protected String _sourceAssayUrl;
     protected String _dataSharing;
 
+    protected int _domainId;
+
     // read-only (not changed in the editor)
     private boolean _definitionIsShared = false;
     private boolean _visitMapShared = false;
@@ -70,6 +72,10 @@ public class DatasetDomainKindProperties
         {
             _sourceAssayName = protocol.getName();
             _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol).getLocalURIString();
+        }
+        if (null != ds.getDomain())
+        {
+            _domainId = ds.getDomain().getTypeId();
         }
     }
 
@@ -276,5 +282,15 @@ public class DatasetDomainKindProperties
     public Integer getCategoryId()
     {
         return _categoryId;
+    }
+
+    public int getDomainId()
+    {
+        return _domainId;
+    }
+
+    public void setDomainId(int domainId)
+    {
+        _domainId = domainId;
     }
 }

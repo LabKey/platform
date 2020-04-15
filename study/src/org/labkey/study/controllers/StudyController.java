@@ -56,6 +56,8 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleHtmlView;
