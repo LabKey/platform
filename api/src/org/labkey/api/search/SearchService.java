@@ -460,7 +460,8 @@ public interface SearchService
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            boolean incremental = modifiedSince == null || modifiedSince.compareTo(oldDate) > 0;
+            // Incremental if modifiedSince is set and is more recent than 1967-10-04
+            boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
             
             // no filter
             if (!incremental)
