@@ -112,8 +112,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 
                 String oldValue = (String) evt.getOldValue();
                 String newValue = (String) evt.getNewValue();
-                String message = evt.container.getName() + " was renamed from " + oldValue + " to " + newValue;
-                addAuditEvent(evt.user, evt.container, message);
+                String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
+                addAuditEvent(evt.user, c, message);
                 break;
             }
         }
