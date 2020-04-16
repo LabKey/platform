@@ -41,10 +41,6 @@ public class DatasetDomainKindProperties implements Cloneable
         _datasetId = ds.getDatasetId();
         _name = ds.getName();
         _description = ds.getDescription();
-        if (ds.getViewCategory() != null)
-        {
-            _category = ds.getViewCategory().getLabel();
-        }
         _label = ds.getLabel();
         _keyPropertyName = ds.getKeyPropertyName();
         _demographicData = ds.isDemographicData();
@@ -53,14 +49,20 @@ public class DatasetDomainKindProperties implements Cloneable
         _visitDatePropertyName = ds.getVisitDatePropertyName();
         _tag = ds.getTag();
         _dataSharing = ds.getDataSharingEnum().name();
-
         _keyPropertyManaged = (ds.getKeyManagementType() != Dataset.KeyManagementType.None);
+
+        if (ds.getViewCategory() != null)
+        {
+            _category = ds.getViewCategory().getLabel();
+        }
+
         ExpProtocol protocol = ds.getAssayProtocol();
         if (protocol != null)
         {
             _sourceAssayName = protocol.getName();
             _sourceAssayUrl = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(protocol.getContainer(), protocol).getLocalURIString();
         }
+
         if (null != ds.getDomain())
         {
             _domainId = ds.getDomain().getTypeId();
