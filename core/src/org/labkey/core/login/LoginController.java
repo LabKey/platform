@@ -1481,7 +1481,7 @@ public class LoginController extends SpringActionController
             URLHelper redirectURL = SecurityManager.logoutUser(getViewContext().getRequest(), getUser(), form.getReturnURLHelper(AppProps.getInstance().getHomePageActionURL()));
             ApiSimpleResponse response = new ApiSimpleResponse("success", true);
             if (null != redirectURL)
-                response.put("redirectUrl", redirectURL);
+                response.put("redirectUrl", redirectURL.getURIString());
             return response;
         }
     }
