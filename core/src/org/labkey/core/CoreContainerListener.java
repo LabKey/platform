@@ -99,17 +99,12 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
         Container c = evt.container;
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
 
         switch (evt.property)
         {
             case Name:
             {
-                if (c.isSearchable())
-                {
-                    //Clear old file documents as the container name may be used in paths & Urls. Issue #39696
-                    SearchService.get().reindexContainerFiles(c);
-                }
-
                 String oldValue = (String) evt.getOldValue();
                 String newValue = (String) evt.getNewValue();
                 String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
@@ -117,7 +112,5 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
                 break;
             }
         }
-
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
     }
 }

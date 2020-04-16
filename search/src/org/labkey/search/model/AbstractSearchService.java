@@ -401,6 +401,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
      * Delete any existing index file documents, and start a new indexing task for container
      * @param c Container to reindex
      */
+    @Override
     public void reindexContainerFiles(Container c)
     {
         //Create new runnable instead of using existing methods so they can be run within the same job.
@@ -410,9 +411,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             //TODO: make DavCrawler (or a wrapper) a DocumentProvider instead
             //Recrawl files as the container name may be used in paths & Urls. Issue #39696
-            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getId()), true);
+            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
         };
-        queueItem(new Item(defaultTask(), r, PRIORITY.background));
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete));
     }
 
     private void queueItem(Item i)
