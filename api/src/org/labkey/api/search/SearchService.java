@@ -97,10 +97,10 @@ public interface SearchService
     }
 
     /**
-     * Delete the index for the container then index it again
+     * Delete the index documents for any files in a container then start a new crawler task for just that container
      * @param c
      */
-    void reindexContainer(Container c);
+    void reindexContainerFiles(Container c);
 
     enum PRIORITY
     {
