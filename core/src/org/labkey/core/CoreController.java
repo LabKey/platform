@@ -713,8 +713,6 @@ public class CoreController extends SpringActionController
             String title = StringUtils.trimToNull(json.getString("title"));
             String description = StringUtils.trimToNull(json.getString("description"));
             String typeName = StringUtils.trimToNull(json.getString("type"));
-            // Inherit parent container's modules for Custom(NONE) folder type unless otherwise indicated
-            boolean inheritModules = !json.has("inheritModules") || json.isNull("inheritModules") || json.getBoolean("inheritModules");
             boolean isWorkbook = false;
             if (typeName == null)
             {
@@ -779,11 +777,10 @@ public class CoreController extends SpringActionController
                 }
 
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
-                if (folderType == FolderType.NONE && inheritModules)
+                if (folderType != FolderType.NONE || !ensureModules.isEmpty())
                 {
-                    ensureModules.addAll(newContainer.getActiveModules(getUser()));
+                    newContainer.setFolderType(folderType, ensureModules, getUser());
                 }
-                newContainer.setFolderType(folderType, ensureModules, getUser());
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));
             }
