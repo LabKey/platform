@@ -166,7 +166,7 @@ public class ClusterStartup extends AbstractPipelineStartup
         //System.exit(0);
     }
 
-    @TestTimeout(300) @TestWhen(TestWhen.When.BVT)
+    @TestWhen(TestWhen.When.BVT)
     public static class TestCase
     {
         private File _tempDir;
