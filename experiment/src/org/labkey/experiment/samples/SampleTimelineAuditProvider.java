@@ -2,7 +2,7 @@ package org.labkey.experiment.samples;
 
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
-import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -16,16 +16,12 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
 {
-    public static final String EVENT_TYPE = "SampleTimelineEvent";
-
     public static final String SAMPLE_TYPE_COLUMN_NAME = "SampleType";
     public static final String SAMPLE_TYPE_ID_COLUMN_NAME = "SampleTypeID";
     public static final String SAMPLE_NAME_COLUMN_NAME = "SampleName";
@@ -60,7 +56,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     @Override
     public String getEventName()
     {
-        return EVENT_TYPE;
+        return SampleTimelineAuditEvent.EVENT_TYPE;
     }
 
     @Override
@@ -118,7 +114,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
         appendValueMapColumns(table);
 
-        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + EVENT_TYPE);
+        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + SampleTimelineAuditEvent.EVENT_TYPE);
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
         return table;
@@ -131,111 +127,6 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     }
 
 
-    public static class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
-    {
-        private String _sampleLsid;
-        private int _sampleId;
-        private String _sampleName;
-        private String _sampleType;
-        private int _sampleTypeId;
-        private boolean _isLineageUpdate;
-        private String _metadata;
-
-        public SampleTimelineAuditEvent()
-        {
-            super();
-        }
-
-        public SampleTimelineAuditEvent(String container, String comment)
-        {
-            super(EVENT_TYPE, container, comment);
-        }
-
-        public String getSampleLsid()
-        {
-            return _sampleLsid;
-        }
-
-        public void setSampleLsid(String sampleLsid)
-        {
-            _sampleLsid = sampleLsid;
-        }
-
-        public int getSampleId()
-        {
-            return _sampleId;
-        }
-
-        public void setSampleId(int sampleId)
-        {
-            _sampleId = sampleId;
-        }
-
-        public String getSampleName()
-        {
-            return _sampleName;
-        }
-
-        public void setSampleName(String sampleName)
-        {
-            _sampleName = sampleName;
-        }
-
-        public String getSampleType()
-        {
-            return _sampleType;
-        }
-
-        public void setSampleType(String sampleType)
-        {
-            _sampleType = sampleType;
-        }
-
-        public int getSampleTypeId()
-        {
-            return _sampleTypeId;
-        }
-
-        public void setSampleTypeId(int sampleTypeId)
-        {
-            _sampleTypeId = sampleTypeId;
-        }
-
-        public boolean getIsLineageUpdate()
-        {
-            return _isLineageUpdate;
-        }
-
-        public void setLineageUpdate(boolean lineageUpdate)
-        {
-            _isLineageUpdate = lineageUpdate;
-        }
-
-        public String getMetadata()
-        {
-            return _metadata;
-        }
-
-        public void setMetadata(String metadata)
-        {
-            _metadata = metadata;
-        }
-
-        @Override
-        public Map<String, Object> getAuditLogMessageElements()
-        {
-            Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("sampleLsid", getSampleLsid());
-            elements.put("sampleId", getSampleId());
-            elements.put("sampleName", getSampleName());
-            elements.put("sampleType", getSampleType());
-            elements.put("sampleTypeId", getSampleTypeId());
-            elements.put("isLineageUpdate", getIsLineageUpdate());
-            elements.putAll(super.getAuditLogMessageElements());
-            return elements;
-        }
-    }
-
     public static class SampleTimelineAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "SampleTimelineAuditDomain";
@@ -245,7 +136,7 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
 
         public SampleTimelineAuditDomainKind()
         {
-            super(EVENT_TYPE);
+            super(SampleTimelineAuditEvent.EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(SAMPLE_TYPE_COLUMN_NAME, PropertyType.STRING));

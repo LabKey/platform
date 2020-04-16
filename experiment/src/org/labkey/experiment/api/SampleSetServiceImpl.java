@@ -29,6 +29,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
@@ -83,7 +84,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
@@ -924,9 +924,9 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
         });
     }
 
-    private SampleTimelineAuditProvider.SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
-        SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(c.getId(), comment);
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
 
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
@@ -968,7 +968,7 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     @Override
     public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
     {
-        SampleTimelineAuditProvider.SampleTimelineAuditEvent event = new SampleTimelineAuditProvider.SampleTimelineAuditEvent(container.getId(), comment);
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
         if (container.getProject() != null)
             event.setProjectId(container.getProject().getId());
         event.setSampleName(sample.getName());
