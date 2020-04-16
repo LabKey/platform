@@ -1,13 +1,15 @@
-# LabKey Query Module
+# LabKey Study Module
 
-The Study module ..
+The Study module provides a variety of tools for integration of heterogeneous data types, 
+such as demographic, clinical, and experimental data. Cohorts and participant groups are 
+also supported by this module.
 
 ### LabKey React pages
 
 This module is setup to use `webpack` to build client application pages, mostly for developing 
 with `React` components and `@labkey/components` shared components. The artifacts will be generated 
 and placed into the standard LabKey view locations to make the pages available to the server through 
-the `query` controller. The generated `<entryPoint>.html` and `<entryPoint>.view.xml` files will 
+the `study` controller. The generated `<entryPoint>.html` and `<entryPoint>.view.xml` files will 
 be placed in the `study/resources/views` directory and the generated JS/CSS artifacts will be 
 placed in the `study/resources/web/experiment/gen` directory.
 

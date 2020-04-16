@@ -31,7 +31,26 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormApiAction;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.ImportOptions;
@@ -407,12 +426,13 @@ public class StudyController extends BaseStudyController
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private Dataset _def;
-        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER);
+
         @Override
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
         {
-            if (experimentalFlagEnabled)
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER))
             {
+                // TODO do we need the getStudyRedirectIfNull() part here?
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
             }
             else
@@ -510,7 +530,6 @@ public class StudyController extends BaseStudyController
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
     {
         private Dataset _def;
-        boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER);
 
         @Override
         public ModelAndView getView(DatasetForm form, BindException errors)
@@ -527,38 +546,37 @@ public class StudyController extends BaseStudyController
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
-            if (experimentalFlagEnabled)
+
+            if (null == def.getTypeURI())
             {
+                def = def.createMutable();
+                String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), getUser(), def);
+                OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
+                def.setTypeURI(domainURI);
+            }
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER))
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
-            }
-            else
-            {
-                if (null == def.getTypeURI())
-                {
-                    def = def.createMutable();
-                    String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), getUser(), def);
-                    OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
-                    def.setTypeURI(domainURI);
-                }
-                Map<String,String> props = PageFlowUtil.map(
-                        "studyId", ""+study.getRowId(),
-                        "datasetId", ""+form.getDatasetId(),
-                        "typeURI", def.getTypeURI(),
-                        "timepointType", ""+study.getTimepointType(),
-                        ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-                String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
-                if (cancelUrl != null)
-                    props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
+            // TODO to be deleted with GWT version of dataset designer (lines below this to the end of the method)
+            Map<String,String> props = PageFlowUtil.map(
+                    "studyId", ""+study.getRowId(),
+                    "datasetId", ""+form.getDatasetId(),
+                    "typeURI", def.getTypeURI(),
+                    "timepointType", ""+study.getTimepointType(),
+                    ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-                HttpView view = new StudyGWTView(Designer.class, props);
+            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
+            if (cancelUrl != null)
+                props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
 
-                // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                ContainerManager.getAllChildren(ContainerManager.getRoot());
+            HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
+            HttpView view = new StudyGWTView(Designer.class, props);
 
-                return new VBox(text, view);
-            }
+            // hack for 4404 : Lookup picker performance is terrible when there are many containers
+            ContainerManager.getAllChildren(ContainerManager.getRoot());
+
+            return new VBox(text, view);
         }
 
         @Override
