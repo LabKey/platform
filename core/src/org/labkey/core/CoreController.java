@@ -760,7 +760,7 @@ public class CoreController extends SpringActionController
                 }
 
                 Set<Module> ensureModules = new HashSet<>();
-                if (json.has("ensureModules"))
+                if (json.has("ensureModules") && !json.isNull("ensureModules"))
                 {
                     List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
                             .toArray()).map(Object::toString).collect(Collectors.toList());
@@ -777,9 +777,15 @@ public class CoreController extends SpringActionController
                 }
 
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
-                if (folderType != FolderType.NONE || !ensureModules.isEmpty())
+                if (folderType != FolderType.NONE)
                 {
                     newContainer.setFolderType(folderType, ensureModules, getUser());
+                }
+                else if (!ensureModules.isEmpty())
+                {
+                    // Custom folder may inherit modules from parent. 'setFolderType' would remove them.
+                    ensureModules.addAll(newContainer.getActiveModules());
+                    newContainer.setActiveModules(ensureModules);
                 }
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));
