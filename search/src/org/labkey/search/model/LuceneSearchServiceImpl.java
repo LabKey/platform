@@ -1261,6 +1261,29 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    @Override
+    protected void clearIndexedContainerCategory(String id, String category)
+    {
+        try
+        {
+            BooleanQuery bq = new BooleanQuery.Builder()
+                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), id)), BooleanClause.Occur.MUST)
+                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), category)), BooleanClause.Occur.MUST)
+                    .build();
+
+            // Run the query before delete, but only if Log4J debug level is set
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Deleting " + getDocCount(bq) + " docs from container " + id);
+            }
+
+            _indexManager.deleteQuery(bq);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     protected void commitIndex()
