@@ -353,12 +353,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         String name = domain.getName();
         Integer datasetId = arguments.getDatasetId();
-        Integer categoryId = arguments.getCategoryId();
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
         String keyPropertyName = arguments.getKeyPropertyName();
         boolean isManagedField = arguments.isKeyPropertyManaged();
         String label = arguments.getLabel();
+        Integer categoryId = null;
         boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
 
         if (useTimeKeyField)
@@ -379,9 +379,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         if (null != datasetId && null != study.getDataset(datasetId))
             throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\"");
-
-        if (categoryId != null && categoryName != null)
-            throw new IllegalArgumentException("Category ID and category name cannot both be specified");
 
         if (isManagedField && keyPropertyName == null)
             throw new IllegalArgumentException("Additional Key Column must be specified if it is a managed field");
@@ -406,12 +403,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 categoryId = category.getRowId();
             else
                 throw new IllegalArgumentException("Unable to find a category named : " + categoryName + " in this folder.");
-        }
-        else if (categoryId != null)
-        {
-            // validate the category ID
-            if (ViewCategoryManager.getInstance().getCategory(container, categoryId) == null)
-                throw new IllegalArgumentException("Unable to find a category with the ID : " + categoryId + " in this folder.");
         }
 
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())

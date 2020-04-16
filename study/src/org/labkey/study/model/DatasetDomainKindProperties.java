@@ -11,7 +11,6 @@ public class DatasetDomainKindProperties implements Cloneable
     protected String _name;
     protected String _description;
     protected String _category;
-    protected Integer _categoryId;
     protected String _label;
 
     protected String _visitDatePropertyName;
@@ -45,7 +44,6 @@ public class DatasetDomainKindProperties implements Cloneable
         if (ds.getViewCategory() != null)
         {
             _category = ds.getViewCategory().getLabel();
-            _categoryId = ds.getViewCategory().getRowId();
         }
         _label = ds.getLabel();
         _keyPropertyName = ds.getKeyPropertyName();
@@ -237,11 +235,6 @@ public class DatasetDomainKindProperties implements Cloneable
     public void setDataSharing(String dataSharing)
     {
         _dataSharing = dataSharing;
-    }
-
-    public Integer getCategoryId()
-    {
-        return _categoryId;
     }
 
     public int getDomainId()
