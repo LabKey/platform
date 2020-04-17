@@ -61,7 +61,7 @@ public class DatasetManager
             {
                 if (datasetId == null || datasetId == 0)
                 {
-                    DatasetDomainKindProperties datasetDomainKindProperties = new DatasetDomainKindProperties(container);
+                    DatasetDomainKindProperties datasetDomainKindProperties = new DatasetDomainKindProperties();
                     datasetDomainKindProperties.setDefinitionIsShared(study.isDataspaceStudy());
                     return datasetDomainKindProperties;
                 }

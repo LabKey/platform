@@ -334,14 +334,24 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
         Dataset ds = getDatasetDefinition(domain.getDomainURI());
-        return new DatasetDomainKindProperties(ds);
+        DatasetDomainKindProperties datasetProperties = new DatasetDomainKindProperties(ds);
+
+        if (container.isProject() && StudyService.get().getStudy(container).isDataspaceStudy())
+        {
+            datasetProperties.setDefinitionIsShared(true);
+            if (StudyService.get().getStudy(container).getShareVisitDefinitions())
+                datasetProperties.setVisitMapShared(true);
+        }
+
+        return datasetProperties;
     }
 
     @Override
     public Domain createDomain(GWTDomain domain, DatasetDomainKindProperties arguments, Container container, User user,
                                @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
+        arguments.setName(domain.getName());
+        String name = arguments.getName();
         Integer datasetId = arguments.getDatasetId();
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
@@ -493,7 +503,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (domain != null && !useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
             throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column");
 
-        if (domain != null)
+        if (domain != null && null != keyPropertyName)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (isManagedField && !(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))

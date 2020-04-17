@@ -35,14 +35,8 @@ public class DatasetDomainKindProperties implements Cloneable
 
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
 
-    public DatasetDomainKindProperties(Container container)
+    public DatasetDomainKindProperties()
     {
-        Study study = StudyService.get().getStudy(container);
-        if (container.isProject() && study.isDataspaceStudy())
-        {
-            _definitionIsShared = study.getShareDatasetDefinitions();
-            _visitMapShared = study.getShareVisitDefinitions();
-        }
     }
 
     public DatasetDomainKindProperties(Dataset ds)
@@ -50,10 +44,6 @@ public class DatasetDomainKindProperties implements Cloneable
         _datasetId = ds.getDatasetId();
         _name = ds.getName();
         _description = ds.getDescription();
-        if (ds.getViewCategory() != null)
-        {
-            _category = ds.getViewCategory().getLabel();
-        }
         _label = ds.getLabel();
         _keyPropertyName = ds.getKeyPropertyName();
         _demographicData = ds.isDemographicData();
@@ -80,13 +70,7 @@ public class DatasetDomainKindProperties implements Cloneable
         {
             _domainId = ds.getDomain().getTypeId();
         }
-
-        Study study = StudyService.get().getStudy(ds.getContainer());
-        if (ds.getContainer().isProject() && study.isDataspaceStudy())
-        {
-            _definitionIsShared = study.getShareDatasetDefinitions();
-            _visitMapShared = study.getShareVisitDefinitions();
-        }
+        _definitionIsShared = ds.isShared();
     }
 
     public boolean isVisitMapShared()
