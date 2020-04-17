@@ -35,12 +35,24 @@ public class DatasetDomainKindProperties implements Cloneable
 
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
 
+    // default constructor needed for jackson
     public DatasetDomainKindProperties()
     {
     }
 
+    public DatasetDomainKindProperties(Container container)
+    {
+        Study study = StudyService.get().getStudy(container);
+        if (container.isProject() && study.isDataspaceStudy())
+        {
+            setDefinitionIsShared(study.getShareDatasetDefinitions());
+            setVisitMapShared(study.getShareVisitDefinitions());
+        }
+    }
+
     public DatasetDomainKindProperties(Dataset ds)
     {
+        this(ds.getContainer());
         _datasetId = ds.getDatasetId();
         _name = ds.getName();
         _description = ds.getDescription();

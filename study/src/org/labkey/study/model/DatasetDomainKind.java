@@ -368,7 +368,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("A study does not exist for this folder");
 
         // general dataset validation
-        validateDatasetProperties(arguments, container, user, domain);
+        validateDatasetProperties(arguments, container, user, domain, null);
         // create-case specific validation
         TimepointType timepointType = study.getTimepointType();
         if (timepointType.isVisitBased() && getKindName().equals(DateDatasetDomainKind.KIND_NAME))
@@ -456,14 +456,14 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         }
     }
 
-    private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain)
+    private void validateDatasetProperties(DatasetDomainKindProperties datasetProperties, Container container, User user, GWTDomain domain, DatasetDefinition def)
     {
         String name = datasetProperties.getName();
         String label = datasetProperties.getLabel();
         String keyPropertyName = datasetProperties.getKeyPropertyName();
         Integer datasetId = datasetProperties.getDatasetId();
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
-        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(name);
+        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName);
         boolean isDemographicData = datasetProperties.isDemographicData();
         Study study = StudyService.get().getStudy(container); // calling functions have validated this is not null
 
@@ -475,7 +475,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (name.length() > 200)
             throw new IllegalArgumentException("Dataset name must be under 200 characters");
 
-        if (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name))
+        if (!name.equals(domain.getName()) && null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name))
             throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\"");
 
         // Label related exceptions
@@ -483,7 +483,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (label == null || label.length() == 0)
             throw new IllegalArgumentException("Dataset label cannot be empty.");
 
-        if (null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
+        if (def != null && !def.getLabel().equals(label) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
             throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\"");
 
         // Additional key related exceptions
@@ -500,10 +500,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (isDemographicData && (isManagedField || keyPropertyName != null))
             throw new IllegalArgumentException("There cannot be an Additional Key Column if the dataset is Demographic Data");
 
-        if (domain != null && !useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
+        if (!useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
             throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column");
 
-        if (domain != null && null != keyPropertyName)
+        if (null != keyPropertyName && !useTimeKeyField)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (isManagedField && !(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
@@ -512,7 +512,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Other exception(s)
 
-        if (null != datasetId && null != study.getDataset(datasetId))
+        if (def != null &&  null != datasetId && def.getDatasetId() != datasetId && null != study.getDataset(datasetId))
             throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\"");
     }
 
@@ -677,7 +677,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             {
                 // general dataset validation
                 // PR Note: I think this is the correct place to put this, after we noted the fields are updated in updateDomainDescriptor(). Let me know though if I misapprehended
-                validateDatasetProperties(datasetProperties, container, user, update);
+                validateDatasetProperties(datasetProperties, container, user, update, def);
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, studyManager, study, container, user, def);
                 if (!exception.hasErrors())
                     transaction.commit();
