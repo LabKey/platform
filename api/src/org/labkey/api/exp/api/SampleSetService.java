@@ -20,12 +20,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -136,4 +139,8 @@ public interface SampleSetService
     ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings);
 
     boolean parentAliasHasCorrectFormat(String parentAlias);
+
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, QueryService.AuditAction action, List<Map<String, Object>>... params);
+
+    void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata);
 }

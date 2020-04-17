@@ -18,6 +18,7 @@ package org.labkey.list.model;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -153,14 +154,12 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         return (Class<K>)ListAuditEvent.class;
     }
 
-    public static class ListAuditEvent extends AuditTypeEvent
+    public static class ListAuditEvent extends DetailedAuditTypeEvent
     {
         private int _listId;
         private String _listDomainUri;
         private String _listItemEntityId;
         private String _listName;
-        private String _oldRecordMap;
-        private String _newRecordMap;
 
         public ListAuditEvent()
         {
@@ -210,26 +209,6 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
         public void setListName(String listName)
         {
             _listName = listName;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override

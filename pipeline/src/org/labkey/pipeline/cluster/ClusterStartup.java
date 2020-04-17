@@ -27,6 +27,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.reader.Readers;
+import org.labkey.api.test.TestTimeout;
+import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.JunitUtil;
@@ -48,6 +50,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Entry point for pipeline jobs that are invoked on a cluster node. After completion of the job, the process
@@ -233,17 +236,30 @@ public class ClusterStartup extends AbstractPipelineStartup
             pb.redirectErrorStream(true);
             Process proc = pb.start();
             StringBuilder sb = new StringBuilder();
-            try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
-            {
-                String line;
-                while ((line = procReader.readLine()) != null)
+
+            // Spin up a separate thread so that we can time and kill the process if it hangs
+            new Thread(() -> {
+                try (BufferedReader procReader = Readers.getReader(proc.getInputStream()))
                 {
-                    sb.append(line);
-                    sb.append("\n");
+                    String line;
+                    while ((line = procReader.readLine()) != null)
+                    {
+                        sb.append(line);
+                        sb.append("\n");
+                    }
                 }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }).start();
+
+            if (!proc.waitFor(1, TimeUnit.MINUTES))
+            {
+                proc.destroy();
+                Assert.fail("Process did not complete. Output:\n" + sb.toString());
             }
-            proc.waitFor();
-            Assert.assertEquals("Wrong exit code", expectedExitCode, proc.exitValue());
+            Assert.assertEquals("Wrong exit code, output: " + sb.toString(), expectedExitCode, proc.exitValue());
             return sb.toString();
         }
 
