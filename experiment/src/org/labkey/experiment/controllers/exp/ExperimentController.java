@@ -1242,6 +1242,15 @@ public class ExperimentController extends SpringActionController
             {
                 DomainTemplate template = _domainTemplates.get(form.getDomainTemplate());
                 name = template.getTemplateName();
+
+                // Issue 40230: if template includes sample set option, verify that it exists
+                if (template.getOptions().containsKey("sampleSet"))
+                {
+                    String sampleSetName = template.getOptions().get("sampleSet").toString();
+                    ExpSampleSet sampleSet = SampleSetServiceImpl.get().getSampleSet(getContainer(), getUser(), sampleSetName);
+                    if (sampleSet == null)
+                        errors.reject(ERROR_MSG, "Unable to find a sample set in this container with name: " + sampleSetName + ".");
+                }
             }
 
             if (StringUtils.isBlank(name))
