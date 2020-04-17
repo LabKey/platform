@@ -557,7 +557,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
         return AuditBehaviorType.NONE;
     }
 
-    /* Can be used to dinstinguish AuditBehaviorType.NONE vs absent xml audit config */
+    /* Can be used to distinguish AuditBehaviorType.NONE vs absent xml audit config */
     default AuditBehaviorType getXmlAuditBehaviorType()
     {
         return null;
