@@ -40,8 +40,8 @@ public class MockMascotServlet extends HttpServlet
     {
         if (req.getPathInfo().equals("/cgi/submit.pl"))
         {
-            assert req.getQueryString().equals("1+--taskID+5678+--sessionID+1234");
-            assert req.getParts().size() == 40;
+            throwIfNotEqual("1+--taskID+5678+--sessionID+1234", req.getQueryString());
+            throwIfNotEqual(40, req.getParts().size());
             testPart(req, "CHARGE", "1+, 2+ and 3+");
             testPart(req, "CLE", "Trypsin");
             testPart(req, "COM", "Comments on this Mascot search");
@@ -81,7 +81,7 @@ public class MockMascotServlet extends HttpServlet
             testPart(req, "MASS", "Average");
             testPart(req, "ITOL", "0.8");
             testPart(req, "ITOLU", "Da");
-            assert req.getPart("FILE").getSize() == 8403;
+            throwIfNotEqual(req.getPart("FILE").getSize(), 8403L);
             resp.setStatus(HttpServletResponse.SC_OK);
             ServletOutputStream os = resp.getOutputStream();
             os.println("Peptide #1: GWKEPA");
@@ -94,6 +94,12 @@ public class MockMascotServlet extends HttpServlet
     private void testPart(HttpServletRequest req, String name, String expectedValue) throws IOException, ServletException
     {
         String value = IOUtils.toString(req.getPart(name).getInputStream(), StandardCharsets.US_ASCII);
-        assert expectedValue.equals(value);
+        throwIfNotEqual(expectedValue, value);
+    }
+
+    private void throwIfNotEqual(Object expected, Object value)
+    {
+        if (!expected.equals(value))
+            throw new IllegalStateException("Expected " + expected.toString() + ", but value was " + value.toString());
     }
 }
