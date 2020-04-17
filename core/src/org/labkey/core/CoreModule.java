@@ -1269,6 +1269,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             case "logoImage":
                 return LookAndFeelPropertiesManager.get()::handleLogoFile;
+            case "logoMobileImage":
+                return LookAndFeelPropertiesManager.get()::handleMobileLogoFile;
             case "iconImage":
                 return LookAndFeelPropertiesManager.get()::handleIconFile;
             case "customStylesheet":

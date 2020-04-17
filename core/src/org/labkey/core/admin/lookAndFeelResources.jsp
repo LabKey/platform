@@ -18,7 +18,6 @@
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
 <%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -28,6 +27,7 @@
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
+<%@ page import="org.labkey.core.admin.AdminController.ResetMobileLogoAction" %>
 <%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -53,13 +53,13 @@
     <td colspan=2>&nbsp;</td>
 </tr>
 <tr>
-    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Header logo (appears in every page header in the upper left)</td>
+    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Header logo<%=helpPopup("Header Logo", "Appears in the header on every page when the page width is greater than 767px.<br><br>Recommend size: 100px x 30px", true, 300)%></td>
     <td>
         <% if (null != bean.customLogo)
         { %>
-            Currently using a custom logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=canUpdate ? link("reset logo to default", ResetLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
+            Currently using a custom header logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=canUpdate ? link("reset header logo to default", ResetLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
         <% } else { %>
-            Currently using the default logo.
+            Currently using the default header logo.
         <% } %>
     </td>
 </tr>
@@ -73,7 +73,27 @@
 <%
     }
 %>
-
+<tr>
+    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Responsive logo<%=helpPopup("Responsive Logo", "Appears in the header on every page when the page width is less than 768px.<br><br>Recommend size: 30px x 30px", true, 300)%></td>
+    <td>
+        <% if (null != bean.customLogoMobile)
+        { %>
+        Currently using a custom responsive logo. <%=link("view logo", TemplateResourceHandler.LOGO_MOBILE.getURL(c))%> <%=canUpdate ? link("reset responsive logo to default", ResetMobileLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
+        <% } else { %>
+        Currently using the default responsive logo.
+        <% } %>
+    </td>
+</tr>
+<%
+    if (canUpdate)
+    {
+%>
+<tr>
+    <td>Replace with: <input type="file" name="logoMobileImage" size="25" style="border: none;"></td>
+</tr>
+<%
+    }
+%>
 <tr>
     <td class="labkey-form-label" rowspan="<%=rowSpan%>">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
     <td>

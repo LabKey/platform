@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.ServletException;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 
 public class LookAndFeelPropertiesManager
@@ -29,56 +28,87 @@ public class LookAndFeelPropertiesManager
         return INSTANCE;
     }
 
-    public void handleLogoFile(MultipartFile file, Container c, User user) throws ServletException, IOException
-    {
-        String logoFileName = getLogoFileName(file.getOriginalFilename());
-        AttachmentFile renamed = new SpringAttachmentFile(file, logoFileName);
-        handleLogoFile(renamed, c, user);
-    }
-
-    public void handleLogoFile(Resource resource, Container c, User user) throws ServletException, IOException
-    {
-        String logoFileName = getLogoFileName(resource.getName());
-        AttachmentFile attachmentFile = new InputStreamAttachmentFile(resource.getInputStream(), logoFileName);
-        handleLogoFile(attachmentFile, c, user);
-    }
-
-    private String getLogoFileName(String name) throws ServletException
-    {
-        verifyLogoFileName(name);
-
-        // Set the name to something we'll recognize as a logo file
-        return AttachmentCache.LOGO_FILE_NAME_PREFIX + name.substring(name.lastIndexOf("."));
-    }
-
-    private void verifyLogoFileName(String name) throws ServletException
+    private String getLogoFileName(String name, String attachmentPrefix) throws ServletException
     {
         int index = name.lastIndexOf(".");
         if (index == -1)
             throw new ServletException("No file extension on the uploaded image");
+
+        // Set the name to something we'll recognize as a logo file
+        return attachmentPrefix + name.substring(name.lastIndexOf("."));
     }
 
-    private void handleLogoFile(AttachmentFile file, Container c, User user) throws IOException
+    private void handleLogoFile(MultipartFile file, Container c, User user, String attachmentPrefix) throws ServletException, IOException
     {
-        deleteExistingLogo(c, user);
+        String logoFileName = getLogoFileName(file.getOriginalFilename(), attachmentPrefix);
+        handleLogoFile(new SpringAttachmentFile(file, logoFileName), c, user, attachmentPrefix);
+    }
 
+    public void handleLogoFile(Resource resource, Container c, User user, String attachmentPrefix) throws ServletException, IOException
+    {
+        String logoFileName = getLogoFileName(resource.getName(), attachmentPrefix);
+        handleLogoFile(new InputStreamAttachmentFile(resource.getInputStream(), logoFileName), c, user, attachmentPrefix);
+    }
+
+    private void handleLogoFile(AttachmentFile file, Container c, User user, String attachmentPrefix) throws IOException
+    {
+        deleteExistingLogo(c, user, attachmentPrefix);
+        AttachmentService.get().addAttachments(new LookAndFeelResourceAttachmentParent(c), Collections.singletonList(file), user);
+        clearLogoCache(attachmentPrefix);
+    }
+
+    private void clearLogoCache(String attachmentPrefix)
+    {
+        switch (attachmentPrefix)
+        {
+            case AttachmentCache.LOGO_FILE_NAME_PREFIX: AttachmentCache.clearLogoCache(); return;
+            case AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX: AttachmentCache.clearLogoMobileCache(); return;
+            default: throw new IllegalArgumentException(attachmentPrefix + " is not a supported logo prefix.");
+        }
+    }
+
+    private void deleteExistingLogo(Container c, User user, String attachmentPrefix)
+    {
         LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-        AttachmentService.get().addAttachments(parent, Collections.singletonList(file), user);
-        AttachmentCache.clearLogoCache();
+
+        for (Attachment attachment : AttachmentService.get().getAttachments(parent))
+        {
+            if (attachment.getName().startsWith(attachmentPrefix))
+            {
+                AttachmentService.get().deleteAttachment(parent, attachment.getName(), user);
+                clearLogoCache(attachmentPrefix);
+            }
+        }
+    }
+
+    public void handleLogoFile(MultipartFile file, Container c, User user) throws ServletException, IOException
+    {
+        handleLogoFile(file, c, user, AttachmentCache.LOGO_FILE_NAME_PREFIX);
+    }
+
+    public void handleLogoFile(Resource resource, Container c, User user) throws ServletException, IOException
+    {
+        handleLogoFile(resource, c, user, AttachmentCache.LOGO_FILE_NAME_PREFIX);
     }
 
     public void deleteExistingLogo(Container c, User user)
     {
-        LookAndFeelResourceAttachmentParent parent = new LookAndFeelResourceAttachmentParent(c);
-        Collection<Attachment> attachments = AttachmentService.get().getAttachments(parent);
-        for (Attachment attachment : attachments)
-        {
-            if (attachment.getName().startsWith(AttachmentCache.LOGO_FILE_NAME_PREFIX))
-            {
-                AttachmentService.get().deleteAttachment(parent, attachment.getName(), user);
-                AttachmentCache.clearLogoCache();
-            }
-        }
+        deleteExistingLogo(c, user, AttachmentCache.LOGO_FILE_NAME_PREFIX);
+    }
+
+    public void handleMobileLogoFile(MultipartFile file, Container c, User user) throws ServletException, IOException
+    {
+        handleLogoFile(file, c, user, AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX);
+    }
+
+    public void handleMobileLogoFile(Resource resource, Container c, User user) throws ServletException, IOException
+    {
+        handleLogoFile(resource, c, user, AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX);
+    }
+
+    public void deleteExistingMobileLogo(Container c, User user)
+    {
+        deleteExistingLogo(c, user, AttachmentCache.MOBILE_LOGO_FILE_NAME_PREFIX);
     }
 
     public void handleIconFile(MultipartFile file, Container c, User user) throws IOException, ServletException

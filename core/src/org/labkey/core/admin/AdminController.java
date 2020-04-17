@@ -1167,6 +1167,16 @@ public class AdminController extends SpringActionController
     }
 
     @RequiresPermission(AdminPermission.class)
+    public static class ResetMobileLogoAction extends ResetResourceAction
+    {
+        @Override
+        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
+        {
+            return LookAndFeelPropertiesManager.get()::deleteExistingMobileLogo;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
     public static class ResetFaviconAction extends ResetResourceAction
     {
         @Override
@@ -9997,6 +10007,20 @@ public class AdminController extends SpringActionController
                 }
             }
 
+            MultipartFile logoMobileFile = fileMap.get("logoMobileImage");
+            if (logoMobileFile != null && !logoMobileFile.isEmpty())
+            {
+                try
+                {
+                    LookAndFeelPropertiesManager.get().handleMobileLogoFile(logoMobileFile, c, getUser());
+                }
+                catch (Exception e)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                    return false;
+                }
+            }
+
             MultipartFile iconFile = fileMap.get("iconImage");
             if (logoFile != null && !iconFile.isEmpty())
             {
@@ -10279,12 +10303,14 @@ public class AdminController extends SpringActionController
     public static class LookAndFeelResourcesBean extends LookAndFeelBean
     {
         public final Attachment customLogo;
+        public final Attachment customLogoMobile;
         public final Attachment customFavIcon;
         public final Attachment customStylesheet;
 
         LookAndFeelResourcesBean(Container c)
         {
             customLogo = AttachmentCache.lookupLogoAttachment(c);
+            customLogoMobile = AttachmentCache.lookupMobileLogoAttachment(c);
             customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));
             customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new LookAndFeelResourceAttachmentParent(c));
         }
@@ -10311,6 +10337,7 @@ public class AdminController extends SpringActionController
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                     new ResetLogoAction(),
+                    new ResetMobileLogoAction(),
                     new ResetPropertiesAction(),
                     new ResetFaviconAction(),
                     new DeleteCustomStylesheetAction(),
