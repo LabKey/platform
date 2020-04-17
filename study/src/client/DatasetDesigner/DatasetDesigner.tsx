@@ -55,6 +55,12 @@ export class App extends PureComponent<any, State> {
         else {
             this.createNewDataset();
         }
+
+        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
