@@ -17,8 +17,6 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Dataset;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
