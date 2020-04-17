@@ -47,7 +47,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -70,6 +70,7 @@ import java.util.stream.Collectors;
  */
 public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
+    public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -106,7 +107,7 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public String getKindName()
     {
-        return "DataClass";
+        return NAME;
     }
 
     @Override
@@ -164,11 +165,21 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
         return true;
     }
 
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateDataClassURL(container);
+    }
+
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpDataClass dataClass = getDataClass(domain);
+        if (dataClass == null)
+            return null;
+
+        return dataClass.urlEditDefinition(containerUser);
     }
 
     @Override
@@ -229,7 +240,19 @@ public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindP
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
     }
 
     @Override
