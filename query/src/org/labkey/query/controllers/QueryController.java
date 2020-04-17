@@ -46,10 +46,12 @@ import org.labkey.api.data.dialect.JdbcMetaDataLocator;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -85,7 +87,6 @@ import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.StringExpression;
@@ -120,12 +121,12 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
+import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
-import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -177,7 +178,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
@@ -3359,6 +3359,7 @@ public class QueryController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
+            _auditBehaviorType = form.getAuditBehavior();
         }
 
         @Override
@@ -3504,11 +3505,11 @@ public class QueryController extends SpringActionController
     {
         insert(InsertPermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 BatchValidationException errors = new BatchValidationException();
-                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, null, extraContext);
+                List<Map<String, Object>> insertedRows = qus.insertRows(user, container, rows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
                 return qus.getRows(user, container, insertedRows);
@@ -3516,7 +3517,7 @@ public class QueryController extends SpringActionController
         },
         insertWithKeys(InsertPermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException
             {
                 List<Map<String, Object>> newRows = new ArrayList<>();
@@ -3531,7 +3532,7 @@ public class QueryController extends SpringActionController
                     oldKeys.add(oldMap);
                 }
                 BatchValidationException errors = new BatchValidationException();
-                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, null, extraContext);
+                List<Map<String, Object>> updatedRows = qus.insertRows(user, container, newRows, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
                 updatedRows = qus.getRows(user, container, updatedRows);
@@ -3548,12 +3549,12 @@ public class QueryController extends SpringActionController
         },
         importRows(InsertPermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, BatchValidationException
             {
                 BatchValidationException errors = new BatchValidationException();
                 DataIteratorBuilder it = new ListofMapsDataIterator.Builder(rows.get(0).keySet(), rows);
-                qus.importRows(user, container, it, errors, null, extraContext);
+                qus.importRows(user, container, it, errors, configParameters, extraContext);
                 if (errors.hasErrors())
                     throw errors;
                 return Collections.emptyList();
@@ -3561,16 +3562,16 @@ public class QueryController extends SpringActionController
         },
         update(UpdatePermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, null, extraContext);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, rows, rows, configParameters, extraContext);
                 return qus.getRows(user, container, updatedRows);
             }
         },
         updateChangingKeys(UpdatePermission.class)
         {
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
                 List<Map<String, Object>> newRows = new ArrayList<>();
@@ -3585,7 +3586,7 @@ public class QueryController extends SpringActionController
                     CaseInsensitiveHashMap oldMap = row.get(SaveRowsAction.PROP_OLD_KEYS) != null ? new CaseInsensitiveHashMap((Map<String, Object>)row.get(SaveRowsAction.PROP_OLD_KEYS)) : new CaseInsensitiveHashMap();
                     oldKeys.add(oldMap);
                 }
-                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, null, extraContext);
+                List<Map<String, Object>> updatedRows = qus.updateRows(user, container, newRows, oldKeys, configParameters, extraContext);
                 updatedRows = qus.getRows(user, container, updatedRows);
                 List<Map<String, Object>> results = new ArrayList<>();
                 for (int i = 0; i < updatedRows.size(); i++)
@@ -3601,10 +3602,10 @@ public class QueryController extends SpringActionController
         delete(DeletePermission.class)
         {
             @Override
-            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+            public List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                     throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException
             {
-                return qus.deleteRows(user, container, rows, null, extraContext);
+                return qus.deleteRows(user, container, rows, configParameters, extraContext);
             }
         };
 
@@ -3620,7 +3621,7 @@ public class QueryController extends SpringActionController
             return _permission;
         }
 
-        public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<String, Object> extraContext)
+        public abstract List<Map<String, Object>> saveRows(QueryUpdateService qus, List<Map<String, Object>> rows, User user, Container container, Map<Enum, Object> configParameters, Map<String, Object> extraContext)
                 throws SQLException, InvalidKeyException, QueryUpdateServiceException, BatchValidationException, DuplicateKeyException;
     }
 
@@ -3705,6 +3706,21 @@ public class QueryController extends SpringActionController
             if (extraContext == null)
                 extraContext = new CaseInsensitiveHashMap<>();
 
+            Map<Enum, Object> configParameters = new HashMap<>();
+            String auditBehavior = json.getString("auditBehavior");
+            if (!StringUtils.isEmpty(auditBehavior))
+            {
+                try
+                {
+                    AuditBehaviorType behaviorType = AuditBehaviorType.valueOf(auditBehavior);
+                    configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, behaviorType);
+                }
+                catch (IllegalArgumentException ignored)
+                {
+                    logger.warn("Unknown log level type " + auditBehavior + " ignored.");
+                }
+            }
+
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
@@ -3722,7 +3738,7 @@ public class QueryController extends SpringActionController
             try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
                 List<Map<String, Object>> responseRows =
-                        commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), extraContext);
+                        commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), configParameters, extraContext);
 
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
@@ -6160,97 +6176,6 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public static class GetQueryAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
-    {
-        @Override
-        public Object execute(AuditChangesForm form, BindException errors)
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, form.getAuditRowId());
-
-            if (event != null)
-            {
-                response.put("comment", event.getComment());
-                response.put("eventUserId", event.getCreatedBy().getUserId());
-                response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
-
-                String oldRecord = event.getOldRecordMap();
-                String newRecord = event.getNewRecordMap();;
-
-                if (oldRecord != null || newRecord != null)
-                {
-                    response.put("oldData", QueryExportAuditProvider.decodeFromDataMap(oldRecord));
-                    response.put("newData", QueryExportAuditProvider.decodeFromDataMap(newRecord));
-                }
-
-                response.put("success", true);
-                return response;
-            }
-
-            response.put("success", false);
-            return response;
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public static class QueryAuditChangesAction extends SimpleViewAction<AuditChangesForm>
-    {
-        @Override
-        public ModelAndView getView(AuditChangesForm form, BindException errors)
-        {
-            int auditRowId = form.getAuditRowId();
-            String comment = null;
-            String oldRecord = null;
-            String newRecord = null;
-
-            QueryUpdateAuditProvider.QueryUpdateAuditEvent event = AuditLogService.get().getAuditEvent(getUser(), QueryUpdateAuditProvider.QUERY_UPDATE_AUDIT_EVENT, auditRowId);
-
-            if (event != null)
-            {
-                comment = event.getComment();
-                oldRecord = event.getOldRecordMap();
-                newRecord = event.getNewRecordMap();
-            }
-
-            if (oldRecord != null || newRecord != null)
-            {
-                Map<String,String> oldData = QueryExportAuditProvider.decodeFromDataMap(oldRecord);
-                Map<String,String> newData = QueryExportAuditProvider.decodeFromDataMap(newRecord);
-
-                return new AuditChangesView(comment, oldData, newData);
-            }
-            return new NoRecordView();
-        }
-
-        private static class NoRecordView extends HttpView
-        {
-            @Override
-            protected void renderInternal(Object model, PrintWriter out)
-            {
-                out.write("<p>No current record found</p>");
-            }
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Audit Details");
-        }
-    }
-
-
-    @SuppressWarnings({"unused", "WeakerAccess"})
-    public static class AuditChangesForm
-    {
-        private int auditRowId;
-
-        public int getAuditRowId() {return auditRowId;}
-
-        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
-    }
-
-
-    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.Export.class)
     public static class ExportTablesAction extends FormViewAction<ExportTablesForm>
     {
@@ -6851,7 +6776,6 @@ public class QueryController extends SpringActionController
                 new ValidateQueryMetadataAction(),
                 new AuditHistoryAction(),
                 new AuditDetailsAction(),
-                new QueryAuditChangesAction(),
                 new ExportTablesAction(),
                 new SaveNamedSetAction(),
                 new DeleteNamedSetAction()
