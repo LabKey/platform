@@ -3712,6 +3712,7 @@ public class ExperimentController extends SpringActionController
                 throw qpe.get(0);
             if (null != t)
                 setTarget(t);
+            _auditBehaviorType = form.getAuditBehavior();
         }
 
         @Override

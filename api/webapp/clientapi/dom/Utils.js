@@ -96,6 +96,33 @@ LABKEY.Utils = new function(impl, $) {
         modal.modal('show');
     };
 
+    var getNextRow = function(rowElem, targetTagName)
+    {
+        if (null == rowElem)
+            return null;
+
+
+        var nextRow = rowElem.nextSibling;
+        while (nextRow != null && !nextRow.tagName)
+            nextRow = nextRow.nextSibling;
+
+        if (nextRow == null)
+            return null;
+
+        if (targetTagName)
+        {
+            if (nextRow.tagName != targetTagName)
+                return null;
+        }
+        else
+        {
+            if (nextRow.tagName != "TR")
+                return null;
+        }
+
+        return nextRow;
+    };
+
     /**
      * Documentation available in core/Utils.js -- search for "@name displayAjaxErrorResponse"
      */
@@ -554,6 +581,64 @@ LABKEY.Utils = new function(impl, $) {
     impl.getSimpleLinkHtml = function(topic, displayText)
     {
         return '<a href="' + LABKEY.Utils.encodeHtml(LABKEY.Utils.getHelpTopicHref(topic)) + '" target="labkeyHelp">' + LABKEY.Utils.encodeHtml(displayText) + "</a>";
+    };
+
+    impl.notifyExpandCollapse = function(url, collapse)
+    {
+        if (url) {
+            if (collapse)
+                url += "&collapse=true";
+            LABKEY.Ajax.request({url: url});
+        }
+    };
+
+    impl.collapseExpand = function(elem, notify, targetTagName)
+    {
+        var collapse = false;
+        var url = elem.href;
+        if (targetTagName)
+        {
+            while (elem.tagName != targetTagName)
+                elem = elem.parentNode;
+        }
+        else
+        {
+            while (elem.tagName != 'TR')
+                elem = elem.parentNode;
+        }
+
+        var nextRow = getNextRow(elem, targetTagName);
+        if (null != nextRow && nextRow.style.display != "none")
+            collapse = true;
+
+        while (nextRow != null)
+        {
+            if (nextRow.className.indexOf("labkey-header") != -1)
+                break;
+            if (nextRow.style.display != "none")
+                nextRow.style.display = "none";
+            else
+                nextRow.style.display = "";
+            nextRow = getNextRow(nextRow, targetTagName);
+        }
+
+        if (null != url && notify)
+            impl.notifyExpandCollapse(url, collapse);
+        return false;
+    };
+
+    impl.toggleLink = function(link, notify, targetTagName)
+    {
+        impl.collapseExpand(link, notify, targetTagName);
+        var i = 0;
+        while (typeof(link.childNodes[i].src) == "undefined")
+            i++;
+
+        if (link.childNodes[i].src.search("plus.gif") >= 0)
+            link.childNodes[i].src = link.childNodes[i].src.replace("plus.gif", "minus.gif");
+        else
+            link.childNodes[i].src = link.childNodes[i].src.replace("minus.gif", "plus.gif");
+        return false;
     };
 
     return impl;
