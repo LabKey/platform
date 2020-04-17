@@ -334,16 +334,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
         Dataset ds = getDatasetDefinition(domain.getDomainURI());
-        DatasetDomainKindProperties datasetProperties = new DatasetDomainKindProperties(ds);
-
-        if (container.isProject() && StudyService.get().getStudy(container).isDataspaceStudy())
-        {
-            datasetProperties.setDefinitionIsShared(true);
-            if (StudyService.get().getStudy(container).getShareVisitDefinitions())
-                datasetProperties.setVisitMapShared(true);
-        }
-
-        return datasetProperties;
+        return new DatasetDomainKindProperties(ds);
     }
 
     @Override

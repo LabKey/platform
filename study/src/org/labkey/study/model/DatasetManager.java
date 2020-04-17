@@ -52,28 +52,19 @@ public class DatasetManager
 
     public DatasetDomainKindProperties getDatasetDomainKindProperties(Container container, Integer datasetId)
     {
-        StudyService studyService = StudyService.get();
-
-        if (null != studyService)
+        if (datasetId == null || datasetId == 0)
         {
-            Study study = studyService.getStudy(container);
-            if (null != study)
-            {
-                if (datasetId == null || datasetId == 0)
-                {
-                    DatasetDomainKindProperties datasetDomainKindProperties = new DatasetDomainKindProperties(container);
-                    datasetDomainKindProperties.setDefinitionIsShared(study.isDataspaceStudy());
-                    return datasetDomainKindProperties;
-                }
-                else
-                {
-                    Dataset<?> ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-                    if (null != ds)
-                        return new DatasetDomainKindProperties(ds);
-                }
-            }
+            return new DatasetDomainKindProperties(container);
         }
-        return null;
+        else
+        {
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            if (ds != null)
+                return new DatasetDomainKindProperties(ds);
+            else
+                return null;
+        }
     }
 
     public interface DatasetListener
