@@ -506,7 +506,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (null != keyPropertyName && !useTimeKeyField)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
-            if (isManagedField && !(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
+            if (!(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
                 throw new IllegalArgumentException("If Additional Key Column is managed, the column type must be numeric or text-based");
         }
 
