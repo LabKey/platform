@@ -67,6 +67,7 @@ public class DatasetDomainKindProperties implements Cloneable
         {
             _domainId = ds.getDomain().getTypeId();
         }
+        _definitionIsShared = ds.isShared();
     }
 
     public boolean isVisitMapShared()

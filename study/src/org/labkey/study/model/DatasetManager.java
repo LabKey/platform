@@ -17,6 +17,8 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -50,16 +52,28 @@ public class DatasetManager
 
     public DatasetDomainKindProperties getDatasetDomainKindProperties(Container container, Integer datasetId)
     {
-        if (datasetId == null || datasetId == 0 )
+        StudyService studyService = StudyService.get();
+
+        if (null != studyService)
         {
-            return new DatasetDomainKindProperties();
+            Study study = studyService.getStudy(container);
+            if (null != study)
+            {
+                if (datasetId == null || datasetId == 0)
+                {
+                    DatasetDomainKindProperties datasetDomainKindProperties = new DatasetDomainKindProperties();
+                    datasetDomainKindProperties.setDefinitionIsShared(study.isDataspaceStudy());
+                    return datasetDomainKindProperties;
+                }
+                else
+                {
+                    Dataset<?> ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+                    if (null != ds)
+                        return new DatasetDomainKindProperties(ds);
+                }
+            }
         }
-        else
-        {
-            StudyImpl study = StudyManager.getInstance().getStudy(container);
-            Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
-            return new DatasetDomainKindProperties(ds);
-        }
+        return null;
     }
 
     public interface DatasetListener

@@ -143,7 +143,6 @@ export class App extends PureComponent<any, State> {
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    showDataSpace={false}
                     showVisitDate={true}
                     useTheme={true}
                     onComplete={this.onComplete}
