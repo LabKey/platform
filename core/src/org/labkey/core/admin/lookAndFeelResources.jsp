@@ -16,23 +16,18 @@
  */
 %>
 <%@ page import="org.labkey.api.admin.AdminUrls"%>
-<%@ page import="org.labkey.api.admin.CoreUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
-<%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
-<%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
-<%@ page import="org.labkey.core.admin.AdminController.ResetMobileLogoAction" %>
-<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
+<%@ page import="org.labkey.core.admin.AdminController.LookAndFeelBean" %>
+<%@ page import="org.labkey.core.admin.AdminController.ResetResourceAction" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    AdminController.LookAndFeelResourcesBean bean = ((JspView<AdminController.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
+    LookAndFeelBean bean = ((JspView<LookAndFeelBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
     boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
     HtmlString rowSpan = HtmlString.of(!canUpdate ? "1" : "2");
@@ -47,93 +42,42 @@
 </tr>
 
 <tr>
-    <td colspan=2>Customize the logo, icon, and stylesheets used <%=text(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
+    <td colspan=2>Customize the header logo, responsive logo, favorite icon, and stylesheet used <%=h(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
-<tr>
-    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Header logo<%=helpPopup("Header Logo", "Appears in the header on every page when the page width is greater than 767px.<br><br>Recommend size: 100px x 30px", true, 300)%></td>
-    <td>
-        <% if (null != bean.customLogo)
-        { %>
-            Currently using a custom header logo. <%=link("view logo", TemplateResourceHandler.LOGO.getURL(c))%> <%=canUpdate ? link("reset header logo to default", ResetLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
-        <% } else { %>
-            Currently using the default header logo.
-        <% } %>
-    </td>
-</tr>
 <%
-    if (canUpdate)
+    for (ResourceType type : ResourceType.values())
     {
 %>
-<tr>
-    <td>Replace with: <input type="file" name="logoImage" size="25" style="border: none;"></td>
-</tr>
+    <tr>
+        <td class="labkey-form-label" rowspan="<%=rowSpan%>"><%=h(type.getLongLabel())%><%=type.getHelpPopup()%></td>
+        <td>
+            <% if (type.isSet(getContainer()))
+            { %>
+            Currently using a custom <%=h(type.getShortLabel().toLowerCase())%>. <%=type.getViewLink(getContainer()).target("_view")%> <%=canUpdate ? link(type.getDeleteText(), urlFor(ResetResourceAction.class).addParameter("resource", type.name())).usePost() : HtmlString.EMPTY_STRING%>
+            <% } else { %>
+            <%=h(type.getDefaultText())%>.
+            <% } %>
+        </td>
+    </tr>
 <%
-    }
+        if (canUpdate)
+        {
 %>
-<tr>
-    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Responsive logo<%=helpPopup("Responsive Logo", "Appears in the header on every page when the page width is less than 768px.<br><br>Recommend size: 30px x 30px", true, 300)%></td>
-    <td>
-        <% if (null != bean.customLogoMobile)
-        { %>
-        Currently using a custom responsive logo. <%=link("view logo", TemplateResourceHandler.LOGO_MOBILE.getURL(c))%> <%=canUpdate ? link("reset responsive logo to default", ResetMobileLogoAction.class).usePost() : HtmlString.EMPTY_STRING%>
-        <% } else { %>
-        Currently using the default responsive logo.
-        <% } %>
-    </td>
-</tr>
+    <tr>
+        <td>Replace with: <input type="file" name="<%=type.getFieldName()%>" size="25" style="border: none;"></td>
+    </tr>
 <%
-    if (canUpdate)
-    {
-%>
-<tr>
-    <td>Replace with: <input type="file" name="logoMobileImage" size="25" style="border: none;"></td>
-</tr>
-<%
-    }
-%>
-<tr>
-    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Favorite icon (displayed in user's favorites or bookmarks, .ico file only)</td>
-    <td>
-        <% if (null != bean.customFavIcon)
-        { %>
-            Currently using a custom favorite icon. <%=link("view icon", TemplateResourceHandler.FAVICON.getURL(c))%> <%=canUpdate ? link("reset favorite icon to default", ResetFaviconAction.class).usePost() : HtmlString.EMPTY_STRING%>
-        <% } else { %>
-            Currently using the default favorite icon.
-        <% } %>
-    </td>
-</tr>
-<%
-    if (canUpdate)
-    {
-%>
-<tr>
-    <td>Replace with: <input type="file" name="iconImage" size="25" style="border: none;"></td>
-</tr>
-<%
+        }
     }
 %>
 
-<tr>
-    <td class="labkey-form-label" rowspan="<%=rowSpan%>">Custom stylesheet</td>
-    <td>
-        <% if (null != bean.customStylesheet)
-        { %>
-            Currently using a custom stylesheet. <%=link("view CSS", PageFlowUtil.urlProvider(CoreUrls.class).getCustomStylesheetURL(getContainer()))%> <%=canUpdate ? link("delete custom stylesheet", DeleteCustomStylesheetAction.class).usePost() : HtmlString.EMPTY_STRING%>
-        <% } else { %>
-            No custom stylesheet.
-        <% } %>
-    </td>
-</tr>
 <%
     if (canUpdate)
     {
 %>
-<tr>
-    <td>Replace with: <input type="file" name="customStylesheet" size="25" style="border: none;"></td>
-</tr>
 <tr>
     <td><br/><%=button("Save").submit(true).onClick("_form.setClean();")%></td>
 </tr>
