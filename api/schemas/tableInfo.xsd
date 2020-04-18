@@ -451,6 +451,15 @@
                     </xs:documentation>
 				</xs:annotation>
 			</xs:element>
+            <xs:element name="isDbSequence" type="xs:boolean" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if the column is assigned an automatically incrementing value by the Java code for every
+                        new row inserted. Unlike autoInc columns, the value for this column can be available during
+                        insert without requiring additional selection to occur.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
 			<xs:element name="isDisplayColumn" type="xs:boolean" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>

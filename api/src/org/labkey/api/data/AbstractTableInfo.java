@@ -597,6 +597,12 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     @Override
+    public String getDbSequenceName(String columnName)
+    {
+        return this.getSchema().getName() + ":" + this.getName() + ":" + columnName;
+    }
+
+    @Override
     public String getName()
     {
         return _name;

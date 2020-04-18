@@ -255,6 +255,8 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isLookup();
 
+    boolean isDbSequence();
+
     @NotNull List<ConditionalFormat> getConditionalFormats();
 
     @NotNull List<? extends IPropertyValidator> getValidators();

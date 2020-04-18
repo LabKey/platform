@@ -87,6 +87,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     private Object _defaultValue = null;
     private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private boolean _isAutoIncrement = false;
+    private boolean _isDbSequence = false;
     private boolean _isKeyField = false;
     private boolean _isReadOnly = false;
     private boolean _isUserEditable = true;
@@ -866,6 +867,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
     @Override
+    public boolean isDbSequence()
+    {
+        return _isDbSequence;
+    }
+
+    public void setIsDbSequence(boolean isDbSequence)
+    {
+        _isDbSequence = isDbSequence;
+    }
+
+    @Override
     public boolean isReadOnly()
     {
         return _isReadOnly || _isAutoIncrement || isVersionColumn();
@@ -1041,6 +1053,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
             setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
             _isAutoIncrement = xmlCol.getIsAutoInc();
+        if (xmlCol.isSetIsDbSequence())
+            _isDbSequence = xmlCol.getIsDbSequence();
         if (xmlCol.isSetIsReadOnly())
             _isReadOnly = xmlCol.getIsReadOnly();
         if (xmlCol.isSetIsUserEditable())

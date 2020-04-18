@@ -195,6 +195,8 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     Set<String> getColumnNameSet();
 
+    String getDbSequenceName(String colName);
+
     /**
      * Return a list of ColumnInfos that make up the extended set of
      * columns that could be considered a part of this table by default.
@@ -209,6 +211,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @return All columns.
      */
     Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
+
 
     /**
      * @return the {@link org.labkey.api.query.FieldKey}s that should be part of the default view of the table,
