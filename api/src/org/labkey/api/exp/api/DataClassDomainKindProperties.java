@@ -30,6 +30,9 @@ public class DataClassDomainKindProperties
 
         if (dc.getSampleSet() != null)
             this.sampleSet = dc.getSampleSet().getRowId();
+
+        if (dc.getDomain() != null)
+            this.domainId = dc.getDomain().getTypeId();
     }
 
     public int getRowId()

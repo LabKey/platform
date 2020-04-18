@@ -34,7 +34,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
-import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -42,6 +41,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -132,7 +132,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
-            audit("insert");
+            audit(QueryService.AuditAction.INSERT);
         }
         return ret;
     }
@@ -144,7 +144,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !context.getErrors().hasErrors())
         {
             onSamplesChanged();
-            audit(context.getInsertOption().mergeRows ? "merge" : "insert");
+            audit(context.getInsertOption().mergeRows ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT);
         }
         return ret;
     }
@@ -156,7 +156,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
-            audit("merge");
+            audit(QueryService.AuditAction.MERGE);
         }
         return ret;
     }
@@ -173,7 +173,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (results != null && results.size() > 0 && !errors.hasErrors())
         {
             onSamplesChanged();
-            audit("insert");
+            audit(QueryService.AuditAction.INSERT);
         }
         return results;
     }
@@ -190,7 +190,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (ret.size() > 0)
         {
             onSamplesChanged();
-            audit("update");
+            audit(QueryService.AuditAction.UPDATE);
         }
 
         return ret;
@@ -272,7 +272,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (ret > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by truncateSampleSet
-            audit("delete");
+            audit(QueryService.AuditAction.TRUNCATE);
         }
         return ret;
     }
@@ -331,7 +331,8 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         if (result.size() > 0)
         {
             // NOTE: Not necessary to call onSamplesChanged -- already called by deleteMaterialByRowIds
-            audit("delete");
+            audit(QueryService.AuditAction.DELETE);
+            addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
         }
         return result;
     }
@@ -439,19 +440,13 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         _sampleset.onSamplesChanged(getUser(), null);
     }
 
-    void audit(String insertUpdateChoice)
+    void audit(QueryService.AuditAction auditAction)
     {
-        String verb;
-        if (insertUpdateChoice.equals("merge"))
-            verb = "inserted or updated";
-        else
-            verb = insertUpdateChoice + (insertUpdateChoice.endsWith("e") ? "d" : "ed");
-
         SampleSetAuditProvider.SampleSetAuditEvent event = new SampleSetAuditProvider.SampleSetAuditEvent(
-                getContainer().getId(), "Samples " + verb + " in: " + _sampleset.getName());
+                getContainer().getId(), "Samples " + auditAction.getVerbPastTense() + " in: " + _sampleset.getName());
         event.setSourceLsid(_sampleset.getLSID());
         event.setSampleSetName(_sampleset.getName());
-        event.setInsertUpdateChoice(insertUpdateChoice);
+        event.setInsertUpdateChoice(auditAction.toString().toLowerCase());
         AuditLogService.get().addEvent(getUser(), event);
     }
 }

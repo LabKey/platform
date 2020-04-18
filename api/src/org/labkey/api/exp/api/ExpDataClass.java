@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.springframework.web.servlet.mvc.Controller;
@@ -79,8 +78,6 @@ public interface ExpDataClass extends ExpObject
     ActionURL urlShowData();
 
     ActionURL urlShowData(Container c);
-
-    ActionURL urlUpdate(User user, Container container, @Nullable URLHelper cancelUrl);
 
     ActionURL urlDetails();
 
