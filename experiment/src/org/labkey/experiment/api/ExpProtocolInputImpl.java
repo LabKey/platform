@@ -25,7 +25,7 @@ import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
 
@@ -50,7 +50,7 @@ public abstract class ExpProtocolInputImpl<T extends AbstractProtocolInput, I ex
         return _object.getRowId();
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         return null;
     }

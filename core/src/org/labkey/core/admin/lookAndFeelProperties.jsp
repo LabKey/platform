@@ -15,15 +15,18 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.data.Container"%>
+<%@ page import="org.labkey.api.admin.AdminUrls"%>
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.SecurityManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ApplicationAdminPermission" %>
 <%@ page import="org.labkey.api.settings.DateParsingMode" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.FolderDisplayMode" %>
 <%@ page import="org.labkey.api.util.Formats" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
@@ -43,10 +46,12 @@
     if (!c.isRoot())
         siteThemeName = LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getThemeName();
     boolean themeNameInherited = !c.isRoot() && laf.isThemeNameInherited();
+    boolean canUpdate = !c.isRoot() || c.hasPermission(getUser(), ApplicationAdminPermission.class);
 %>
 <%=formatMissedErrors("form")%>
 <labkey:form name="preferences" method="post" id="form-preferences">
 <table class="lk-fields-table">
+<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
@@ -278,12 +283,26 @@
 </tr>
 <%
     }
+
+    if (canUpdate)
+    {
 %>
 <tr>
     <td><%=button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;
         <%=button("Reset").onClick("return confirmReset();") %>
     </td>
 </tr>
+<%
+    }
+    else
+    {
+%>
+<tr>
+    <td><%=button("Done").href(urlProvider(AdminUrls.class).getAdminConsoleURL())%></td>
+</tr>
+<%
+    }
+%>
 <tr>
     <td>&nbsp;</td>
 </tr>

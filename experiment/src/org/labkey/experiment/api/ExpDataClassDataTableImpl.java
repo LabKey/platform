@@ -26,6 +26,7 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
 import org.labkey.api.dataiterator.DataIteratorContext;
@@ -42,6 +43,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
@@ -52,6 +54,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -104,6 +107,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         _dataClass = dataClass;
         addAllowablePermission(InsertPermission.class);
         addAllowablePermission(UpdatePermission.class);
+        // leaving commented out until branch that supports merge for data classes is merged
+//        ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getImportDataURL(getContainer(), _dataClass.getName());
+//        setImportURL(new DetailsURL(url));
 
         // Filter exp.data to only those rows that are members of the DataClass
         addCondition(new SimpleFilter(FieldKey.fromParts("classId"), _dataClass.getRowId()));
@@ -113,6 +119,31 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     public Domain getDomain()
     {
         return _dataClass.getDomain();
+    }
+
+    @Override
+    public AuditBehaviorType getAuditBehavior()
+    {
+        // if there is xml config, use xml config
+        if (_auditBehaviorType == AuditBehaviorType.NONE && getXmlAuditBehaviorType() == null)
+        {
+            ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+            if (categoryType != null && categoryType.defaultBehavior != null)
+                return categoryType.defaultBehavior;
+        }
+
+        return _auditBehaviorType;
+    }
+
+    @Override
+    @Nullable
+    public Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        ExpSchema.DataClassCategoryType categoryType = ExpSchema.DataClassCategoryType.fromString(_dataClass.getCategory());
+        if (categoryType != null)
+            return categoryType.additionalAuditFields;
+
+        return null;
     }
 
     @Override
@@ -146,7 +177,9 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             {
                 var c = wrapColumn(alias, getRealTable().getColumn(column.name()));
                 // TODO: Name is editable in insert view, but not in update view
-                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), _dataClass.getNameExpression());
+                String nameExpression = _dataClass.getNameExpression();
+                c.setNullable(nameExpression != null);
+                String desc = ExpMaterialTableImpl.appendNameExpressionDescription(c.getDescription(), nameExpression);
                 c.setDescription(desc);
                 return c;
             }
@@ -254,6 +287,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         addColumn(Column.LSID);
         var rowIdCol = addColumn(Column.RowId);
         var nameCol = addColumn(Column.Name);
+
         addColumn(Column.Created);
         addColumn(Column.CreatedBy);
         addColumn(Column.Modified);
@@ -268,11 +302,16 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         // Add the domain columns
         Collection<BaseColumnInfo> cols = new ArrayList<>(20);
+        Set skipCols = new CaseInsensitiveHashSet();
+        skipCols.add("lsid");
+        skipCols.add("rowid");
+        skipCols.add("name");
+        skipCols.add("classid");
         for (ColumnInfo col : extTable.getColumns())
         {
             // Skip the lookup column itself, LSID, and exp.data.rowid -- it is added above
             String colName = col.getName();
-            if (colName.equalsIgnoreCase("lsid") || colName.equalsIgnoreCase("rowid"))
+            if (skipCols.contains(colName))
                 continue;
 
             if (colName.equalsIgnoreCase("genid"))
@@ -311,6 +350,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
                 if (null != dp && null != pd)
                 {
+                    col.setName(dp.getName());
                     if (pd.getLookupQuery() != null || pd.getConceptURI() != null)
                     {
                         col.setFk(PdLookupForeignKey.create(schema, pd));
@@ -380,13 +420,34 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
         Set<String> dataCols = new CaseInsensitiveHashSet(_rootTable.getColumnNameSet());
         dataCols.remove("lsid");
 
+        // all columns from dataclass property table except name and classid
+        Set<String> pCols = new CaseInsensitiveHashSet(provisioned.getColumnNameSet());
+        pCols.remove("name");
+        pCols.remove("classid");
+
         SQLFragment sql = new SQLFragment();
+        sql.append("(SELECT * FROM\n");
         sql.append("(SELECT ");
+        String comma = "";
         for (String dataCol : dataCols)
-            sql.append("d.").append(dataCol).append(", ");
-        sql.append("p.* FROM ");
+        {
+            sql.append(comma);
+            sql.append("d.").append(dataCol);
+            comma = ", ";
+        }
+
+        SqlDialect dialect = _rootTable.getSqlDialect();
+        for (String pCol : pCols)
+        {
+            sql.append(comma);
+            sql.append("p.").append(dialect.makeLegalIdentifier(pCol));
+        }
+        sql.append(" FROM ");
         sql.append(_rootTable, "d");
-        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid");
+        sql.append(" INNER JOIN ").append(provisioned, "p").append(" ON d.lsid = p.lsid) ");
+        String subAlias = alias + "_dc_sub";
+        sql.append(subAlias);
+        sql.append("\n");
 
         // WHERE
         Map<FieldKey, ColumnInfo> columnMap = Table.createColumnMap(getFromTable(), getFromTable().getColumns());
@@ -509,7 +570,8 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             step0.addSequenceColumn(genIdCol, _dataClass.getContainer(), ExpDataClassImpl.SEQUENCE_PREFIX, _dataClass.getRowId(), batchSize);
 
             // Ensure we have a dataClass column and it is of the right value
-            ColumnInfo classIdCol = expData.getColumn("classId");
+            // use materialized classId so that parameter binding works for both exp.data as well as materialized table
+            ColumnInfo classIdCol = _dataClass.getTinfo().getColumn("classId");
             step0.addColumn(classIdCol, new SimpleTranslator.ConstantColumn(_dataClass.getRowId()));
 
             // Ensure we have a cpasType column and it is of the right value
@@ -601,7 +663,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
             TableInfo t = ExpDataClassDataTableImpl.this._dataClass.getTinfo();
 
             SQLFragment sql = new SQLFragment()
-                    .append("SELECT t.*, d.RowId, d.Name, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
+                    .append("SELECT t.*, d.RowId, d.Name, d.ClassId, d.Container, d.Description, d.CreatedBy, d.Created, d.ModifiedBy, d.Modified")
                     .append(" FROM ").append(d, "d")
                     .append(" LEFT OUTER JOIN ").append(t, "t")
                     .append(" ON d.lsid = t.lsid")
@@ -677,6 +739,19 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
                     data = ExperimentServiceImpl.get().getExpData(lsid);
                 data.index(null);
             }
+
+            ret.put("lsid", lsid);
+            return ret;
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            var ret = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
+
+            /* setup mini dataiterator pipeline to process lineage */
+            DataIterator di = _toDataIterator("updateRows.lineage", ret);
+            ExpDataIterators.derive(user, container, di, false);
 
             return ret;
         }

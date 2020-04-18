@@ -32,6 +32,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
@@ -646,22 +647,22 @@ public class DataColumn extends DisplayColumn
             }
         }
 
-        String errors = getErrors(ctx);
-        if (!StringUtils.isEmpty(errors))
+        HtmlString errors = getErrors(ctx);
+        if (!StringUtils.isEmpty(errors.toString()))
         {
             out.write("<span class=\"help-block form-text\">");
-            out.write(errors);
+            out.write(errors.toString());
             out.write("</span>");
         }
     }
 
-    protected String getErrors(RenderContext ctx)
+    protected @NotNull HtmlString getErrors(RenderContext ctx)
     {
         ColumnInfo col = null;
         if (isQueryColumn())
             col = getColumnInfo();
 
-        return ctx.getForm() == null || col == null ? "" : ctx.getErrors(col);
+        return ctx.getForm() == null || col == null ? HtmlString.EMPTY_STRING : ctx.getErrors(col);
     }
 
     protected void renderSelectFormInput(RenderContext ctx, Writer out, String formFieldName, Object value, String strVal, boolean disabledInput)

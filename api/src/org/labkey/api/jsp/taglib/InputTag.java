@@ -15,6 +15,8 @@
  */
 package org.labkey.api.jsp.taglib;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.element.DisplayField;
 import org.labkey.api.util.element.Input;
@@ -58,7 +60,7 @@ public class InputTag extends SimpleTagBase
     private String state;
     private Integer step;
     private String type;
-    private Object value;
+    private @Nullable HtmlString value;
 
     public void setAutoComplete(String autoComplete)
     {
@@ -215,9 +217,31 @@ public class InputTag extends SimpleTagBase
         this.type = type;
     }
 
-    public void setValue(Object value)
+    public void setValue(HasHtmlString hasHtmlString)
     {
-        this.value = value;
+        this.value = null != hasHtmlString ? hasHtmlString.getHtmlString() : null;
+    }
+
+    @Deprecated // TODO: Just call the String version without h(), like all the other tag attributes
+    public void setValue(HtmlString htmlString)
+    {
+        this.value = htmlString;
+    }
+
+    /**
+     * Sets value to HTML-encoded s or "" if s is null.
+     */
+    public void setValue(String s)
+    {
+        this.value = HtmlString.of(s);
+    }
+
+    /**
+     * Sets value to HTML-encoded o.toString() or "" if o is null. Especially useful for Integers and Booleans.
+     */
+    public void setValue(Object o)
+    {
+        setValue(null != o ? o.toString() : null);
     }
 
     public void setOnChange(String onChange)
@@ -289,7 +313,7 @@ public class InputTag extends SimpleTagBase
             .disabled(isDisabled)
             .required(isRequired)
             .readOnly(isReadOnly)
-            .unsafeValue(value) // 32433: mimic a normal <input/> where user is responsible for the encoding
+            .value(value)
             .checked(checked)
             .size(size)
             .maxLength(maxLength)

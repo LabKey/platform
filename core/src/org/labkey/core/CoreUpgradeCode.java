@@ -53,10 +53,15 @@ import org.labkey.core.reports.ExternalScriptEngineDefinitionImpl;
 import org.labkey.core.reports.ScriptEngineManagerImpl;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.security.AuthenticationManager.AUTHENTICATION_CATEGORY;
+import static org.labkey.api.security.AuthenticationManager.PROVIDERS_KEY;
 import static org.labkey.core.reports.ScriptEngineManagerImpl.SCRIPT_ENGINE_MAP;
 
 /**
@@ -329,7 +334,7 @@ public class CoreUpgradeCode implements UpgradeCode
     }
 
     /**
-     * Invoked from 19.20-19.30 to move existing authentication property configurations to core.AuthenticationConfigurations table
+     * Invoked from 19.20-19.30 to move existing primary authentication property configurations to core.AuthenticationConfigurations table
      */
     @SuppressWarnings({"UnusedDeclaration"})
     @DeferredUpgrade
@@ -343,7 +348,7 @@ public class CoreUpgradeCode implements UpgradeCode
 
     public void migrateAuthenticationConfigurations(User user)
     {
-        Set<String> active = AuthenticationManager.getActiveProviderNamesFromProperties();
+        Set<String> active = getActiveProviderNamesFromProperties();
         AuthenticationManager.getAllPrimaryProviders().forEach(provider->{
             try
             {
@@ -354,5 +359,43 @@ public class CoreUpgradeCode implements UpgradeCode
                 ExceptionUtil.logExceptionToMothership(null, t);
             }
         });
+    }
+
+    /**
+     * Invoked at 19.35 to move existing secondary authentication property configurations to core.AuthenticationConfigurations table
+     */
+    @SuppressWarnings({"UnusedDeclaration"})
+    @DeferredUpgrade
+    public void migrateSecondaryAuthenticationConfigurations(ModuleContext context)
+    {
+        if (!context.isNewInstall())
+        {
+            User user = context.getUpgradeUser();
+            Set<String> active = getActiveProviderNamesFromProperties();
+            AuthenticationManager.getAllSecondaryProviders().forEach(provider -> {
+                try
+                {
+                    provider.migrateOldConfiguration(active.contains(provider.getName()), user);
+                }
+                catch (Throwable t)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, t);
+                }
+            });
+        }
+    }
+
+    private static final String PROP_SEPARATOR = ":";
+    // Provider names stored in properties; they're not necessarily all valid providers
+
+    public static Set<String> getActiveProviderNamesFromProperties()
+    {
+        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
+        String activeProviderProp = props.get(PROVIDERS_KEY);
+
+        Set<String> set = new HashSet<>();
+        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
+
+        return set;
     }
 }

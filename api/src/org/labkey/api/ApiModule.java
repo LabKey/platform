@@ -15,19 +15,22 @@
  */
 package org.labkey.api;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
@@ -45,9 +48,12 @@ import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.markdown.MarkdownService;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleXml;
+import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
@@ -62,6 +68,7 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
@@ -78,10 +85,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.ContainerUser;
 
-import javax.servlet.jsp.JspFactory;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -155,6 +164,7 @@ public class ApiModule extends CodeOnlyModule
             FileUtil.TestCase.class,
             HelpTopic.TestCase.class,
             InlineInClauseGenerator.TestCase.class,
+            JavaVersion.TestCase.class,
             JSONDataLoader.HeaderMatchTest.class,
             JSONDataLoader.MetadataTest.class,
             JSONDataLoader.RowTest.class,
@@ -162,6 +172,7 @@ public class ApiModule extends CodeOnlyModule
             MarkableIterator.TestCase.class,
             MaterializedQueryHelper.TestCase.class,
             MemTracker.TestCase.class,
+            ModuleContext.TestCase.class,
             ModuleDependencySorter.TestCase.class,
             MultiValuedRenderContext.TestCase.class,
             NumberUtilsLabKey.TestCase.class,
@@ -175,6 +186,7 @@ public class ApiModule extends CodeOnlyModule
             RReport.TestCase.class,
             Sampler.TestCase.class,
             SchemaKey.TestCase.class,
+            SessionHelper.TestCase.class,
             SimpleFilter.BetweenClauseTestCase.class,
             SimpleFilter.FilterTestCase.class,
             SimpleFilter.InClauseTestCase.class,
@@ -192,6 +204,15 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
+    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    {
+        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        //TODO: No test cases.
+        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        return list;
+    }
+
+    @Override
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
@@ -200,6 +221,7 @@ public class ApiModule extends CodeOnlyModule
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
+            BlockingCache.BlockingCacheTest.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
@@ -219,11 +241,12 @@ public class ApiModule extends CodeOnlyModule
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
             JspTemplate.TestCase.class,
+            LabKeyCollectors.TestCase.class,
             MapLoader.MapLoaderTestCase.class,
             MarkdownService.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
-            MultiValuedMapCollectors.TestCase.class,
+            ModuleXml.TestCase.class,
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
@@ -245,6 +268,7 @@ public class ApiModule extends CodeOnlyModule
             TableSelectorTestCase.class,
             TabLoader.TabLoaderTestCase.class,
             TempTableInClauseGenerator.TestCase.class,
+            TomcatVersion.TestCase.class,
             URLHelper.TestCase.class,
             ViewCategoryManager.TestCase.class,
             WorkbookContainerType.TestCase.class
@@ -259,5 +283,15 @@ public class ApiModule extends CodeOnlyModule
         return super.getJarFilenames().stream()
             .filter(fn->!fn.startsWith("labkey-client-api-"))
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        if (config != null)
+            json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+        return json;
     }
 }

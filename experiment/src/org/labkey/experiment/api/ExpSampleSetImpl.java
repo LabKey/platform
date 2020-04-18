@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
@@ -62,6 +63,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
@@ -98,11 +100,23 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return _object.detailsURL();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(ContainerUser cu)
+    {
+        ActionURL ret = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ret.addParameter("RowId", getRowId());
         return ret;
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return _object.getQueryRowReference();
     }
 
     @Override
@@ -254,6 +268,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getDomainProperty(_object.getIdCol3());
     }
 
+    //TODO remove
     @Override
     public DomainProperty getParentCol()
     {
@@ -677,6 +692,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
     }
 }

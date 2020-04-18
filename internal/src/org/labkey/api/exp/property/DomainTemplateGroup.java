@@ -54,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -192,6 +193,16 @@ public class DomainTemplateGroup
             .collect(Collectors.toMap(DomainTemplate::getTemplateKey, Function.identity()));
     }
 
+    public static Set<String> getTemplatesForDomainKind(Container c, String domainKindName)
+    {
+        Set<String> templates = new TreeSet<>();
+        Map<String, DomainTemplateGroup> groups = getAllGroups(c);
+        for (DomainTemplateGroup g : groups.values())
+            templates.addAll(g.getTemplates(domainKindName).keySet());
+
+        return templates;
+    }
+
     private final String _moduleName;
     private final String _groupName;
     private final List<DomainTemplate> _templates;
@@ -283,6 +294,11 @@ public class DomainTemplateGroup
 
     public Map<String, DomainTemplate> getTemplates()
     {
+        return getTemplates(null);
+    }
+
+    public Map<String, DomainTemplate> getTemplates(@Nullable String domainKind)
+    {
         Map<String, DomainTemplate> templates = new LinkedHashMap<>();
 
         Module m = ModuleLoader.getInstance().getModule(_moduleName);
@@ -294,7 +310,9 @@ public class DomainTemplateGroup
 
             String templateKey = t.getTemplateKey();
             assert templateKey.startsWith(key);
-            templates.put(templateKey, t);
+
+            if (domainKind == null || domainKind.equalsIgnoreCase(t.getDomainKind()))
+                templates.put(templateKey, t);
         }
 
         return templates;

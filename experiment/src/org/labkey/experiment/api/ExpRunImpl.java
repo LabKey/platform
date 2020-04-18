@@ -20,6 +20,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.cloud.CloudStoreService;
 import org.labkey.api.data.Container;
@@ -44,22 +48,25 @@ import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.DotGraph;
 import org.labkey.experiment.ExperimentRunGraph;
-import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.io.File;
 import java.io.IOException;
@@ -108,9 +115,38 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        return ExperimentController.getRunGraphURL(getContainer(), getRowId());
+        return _object.detailsURL();
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        ExpProtocol protocol = getProtocol();
+        if (protocol != null)
+        {
+            ProtocolImplementation impl = protocol.getImplementation();
+            if (impl != null)
+            {
+                QueryRowReference coords = impl.getQueryRowReference(protocol, this);
+                if (coords != null)
+                    return coords;
+            }
+
+            AssayService assayService = AssayService.get();
+            if (assayService != null)
+            {
+                AssayProvider provider = assayService.getProvider(this);
+                if (provider != null)
+                {
+                    SchemaKey schemaKey = AssayProtocolSchema.schemaName(provider, protocol);
+                    return new QueryRowReference(getContainer(), schemaKey, ExpSchema.TableType.Runs.name(), FieldKey.fromParts(ExpRunTable.Column.RowId), getRowId());
+                }
+            }
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Runs.name(), FieldKey.fromParts(ExpRunTable.Column.RowId), getRowId());
     }
 
     @Override
@@ -183,7 +219,8 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public boolean isFinalOutput(ExpData data)
     {
-        return data.getSourceApplication().getActionSequence() == getMaxOutputActionSequence();
+        ExpProtocolApplication sourceApplication = data.getSourceApplication();
+        return sourceApplication != null && sourceApplication.getActionSequence() == getMaxOutputActionSequence();
     }
 
     private int getMaxOutputActionSequence()

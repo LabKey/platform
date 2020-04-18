@@ -20,6 +20,8 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.ReexecutableDataregion;
+import org.labkey.api.query.ReexecutableRenderContext;
 import org.labkey.api.query.UserSchema;
 
 import java.io.IOException;
@@ -212,6 +214,14 @@ public class LineageDisplayColumn extends DataColumn implements IMultiValuedDisp
     @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value)
     {
+    }
+
+    @Override
+    public Class getDisplayValueClass()
+    {
+        if (null == innerDisplayColumn)
+            return String.class;
+        return innerDisplayColumn.getDisplayValueClass();
     }
 
     @Override

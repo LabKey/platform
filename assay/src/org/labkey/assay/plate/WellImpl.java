@@ -46,6 +46,7 @@ public class WellImpl extends PositionImpl implements Well
         setPlateId(plate.getRowId());
     }
 
+    @Override
     public double getValue()
     {
         return _value;
@@ -56,36 +57,43 @@ public class WellImpl extends PositionImpl implements Well
         _value = value;
     }
 
+    @Override
     public double getMax()
     {
         return _excluded ? Double.NaN : _value;
     }
 
+    @Override
     public double getMean()
     {
         return  _excluded ? Double.NaN : _value;
     }
 
+    @Override
     public double getMin()
     {
         return  _excluded ? Double.NaN : _value;
     }
 
+    @Override
     public double getStdDev()
     {
         return 0;
     }
 
+    @Override
     public Double getDilution()
     {
         return _dilution;
     }
 
+    @Override
     public void setDilution(Double dilution)
     {
         _dilution = dilution;
     }
 
+    @Override
     public PlateImpl getPlate()
     {
         return _plate;

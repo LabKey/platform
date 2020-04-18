@@ -285,7 +285,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol)
     {
         AssayTableMetadata metadata = super.getTableMetadata(protocol);
-        return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName())
+        return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName(), metadata.getResultLsidFieldKey())
         {
             @Override
             public FieldKey getParticipantIDFieldKey()

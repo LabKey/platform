@@ -16,6 +16,7 @@
 
 package org.labkey.api.pipeline;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -83,7 +84,7 @@ public interface PipeRoot extends SecurableResource
      * Delete the import directory and its contents
      * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
      */
-    void deleteImportDirectory() throws DirectoryNotDeletedException;
+    void deleteImportDirectory(@Nullable Logger log) throws DirectoryNotDeletedException;
 
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);

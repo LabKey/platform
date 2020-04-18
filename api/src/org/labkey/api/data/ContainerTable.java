@@ -238,14 +238,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         if (StringUtils.equalsIgnoreCase("iconurl",name))
         {
             var iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
-            iconCol.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new IconDisplayColumn(colInfo);
-                }
-            });
+            iconCol.setDisplayColumnFactory(IconDisplayColumn::new);
             return iconCol;
         }
         return super.resolveColumn(name);

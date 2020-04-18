@@ -46,6 +46,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.specimen.LocationCache;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -152,7 +153,14 @@ public class LocationTable extends BaseStudyTable
                 throw new BatchValidationException(Collections.singletonList(new ValidationException("Location not found: " + locId)), extraScriptContext);
             loc.createMutable();    // Test mutability
 
-            return super.updateRows(user, c, rows, oldKeys, configParameters, extraScriptContext);
+            try
+            {
+                return super.updateRows(user, c, rows, oldKeys, configParameters, extraScriptContext);
+            }
+            finally
+            {
+                LocationCache.clear(c);
+            }
         }
 
         @Override
@@ -194,6 +202,7 @@ public class LocationTable extends BaseStudyTable
 
                 try
                 {
+                    // Note: deleteLocation() clears the location cache
                     StudyManager.getInstance().deleteLocation(loc);
                 }
                 catch (ValidationException e)
@@ -322,7 +331,15 @@ public class LocationTable extends BaseStudyTable
                 .append(" = ")
                 .append(schema.getSqlDialect().wrapExistsExpression(existsSQL));
 
-            new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
+            try
+            {
+                new SqlExecutor(locationTableInfo.getSchema()).execute(updateSQL);
+            }
+            finally
+            {
+                // Not strictly required, since LocationImpl doesn't currently hold inUse
+                LocationCache.clear(container);
+            }
         }
     }
 

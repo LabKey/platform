@@ -56,6 +56,7 @@ import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -328,7 +329,7 @@ public class SpecimenController extends BaseStudyController
         // to let the user apply subsequent filters and switch back and forth between vial and specimen view
         // without losing their original participant/visit selection.
         Set<String> lsids = null;
-        if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+        if (isPost())
             lsids = DataRegionSelection.getSelected(getViewContext(), true);
         HttpSession session = getViewContext().getRequest().getSession(true);
         Pair<Container, Set<String>> selectionCache = (Pair<Container, Set<String>>) session.getAttribute(SELECTED_SAMPLES_SESSION_ATTRIB_KEY);
@@ -1132,7 +1133,7 @@ public class SpecimenController extends BaseStudyController
                     form.isSubmissionResult(), form.getReturnUrl());
             if (form.getExport() != null)
             {
-                bean.getSpecimenQueryView().getSettings().setMaxRows(-1);   // #34998; exporting specimens in a request should include all of them
+                bean.getSpecimenQueryView().getSettings().setMaxRows(Table.ALL_ROWS);   // #34998; exporting specimens in a request should include all of them
                 getUtils().writeExportData(bean.getSpecimenQueryView(), form.getExport());
                 return null;
             }
@@ -5890,55 +5891,6 @@ public class SpecimenController extends BaseStudyController
         if (tableInfo instanceof SpecimenDetailTable)
             ((SpecimenDetailTable)tableInfo).changeRequestableColumn();
     }
-
-
-    public static class DesignerForm extends ReturnUrlForm
-    {
-    }
-
-
-    @RequiresPermission(AdminPermission.class)
-    public class DesignerAction extends SimpleViewAction<DesignerForm>
-    {
-        private DesignerForm _form;
-
-        @Override
-        public ModelAndView getView(DesignerForm form, BindException errors)
-        {
-            _form = form;
-            Map<String, String> properties = new HashMap<>();
-
-            if (form.getReturnUrl() != null)
-            {
-                properties.put(ActionURL.Param.returnUrl.name(), form.getReturnUrl());
-            }
-
-            // hack for 4404 : Lookup picker performance is terrible when there are many containers
-            ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-            return new StudyGWTView(new StudyApplication.SpecimenDesigner(), properties);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            setHelpTopic("manageSpecimens#editProperties");
-            _appendManageStudy(root);
-            root.addChild("Specimen Properties");
-            return root;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class ServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new SpecimenServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresSiteAdmin
     public class PivotAction extends SimpleViewAction<Object>

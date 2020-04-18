@@ -220,7 +220,7 @@ public class ToolsController extends SpringActionController
                 if (!jspFiles.isEmpty())
                 {
                     out.println();
-                    out.println("The following " + StringUtilsLabKey.pluralize(jspFiles.size(), "JSP file is a", "JSP files are") + " strong candidates for removal:");
+                    out.println("The following " + (jspFiles.size() == 1 ? "JSP file is a strong candidate" : jspFiles.size() + " JSP files are strong candidates") + " for removal:");
                     out.println();
                     jspFiles.forEach(path->out.println(filter(path)));
                 }

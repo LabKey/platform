@@ -39,6 +39,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
 {
     private final Results _results;
     protected final List<DisplayColumn> _displayColumns;
+    protected final Map<String, String> _renameColumn;
 
     private int _dataRowCount;
 
@@ -49,6 +50,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tinfo, Collections.emptySet(), RenderContext.getSelectColumns(displayColumns, tinfo));
             _results = ctx.getResults(columns, displayColumns, tinfo, null, null, Table.ALL_ROWS, Table.NO_OFFSET, name, false);
             _displayColumns = init(displayColumns);
+            _renameColumn = Collections.emptyMap();
         }
         catch (SQLException e)
         {
@@ -61,6 +63,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         _results = results;
         _displayColumns = init(results.getFieldMap().values());
+        _renameColumn = Collections.emptyMap();
     }
 
     /**
@@ -76,6 +79,14 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     {
         _results = results;
         _displayColumns = init(displayColumns);
+        _renameColumn = Collections.emptyMap();
+    }
+
+    public TSVGridWriter(Results results, List<DisplayColumn> displayColumns, Map<String, String> renameColumn)
+    {
+        _results = results;
+        _displayColumns = init(displayColumns);
+        _renameColumn = renameColumn;
     }
 
     private static List<DisplayColumn> init(Collection<ColumnInfo> cols)
@@ -109,7 +120,7 @@ public class TSVGridWriter extends TSVColumnWriter implements ExportWriter
     public void writeColumnHeaders()
     {
         RenderContext context = getRenderContext();
-        writeColumnHeaders(context, _displayColumns);
+        writeColumnHeaders(context, _displayColumns, _renameColumn);
     }
 
     private RenderContext getRenderContext()

@@ -54,7 +54,6 @@ import org.labkey.search.view.DefaultSearchResultTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -308,9 +307,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-    final Item _commitItem = new Item(null, () ->
-    {
-    }, PRIORITY.commit);
+    final Item _commitItem = new Item(null, () -> {}, PRIORITY.commit);
 
 
     @Override
@@ -355,7 +352,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         }
     }
 
-    
 
     private final SavePaths _savePaths = new SavePaths();
 
@@ -364,7 +360,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     {
         _savePaths.updateFile(path, new Date(time), new Date(indexed));
     }
-
 
     @Override
     public final void deleteContainer(final String id)
@@ -379,11 +374,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         queueItem(new Item(defaultTask(), r, PRIORITY.background));
     }
 
-
     @Override
-    public final void clearLastIndexed()
+    public void clearLastIndexed()
     {
         _log.info("Clearing last indexed for all providers");
+
         for (DocumentProvider p : _documentProviders)
         {
             try
@@ -396,13 +391,20 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 _log.error("Unexpected error", t);
             }
         }
+
         // CONSIDER: have DavCrawler implement DocumentProvider and listen for indexDeleted()
         DavCrawler.getInstance().clearFailedDocuments();
-
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
-    
+    public void reindexContainer(Container c)
+    {
+        deleteContainer(c.getId());
+
+        //Recrawl documents/files as the container name may be used in paths & Urls. Issue #39696
+        DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getId()), true);
+    }
+
     private void queueItem(Item i)
     {
         // UNDONE: this is not 100% correct, consider passing in a scope with Item
@@ -557,7 +559,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             String docid = in.getParameter("_docid");
             if (StringUtils.isEmpty(docid))
                 return;
-            SearchHit hit = ((LuceneSearchServiceImpl)this).find(docid);
+            SearchHit hit = find(docid);
             if (null == hit || null == hit.url)
                 return;
 
@@ -1045,8 +1047,6 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
-
-
     private final ArrayList<SearchCategory> _searchCategories = new ArrayList<>();
     private final Object _categoriesLock = new Object();
 
@@ -1076,8 +1076,8 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         synchronized (_categoriesLock)
         {
             _searchCategories.add(category);
-            SearchCategory[] arr = _searchCategories.toArray(new SearchCategory[_searchCategories.size()]);
-            _readonlyCategories = Collections.unmodifiableList(Arrays.asList(arr));
+            SearchCategory[] arr = _searchCategories.toArray(new SearchCategory[0]);
+            _readonlyCategories = List.of(arr);
         }
     }
 
@@ -1089,7 +1089,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         
         List<SearchCategory> cats = _readonlyCategories;
         List<SearchCategory> usedCats = new ArrayList<>();
-        List<String> requestedCats = Arrays.asList(categories.split("\\+"));
+        String[] requestedCats = categories.split("\\+");
         for (SearchCategory cat : cats)
         {
             for (String usedCat : requestedCats)

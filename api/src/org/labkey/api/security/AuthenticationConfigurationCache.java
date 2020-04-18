@@ -5,10 +5,8 @@ import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
 
@@ -26,7 +24,7 @@ public class AuthenticationConfigurationCache
 {
     // We have just a single object to cache (a global AuthenticationConfigurationCollections), but use standard cache (blocking cache wrapping the
     // shared cache) for convenience and to ensure that configuration changes will get propagated once multiple application servers are supported.
-    private static final BlockingCache<String, AuthenticationConfigurationCollections> CACHE = new BlockingStringKeyCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationConfigurationCollections());
+    private static final BlockingCache<String, AuthenticationConfigurationCollections> CACHE = new BlockingCache<>(CacheManager.getSharedCache(), (key, argument) -> new AuthenticationConfigurationCollections());
     private static final String CACHE_KEY = AuthenticationConfigurationCache.class.getName();
 
     static
@@ -37,19 +35,19 @@ public class AuthenticationConfigurationCache
 
     private static class AuthenticationConfigurationCollections
     {
-        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> _allMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
         {
             @Override
-            protected Set<AuthenticationConfiguration> createCollection()
+            protected Set<AuthenticationConfiguration<?>> createCollection()
             {
                 return new LinkedHashSet<>();
             }
         };
 
-        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
+        private final SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> _activeMap = new AbstractSetValuedMap<>(new LinkedHashMap<>())
         {
             @Override
-            protected Set<AuthenticationConfiguration> createCollection()
+            protected Set<AuthenticationConfiguration<?>> createCollection()
             {
                 return new LinkedHashSet<>();
             }
@@ -64,11 +62,14 @@ public class AuthenticationConfigurationCache
             // AuthenticationConfigurations in a single operation. This allows the provider to definitively record current
             // state, for example, the LDAP provider can stash all the email domains tied to LDAP authentication, to tailor
             // messages on administration pages.
-            Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap =
-                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), null, new Sort("RowId"))
+            Map<AuthenticationConfigurationFactory, List<Map<String, Object>>> configurationMap =
+                new TableSelector(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations()) // Don't bother sorting since we're grouping by provider
                     .mapStream()
-                    .filter(m->null != getProvider(m))  // Filter out providers that no longer exist - null keys throw
-                    .collect(Collectors.groupingBy(this::getProvider));
+                    .filter(m->{
+                        AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, (String)m.get("Provider"));
+                        return (null != provider && (!acceptOnlyFicamProviders || provider.isFicamApproved()));
+                    })
+                    .collect(Collectors.groupingBy(this::getAuthenticationConfigurationFactory));
 
             // Bit of a hack: LdapProvider sets "ldapDomain" to the first configuration's domain. We should add getDomain()
             // to AuthenticationConfiguration and collect all email domains, caching them with the collections. This is only
@@ -76,49 +77,51 @@ public class AuthenticationConfigurationCache
             AuthenticationManager.setLdapDomain(null);
 
             // Add each group of configurations
-            addConfigurations(configurationMap, acceptOnlyFicamProviders);
+            addConfigurations(configurationMap);
 
             // Gather and add all the "permanent" configurations -- this should be just a single configuration for Database authentication
             Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> permanentMap = AuthenticationManager.getAllPrimaryProviders().stream()
                 .filter(AuthenticationProvider::isPermanent)
                 .collect(Collectors.toMap(p->p, p->Collections.emptyList()));
 
-            addConfigurations(permanentMap, acceptOnlyFicamProviders);
+            addConfigurations(permanentMap);
         }
 
         // Little helper method simplifies the stream handling above
-        private @Nullable PrimaryAuthenticationProvider getProvider(Map<String, Object> map)
+        private @NotNull AuthenticationConfigurationFactory<?> getAuthenticationConfigurationFactory(Map<String, Object> map)
         {
-            return AuthenticationProviderCache.getProvider(PrimaryAuthenticationProvider.class, (String)map.get("Provider"));
+            String providerName = (String)map.get("Provider");
+            AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, providerName);
+            if (provider instanceof AuthenticationConfigurationFactory)
+                return (AuthenticationConfigurationFactory<?>)provider;
+
+            throw new IllegalStateException("AuthenticationProvider does not implement AuthenticationConfigurationFactory: " + providerName);
         }
 
         // Add all the configurations, one provider group at a time
-        private void addConfigurations(Map<PrimaryAuthenticationProvider, List<Map<String, Object>>> configurationMap, boolean acceptOnlyFicamProviders)
+        private void addConfigurations(Map<? extends AuthenticationConfigurationFactory, List<Map<String, Object>>> configurationMap)
         {
             configurationMap.entrySet().stream()
-                .filter(e->(!acceptOnlyFicamProviders || e.getKey().isFicamApproved()))
                 .map(e->getConfigurations(e.getKey(), e.getValue()))
                 .flatMap(Collection::stream)
                 .sorted(AUTHENTICATION_CONFIGURATION_COMPARATOR)
                 .forEach(this::addConfiguration);
         }
 
-        // For now, group by provider type (SSO vs. LDAP) and order by rowId within those groupings
-        private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR =
-            ((Comparator<AuthenticationConfiguration>) (o1, o2) -> Boolean.compare(o1 instanceof LoginFormAuthenticationConfiguration, o2 instanceof LoginFormAuthenticationConfiguration))
-            .thenComparing(AuthenticationConfiguration::getRowId);
+        // Order by SortOrder & RowId
+        private static final Comparator<AuthenticationConfiguration> AUTHENTICATION_CONFIGURATION_COMPARATOR = Comparator.<AuthenticationConfiguration>comparingInt(AuthenticationConfiguration::getSortOrder).thenComparingInt(AuthenticationConfiguration::getRowId);
 
         // Translate a provider's maps into ConfigurationSettings and then ask the provider to convert these into AuthenticationConfigurations
-        private List<AuthenticationConfiguration> getConfigurations(PrimaryAuthenticationProvider provider, List<Map<String, Object>> list)
+        private List<AuthenticationConfiguration> getConfigurations(AuthenticationConfigurationFactory factory, List<Map<String, Object>> list)
         {
             List<ConfigurationSettings> settings = list.stream()
                 .map(ConfigurationSettings::new)
                 .collect(Collectors.toList());
 
-            return provider.getAuthenticationConfigurations(settings);
+            return factory.getAuthenticationConfigurations(settings);
         }
 
-        private void addConfiguration(AuthenticationConfiguration configuration)
+        private void addConfiguration(AuthenticationConfiguration<?> configuration)
         {
             addToMap(_allMap, configuration);
 
@@ -126,7 +129,7 @@ public class AuthenticationConfigurationCache
                 addToMap(_activeMap, configuration);
         }
 
-        private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration> map, AuthenticationConfiguration configuration)
+        private void addToMap(SetValuedMap<Class<? extends AuthenticationConfiguration>, AuthenticationConfiguration<?>> map, AuthenticationConfiguration<?> configuration)
         {
             map.put(configuration.getClass(), configuration);
             AuthenticationConfiguration.ALL_CONFIGURATION_INTERFACES
@@ -135,14 +138,14 @@ public class AuthenticationConfigurationCache
                 .forEach(providerClass -> map.put(providerClass, configuration));
         }
 
-        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getAll(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getAll(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _allMap.get(clazz);
 
             return null != configurations ? configurations : Collections.emptyList();
         }
 
-        private @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+        private @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getActive(Class<T> clazz)
         {
             Collection<T> configurations = (Collection<T>) _activeMap.get(clazz);
 
@@ -156,7 +159,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    public static @NotNull <T extends AuthenticationConfiguration> Collection<T> getConfigurations(Class<T> clazz)
+    public static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getConfigurations(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getAll(clazz);
     }
@@ -167,7 +170,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return A collection of the requested configurations
      */
-    static @NotNull <T extends AuthenticationConfiguration> Collection<T> getActive(Class<T> clazz)
+    static @NotNull <T extends AuthenticationConfiguration<?>> Collection<T> getActive(Class<T> clazz)
     {
         return CACHE.get(CACHE_KEY).getActive(clazz);
     }
@@ -178,7 +181,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getActiveConfiguration(Class<T> clazz, int rowId)
+    public static @Nullable <T extends AuthenticationConfiguration<?>> T getActiveConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getActive(clazz))
             if (configuration.getRowId() == rowId)
@@ -193,7 +196,7 @@ public class AuthenticationConfigurationCache
      * @param <T> The interface type
      * @return The requested configuration or null if not found
      */
-    public static @Nullable <T extends AuthenticationConfiguration> T getConfiguration(Class<T> clazz, int rowId)
+    public static @Nullable <T extends AuthenticationConfiguration<?>> T getConfiguration(Class<T> clazz, int rowId)
     {
         for (T configuration : getConfigurations(clazz))
             if (configuration.getRowId() == rowId)

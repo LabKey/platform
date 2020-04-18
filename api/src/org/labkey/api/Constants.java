@@ -17,11 +17,14 @@ package org.labkey.api;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.VersionNumber;
 
+import java.time.Year;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -31,56 +34,77 @@ import java.util.function.Function;
  */
 public class Constants
 {
-    private static final Collection<Double> VALID_VERSIONS;
-
-    static
-    {
-        Collection<Double> list = new LinkedList<>();
-        double version = ModuleLoader.EARLIEST_UPGRADE_VERSION;
-
-        while (version <= getNextReleaseVersion())
-        {
-            list.add(version);
-            version = incrementVersion(version);
-        }
-
-        VALID_VERSIONS = Collections.unmodifiableCollection(list);
-    }
-
-
     /**
-     * The most recent official release version number is used to generate help topics, tag all code-only modules, and
-     * drive the script consolidation process. This constant should be updated just before branching each major release.
-     *
-     * @return The last official release version number
+     * Returns the earliest core module schema version that this server will upgrade. This constant should be updated
+     * every major release.
      */
-    public static double getPreviousReleaseVersion()
+    public static double getEarliestUpgradeVersion()
     {
-        return 19.30;
+        return 18.1;
     }
 
     /**
-     * The next official release version number, based on LabKey's standard release numbering sequence, for example:
-     * <p>
-     * 17.10, 17.20, 17.30, 18.10, 18.20...
-     * <p>
-     * This is used in the script consolidation process.
-     *
-     * @return The next official release version number
+     * Returns the documentation folder name associated with this version of LabKey. These names have typically been the
+     * version numbers of each major release, therefore, this constant should be updated just before every major release.
      */
-    public static double getNextReleaseVersion()
+    public static String getDocumentationVersion()
     {
-        return incrementVersion(getPreviousReleaseVersion());
+        return "20.3";
     }
 
-    public static double incrementVersion(double version)
+    /**
+     * Returns the current "base" schema version, the lowest schema version for modules that LabKey manages. The year
+     * portion gets incremented annually in late December, just before we create the xx.1 branch.
+     */
+    public static double getLowestSchemaVersion()
     {
-        return changeVersion(version, fractional -> (3 == fractional ? 8 : 1));
+        return 20.000;
     }
 
-    public static double decrementVersion(double version)
+    /**
+     * Returns the maximum number of modules supported by the system
+     */
+    public static int getMaxModules()
     {
-        return changeVersion(version, fractional -> -(1 == fractional ? 8 : 1));
+        return 200;
+    }
+
+    /**
+     * Returns the maximum number of containers supported by the system
+     */
+    public static int getMaxContainers()
+    {
+        return 100_000;
+    }
+
+    public static Collection<Double> getMajorSchemaVersions()
+    {
+        return SCHEMA_VERSIONS;
+    }
+
+    /**
+     * Returns the next major schema version number, based on LabKey's standard schema numbering sequence, accommodating
+     * the schema versioning change made in January 2020.
+     */
+    private static double getNextReleaseVersion()
+    {
+        return incrementVersion(getLowestSchemaVersion());
+    }
+
+    private static double incrementVersion(double version)
+    {
+        if (version == 19.30)
+            return 20.000;
+
+        return version < 19.30 ? changeVersion(version, fractional -> (3 == fractional ? 8 : 1)) : version + 1;
+    }
+
+    private static double decrementVersion(double version)
+    {
+        if (version == 20.000)
+            return 19.30;
+
+        return version < 20.000 ? changeVersion(version, fractional -> -(1 == fractional ? 8 : 1)) : version - 1;
     }
 
     private static double changeVersion(double version, Function<Integer, Integer> function)
@@ -91,27 +115,21 @@ public class Constants
         return (round + function.apply(fractional)) / 10.0;
     }
 
-    public static Collection<Double> getValidVersions()
-    {
-        return VALID_VERSIONS;
-    }
+    private static final Collection<Double> SCHEMA_VERSIONS;
 
-    /**
-     * @return The maximum number of modules supported by the system
-     */
-    public static int getMaxModules()
+    static
     {
-        return 200;
-    }
+        Collection<Double> list = new LinkedList<>();
+        double version = getEarliestUpgradeVersion();
 
-    /**
-     * @return The maximum number of containers supported by the system
-     */
-    public static int getMaxContainers()
-    {
-        return 100_000;
-    }
+        while (version <= getNextReleaseVersion())
+        {
+            list.add(version);
+            version = incrementVersion(version);
+        }
 
+        SCHEMA_VERSIONS = Collections.unmodifiableCollection(list);
+    }
 
     public static class TestCase extends Assert
     {
@@ -120,12 +138,37 @@ public class Constants
         {
             double version = 16.20;
 
-            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20, 19.30, 20.10, 20.20, 20.30, 21.10})
+            for (double expected : new double[]{16.30, 17.10, 17.20, 17.30, 18.10, 18.20, 18.30, 19.10, 19.20, 19.30, 20.000, 21.000, 22.000, 23.000})
             {
                 double previous = version;
                 version = incrementVersion(version);
                 assertEquals(expected, version, 0);
                 assertEquals(previous, decrementVersion(version), 0);
+            }
+        }
+
+        @Test
+        public void testLowestSchemaVersion()
+        {
+            double lowest = getLowestSchemaVersion();
+            double expected = Math.round(Year.now().getValue() / 100.0);
+            assertEquals("It's time to update Constants.getLowestSchemaVersion()!", expected, lowest, 0.0);
+        }
+
+        @Test
+        public void testDocumentationLink()
+        {
+            String releaseVersion = AppProps.getInstance().getReleaseVersion();
+
+            if (!AppProps.UNKNOWN_VERSION.equals(releaseVersion))
+            {
+                // If this is a production release version (e.g., 20.7, 21.3, 22.11) then the doc link should match
+                VersionNumber vn = new VersionNumber(releaseVersion);
+                if (Set.of(3, 7, 11).contains(vn.getMinor()))
+                {
+                    String currentVersion = vn.getMajor() + "." + vn.getMinor();
+                    assertEquals("It's time to update Constants.getDocumentationVersion()!", currentVersion, getDocumentationVersion());
+                }
             }
         }
     }

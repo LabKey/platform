@@ -127,27 +127,8 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
-import org.labkey.assay.actions.AssayBatchesAction;
-import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
-import org.labkey.assay.actions.DeleteProtocolAction;
-import org.labkey.assay.actions.GetAssayBatchAction;
-import org.labkey.assay.actions.GetAssayBatchesAction;
-import org.labkey.assay.actions.GetAssayRunAction;
-import org.labkey.assay.actions.GetAssayRunsAction;
-import org.labkey.assay.actions.GetProtocolAction;
-import org.labkey.assay.actions.ImportAction;
-import org.labkey.assay.actions.ImportRunApiAction;
-import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
-import org.labkey.assay.actions.SaveAssayBatchAction;
-import org.labkey.assay.actions.SaveAssayRunsAction;
-import org.labkey.assay.actions.SaveProtocolAction;
-import org.labkey.assay.actions.SetDefaultValuesAssayAction;
-import org.labkey.assay.actions.ShowSelectedDataAction;
-import org.labkey.assay.actions.ShowSelectedRunsAction;
-import org.labkey.assay.actions.TemplateAction;
-import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.actions.*;
+import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -209,7 +190,8 @@ public class AssayController extends SpringActionController
             AssayDetailRedirectAction.class,
             SaveProtocolAction.class,
             GetProtocolAction.class,
-            DeleteProtocolAction.class
+            DeleteProtocolAction.class,
+            AssayPlateMetadataTemplateAction.class
         );
 
     public AssayController()
@@ -796,7 +778,7 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
-                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser());
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
                 {
@@ -1055,44 +1037,8 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, Lsid assayResultRowLsid)
+        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId)
         {
-            assert provider.getResultRowLSIDPrefix().equals(assayResultRowLsid.getNamespacePrefix());
-            String namespaceSuffix = assayResultRowLsid.getNamespaceSuffix();
-
-            // LSID namespace suffix format expected to be: "Protocol-" + <protocol-row-id>
-            ExpProtocol protocol = null;
-            if (namespaceSuffix.startsWith("Protocol-"))
-            {
-                try
-                {
-                    int protocolId = Integer.parseInt(namespaceSuffix.substring("Protocol-".length()));
-                    if (protocolId > 0)
-                        protocol = ExperimentService.get().getExpProtocol(protocolId);
-                }
-                catch (NumberFormatException ex)
-                {
-                    // ignore
-                }
-            }
-
-            if (protocol == null)
-                return null;
-
-            // LSID object id expected to be rowId
-            int rowId = -1;
-            try
-            {
-                rowId = Integer.parseInt(assayResultRowLsid.getObjectId());
-            }
-            catch (NumberFormatException ex)
-            {
-                // ignore
-            }
-
-            if (rowId <= 0)
-                return null;
-
             ActionURL resultsURL = getAssayResultsURL(container, protocol);
             resultsURL.addFilter("Data", FieldKey.fromParts("rowId"), CompareType.EQUAL, rowId);
             return resultsURL;
@@ -1236,6 +1182,12 @@ public class AssayController extends SpringActionController
             ActionURL fakeURL = new ActionURL(ShowSelectedRunsAction.class, ContainerManager.getHomeContainer());
             fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME, AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
             return fakeURL.getParameters().get(0).getKey();
+        }
+
+        @Override
+        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider)
+        {
+            return provider.getPlateMetadataTemplateURL(container);
         }
     }
 

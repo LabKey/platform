@@ -18,7 +18,6 @@ package org.labkey.api.module;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -40,23 +39,21 @@ import org.labkey.api.data.SqlScriptRunner.SqlScriptProvider;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -66,13 +63,6 @@ import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.clientLibrary.xml.DependencyType;
-import org.labkey.data.xml.PermissionType;
-import org.labkey.moduleProperties.xml.ModuleDocument;
-import org.labkey.moduleProperties.xml.ModuleType;
-import org.labkey.moduleProperties.xml.OptionsListType;
-import org.labkey.moduleProperties.xml.PropertyType;
-import org.labkey.moduleProperties.xml.RequiredModuleType;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -99,6 +89,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Standard base class for modules, supplies no-op implementations for many optional methods.
@@ -108,26 +99,25 @@ import java.util.Set;
 public abstract class DefaultModule implements Module, ApplicationContextAware
 {
     public static final String CORE_MODULE_NAME = "Core";
-    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
 
+    private static final String DEPENDENCIES_FILE_PATH = "credits/dependencies.txt";
     private static final Logger _log = Logger.getLogger(DefaultModule.class);
-    private static final Set<Pair<Class<?>, String>> INSTANTIATED_MODULES = new HashSet<>();
-    private static final String XML_FILENAME = "module.xml";
+    private static final Set<Pair<Class<? extends DefaultModule>, String>> INSTANTIATED_MODULES = new HashSet<>();
+    static final ModuleResourceCache<ModuleXml> MODULE_XML_CACHE = ModuleResourceCaches.create("module.xml files", new ModuleXmlCacheHandler(), ResourceRootProvider.getStandard(new Path()));
 
     private final Queue<Pair<String, Runnable>> _deferredUpgradeRunnables = new LinkedList<>();
     private final Map<String, Class<? extends Controller>> _controllerNameToClass = new LinkedHashMap<>();
     private final Map<Class<? extends Controller>, String> _controllerClassToName = new HashMap<>();
     private final Set<String> _moduleDependencies = new CaseInsensitiveHashSet();
-    private Set<Module> _resolvedModuleDependencies;
     private final Map<String, ModuleProperty> _moduleProperties = new LinkedHashMap<>();
-    private final LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
+    private Set<Module> _resolvedModuleDependencies;
     private Collection<WebPartFactory> _webPartFactories;
     private ModuleResourceResolver _resolver;
     private String _name = null;
     private String _label = null;
     private String _description = null;
-    private double _version = 0.0;
+    private Double _schemaVersion = null;
     private double _requiredServerVersion = 0.0;
     private String _moduleDependenciesString = null;
     private String _url = null;
@@ -150,20 +140,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildNumber = null;
     private String _enlistmentId = null;
     private File _explodedPath = null;
-    protected String _resourcePath = null;
-    private boolean _requireSitePermission = false;
-
-    private Boolean _consolidateScripts = null;
+    private File _zippedPath = null;
     private Boolean _manageVersion = null;
-    private String _labkeyVersion = null;
+    private String _releaseVersion = null;
 
     // for displaying development status of module
     private boolean _sourcePathMatched = false;
     private boolean _sourceEnlistmentIdMatched = false;
 
+    protected String _resourcePath = null;
 
     protected DefaultModule()
     {
+        assert MemTracker.getInstance().put(this);
     }
 
     @Override
@@ -219,7 +208,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         {
             //simple modules all use the same Java class, so we need to also include
             //the module name in the instantiated modules set
-            Pair<Class<?>, String> reg = new Pair<>(getClass(), getName());
+            Pair<Class<? extends DefaultModule>, String> reg = new Pair<>(getClass(), getName());
             if (INSTANTIATED_MODULES.contains(reg))
                 throw new IllegalStateException("An instance of module " + getClass() +  " with name '" + getName() + "' has already been created. Modules should be singletons");
             else
@@ -231,6 +220,15 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 //        _resolver = new ModuleResourceResolver(this, getResourceDirectories(), getResourceClasses());
 
         init();
+    }
+
+    public void unregister()
+    {
+        synchronized(INSTANTIATED_MODULES)
+        {
+            Pair<Class, String> reg = new Pair<>(getClass(), getName());
+            INSTANTIATED_MODULES.remove(reg);
+        }
     }
 
     protected abstract void init();
@@ -248,10 +246,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     final public void startup(ModuleContext moduleContext)
     {
-        Resource xml = getModuleResolver().lookup(Path.parse(XML_FILENAME));
-        if (xml != null)
-            loadXmlFile(xml);
-
         doStartup(moduleContext);
     }
 
@@ -306,20 +300,11 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _controllerNameToClass.put(controllerName, controllerClass);
     }
 
-
     @Override
     public String getTabName(ViewContext context)
     {
         return getName();
     }
-
-
-    @Override
-    public String getFormattedVersion()
-    {
-        return ModuleContext.formatVersion(getVersion());
-    }
-
 
     @Override
     public void beforeUpdate(ModuleContext moduleContext)
@@ -336,12 +321,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (hasScripts())
         {
+            if (null == getSchemaVersion())
+            {
+                // TODO: Change to an assert or exception once we no longer support old version methods/properties
+                _log.warn("getSchemaVersion() was null for module: " + getName() + " even though hasScripts() was true");
+                return;
+            }
+
             SqlScriptProvider provider = new FileSqlScriptProvider(this);
 
             for (DbSchema schema : provider.getSchemas())
             {
                 SqlScriptManager manager = SqlScriptManager.get(provider, schema);
-                List<SqlScript> scripts = manager.getRecommendedScripts(getVersion());
+                List<SqlScript> scripts = manager.getRecommendedScripts(getSchemaVersion());
 
                 if (!scripts.isEmpty())
                     SqlScriptRunner.runScripts(this, moduleContext.getUpgradeUser(), scripts);
@@ -573,7 +565,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
     public String getName()
     {
@@ -594,25 +585,34 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _name = name;
     }
 
-    // TODO: Mark getter as final and call setter in subclass constructors instead of overriding
     @Override
-    public double getVersion()
+    public @Nullable Double getSchemaVersion()
     {
-        return _version;
+        // For now, delegate to getVersion() for modules that still override that method
+        if (-1 != getVersion())
+        {
+            _log.warn("The \"" + getName() + "\" module overrides the getVersion() method, which is no longer supported. Please override getSchemaVersion() instead.");
+
+            return getVersion();
+        }
+        else
+        {
+            return _schemaVersion;
+        }
     }
 
-    public final void setVersion(double version)
+    public final void setSchemaVersion(Double schemaVersion)
     {
         checkLocked();
-        if (0.0 == version)
+        if (null == schemaVersion)
             return;
-        if (0.0 != _version)
+        if (null != _schemaVersion)
         {
-            if (_version != version)
-                _log.error("Attempt to change version of module from " + _version + " to " + version + ".");
+            if (!_schemaVersion.equals(schemaVersion))
+                _log.error("Attempt to change version of module from " + _schemaVersion + " to " + schemaVersion + ".");
             return;
         }
-        _version = version;
+        _schemaVersion = schemaVersion;
     }
 
     public final double getRequiredServerVersion()
@@ -686,6 +686,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return _maintainer;
     }
 
+    @SuppressWarnings("unused")
     public final void setMaintainer(String maintainer)
     {
         checkLocked();
@@ -958,28 +959,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @SuppressWarnings("unused")
-    public Boolean getConsolidateScripts()
-    {
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
-    public void setConsolidateScripts(Boolean consolidate)
-    {
-        _consolidateScripts = consolidate;
-    }
-
-    @Override
-    public boolean shouldConsolidateScripts()
-    {
-        // Default value depends on location -- we don't consolidate external modules
-        if (null == _consolidateScripts)
-            return !getSourcePath().contains("externalModules");
-
-        return _consolidateScripts;
-    }
-
-    @SuppressWarnings("unused")
     public Boolean getManageVersion()
     {
         return _manageVersion;
@@ -991,26 +970,22 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _manageVersion = manageVersion;
     }
 
-
     @Override
     public boolean shouldManageVersion()
     {
-        // Default value depends on location -- we don't manage module versions in external modules
-        if (null == _manageVersion)
-            return !getSourcePath().contains("externalModules");
-
-        return _manageVersion;
+        return _manageVersion != Boolean.FALSE;
     }
 
-    public String getLabkeyVersion()
+    @Override
+    public @Nullable String getReleaseVersion()
     {
-        return _labkeyVersion;
+        return _releaseVersion;
     }
 
     @SuppressWarnings("unused")
-    public void setLabkeyVersion(String labkeyVersion)
+    public void setReleaseVersion(String releaseVersion)
     {
-        _labkeyVersion = labkeyVersion;
+        _releaseVersion = releaseVersion;
     }
 
     @Override
@@ -1019,9 +994,9 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Map<String, String> props = new LinkedHashMap<>();
 
         props.put("Module Class", getClass().getName());
-        props.put("Version", getFormattedVersion());
-        if (StringUtils.isNotBlank(getLabkeyVersion()))
-            props.put("LabKey Version", getLabkeyVersion());
+        props.put("Schema Version", getFormattedSchemaVersion());
+        if (StringUtils.isNotBlank(getReleaseVersion()))
+            props.put("Release Version", getReleaseVersion());
         if (StringUtils.isNotBlank(getAuthor()))
             props.put("Author", getAuthor());
         if (StringUtils.isNotBlank(getMaintainer()))
@@ -1047,6 +1022,8 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
         props.put("Source Path", getSourcePath());
+        if (null != getZippedPath())
+            props.put("Module File", getZippedPath().getPath());
         props.put("Build Number", getBuildNumber());
         props.put("Enlistment ID", getEnlistmentId());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
@@ -1064,6 +1041,18 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final void setExplodedPath(File path)
     {
         _explodedPath = path.getAbsoluteFile();
+    }
+
+    @Override
+    public @Nullable File getZippedPath()
+    {
+        return _zippedPath;
+    }
+
+    @Override
+    public void setZippedPath(File zipped)
+    {
+        _zippedPath = zipped;
     }
 
     @Override
@@ -1091,128 +1080,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     public final String getSqlScriptsPath(@NotNull SqlDialect dialect)
     {
         return "schemas/dbscripts/" + dialect.getSQLScriptPath() + "/";
-    }
-
-    protected final void loadXmlFile(Resource r)
-    {
-        if (r.exists())
-        {
-            try
-            {
-                XmlOptions xmlOptions = new XmlOptions();
-                Map<String,String> namespaceMap = new HashMap<>();
-                namespaceMap.put("", "http://labkey.org/moduleProperties/xml/");
-                xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
-
-                ModuleDocument moduleDoc = ModuleDocument.Factory.parse(r.getInputStream(), xmlOptions);
-                if (AppProps.getInstance().isDevMode())
-                {
-                    try
-                    {
-                        XmlBeansUtil.validateXmlDocument(moduleDoc, getName());
-                    }
-                    catch (XmlValidationException e)
-                    {
-                        _log.error("Module XML file failed validation for module: " + getName() + ". Error: " + e.getDetails());
-                    }
-                }
-
-                ModuleType mt = moduleDoc.getModule();
-                if (null != mt && mt.getProperties() != null)
-                {
-                    for (PropertyType pt : mt.getProperties().getPropertyDescriptorArray())
-                    {
-                        ModuleProperty mp;
-                        if (pt.isSetName())
-                            mp = new ModuleProperty(this, pt.getName());
-                        else
-                            continue;
-
-                        if (pt.isSetLabel())
-                            mp.setLabel(pt.getLabel());
-                        if (pt.isSetCanSetPerContainer())
-                            mp.setCanSetPerContainer(pt.getCanSetPerContainer());
-                        if (pt.isSetExcludeFromClientContext())
-                            mp.setExcludeFromClientContext(pt.getExcludeFromClientContext());
-                        if (pt.isSetDefaultValue())
-                            mp.setDefaultValue(pt.getDefaultValue());
-                        if (pt.isSetDescription())
-                            mp.setDescription(pt.getDescription());
-                        if (pt.isSetShowDescriptionInline())
-                            mp.setShowDescriptionInline(pt.getShowDescriptionInline());
-                        if (pt.isSetInputFieldWidth())
-                            mp.setInputFieldWidth(pt.getInputFieldWidth());
-                        if (pt.isSetInputType())
-                            mp.setInputType(ModuleProperty.InputType.valueOf(pt.getInputType().toString()));
-                        if (pt.isSetOptions())
-                        {
-                            List<ModuleProperty.Option> options = new ArrayList<>();
-                            for (OptionsListType.Option option : pt.getOptions().getOptionArray())
-                            {
-                                options.add(new ModuleProperty.Option(option.getDisplay(), option.getValue()));
-                            }
-                            mp.setOptions(options);
-                        }
-                        if (pt.isSetEditPermissions() && pt.getEditPermissions() != null && pt.getEditPermissions().getPermissionArray() != null)
-                        {
-                            List<Class<? extends Permission>> editPermissions = new ArrayList<>();
-                            for (PermissionType.Enum permEntry : pt.getEditPermissions().getPermissionArray())
-                            {
-                                SecurityManager.PermissionTypes perm = SecurityManager.PermissionTypes.valueOf(permEntry.toString());
-                                Class<? extends Permission> permClass = perm.getPermission();
-                                if (permClass != null)
-                                    editPermissions.add(permClass);
-                            }
-
-                            if (editPermissions.size() > 0)
-                                mp.setEditPermissions(editPermissions);
-                        }
-
-                        if (mp.getName() != null)
-                            _moduleProperties.put(mp.getName(), mp);
-                    }
-                }
-
-                if (mt.getClientDependencies() != null && mt.getClientDependencies().getDependencyArray() != null)
-                {
-                    for (DependencyType rt : mt.getClientDependencies().getDependencyArray())
-                    {
-                        String path = rt.getPath();
-                        if (path != null)
-                        {
-                            ClientDependency cd = ClientDependency.fromXML(rt);
-                            if (cd != null)
-                                _clientDependencies.add(cd);
-                            else
-                                _log.error("Unable to parse <dependency> in XML for module: " + getName());
-                        }
-                    }
-                }
-
-                if (mt.getRequiredModuleContext() != null && mt.getRequiredModuleContext().getRequiredModuleArray() != null)
-                {
-                    for (RequiredModuleType rmt : mt.getRequiredModuleContext().getRequiredModuleArray())
-                    {
-                        if (rmt.getName() != null)
-                        {
-                            if(rmt.getName().equalsIgnoreCase(getName()))
-                                _log.error("Module " + getName() + " lists itself as a dependency in module.xml");
-                            else
-                                _clientDependencies.add(ClientDependency.fromModuleName(rmt.getName()));
-                        }
-                    }
-                }
-
-                if (mt.getEnableOptions() != null && mt.getEnableOptions().isSetRequireSitePermission())
-                {
-                    _requireSitePermission = true;
-                }
-            }
-            catch(Exception e)
-            {
-                _log.error("Error trying to read and parse the metadata XML for module " + getName() + " from " + r.getPath(), e);
-            }
-        }
     }
 
     @Override
@@ -1248,7 +1115,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     public String toString()
     {
-        return getName() + " " + getVersion() + " " + super.toString();
+        return getName() + " " + getReleaseVersion() + " " + getClass().getName();
     }
 
 
@@ -1472,11 +1339,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return getDependenciesFromFile();
     }
 
-    public static boolean isRuntimeJar(String name)
-    {
-        return name.endsWith(".jar") && !name.endsWith("javadoc.jar") && !name.endsWith("sources.jar");
-    }
-
     /**
      * List of .jar files that might be produced from module's own source.
      * This default set is not meant to be definitive for every module; not all of these jars
@@ -1561,17 +1423,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public Map<String, ModuleProperty> getModuleProperties()
-    {
-        return _moduleProperties;
-    }
-
-    protected void addModuleProperty(ModuleProperty property)
-    {
-        _moduleProperties.put(property.getName(), property);
-    }
-
-    @Override
     public JSONObject getPageContextJson(ContainerUser context)
     {
         return new JSONObject(getDefaultPageContextJson(context.getContainer()));
@@ -1588,17 +1439,36 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return props;
     }
 
+    private ModuleXml getModuleXml()
+    {
+        return MODULE_XML_CACHE.getResourceMap(this);
+    }
+
+    @Override
+    public Map<String, ModuleProperty> getModuleProperties()
+    {
+        Map<String, ModuleProperty> map = new LinkedHashMap<>(getModuleXml().getModuleProperties());
+        map.putAll(_moduleProperties);
+
+        return map;
+    }
+
+    protected void addModuleProperty(ModuleProperty property)
+    {
+        _moduleProperties.put(property.getName(), property);
+    }
+
     @Override
     @NotNull
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c)
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
-        return _clientDependencies;
+        return getModuleXml().getClientDependencySuppliers();
     }
 
     @Override
     public boolean getRequireSitePermission()
     {
-        return _requireSitePermission;
+        return getModuleXml().getRequireSitePermission();
     }
 
     @Override
@@ -1644,5 +1514,74 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         if (_locked)
             throw new IllegalStateException("Module info setters can only be called in constructor.");
+    }
+
+    // TODO: Delete these getters/setters once we no longer want to support modules built with the old properties.
+    // Note that spring explodes if it sees a property in module.xml without a corresponding getter/setter pair.
+
+    @Deprecated
+    public double getVersion()
+    {
+        return -1;
+    }
+
+    public final void setVersion(double version)
+    {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"version\" property; this module needs to be recompiled.");
+        setSchemaVersion(version);
+    }
+
+    // consolidateScripts property is no longer read or used. But, leave getter and setter behind for now so Spring
+    // doesn't explode if it sees this property in an old module.
+    @SuppressWarnings("unused")
+    public Boolean getConsolidateScripts()
+    {
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    public void setConsolidateScripts(Boolean consolidate)
+    {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"consolidateScripts\" property; this module needs to be recompiled.");
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public String getLabkeyVersion()
+    {
+        return _releaseVersion;
+    }
+
+    @SuppressWarnings("unused")  // "labkeyVersion" is the old name of the property in module.xml
+    public void setLabkeyVersion(String labkeyVersion)
+    {
+        _log.warn("Module \"" + getName() + "\" still specifies the \"labkeyVersion\" property; this module needs to be recompiled.");
+        _releaseVersion = labkeyVersion;
+    }
+
+    public void copyPropertiesFrom(DefaultModule from)
+    {
+        this.setAuthor(from.getAuthor());
+        this.setBuildNumber(from.getBuildNumber());
+        this.setBuildOS(from.getBuildOS());
+        this.setBuildPath(from.getBuildPath());
+        this.setBuildTime(from.getBuildTime());
+        this.setBuildType(from.getBuildType());
+        this.setBuildUser(from.getBuildUser());
+        this.setDescription(from.getDescription());
+        this.setEnlistmentId(from.getEnlistmentId());
+        this.setLabel(from.getLabel());
+        this.setLabkeyVersion(from.getLabkeyVersion());
+        this.setLicense(from.getLicense());
+        this.setLicenseUrl(from.getLicenseUrl());
+        this.setMaintainer(from.getMaintainer());
+        this.setOrganization(from.getOrganization());
+        this.setOrganizationUrl(from.getOrganizationUrl());
+        this.setUrl(from.getUrl());
+        this.setVcsBranch(from.getVcsBranch());
+        this.setVcsRevision(from.getVcsRevision());
+        this.setVcsTag(from.getVcsTag());
+        this.setVcsUrl(from.getVcsUrl());
+        this.setVersion(from.getVersion());
+        this.setZippedPath(from.getZippedPath());
     }
 }

@@ -18,6 +18,7 @@ package org.labkey.api.audit;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -128,9 +129,28 @@ public interface AuditLogService
 
     static void handleAuditFailure(User user, Throwable e)
     {
-        for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
-            provider.handleAuditFailure(user, e);
+        DbScope scope = DbScope.getLabKeyScope();
+        // See issue 36948 - can't do things like look up configurations for how to handle audit logging transactions
+        // if there's a now-trashed connection associated with a transaction
+        if (scope.isTransactionActive())
+        {
+            // Use a different transaction kind to ensure a different DB connection is used
+            try (DbScope.Transaction t = scope.ensureTransaction(TRANSACTION_KIND))
+            {
+                for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
+                    provider.handleAuditFailure(user, e);
+
+                t.commit();
+            }
+        }
+        else
+        {
+            for (AuditFailureHandlerProvider provider : getAuditFailureHandlerProviders())
+                provider.handleAuditFailure(user, e);
+        }
     }
+
+    DbScope.TransactionKind TRANSACTION_KIND = () -> "AuditLog";
 
     interface Replaceable{}
 }

@@ -16,23 +16,27 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.DataClassDomainKindProperties;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.DataClassUserSchema;
@@ -41,8 +45,9 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -50,9 +55,9 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.data.xml.domainTemplate.DataClassTemplateType;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,8 +68,9 @@ import java.util.stream.Collectors;
  * User: kevink
  * Date: 9/15/15
  */
-public class DataClassDomainKind extends AbstractDomainKind
+public class DataClassDomainKind extends AbstractDomainKind<DataClassDomainKindProperties>
 {
+    public static final String NAME = "DataClass";
     public static final String PROVISIONED_SCHEMA_NAME = "expdataclass";
 
     private static final Set<PropertyStorageSpec> BASE_PROPERTIES;
@@ -75,7 +81,9 @@ public class DataClassDomainKind extends AbstractDomainKind
     static {
         BASE_PROPERTIES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
                 new PropertyStorageSpec("genId", JdbcType.INTEGER),
-                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false)
+                new PropertyStorageSpec("lsid", JdbcType.VARCHAR, 300).setNullable(false),
+                new PropertyStorageSpec("name", JdbcType.VARCHAR, 200),
+                new PropertyStorageSpec("classid", JdbcType.INTEGER)
         )));
 
 
@@ -88,9 +96,8 @@ public class DataClassDomainKind extends AbstractDomainKind
                 new PropertyStorageSpec.ForeignKey("lsid", "exp", "Data", "LSID", null, false)
         )));
 
-        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(
-                new PropertyStorageSpec.Index(true, "lsid")
-        )));
+        INDEXES = Collections.unmodifiableSet(Sets.newLinkedHashSet(Arrays.asList(new PropertyStorageSpec.Index(true, "lsid"),
+                new PropertyStorageSpec.Index(true, "name", "classid"))));
     }
 
     public DataClassDomainKind()
@@ -100,7 +107,29 @@ public class DataClassDomainKind extends AbstractDomainKind
     @Override
     public String getKindName()
     {
-        return "DataClass";
+        return NAME;
+    }
+
+    @Override
+    public Class<DataClassDomainKindProperties> getTypeClass()
+    {
+        return DataClassDomainKindProperties.class;
+    }
+
+    @Override
+    public Map<String, Object> processArguments(Container container, User user, Map<String, Object> arguments)
+    {
+        Map<String, Object> updatedArguments = new HashMap<>(arguments);
+
+        // if "sampleSet" is the Name string, look it up and switch the argument map to use the RowId
+        if (arguments.containsKey("sampleSet") && !StringUtils.isNumeric(arguments.get("sampleSet").toString()))
+        {
+            ExpSampleSet sampleSet = SampleSetService.get().getSampleSet(container, user, (String)arguments.get("sampleSet"));
+            if (sampleSet != null)
+                updatedArguments.put("sampleSet", sampleSet.getRowId());
+        }
+
+        return updatedArguments;
     }
 
     @Override
@@ -136,11 +165,21 @@ public class DataClassDomainKind extends AbstractDomainKind
         return true;
     }
 
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateDataClassURL(container);
+    }
+
     @Nullable
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpDataClass dataClass = getDataClass(domain);
+        if (dataClass == null)
+            return null;
+
+        return dataClass.urlEditDefinition(containerUser);
     }
 
     @Override
@@ -187,67 +226,65 @@ public class DataClassDomainKind extends AbstractDomainKind
         return PROVISIONED_SCHEMA_NAME;
     }
 
+    public DbSchema getSchema()
+    {
+        return DbSchema.get(PROVISIONED_SCHEMA_NAME, DbSchemaType.Provisioned);
+    }
+
     @Override
     public DbScope getScope()
     {
-        return ExperimentService.get().getSchema().getScope();
+        return getSchema().getScope();
     }
 
     @Override
     public boolean canCreateDefinition(User user, Container container)
     {
-        return container.hasPermission(user, AdminPermission.class);
+        return container.hasPermission(user, DesignDataClassPermission.class);
     }
 
+    @Override
+    public boolean canEditDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public boolean canDeleteDefinition(User user, Domain domain)
+    {
+        return domain.getContainer().hasPermission(user, DesignDataClassPermission.class);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, DataClassDomainKindProperties options, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        if (name == null)
-            throw new IllegalArgumentException("DataClass name required");
-
-        String description = domain.getDescription();
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        String nameExpression = arguments.containsKey("nameExpression") ? String.valueOf(arguments.get("nameExpression")) : null;
-
-        Integer sampleSetId = null;
-        String sampleSet = arguments.containsKey("sampleSet") ? String.valueOf(arguments.get("sampleSet")) : null;
-        if (sampleSet != null)
-        {
-            int id = 0;
-            try { id = Integer.parseInt(sampleSet); } catch (NumberFormatException e) { }
-            if (id > 0)
-                sampleSetId = id;
-
-            ExpSampleSet ss = ExperimentService.get().getSampleSet(container, sampleSet);
-            if (ss != null)
-                sampleSetId = ss.getRowId();
-        }
-
-        ExpDataClass dataClass;
         try
         {
-            dataClass = ExperimentService.get().createDataClass(container, user, name, description, properties, indices, sampleSetId, nameExpression, templateInfo);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
+            ExpDataClass dataClass = ExperimentService.get().createDataClass(container, user, name, options, properties, indices, templateInfo);
+            return dataClass.getDomain();
         }
         catch (ExperimentException e)
         {
             throw new RuntimeException(e);
         }
-        return dataClass.getDomain();
     }
 
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable DataClassDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        ExpDataClass dc = ExperimentService.get().getDataClass(original.getDomainURI());
+        return ExperimentService.get().updateDataClass(container, user, dc, options, original, update);
+    }
 
     @Override
     public void deleteDomain(User user, Domain domain)
     {
-        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
+        ExpDataClass dc = getDataClass(domain);
         if (dc == null)
             throw new NotFoundException("DataClass not found: " + domain.getTypeURI());
 
@@ -266,7 +303,7 @@ public class DataClassDomainKind extends AbstractDomainKind
     {
         super.invalidate(domain);
 
-        ExpDataClass dc = ExperimentServiceImpl.get().getDataClass(domain.getTypeURI());
+        ExpDataClass dc = getDataClass(domain);
         if (dc != null && dc.getDomain() != null && dc.getDomain().getStorageTableName() != null)
             ExperimentServiceImpl.get().indexDataClass(dc);
     }
@@ -288,5 +325,13 @@ public class DataClassDomainKind extends AbstractDomainKind
     public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
     {
         return UpdateableTableInfo.ObjectUriType.schemaColumn;
+    }
+
+    @Nullable
+    @Override
+    public DataClassDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    {
+        ExpDataClass dc = ExperimentService.get().getDataClass(domain.getDomainURI());
+        return new DataClassDomainKindProperties(dc);
     }
 }

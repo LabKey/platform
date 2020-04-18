@@ -35,11 +35,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -142,6 +145,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
             {
+                Set<File> copiedFiles = new HashSet<>();
                 // First handle anything that's been explicitly configured
                 for (Map.Entry<String, TaskPath> entry : expectedOutputs.entrySet())
                 {
@@ -151,44 +155,77 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                     {
                         role = taskPath.getDefaultRole();
                     }
-                    outputFile(taskPath, role, action);
+                    copiedFiles.addAll(outputFile(taskPath, role, action));
                 }
 
-                // Slurp up any other files too
-                for (File workFile : getDir().listFiles())
-                {
-                    File f = outputFile(workFile);
-                    String role = "";
-                    String baseName = _support.getBaseName();
-                    if (f.getName().startsWith(baseName))
-                    {
-                        role = f.getName().substring(baseName.length());
-                    }
-                    else if (f.getName().contains("."))
-                    {
-                        role = f.getName().substring(f.getName().indexOf(".") + 1);
-                    }
-                    while (role.length() > 0 && !Character.isJavaIdentifierPart(role.charAt(0)))
-                    {
-                        role = role.substring(1);
-                    }
-                    if ("".equals(role))
-                    {
-                        role = "Output";
-                    }
+                _jobLog.debug("Already copied files: " + copiedFiles);
 
-                    if (f.isDirectory())
+                // Slurp up any other files too
+                File[] additionalFiles = getDir().listFiles();
+                if (additionalFiles != null && additionalFiles.length > 0)
+                {
+                    _jobLog.debug("Additional files: " + Arrays.asList(additionalFiles));
+                }
+
+                for (File workFile : remainingFiles)
+                {
+                    if (copiedFiles.contains(workFile))
                     {
-                        // It's a directory, so add all of the child files instead of the directory itself 
-                        Collection<File> contents = FileUtils.listFiles(f, FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
-                        for (File content : contents)
+                        _jobLog.debug("Skipping copy of file that was already copied as an expected output: " + workFile);
+                        int attempts = 0;
+                        boolean deleted = false;
+                        // Issue 40138 - large files not deleting immediately, so retry and log
+                        while (workFile.exists() && attempts < 6)
                         {
-                            action.addOutput(content, role, false, true);
+                            if (attempts > 0)
+                            {
+                                _jobLog.debug("Attempted to discard " + workFile + " but it still exists. Try #" + attempts + ", delete attempt reported " + deleted);
+                                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
+                            }
+                            attempts++;
+                            deleted = workFile.delete();
+                        }
+                        if (workFile.exists())
+                        {
+                            throw new IOException("Failed to delete: " + workFile);
                         }
                     }
                     else
                     {
-                        action.addOutput(f, role, false, true);
+                        File f = outputFile(workFile);
+                        String role = "";
+                        String baseName = _support.getBaseName();
+                        if (f.getName().startsWith(baseName))
+                        {
+                            role = f.getName().substring(baseName.length());
+                        }
+                        else if (f.getName().contains("."))
+                        {
+                            role = f.getName().substring(f.getName().indexOf(".") + 1);
+                        }
+                        while (role.length() > 0 && !Character.isJavaIdentifierPart(role.charAt(0)))
+                        {
+                            role = role.substring(1);
+                        }
+                        if ("".equals(role))
+                        {
+                            role = "Output";
+                        }
+
+                        if (f.isDirectory())
+                        {
+                            // It's a directory, so add all of the child files instead of the directory itself
+                            Collection<File> contents = FileUtils.listFiles(f, FileFilterUtils.fileFileFilter(), FileFilterUtils.trueFileFilter());
+                            for (File content : contents)
+                            {
+                                action.addOutput(content, role, false, true);
+                            }
+                        }
+                        else
+                        {
+                            action.addOutput(f, role, false, true);
+                        }
+                        copiedFiles.add(f);
                     }
                 }
             }
@@ -222,8 +259,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return files;
     }
 
-    private void outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
+    private Set<File> outputFile(TaskPath tp, String role, RecordedAction action) throws IOException
     {
+        Set<File> result = new HashSet<>();
         List<File> filesWork = getWorkFiles(WorkDirectory.Function.output, tp);
         for (File fileWork : filesWork)
         {
@@ -264,7 +302,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                     if (NetworkDrive.exists(fileOutput))
                     {
                         discardFile(fileWork);
-                        return;
+                        break;
                     }
                 }
             }
@@ -274,8 +312,10 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
                 // Add it as an output if it's non-optional, or if it's optional and the file exists
                 File f = outputFile(fileWork, fileOutput);
                 action.addOutput(f, role, false, true);
+                result.add(fileWork);
             }
         }
+        return result;
     }
 
     public File getDir()
@@ -511,16 +551,29 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         _jobLog.debug("discarding file: " + fileWork.getPath());
         ensureDescendant(fileWork);
-        if (fileWork.exists() && !fileWork.delete())
+        int attempts = 0;
+        // Issue 40138 - large files not deleting immediately, so retry and log
+        while (fileWork.exists() && attempts < 6)
         {
+            attempts++;
+            boolean deleted = fileWork.delete();
+
             if (fileWork.isDirectory())
             {
                 FileUtils.deleteDirectory(fileWork);
             }
+
             if (fileWork.exists())
             {
-                throw new IOException("Failed to remove file " + fileWork);
+                _jobLog.debug("Attempted to discard " + fileWork + " but it still exists. Try #" + attempts + ", delete attempt reported " + deleted);
+                // Wait five seconds
+                try { Thread.sleep(5000); } catch (InterruptedException ignored) {}
             }
+        }
+
+        if (fileWork.exists())
+        {
+            throw new IOException("Failed to remove file " + fileWork);
         }
     }
 

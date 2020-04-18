@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
@@ -28,10 +29,8 @@ import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.template.ClientDependency;
 
 import java.io.File;
 import java.util.List;
@@ -100,10 +99,6 @@ abstract public class LaboratoryService
     abstract public void ensureAssayColumns(User u, String providerName) throws ChangePropertyDescriptorException;
 
     abstract public void sortNavItems(List<? extends NavItem> navItems);
-
-    abstract public void registerClientDependency(ClientDependency cd, Module owner);
-
-    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c);
 
     abstract public String getDefaultWorkbookFolderType(Container c);
 

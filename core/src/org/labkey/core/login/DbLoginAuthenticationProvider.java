@@ -20,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.security.AuthenticationConfigureForm;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.ConfigurationSettings;
@@ -41,7 +41,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EmptyStackException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -59,12 +58,15 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @Override
     public List<DbLoginConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
     {
-        Map<String, String> props = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
-        Map<String, String> map = new HashMap<>(props);
-        map.put("Enabled", "true");
-        map.put("Name", getName());
+        Map<String, Object> properties = Map.of(
+            "RowId", 0,
+            "Enabled", true,
+            "Name", getName()
+        );
 
-        return Collections.singletonList(new DbLoginConfiguration(DATABASE_AUTHENTICATION_CATEGORY_KEY, this, map));
+        Map<String, String> stringProperties = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+
+        return Collections.singletonList(new DbLoginConfiguration(this, stringProperties, properties));
     }
 
     @Override
@@ -84,7 +86,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     @NotNull
     public String getDescription()
     {
-        return "Stores user names and passwords in the LabKey database";
+        return "Stores user names and password hashes in the LabKey database";
     }
 
     @Override
@@ -102,10 +104,10 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
         User user = UserManager.getUser(email);
 
         if (null == hash || null == user)
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.userDoesNotExist);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.badPassword);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
 
         // Password is correct for this user; now check password rules and expiration.
 
@@ -114,7 +116,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
         if (!rule.isValidForLogin(password, user, messages))
         {
-            return getChangePasswordResponse(user, returnURL, FailureReason.complexity);
+            return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
         }
         else
         {
@@ -122,15 +124,15 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
             if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
             {
-                return getChangePasswordResponse(user, returnURL, FailureReason.expired);
+                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
             }
         }
 
-        return AuthenticationResponse.createSuccessResponse(this, email);
+        return AuthenticationResponse.createSuccessResponse(configuration, email);
     }
 
     @Override
-    public @Nullable AuthenticationConfigureForm getFormFromOldConfiguration(boolean active)
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
     {
         return null;  // We don't migrate the database login configuration
     }
@@ -159,7 +161,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
-    private AuthenticationResponse getChangePasswordResponse(User user, URLHelper returnURL, FailureReason failureReason)
+    private AuthenticationResponse getChangePasswordResponse(DbLoginConfiguration configuration, User user, URLHelper returnURL, FailureReason failureReason)
     {
         ActionURL redirectURL = null;
 
@@ -189,12 +191,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
-    }
-
-    @Override
-    public ActionURL getConfigurationLink()
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
+        return AuthenticationResponse.createFailureResponse(configuration, failureReason, redirectURL);
     }
 }

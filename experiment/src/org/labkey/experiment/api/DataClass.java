@@ -17,6 +17,8 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.util.Objects;
 
@@ -30,6 +32,7 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     private String _description;
     private String _nameExpression;
     private Integer _materialSourceId;
+    private String _category;
 
     public String getDescription()
     {
@@ -62,6 +65,25 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
         _materialSourceId = materialSourceId;
     }
 
+    public String getCategory()
+    {
+        return _category;
+    }
+
+    public void setCategory(String category)
+    {
+        _category = category;
+    }
+
+    @Nullable
+    @Override
+    public ActionURL detailsURL()
+    {
+        ActionURL ret = new ActionURL(ExperimentController.ShowDataClassAction.class, getContainer());
+        ret.addParameter("rowId", getRowId());
+        return ret;
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -82,5 +104,4 @@ public class DataClass extends IdentifiableEntity implements Comparable<DataClas
     {
         return getName().compareToIgnoreCase(o.getName());
     }
-
 }

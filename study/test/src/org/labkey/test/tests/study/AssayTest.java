@@ -24,14 +24,21 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ReactAssayDesignerPage;
+import org.labkey.test.pages.assay.AssayBeginPage;
+import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.experiment.SampleSetDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,6 +48,8 @@ public class AssayTest extends AbstractAssayTest
     private static final String INVESTIGATOR = "Dr. No";
     private static final String GRANT = "SPECTRE";
     private static final String DESCRIPTION = "World Domination.";
+    private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
+    private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project";
 
     @Override
     protected String getProjectName()
@@ -55,6 +64,7 @@ public class AssayTest extends AbstractAssayTest
     {
         //should also delete the groups
         _containerHelper.deleteProject(getProjectName(), afterTest);
+        _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, afterTest);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
     }
@@ -71,7 +81,7 @@ public class AssayTest extends AbstractAssayTest
         log("Starting Assay security scenario tests");
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"), new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer.importAndWaitForComplete();
         defineAssay();
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
@@ -86,6 +96,104 @@ public class AssayTest extends AbstractAssayTest
         // TODO: Turn this on once file browser migration is complete.
         //verifyWebdavTree();
         goBack();
+    }
+
+    @Test
+    public void testSampleFieldUpdate()
+    {
+        log("Starting sample field update test");
+        _containerHelper.createProject(SAMPLE_FIELD_PROJECT_NAME, "Assay");
+
+        log("Create test assay");
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", SAMPLE_FIELD_TEST_ASSAY)
+                .setDescription(TEST_ASSAY_DESC);
+
+        String sampleFieldName = "SampleField";
+        assayDesignerPage.goToBatchFields().removeAllFields(false); //remove preset batch fields
+
+        DomainFormPanel resultsPanel = assayDesignerPage.goToResultsFields().removeAllFields(false); //remove preset result fields
+        click(Locator.tag("span").withText("manually define fields"));
+        resultsPanel.addField(sampleFieldName)
+                .setType(FieldDefinition.ColumnType.Sample)
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+        resultsPanel.removeField(""); //remove field added by manual definition link
+
+        log("Save initial assay design with sample field set to 'All Samples'");
+        assayDesignerPage.clickFinish();
+
+        log("Verify save successful");
+        assertEquals("Error saving initial assay", 0, checker().errorsSinceMark());
+        AssayBeginPage assayPage = goToManageAssays();
+        assertElementPresent(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+
+        log("Create new Sample Types to verify against");
+        String targetSetName = "Target Sample Set";
+        SampleSetDefinition targetDefinition = new SampleSetDefinition(targetSetName).setFields(new ArrayList<>());
+        SampleSetHelper ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
+        ssHelper.createSampleSet(targetDefinition, "Name\nS_1\nS_2\nS_3");
+
+        String otherSetName = "Other Sample Set";
+        SampleSetDefinition otherDefinition = new SampleSetDefinition(otherSetName).setFields(new ArrayList<>());
+        ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
+        ssHelper.createSampleSet(otherDefinition, "Name\nOS_1\nOS_2");
+
+        importSampleAssayData(TEST_RUN1, "OS_1");
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
+
+
+        log("Edit assay design and change Sample field to point to created Sample Type");
+        goToManageAssays();
+        clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+        designerPage.expandFieldsPanel("Results")
+                .getField(sampleFieldName)
+                .setSampleType(targetSetName);
+        designerPage.clickFinish();
+
+        log("Verify updates saved successfully");
+        assertEquals("Error saving initial assay", 0, checker().errorsSinceMark());
+        importSampleAssayData(TEST_RUN2, "S_1");
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+//        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change. Issue #40047
+
+        assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
+
+        log("Edit assay design and change Sample field to point back to 'All Samples'");
+        goToManageAssays();
+        clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        designerPage = _assayHelper.clickEditAssayDesign();
+        designerPage.expandFieldsPanel("Results")
+                .getField(sampleFieldName)
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+        designerPage.clickFinish();
+        assertEquals("Error saving updated sample field", 0, checker().errorsSinceMark());
+
+        log("Verify updates saved successfully");
+        importSampleAssayData(TEST_RUN3, "S_2\nOS_2");
+        assertEquals("Error importing data after assay sample field update", 0, checker().errorsSinceMark());
+
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
+        assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
+        assertElementPresent("Sample lookup failed for: S_2", new Locator.LinkLocator("S_2"), 1);
+        assertElementPresent("Sample lookup failed for: OS_2", new Locator.LinkLocator("OS_2"), 1);
+
+    }
+
+    private void importSampleAssayData(String runName, String sampleId)
+    {
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickButton("Import Data", "Run Data");
+        setFormElement(Locator.name("name"), runName);
+        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"),  "SampleField\n" + sampleId);
+        clickButton("Save and Finish");
+
     }
 
     @LogMethod
@@ -715,7 +823,7 @@ public class AssayTest extends AbstractAssayTest
         DomainFormPanel domainFormPanel = designerPage.expandFieldsPanel("Results");
         domainFormPanel.getField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
         domainFormPanel.getField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        domainFormPanel.removeField(domainFormPanel.getField(4).getName());
+        domainFormPanel.removeField(domainFormPanel.getField(4).getName(), true);
         designerPage.clickFinish();
 
         //ensure that label has changed in run data in Lab 1 folder

@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
@@ -32,10 +33,13 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.dataiterator.DataIterator;
 import org.labkey.api.dataiterator.DataIteratorContext;
+import org.labkey.api.dataiterator.DetailedAuditLogDataIterator;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.Resource;
@@ -107,6 +111,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     protected boolean _importIdentity = false;
     protected boolean _importLookupByAlternateKey = false;
     protected QueryUpdateService.InsertOption _insertOption= QueryUpdateService.InsertOption.INSERT;
+    protected AuditBehaviorType _auditBehaviorType = null;
 
     protected void setTarget(TableInfo t) throws ServletException
     {
@@ -412,7 +417,20 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (loader != null && _target != null)
                 loader.setKnownColumns(_target.getColumns());
 
-            int rowCount = importData(loader, file, originalName, ve);
+            Map<String, String> renamedColumns = getRenamedColumns();
+            if (loader != null && renamedColumns != null)
+            {
+                ColumnDescriptor[]  columnDescriptors = loader.getColumns();
+                for (ColumnDescriptor columnDescriptor : columnDescriptors)
+                {
+                    if (renamedColumns.containsKey(columnDescriptor.getColumnName()))
+                    {
+                        columnDescriptor.name = renamedColumns.get(columnDescriptor.getColumnName());
+                    }
+                }
+            }
+
+            int rowCount = importData(loader, file, originalName, ve, getAuditBehaviorType());
 
             if (ve.hasErrors())
                 throw ve;
@@ -432,6 +450,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             if (null != dataFile && !Boolean.parseBoolean(saveToPipeline))
                 dataFile.delete();
         }
+    }
+
+    protected Map<String, String> getRenamedColumns()
+    {
+        return null;
     }
 
     protected JSONObject createSuccessResponse(int rowCount)
@@ -482,6 +505,11 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
     }
 
+    protected AuditBehaviorType getAuditBehaviorType()
+    {
+        return _auditBehaviorType;
+    }
+
 
     /* NYI see comment on importData() */
     protected DataIterator wrap(DataIterator di, BatchValidationException errors)
@@ -494,15 +522,25 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+    {
+        return importData(dl, file, originalName, errors, null);
+    }
 
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
-    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
     {
         if (_target != null)
         {
             DataIteratorContext context = new DataIteratorContext(errors);
             context.setInsertOption(_insertOption);
             context.setAllowImportLookupByAlternateKey(_importLookupByAlternateKey);
+            if (auditBehaviorType != null)
+            {
+                Map<Enum, Object> configParameters = new HashMap<>();
+                configParameters.put(DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior, auditBehaviorType);
+                context.setConfigParameters(configParameters);
+            }
             if (_importIdentity)
             {
                 context.setInsertOption(QueryUpdateService.InsertOption.IMPORT_IDENTITY);

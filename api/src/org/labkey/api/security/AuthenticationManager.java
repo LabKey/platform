@@ -16,6 +16,7 @@
 package org.labkey.api.security;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,17 +42,21 @@ import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.security.AuthenticationConfiguration.LoginFormAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
+import org.labkey.api.security.AuthenticationConfiguration.SecondaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationProvider.AuthenticationResponse;
 import org.labkey.api.security.AuthenticationProvider.DisableLoginProvider;
 import org.labkey.api.security.AuthenticationProvider.ExpireAccountProvider;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.PrimaryAuthenticationProvider;
-import org.labkey.api.security.AuthenticationProvider.RequestAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.AuthenticationProvider.SSOAuthenticationProvider;
 import org.labkey.api.security.AuthenticationProvider.SecondaryAuthenticationProvider;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -82,15 +87,13 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -112,21 +115,26 @@ public class AuthenticationManager
     private static final Logger _log = Logger.getLogger(AuthenticationManager.class);
     // All registered authentication providers (DbLogin, LDAP, SSO, etc.)
     private static final List<AuthenticationProvider> _allProviders = new CopyOnWriteArrayList<>();
-    // Map of user id to login provider. This is needed to handle clean up on logout.
-    private static final Map<Integer, PrimaryAuthenticationProvider> _userProviders = new ConcurrentHashMap<>();
 
     public enum AuthLogoType
     {
-        HEADER("auth_header_logo", "16"),
-        LOGIN_PAGE("auth_login_page_logo", "32");
+        HEADER("header", "auth_header_logo", "16"),
+        LOGIN_PAGE("login page", "auth_login_page_logo", "32");
 
+        private final String _label;
         private final String _fileName;
         private final String _height;
 
-        AuthLogoType(String fileName, String height)
+        AuthLogoType(String label, String fileName, String height)
         {
+            _label = label;
             _fileName = fileName;
             _height = height;
+        }
+
+        public String getLabel()
+        {
+            return _label;
         }
 
         public String getFileName()
@@ -143,36 +151,50 @@ public class AuthenticationManager
         {
             return _fileName + "_";
         }
-    }
 
-    public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
-    {
-        for (RequestAuthenticationProvider provider : AuthenticationManager.getActiveProviders(RequestAuthenticationProvider.class))
+        public static @NotNull AuthLogoType getForFilename(String fileName)
         {
-            AuthenticationResponse response = provider.authenticate(request);
+            for (AuthLogoType type : values())
+                if (type.getFileName().equals(fileName))
+                    return type;
 
-            if (response.isAuthenticated())
-            {
-                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, response);
-                return result.getUser();
-            }
+            throw new NotFoundException("Unknown logo type");
         }
-
-        return null;
     }
 
-    // Called unconditionally on every server startup. At some point, might want to make this bootstrap only.
+//    We don't register any RequestAuthenticationProvider implementations right now, so don't bother converting this code
+//    to handling configurations.
+//
+//    public static @Nullable User attemptRequestAuthentication(HttpServletRequest request)
+//    {
+//        for (RequestAuthenticationProvider provider : AuthenticationManager.getActiveProviders(RequestAuthenticationProvider.class))
+//        {
+//            AuthenticationResponse response = provider.authenticate(request);
+//
+//            if (response.isAuthenticated())
+//            {
+//                PrimaryAuthenticationResult result = finalizePrimaryAuthentication(request, response);
+//                return result.getUser();
+//            }
+//        }
+//
+//        return null;
+//    }
+
+    // Called unconditionally on every server startup. Properties that are designated as "startup" will overwrite existing
+    // values. Authentication configuration properties will overwrite an existing configuration if "Description" is provided
+    // and matches an existing configuration description for the same provider; if "Description" is not provided or doesn't
+    // match an existing configuration for that provider then a new configuration will be created. See #39474.
     // TODO: SSO logos. Auditing of configuration property changes.
     public static void populateSettingsWithStartupProps()
     {
-        // Handle each provider's startup properties, only for new installs
-        if (ModuleLoader.getInstance().isNewInstall())
-            getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
+        // Handle each provider's startup properties
+        getAllProviders().forEach(AuthenticationProvider::handleStartupProperties);
 
         // Populate the general authentication properties (e.g., auto-create accounts, self registration, self-service email changes).
         ModuleLoader.getInstance().getConfigProperties(AUTHENTICATION_CATEGORY).stream()
             .filter(cp->!cp.getName().equals(PROVIDERS_KEY)) // Ignore "Authentication" -- we don't use this property anymore
-            .forEach(cp->setAuthConfigProperty(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
+            .forEach(cp-> saveAuthSetting(null, cp.getName(), Boolean.parseBoolean(cp.getValue())));
     }
 
     public enum Priority { High, Low }
@@ -192,17 +214,17 @@ public class AuthenticationManager
 
     public static boolean isRegistrationEnabled()
     {
-        return getAuthConfigProperty(SELF_REGISTRATION_KEY, false);
+        return getAuthSetting(SELF_REGISTRATION_KEY, false);
     }
 
     public static boolean isAutoCreateAccountsEnabled()
     {
-        return isExternalConfigurationEnabled() && getAuthConfigProperty(AUTO_CREATE_ACCOUNTS_KEY, true);
+        return isExternalConfigurationEnabled() && getAuthSetting(AUTO_CREATE_ACCOUNTS_KEY, true);
     }
 
-    public static boolean isSelfServiceEmailChangesEnabled() { return getAuthConfigProperty(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
+    public static boolean isSelfServiceEmailChangesEnabled() { return getAuthSetting(SELF_SERVICE_EMAIL_CHANGES_KEY, false);}
 
-    public static boolean getAuthConfigProperty(String key, boolean defaultValue)
+    public static boolean getAuthSetting(String key, boolean defaultValue)
     {
         Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
         String value = props.get(key);
@@ -210,13 +232,51 @@ public class AuthenticationManager
         return value == null ? defaultValue : Boolean.valueOf(value);
     }
 
-    public static void setAuthConfigProperty(User user, String key, boolean value)
+    public static void saveAuthSetting(User user, String key, boolean value)
     {
         PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
         props.put(key, Boolean.toString(value));
         props.save();
 
-        addConfigurationAuditEvent(user, key, value ? "enabled" : "disabled");
+        addAuthSettingAuditEvent(user, key, value ? "enabled" : "disabled");
+    }
+
+    public static void saveAuthSettings(User user, Map<String, Boolean> map)
+    {
+        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
+
+        Map<String, Boolean> changed = map.entrySet().stream()
+            .filter(e->!Boolean.toString(e.getValue()).equals(props.get(e.getKey())))
+            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!changed.isEmpty())
+        {
+            changed.forEach((k, v)->{
+                props.put(k, Boolean.toString(v));
+                addAuthSettingAuditEvent(user, k, v ? "enabled" : "disabled");
+            });
+
+            props.save();
+        }
+    }
+
+    public static void reorderConfigurations(User user, String name, int[] rowIds)
+    {
+        if (null != rowIds && rowIds.length != 0)
+        {
+            TableInfo tinfo = CoreSchema.getInstance().getTableInfoAuthenticationConfigurations();
+            MutableInt count = new MutableInt();
+            Arrays.stream(rowIds)
+                .filter(id->id > 0)
+                .forEach(id->{
+                    count.increment();
+                    Table.update(user, tinfo, new HashMap<>(Map.of("SortOrder", count)), id); // Table.update() requires mutable map
+                });
+            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " configurations were reordered");
+            event.setChanges("reordered");
+            AuditLogService.get().addEvent(user, event);
+            AuthenticationConfigurationCache.clear();
+        }
     }
 
     public static @Nullable HtmlString getHeaderLogoHtml(URLHelper currentURL)
@@ -365,56 +425,7 @@ public class AuthenticationManager
     }
 
 
-    public static Collection<AuthenticationProvider> getActiveProviders()
-    {
-        return AuthenticationProviderCache.getActiveProviders(AuthenticationProvider.class);
-    }
-
-
-    public static <T extends AuthenticationProvider> Collection<T> getActiveProviders(Class<T> clazz)
-    {
-        return AuthenticationProviderCache.getActiveProviders(clazz);
-    }
-
-
-    public static void enableProvider(String name, User user)
-    {
-        AuthenticationProvider provider = getProvider(name);
-        Set<String> activeNames = getActiveProviders().stream()
-            .map(AuthenticationProvider::getName)
-            .collect(Collectors.toSet());
-
-        if (!activeNames.contains(name))
-        {
-            try
-            {
-                activeNames.add(name);
-                saveActiveProviders(activeNames);
-                addProviderAuditEvent(user, name, "enabled");
-            }
-            catch (Exception e)
-            {
-                _log.error("Can't initialize provider " + provider.getName(), e);
-            }
-        }
-    }
-
-    public static void disableProvider(String name, User user)
-    {
-        AuthenticationProvider provider = getProvider(name);
-        Set<String> activeNames = getActiveProviders().stream()
-            .map(AuthenticationProvider::getName)
-            .collect(Collectors.toSet());
-
-        if (activeNames.contains(name))
-        {
-            activeNames.remove(name);
-            saveActiveProviders(activeNames);
-            addProviderAuditEvent(user, name, "disabled");
-        }
-    }
-
-    public static void deleteConfiguration(int rowId)
+    public static void deleteConfiguration(User user, int rowId)
     {
         // Delete any logos attached to the configuration
         AuthenticationConfiguration configuration = AuthenticationConfigurationCache.getConfiguration(AuthenticationConfiguration.class, rowId);
@@ -422,37 +433,17 @@ public class AuthenticationManager
 
         // Delete configuration
         Table.delete(CoreSchema.getInstance().getTableInfoAuthenticationConfigurations(), rowId);
+        AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(configuration.getAuthenticationProvider().getName() + " authentication configuration \"" + configuration.getDescription() + "\" (" + rowId + ") was deleted");
+        event.setChanges("deleted");
+        AuditLogService.get().addEvent(user, event);
         AuthenticationConfigurationCache.clear();
     }
 
-    private static void addConfigurationAuditEvent(User user, String name, String action)
+    private static void addAuthSettingAuditEvent(User user, String name, String action)
     {
-        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), name + " was " + action);
+        AuthSettingsAuditEvent event = new AuthSettingsAuditEvent(name + " setting was " + action);
         event.setChanges(action);
         AuditLogService.get().addEvent(user, event);
-    }
-
-    private static void addProviderAuditEvent(User user, String name,  String action)
-    {
-        AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent event = new AuthenticationProviderConfigAuditTypeProvider.AuthProviderConfigAuditEvent(
-                ContainerManager.getRoot().getId(), name + " provider was " + action);
-        event.setChanges(action);
-        AuditLogService.get().addEvent(user, event);
-    }
-
-    /**
-     * @throws org.labkey.api.view.NotFoundException if there is no registered provider with the given name
-     */
-    @NotNull
-    public static AuthenticationProvider getProvider(String name)
-    {
-        AuthenticationProvider provider = AuthenticationProviderCache.getProvider(AuthenticationProvider.class, name);
-
-        if (null != provider)
-            return provider;
-        else
-            throw new NotFoundException("No such AuthenticationProvider available: " + name);
     }
 
     public static @Nullable SSOAuthenticationConfiguration getActiveSSOConfiguration(@Nullable Integer key)
@@ -513,58 +504,23 @@ public class AuthenticationManager
      */
     public static boolean isAcceptOnlyFicamProviders()
     {
-        return getAuthConfigProperty(ACCEPT_ONLY_FICAM_PROVIDERS_KEY, false);
+        return getAuthSetting(ACCEPT_ONLY_FICAM_PROVIDERS_KEY, false);
     }
 
     public static void setAcceptOnlyFicamProviders(User user, boolean enable)
     {
-        setAuthConfigProperty(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
-        AuthenticationProviderCache.clear();
+        saveAuthSetting(user, ACCEPT_ONLY_FICAM_PROVIDERS_KEY, enable);
         AuthenticationConfigurationCache.clear();
     }
 
-    private static final String AUTHENTICATION_CATEGORY = "Authentication";
-    private static final String PROVIDERS_KEY = "Authentication";
-    private static final String PROP_SEPARATOR = ":";
+    // leave public until upgrade from 19.3 is no longer allowed (and CoreUpgrade migration method is removed)
+    public static final String AUTHENTICATION_CATEGORY = "Authentication";
+    public static final String PROVIDERS_KEY = "Authentication";
+
     public static final String SELF_REGISTRATION_KEY = "SelfRegistration";
     public static final String AUTO_CREATE_ACCOUNTS_KEY = "AutoCreateAccounts";
     public static final String SELF_SERVICE_EMAIL_CHANGES_KEY = "SelfServiceEmailChanges";
     public static final String ACCEPT_ONLY_FICAM_PROVIDERS_KEY = "AcceptOnlyFicamProviders";
-
-    private static void saveActiveProviders(Set<String> activeNames)
-    {
-        StringBuilder sb = new StringBuilder();
-        String sep = "";
-
-        for (String name : activeNames)
-        {
-            sb.append(sep);
-            sb.append(name);
-            sep = PROP_SEPARATOR;
-        }
-
-        String providers = String.join(PROP_SEPARATOR, activeNames);
-
-        assert providers.equals(sb.toString());
-
-        PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_CATEGORY, true);
-        props.put(PROVIDERS_KEY, sb.toString());
-        props.save();
-        AuthenticationProviderCache.clear();
-        AuthenticationConfigurationCache.clear();
-    }
-
-    // Provider names stored in properties; they're not necessarily all valid providers
-    public static Set<String> getActiveProviderNamesFromProperties()
-    {
-        Map<String, String> props = PropertyManager.getProperties(AUTHENTICATION_CATEGORY);
-        String activeProviderProp = props.get(PROVIDERS_KEY);
-
-        Set<String> set = new HashSet<>();
-        Collections.addAll(set, null != activeProviderProp ? activeProviderProp.split(PROP_SEPARATOR) : new String[0]);
-
-        return set;
-    }
 
     /**
      * Return the first SSOAuthenticationConfiguration that is set to auto redirect from the login page.
@@ -639,7 +595,6 @@ public class AuthenticationManager
                 errors.addError(new FormattedError(AppProps.getInstance().getAdministratorContactHTML() + " to have your account created."));
             }
         },
-
         PasswordExpired
         {
             @Override
@@ -768,7 +723,6 @@ public class AuthenticationManager
 
     public static @NotNull PrimaryAuthenticationResult authenticate(HttpServletRequest request, String id, String password, URLHelper returnURL, boolean logFailures) throws InvalidEmailException
     {
-        AuthenticationConfigurationCache.getActive(AuthenticationConfiguration.class);
         PrimaryAuthenticationResult result = null;
         try
         {
@@ -791,7 +745,7 @@ public class AuthenticationManager
         {
             AuthenticationResponse firstFailure = null;
 
-            for (LoginFormAuthenticationConfiguration<LoginFormAuthenticationProvider> configuration : AuthenticationConfigurationCache.getActive(LoginFormAuthenticationConfiguration.class))
+            for (LoginFormAuthenticationConfiguration<LoginFormAuthenticationProvider<?>> configuration : AuthenticationConfigurationCache.getActive(LoginFormAuthenticationConfiguration.class))
             {
                 AuthenticationResponse authResponse;
 
@@ -938,7 +892,7 @@ public class AuthenticationManager
                 else
                 {
                     // No: log that we're not permitted to create accounts automatically
-                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getProvider().getName() + ". Login failed because account creation is disabled.");
+                    addAuditEvent(User.guest, request, "User " + email + " successfully authenticated via " + response.getConfiguration().getDescription() + ". Login failed because account creation is disabled.");
                     return new PrimaryAuthenticationResult(AuthenticationStatus.UserCreationNotAllowed);
                 }
             }
@@ -959,8 +913,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        _userProviders.put(user.getUserId(), response.getProvider());  // TODO: This should go into session (handle in caller)!
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getProvider().getName() + " authentication.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getConfiguration().getDescription() + " authentication.");
 
         return new PrimaryAuthenticationResult(user, response);
     }
@@ -1092,25 +1045,35 @@ public class AuthenticationManager
     }
 
 
-    public static void logout(@NotNull User user, HttpServletRequest request)
+    public static URLHelper logout(@NotNull User user, HttpServletRequest request, URLHelper returnURL)
     {
-        PrimaryAuthenticationProvider provider = _userProviders.get(user.getUserId());
+        URLHelper ret = null;
+        HttpSession session = request.getSession(false);
 
-        if (null != provider)
-            provider.logout(request);
-
-        if (!user.isGuest())
+        if (null != session && !user.isGuest())
         {
             // notify websocket clients associated with this http session, the user has logged out
-            HttpSession session = request.getSession(false);
             NotificationService.get().closeServerEvents(user.getUserId(), session, AuthNotify.LoggedOut);
 
             // notify any remaining websocket clients for this user that were not closed that the user has logged out elsewhere
-            if (session != null)
-                NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
+            NotificationService.get().sendServerEvent(user.getUserId(), AuthNotify.LoggedOut);
 
             addAuditEvent(user, request, user.getEmail() + " " + UserManager.UserAuditEvent.LOGGED_OUT + ".");
+
+            Integer configurationId = (Integer)session.getAttribute(SecurityManager.PRIMARY_AUTHENTICATION_CONFIGURATION);
+
+            if (null != configurationId)
+            {
+                PrimaryAuthenticationConfiguration<?> configuration = AuthenticationConfigurationCache.getConfiguration(PrimaryAuthenticationConfiguration.class, configurationId);
+
+                if (null != configuration)
+                {
+                    ret = configuration.logout(request, returnURL);
+                }
+            }
         }
+
+        return ret;
     }
 
 
@@ -1124,37 +1087,15 @@ public class AuthenticationManager
         return getActiveConfigurations(AuthenticationConfiguration.class).size() > 1;
     }
 
-    public static boolean isActive(String providerName)
-    {
-        AuthenticationProvider provider = getProvider(providerName);
-
-        return isActive(provider);
-    }
-
-
-    public static boolean isActive(AuthenticationProvider authProvider)
-    {
-        return getActiveProviders().contains(authProvider);
-    }
-
-
     public static Collection<PrimaryAuthenticationProvider> getAllPrimaryProviders()
     {
         return AuthenticationProviderCache.getProviders(PrimaryAuthenticationProvider.class);
     }
 
-
     public static Collection<SecondaryAuthenticationProvider> getAllSecondaryProviders()
     {
         return AuthenticationProviderCache.getProviders(SecondaryAuthenticationProvider.class);
     }
-
-
-    public static Collection<SecondaryAuthenticationProvider> getActiveSecondaryProviders()
-    {
-        return AuthenticationProviderCache.getActiveProviders(SecondaryAuthenticationProvider.class);
-    }
-
 
     // This is like LoginForm... but doesn't contain any credentials
     public static class LoginReturnProperties
@@ -1215,33 +1156,38 @@ public class AuthenticationManager
     public static void setPrimaryAuthenticationResult(HttpServletRequest request, PrimaryAuthenticationResult result)
     {
         HttpSession session = request.getSession(true);
-        session.setAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class), result);
+        session.setAttribute(getAuthenticationProcessSessionKey(), result);
     }
 
 
     public static @Nullable PrimaryAuthenticationResult getPrimaryAuthenticationResult(HttpSession session)
     {
-        return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey(PrimaryAuthenticationProvider.class));
+        return (PrimaryAuthenticationResult)session.getAttribute(getAuthenticationProcessSessionKey());
     }
 
 
-    public static void setSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz, User user)
+    public static void setSecondaryAuthenticationUser(HttpSession session, int configurationId, User user)
     {
-        session.setAttribute(getAuthenticationProcessSessionKey(clazz), user);
+        session.setAttribute(getAuthenticationProcessSessionKey(configurationId), user);
     }
 
 
-    public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, Class<? extends SecondaryAuthenticationProvider> clazz)
+    public static @Nullable User getSecondaryAuthenticationUser(HttpSession session, int configurationId)
     {
-        return (User)session.getAttribute(getAuthenticationProcessSessionKey(clazz));
+        return (User)session.getAttribute(getAuthenticationProcessSessionKey(configurationId));
     }
 
 
     private static final String AUTHENTICATION_PROCESS_PREFIX = "AuthenticationProcess$";
 
-    private static String getAuthenticationProcessSessionKey(Class<? extends AuthenticationProvider> clazz)
+    private static String getAuthenticationProcessSessionKey()
     {
-        return AUTHENTICATION_PROCESS_PREFIX + clazz.getName() + "$User";
+        return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationProvider.class.getName();
+    }
+
+    private static String getAuthenticationProcessSessionKey(int configurationId)
+    {
+        return AUTHENTICATION_PROCESS_PREFIX + PrimaryAuthenticationConfiguration.class.getName() + "$" + configurationId;
     }
 
 
@@ -1319,31 +1265,28 @@ public class AuthenticationManager
 
         List<AuthenticationValidator> validators = new LinkedList<>();
 
-        for (SecondaryAuthenticationProvider provider : getActiveSecondaryProviders())
+        for (SecondaryAuthenticationConfiguration<?> configuration : getActiveConfigurations(SecondaryAuthenticationConfiguration.class))
         {
-            User secondaryAuthUser = getSecondaryAuthenticationUser(session, provider.getClass());
+            User secondaryAuthUser = getSecondaryAuthenticationUser(session, configuration.getRowId());
 
             if (null == secondaryAuthUser)
             {
+                SecondaryAuthenticationProvider<?> provider = configuration.getAuthenticationProvider();
                 if (provider.bypass())
                 {
                     _log.info("Per configuration, bypassing secondary authentication for provider: " + provider.getClass());
-                    setSecondaryAuthenticationUser(session, provider.getClass(), primaryAuthUser);
+                    setSecondaryAuthenticationUser(session, configuration.getRowId(), primaryAuthUser);
                     continue;
                 }
 
-                return new AuthenticationResult(provider.getRedirectURL(primaryAuthUser, c));
+                return new AuthenticationResult(configuration.getRedirectURL(primaryAuthUser, c));
             }
 
             // Validate that secondary auth user matches primary auth user
             if (!secondaryAuthUser.equals(primaryAuthUser))
-            {
                 throw new IllegalStateException("Wrong user");
-            }
-            else
-            {
-                // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
-            }
+
+            // validators.add();  TODO: provide mechanism for secondary auth providers to convey a validator
         }
 
         // Get the redirect URL from the current session
@@ -1351,7 +1294,7 @@ public class AuthenticationManager
         URLHelper url = getAfterLoginURL(c, properties, primaryAuthUser);
 
         // Prep the new session and set the user attribute
-        session = SecurityManager.setAuthenticatedUser(request, primaryAuthUser, true);
+        session = SecurityManager.setAuthenticatedUser(request, primaryAuthResult.getResponse().getConfiguration(), primaryAuthUser, true);
 
         if (session.isNew() && !primaryAuthUser.isGuest())
         {
@@ -1460,13 +1403,11 @@ public class AuthenticationManager
         {
             try
             {
-                Attachment logo = AttachmentService.get().getAttachment(_configuration, logoType.getFileName());
+                String logoUrl = generateLogoUrl(_configuration, logoType);
 
-                if (null != logo)
+                if (null != logoUrl)
                 {
-                    return "<img src=\"" + AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image" +
-                            "?configuration=" + _configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() + "\"" +
-                            " alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
+                    return "<img src=\"" + logoUrl + "\" alt=\"Sign in using " + _configuration.getDescription() + "\" height=\"" + logoType.getHeight() + "px\">";
                 }
             }
             catch (RuntimeSQLException e)
@@ -1478,7 +1419,38 @@ public class AuthenticationManager
         }
     }
 
+    // In most cases, callers will want to add a "revision" parameter with the look & feel revision value to defeat browser caching
+    public static @Nullable String generateLogoUrl(SSOAuthenticationConfiguration<?> configuration, AuthLogoType logoType)
+    {
+        Attachment logo = AttachmentService.get().getAttachment(configuration, logoType.getFileName());
 
+        return null != logo ? AppProps.getInstance().getContextPath() + "/" + logoType.getFileName() + ".image?configuration=" + configuration.getRowId() + "&revision=" + AppProps.getInstance().getLookAndFeelRevision() : null;
+    }
+
+    public static Map<String, Object> getSsoConfigurationMap(SSOAuthenticationConfiguration<?> configuration)
+    {
+        Map<String, Object> map = getConfigurationMap(configuration);
+        map.put("headerLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.HEADER));
+        map.put("loginLogoUrl", AuthenticationManager.generateLogoUrl(configuration, AuthLogoType.LOGIN_PAGE));
+        map.put("autoRedirect", configuration.isAutoRedirect());
+
+        return map;
+    }
+
+    public static Map<String, Object> getConfigurationMap(AuthenticationConfiguration<?> configuration)
+    {
+        Map<String, Object> map = new HashMap<>();
+        map.put("provider", configuration.getAuthenticationProvider().getName());
+        map.put("description", configuration.getDescription());
+        map.put("details", configuration.getDetails());
+        map.put("enabled", configuration.isEnabled());
+        map.put("configuration", configuration.getRowId());
+        map.putAll(configuration.getCustomProperties());
+
+        return map;
+    }
+
+    // TODO: Register this!
     public static class TestCase extends Assert
     {
         @Test

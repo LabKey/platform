@@ -18,6 +18,7 @@ package org.labkey.api.query;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
@@ -29,7 +30,7 @@ import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
@@ -44,7 +45,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,7 +53,7 @@ import java.util.Set;
  *
  * A domain kind for {@link SimpleUserSchema.SimpleTable}s.
  */
-public class SimpleTableDomainKind extends AbstractDomainKind
+public class SimpleTableDomainKind extends BaseAbstractDomainKind
 {
     private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -111,6 +111,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
         return lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(SimpleModule.NAMESPACE_PREFIX) ? Handler.Priority.MEDIUM : null;
     }
 
+    @Override
     public String generateDomainURI(String schemaName, String tableName, Container c, User u)
     {
         return getDomainURI(schemaName, tableName, c, u);
@@ -252,7 +253,7 @@ public class SimpleTableDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         String schemaName = (String)arguments.get("schemaName");
         String tableName = (String)arguments.get("tableName");

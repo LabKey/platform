@@ -124,6 +124,7 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -1646,11 +1647,12 @@ public class StudyController extends BaseStudyController
             QueryUpdateService qus = studyProperties.getUpdateService();
             if (null == qus)
                 throw new UnauthorizedException();
-            try
+            try (DbScope.Transaction transaction = studyProperties.getSchema().getScope().ensureTransaction())
             {
                 qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null, null);
                 List<AttachmentFile> files = getAttachmentFileList();
                 getStudyThrowIfNull().attachProtocolDocument(files, getUser());
+                transaction.commit();
             }
             catch (BatchValidationException x)
             {
@@ -1881,7 +1883,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
@@ -1906,7 +1908,7 @@ public class StudyController extends BaseStudyController
             {
                 if (c.hasPermission(getUser(), AdminPermission.class))
                 {
-                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    for (LocationImpl loc : StudyManager.getInstance().getLocations(c))
                     {
                         if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
@@ -3716,7 +3718,7 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No dataset found for id: " + _datasetId);
             }
             Set<String> lsids = null;
-            if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+            if (isPost())
                 lsids = DataRegionSelection.getSelected(getViewContext(), updateQCForm.getDataRegionSelectionKey(), false);
             if (lsids == null || lsids.isEmpty())
                 return new HtmlView("No data rows selected.  " + PageFlowUtil.link("back").href("javascript:back()"));

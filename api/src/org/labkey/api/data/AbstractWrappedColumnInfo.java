@@ -176,6 +176,14 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
     }
 
     @Override
+    public TableDescription getFkTableDescription()
+    {
+        if (null == getFk())
+            return null;
+        return getFk().getLookupTableDescription();
+    }
+
+    @Override
     public boolean isUserEditable()
     {
         return delegate.isUserEditable();

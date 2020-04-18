@@ -16,10 +16,14 @@
 
 package org.labkey.api.data;
 
+import org.json.JSONObject;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
 
 import java.io.Serializable;
+import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.encode;
 
 /**
  * Bean to capture a single filter on a single column.
@@ -93,5 +97,19 @@ public class FilterInfo implements Serializable
         String opStr = op.getPreferredUrlKey() != null ? op.getPreferredUrlKey() : "";
         String valueStr = value != null ? value : "";
         url.addParameter(regionName + "." + fieldKey.toString() + "~" + opStr, valueStr);
+    }
+
+    public Map<String, String> toMap()
+    {
+        return Map.of(
+                "fieldKey", this.field.toString(),
+                "op", this.op != null ? this.op.getPreferredUrlKey() : "",
+                "value", this.value
+        );
+    }
+
+    public String toString()
+    {
+        return encode(field.toString()) + "~" + (this.op != null ? this.op.getPreferredUrlKey() : "") + "=" + encode(value);
     }
 }

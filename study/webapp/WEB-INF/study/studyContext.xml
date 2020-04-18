@@ -18,6 +18,7 @@
                 <bean class="org.labkey.study.pipeline.StudyReloadSourceTask$Factory"/>
                 <bean class="org.labkey.study.pipeline.FileAnalysisDatasetTask$Factory"/>
                 <bean class="org.labkey.study.importer.StudyReloadTask$Factory"/>
+                <bean class="org.labkey.study.pipeline.FileAnalysisSpecimenTask$Factory"/>
             </list>
         </property>
 
@@ -157,6 +158,32 @@
                     </property>
                     <property name="helpText" value="The selected Pipeline task should only be initiated on a studyload.txt file underneath a pipeline root, and will only analyze exploded study archives. It will not accept compressed (.zip) study archives." />
                 </bean>
+
+                <bean class="org.labkey.api.pipeline.file.FileAnalysisTaskPipelineSettings">
+                    <constructor-arg value="specimenImportTask"/>
+                    <property name="description" value="Imports specimen data using data file"/>
+                    <property name="protocolObjectId" value="specimen.specimenImport"/>
+                    <property name="protocolName" value="Specimen Import"/>
+                    <property name="protocolFactoryName" value="specimenImport"/>
+                    <property name="defaultDisplayState" value="hidden"/>
+                    <property name="allowForTriggerConfiguration" value="true"/>
+                    <property name="activeModuleRequired" value="false"/>
+                    <property name="initialInputExts">
+                        <list>
+                            <ref bean="zipFileType"/>
+                            <ref bean="tsvFileType"/>
+                            <ref bean="specimensFileType"/>
+                        </list>
+                    </property>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean id="specimenImportTask" class="org.labkey.api.pipeline.TaskId">
+                                <constructor-arg><value type="java.lang.Class">org.labkey.study.pipeline.FileAnalysisSpecimenTask</value></constructor-arg>
+                            </bean>
+                        </list>
+                    </property>
+                    <property name="helpText" value="The selected Pipeline task can only be initiated on .zip and .tsv files."/>
+                </bean>
             </list>
         </property>
     </bean>
@@ -172,6 +199,12 @@
     </bean>
     <bean id="txtFileType" class="org.labkey.api.util.FileType">
         <constructor-arg value=".txt"/>
+    </bean>
+    <bean id="zipFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".zip"/>
+    </bean>
+    <bean id="specimensFileType" class="org.labkey.api.util.FileType">
+        <constructor-arg value=".specimens"/>
     </bean>
 
 </beans>

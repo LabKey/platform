@@ -18,7 +18,8 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
@@ -36,7 +37,7 @@ public class DbSchemaCache
     private static final Logger LOG = Logger.getLogger(DbSchemaCache.class);
 
     private final DbScope _scope;
-    private final BlockingStringKeyCache<DbSchema> _cache;
+    private final BlockingCache<String, DbSchema> _cache;
 
     // Ask the DbSchemaType how long to cache each schema
     private final CacheTimeChooser<String> SCHEMA_CACHE_TIME_CHOOSER = (key, argument) -> {
@@ -71,7 +72,7 @@ public class DbSchemaCache
             LOG.warn("removing module schema: " + schemaName, new Throwable("removing module schema: " + schemaName));
         else
             LOG.debug("remove " + type + " schema: " + schemaName);
-        _cache.removeUsingPrefix(getKey(schemaName, type));
+        _cache.removeUsingFilter(new Cache.StringPrefixFilter(getKey(schemaName, type)));
     }
 
     private String getKey(String schemaName, DbSchemaType type)
@@ -121,7 +122,7 @@ public class DbSchemaCache
     }
 
 
-    private class DbSchemaBlockingCache extends BlockingStringKeyCache<DbSchema>
+    private class DbSchemaBlockingCache extends BlockingCache<String, DbSchema>
     {
         public DbSchemaBlockingCache(String dsName)
         {

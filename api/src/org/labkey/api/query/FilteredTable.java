@@ -609,6 +609,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return getName() + " - FilteredTable over " + _rootTable;
     }
 
+    @Override
     public boolean isPublic()
     {
         return _public;

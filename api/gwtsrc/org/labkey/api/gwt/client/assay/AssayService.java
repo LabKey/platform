@@ -38,14 +38,4 @@ public interface AssayService extends LookupService
     GWTProtocol getAssayTemplate(String providerName) throws SerializableException;
 
     GWTProtocol saveChanges(GWTProtocol plate, boolean replaceIfExisting) throws AssayException, ValidationException;
-
-    /**
-     * @param orig Unchanged domain
-     * @param update Edited domain
-     * @return list of errors
-     */
-    List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update);
-
-    /** Get the list of containers with studies that are readable by the current user */
-    List<GWTContainer> getStudyContainers();
 }

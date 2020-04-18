@@ -63,7 +63,7 @@
     SpecimenRequestRequirement[] requirements = manager.getRequestRequirements(bean.getSpecimenRequest());
     Location destinationLocation = bean.getDestinationSite();
     User creatingUser = UserManager.getUser(bean.getSpecimenRequest().getCreatedBy());
-    List<LocationImpl> locations = StudyManager.getInstance().getSites(c);
+    List<LocationImpl> locations = StudyManager.getInstance().getLocations(c);
     boolean notYetSubmitted = false;
     if (manager.isSpecimenShoppingCartEnabled(c))
     {

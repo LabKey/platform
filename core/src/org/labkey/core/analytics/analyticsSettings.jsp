@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.AdminOperationsPermission" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.analytics.AnalyticsController" %>
@@ -29,6 +30,7 @@
     AnalyticsController.SettingsForm settingsForm = (AnalyticsController.SettingsForm) HttpView.currentModel();
     boolean hasAdminOpsPerms = getContainer().hasPermission(getUser(), AdminOperationsPermission.class);
 %>
+<%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<br>"))%>
 <p>Your LabKey Server can be configured to add JavaScript to your HTML pages, so that information about how your users
     use your server will be sent to Google Analytics.</p>
 <p>When enabled, the project/folder path will only be reported when it is accessible to Guest users. When a project/folder is secure,

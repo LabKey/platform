@@ -20,17 +20,18 @@ import org.apache.commons.beanutils.converters.FileConverter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayDataType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.Path;
@@ -39,6 +40,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
 import java.io.File;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
@@ -115,7 +117,7 @@ public class ExpDataFileConverter implements Converter
             }
             return data;
         }
-        // Try as a full URL on the server's file system - "file://"...
+        // Try as a full URL on the server's file system - "file://"... or path to the file relative to the file root
         else if (dataObject.has(ExperimentJSONConverter.DATA_FILE_URL) && dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL) != null)
         {
             String dataFileURL = dataObject.getString(ExperimentJSONConverter.DATA_FILE_URL);
@@ -124,7 +126,21 @@ public class ExpDataFileConverter implements Converter
 
             if (null == data)
             {
-                throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+                if (null != container)
+                {
+                    // Check for file at file root
+                    URI dataFileUri = FileContentService.get().getFileRootUri(container, FileContentService.ContentType.files, dataFileURL);
+                    if (dataFileUri == null) {
+                        throw new IllegalArgumentException("Could not resolve file at file root: " + dataFileURL);
+                    }
+
+                    data = expSvc.getExpDataByURL(dataFileUri.toString(), container);
+
+                    if (null == data)
+                    {
+                        throw new IllegalArgumentException("Could not find a file for dataFileURL " + dataFileURL);
+                    }
+                }
             }
             return data;
         }

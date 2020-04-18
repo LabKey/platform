@@ -296,7 +296,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     {
         ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this, cf);
         table.populate();
-        table.setAssayProtocol(getProtocol());
+        table.setAssayProtocol(getProvider(), getProtocol());
         return table;
     }
 

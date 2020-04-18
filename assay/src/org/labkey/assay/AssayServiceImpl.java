@@ -28,21 +28,21 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
 import org.labkey.api.assay.plate.PlateTemplate;
 import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
 import org.labkey.api.exp.property.PropertyService;
@@ -151,10 +151,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             gwtDomain.setProvisioned(domain.isProvisioned());
             gwtDomains.add(gwtDomain);
 
+            DomainKind kind = domain.getDomainKind();
+
             List<GWTPropertyDescriptor> gwtProps = new ArrayList<>();
             List<? extends DomainProperty> properties = domain.getProperties();
             Map<DomainProperty, Object> defaultValues = domainInfo.getValue();
-            Set<String> mandatoryPropertyDescriptors = new HashSet<>();
+            Set<String> mandatoryPropertyDescriptors = new CaseInsensitiveHashSet(kind.getMandatoryPropertyNames(domain));
 
             for (DomainProperty prop : properties)
             {
@@ -258,6 +260,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         result.setEditableRuns(provider.isEditableRuns(protocol));
         result.setBackgroundUpload(provider.isBackgroundUpload(protocol));
         result.setQcEnabled(provider.isQCEnabled(protocol));
+        result.setPlateMetadata(provider.isPlateMetadataEnabled(protocol));
 
         // data transform scripts
         List<File> transformScripts = provider.getValidationAndAnalysisScripts(protocol, AssayProvider.Scope.ASSAY_DEF);
@@ -289,6 +292,8 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
         // if the provider supports QC and if there is a valid QC service registered
         result.setAllowQCStates(provider.supportsQC() && AssayQCService.getProvider().supportsQC());
+
+        result.setAllowPlateMetadata(provider.supportsPlateMetadata());
 
         boolean supportsFlag = provider.supportsFlagColumnType(ExpProtocol.AssayDomainTypes.Result);
         for (GWTDomain d : result.getDomains())
@@ -486,6 +491,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     provider.setEditableRuns(protocol, assay.isEditableRuns());
                     provider.setBackgroundUpload(protocol, assay.isBackgroundUpload());
                     provider.setQCEnabled(protocol, assay.isQcEnabled());
+                    provider.setPlateMetadataEnabled(protocol, assay.isPlateMetadata());
 
                     Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
                     // get the autoCopyTargetContainer from either the id on the assay object entityId
@@ -541,7 +547,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private ValidationException updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
     {
-        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
+        GWTDomain<GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)
@@ -551,32 +557,6 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
         provider.changeDomain(getUser(), protocol, previous, domain);
         return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
-    }
-
-    @Override
-    public List<GWTContainer> getStudyContainers()
-    {
-        List<GWTContainer> result = new ArrayList<>();
-        AssayPublishService aps = AssayPublishService.get();
-
-        if (null != aps)
-        {
-            // Use a tree set so they're sorted nicely
-            Set<Container> containers = new TreeSet<>();
-            Set<Study> publishTargets = aps.getValidPublishTargets(getUser(), ReadPermission.class);
-
-            for (Study study : publishTargets)
-            {
-                containers.add(study.getContainer());
-            }
-
-            for (Container container : containers)
-            {
-                result.add(convertToGWTContainer(container));
-            }
-        }
-
-        return result;
     }
 
     public boolean canUpdateProtocols()

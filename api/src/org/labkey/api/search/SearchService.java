@@ -96,6 +96,12 @@ public interface SearchService
         ServiceRegistry.get().registerService(SearchService.class, impl);
     }
 
+    /**
+     * Delete the index for the container then index it again
+     * @param c
+     */
+    void reindexContainer(Container c);
+
     enum PRIORITY
     {
         commit,
@@ -320,6 +326,11 @@ public interface SearchService
     WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
     SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+
+    // return list of uniqueId
+    List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
+
+    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
 
     @Nullable SearchHit find(String docId) throws IOException;
 

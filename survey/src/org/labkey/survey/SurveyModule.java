@@ -66,7 +66,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -81,9 +80,9 @@ public class SurveyModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.30;
+        return 20.000;
     }
 
     @Override
@@ -96,10 +95,10 @@ public class SurveyModule extends DefaultModule
     @Override
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
-                new SurveyDesignWebPartFactory(),
-                new SurveysWebPartFactory()
-        ));
+        return Arrays.asList(
+            new SurveyDesignWebPartFactory(),
+            new SurveysWebPartFactory()
+        );
     }
 
     @Override
@@ -111,6 +110,7 @@ public class SurveyModule extends DefaultModule
 
         DefaultSchema.registerProvider("survey", new DefaultSchema.SchemaProvider(this)
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new SurveyQuerySchema(schema.getUser(), schema.getContainer());
@@ -174,6 +174,7 @@ public class SurveyModule extends DefaultModule
             super("Survey Designs", WebPartFactory.LOCATION_BODY);
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(AdminPermission.class))
@@ -211,6 +212,7 @@ public class SurveyModule extends DefaultModule
             return new JspView<>("/org/labkey/survey/view/customizeSurveysWebPart.jsp", webPart);
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(ReadPermission.class) || context.getUser().isGuest())
@@ -263,8 +265,8 @@ public class SurveyModule extends DefaultModule
     @Override
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SurveyManager.TestCase.class);
-        return set;
+        return Set.of(
+            SurveyManager.TestCase.class
+        );
     }
 }

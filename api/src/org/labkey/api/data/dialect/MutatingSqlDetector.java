@@ -121,6 +121,7 @@ public class MutatingSqlDetector
         // Needed for PostgreSQL
         WORD_MUTATING_MAP.putAll(Map.of(
             "ANALYZE", true,   // Typically executed after UPDATE, CREATE INDEX, et al
+            "VACUUM", true,    // VACUUM is mutating
             "{call", true      // Execute a stored procedure, which is likely to be mutating
         ));
 

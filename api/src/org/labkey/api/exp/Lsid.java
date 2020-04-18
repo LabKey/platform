@@ -33,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -255,16 +256,9 @@ public class Lsid
      */
     public static String encodePart(String original)
     {
-        try
-        {
-            String result = URLEncoder.encode(original, "UTF-8");
-            result = result.replace(":", "%3A");
-            return result;
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", e);
-        }
+        String result = URLEncoder.encode(original, StandardCharsets.UTF_8);
+        result = result.replace(":", "%3A");
+        return result;
     }
 
     /**
@@ -277,14 +271,7 @@ public class Lsid
             return null;
         }
 
-        try
-        {
-            return URLDecoder.decode(original, "UTF-8");
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new IllegalArgumentException("UTF-8 encoding not supported on this machine", e);
-        }
+        return URLDecoder.decode(original, StandardCharsets.UTF_8);
     }
 
     public static boolean isLsid(String lsid)
@@ -331,6 +318,11 @@ public class Lsid
             }
         }
         return uri;
+    }
+
+    public LsidBuilder edit()
+    {
+        return new LsidBuilder(this);
     }
 
 
@@ -701,7 +693,7 @@ public class Lsid
             assertEquals(b.toString(), lsid3.toString());
             Lsid lsid4 = b.setObjectId("OBJ").build();
 
-            Lsid.LsidBuilder t = new Lsid.LsidBuilder(lsid1);
+            Lsid.LsidBuilder t = lsid1.edit();
             assertEquals(lsid1,t.build());
             assertEquals(lsid1.toString(),t.toString());
             t.setVersion("3");

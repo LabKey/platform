@@ -86,6 +86,12 @@ public class WrappedColumnInfo
                 // don't return filterField if it's from a different table, that would probably be wrong...
                 return parent == delegate.getParentTable() ? delegate.getFilterField() : null;
             }
+
+            @Override
+            public TableDescription getFkTableDescription()
+            {
+                return delegate.getFkTableDescription();
+            }
         };
         return new MutableColumnInfoWrapper(inner);
     }
@@ -741,12 +747,6 @@ public class WrappedColumnInfo
                 {
                     return null;
                 }
-
-                @Override
-                public TableInfo getFkTableInfo()
-                {
-                    return null;
-                }
             };
         }
 
@@ -760,12 +760,6 @@ public class WrappedColumnInfo
                 public ForeignKey getFk()
                 {
                     return fk;
-                }
-
-                @Override
-                public TableInfo getFkTableInfo()
-                {
-                    return null;
                 }
             };
         }

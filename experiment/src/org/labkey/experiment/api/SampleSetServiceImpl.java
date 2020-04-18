@@ -20,12 +20,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -47,10 +55,13 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleSetService;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
@@ -59,6 +70,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.miniprofiler.MiniProfiler;
@@ -66,11 +78,13 @@ import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -83,6 +97,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -92,10 +107,14 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singleton;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleSetServiceImpl implements SampleSetService
+public class SampleSetServiceImpl extends AuditHandler implements SampleSetService
 {
     public static SampleSetServiceImpl get()
     {
@@ -106,9 +125,9 @@ public class SampleSetServiceImpl implements SampleSetService
     private static final Logger LOG = Logger.getLogger(SampleSetServiceImpl.class);
 
     // SampleSet -> Container cache
-    private StringKeyCache<String> sampleSetCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleSetToContainer");
+    private Cache<String, String> sampleSetCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "SampleSetToContainer");
 
-    private StringKeyCache<SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
+    private Cache<String, SortedSet<MaterialSource>> materialSourceCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "MaterialSource", (container, argument) ->
     {
         Container c = ContainerManager.getForId(container);
         if (c == null)
@@ -118,7 +137,7 @@ public class SampleSetServiceImpl implements SampleSetService
         return Collections.unmodifiableSortedSet(new TreeSet<>(new TableSelector(getTinfoMaterialSource(), filter, null).getCollection(MaterialSource.class)));
     });
 
-    StringKeyCache<SortedSet<MaterialSource>> getMaterialSourceCache()
+    Cache<String, SortedSet<MaterialSource>> getMaterialSourceCache()
     {
         return materialSourceCache;
     }
@@ -241,7 +260,7 @@ public class SampleSetServiceImpl implements SampleSetService
     public Map<String, ExpSampleSet> getSampleSetsForRoles(Container container, ContainerFilter filter, ExpProtocol.ApplicationType type)
     {
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT mi.Role, MAX(m.CpasType) AS SampleSetLSID, COUNT (DISTINCT m.CpasType) AS SampleSetCount FROM ");
+        sql.append("SELECT mi.Role, MAX(m.CpasType) AS MaxSampleSetLSID, MIN (m.CpasType) AS MinSampleSetLSID FROM ");
         sql.append(getTinfoMaterial(), "m");
         sql.append(", ");
         sql.append(getTinfoMaterialInput(), "mi");
@@ -267,26 +286,19 @@ public class SampleSetServiceImpl implements SampleSetService
         sql.append(filter.getSQLFragment(getExpSchema(), new SQLFragment("r.Container"), container));
         sql.append(" GROUP BY mi.Role ORDER BY mi.Role");
 
-        Collection<Map<String, Object>> queryResults = new SqlSelector(getExpSchema(), sql).getMapCollection();
-        Map<String, ExpSampleSet> lsidToSampleSet = new HashMap<>();
-
         Map<String, ExpSampleSet> result = new LinkedHashMap<>();
-        for (Map<String, Object> queryResult : queryResults)
+        for (Map<String, Object> queryResult : new SqlSelector(getExpSchema(), sql).getMapCollection())
         {
             ExpSampleSet sampleSet = null;
-            Number sampleSetCount = (Number) queryResult.get("SampleSetCount");
-            if (sampleSetCount.intValue() == 1)
+            String maxSampleSetLSID = (String) queryResult.get("MaxSampleSetLSID");
+            String minSampleSetLSID = (String) queryResult.get("MinSampleSetLSID");
+
+            // Check if we have a sample set that was being referenced
+            if (maxSampleSetLSID != null && maxSampleSetLSID.equalsIgnoreCase(minSampleSetLSID))
             {
-                String sampleSetLSID = (String) queryResult.get("SampleSetLSID");
-                if (!lsidToSampleSet.containsKey(sampleSetLSID))
-                {
-                    sampleSet = getSampleSet(sampleSetLSID);
-                    lsidToSampleSet.put(sampleSetLSID, sampleSet);
-                }
-                else
-                {
-                    sampleSet = lsidToSampleSet.get(sampleSetLSID);
-                }
+                // If the min and the max are the same, it means all rows share the same value so we know that there's
+                // a single sample set being targeted
+                sampleSet = getSampleSet(container, maxSampleSetLSID);
             }
             result.put((String) queryResult.get("Role"), sampleSet);
         }
@@ -653,9 +665,7 @@ public class SampleSetServiceImpl implements SampleSetService
             {
                 if (lowerReservedNames.contains(propertyName))
                 {
-                    if (pd.getLabel() == null)
-                        pd.setLabel(pd.getName());
-                    pd.setName("Property_" + pd.getName());
+                    throw new IllegalArgumentException("Property name '" + propertyName + "' is a reserved name.");
                 }
 
                 DomainProperty dp = DomainUtil.addProperty(domain, pd, defaultValues, propertyUris, null);
@@ -681,7 +691,7 @@ public class SampleSetServiceImpl implements SampleSetService
         if (hasNameProperty && idUri1 != null)
             throw new ExperimentException("Either a 'Name' property or idCols can be used, but not both");
 
-        String importAliasJson = getAliasJson(importAliases);
+        String importAliasJson = getAliasJson(importAliases, name);
 
         MaterialSource source = new MaterialSource();
         source.setLSID(lsid.toString());
@@ -724,36 +734,60 @@ public class SampleSetServiceImpl implements SampleSetService
                 }
                 catch (ExperimentException eex)
                 {
-                    throw new RuntimeException(eex);
+                    throw new DbScope.RetryPassthroughException(eex);
                 }
             });
         }
-        catch (RuntimeException x)
+        catch (DbScope.RetryPassthroughException x)
         {
-            if (x.getCause() instanceof ExperimentException)
-                throw (ExperimentException)x.getCause();
-            else
-                throw x;
+            x.rethrow(ExperimentException.class);
+            throw x;
         }
 
         return ss;
     }
 
-    public String getAliasJson(Map<String, String> importAliases)
+    public String getAliasJson(Map<String, String> importAliases, String currentAliasName)
     {
         if (importAliases == null || importAliases.size() == 0)
             return null;
 
+        Map<String, String> aliases = sanitizeAliases(importAliases, currentAliasName);
+
         try
         {
             ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(importAliases);
+            return mapper.writeValueAsString(aliases);
         }
         catch (JsonProcessingException e)
         {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private Map<String, String> sanitizeAliases(Map<String, String> importAliases, String currentAliasName)
+    {
+        Map<String, String> cleanAliases = new HashMap<>();
+        importAliases.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedVal = StringUtils.trimToNull(value);
+
+            //Sanity check this should be caught earlier
+            if (trimmedKey == null || trimmedVal == null)
+                throw new IllegalArgumentException("Parent aliases contain blanks");
+
+            //Substitute the currentAliasName for the placeholder value
+            if (trimmedVal.equalsIgnoreCase(NEW_SAMPLE_SET_ALIAS_VALUE) ||
+                trimmedVal.equalsIgnoreCase(MATERIAL_INPUTS_PREFIX + NEW_SAMPLE_SET_ALIAS_VALUE))
+            {
+                trimmedVal = MATERIAL_INPUTS_PREFIX + currentAliasName;
+            }
+
+            cleanAliases.put(trimmedKey, trimmedVal);
+        });
+
+        return cleanAliases;
     }
 
 
@@ -799,5 +833,154 @@ public class SampleSetServiceImpl implements SampleSetService
         counts.put("monthlySampleCount", SampleSequenceType.MONTHLY.next(counterDate));
         counts.put("yearlySampleCount",  SampleSequenceType.YEARLY.next(counterDate));
         return counts;
+    }
+
+    @Override
+    public ValidationException updateSampleSet(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        ExpSampleSetImpl ss = new ExpSampleSetImpl(getMaterialSource(update.getDomainURI()));
+
+        String newDescription = StringUtils.trimToNull(update.getDescription());
+        String description = ss.getDescription();
+        if (description == null || !description.equals(newDescription))
+        {
+            ss.setDescription(newDescription);
+        }
+
+        if (options != null)
+        {
+            String sampleIdPattern = StringUtils.trimToNull(options.getNameExpression());
+            String oldPattern = ss.getNameExpression();
+            if (oldPattern == null || !oldPattern.equals(sampleIdPattern))
+            {
+                ss.setNameExpression(sampleIdPattern);
+            }
+
+            ss.setImportAliasMap(options.getImportAliases());
+        }
+
+        ValidationException errors;
+        try (DbScope.Transaction transaction = ensureTransaction())
+        {
+            ss.save(user);
+            errors = DomainUtil.updateDomainDescriptor(original, update, container, user);
+
+            if (!errors.hasErrors())
+            {
+                transaction.addCommitTask(() -> clearMaterialSourceCache(container), DbScope.CommitTaskOption.IMMEDIATE, POSTCOMMIT, POSTROLLBACK);
+                transaction.commit();
+            }
+        }
+
+        return errors;
+    }
+
+    @Override
+    public boolean parentAliasHasCorrectFormat(String parentAlias)
+    {
+        //check if it is of the expected format or targeting the to be created sampleset
+        if (!(UploadSamplesHelper.isInputOutputHeader(parentAlias) || NEW_SAMPLE_SET_ALIAS_VALUE.equals(parentAlias)))
+            throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
+
+        return true;
+    }
+
+    protected String getCommentDetailed(QueryService.AuditAction action)
+    {
+        switch (action) {
+            case INSERT:
+                return "Sample was registered.";
+            case DELETE:
+            case TRUNCATE:
+                return "Sample was deleted.";
+            case MERGE:
+                return "Sample was registered or updated.";
+            case UPDATE:
+                return "Sample was updated.";
+        }
+        return action.getCommentDetailed();
+    }
+
+    @Override
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow);
+    }
+
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), row, null);
+    }
+
+    @Override
+    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    {
+        // we want to include the fields that indicate parent lineage has changed.
+        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
+        updatedRow.forEach((fieldName, value) -> {
+            if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
+                modifiedRow.put(fieldName, value);
+        });
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
+
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+
+        if (updatedRow != null)
+        {
+            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+        }
+
+        if (row != null)
+        {
+            String sampleSetLsid = null;
+            if (row.containsKey(CPAS_TYPE))
+                sampleSetLsid =  String.valueOf(row.get(CPAS_TYPE));
+            // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
+            if (sampleSetLsid == null && row.containsKey("sampleset"))
+                sampleSetLsid = String.valueOf(row.get("sampleset"));
+            if (sampleSetLsid != null)
+            {
+                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(sampleSetLsid, c);
+                if (sampleSet != null)
+                {
+                    event.setSampleType(sampleSet.getName());
+                    event.setSampleTypeId(sampleSet.getRowId());
+                }
+            }
+            if (row.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(row.get(LSID)));
+            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
+                event.setSampleId((Integer) row.get(ROW_ID));
+            if (row.containsKey(NAME))
+                event.setSampleName(String.valueOf(row.get(NAME)));
+        }
+
+        return event;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
+        if (container.getProject() != null)
+            event.setProjectId(container.getProject().getId());
+        event.setSampleName(sample.getName());
+        event.setSampleLsid(sample.getLSID());
+        event.setSampleId(sample.getRowId());
+        ExpSampleSet type = sample.getSampleSet();
+        if (type != null)
+        {
+            event.setSampleType(type.getName());
+            event.setSampleTypeId(type.getRowId());
+        }
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        AuditLogService.get().addEvent(user, event);
     }
 }

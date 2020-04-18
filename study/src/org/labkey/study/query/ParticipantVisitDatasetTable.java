@@ -277,6 +277,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     }
 
 
+    @Override
     protected ColumnInfo resolveColumn(String name)
     {
         double seq = -1;

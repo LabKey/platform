@@ -172,6 +172,8 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     TableInfo getFkTableInfo();
 
+    TableDescription getFkTableDescription();
+
     boolean isUserEditable();
 
     DisplayColumnFactory getDisplayColumnFactory();

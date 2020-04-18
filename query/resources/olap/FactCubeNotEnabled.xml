@@ -1,0 +1,29 @@
+<Schema name="OlapTest" description="testAutomation">
+
+    <Annotations>
+        <!-- associate this olap schema with a labkey sql schema.  In this case, this doesn't actually do anything.
+        However, the SQL schema, can be used to implement additional security checks -->
+        <Annotation name="SchemaName">rolap_test</Annotation>
+    </Annotations>
+
+    <Cube name="Facts" visible="true" defaultMeasure="RowCount" cache="true" enabled="true">
+
+        <Table schema="rolap_test" name="Fact"/>
+
+        <Dimension name="Fact" visible="true" highCardinality="false">
+            <Hierarchy name="ptid" visible="true" hasAll="true">
+                <Level name="ptid" visible="true" column="ptid" type="String" uniqueMembers="false" />
+            </Hierarchy>
+            <Hierarchy name="studyid" visible="true" hasAll="true">
+                <Level name="studyid" visible="true" column="studyid" type="String" uniqueMembers="false" />
+            </Hierarchy>
+            <Hierarchy name="assay" visible="true" hasAll="true">
+                <Level name="assay" visible="true" column="assay" type="String" uniqueMembers="false" />
+            </Hierarchy>
+        </Dimension>
+
+        <Measure name="RowCount" column="ptid" aggregator="count" visible="true"/>
+
+    </Cube>
+
+</Schema>

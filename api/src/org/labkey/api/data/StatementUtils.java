@@ -77,6 +77,7 @@ public class StatementUtils
     private Set<String> _dontUpdateColumnNames = new CaseInsensitiveHashSet();
     private boolean _updateBuiltInColumns = false;      // default to false, this should usually be handled by StandardDataIteratorBuilder
     private boolean _selectIds = false;
+    private boolean _selectObjectUri = false;
     private boolean _allowUpdateAutoIncrement = false;
     private boolean _allowInsertByLookupDisplayValue = false;
 
@@ -145,6 +146,12 @@ public class StatementUtils
     public StatementUtils selectIds(boolean b)
     {
         _selectIds = b;
+        return this;
+    }
+
+    public StatementUtils selectObjectUri(boolean b)
+    {
+        _selectObjectUri = b;
         return this;
     }
 
@@ -433,6 +440,29 @@ public class StatementUtils
         sqlfDelete.append(");\n");
     }
 
+    public void setObjectUriPreselect(SQLFragment sqlfPreselectObject, TableInfo table, LinkedHashMap<FieldKey,ColumnInfo> keys, String objectURIVar, String objectURIColumnName, ParameterHolder objecturiParameter)
+    {
+        String setKeyword = _dialect.isPostgreSQL() ? "" : "SET ";
+        if (Operation.merge == _operation)
+        {
+            // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
+            sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
+            sqlfPreselectObject.append("SELECT ").append(table.getColumn(objectURIColumnName).getSelectName());
+            sqlfPreselectObject.append(" FROM ").append(table.getSelectName());
+            sqlfPreselectObject.append(getPkWhereClause(keys));
+            sqlfPreselectObject.append("),");
+            appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
+            sqlfPreselectObject.append(");\n");
+
+        }
+        else
+        {
+            sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = ");
+            appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
+            sqlfPreselectObject.append(";\n");
+        }
+    }
+
     public Parameter.ParameterMap createStatement(Connection conn, @Nullable Container c, User user) throws SQLException
     {
         if (!(_table instanceof UpdateableTableInfo))
@@ -532,6 +562,7 @@ public class StatementUtils
 //        _dontUpdateColumnNames.add("Created");
 //        _dontUpdateColumnNames.add("CreatedBy");
 
+        boolean objectUriPreselectSet = false;
         boolean isMaterializedDomain = null != domain && null != domainKind && StringUtils.isNotEmpty(domainKind.getStorageSchemaName());
         if (alwaysInsertExpObject || (null != domain && !isMaterializedDomain) || !_vocabularyProperties.isEmpty())
         {
@@ -555,23 +586,8 @@ public class StatementUtils
                 // Grab the object's ObjectId based on the pk of the base table
                 if (hasObjectURIColumn || !_vocabularyProperties.isEmpty())
                 {
-                    if (Operation.merge == _operation)
-                    {
-                        // this seems overkill actually, but I'm focused on optimizing insert right now (MAB)
-                        sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = COALESCE((");
-                        sqlfPreselectObject.append("SELECT ").append(table.getColumn(objectURIColumnName).getSelectName());
-                        sqlfPreselectObject.append(" FROM ").append(table.getSelectName());
-                        sqlfPreselectObject.append(getPkWhereClause(keys));
-                        sqlfPreselectObject.append("),");
-                        appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
-                        sqlfPreselectObject.append(");\n");
-                    }
-                    else
-                    {
-                        sqlfPreselectObject.append(setKeyword).append(objectURIVar).append(" = ");
-                        appendParameterOrVariable(sqlfPreselectObject, objecturiParameter);
-                        sqlfPreselectObject.append(";\n");
-                    }
+                    setObjectUriPreselect(sqlfPreselectObject, table, keys, objectURIVar, objectURIColumnName, objecturiParameter);
+                    objectUriPreselectSet = true;
                 }
 
                 SQLFragment sqlfWhereObjectURI = new SQLFragment();
@@ -613,6 +629,21 @@ public class StatementUtils
                 }
             }
         }
+
+        if (_selectObjectUri)
+        {
+            if (objectURIVar == null)
+            {
+                objectURIVar = _dialect.isPostgreSQL() ? "_$objecturi$_" : "@_objecturi_";
+                sqlfDeclare.append("DECLARE ").append(objectURIVar).append(" ").append(_dialect.getSqlTypeName(JdbcType.VARCHAR)).append("(300);\n");
+            }
+
+            if (!objectUriPreselectSet && (hasObjectURIColumn || !_vocabularyProperties.isEmpty()))
+            {
+                setObjectUriPreselect(sqlfPreselectObject, table, keys, objectURIVar, objectURIColumnName, objecturiParameter);
+            }
+        }
+
 
         //
         // BASE TABLE INSERT()
@@ -767,6 +798,12 @@ public class StatementUtils
                 if (useVariables)
                     sqlfDeclare.append("DECLARE ").append(rowIdVar).append(" INT;\n");  // TODO: Move this into addReselect()?
             }
+
+            if(_selectObjectUri && hasObjectURIColumn)
+            {
+                _dialect.addReselect(sqlfInsertInto, table.getColumn(objectURIColumnName), objectURIVar);
+            }
+
         }
 
         //
@@ -823,17 +860,26 @@ public class StatementUtils
         if (Operation.insert == _operation || Operation.merge == _operation)
             sqlfInsertInto.append(";\n");
 
-        if (_selectIds && (null != objectIdVar || null != rowIdVar))
+        if ((_selectIds && (null != objectIdVar || null != rowIdVar)) || (_selectObjectUri && null != objectURIVar))
         {
             sqlfSelectIds = new SQLFragment("SELECT ");
             comma = "";
-            if (null != rowIdVar)
+            if (_selectIds)
             {
-                sqlfSelectIds.append(rowIdVar);
-                comma = ",";
+                if (null != rowIdVar)
+                {
+                    sqlfSelectIds.append(rowIdVar);
+                    comma = ",";
+                }
+                if (null != objectIdVar)
+                {
+                    sqlfSelectIds.append(comma).append(objectIdVar);
+                    comma = ",";
+                }
             }
-            if (null != objectIdVar)
-                sqlfSelectIds.append(comma).append(objectIdVar);
+
+            if (_selectObjectUri &&  null != objectURIVar)
+                sqlfSelectIds.append(comma).append(objectURIVar);
         }
 
         //
@@ -945,11 +991,31 @@ public class StatementUtils
             if (null != sqlfSelectIds)
             {
                 call.insert(0, "SELECT * FROM ");
-                if (null != rowIdVar && null != objectIdVar)
-                    call.append(" AS x(A int, B int)");
-                else
-                    call.append(" AS x(A int)");
-                call.append(";");
+                call.append("As x(");
+                String sep = "";
+
+                if (_selectIds)
+                {
+                    if (null != rowIdVar)
+                    {
+                        call.append("A int");
+                        sep = ", ";
+                    }
+                    if (null != objectIdVar)
+                    {
+                        call.append(sep);
+                        call.append("B int");
+                        sep = ", ";
+                    }
+                }
+
+                if (_selectObjectUri && null != objectURIVar)
+                {
+                    call.append(sep);
+                    call.append("C varchar");
+                }
+
+                call.append(");");
             }
             else
             {
@@ -993,13 +1059,22 @@ public class StatementUtils
             });
         }
 
+        int selectIndex = 1;
+
         if (_selectIds)
         {
             // Why is one of these boolean and the other an index?? I don't know
             ret.setSelectRowId(selectAutoIncrement);
+
+            if (selectAutoIncrement)
+                selectIndex++;
+
             if (null != objectIdVar)
-                ret.setObjectIdIndex(selectAutoIncrement ? 2 : 1);
+                ret.setObjectIdIndex(selectIndex++);
         }
+
+        if (_selectObjectUri && null != objectURIVar)
+            ret.setObjectUriIndex(selectIndex);
 
         return ret;
     }

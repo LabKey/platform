@@ -15,13 +15,16 @@
  */
 package org.labkey.filecontent;
 
+import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
@@ -35,7 +38,7 @@ import java.util.Set;
  * Date: May 4, 2010
  * Time: 4:24:36 PM
  */
-public class FilePropertiesDomainKind extends AbstractDomainKind
+public class FilePropertiesDomainKind extends BaseAbstractDomainKind
 {
     private static final List<String> RESERVED_FIELDS = Collections.unmodifiableList(Arrays.asList(
             "name",
@@ -93,13 +96,19 @@ public class FilePropertiesDomainKind extends AbstractDomainKind
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return new ActionURL(FileContentController.DesignerAction.class, domain.getContainer());
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return _reservedFieldSet;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 
     @Override

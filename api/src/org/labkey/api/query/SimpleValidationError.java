@@ -23,45 +23,58 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.springframework.validation.BindException;
-import org.springframework.validation.ObjectError;
+import org.springframework.validation.FieldError;
 
 import java.sql.SQLException;
+import java.util.Objects;
 
 public class SimpleValidationError implements ValidationError
 {
     private final String _message;
     private final Throwable _cause;
-    
+    private final ValidationException.SEVERITY _severity;
+    private final String _fieldName;
+
     public SimpleValidationError(@NotNull String message)
     {
-        assert null != message: "Null message passed to SimpleValidationError!";
         _message = message;
         _cause = null;
+        _severity = ValidationException.SEVERITY.ERROR;
+        _fieldName = null;
+    }
+
+    public SimpleValidationError(@NotNull String message, @NotNull String fieldName, @NotNull ValidationException.SEVERITY severity)
+    {
+        _message = message;
+        _cause = null;
+        _severity = severity;
+        _fieldName = fieldName;
     }
 
     public SimpleValidationError(SQLException x)
     {
         _message = x.getMessage();
         _cause = x;
+        _severity = null;
+        _fieldName = null;
     }
 
+    @Override
     public String getMessage()
     {
         return _message;
     }
-
-    @Override
-    public ObjectError getObjectError()
-    {
-        return null;
-    }
-
 
     public Throwable getCause()
     {
         return _cause;
     }
 
+    @Override
+    public ValidationException.SEVERITY getSeverity()
+    {
+        return _severity;
+    }
 
     @Override
     public String toString()
@@ -77,9 +90,7 @@ public class SimpleValidationError implements ValidationError
 
         SimpleValidationError that = (SimpleValidationError) o;
 
-        if (_message != null ? !_message.equals(that._message) : that._message != null) return false;
-
-        return true;
+        return Objects.equals(_message, that._message) && Objects.equals(_severity, that._severity);
     }
 
     @Override
@@ -88,15 +99,36 @@ public class SimpleValidationError implements ValidationError
         return _message != null ? _message.hashCode() : 0;
     }
 
-    public void addToBindException(BindException errors, String errorCode)
+    @Override
+    public void addToBindException(BindException errors, String errorCode, boolean includeWarnings)
     {
-        if (null != this.getObjectError())
+        // Only bind warnings when there is a request from client
+        if (ValidationException.SEVERITY.WARN.equals(this._severity))
         {
-            errors.addError(this.getObjectError());
+            if (includeWarnings)
+            {
+                // client (ui-components) distinguishes between server side warnings and client side warnings based on the below objectName passed in the constructor
+                FieldWarning fieldWarning = new FieldWarning("ServerWarning", this._fieldName, getMessage());
+                errors.addError(fieldWarning);
+            }
         }
         else
         {
             errors.reject(errorCode, this.getMessage());
         }
+    }
+
+    public static class FieldWarning extends FieldError
+    {
+        public FieldWarning(String objectName, String field, String defaultMessage)
+        {
+            super(objectName, field, defaultMessage);
+        }
+
+        public String getSeverity()
+        {
+            return ValidationException.SEVERITY.WARN.toString();
+        }
+
     }
 }

@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
@@ -96,9 +97,9 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    public ModuleResourceCacheListener createChainedListener(Module module)
     {
-        return new FileSystemDirectoryListener()
+        return new ModuleResourceCacheListener()
         {
             @Override
             public void entryCreated(Path directory, Path entry)
@@ -121,6 +122,12 @@ public class ModuleAssayCacheHandler implements ModuleResourceCacheHandler<Colle
             @Override
             public void overflow()
             {
+            }
+
+            @Override
+            public void moduleChanged(Module module)
+            {
+                ModuleAssayCache.get().clearModuleAssayCollections();
             }
         };
     }

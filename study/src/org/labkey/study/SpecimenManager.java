@@ -69,7 +69,6 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.EnumHasHtmlString;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -106,6 +105,7 @@ import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
+import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.specimen.SpecimenCommentAuditProvider;
 import org.labkey.study.specimen.report.SpecimenCountSummary;
 import org.labkey.study.specimen.settings.DisplaySettings;
@@ -2017,6 +2017,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         assert set.add(_requestStatusHelper.getTableInfo());
 
         new SpecimenTablesProvider(c, null, null).deleteTables();
+        LocationCache.clear(c);
 /*
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenAdditive(), containerFilter);
         assert set.add(StudySchema.getInstance().getTableInfoSpecimenAdditive());
@@ -3040,7 +3041,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         }
     }
 
-    private DatabaseCache<Map<String, Map<String, Object>>> _groupedValuesCache = null;
+    private DatabaseCache<String, Map<String, Map<String, Object>>> _groupedValuesCache = null;
     private class GroupedResults
     {
         public String viewName;

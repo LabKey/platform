@@ -6,6 +6,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -14,7 +16,15 @@ import java.util.Set;
  * */
 public interface ProvenanceService
 {
-    String PROVENANCE_INPUT_PROPERTY = "prov:objectInputs";
+    String PROVENANCE_PROPERTY_PREFIX = "prov";
+
+    String PROVENANCE_OBJECT_INPUTS = "objectInputs";
+    String PROVENANCE_INPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_INPUTS;
+
+    String PROVENANCE_OBJECT_OUTPUTS = "objectOutputs";
+    String PROVENANCE_OUTPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_OUTPUTS;
+
+    String PROVENANCE_OBJECT_MAP = "provenanceMap";
 
     static ProvenanceService get()
     {
@@ -36,6 +46,11 @@ public interface ProvenanceService
      * Get list of provenance input LSIDs and output LSIDs for a protocol application.
      */
     Set<Pair<String,String>> getProvenanceObjectUris(int protocolAppId);
+
+    /**
+     * Get all input and output lsids for a protocol application.
+     */
+    Set<String> getProvenanceObjectUriSet(int protocolAppId);
 
     /**
      * Get list of provenance input object IDs and output object IDs for a protocol application.
@@ -68,7 +83,13 @@ public interface ProvenanceService
     Set<Integer> getProtocolApplications(String lsid);
 
     /**
-     * Get lsids for protocol applications
+     * Get the ExpRun referenced by the set of LSIDs
      */
-    Set<String> getLSIDs(Integer protocolAppId);
+    List<? extends ExpRun> getRuns(Set<String> lsids);
+
+    /**
+     * Get the ExpRun referenced by the set of LSIDs
+     */
+    Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids);
+
 }

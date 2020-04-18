@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
@@ -45,6 +45,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -160,7 +161,7 @@ public class DbScope
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
          * outer-most layer of the transaction has completed (either by committing or closing the connection).
          */
-        boolean isReleaseLocksOnFinalCommit();
+        default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
 
 
@@ -213,22 +214,7 @@ public class DbScope
     }
 
 
-    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
-    {
-        @NotNull
-        @Override
-        public String getKind()
-        {
-            return "NORMAL";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
-
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
     {
@@ -635,12 +621,32 @@ public class DbScope
 
     public interface RetryFn<ReturnType>
     {
-        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException;
+        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
     }
 
+    /** Can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryPassthroughException extends RuntimeException
+    {
+        public RetryPassthroughException(@NotNull Exception x)
+        {
+            super(x);
+        }
 
-    /** Won't retry if we're already in a transaction
-     * fn() should throw DeadlockLoserDataAccessException, not generic SQLException
+        public <T extends Throwable> void rethrow(Class<T> clazz) throws T
+        {
+            if (clazz.isAssignableFrom(getCause().getClass()))
+                throw (T)getCause();
+        }
+
+        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        {
+            throw UnexpectedException.wrap(getCause());
+        }
+    }
+
+    /**
+     * If there's a deadlock exception, retry two more times after a delay. Won't retry if we're already in a transaction
+     * fn() should throw DeadlockLoserDataAccessException or RuntimeSQLException to get the retry behavior
      */
     public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
     {
@@ -648,7 +654,7 @@ public class DbScope
         ReturnType ret = null;
         int tries = isTransactionActive() ? 1 : 3;
         long delay = 100;
-        DeadlockLoserDataAccessException lastException = null;
+        RuntimeException lastException = null;
         for (var tri=0 ; tri < tries ; tri++ )
         {
             lastException = null;
@@ -661,7 +667,17 @@ public class DbScope
             catch (DeadlockLoserDataAccessException dldae)
             {
                 lastException = dldae;
-                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ie) {}
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+            catch (RuntimeSQLException e)
+            {
+                lastException = e;
+                if (!SqlDialect.isTransactionException(e))
+                {
+                    break;
+                }
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
                 LOG.info("Retrying operation after deadlock", new Throwable());
             }
         }
@@ -843,7 +859,8 @@ public class DbScope
     {
         try
         {
-            return DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            Connection raw = DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
         {
@@ -1834,7 +1851,7 @@ public class DbScope
         private final String id = GUID.makeGUID();
         @NotNull
         private final ConnectionWrapper _conn;
-        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
+        private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
         // Sets so that we can coalesce identical tasks and avoid duplicating the effort
         private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
@@ -1859,12 +1876,12 @@ public class DbScope
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
         }
 
-        <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
+        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
-            return (StringKeyCache<ValueType>)_caches.get(cache);
+            return (Cache<K, V>)_caches.get(cache);
         }
 
-        <ValueType> void addCache(DatabaseCache<ValueType> cache, StringKeyCache<ValueType> map)
+        <K, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
         {
             _caches.put(cache, map);
         }
@@ -2021,7 +2038,7 @@ public class DbScope
 
         private void closeCaches()
         {
-            for (StringKeyCache<?> cache : _caches.values())
+            for (Cache<?, ?> cache : _caches.values())
                 cache.close();
             _caches.clear();
         }
@@ -2741,6 +2758,21 @@ public class DbScope
                 }
                 t.commit();
                 assertTrue(c.isClosed());
+            }
+        }
+
+        @Test
+        public void testRetryException()
+        {
+            var r = new RetryPassthroughException(new IllegalArgumentException());
+            try
+            {
+                r.rethrow(IllegalArgumentException.class);
+                fail("should have thrown");
+            }
+            catch (IllegalArgumentException x)
+            {
+                // expected!
             }
         }
     }

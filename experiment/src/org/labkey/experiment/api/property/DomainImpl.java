@@ -111,21 +111,25 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
-        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
-        _properties = new ArrayList<>(pds.size());
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
-        for (PropertyDescriptor pd : pds)
+
+        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
+        _properties = new ArrayList<>();
+        if (pds != null)
         {
-            List<ConditionalFormat> formats = new ArrayList<>();
-            for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
+            for (PropertyDescriptor pd : pds)
             {
-                if (format.getPropertyId() == pd.getPropertyId())
+                List<ConditionalFormat> formats = new ArrayList<>();
+                for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
                 {
-                    formats.add(format);
+                    if (format.getPropertyId() == pd.getPropertyId())
+                    {
+                        formats.add(format);
+                    }
                 }
+                DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
+                _properties.add(property);
             }
-            DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
-            _properties.add(property);
         }
     }
 
@@ -157,7 +161,7 @@ public class DomainImpl implements Domain
     }
 
     @Override
-    public synchronized DomainKind getDomainKind()
+    public synchronized DomainKind<?> getDomainKind()
     {
         return _dd.getDomainKind();
     }
@@ -515,32 +519,24 @@ public class DomainImpl implements Domain
             }
 
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
-            boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
-            if (isNew())
-            {
-                // consider: optimistic concurrency check here?
-                Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-                _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
-                // CONSIDER put back if we want automatic provisioning for several DomainKinds
-                // StorageProvisioner.create(this);
-                isDomainNew = true;
-            }
-            else
+            boolean isDomainNew = isNew();         // #32406 Need to capture because _new changes during the process
+            if (!isDomainNew)
             {
                 DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
                 if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
                     throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
-
-                // call OntologyManager.updateDomainDescriptor() to invalidate proper caches
-                _dd = OntologyManager.updateDomainDescriptor(_dd);
             }
+
+            // call OntologyManager method to invalidate proper caches
+            _dd = OntologyManager.ensureDomainDescriptor(_dd);
+
             boolean propChanged = false;
             int sortOrder = 0;
 
             List<DomainProperty> propsDropped = new ArrayList<>();
             List<DomainProperty> propsAdded = new ArrayList<>();
 
-            DomainKind kind = getDomainKind();
+            DomainKind<?> kind = getDomainKind();
             boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
             // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
@@ -1224,7 +1220,7 @@ public class DomainImpl implements Domain
         if (null == _aliasManager)
         {
             _aliasManager = new AliasManager(ExperimentService.get().getSchema());
-            DomainKind k = getDomainKind();
+            DomainKind<?> k = getDomainKind();
             if (null != k)
             {
                 for (PropertyStorageSpec s : k.getBaseProperties(this))

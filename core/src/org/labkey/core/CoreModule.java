@@ -78,7 +78,7 @@ import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
-import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -115,7 +115,15 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.*;
+import org.labkey.api.util.CommandLineTokenizer;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -237,7 +245,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -386,27 +393,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerHealthChecks()
     {
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+            {
+                Map<String, Object> healthValues = new HashMap<>();
+                boolean allConnected = true;
+                for (DbScope dbScope : DbScope.getDbScopes())
                 {
-                    Map<String, Object> healthValues = new HashMap<>();
-                    boolean allConnected = true;
-                    for (DbScope dbScope : DbScope.getDbScopes())
+                    boolean dbConnected;
+                    try (Connection conn = dbScope.getConnection())
                     {
-                        boolean dbConnected;
-                        try (Connection conn = dbScope.getConnection())
-                        {
-                            dbConnected = conn != null;
-                        }
-                        catch (SQLException e)
-                        {
-                            dbConnected = false;
-                        }
-
-                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                        allConnected &= dbConnected;
+                        dbConnected = conn != null;
+                    }
+                    catch (SQLException e)
+                    {
+                        dbConnected = false;
                     }
 
-                    return new HealthCheck.Result(allConnected, healthValues);
+                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                    allConnected &= dbConnected;
                 }
+
+                return new HealthCheck.Result(allConnected, healthValues);
+            }
         );
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
@@ -564,7 +571,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -591,7 +598,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -725,7 +732,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             String rootContainerId = rootContainer.getId();
             TableInfo mvTable = CoreSchema.getInstance().getTableInfoMvIndicators();
 
-            for (Map.Entry<String, String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
+            for (Map.Entry<String,String> qcEntry : MvUtil.getDefaultMvIndicators().entrySet())
             {
                 Map<String, Object> params = new HashMap<>();
                 params.put("Container", rootContainerId);
@@ -780,7 +787,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
-            AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
+            AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -904,6 +911,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
+                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
+                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
+                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
@@ -927,6 +938,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_STRICT_RETURN_URL,
                 "Check for return URL parameter casing as 'returnUrl'",
                 "Raise an error if the return URL parameter is capitalized incorrectly. It should be 'returnUrl' and not 'returnURL'.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
+                "No Question Marks in URLs",
+                "Don't append '?' to URLs unless there are query parameters.",
                 false);
 
         if (null != PropertyService.get())
@@ -1000,8 +1015,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         TempTableTracker.init();
     }
 
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
-
     @Override
     public String getTabName(ViewContext context)
     {
@@ -1032,7 +1045,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // Must be mutable since we add the dialect tests below
         Set<Class> testClasses = Sets.newHashSet
         (
-            AdminController.ModuleVersionTestCase.class,
+            AdminController.SchemaVersionTestCase.class,
             AdminController.SerializationTest.class,
             AdminController.TestCase.class,
             AttachmentServiceImpl.TestCase.class,

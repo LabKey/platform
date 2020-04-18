@@ -97,12 +97,25 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getResultsDomain(ExpProtocol protocol);
 
-    void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update);
+    void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update);
 
     AssayRunCreator getRunCreator();
 
     /** @return all of the legal data collectors that the user can choose from for the current import attempt */
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
+
+    /**
+     * Providers that support plate metadata can provide a data collector for plate specific data
+     */
+    @Nullable
+    AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context);
+
+    /**
+     * Return the ActionURL to download (or render) an example of the plate metadata format necessary
+     * to support importing of plate metadata. This will be rendered in the import wizard.
+     */
+    @Nullable
+    ActionURL getPlateMetadataTemplateURL(Container container);
 
     /**
      * @return the name of the assay provider.
@@ -252,6 +265,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void setQCEnabled(ExpProtocol protocol, boolean qcEnabled);
     boolean isQCEnabled(ExpProtocol protocol);
 
+    /** Does the provider support integration of plate template metadata */
+    boolean supportsPlateMetadata();
+    void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
+    boolean isPlateMetadataEnabled(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */
@@ -292,6 +310,12 @@ public interface AssayProvider extends Handler<ExpProtocol>
      * @return Provider specific sql expression
      */
     @Nullable String getResultRowLSIDExpression();
+
+    /**
+     * Extract the ExpProtocol and rowId from an assay result row LSID.
+     */
+    @Nullable
+    Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid);
 
     /**
      * Get the URL for an assay result row's LSID.

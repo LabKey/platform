@@ -16,6 +16,7 @@
 package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -36,7 +37,6 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -46,7 +46,7 @@ import java.util.Set;
  * For the StorageProvisioner integration tests, when the Study module is not present.
  *
  */
-public class TestDomainKind extends DomainKind
+public class TestDomainKind extends DomainKind<JSONObject>
 {
     public static final String NAME = "TestDomainKind";
     private static final String SCHEMA = DbSchema.TEMP_SCHEMA_NAME;
@@ -75,6 +75,12 @@ public class TestDomainKind extends DomainKind
     public String getKindName()
     {
         return NAME;
+    }
+
+    @Override
+    public Class<JSONObject> getTypeClass()
+    {
+        return JSONObject.class;
     }
 
     @Override
@@ -157,13 +163,20 @@ public class TestDomainKind extends DomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public @Nullable JSONObject getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
     {
         throw new UnsupportedOperationException();
     }

@@ -55,7 +55,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
-    @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, Lsid assayResultRowLsid);
+    @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId);
 
     ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 
@@ -95,4 +95,5 @@ public interface AssayUrls extends UrlProvider
     ActionURL getShowSelectedRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter);
     ActionURL getSetDefaultValuesAssayURL(Container container, String providerName, Domain domain, ActionURL returnUrl);
     String getBatchIdFilterParam();
+    ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider);
 }

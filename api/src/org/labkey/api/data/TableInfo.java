@@ -45,7 +45,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,11 +56,8 @@ import java.util.Set;
  * User: Matthew
  * Date: Apr 27, 2006
  */
-public interface TableInfo extends HasPermission, SchemaTreeNode
+public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
-
-    String getName();
-
     /** Get title, falling back to the name if title is null **/
     String getTitle();
 
@@ -107,8 +103,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     /** getSchema().getSqlDialect() */
     SqlDialect getSqlDialect();
-
-    List<String> getPkColumnNames();
 
     @NotNull List<ColumnInfo> getPkColumns();
 
@@ -172,9 +166,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     ColumnInfo getVersionColumn();
 
     String getVersionColumnName();
-
-    /** @return the default display value for this table if it's the target of a foreign key */
-    String getTitleColumn();
 
     boolean hasDefaultTitleColumn();
 
@@ -327,13 +318,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * getImportTemplates() should be used instead
      */
     List<Pair<String, StringExpression>> getRawImportTemplates();
-
-    boolean isPublic();
-
-    String getPublicName();
-
-    /** @return The public (queryable) schema name in SchemaKey encoding. */
-    String getPublicSchemaName();
 
     // Most datasets do not have a container column
     boolean hasContainerColumn();
@@ -571,6 +555,19 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     default AuditBehaviorType getAuditBehavior()
     {
         return AuditBehaviorType.NONE;
+    }
+
+    /* Can be used to distinguish AuditBehaviorType.NONE vs absent xml audit config */
+    default AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return null;
+    }
+
+    /* fields to include in detailed UPDATE audit log, even if no change is made to field value */
+    @Nullable
+    default Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        return null;
     }
 
     /**

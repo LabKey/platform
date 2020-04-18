@@ -17,7 +17,6 @@ package org.labkey.api.security.permissions;
 
 public class SiteAdminPermission extends AbstractSitePermission
 {
-    @Deprecated  // this will hopefully be swapped out for more fine-grained permissions soon; try to use those instead
     public SiteAdminPermission()
     {
         super("Site Admin", "Allows full control over the entire system.");

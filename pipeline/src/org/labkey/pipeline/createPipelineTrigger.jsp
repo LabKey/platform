@@ -102,7 +102,7 @@
                 <labkey:input name="name"
                               className="form-control lk-pipeline-input"
                               label="Name *"
-                              value="<%=h(bean.getName())%>"
+                              value="<%=bean.getName()%>"
                               isRequired="true"/>
 
                 <div class=" form-group">
@@ -178,7 +178,7 @@
                               className="form-control lk-pipeline-param-input"
                               label="Run As Username"
                               forceSmallContext="true"
-                              value="<%=h(getUser().getDisplayName(getUser()))%>"
+                              value="<%=getUser().getDisplayName(getUser())%>"
                               contextContent="The file watcher will run as this user in the pipeline. Some tasks may require this user to have admin permissions."/>
 
                 <labkey:input name="assay provider"
@@ -274,8 +274,8 @@
                     </div>
                 </div>
 
-                <labkey:input type="hidden" name="rowId" value="<%=h(bean.getRowId())%>"/>
-                <labkey:input type="hidden" name="returnUrl" value="<%=h(bean.getReturnUrl())%>"/>
+                <labkey:input type="hidden" name="rowId" value="<%=bean.getRowId()%>"/>
+                <labkey:input type="hidden" name="returnUrl" value="<%=bean.getReturnUrl()%>"/>
 
                 <br/>
                 <%= button("Save").primary(true).id("btnSubmit") %>

@@ -1,13 +1,29 @@
 import org.labkey.gradle.util.BuildUtils
 
 apply plugin: 'java'
+if (project.hasProperty("gradle7Compat"))
+   apply plugin: 'java-library'
 apply plugin: 'org.labkey.javaModule'
 
 dependencies {
-   BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
-   compile "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
-   compile "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
-   compile  "org.labkey:labkey-client-api:${labkeyVersion}"
+   if (project.hasProperty("gradle7Compat"))
+   {
+      BuildUtils.addLabKeyDependency(project: project, config: "api", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
+      if (project.configurations.findByName("dedupe") != null)
+         BuildUtils.addLabKeyDependency(project: project, config: "dedupe", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "external")
+      implementation "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
+      implementation "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
+      api  "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
+   }
+   else
+   {
+      BuildUtils.addLabKeyDependency(project: project, config: "compile", depProjectPath: BuildUtils.getApiProjectPath(project.gradle))
+      if (project.configurations.findByName("dedupe") != null)
+         BuildUtils.addLabKeyDependency(project: project, config: "dedupe", depProjectPath: BuildUtils.getApiProjectPath(project.gradle), depProjectConfig: "external")
+      compile "org.apache.tomcat:tomcat-jsp-api:${apacheTomcatVersion}"
+      compile "org.apache.tomcat:tomcat-jasper:${apacheTomcatVersion}"
+      compile "org.labkey.api:labkey-client-api:${labkeyClientApiVersion}"
+   }
    external  'com.sun.script.js:jsr223-js-engine:Aug2008'
    external  'org.mozilla:rhino:1.7R3'
 }

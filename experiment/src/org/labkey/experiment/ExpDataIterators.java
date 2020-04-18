@@ -15,11 +15,13 @@
  */
 package org.labkey.experiment;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -34,6 +36,7 @@ import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.dataiterator.ErrorIterator;
 import org.labkey.api.dataiterator.LoggingDataIterator;
+import org.labkey.api.dataiterator.Pump;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.TableInsertDataIteratorBuilder;
 import org.labkey.api.dataiterator.WrapperDataIterator;
@@ -43,11 +46,13 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -365,6 +370,17 @@ public class ExpDataIterators
         }
     }
 
+    /* setup mini dataiterator pipeline to process lineage */
+    public static void derive(User user, Container container, DataIterator di, boolean isSample) throws BatchValidationException
+    {
+        ExpDataIterators.DerivationDataIteratorBuilder ddib = new ExpDataIterators.DerivationDataIteratorBuilder(DataIteratorBuilder.wrap(di), container, user, isSample);
+        DataIteratorContext context = new DataIteratorContext();
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        DataIterator derive = ddib.getDataIterator(context);
+        new Pump(derive, context).run();
+        if (context.getErrors().hasErrors())
+            throw context.getErrors();
+    }
 
     public static class DerivationDataIteratorBuilder implements DataIteratorBuilder
     {
@@ -476,13 +492,17 @@ public class ExpDataIterators
                         String parentColName = _parentCols.get(parentCol);
                         Set<Pair<String, String>> parts = parentNames.stream()
                                 .map(String::trim)
-                                .filter(s -> !s.isEmpty())
                                 .map(s -> Pair.of(parentColName, s))
                                 .collect(Collectors.toSet());
 
                         allParts.addAll(parts);
                     }
+                    else // we have parent columns but the parent value is empty, indicating that the parents should be cleared
+                    {
+                        allParts.add(new Pair<>(_parentCols.get(parentCol), null));
+                    }
                 }
+
                 if (!allParts.isEmpty())
                     _parentNames.put(lsid, allParts);
             }
@@ -505,60 +525,78 @@ public class ExpDataIterators
                         String lsid = entry.getKey();
                         Set<Pair<String, String>> parentNames = entry.getValue();
 
-                        Pair<RunInputOutputBean, RunInputOutputBean> pair =
-                                UploadSamplesHelper.resolveInputsAndOutputs(_user, _container, parentNames, null, cache, materialCache, dataCache);
-
-                        if (pair.first == null && pair.second == null)
+                        ExpRunItem runItem = _isSample ? ExperimentService.get().getExpMaterial(lsid) : ExperimentService.get().getExpData(lsid);
+                        if (runItem == null) // nothing to do if the item does not exist
                             continue;
 
-                        Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
-                        ExpData data = null;
-                        Map<ExpData, String> currentDataMap = Collections.emptyMap();
-                        if (_isSample)
+                        Pair<RunInputOutputBean, RunInputOutputBean> pair;
+                        if (_isSample && _context.getInsertOption().mergeRows)
                         {
-                            ExpMaterial sample = ExperimentService.get().getExpMaterial(lsid);
-                            if (null == sample)
-                                continue;
+                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                                    _user, _container, runItem, parentNames, null, cache, materialCache, dataCache);
 
-                            if (_context.getInsertOption().mergeRows)
-                            {
-                                // TODO only call this for existing rows
-                                // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
-                                // Since this entry was (maybe) already in the database, we may need to delete old derivation info
-                                UploadSamplesHelper.clearSampleSourceRun(_user, sample);
-                            }
-                            currentMaterialMap = new HashMap<>();
-                            currentMaterialMap.put(sample, "Sample");
                         }
                         else
                         {
-                            data = ExperimentService.get().getExpData(lsid);
-                            if (null == data)
-                                continue;
-                            currentDataMap = Collections.singletonMap(data, "Data");
+                            pair = UploadSamplesHelper.resolveInputsAndOutputs(
+                                    _user, _container, null, parentNames, null, cache, materialCache, dataCache);
+
                         }
 
-                        if (pair.first != null)
-                        {
-                            // Add parent derivation run
-                            Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
-                            Map<ExpData, String> parentDataMap = pair.first.getDatas();
+                        if (pair.first == null && pair.second == null) // no parents or children columns provided in input data and no existing parents to be updated
+                            continue;
 
-                            boolean merge = _isSample;
-                            UploadSamplesHelper.record(merge, runRecords,
-                                    parentMaterialMap, currentMaterialMap,
-                                    parentDataMap, currentDataMap);
+                        // the parent columns provided in the input are all empty and there are no existing parents not mentioned in the input that need to be retained.
+                        if (_isSample && _context.getInsertOption().mergeRows && pair.first.doClear())
+                        {
+                            UploadSamplesHelper.clearSampleSourceRun(_user, (ExpMaterial) runItem);
                         }
-
-                        if (pair.second != null)
+                        else
                         {
-                            // Add child derivation run
-                            Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
-                            Map<ExpData, String> childDataMap = pair.second.getDatas();
+                            Map<ExpMaterial, String> currentMaterialMap = Collections.emptyMap();
+                            
+                            Map<ExpData, String> currentDataMap = Collections.emptyMap();
+                            if (_isSample)
+                            {
+                                ExpMaterial sample = (ExpMaterial) runItem;
 
-                            UploadSamplesHelper.record(false, runRecords,
-                                    currentMaterialMap, childMaterialMap,
-                                    currentDataMap, childDataMap);
+                                if (_context.getInsertOption().mergeRows)
+                                {
+                                    // TODO always clear? or only when parentcols is in input? or only when new derivation is specified?
+                                    // Since this entry was (maybe) already in the database, we may need to delete old derivation info
+                                    UploadSamplesHelper.clearSampleSourceRun(_user, sample);
+                                }
+                                currentMaterialMap = new HashMap<>();
+                                currentMaterialMap.put(sample, UploadSamplesHelper.sampleRole(sample));
+                            }
+                            else
+                            {
+                                ExpData data = (ExpData) runItem;
+                                currentDataMap = Collections.singletonMap(data, UploadSamplesHelper.dataRole(data, _user));
+                            }
+
+                            if (pair.first != null)
+                            {
+                                // Add parent derivation run
+                                Map<ExpMaterial, String> parentMaterialMap = pair.first.getMaterials();
+                                Map<ExpData, String> parentDataMap = pair.first.getDatas();
+
+                                boolean merge = _isSample;
+                                UploadSamplesHelper.record(merge, runRecords,
+                                        parentMaterialMap, currentMaterialMap,
+                                        parentDataMap, currentDataMap);
+                            }
+
+                            if (pair.second != null)
+                            {
+                                // Add child derivation run
+                                Map<ExpMaterial, String> childMaterialMap = pair.second.getMaterials();
+                                Map<ExpData, String> childDataMap = pair.second.getDatas();
+
+                                UploadSamplesHelper.record(false, runRecords,
+                                        currentMaterialMap, childMaterialMap,
+                                        currentDataMap, childDataMap);
+                            }
                         }
                     }
 
@@ -777,16 +815,31 @@ public class ExpDataIterators
                     _importAliases :
                     new CaseInsensitiveHashMap<>();
 
+            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
+            boolean isSample = _expTable instanceof ExpMaterialTableImpl;
+
             SimpleTranslator step0 = new SimpleTranslator(input, context);
             step0.selectAll(Sets.newCaseInsensitiveHashSet("alias"), aliases);
             if (colNameMap.containsKey("alias"))
                 step0.addColumn(AliasDataIterator.ALIASCOLUMNALIAS, colNameMap.get("alias")); // see AliasDataIteratorBuilder
 
+            CaseInsensitiveHashSet dontUpdate = new CaseInsensitiveHashSet();
+            dontUpdate.add("lsid");
+            CaseInsensitiveHashSet keyColumns = new CaseInsensitiveHashSet();
+            if (isSample || !context.getInsertOption().mergeRows)
+                keyColumns.add("lsid");
+            else
+            {
+                keyColumns.add("classid");
+                keyColumns.add("name");
+            }
+
             // Insert into exp.data then the provisioned table
-            // Use embargo data iterator to ensure rows are commited before being sent along Issue 26082 (row at a time, reselect rowid)
+            // Use embargo data iterator to ensure rows are committed before being sent along Issue 26082 (row at a time, reselect rowid)
             DataIteratorBuilder step2 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(DataIteratorBuilder.wrap(step0), _expTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"))
-                    .setAddlSkipColumns(Set.of("generated","sourceapplicationid"))     // generated has database DEFAULT 0
+                    .setKeyColumns(keyColumns)
+                    .setDontUpdate(dontUpdate)
+                    .setAddlSkipColumns(Set.of("generated","runId","sourceapplicationid"))     // generated has database DEFAULT 0
                     .setCommitRowsBeforeContinuing(true))
                     ;
 
@@ -794,11 +847,9 @@ public class ExpDataIterators
             Set<DomainProperty> vocabularyDomainProperties = findVocabularyProperties(colNameMap);
 
             DataIteratorBuilder step3 = LoggingDataIterator.wrap(new TableInsertDataIteratorBuilder(step2, _propertiesTable, _container)
-                    .setKeyColumns(Collections.singleton("lsid"))
+                    .setKeyColumns(keyColumns)
+                    .setDontUpdate(dontUpdate)
                     .setVocabularyProperties(vocabularyDomainProperties));
-
-            assert _expTable instanceof ExpMaterialTableImpl || _expTable instanceof ExpDataClassDataTableImpl;
-            boolean isSample = _expTable instanceof ExpMaterialTableImpl; //"Material".equalsIgnoreCase(_expTable.getName());
 
             DataIteratorBuilder step4 = step3;
             if (colNameMap.containsKey("flag") || colNameMap.containsKey("comment"))

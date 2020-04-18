@@ -16,6 +16,7 @@
 package org.labkey.core.dialect;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.template.Warnings;
 
 import java.util.Set;
@@ -25,8 +26,10 @@ import java.util.Set;
  * Date: 8/5/2014
  * Time: 10:49 PM
  */
-public class PostgreSql94Dialect extends PostgreSql93Dialect
+public abstract class PostgreSql94Dialect extends PostgreSql93Dialect
 {
+    private HtmlString _adminWarning = null;
+
     public PostgreSql94Dialect()
     {
     }
@@ -44,6 +47,18 @@ public class PostgreSql94Dialect extends PostgreSql93Dialect
         words.remove("over");
 
         return words;
+    }
+
+    public void setAdminWarning(HtmlString warning)
+    {
+        _adminWarning = warning;
+    }
+
+    @Override
+    public void addAdminWarningMessages(Warnings warnings)
+    {
+        if (null != _adminWarning)
+            warnings.add(_adminWarning);
     }
 
     @Override

@@ -20,12 +20,14 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -61,6 +63,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
     protected Form _form;
 
+    @Override
     public void checkPermissions() throws UnauthorizedException
     {
         if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")))
@@ -69,6 +72,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
     }
 
     /** Most subclasses should not override this method */
+    @Override
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
         // TODO: Do we need Sign action here?
@@ -142,10 +146,14 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         // Issue 37914 - be sure we have a fully populated QuerySettings to generate the right dataRegionSelectionKey
         if (settings.getSchemaName() == null)
         {
-            UserSchema schema = result.getTable().getUserSchema();
-            if (schema != null)
+            TableInfo table = result.getTable();
+            if (table != null)
             {
-                settings.setSchemaName(schema.getName());
+                UserSchema schema = table.getUserSchema();
+                if (schema != null)
+                {
+                    settings.setSchemaName(schema.getName());
+                }
             }
         }
         return result;
@@ -163,6 +171,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         private TSVWriter.DELIM _delim;
         private TSVWriter.QUOTE _quote;
         private ColumnHeaderType _headerType;
+        private String _scriptType;
 
         public String getScriptType()
         {
@@ -174,8 +183,6 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         {
             _scriptType = scriptType;
         }
-
-        private String _scriptType;
 
         public String getExportType()
         {
@@ -193,6 +200,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return super.getDataRegionName();
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setExportRegion(String exportRegion)
         {
             super.setDataRegionName(exportRegion);
@@ -208,6 +216,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _delim;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setDelim(TSVWriter.DELIM delim)
         {
             _delim = delim;
@@ -218,6 +227,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _quote;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setQuote(TSVWriter.QUOTE quote)
         {
             _quote = quote;
@@ -228,6 +238,7 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
             return _headerType;
         }
 
+        @SuppressWarnings({"UnusedDeclaration"})
         public void setHeaderType(ColumnHeaderType headerType)
         {
             _headerType = headerType;

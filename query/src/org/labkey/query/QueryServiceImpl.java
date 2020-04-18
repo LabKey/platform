@@ -31,19 +31,21 @@ import org.junit.Test;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
@@ -142,7 +144,7 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 
-public class QueryServiceImpl implements QueryService
+public class QueryServiceImpl extends AuditHandler implements QueryService
 {
     private static final Logger LOG = Logger.getLogger(QueryServiceImpl.class);
     private static final ResourceRootProvider QUERY_AND_ASSAY_PROVIDER = new ResourceRootProvider()
@@ -161,7 +163,7 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
-    private static final FileSystemDirectoryListener INVALIDATE_QUERY_METADATA_HANDLER = new FileSystemDirectoryListener()
+    private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -185,6 +187,12 @@ public class QueryServiceImpl implements QueryService
         public void overflow()
         {
         }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            QueryService.get().updateLastModified();
+        }
     };
 
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
@@ -192,6 +200,8 @@ public class QueryServiceImpl implements QueryService
 
     private final ConcurrentMap<Class<? extends Controller>, Pair<Module,String>> _schemaLinkActions = new ConcurrentHashMap<>();
     private QueryAnalysisService _queryAnalysisService;
+
+    private final List<QueryIconURLProvider> _queryIconURLProviders = new CopyOnWriteArrayList<>();
 
     private final AtomicLong _metadataLastModified = new AtomicLong(new Date().getTime());
 
@@ -680,11 +690,11 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                 .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -1032,11 +1042,11 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -2161,11 +2171,11 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .collect(MultiValuedMapCollectors.of(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -2740,6 +2750,19 @@ public class QueryServiceImpl implements QueryService
         return schemaLinks;
     }
 
+    @Override
+    public void registerQueryIconURLProvider(QueryIconURLProvider queryIconProvider)
+    {
+        _queryIconURLProviders.add(queryIconProvider);
+    }
+
+    @Override
+    @NotNull public List<QueryIconURLProvider> getQueryIconURLProviders()
+    {
+        ArrayList<QueryIconURLProvider> providers = new ArrayList<>(_queryIconURLProviders);
+        return Collections.unmodifiableList(providers);
+    }
+
     private static class QAliasedColumn extends AliasedColumn
     {
         public QAliasedColumn(FieldKey key, String alias, ColumnInfo column, boolean forceKeepLabel)
@@ -2845,8 +2868,7 @@ public class QueryServiceImpl implements QueryService
 
             if (auditType == SUMMARY)
             {
-                String comment = String.format(action.getCommentSummary(), dataRowCount);
-                AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, dataRowCount, null);
 
                 AuditLogService.get().addEvent(user, event);
             }
@@ -2854,118 +2876,19 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params)
+    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
-        if (table.supportsAuditTracking())
-        {
-            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
-
-            // Truncate audit event doesn't accept any params
-            if (action == AuditAction.TRUNCATE)
-            {
-                assert params.length == 0;
-                switch (auditType)
-                {
-                    case NONE:
-                        return;
-
-                    case SUMMARY:
-                    case DETAILED:
-                        String comment = AuditAction.TRUNCATE.getCommentSummary();
-                        AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
-                        AuditLogService.get().addEvent(user, event);
-                        return;
-                }
-            }
-
-            switch (auditType)
-            {
-                case NONE:
-                    return;
-
-                case SUMMARY:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    String comment = String.format(action.getCommentSummary(), rows.size());
-                    AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, rows.get(0));
-
-                    AuditLogService.get().addEvent(user, event);
-                    break;
-                }
-                case DETAILED:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    for (int i=0; i < rows.size(); i++)
-                    {
-                        Map<String, Object> row = rows.get(i);
-                        String comment = String.format(action.getCommentDetailed(), row.size());
-
-                        QueryUpdateAuditProvider.QueryUpdateAuditEvent event = _createAuditRecord(user, c, auditConfigurable, comment, row);
-
-                        switch (action)
-                        {
-                            case INSERT:
-                            {
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
-                                break;
-                            }
-                            case DELETE:
-                            {
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-                                break;
-                            }
-                            case UPDATE:
-                            {
-                                assert (params.length >= 2);
-
-                                List<Map<String, Object>> updatedRows = params[1];
-                                Map<String, Object> updatedRow = updatedRows.get(i);
-
-                                // only record modified fields
-                                Map<String, Object> originalRow = new HashMap<>();
-                                Map<String, Object> modifiedRow = new HashMap<>();
-
-                                for (Entry<String, Object> entry : row.entrySet())
-                                {
-                                    if (updatedRow.containsKey(entry.getKey()))
-                                    {
-                                        Object newValue = updatedRow.get(entry.getKey());
-                                        if (!Objects.equals(entry.getValue(), newValue))
-                                        {
-                                            originalRow.put(entry.getKey(), entry.getValue());
-                                            modifiedRow.put(entry.getKey(), newValue);
-                                        }
-                                    }
-                                }
-
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, originalRow);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, modifiedRow);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
-                                break;
-                            }
-                        }
-                        AuditLogService.get().addEvent(user, event);
-                    }
-                    break;
-                }
-            }
-        }
+        return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
     }
 
-    private static QueryUpdateAuditProvider.QueryUpdateAuditEvent _createAuditRecord(User user, Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), row);
+    }
+
+
+    private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
 
@@ -2991,7 +2914,7 @@ public class QueryServiceImpl implements QueryService
     {
         if (table.supportsAuditTracking())
         {
-            AuditBehaviorType auditBehavior = ((AuditConfigurable)table).getAuditBehavior();
+            AuditBehaviorType auditBehavior = table.getAuditBehavior();
 
             if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
             {

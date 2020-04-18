@@ -21,18 +21,19 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabKeyError;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -41,12 +42,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class RenderContext implements Map<String, Object>, Serializable
 {
@@ -288,7 +291,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         return null == _results ? null : _results.getFieldMap();
     }
 
-    private List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
+    public List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
     {
         // collect the ColumnInfo for each DisplayColumn
         List<ColumnInfo> columnInfos = new ArrayList<>();
@@ -490,10 +493,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         TableSelector selector = new TableSelector(table, columns, filter, sort)
-                .setNamedParameters(parameters)
-                .setMaxRows(maxRows)
-                .setOffset(offset)
-                .setForDisplay(true);
+            .setJdbcCaching(getCache())  // #39888
+            .setNamedParameters(parameters)
+            .setMaxRows(maxRows)
+            .setOffset(offset)
+            .setForDisplay(true);
 
         if (async)
         {
@@ -505,12 +509,22 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
     }
 
-
+    /**
+     * If false, callers should anticipate very large ResultSets. They should ensure that they don't cache the ResultSet
+     * in memory, e.g., don't use CachedResultSet and call setJdbcCaching(getCache()).
+     * @return The current setting
+     */
     public boolean getCache()
     {
         return _cache;
     }
 
+    /**
+     * Calling with cache=false ensures that the produced ResultSet will not be cached in the JVM heap. Specifically,
+     * false means that LabKey will simply wrap the underlying ResultSet (without using a CachedResultSet) and will
+     * configure the Connection to ensure the JDBC driver doesn't cache the ResultSet either. If true, ResultSets may
+     * be cached in both places.
+     */
     public void setCache(boolean cache)
     {
         _cache = cache;
@@ -808,54 +822,54 @@ public class RenderContext implements Map<String, Object>, Serializable
      * Moved getErrors() from TableViewForm
      * 4927 : DataRegion needs to support Spring errors collection
      */
-    public String getErrors(String paramName)
+    public HtmlString getErrors(String paramName)
     {
         Errors errors = getErrors();
         if (null == errors)
-            return "";
-        List list;
+            return HtmlString.EMPTY_STRING;
+        List<? extends ObjectError> list;
         if ("main".equals(paramName))
             list = errors.getGlobalErrors();
         else
             list = errors.getFieldErrors(paramName);
         if (list == null || list.size() == 0)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
-        Set<String> uniqueErrorStrs = new CaseInsensitiveHashSet();
-        StringBuilder sb = new StringBuilder();
-        String br = "<font class=\"labkey-error\">";
+        Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+        HtmlStringBuilder builder = HtmlStringBuilder.of("");
+        HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
         for (Object m : list)
         {
-            String errStr = null;
+            HtmlString errStr;
             if (m instanceof LabKeyError)
             {
                 errStr = ((LabKeyError) m).renderToHTML(getViewContext());
             }
             else
             {
-                errStr = PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true);
+                errStr = HtmlString.of(getViewContext().getMessage((MessageSourceResolvable) m), true);
             }
 
             if (!uniqueErrorStrs.contains(errStr))
             {
-                sb.append(br);
-                sb.append(errStr);
-                br = "<br>";
+                builder.append(br);
+                builder.append(errStr);
+                br = HtmlString.unsafe("<br>");
             }
             uniqueErrorStrs.add(errStr);
         }
-        if (sb.length() > 0)
-            sb.append("</font>");
-        return sb.toString();
+        if (builder.toString().length() > 0)
+            builder.append(HtmlString.unsafe("</font>"));
+        return builder.getHtmlString();
     }
 
-    public String getErrors(ColumnInfo column)
+    public HtmlString getErrors(ColumnInfo column)
     {
-        String errors = getErrors(getForm().getFormFieldName(column));
-        if ("".equals(errors))
+        HtmlString errors = getErrors(getForm().getFormFieldName(column));
+        if ("".equals(errors.toString()))
         {
             errors = getErrors(column.getName());
-            if ("".equals(errors))
+            if ("".equals(errors.toString()))
                 errors = getErrors(column.getName().toLowerCase());  // error may be mapped from lowercase name because of provisioning
         }
         return errors;

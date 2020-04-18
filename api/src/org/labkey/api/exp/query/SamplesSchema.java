@@ -124,25 +124,13 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
-        {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
-        }
+        QueryView queryView = super.createView(context, settings, errors);
 
-        return super.createView(context, settings, errors);
+        // Use default delete button, but without showing the confirmation text
+        // NOTE: custom queries in the schema don't support delete so setting this flag is ok
+        queryView.setShowDeleteButtonConfirmationText(false);
+
+        return queryView;
     }
 
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
@@ -168,18 +156,33 @@ public class SamplesSchema extends AbstractExpSchema
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
-            public TableInfo getLookupTableInfo()
+            @Override
+            public @Nullable TableInfo getLookupTableInfo()
+            {
+                ContainerFilter cf = getLookupContainerFilter();
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey(getContainer());
+                return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
+            }
+
+            private TableInfo createLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
                 ret.populate(ss, true);
-                ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
+                ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
                 {
                     // Hack to support lookup via RowId or Name
                     _columnName = "Name";
                 }
+                ret.setLocked(true);
                 return ret;
+            }
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser()));
             }
 
             @Override

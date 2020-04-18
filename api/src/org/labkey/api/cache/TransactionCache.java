@@ -134,8 +134,14 @@ public class TransactionCache<K, V> implements Cache<K, V>
     }
 
     @Override
-    public TrackingCache getTrackingCache()
+    public TrackingCache<K, V> getTrackingCache()
     {
         return _privateCache.getTrackingCache();
+    }
+
+    @Override
+    public Cache<K, V> createTemporaryCache()
+    {
+        throw new UnsupportedOperationException();
     }
 }

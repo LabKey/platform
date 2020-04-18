@@ -443,6 +443,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return gate && _list.getContainer().hasPermission(user, perm);
     }
 
+    @Override
     public String getPublicName()
     {
         return _list.getName();

@@ -49,20 +49,7 @@ import java.util.Map;
 public class ApiKeyManager
 {
     private final static ApiKeyManager INSTANCE = new ApiKeyManager();
-    private final static TransactionKind TRANSACTION_KIND = new TransactionKind()
-    {
-        @Override
-        public @NotNull String getKind()
-        {
-            return "APIKEY";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
+    private final static TransactionKind TRANSACTION_KIND = () -> "APIKEY";
 
     public static ApiKeyManager get()
     {

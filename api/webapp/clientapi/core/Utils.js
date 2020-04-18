@@ -90,91 +90,6 @@ LABKEY.Utils = new function()
         }
     }
 
-    var getNextRow = function(rowElem, targetTagName)
-    {
-        if (null == rowElem)
-            return null;
-
-
-        var nextRow = rowElem.nextSibling;
-        while (nextRow != null && !nextRow.tagName)
-            nextRow = nextRow.nextSibling;
-
-        if (nextRow == null)
-            return null;
-
-        if (targetTagName)
-        {
-            if (nextRow.tagName != targetTagName)
-                return null;
-        }
-        else
-        {
-            if (nextRow.tagName != "TR")
-                return null;
-        }
-
-        return nextRow;
-    };
-
-    var collapseExpand = function(elem, notify, targetTagName)
-    {
-        var collapse = false;
-        var url = elem.href;
-        if (targetTagName)
-        {
-            while (elem.tagName != targetTagName)
-                elem = elem.parentNode;
-        }
-        else
-        {
-            while (elem.tagName != 'TR')
-                elem = elem.parentNode;
-        }
-
-        var nextRow = getNextRow(elem, targetTagName);
-        if (null != nextRow && nextRow.style.display != "none")
-            collapse = true;
-
-        while (nextRow != null)
-        {
-            if (nextRow.className.indexOf("labkey-header") != -1)
-                break;
-            if (nextRow.style.display != "none")
-                nextRow.style.display = "none";
-            else
-                nextRow.style.display = "";
-            nextRow = getNextRow(nextRow, targetTagName);
-        }
-
-        if (null != url && notify)
-            notifyExpandCollapse(url, collapse);
-        return false;
-    };
-
-    var notifyExpandCollapse = function(url, collapse)
-    {
-        if (url) {
-            if (collapse)
-                url += "&collapse=true";
-            LABKEY.Ajax.request({url: url});
-        }
-    };
-
-    var toggleLink = function(link, notify, targetTagName)
-    {
-        collapseExpand(link, notify, targetTagName);
-        var i = 0;
-        while (typeof(link.childNodes[i].src) == "undefined" )
-            i++;
-
-        if (link.childNodes[i].src.search("plus.gif") >= 0)
-            link.childNodes[i].src = link.childNodes[i].src.replace("plus.gif", "minus.gif");
-        else
-            link.childNodes[i].src = link.childNodes[i].src.replace("minus.gif", "plus.gif");
-        return false;
-    };
-
     var isIE11 = !!window.MSInputMethodContext && !!document.documentMode;
 
     /**
@@ -209,17 +124,25 @@ LABKEY.Utils = new function()
     /** @scope LABKEY.Utils */
     return {
         /**
-        * Encodes the html passed in so that it will not be interpreted as HTML by the browser.
-        * For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
+        * Encodes the html passed in and converts it to a String so that it will not be interpreted as HTML
+        * by the browser. For example, if your input string was "&lt;p&gt;Hello&lt;/p&gt;" the output would be
         * "&amp;lt;p&amp;gt;Hello&amp;lt;/p&amp;gt;". If you set an element's innerHTML property
         * to this string, the HTML markup will be displayed as literal text rather than being
-        * interpreted as HTML.
+        * interpreted as HTML. By default this function will return an empty string if a value
+        * of undefined or null is passed it. To prevent this default, you can pass in a second
+        * optional parameter value of true to retain the empty value's type.
         *
-        * @param {String} html The HTML to encode
+        * @param {String} html The HTML to encode and return as a String value. If the value of this parameter is null or undefined, an empty string will be returned by default.
+        * @param {boolean} retainEmptyValueTypes An optional boolean parameter indicating that the empty values (null and undefined) should be returned as is from this function.
 		* @return {String} The encoded HTML
 		*/
-        encodeHtml : function(html)
+        encodeHtml : function(html, retainEmptyValueTypes)
         {
+            // Issue 39628: default to returning an empty string when this function is called with a value of undefined or null
+            if (html === undefined || html === null) {
+                return retainEmptyValueTypes ? html : '';
+            }
+
             // https://stackoverflow.com/a/7124052
             return String(html)
                     .replace(/&/g, '&amp;')
@@ -987,11 +910,6 @@ LABKEY.Utils = new function()
                 throw "Date string not in expected format. Expecting yyyy-MM-dd HH:mm:ss.SSS";
             }
         },
-
-        // private
-        collapseExpand: collapseExpand,
-        notifyExpandCollapse: notifyExpandCollapse,
-        toggleLink: toggleLink
     };
 };
 

@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.Path;
@@ -261,9 +260,9 @@ public class FolderTypeManager
 
         @Nullable
         @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public ModuleResourceCacheListener createChainedListener(Module module)
         {
-            return new FileSystemDirectoryListener()
+            return new ModuleResourceCacheListener()
             {
                 @Override
                 public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -285,6 +284,12 @@ public class FolderTypeManager
 
                 @Override
                 public void overflow()
+                {
+                    FolderTypeManager.get().clearAllFolderTypes();
+                }
+
+                @Override
+                public void moduleChanged(Module module)
                 {
                     FolderTypeManager.get().clearAllFolderTypes();
                 }

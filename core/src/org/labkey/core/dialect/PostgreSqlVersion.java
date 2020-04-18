@@ -3,7 +3,6 @@ package org.labkey.core.dialect;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.data.dialect.PostgreSql91Dialect;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,32 +10,34 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * Enum that specifies the versions of PostgreSQL that LabKey supports plus their properties
+ */
 public enum PostgreSqlVersion
 {
-    POSTGRESQL_UNSUPPORTED(-1, () -> {
-        throw new IllegalStateException();
-    }, true, false),
-    POSTGRESQL_9_4(94, PostgreSql94Dialect::new, true, true),
-    POSTGRESQL_9_5(95, PostgreSql95Dialect::new, false, true),
-    POSTGRESQL_9_6(96, PostgreSql96Dialect::new, false, true),
-    POSTGRESQL_10(100, PostgreSql_10_Dialect::new, false, true),
-    POSTGRESQL_11(110, PostgreSql_11_Dialect::new, false, true),
-    POSTGRESQL_12(120, PostgreSql_12_Dialect::new, false, true),
-    POSTGRESQL_FUTURE(Integer.MAX_VALUE, PostgreSql_12_Dialect::new, false, false);
+    POSTGRESQL_UNSUPPORTED(-1, true, false, null),
+    POSTGRESQL_95(95, false, true, PostgreSql95Dialect::new),
+    POSTGRESQL_96(96, false, true, PostgreSql96Dialect::new),
+    POSTGRESQL_10(100, false, true, PostgreSql_10_Dialect::new),
+    POSTGRESQL_11(110, false, true, PostgreSql_11_Dialect::new),
+    POSTGRESQL_12(120, false, true, PostgreSql_12_Dialect::new),
+    POSTGRESQL_13(130, false, false, PostgreSql_12_Dialect::new),
+    POSTGRESQL_FUTURE(Integer.MAX_VALUE, true, false, PostgreSql_12_Dialect::new);
 
     private final int _version;
-    private final Supplier<? extends PostgreSql91Dialect> _factory;
     private final boolean _deprecated;
     private final boolean _tested;
+    private final Supplier<? extends PostgreSql94Dialect> _dialectFactory;
 
-    PostgreSqlVersion(int version, Supplier<? extends PostgreSql91Dialect> factory, boolean deprecated, boolean tested)
+    PostgreSqlVersion(int version, boolean deprecated, boolean tested, Supplier<? extends PostgreSql94Dialect> dialectFactory)
     {
         _version = version;
-        _factory = factory;
         _deprecated = deprecated;
         _tested = tested;
+        _dialectFactory = dialectFactory;
     }
 
+    // Should LabKey warn administrators that support for this PostgreSQL version will be removed soon?
     public boolean isDeprecated()
     {
         return _deprecated;
@@ -47,13 +48,13 @@ public enum PostgreSqlVersion
         return _tested;
     }
 
-    public PostgreSql91Dialect getDialect()
+    public PostgreSql94Dialect getDialect()
     {
-        return _factory.get();
+        return _dialectFactory.get();
     }
 
     private final static Map<Integer, PostgreSqlVersion> VERSION_MAP = Arrays.stream(values())
-        .collect(Collectors.toMap(pv->pv._version, pv->pv));
+        .collect(Collectors.toMap(jv->jv._version, jv->jv));
 
     private final static int MAX_KNOWN_VERSION = Arrays.stream(values())
         .filter(v->POSTGRESQL_FUTURE != v)
@@ -63,10 +64,7 @@ public enum PostgreSqlVersion
 
     static @NotNull PostgreSqlVersion get(int version)
     {
-        // Starting with 10.0, PostgreSQL version format changed from x.y.z to x.y, making that last digit a minor version.
-        // We don't care about the minor version, so round to the nearest 10.
-        if (version >= 100)
-            version = version / 10 * 10;
+        version = version >= 100 ? version / 10 * 10 : version;
 
         if (version > MAX_KNOWN_VERSION)
         {
@@ -74,8 +72,8 @@ public enum PostgreSqlVersion
         }
         else
         {
-            PostgreSqlVersion pv = VERSION_MAP.get(version);
-            return null != pv ? pv : POSTGRESQL_UNSUPPORTED;
+            PostgreSqlVersion psv = VERSION_MAP.get(version);
+            return null != psv ? psv : POSTGRESQL_UNSUPPORTED;
         }
     }
 
@@ -84,39 +82,35 @@ public enum PostgreSqlVersion
         @Test
         public void test()
         {
-            test(80, POSTGRESQL_UNSUPPORTED);
-            test(82, POSTGRESQL_UNSUPPORTED);
+            // Good
+            test(95, POSTGRESQL_95);
+            test(96, POSTGRESQL_96);
+            test(100, POSTGRESQL_10);
+            test(110, POSTGRESQL_11);
+            test(120, POSTGRESQL_12);
+            test(130, POSTGRESQL_13);
+
+            // Future
+            test(140, POSTGRESQL_FUTURE);
+            test(150, POSTGRESQL_FUTURE);
+            test(160, POSTGRESQL_FUTURE);
+
+            // Bad
+            test(83, POSTGRESQL_UNSUPPORTED);
+            test(84, POSTGRESQL_UNSUPPORTED);
             test(85, POSTGRESQL_UNSUPPORTED);
-            test(89, POSTGRESQL_UNSUPPORTED);
             test(90, POSTGRESQL_UNSUPPORTED);
             test(91, POSTGRESQL_UNSUPPORTED);
             test(92, POSTGRESQL_UNSUPPORTED);
             test(93, POSTGRESQL_UNSUPPORTED);
-            test(94, POSTGRESQL_9_4);
-            test(95, POSTGRESQL_9_5);
-            test(96, POSTGRESQL_9_6);
-            test(97, POSTGRESQL_UNSUPPORTED);  // 9.7 never existed
-            test(98, POSTGRESQL_UNSUPPORTED);  // 9.8 never existed
-            test(99, POSTGRESQL_UNSUPPORTED);  // 9.9 never existed
-            test(100, POSTGRESQL_10);
-            test(101, POSTGRESQL_10);
-            test(109, POSTGRESQL_10);
-            test(110, POSTGRESQL_11);
-            test(111, POSTGRESQL_11);
-            test(115, POSTGRESQL_11);
-            test(120, POSTGRESQL_12);
-            test(121, POSTGRESQL_12);
-            test(125, POSTGRESQL_12);
-            test(130, POSTGRESQL_FUTURE);
-            test(131, POSTGRESQL_FUTURE);
-            test(135, POSTGRESQL_FUTURE);
-            test(140, POSTGRESQL_FUTURE);
-            test(150, POSTGRESQL_FUTURE);
+            test(94, POSTGRESQL_UNSUPPORTED);
+            test(97, POSTGRESQL_UNSUPPORTED);
+            test(98, POSTGRESQL_UNSUPPORTED);
         }
 
-        private void test(int version, PostgreSqlVersion expectedPostgreSqlVersion)
+        private void test(int version, PostgreSqlVersion expectedVersion)
         {
-            Assert.assertEquals(get(version), expectedPostgreSqlVersion);
+            Assert.assertEquals(get(version), expectedVersion);
         }
     }
 }

@@ -16,7 +16,6 @@
 
 package org.labkey.core.admin.sql;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
@@ -24,7 +23,6 @@ import org.json.JSONObject;
 import org.labkey.api.Constants;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
-import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -114,11 +112,7 @@ public class SqlScriptController extends SpringActionController
                 JSONObject moduleJSON = new JSONObject();
                 ModuleContext ctx = ModuleLoader.getInstance().getModuleContext(module);
                 moduleJSON.put("name", module.getName());
-                moduleJSON.put("message", ctx.getMessage());
                 moduleJSON.put("state", ctx.getModuleState().toString());
-                moduleJSON.put("version", module.getVersion());
-                moduleJSON.put("originalVersion", ctx.getOriginalVersion());
-                moduleJSON.put("installedVersion", ctx.getInstalledVersion());
 
                 JSONArray scriptsJSON = new JSONArray();
 
@@ -187,17 +181,17 @@ public class SqlScriptController extends SpringActionController
 
     public static class ScriptsForm
     {
-        private boolean _consolidateOnly = false;
+        private boolean _managedOnly = false;
 
-        public boolean isConsolidateOnly()
+        public boolean isManagedOnly()
         {
-            return _consolidateOnly;
+            return _managedOnly;
         }
 
         @SuppressWarnings("unused")
-        public void setConsolidateOnly(boolean consolidateOnly)
+        public void setManagedOnly(boolean managedOnly)
         {
-            _consolidateOnly = consolidateOnly;
+            _managedOnly = managedOnly;
         }
     }
 
@@ -214,13 +208,12 @@ public class SqlScriptController extends SpringActionController
             {
                 html.append("<tr><td colspan=4>");
 
-                if (form.isConsolidateOnly())
+                if (form.isManagedOnly())
                     html.append(PageFlowUtil.link("show all modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot())));
                 else
-                    html.append(PageFlowUtil.link("show only \"consolidate scripts\" modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("consolidateOnly", true)));
+                    html.append(PageFlowUtil.link("show only managed modules").href(new ActionURL(ScriptsAction.class, ContainerManager.getRoot()).addParameter("managedOnly", true)));
 
                 html.append(PageFlowUtil.link("consolidate scripts").href(new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
-                html.append(PageFlowUtil.link("obsolete incremental scripts").href(new ActionURL(ObsoleteScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("orphaned scripts").href(new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.link("scripts with errors").href(new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
 //                html.append(PageFlowUtil.textLink("reorder all scripts", new ActionURL(ReorderAllScriptsAction.class, ContainerManager.getRoot())));
@@ -234,10 +227,10 @@ public class SqlScriptController extends SpringActionController
 
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
-            if (form.isConsolidateOnly())
+            if (form.isManagedOnly())
             {
                 modules = modules.stream()
-                    .filter(Module::shouldConsolidateScripts)
+                    .filter(Module::shouldManageVersion)
                     .collect(Collectors.toList());
             }
 
@@ -436,7 +429,7 @@ public class SqlScriptController extends SpringActionController
 
         for (Module module : modules)
         {
-            if (!module.shouldConsolidateScripts())
+            if (!module.shouldManageVersion())
                 continue;
 
             FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
@@ -575,90 +568,6 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private ActionURL getObsoleteScriptsURL(double fromVersion, double toVersion)
-    {
-        ActionURL url = new ActionURL(ObsoleteScriptsAction.class, ContainerManager.getRoot());
-        url.addParameter("fromVersion", Double.toString(fromVersion));
-        url.addParameter("toVersion", Double.toString(toVersion));
-
-        return url;
-    }
-
-
-    public static class ObsoleteScriptsForm extends ScriptRangeForm
-    {
-        public ObsoleteScriptsForm()
-        {
-            _toVersion = Constants.decrementVersion(Constants.getPreviousReleaseVersion());
-            _fromVersion = Constants.decrementVersion(_toVersion);
-        }
-    }
-
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class ObsoleteScriptsAction extends AbstractScriptRangeAction<ObsoleteScriptsForm>
-    {
-        @Override
-        protected void appendExtraRows(StringBuilder html, ObsoleteScriptsForm form)
-        {
-        }
-
-        @Override
-        public StringBuilder getScriptHtml(ObsoleteScriptsForm form)
-        {
-            StringBuilder html = new StringBuilder();
-            List<Module> modules = ModuleLoader.getInstance().getModules();
-
-            for (Module module : modules)
-            {
-                if (!module.shouldConsolidateScripts())
-                    continue;
-
-                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-                Collection<DbSchema> schemas = provider.getSchemas();
-
-                for (DbSchema schema : schemas)
-                {
-                    List<SqlScript> scripts = getIncrementalScripts(provider, schema, form);
-
-                    if (!scripts.isEmpty())
-                    {
-                        html.append("<b>Schema ").append(schema.getName()).append("</b><br>\n");
-
-                        for (SqlScript script : scripts)
-                            html.append(script.getDescription()).append("<br>\n");
-
-                        html.append("<br>\n");
-
-                        ActionURL obsoleteURL = getObsoleteSchemaURL(module.getName(), schema.getName(), form.getFromVersion(), form.getToVersion());
-                        html.append(PageFlowUtil.button("Obsolete script" + (scripts.size() > 1 ? "s" : "")).href(obsoleteURL).usePost()).append("<br><br>\n");
-                    }
-                }
-            }
-
-            if (0 == html.length())
-                html.append("No incremental scripts in this range");
-
-            return html;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new ScriptsAction().appendNavTrail(root);
-            root.addChild("Obsolete Incremental Scripts");
-
-            return root;
-        }
-    }
-
-
-    private List<SqlScript> getIncrementalScripts(SqlScriptProvider provider, DbSchema schema, ObsoleteScriptsForm form)
-    {
-        return SqlScriptManager.get(provider, schema).getIncrementalScripts(form.getFromVersion(), form.getToVersion());
-    }
-
-
     private static class ScriptConsolidator
     {
         private final FileSqlScriptProvider _provider;
@@ -771,34 +680,10 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private abstract static class ScriptRangeForm
+    public static class ScriptRangeForm
     {
-        private String _module;
-        private String _schema;
         protected double _fromVersion;
-        protected double _toVersion;
-
-        public String getModule()
-        {
-            return _module;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setModule(String module)
-        {
-            _module = module;
-        }
-
-        public String getSchema()
-        {
-            return _schema;
-        }
-
-        @SuppressWarnings({"UnusedDeclaration"})
-        public void setSchema(String schema)
-        {
-            _schema = schema;
-        }
+        protected double _toVersion = Constants.getLowestSchemaVersion() + 1;
 
         public double getFromVersion()
         {
@@ -826,12 +711,36 @@ public class SqlScriptController extends SpringActionController
 
     public static class ConsolidateForm extends ScriptRangeForm
     {
+        private String _module;
+        private String _schema;
         private boolean _includeSingleScripts = false;
 
         public ConsolidateForm()
         {
-            _fromVersion = Constants.getPreviousReleaseVersion();
-            _toVersion = Constants.getNextReleaseVersion();
+            _fromVersion = 0.0;
+            _toVersion = Constants.getEarliestUpgradeVersion();
+        }
+
+        public String getModule()
+        {
+            return _module;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setModule(String module)
+        {
+            _module = module;
+        }
+
+        public String getSchema()
+        {
+            return _schema;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setSchema(String schema)
+        {
+            _schema = schema;
         }
 
         public boolean getIncludeSingleScripts()
@@ -908,12 +817,12 @@ public class SqlScriptController extends SpringActionController
             ScriptConsolidator consolidator = getConsolidator(form);
             consolidator.saveScript();
 
-            // Consider automatic obsoleting when consolidating bootstrap scripts, #38810
+            // Consider deleting the old scripts when consolidating bootstrap scripts, #38810
             if (0.0 == form.getFromVersion())
             {
                 // ...but only if there are no incremental scripts involved
                 if (consolidator.getScripts().stream().noneMatch(SqlScript::isIncremental))
-                    obsoleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
+                    deleteScripts(consolidator.getScriptDirectory(), consolidator.getScripts());
             }
 
             return true;
@@ -947,61 +856,13 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private void obsoleteScripts(File dir, List<SqlScript> scripts)
+    private void deleteScripts(File dir, List<SqlScript> scripts)
     {
         Vcs vcs = VcsService.get().getVcs(dir);
 
         if (null != vcs)
         {
-            File destination = new File(dir, "obsolete");
-
-            if (!destination.exists())
-                destination.mkdir();
-
-            scripts.forEach(sqlScript -> {
-                File source = new File(dir, sqlScript.getDescription());
-                vcs.moveFile(source, destination);
-            });
-        }
-    }
-
-
-    private ActionURL getObsoleteSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion)
-    {
-        ActionURL url = new ActionURL(ObsoleteSchemaAction.class, ContainerManager.getRoot());
-        url.addParameter("module", moduleName);
-        url.addParameter("schema", schemaName);
-        url.addParameter("fromVersion", ModuleContext.formatVersion(fromVersion));
-        url.addParameter("toVersion", ModuleContext.formatVersion(toVersion));
-
-        return url;
-    }
-
-
-    @RequiresPermission(AdminOperationsPermission.class)
-    public class ObsoleteSchemaAction extends FormHandlerAction<ObsoleteScriptsForm>
-    {
-        @Override
-        public void validateCommand(ObsoleteScriptsForm target, Errors errors)
-        {
-        }
-
-        @Override
-        public boolean handlePost(ObsoleteScriptsForm form, BindException errors) throws Exception
-        {
-            Module module = ModuleLoader.getInstance().getModule(form.getModule());
-            FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
-            DbSchema schema = DbSchema.get(form.getSchema(), DbSchemaType.Module);
-            List<SqlScript> scripts = getIncrementalScripts(provider, schema, form);
-            obsoleteScripts(provider.getScriptDirectory(schema.getSqlDialect()), scripts);
-
-            return true;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ObsoleteScriptsForm form)
-        {
-            return getObsoleteScriptsURL(form.getFromVersion(), form.getToVersion());
+            scripts.forEach(sqlScript -> vcs.deleteFile(sqlScript.getDescription()));
         }
     }
 
@@ -1028,10 +889,10 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class OrphanedScriptsAction extends SimpleViewAction<ConsolidateForm>
+    public class OrphanedScriptsAction extends SimpleViewAction<Void>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors) throws IOException
+        public ModelAndView getView(Void form, BindException errors) throws IOException
         {
             Set<SqlScript> orphanedScripts = new TreeSet<>();
             Set<String> unclaimedFiles = new TreeSet<>();
@@ -1040,7 +901,7 @@ public class SqlScriptController extends SpringActionController
 
             for (Module module : modules)
             {
-                if (!module.shouldConsolidateScripts())
+                if (!module.shouldManageVersion())
                     continue;
 
                 FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
@@ -1115,7 +976,7 @@ public class SqlScriptController extends SpringActionController
             StringBuilder html = new StringBuilder();
             html.append("  <table>\n");
             html.append("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
-                    " \"from\" version and a later \"to\" version. These scripts can be \"obsoleted\" safely.</td></tr>\n");
+                    " \"from\" version and a later \"to\" version. These scripts can be deleted safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
 
@@ -1358,17 +1219,17 @@ public class SqlScriptController extends SpringActionController
 
 
     @RequiresPermission(AdminOperationsPermission.class)
-    public class UnreachableScriptsAction extends SimpleViewAction<ConsolidateForm>
+    public class UnreachableScriptsAction extends SimpleViewAction<ScriptRangeForm>
     {
         @Override
-        public ModelAndView getView(ConsolidateForm form, BindException errors)
+        public ModelAndView getView(ScriptRangeForm form, BindException errors)
         {
             // Order scripts by fromVersion. If fromVersion is the same, use standard compare order (schema + from + to)
             Set<SqlScript> unreachableScripts = new TreeSet<>(Comparator.comparingDouble(SqlScript::getFromVersion).thenComparing(s -> s));
 
             Collection<Double> fromVersions = new LinkedList<>();
             fromVersions.add(0.00);
-            fromVersions.addAll(Constants.getValidVersions());
+            fromVersions.addAll(Constants.getMajorSchemaVersions());
 
             double toVersion = form.getToVersion();
 
@@ -1403,8 +1264,11 @@ public class SqlScriptController extends SpringActionController
             double previousRoundedVersion = -1;
             List<SqlScript> batch = new LinkedList<>();
 
-            StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading from any of the following versions: ");
-            html.append(ArrayUtils.toString(fromVersions)).append("<br>");
+            StringBuilder html = new StringBuilder("SQL scripts that will never run when upgrading to schema version " + ModuleContext.formatVersion(toVersion) + " from any of the following schema versions: ");
+            String joinedVersions = fromVersions.stream()
+                .map(ModuleContext::formatVersion)
+                .collect(Collectors.joining(", "));
+            html.append("[").append(joinedVersions).append("]<br>");
 
             for (SqlScript script : unreachableScripts)
             {
@@ -1460,8 +1324,6 @@ public class SqlScriptController extends SpringActionController
                 controller.new ScriptsWithErrorsAction(),
                 controller.new ConsolidateScriptsAction(),
                 controller.new ConsolidateSchemaAction(),
-                controller.new ObsoleteScriptsAction(),
-                controller.new ObsoleteSchemaAction(),
                 controller.new OrphanedScriptsAction(),
                 controller.new ScriptAction(),
                 controller.new ReorderScriptAction(),

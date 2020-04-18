@@ -16,6 +16,11 @@
 
 package org.labkey.experiment.api.property;
 
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.fhcrc.cpas.exp.xml.DefaultType;
@@ -48,12 +53,16 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.experiment.api.GWTDomainMixin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -265,6 +274,7 @@ public class PropertyServiceImpl implements PropertyService
         DomainPropertyManager.get().saveConditionalFormats(user, pd, formats);
     }
 
+    @Override
     public Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, DomainDescriptorType xDomain)
     {
         try
@@ -278,6 +288,7 @@ public class PropertyServiceImpl implements PropertyService
         }
     }
 
+    @Override
     public Pair<Domain, Map<DomainProperty, Object>> createDomain(Container c, XarContext context, DomainDescriptorType xDomain) throws XarFormatException
     {
         String lsid = xDomain.getDomainURI();
@@ -298,7 +309,28 @@ public class PropertyServiceImpl implements PropertyService
         return new Pair<>(domain, defaultValues);
     }
 
-    private static DomainProperty loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp, Map<DomainProperty, Object> defaultValues)
+    @Override
+    public void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter)
+    {
+        SimpleBeanPropertyFilter gwtDomainPropertiesFilter;
+        if(null == filter)
+        {
+            gwtDomainPropertiesFilter = SimpleBeanPropertyFilter.serializeAll();
+        }
+        else
+        {
+            gwtDomainPropertiesFilter = filter;
+        }
+
+        FilterProvider gwtDomainFilterProvider = new SimpleFilterProvider()
+                .addFilter("listDomainsActionFilter", gwtDomainPropertiesFilter);
+        om.setFilterProvider(gwtDomainFilterProvider);
+        om.addMixIn(GWTDomain.class, GWTDomainMixin.class);
+        om.addMixIn(GWTPropertyDescriptor.class, GWTPropertyDescriptorMixin.class);
+        om.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
+    }
+
+    private static void loadPropertyDescriptor(Domain domain, XarContext context, PropertyDescriptorType xProp, Map<DomainProperty, Object> defaultValues)
         throws XarFormatException
     {
         DomainProperty prop = domain.addProperty();
@@ -449,6 +481,5 @@ public class PropertyServiceImpl implements PropertyService
             prop.setDimension(xProp.getDimension());
         prop.setRecommendedVariable(xProp.getRecommendedVariable());
 
-        return prop;
     }
 }

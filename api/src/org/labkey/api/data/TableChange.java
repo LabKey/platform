@@ -137,7 +137,7 @@ public class TableChange
     // TODO consider indices created from domain as well(domain does not persist property indices after creating currently, so they are not available during resizing)
     public void updateResizeIndices()
     {
-        DomainKind kind = _domain.getDomainKind();
+        DomainKind<?> kind = _domain.getDomainKind();
 
         if (_type == ChangeType.ResizeColumns)
         {
@@ -340,7 +340,7 @@ public class TableChange
     public final List<PropertyStorageSpec> toSpecs(Collection<String> columnNames)
     {
         final Domain domain = _domain;
-        final DomainKind kind = _domain.getDomainKind();
+        final DomainKind<?> kind = _domain.getDomainKind();
 
         Map<String, PropertyStorageSpec> specs = new CaseInsensitiveHashMap<>();
         kind.getBaseProperties(_domain).forEach(p -> specs.put(p.getName(), p));

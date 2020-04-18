@@ -28,10 +28,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.MultiValuedMapCollectors;
+import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.AuditConfigurable;
-import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -662,7 +662,7 @@ public class SurveyManager
                 .filter(getFilter(MODULE_RESOURCE_FILE_EXTENSION))
                 .map(this::loadSurveyDesign)
                 .filter(Objects::nonNull)
-                .collect(MultiValuedMapCollectors.of(SurveyDesign::getSchemaName, Function.identity())));
+                .collect(LabKeyCollectors.toMultiValuedMap(SurveyDesign::getSchemaName, Function.identity())));
         }
 
         private @Nullable SurveyDesign loadSurveyDesign(Resource r)

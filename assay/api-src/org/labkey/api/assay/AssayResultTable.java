@@ -55,6 +55,7 @@ import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
@@ -273,6 +274,9 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         var lsidCol = createRowExpressionLsidColumn(this);
         addColumn(lsidCol);
 
+        var propsCol = createPropertiesColumn();
+        addColumn(propsCol);
+
         setDefaultVisibleColumns(visibleColumns);
     }
 
@@ -296,11 +300,29 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         }
 
         var lsidCol = new ExprColumn(table, "LSID", sql, JdbcType.VARCHAR);
+        lsidCol.setHidden(true);
         lsidCol.setCalculated(true);
         lsidCol.setUserEditable(false);
         lsidCol.setReadOnly(true);
+        lsidCol.setHidden(true);
         return lsidCol;
     }
+
+    // Expensive render-time fetching of all ontology properties attached to the object row
+    protected BaseColumnInfo createPropertiesColumn()
+    {
+        var lsidColumn = getColumn("LSID");
+
+        var col = new AliasedColumn(this, "Properties", lsidColumn);
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
+        return col;
+    }
+
 
     private void configureSpecimensLookup(MutableColumnInfo specimenIdCol, boolean foundTargetStudyCol)
     {

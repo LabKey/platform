@@ -117,7 +117,7 @@ public abstract class AbstractStudyPipelineJob extends PipelineJob
         if (studyDoc != null)
         {
             StudyImportContext ctx = new StudyImportContext(getUser(), destStudy.getContainer(), studyDoc, null, new PipelineJobLoggerGetter(this), studyDir);
-            StudyImportSpecimenTask.doImport(null, this, ctx, false);
+            StudyImportSpecimenTask.doImport(null, this, ctx, false, true);
         }
     }
 

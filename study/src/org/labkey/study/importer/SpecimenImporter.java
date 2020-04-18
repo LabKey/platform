@@ -88,6 +88,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Vial;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
@@ -1323,7 +1324,16 @@ public class SpecimenImporter
             setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.PopulateLabs);
             if (null != sifMap.get(_labsTableType))
-                mergeTable(schema, sifMap.get(_labsTableType), getTableInfoLocation(), true, true);
+            {
+                try
+                {
+                    mergeTable(schema, sifMap.get(_labsTableType), getTableInfoLocation(), true, true);
+                }
+                finally
+                {
+                    LocationCache.clear(_container);
+                }
+            }
 
             _iTimer.setPhase(ImportPhases.SpecimenTypes);
             if (merge)
@@ -3319,7 +3329,8 @@ public class SpecimenImporter
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
             info(remapExternalIdsSql.toDebugString());
-        executeSQL(schema, remapExternalIdsSql);
+        if (!sep.isBlank())
+            executeSQL(schema, remapExternalIdsSql);
         info("Update complete.");
     }
 

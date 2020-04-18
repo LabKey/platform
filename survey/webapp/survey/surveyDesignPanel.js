@@ -282,7 +282,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
                 + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">mainPanelWidth</span></td></tr>'
                 + '<tr><td class="spacer"></td><td>In card layout, the width of the main section panel. Defaults to 800.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">navigateOnSave</span></td></tr>'
-                + '<tr><td class="spacer"></td><td>True to navigate away from the survey form after the save action. Navigation will take the user to the returnURL, if provided, or to the project begin action. Defaults to false.</td></tr>'
+                + '<tr><td class="spacer"></td><td>True to navigate away from the survey form after the save action. Navigation will take the user to the returnUrl, if provided, or to the project begin action. Defaults to false.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Integer}</span> <span class="varname">autoSaveInterval</span></td></tr>'
                 + '<tr><td class="spacer"></td><td>The interval (in milliseconds) that auto-saving of the survey results will occur. The default value is : 60000.</td></tr>'
                 + '<tr><td colspan="2"><span class="vartype">{Boolean}</span> <span class="varname">disableAutoSave</span></td></tr>'

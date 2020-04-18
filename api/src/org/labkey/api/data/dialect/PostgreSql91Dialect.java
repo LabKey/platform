@@ -949,7 +949,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     @Override
     protected @Nullable String getDatabaseMaintenanceSql()
     {
-        return null; // "VACUUM ANALYZE;";
+        return "VACUUM ANALYZE;";
     }
 
     @Override
@@ -1175,10 +1175,8 @@ public abstract class PostgreSql91Dialect extends SqlDialect
 
     private List<String> getDropConstraintsStatement(TableChange change)
     {
-        List<String> statements = change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
+        return change.getConstraints().stream().map(constraint -> String.format("ALTER TABLE %s DROP CONSTRAINT %s",
                 change.getSchemaName() + "." + change.getTableName(), constraint.getName())).collect(Collectors.toList());
-
-        return statements;
     }
 
     private List<String> getAddConstraintsStatement(TableChange change)
@@ -1186,20 +1184,21 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         Collection<Constraint> constraints = change.getConstraints();
 
-        if (null!=constraints && !constraints.isEmpty())
+        if(null!=constraints && !constraints.isEmpty())
         {
             statements = constraints.stream().map(constraint ->
-                String.format("DO $$\n " +
-                    "BEGIN\n " +
-                    "IF NOT EXISTS\n" +
-                    "(SELECT 1 FROM information_schema.constraint_column_usage\n " +
-                    "WHERE table_name = '%s'  and constraint_name = '%s') THEN\n" +
-                    "ALTER TABLE %s ADD CONSTRAINT %s %s (%s);\n" +
-                    "END IF;\n" +
-                    "END$$;",
-                    change.getSchemaName() + "." + change.getTableName(), constraint.getName(),
-                    change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
-                    StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+                    String.format("DO $$\n " +
+                            "BEGIN\n " +
+                            "IF NOT EXISTS\n" +
+                            "(SELECT 1 FROM information_schema.constraint_column_usage\n " +
+                            "WHERE table_name = '%s'  and constraint_name = '%s') THEN\n" +
+                            "ALTER TABLE %s ADD CONSTRAINT %s %s (%s);\n" +
+                            "END IF;\n" +
+                            "END$$;",
+                            change.getSchemaName() + "." + change.getTableName(), constraint.getName(),
+                            change.getSchemaName() + "." + change.getTableName(), constraint.getName(), constraint.getType(),
+                            StringUtils.join(constraint.getColumns(), ","))).collect(Collectors.toList());
+
         }
 
         return statements;
@@ -1308,6 +1307,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
     }
 
+    @Override
     public String nameIndex(String tableName, String[] indexedColumns)
     {
         return AliasManager.makeLegalName(tableName + '_' + StringUtils.join(indexedColumns, "_"), this);
@@ -1476,7 +1476,7 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     public ColumnMetaDataReader getColumnMetaDataReader(ResultSet rsCols, TableInfo table)
     {
         // Retrieve and pass in the previously queried scale values for this scope.
-        return new PostgreSQLColumnMetaDataReader(rsCols, table);
+        return new PostgreSqlColumnMetaDataReader(rsCols, table);
     }
 
     @Override
@@ -1622,11 +1622,11 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         return true;
     }
 
-    private class PostgreSQLColumnMetaDataReader extends ColumnMetaDataReader
+    private class PostgreSqlColumnMetaDataReader extends ColumnMetaDataReader
     {
         private final TableInfo _table;
 
-        public PostgreSQLColumnMetaDataReader(ResultSet rsCols, TableInfo table)
+        public PostgreSqlColumnMetaDataReader(ResultSet rsCols, TableInfo table)
         {
             super(rsCols);
 
@@ -1724,6 +1724,12 @@ public abstract class PostgreSql91Dialect extends SqlDialect
     }
 
     @Override
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return true;
+    }
+
+    @Override
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         Closer ret = super.configureToDisableJdbcCaching(connection, scope, sql);
@@ -1736,13 +1742,17 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         {
             try
             {
-                // Used in conjunction with stmt.setFetchSize() to force uncached ResultSets
+                // See http://stackoverflow.com/questions/1468036/java-jdbc-ignores-setfetchsize
+                int previousTransactionIsolation = connection.getTransactionIsolation();
+                connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
                 connection.setAutoCommit(false);
+
                 Closer previous = ret;
 
                 ret = () -> {
                     previous.close();
                     connection.setAutoCommit(true);
+                    connection.setTransactionIsolation(previousTransactionIsolation);
                 };
             }
             catch (SQLException e)
@@ -1754,14 +1764,6 @@ public abstract class PostgreSql91Dialect extends SqlDialect
         }
 
         return ret;
-    }
-
-
-    @Override
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
-        super.configureToDisableJdbcCaching(stmt);
-        stmt.setFetchSize(1000);
     }
 
     @Override

@@ -55,6 +55,7 @@
 
 <labkey:form name="systemMaintenanceSettings" method="post">
     <table width="1000">
+        <%=getTroubleshooterWarning(hasAdminOpsPerms, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("<br></td></tr>"))%>
         <tr>
             <td colspan="2">The following tasks are (typically) run every night to clear unused data, update database statistics, perform nightly data refreshes,
                 and generally keep this server running smoothly and quickly. We recommend leaving all system maintenance tasks enabled, but some

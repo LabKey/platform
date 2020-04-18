@@ -70,7 +70,9 @@ public class JavaScriptDisplayColumn extends DataColumn
             {
                 out.write("class=\"" + _linkClassName + "\" ");
             }
-            out.write(_eventExpression.eval(ctx));
+            String eventExpressionEvalResult = _eventExpression.eval(ctx);
+            if (eventExpressionEvalResult != null)
+                out.write(eventExpressionEvalResult);
             out.write(">");
             out.write(getFormattedValue(ctx));
             out.write("</a>");

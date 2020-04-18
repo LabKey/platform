@@ -239,6 +239,11 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
 
     public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns)
     {
+        setShowInsertableColumnsOnly(b, includeColumns, null);
+    }
+
+    public void setShowInsertableColumnsOnly(boolean b, @Nullable List<FieldKey> includeColumns, @Nullable List<FieldKey> excludeColumns)
+    {
         _insertableColumnsOnly = b;
         if (_insertableColumnsOnly)
         {
@@ -255,6 +260,12 @@ public class ExcelWriter implements ExportWriter, AutoCloseable
                 ColumnInfo c = dc.getColumnInfo();
                 if (c == null)
                     continue;
+
+                if (excludeColumns != null && excludeColumns.contains(c.getFieldKey()))
+                {
+                    i.remove();
+                    continue;
+                }
 
                 if (includeColumns != null && includeColumns.contains(c.getFieldKey()))
                     continue;

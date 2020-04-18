@@ -321,15 +321,6 @@ public class CopyFileRootPipelineJob extends PipelineJob
                         setStatus(TaskStatus.running, "Copying files");
                         info("Copying file  '" + pathString + "'");
 
-                        if (matchesCopyFailureSimulatorRegex("FileRootCopyExpectedFailureSimulator", sourceChild.getFileName().toString()))
-                        {
-                            throw new IOException("Simulating an I/O failure copying " + sourceChild);
-                        }
-                        if (matchesCopyFailureSimulatorRegex("FileRootCopyUnexpectedFailureSimulator", sourceChild.getFileName().toString()))
-                        {
-                            throw new NullPointerException("Simulating an unexpected error copying " + sourceChild);
-                        }
-
                         long sourceSize = Files.size(sourceChild);
                         boolean retainExisting = false;
 
@@ -348,7 +339,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                                         info("Retained existing file '" + pathString + "'");
                                         modifiedUpdated = true;
                                     }
-                                    catch (FileNotFoundException e)
+                                    catch (FileNotFoundException | NoSuchFileException e)
                                     {
                                         // S3 backed storage is not immediately consistent after the PUT. Try a few times
                                         // before declaring failure
@@ -377,7 +368,7 @@ public class CopyFileRootPipelineJob extends PipelineJob
                                     info("Copy complete '" + pathString + "'");
                                     modifiedUpdated = true;
                                 }
-                                catch (FileNotFoundException e)
+                                catch (FileNotFoundException | NoSuchFileException e)
                                 {
                                     // S3 backed storage is not immediately consistent after the PUT. Try a few times
                                     // before declaring failure
