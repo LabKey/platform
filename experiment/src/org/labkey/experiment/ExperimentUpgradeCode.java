@@ -18,6 +18,7 @@ package org.labkey.experiment;
 import com.google.common.collect.Sets;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbSequence;
@@ -501,6 +502,19 @@ public class ExperimentUpgradeCode implements UpgradeCode
 
         int count = new SqlExecutor(scope).execute(update);
         LOG.info("DataClass '" + ds.getName() + "' (" + ds.getRowId() + ") updated 'name' and 'classId' column, count=" + count);
+    }
+
+    // called from exp-20.003-20.004
+    public static void addDbSequenceForMaterialsRowId(ModuleContext context)
+    {
+        if (context.isNewInstall())
+            return;
+
+        SQLFragment frag = new SQLFragment("SELECT MAX(rowId) FROM exp.material");
+        int maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
+
+        DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId"));
+        sequence.ensureMinimum(maxId);
     }
 
 }
