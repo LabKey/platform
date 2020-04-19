@@ -79,8 +79,6 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
-    private int _databaseVersion = 0;
-    private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -435,34 +433,14 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Internal version number
-    public int getDatabaseVersion()
-    {
-        return _databaseVersion;
-    }
-
-    public void setDatabaseVersion(int databaseVersion)
-    {
-        _databaseVersion = databaseVersion;
-    }
-
-    // Human readable product version number
-    public String getProductVersion()
-    {
-        return _productVersion;
-    }
-
-    public void setProductVersion(String productVersion)
-    {
-        _productVersion = productVersion;
-    }
-
-    public abstract String getProductName();
-
-    public @Nullable String getProductEdition()
+    // Human readable product version number. Dialects should override this if they can provide a more useful product
+    // version than DatabaseMetaData.getDatabaseProductVersion().
+    public @Nullable String getProductVersion()
     {
         return null;
     }
+
+    public abstract String getProductName();
 
     public abstract String getSQLScriptPath();
 

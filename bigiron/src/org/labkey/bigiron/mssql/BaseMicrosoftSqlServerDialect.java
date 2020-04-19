@@ -78,7 +78,9 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private static final int MAX_INDEX_SIZE = 900;
 
     private volatile boolean _groupConcatInstalled = false;
-    private volatile Edition _edition = Edition.Unknown;
+    private volatile String _versionYear = null;
+    private volatile String _versionNumber = null;
+    private volatile Edition _edition = null;
 
     @SuppressWarnings("unused")
     enum Edition
@@ -243,11 +245,20 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return MicrosoftSqlServerDialectFactory.PRODUCT_NAME;
     }
 
-    @Nullable
-    @Override
-    public String getProductEdition()
+    void setVersionNumber(String versionNumber)
     {
-        return _edition.name() + " Edition";
+        _versionNumber = versionNumber;
+    }
+
+    void setVersionYear(String versionYear)
+    {
+        _versionYear = versionYear;
+    }
+
+    @Override
+    public String getProductVersion()
+    {
+        return _versionYear + " (" + _versionNumber + ")" + (null != _edition ? " " + _edition.name() + " Edition" : "");
     }
 
     @Override

@@ -330,12 +330,14 @@ public class DbScope
             }
             finally
             {
+                String dialectProductVersion = null != _dialect ? _dialect.getProductVersion() : null;
+
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + dsName +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                        "\n    Database Product Version: " + (null != dialectProductVersion ? dialectProductVersion : dbmd.getDatabaseProductVersion()) +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
                         "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
     (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
@@ -406,7 +408,9 @@ public class DbScope
 
     public String getDatabaseProductVersion()
     {
-        return _databaseProductVersion;
+        // Prefer the dialect's product version over DatabaseMetaData.getDatabaseProductVersion()
+        String dialectProductVersion = _dialect.getProductVersion();
+        return null != dialectProductVersion ? dialectProductVersion : _databaseProductVersion;
     }
 
     public String getDriverName()
