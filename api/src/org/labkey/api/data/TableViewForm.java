@@ -119,11 +119,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _tinfo = tinfo;
     }
 
-    protected void setDynaClass(StringWrapperDynaClass dynaClass)
-    {
-        _dynaClass = dynaClass;
-    }
-
     /**
      * Sets the table. NOTE This will also overwrite any previously
      * set dynaClass with one derived from the table.
@@ -193,7 +188,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             set("container", _c.getId());
 
         Object[] pkVal = getPkVals();
-        Map newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
+        Map<String, Object> newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
         setTypedValues(newMap, true);
     }
 
@@ -656,6 +651,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues.containsKey(col.getFormFieldName(ctx));
     }
 
+    @Override
     public String get(String arg0)
     {
         return _stringValues.get(arg0);
@@ -666,6 +662,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues.get(getFormFieldName(col));
     }
 
+    @Override
     public void set(String arg0, Object arg1)
     {
         String v;
@@ -687,36 +684,43 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _values = null;
     }
 
+    @Override
     public boolean contains(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public Object get(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public Object get(String arg0, int arg1)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
+    @Override
     public DynaClass getDynaClass()
     {
         return _dynaClass;
     }
 
+    @Override
     public void remove(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
+    @Override
     public void set(String arg0, String arg1, Object arg2)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public void set(String arg0, int arg1, Object arg2)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
@@ -798,7 +802,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         catch (Exception ignored) {}
     }
 
-
+    @Override
     public @NotNull BindException bindParameters(PropertyValues params)
     {
         /*
