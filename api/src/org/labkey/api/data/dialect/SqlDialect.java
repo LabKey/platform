@@ -433,11 +433,11 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Human readable product version number. Dialects should override this if they can provide a more useful product
-    // version than DatabaseMetaData.getDatabaseProductVersion().
-    public @Nullable String getProductVersion()
+    // Human readable product version number. Pass through by default; dialects should override this if they can provide
+    // more useful product version information than what's returned from DatabaseMetaData.getDatabaseProductVersion().
+    public @Nullable String getProductVersion(String dbmdProductVersion)
     {
-        return null;
+        return dbmdProductVersion;
     }
 
     public abstract String getProductName();

@@ -82,9 +82,8 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         VersionNumber versionNumber = new VersionNumber(jdbcProductVersion);
         int version = versionNumber.getVersionInt();
 
-        // Get the appropriate dialect and stash version information
+        // Get the appropriate dialect and stash the version year
         BaseMicrosoftSqlServerDialect dialect = getDialect(version, jdbcProductVersion, logWarnings, primaryDataSource);
-        dialect.setVersionNumber(jdbcProductVersion);
         String className = dialect.getClass().getSimpleName();
         dialect.setVersionYear(className.substring(18, className.indexOf("Dialect")));
 

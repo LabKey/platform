@@ -79,7 +79,6 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
 
     private volatile boolean _groupConcatInstalled = false;
     private volatile String _versionYear = null;
-    private volatile String _versionNumber = null;
     private volatile Edition _edition = null;
 
     @SuppressWarnings("unused")
@@ -245,20 +244,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return MicrosoftSqlServerDialectFactory.PRODUCT_NAME;
     }
 
-    void setVersionNumber(String versionNumber)
-    {
-        _versionNumber = versionNumber;
-    }
-
     void setVersionYear(String versionYear)
     {
         _versionYear = versionYear;
     }
 
     @Override
-    public String getProductVersion()
+    public String getProductVersion(String dbmdProductVersion)
     {
-        return _versionYear + " (" + _versionNumber + ")" + (null != _edition ? " " + _edition.name() + " Edition" : "");
+        return _versionYear + " (" + dbmdProductVersion + ")" + (null != _edition ? " " + _edition.name() + " Edition" : "");
     }
 
     @Override
@@ -1665,8 +1659,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if ("2008R2".equals(getProductVersion()))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+        if ("2008R2".equals(_versionYear))
+            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 
     @Override

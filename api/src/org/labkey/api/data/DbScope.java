@@ -322,6 +322,7 @@ public class DbScope
             DatabaseMetaData dbmd = conn.getMetaData();
             _dsProps = new DataSourceProperties(dsName, dataSource);
             Integer maxTotal = _dsProps.getMaxTotal();
+            _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
@@ -330,14 +331,12 @@ public class DbScope
             }
             finally
             {
-                String dialectProductVersion = null != _dialect ? _dialect.getProductVersion() : null;
-
                 // Always log the attempt, even if DatabaseNotSupportedException, etc. occurs, to help with diagnosis
                 LOG.info("Initializing DbScope with the following configuration:" +
                         "\n    DataSource Name:          " + dsName +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + (null != dialectProductVersion ? dialectProductVersion : dbmd.getDatabaseProductVersion()) +
+                        "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
                         "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
     (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
@@ -350,7 +349,6 @@ public class DbScope
             _databaseName = _dialect.getDatabaseName(_dsProps);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
-            _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
             _labkeyProps = props;
@@ -408,9 +406,8 @@ public class DbScope
 
     public String getDatabaseProductVersion()
     {
-        // Prefer the dialect's product version over DatabaseMetaData.getDatabaseProductVersion()
-        String dialectProductVersion = _dialect.getProductVersion();
-        return null != dialectProductVersion ? dialectProductVersion : _databaseProductVersion;
+        // Dialect may be able to provide more useful version information
+        return _dialect.getProductVersion(_databaseProductVersion);
     }
 
     public String getDriverName()
