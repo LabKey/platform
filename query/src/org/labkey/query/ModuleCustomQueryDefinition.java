@@ -188,6 +188,8 @@ public class ModuleCustomQueryDefinition extends CustomQueryDefinitionImpl
                     QueryService.get().fireQueryChanged(user, container, null, _queryDef.getSchemaPath(), change.getProperty(), Collections.singleton(change));
                 }
             }
+            // NOTE: File watcher is fast, but we want to make sure that this will be reflected immediately, since the caller is
+            // probably about to request this resource again quickly.
             QueryServiceImpl.get().uncacheModuleResources(ModuleLoader.getInstance().getModule(_moduleName));
         }
 
