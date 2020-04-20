@@ -360,8 +360,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME + ".");
 
+        // Check for usage of Time as Key Field
         String keyPropertyName = arguments.getKeyPropertyName();
-        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
+        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName);
         if (useTimeKeyField)
             keyPropertyName = null;
 
@@ -396,7 +397,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 managementType = KeyManagementType.getManagementTypeFromProp(pd.getPropertyType());
             }
 
-
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
                     demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType);
 
@@ -429,11 +429,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                         propertyIndices.add(propIndex);
                     }
                     newDomain.setPropertyIndices(propertyIndices);
+
                     newDomain.save(user);
                 }
                 else
                     throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
             }
+
             transaction.commit();
             return study.getDataset(def.getDatasetId()).getDomain();
         }
@@ -529,14 +531,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                        Container container, User user, DatasetDefinition def)
     {
-        ValidationException exception = new ValidationException();
-
         try
         {
-            List<String> allErrors = DomainUtil.updateDomainDescriptor(original, update, container, user).getAllErrors();
-            for (String str : allErrors) {
-                exception.addGlobalError(str);
-            }
+            ValidationException exception = new ValidationException();
+            exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
             return exception;
         }
         finally
@@ -572,32 +570,27 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             if (!study.getShareVisitDefinitions())
                 datasetProperties.setDataSharing("NONE");
 
-            // Default is no key management
-            Dataset.KeyManagementType keyType = Dataset.KeyManagementType.None;
-            String keyPropertyName = null;
-            boolean useTimeKeyField = false;
             // Check for usage of Time as Key Field
-            if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
-            {
+            boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName());
+            if (useTimeKeyField)
                 datasetProperties.setKeyPropertyName(null);
-                useTimeKeyField = true;
-            }
 
+            // Default is no key management
+            KeyManagementType keyType = KeyManagementType.None;
+            String keyPropertyName = datasetProperties.getKeyPropertyName();
             if (datasetProperties.getKeyPropertyName() != null)
             {
                 Domain domain = PropertyService.get().getDomain(container, domainURI);
-
                 for (DomainProperty dp : domain.getProperties())
                 {
                     if (dp.getName().equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
                     {
                         keyPropertyName = dp.getName();
-                        // Be sure that the user really wants a managed key, not just that disabled select box still had a value
 
+                        // Be sure that the user really wants a managed key, not just that disabled select box still had a value
                         if (datasetProperties.isKeyPropertyManaged())
-                        {
-                            keyType = Dataset.KeyManagementType.getManagementTypeFromProp(dp.getPropertyDescriptor().getPropertyType());
-                        }
+                            keyType = KeyManagementType.getManagementTypeFromProp(dp.getPropertyDescriptor().getPropertyType());
+
                         break;
                     }
                 }
