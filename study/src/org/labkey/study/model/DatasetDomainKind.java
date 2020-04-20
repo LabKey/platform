@@ -471,7 +471,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Dataset name must be under 200 characters.");
 
         // issue 17766: check if dataset or query exist with this name
-        if (!name.equals(domain.getName()) && (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name)))
+        if ((!name.equals(domain.getName()) || def == null) && (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name)))
             throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\".");
 
         // Label related exceptions
@@ -479,7 +479,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (label == null || label.length() == 0)
             throw new IllegalArgumentException("Dataset label cannot be empty.");
 
-        if (def != null && !def.getLabel().equals(label) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
+        if ((def != null && !def.getLabel().equals(label) || (def == null)) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
             throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\".");
 
         // Additional key related exceptions
@@ -510,9 +510,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         if (def != null &&  null != datasetId && def.getDatasetId() != datasetId && null != study.getDataset(datasetId))
             throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\".");
+
+        if (!study.getShareVisitDefinitions() && null != datasetProperties.getDataSharing() && !datasetProperties.getDataSharing().equals("NONE"))
+            throw new IllegalArgumentException("Illegal value set for data sharing option.");
     }
 
-    private void checkCanUpdate(DatasetDefinition def, Container container, User user,
+    private void checkCanUpdate(DatasetDefinition def, Container container, User user, DatasetDomainKindProperties datasetProperties,
                                 GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         if (null == def)
@@ -526,6 +529,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         if (!def.getTypeURI().equals(original.getDomainURI()) || !def.getTypeURI().equals(update.getDomainURI()))
             throw new IllegalArgumentException("Illegal Argument");
+
+        if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
+        {
+            String noun = StudyService.get().getSubjectNounSingular(container);
+            throw new IllegalArgumentException("This dataset currently contains more than one row of data per " + noun +
+                    ". Demographic data includes one row of data per " + noun + ".");
+        }
     }
 
     private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
@@ -548,28 +558,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         try
         {
-            // Update-case specific validation
-            if ( datasetProperties.isDemographicData() && !datasetProperties.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
-            {
-                String noun = StudyService.get().getSubjectNounSingular(container);
-                throw new IllegalArgumentException("This dataset currently contains more than one row of data per " + noun +
-                        ". Demographic data includes one row of data per " + noun + ".");
-            }
-
-            // PR Note: is it desired that we check for this at all?
-//            if (null != datasetProperties.getCategory() && null == ViewCategoryManager.getInstance().getCategory(container, datasetProperties.getCategory()))
-//                throw new IllegalArgumentException("Unable to find a category named : " + datasetProperties.getCategory() + " in this folder.");
-
-            if (datasetProperties.isDemographicData())
-            {
-                datasetProperties.setKeyPropertyName(null);
-                datasetProperties.setKeyPropertyManaged(false);
-            }
-
-            /* IGNORE illegal shareDataset values */
-            if (!study.getShareVisitDefinitions())
-                datasetProperties.setDataSharing("NONE");
-
             // Check for usage of Time as Key Field
             boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName());
             if (useTimeKeyField)
@@ -617,9 +605,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         {
             return exception.addGlobalError("Additional key column must have unique values.");
         }
-        catch (Exception x)
+        catch (Exception e)
         {
-            throw UnexpectedException.wrap(x);
+            throw new RuntimeException(e);
         }
     }
 
@@ -634,18 +622,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         validateDatasetProperties(datasetProperties, container, user, update, def);
 
-        checkCanUpdate(def, container, user, original, update);
-
-        // Remove any fields that are duplicates of the default dataset fields (e.g. participantid, etc).
-        List<? extends GWTPropertyDescriptor> updatedProps = update.getFields();
-        for (Iterator<? extends GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
-        {
-            GWTPropertyDescriptor prop = iter.next();
-            if (DatasetDefinition.isDefaultFieldName(prop.getName(), study))
-                iter.remove();
-            else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
-                prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
-        }
+        checkCanUpdate(def, container, user, datasetProperties, original, update);
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
