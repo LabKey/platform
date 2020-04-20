@@ -78,7 +78,7 @@ import java.util.Map;
  */
 public abstract class AbstractReport implements Report, Cloneable // TODO: Remove this and switch to a builder pattern.
 {
-    private ReportDescriptor _descriptor;
+    protected ReportDescriptor _descriptor;
 
     public String getDescriptorType()
     {
@@ -383,8 +383,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
 
-    @Override
-    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    protected final boolean hasEditPermissions(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
         {
@@ -406,10 +405,26 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return errors.isEmpty();
     }
 
-    public boolean canEdit(User user, Container container)
-    {
-        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<>());
 
+    /*
+     * By default this method will return canEdit()==false for module based reports.
+     * Sub-class can override this method, and call hasEditPermissions()
+     * instead of super.canEdit() to avoid this check.
+     */
+    @Override
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isModuleBased())
+        {
+            errors.add(new SimpleValidationError("This module report is not editable"));
+            return false;
+        }
+        return hasEditPermissions(user, container, errors);
+    }
+
+    public final boolean canEdit(User user, Container container)
+    {
+        return canEdit(user, container, new ArrayList<>());
     }
 
     public boolean canShare(User user, Container container, List<ValidationError> errors)

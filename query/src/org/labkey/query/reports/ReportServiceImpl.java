@@ -18,6 +18,7 @@ package org.labkey.query.reports;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -37,6 +38,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationError;
@@ -51,11 +53,15 @@ import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ModuleRReportDescriptor;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
+import org.labkey.api.reports.report.ModuleReportIdentifier;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportIdentifierConverter;
 import org.labkey.api.reports.report.ScriptEngineReport;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -67,8 +73,10 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -79,7 +87,11 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -327,15 +339,31 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override
-    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
+    public ReportIdentifier saveReportEx(ContainerUser context, String key, Report report, boolean skipValidation)
     {
-        return _saveReport(context, key, report, skipValidation).getRowId();
+        ReportIdentifier id = report.getDescriptor().getReportId();
+        if (null == id || id instanceof DbReportIdentifier)
+        {
+            if (report.getDescriptor().isModuleBased())
+                throw new IllegalStateException();
+            int rowid = _saveDbReport(context, key, report, skipValidation).getRowId();
+            return new DbReportIdentifier(rowid);
+        }
+        // NOTE there are module reports other than R
+        else if (id instanceof ModuleReportIdentifier && report.getDescriptor() instanceof ModuleRReportDescriptor)
+        {
+            return _saveModuleRReport(context, key, report, skipValidation);
+        }
+        else
+        {
+            throw new RuntimeException("Can't save this kind of module report yet.");
+        }
     }
 
-    @Override
-    public int saveReport(ContainerUser context, String key, Report report)
+    @Override @Deprecated /* use ReportIdentifier version saveReportEx */
+    public int saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
-        return _saveReport(context, key, report).getRowId();
+        return _saveDbReport(context, key, report, skipValidation).getRowId();
     }
 
     @Override
@@ -382,12 +410,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         return errors.isEmpty();
     }
 
-    private ReportDB _saveReport(ContainerUser context, String key, Report report)
-    {
-        return _saveReport(context, key, report, false);
-    }
-
-    private ReportDB _saveReport(ContainerUser context, String key, Report report, boolean skipValidation)
+    private ReportDB _saveDbReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
         DbScope scope = getTable().getSchema().getScope();
         ReportDescriptor descriptor;
@@ -404,14 +427,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             if (!skipValidation)
                 validateReportPermissions(context, report);
 
-            r = _saveReport(context.getUser(), context.getContainer(), key, descriptor);
+            r = _saveDbReport(context.getUser(), context.getContainer(), key, descriptor);
             tx.commit();
         }
         _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
         return r;
     }
 
-    private ReportDB _saveReport(User user, Container c, String key, ReportDescriptor descriptor)
+    private ReportDB _saveDbReport(User user, Container c, String key, ReportDescriptor descriptor)
     {
         ReportDB reportDB = new ReportDB(c, key, descriptor);
 
@@ -452,6 +475,45 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             throw new RuntimeException(e);
         }
     }
+
+
+    private ReportIdentifier _saveModuleRReport(ContainerUser context, String key, Report report, boolean skipValidation)
+    {
+        if (!(report.getDescriptor() instanceof ModuleReportDescriptor) || !(report.getDescriptor().getReportId() instanceof ModuleReportIdentifier))
+            throw new IllegalStateException("This should be a module report!");
+
+        User user = context.getUser();
+        Container c = context.getContainer();
+        ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)report.getDescriptor();
+
+        report.beforeSave(context);
+
+        // last chance to validate permissions, this should be done in the controller actions, so
+        // just throw an exception if validation fails
+        if (!skipValidation)
+            validateReportPermissions(context, report);
+
+        File f = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getSourceFile().getPath());
+        if (null == f || !f.canWrite())
+            throw new RuntimeException("This module resource can not be edited");   // shouldn't happen
+        try
+        {
+            String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
+            FileUtils.write(f, script, StringUtilsLabKey.DEFAULT_CHARSET);
+        }
+        catch (IOException x)
+        {
+            throw UnexpectedException.wrap(x);
+        }
+
+        // TODO save report.xml
+        //  _saveReportProperties(context.getContainer(), r.getEntityId(), descriptor);
+
+        // avoid having a race between reselecting the report, and the file watcher
+        ModuleReportCache.uncache(descriptor.getModule());
+        return descriptor.getReportId();
+    }
+
 
     public @Nullable Report _getInstance(ReportDB r)
     {
@@ -844,7 +906,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                     descriptor = convertedReport.getDescriptor();
                 }
             }
-            int rowId = _saveReport(ctx.getUser(), ctx.getContainer(), key, descriptor).getRowId();
+            int rowId = _saveDbReport(ctx.getUser(), ctx.getContainer(), key, descriptor).getRowId();
             descriptor.setReportId(new DbReportIdentifier(rowId));
 
             // re-load the report to get the updated property information (i.e container, etc.)

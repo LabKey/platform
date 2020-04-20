@@ -78,6 +78,10 @@ public class ModuleReportCache
         return collections.getDescriptors(path);
     }
 
+    static void uncache(Module module)
+    {
+        MODULE_REPORT_DESCRIPTOR_CACHE.onModuleChanged(module);
+    }
 
     private static class ReportCollections
     {

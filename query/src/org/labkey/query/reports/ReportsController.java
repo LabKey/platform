@@ -1338,8 +1338,8 @@ public class ReportsController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            int newId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
-            report = ReportService.get().getReport(getContainer(), newId);  // Re-select saved report so we get EntityId, etc.
+            ReportIdentifier newId = ReportService.get().saveReportEx(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
+            report = newId.getReport(getViewContext());
 
             if (isManageThumbnails())
             {
