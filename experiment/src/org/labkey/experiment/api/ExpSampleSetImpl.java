@@ -63,6 +63,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
@@ -102,6 +103,14 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     public ActionURL detailsURL()
     {
         return _object.detailsURL();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(ContainerUser cu)
+    {
+        ActionURL ret = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ret.addParameter("RowId", getRowId());
+        return ret;
     }
 
     @Override

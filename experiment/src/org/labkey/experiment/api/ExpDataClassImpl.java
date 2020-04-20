@@ -29,18 +29,13 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.query.QueryAction;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
@@ -245,17 +240,13 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     @Override
     public ActionURL urlShowDefinition(ContainerUser cu)
     {
-        Domain d = getDomain();
-        DomainKind kind = d.getDomainKind();
-        return kind.urlEditDefinition(d, cu);
+        return urlFor(ExperimentController.ShowDataClassAction.class, getContainer());
     }
 
     @Override
     public ActionURL urlEditDefinition(ContainerUser cu)
     {
-        Domain d = getDomain();
-        DomainKind kind = d.getDomainKind();
-        return kind.urlEditDefinition(d, cu);
+        return urlFor(ExperimentController.EditDataClassAction.class, getContainer());
     }
 
     @Override
@@ -268,19 +259,6 @@ public class ExpDataClassImpl extends ExpIdentifiableEntityImpl<DataClass> imple
     public ActionURL urlShowData()
     {
         return urlShowData(getContainer());
-    }
-
-    @Override
-    public ActionURL urlUpdate(User user, Container container, @Nullable URLHelper cancelUrl)
-    {
-        ActionURL url = QueryService.get().urlFor(user, container, QueryAction.updateQueryRow, ExpSchema.SCHEMA_NAME, ExpSchema.TableType.DataClasses.name());
-
-        url.addParameter("rowId", getRowId());
-
-        if (cancelUrl != null)
-            url.addParameter(ActionURL.Param.cancelUrl, cancelUrl.getLocalURIString());
-
-        return url;
     }
 
     @Override

@@ -68,6 +68,7 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
+    @Override
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
@@ -77,9 +78,9 @@ public class QueryUpdateForm extends TableViewForm
         return getTable().getColumn(_ignorePrefix ? name : name.substring(PREFIX.length()));
     }
 
+    @Override
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
         return (_ignorePrefix ? "" : PREFIX) + column.getName();
     }
-
 }

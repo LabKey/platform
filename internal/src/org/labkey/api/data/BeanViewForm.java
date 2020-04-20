@@ -82,6 +82,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         this.setTypedValues(factory.toMap(bean, null), false);
     }
 
+    @Override
     public Map<String, String> getStrings()
     {
         //If we don't have strings and do have typed values then
@@ -100,6 +101,7 @@ public class BeanViewForm<K> extends TableViewForm implements DynaBean
         return strings;
     }
 
+    @Override
     public void setOldValues(Object o)
     {
         if (o == null)

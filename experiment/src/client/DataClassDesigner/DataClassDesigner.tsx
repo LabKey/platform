@@ -39,11 +39,11 @@ export class App extends React.Component<any, State> {
     }
 
     componentDidMount() {
-        // if URL has a name, look up the data class info for the edit case
+        // if URL has a name or rowId, look up the data class info for the edit case
         // else we are in the create new data class case
-        const { name } = ActionURL.getParameters();
-        if (name) {
-            fetchDataClass(name)
+        const { rowId, name } = ActionURL.getParameters();
+        if (name || rowId) {
+            fetchDataClass(name, rowId)
                 .then((model: DataClassModel) => {
                     this.setState(() => ({model, isLoading: false}));
                 })
