@@ -22,7 +22,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.data.xml.externalSchema.TemplateSchemaType" %>
-<%@ page import="org.labkey.query.controllers.QueryController.BaseExternalSchemaBean" %>
+<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page import="org.labkey.query.controllers.QueryController.DataSourceInfo" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef" %>
 <%@ page import="org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType" %>
@@ -30,7 +30,6 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.query.controllers.QueryController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -84,7 +83,7 @@
     String initialTemplateName = bean.getSchemaDef().getSchemaTemplate();
     TemplateSchemaType initialTemplate = bean.getSchemaDef().lookupTemplate(c);
 %>
-var dataSources = <%=text(dataSourcesJson.toString())%>;
+var dataSources = <%=dataSourcesJson%>;
 var initialDataSourceIndex = <%=coreIndex%>;
 
 var dataSourceStore = new Ext.data.SimpleStore({
@@ -232,7 +231,7 @@ else if (initialTemplate != null && initialTemplate.isSetTables())
     tables.addAll(Arrays.asList(initialTemplate.getTables().getTableNameArray()));
 }
 %>
-var initialTables = <%=text(new JSONArray(tables).toString())%>;
+var initialTables = <%=new JSONArray(tables)%>;
 
 // create the table grid
 var grid = new Ext.grid.GridPanel({

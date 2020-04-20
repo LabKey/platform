@@ -25,6 +25,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
 import java.util.List;
@@ -167,4 +169,6 @@ public interface ExpSampleSet extends ExpObject
     @NotNull Map<String, String> getImportAliasMap() throws IOException;
 
     void setImportAliasMap(Map<String, String> aliasMap);
+
+    ActionURL urlEditDefinition(ContainerUser cu);
 }

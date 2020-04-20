@@ -42,17 +42,20 @@ public class CustomQueryDefinitionImpl extends QueryDefinitionImpl
         super(user, container, schema, name);
     }
 
+    @Override
     public void setSql(String sql)
     {
         edit().setSql(sql);
         // CONSIDER: Add sql QueryPropertyChange to _changes
     }
 
+    @Override
     public boolean isMetadataEditable()
     {
         return true;
     }
 
+    @Override
     public String getSql()
     {
         return getQueryDef().getSql();

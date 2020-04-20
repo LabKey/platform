@@ -24,9 +24,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.AuditHandler;
+import org.labkey.api.audit.SampleTimelineAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.Sets;
+import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -48,6 +55,8 @@ import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.TemplateInfo;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
@@ -88,6 +97,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -97,10 +107,14 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singleton;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.LSID;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.NAME;
+import static org.labkey.api.exp.api.ExperimentJSONConverter.ROW_ID;
 import static org.labkey.api.exp.query.ExpSchema.NestedSchemas.materials;
 
 
-public class SampleSetServiceImpl implements SampleSetService
+public class SampleSetServiceImpl extends AuditHandler implements SampleSetService
 {
     public static SampleSetServiceImpl get()
     {
@@ -869,5 +883,104 @@ public class SampleSetServiceImpl implements SampleSetService
             throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", parentAlias));
 
         return true;
+    }
+
+    protected String getCommentDetailed(QueryService.AuditAction action)
+    {
+        switch (action) {
+            case INSERT:
+                return "Sample was registered.";
+            case DELETE:
+            case TRUNCATE:
+                return "Sample was deleted.";
+            case MERGE:
+                return "Sample was registered or updated.";
+            case UPDATE:
+                return "Sample was updated.";
+        }
+        return action.getCommentDetailed();
+    }
+
+    @Override
+    public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow);
+    }
+
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, String.format(action.getCommentSummary(), rowCount), row, null);
+    }
+
+    @Override
+    protected void addDetailedModifiedFields(Map<String, Object> modifiedRow, Map<String, Object> updatedRow)
+    {
+        // we want to include the fields that indicate parent lineage has changed.
+        // Note that we don't need to check for output fields because lineage can be modified only by changing inputs not outputs
+        updatedRow.forEach((fieldName, value) -> {
+            if (fieldName.startsWith(ExpData.DATA_INPUT_PARENT) || fieldName.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT))
+                modifiedRow.put(fieldName, value);
+        });
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
+
+        if (c.getProject() != null)
+            event.setProjectId(c.getProject().getId());
+
+        if (updatedRow != null)
+        {
+            Optional<String> parentFields = updatedRow.keySet().stream().filter((fieldKey) -> fieldKey.startsWith(ExpData.DATA_INPUT_PARENT) || fieldKey.startsWith(ExpMaterial.MATERIAL_INPUT_PARENT)).findAny();
+            event.setLineageUpdate(parentFields.isPresent());
+        }
+
+        if (row != null)
+        {
+            String sampleSetLsid = null;
+            if (row.containsKey(CPAS_TYPE))
+                sampleSetLsid =  String.valueOf(row.get(CPAS_TYPE));
+            // When a sample is deleted, the LSID is provided via the "sampleset" field instead of "LSID"
+            if (sampleSetLsid == null && row.containsKey("sampleset"))
+                sampleSetLsid = String.valueOf(row.get("sampleset"));
+            if (sampleSetLsid != null)
+            {
+                ExpSampleSet sampleSet = SampleSetService.get().getSampleSetByType(sampleSetLsid, c);
+                if (sampleSet != null)
+                {
+                    event.setSampleType(sampleSet.getName());
+                    event.setSampleTypeId(sampleSet.getRowId());
+                }
+            }
+            if (row.containsKey(LSID))
+                event.setSampleLsid(String.valueOf(row.get(LSID)));
+            if (row.containsKey(ROW_ID) && row.get(ROW_ID) != null)
+                event.setSampleId((Integer) row.get(ROW_ID));
+            if (row.containsKey(NAME))
+                event.setSampleName(String.valueOf(row.get(NAME)));
+        }
+
+        return event;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, String comment, ExpMaterial sample, Map<String, Object> metadata)
+    {
+        SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(container.getId(), comment);
+        if (container.getProject() != null)
+            event.setProjectId(container.getProject().getId());
+        event.setSampleName(sample.getName());
+        event.setSampleLsid(sample.getLSID());
+        event.setSampleId(sample.getRowId());
+        ExpSampleSet type = sample.getSampleSet();
+        if (type != null)
+        {
+            event.setSampleType(type.getName());
+            event.setSampleTypeId(type.getRowId());
+        }
+        event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(container, metadata));
+        AuditLogService.get().addEvent(user, event);
     }
 }
