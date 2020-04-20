@@ -259,7 +259,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     DatasetDefinition getDatasetDefinition(String domainURI)
     {
-        return StudyManager.getInstance().getDatasetDefinition(domainURI); // bookmark
+        return StudyManager.getInstance().getDatasetDefinition(domainURI);
     }
 
 
@@ -360,12 +360,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // general dataset validation
         validateDatasetProperties(arguments, container, user, domain, null);
+
         // create-case specific validation
         TimepointType timepointType = study.getTimepointType();
         if (timepointType.isVisitBased() && getKindName().equals(DateDatasetDomainKind.KIND_NAME))
-            throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME);
+            throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME + ".");
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
-            throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME);
+            throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME + ".");
 
         if (categoryName != null)
         {
@@ -381,8 +382,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             KeyManagementType managementType = KeyManagementType.None;
             if (isManagedField)
             {
-                PropertyDescriptor pd = new PropertyDescriptor();
-
                 String rangeUri = "";
                 for (GWTPropertyDescriptor a : (List<GWTPropertyDescriptor>)domain.getFields())
                 {
@@ -394,6 +393,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
                 }
 
+                PropertyDescriptor pd = new PropertyDescriptor();
                 pd.setRangeURI(rangeUri);
                 managementType = KeyManagementType.getManagementTypeFromProp(pd.getPropertyType());
             }
@@ -419,9 +419,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     for (GWTPropertyDescriptor pd : properties)
                     {
                         if (lowerReservedNames.contains(pd.getName().toLowerCase()) || existingProperties.contains(pd.getName().toLowerCase()))
-                        {
                             throw new IllegalArgumentException("Property: " + pd.getName() + " is reserved or exists in the current domain.");
-                        }
                         else
                             DomainUtil.addProperty(newDomain, pd, defaultValues, propertyUris, null);
                     }
@@ -436,7 +434,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     newDomain.save(user);
                 }
                 else
-                    throw new IllegalArgumentException("Failed to create domain for dataset : " + name);
+                    throw new IllegalArgumentException("Failed to create domain for dataset : " + name + ".");
             }
             transaction.commit();
             return study.getDataset(def.getDatasetId()).getDomain();
@@ -464,10 +462,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Dataset name cannot be empty.");
 
         if (name.length() > 200)
-            throw new IllegalArgumentException("Dataset name must be under 200 characters");
+            throw new IllegalArgumentException("Dataset name must be under 200 characters.");
 
-        if (!name.equals(domain.getName()) && null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name))
-            throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\"");
+        if (!name.equals(domain.getName()) && (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name)))
+            throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\".");
 
         // Label related exceptions
 
@@ -475,36 +473,36 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Dataset label cannot be empty.");
 
         if (def != null && !def.getLabel().equals(label) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
-            throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\"");
+            throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\".");
 
         // Additional key related exceptions
 
         if ("".equals(keyPropertyName))
-            throw new IllegalArgumentException("Please select a field name for the additional key."); // PR Note: Alternate existing error message is "Please select a field name for the additional key."
+            throw new IllegalArgumentException("Please select a field name for the additional key.");
 
         if (isManagedField && (keyPropertyName == null || keyPropertyName.length() == 0))
-            throw new IllegalArgumentException("Additional Key Column name must be specified if field is managed");
+            throw new IllegalArgumentException("Additional Key Column name must be specified if field is managed.");
 
         if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName) && isManagedField)
-            throw new IllegalArgumentException("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time)");
+            throw new IllegalArgumentException("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time).");
 
         if (isDemographicData && (isManagedField || keyPropertyName != null))
-            throw new IllegalArgumentException("There cannot be an Additional Key Column if the dataset is Demographic Data");
+            throw new IllegalArgumentException("There cannot be an Additional Key Column if the dataset is Demographic Data.");
 
         if (!useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
-            throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column");
+            throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column.");
 
         if (null != keyPropertyName && !useTimeKeyField)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (!(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
-                throw new IllegalArgumentException("If Additional Key Column is managed, the column type must be numeric or text-based");
+                throw new IllegalArgumentException("If Additional Key Column is managed, the column type must be numeric or text-based.");
         }
 
         // Other exception(s)
 
         if (def != null &&  null != datasetId && def.getDatasetId() != datasetId && null != study.getDataset(datasetId))
-            throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\"");
+            throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\".");
     }
 
     private void checkCanUpdate(DatasetDefinition def, Container container, User user,
@@ -521,14 +519,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Study not found in current container"); // PR Note: Alternate existing error message is 'A study does not exist for this folder'
 
         if (!def.canUpdateDefinition(user))
-            throw new IllegalArgumentException("Shared dataset can not be edited in this folder");
+            throw new IllegalArgumentException("Shared dataset can not be edited in this folder.");
 
         Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
         if (null == d)
-            throw new IllegalArgumentException("Domain not found: " + update.getDomainURI());
+            throw new IllegalArgumentException("Domain not found: " + update.getDomainURI() + ".");
 
-        if (!def.getTypeURI().equals(original.getDomainURI()) ||
-            !def.getTypeURI().equals(update.getDomainURI()))
+        if (!def.getTypeURI().equals(original.getDomainURI()) || !def.getTypeURI().equals(update.getDomainURI()))
             throw new IllegalArgumentException("Illegal Argument");
     }
 
@@ -559,8 +556,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             // Update-case specific validation
             if ( datasetProperties.isDemographicData() && !datasetProperties.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
             {
-                throw new IllegalArgumentException("This dataset currently contains more than one row of data per " + StudyService.get().getSubjectNounSingular(container) +
-                        ". Demographic data includes one row of data per " + StudyService.get().getSubjectNounSingular(container) + ".");
+                String noun = StudyService.get().getSubjectNounSingular(container);
+                throw new IllegalArgumentException("This dataset currently contains more than one row of data per " + noun +
+                        ". Demographic data includes one row of data per " + noun + ".");
             }
 
             // PR Note: is it desired that we check for this at all?
