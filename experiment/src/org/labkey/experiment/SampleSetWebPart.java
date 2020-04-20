@@ -42,7 +42,7 @@ import java.io.PrintWriter;
  */
 public class SampleSetWebPart extends QueryView
 {
-    private String _sampleSetError;
+    private String _errorMessage;
     private final boolean _narrow;
 
     public SampleSetWebPart(boolean narrow, ViewContext viewContext)
@@ -89,14 +89,6 @@ public class SampleSetWebPart extends QueryView
     {
         super.populateButtonBar(view, bar);
 
-        ActionURL urlInsert = new ActionURL(ExperimentController.CreateSampleSetAction.class, getContainer());
-        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
-
-        ActionButton createNewButton = new ActionButton(ExperimentController.CreateSampleSetAction.class, "New Sample Set", ActionButton.Action.LINK);
-        createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
-        createNewButton.setURL(urlInsert);
-        bar.add(createNewButton);
-
         ActionURL deleteURL = new ActionURL(ExperimentController.DeleteMaterialSourceAction.class, getContainer());
         deleteURL.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
 
@@ -108,6 +100,13 @@ public class SampleSetWebPart extends QueryView
         deleteButton.setRequiresSelection(true);
         bar.add(deleteButton);
 
+        ActionURL urlInsert = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        urlInsert.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().toString());
+        ActionButton createNewButton = new ActionButton(urlInsert, "New Sample Set", ActionButton.Action.LINK);
+        createNewButton.setDisplayPermission(DesignSampleSetPermission.class);
+        createNewButton.setURL(urlInsert);
+        bar.add(createNewButton);
+
         ActionURL showAllURL = new ActionURL(ExperimentController.ShowAllMaterialsAction.class, getContainer());
         ActionButton showAllButton = new ActionButton(showAllURL, "Show All Materials");
         showAllButton.setDisplayPermission(ReadPermission.class);
@@ -118,16 +117,16 @@ public class SampleSetWebPart extends QueryView
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         PrintWriter out = response.getWriter();
-        if (_sampleSetError != null)
+        if (_errorMessage != null)
         {
-            out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_sampleSetError) + "</font><br>");
+            out.write("<font class=\"labkey-error\">" + PageFlowUtil.filter(_errorMessage) + "</font><br>");
         }
         super.renderView(model, request, response);
     }
 
-    public void setSampleSetError(String sampleSetError)
+    public void setErrorMessage(String errorMessage)
     {
-        _sampleSetError = sampleSetError;
+        _errorMessage = errorMessage;
     }
 
 }

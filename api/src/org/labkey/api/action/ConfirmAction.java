@@ -17,17 +17,15 @@
 package org.labkey.api.action;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.RedirectException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
-import org.labkey.api.util.URLHelper;
 
 /**
  * Base class for actions that want to show a full-page confirmation step prior to performing the actual operation.
@@ -56,10 +54,9 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
         return false;
     }
 
+    @Override
     public final ModelAndView handleRequest() throws Exception
     {
-        ViewContext context = HttpView.currentContext();
-
         BindException errors = bindParameters(getPropertyValues());
         FORM form = (FORM)errors.getTarget();
 
@@ -86,7 +83,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
             else
             {
                 ModelAndView confirmView = getConfirmView(form, errors);
-                JspView<ConfirmAction> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this, errors);
+                JspView<ConfirmAction<FORM>> confirmWrapper = new JspView<>("/org/labkey/api/action/confirmWrapper.jsp", this);
                 confirmWrapper.setBody(confirmView);
                 getPageConfig().setTemplate(PageConfig.Template.Dialog);
 
@@ -108,6 +105,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "handlePost";
@@ -133,6 +131,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction<FORM>
      */
     public abstract boolean handlePost(FORM form, BindException errors) throws Exception;
 
+    @Override
     public void validate(Object form, Errors errors)
     {
         validateCommand((FORM)form, errors);

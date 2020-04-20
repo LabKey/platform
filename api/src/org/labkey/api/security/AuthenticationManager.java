@@ -913,7 +913,7 @@ public class AuthenticationManager
             return new PrimaryAuthenticationResult(AuthenticationStatus.InactiveUser);
         }
 
-        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via " + response.getConfiguration().getDescription() + " authentication.");
+        addAuditEvent(user, request, email + " " + UserManager.UserAuditEvent.LOGGED_IN + " successfully via the \"" + response.getConfiguration().getDescription() + "\" configuration.");
 
         return new PrimaryAuthenticationResult(user, response);
     }

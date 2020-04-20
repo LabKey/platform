@@ -86,7 +86,7 @@ public interface QueryChangeListener
     Collection<String> queryDependents(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries);
 
     // CONSIDER: Create a generic class instead of using an enum.
-    public enum QueryProperty
+    enum QueryProperty
     {
         Name(String.class),
         Container(Container.class),
@@ -138,10 +138,16 @@ public interface QueryChangeListener
         }
 
         public QueryDefinition getSource() { return _queryDef; }
+
+        @Override
         @NotNull
         public QueryProperty getProperty() { return _property; }
+
+        @Override
         @Nullable
         public V getOldValue() { return _oldValue; }
+
+        @Override
         @Nullable
         public V getNewValue() { return _newValue; }
     }

@@ -51,9 +51,6 @@
     catch (Exception ignored)
     {}
 
-    String edition = bean.scope.getSqlDialect().getProductEdition();
-    String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
-
     int row = 0;
 %>
 <style type="text/css">
@@ -84,7 +81,7 @@
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
                 if (null != location)

@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
  * These are fields used by ColumnInfo and PropertyDescriptor that primarily affect
  * how the field is rendered in the HTML grids, forms, and pickers
  */
-public abstract class ColumnRenderPropertiesImpl implements ColumnRenderProperties
+public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderProperties
 {
     protected SortDirection _sortDirection = SortDirection.ASC;
     protected String _inputType;
