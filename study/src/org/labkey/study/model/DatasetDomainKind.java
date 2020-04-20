@@ -347,17 +347,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         Integer datasetId = arguments.getDatasetId();
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
-        String keyPropertyName = arguments.getKeyPropertyName();
         boolean isManagedField = arguments.isKeyPropertyManaged();
-        Integer categoryId = null;
-        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
-
-        if (useTimeKeyField)
-            keyPropertyName = null;
-
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        if (study == null)
-            throw new IllegalArgumentException("A study does not exist for this folder");
 
         // general dataset validation
         validateDatasetProperties(arguments, container, user, domain, null);
@@ -369,6 +360,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME + ".");
 
+        String keyPropertyName = arguments.getKeyPropertyName();
+        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(arguments.getKeyPropertyName());
+        if (useTimeKeyField)
+            keyPropertyName = null;
+
+        Integer categoryId = null;
         if (categoryName != null)
         {
             ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, categoryName);
@@ -455,7 +452,13 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
         boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName);
         boolean isDemographicData = datasetProperties.isDemographicData();
-        Study study = StudyService.get().getStudy(container); // calling functions have validated this is not null
+
+        if (!container.hasPermission(user, AdminPermission.class))
+            throw new IllegalArgumentException("You do not have permissions to edit dataset definitions in this container.");
+
+        Study study = StudyService.get().getStudy(container);
+        if (study == null)
+            throw new IllegalArgumentException("A study does not exist for this container.");
 
         // Name related exceptions
 
@@ -465,6 +468,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (name.length() > 200)
             throw new IllegalArgumentException("Dataset name must be under 200 characters.");
 
+        // issue 17766: check if dataset or query exist with this name
         if (!name.equals(domain.getName()) && (null != StudyManager.getInstance().getDatasetDefinitionByName(study, name) || null != QueryService.get().getQueryDef(user, container, "study", name)))
             throw new IllegalArgumentException("A Dataset or Query already exists with the name \"" + name +"\".");
 
@@ -484,7 +488,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (isManagedField && (keyPropertyName == null || keyPropertyName.length() == 0))
             throw new IllegalArgumentException("Additional Key Column name must be specified if field is managed.");
 
-        if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName) && isManagedField)
+        if (useTimeKeyField && isManagedField)
             throw new IllegalArgumentException("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time).");
 
         if (isDemographicData && (isManagedField || keyPropertyName != null))
@@ -510,20 +514,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                                 GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         if (null == def)
-            throw new IllegalArgumentException("Dataset not found");
-
-        if (!container.hasPermission(user, AdminPermission.class))
-            throw new IllegalArgumentException("Unauthorized");
-
-        Study study = StudyService.get().getStudy(container);
-        if (null == study)
-            throw new IllegalArgumentException("Study not found in current container"); // PR Note: Alternate existing error message is 'A study does not exist for this folder'
+            throw new IllegalArgumentException("Dataset not found.");
 
         if (!def.canUpdateDefinition(user))
             throw new IllegalArgumentException("Shared dataset can not be edited in this folder.");
 
-        Domain d = PropertyService.get().getDomain(container, update.getDomainURI());
-        if (null == d)
+        if (null == PropertyService.get().getDomain(container, update.getDomainURI()))
             throw new IllegalArgumentException("Domain not found: " + update.getDomainURI() + ".");
 
         if (!def.getTypeURI().equals(original.getDomainURI()) || !def.getTypeURI().equals(update.getDomainURI()))
@@ -531,7 +527,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                       Container container, User user, DatasetDefinition def, DatasetDomainKindProperties datasetProperties)
+                                                       Container container, User user, DatasetDefinition def)
     {
         ValidationException exception = new ValidationException();
 
@@ -550,7 +546,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception,
-                                              StudyManager studyManager, StudyImpl study, Container container, User user, DatasetDefinition def)
+                                              StudyImpl study, Container container, User user, DatasetDefinition def)
     {
         try
         {
@@ -580,18 +576,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             Dataset.KeyManagementType keyType = Dataset.KeyManagementType.None;
             String keyPropertyName = null;
             boolean useTimeKeyField = false;
-
-            DatasetDefinition updated = def.createMutable();
-            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
-            updated.setCategoryId(null);
-
-            // Use Time as Key Field
+            // Check for usage of Time as Key Field
             if (DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName()))
             {
                 datasetProperties.setKeyPropertyName(null);
                 useTimeKeyField = true;
             }
-            BeanUtils.copyProperties(updated, datasetProperties);
 
             if (datasetProperties.getKeyPropertyName() != null)
             {
@@ -612,16 +602,22 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                     }
                 }
             }
+
+            DatasetDefinition updated = def.createMutable();
+
+            // Clear the category ID so that it gets regenerated based on the new string - see issue 19649
+            updated.setCategoryId(null);
+
+            BeanUtils.copyProperties(updated, datasetProperties);
             updated.setKeyPropertyName(keyPropertyName);
             updated.setKeyManagementType(keyType);
             updated.setUseTimeKeyField(useTimeKeyField);
 
             List<String> errors = new ArrayList<>();
-            studyManager.updateDatasetDefinition(user, updated, errors);
+            StudyManager.getInstance().updateDatasetDefinition(user, updated, errors);
+
             for (String errorMsg: errors)
-            {
                 exception.addGlobalError(errorMsg);
-            }
             return exception;
         }
         catch (RuntimeSQLException e)
@@ -639,17 +635,15 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                                             DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
-        ValidationException exception = new ValidationException();
 
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
-        StudyManager studyManager = new StudyManager();
+
+        validateDatasetProperties(datasetProperties, container, user, update, def);
 
         checkCanUpdate(def, container, user, original, update);
 
-        // Remove any fields that are duplicates of the default dataset fields.
-        // e.g. participantid, etc.
-
+        // Remove any fields that are duplicates of the default dataset fields (e.g. participantid, etc).
         List<? extends GWTPropertyDescriptor> updatedProps = update.getFields();
         for (Iterator<? extends GWTPropertyDescriptor> iter = updatedProps.iterator(); iter.hasNext();)
         {
@@ -662,18 +656,16 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
-            exception = updateDomainDescriptor(original, update, container, user, def, datasetProperties);
+            ValidationException exception = updateDomainDescriptor(original, update, container, user, def);
+
             if (!exception.hasErrors())
-            {
-                // general dataset validation
-                // PR Note: I think this is the correct place to put this, after we noted the fields are updated in updateDomainDescriptor(). Let me know though if I misapprehended
-                validateDatasetProperties(datasetProperties, container, user, update, def);
-                exception = updateDataset(datasetProperties, original.getDomainURI(), exception, studyManager, study, container, user, def);
-                if (!exception.hasErrors())
-                    transaction.commit();
-            }
+                exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);
+
+            if (!exception.hasErrors())
+                transaction.commit();
+
+            return exception;
         }
-        return exception;
     }
 
     @Override
