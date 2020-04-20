@@ -366,16 +366,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (useTimeKeyField)
             keyPropertyName = null;
 
-        Integer categoryId = null;
-        if (categoryName != null)
-        {
-            ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, categoryName);
-            if (category != null)
-                categoryId = category.getRowId();
-            else
-                throw new IllegalArgumentException("Unable to find a category named : " + categoryName + " in this folder.");
-        }
-
         try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
         {
             KeyManagementType managementType = KeyManagementType.None;
@@ -395,6 +385,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                 PropertyDescriptor pd = new PropertyDescriptor();
                 pd.setRangeURI(rangeUri);
                 managementType = KeyManagementType.getManagementTypeFromProp(pd.getPropertyType());
+            }
+
+            Integer categoryId = null;
+            ViewCategory category;
+            if (categoryName != null)
+            {
+                category = ViewCategoryManager.getInstance().getCategory(container, categoryName);
+                if (category != null)
+                    categoryId = category.getRowId();
+                else
+                    {
+                        String[] parts = ViewCategoryManager.getInstance().decode(categoryName);
+                        category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
+                        categoryId = category.getRowId();
+                    }
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
