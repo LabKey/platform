@@ -1262,26 +1262,51 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    protected void clearIndexedContainerCategory(String id, String category)
+    protected void clearIndexedFileSystemFiles(Container container)
     {
         try
         {
-            BooleanQuery bq = new BooleanQuery.Builder()
-                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), id)), BooleanClause.Occur.MUST)
-                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), category)), BooleanClause.Occur.MUST)
+            BooleanQuery query = new BooleanQuery.Builder()
+                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "files")), BooleanClause.Occur.MUST)
                     .build();
 
-            // Run the query before delete, but only if Log4J debug level is set
-            if (_log.isDebugEnabled())
+            String davPrefix = "dav:";
+
+            List<Document> matches = findMatches(query, doc -> doc.get(FIELD_NAME.uniqueId.toString()).startsWith(davPrefix));
+            for (Document match : matches)
             {
-                _log.debug("Deleting " + getDocCount(bq) + " docs from container " + id);
+                _indexManager.deleteDocument(match.get(FIELD_NAME.uniqueId.toString()));
             }
 
-            _indexManager.deleteQuery(bq);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
+        }
+    }
+
+    private List<Document> findMatches(BooleanQuery query, Predicate<Document> documentFilter) throws IOException
+    {
+        IndexSearcher searcher = _indexManager.getSearcher();
+
+        try
+        {
+            TopDocs docs = searcher.search(query, 1);
+            List<Document> matches = new ArrayList<>();
+            for (ScoreDoc sd : docs.scoreDocs)
+            {
+                Document document = searcher.doc(sd.doc);
+                if (documentFilter.test(document))
+                {
+                    matches.add(document);
+                }
+            }
+            return matches;
+        }
+        finally
+        {
+            _indexManager.releaseSearcher(searcher);
         }
     }
 
@@ -1565,7 +1590,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
             hit.score = scoreDoc.score;
 
-            // BUG patch see 10734 : Bad URLs for files in search results
+            // BUG patch see Issue 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
             if (hit.url.contains("/%40files?renderAs=DEFAULT/"))
             {

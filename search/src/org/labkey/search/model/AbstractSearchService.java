@@ -407,11 +407,11 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         //Create new runnable instead of using existing methods so they can be run within the same job.
         Runnable r = () -> {
             //Remove old items
-            clearIndexedContainerCategory(c.getId(), "file");
+            clearIndexedFileSystemFiles(c);
 
             //TODO: make DavCrawler (or a wrapper) a DocumentProvider instead
             //Recrawl files as the container name may be used in paths & Urls. Issue #39696
-            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
+            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.delete));
     }
@@ -1124,11 +1124,10 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void deleteIndexedContainer(String id);
 
     /**
-     * Delete the index documents for a Search Category within a container
-     * @param id of container
-     * @param category search category
+     * Delete the index documents for file system files within a container
+     * @param container target container
      */
-    protected abstract void clearIndexedContainerCategory(String id, String category);
+    protected abstract void clearIndexedFileSystemFiles(Container container);
 
     protected abstract void shutDown();
 
