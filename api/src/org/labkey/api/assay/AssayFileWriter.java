@@ -106,11 +106,14 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         return dir;
     }
 
+    /**
+     * Create file name based upon the assay protocol's name and the current time.
+     * e.g., <code>assayname-2020-04-14-1602345</code>
+     */
     public static File createFile(ExpProtocol protocol, File dir, String extension)
     {
-        //File name is studyname_datasetname_date_hhmm.ss
         Date dateCreated = new Date();
-        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmm");
+        String dateString = DateUtil.formatDateTime(dateCreated, "yyy-MM-dd-HHmmss");
         int id = 0;
 
         String protocolName = protocol.getName();

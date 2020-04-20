@@ -39,6 +39,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.security.User;
@@ -150,7 +151,6 @@ public interface QueryService
      * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
      */
     List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
     /**
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
@@ -382,21 +382,30 @@ public interface QueryService
     enum AuditAction
     {
         INSERT("A row was inserted.",
-                "%s row(s) were inserted."),
-        UPDATE("Row was updated.",
-                "%s row(s) were updated."),
-        DELETE("Row was deleted.",
-                "%s row(s) were deleted."),
+                "%s row(s) were inserted.",
+                "inserted"),
+        UPDATE("A row was updated.",
+                "%s row(s) were updated.",
+                "updated"),
+        DELETE("A row was deleted.",
+                "%s row(s) were deleted.",
+                "deleted"),
         TRUNCATE("Table was truncated.",
-                "All rows were deleted.");
+                "All rows were deleted.",
+                "deleted"),
+        MERGE("A row was inserted or updated.",
+                "%s row(s) were inserted or updated.",
+                "inserted or updated");
 
         String _commentDetailed;
         String _commentSummary;
+        String _verbPastTense;
 
-        AuditAction(String commentDetailed, String commentSummary)
+        AuditAction(String commentDetailed, String commentSummary, String verbPastTense)
         {
             _commentDetailed = commentDetailed;
             _commentSummary = commentSummary;
+            _verbPastTense = verbPastTense;
         }
 
         public String getCommentDetailed()
@@ -408,6 +417,11 @@ public interface QueryService
         {
             return _commentSummary;
         }
+
+        public String getVerbPastTense()
+        {
+            return _verbPastTense;
+        }
     }
 
     /**
@@ -418,7 +432,7 @@ public interface QueryService
      */
     void addAuditEvent(QueryView queryView, String comment, @Nullable Integer dataRowCount);
     void addAuditEvent(User user, Container c, String schemaName, String queryName, ActionURL sortFilter, String comment, @Nullable Integer dataRowCount);
-    void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>>... params);
+    void addAuditEvent(User user, Container c, TableInfo table, AuditBehaviorType auditBehaviorType, AuditAction action, List<Map<String, Object>>... params);
     void addSummaryAuditEvent(User user, Container c, TableInfo table, AuditAction action, Integer dataRowCount);
 
     /**

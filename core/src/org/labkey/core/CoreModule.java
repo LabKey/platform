@@ -107,6 +107,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -229,7 +230,6 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -912,8 +912,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         }
 
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
-                "Use @labkey/api on the client-side",
-                "Serve @labkey/api as the default client-side implementation of JavaScript API.",
+                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
+                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
@@ -1265,22 +1265,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
     {
-        switch (name)
-        {
-            case "logoImage":
-                return LookAndFeelPropertiesManager.get()::handleLogoFile;
-            case "iconImage":
-                return LookAndFeelPropertiesManager.get()::handleIconFile;
-            case "customStylesheet":
-                return LookAndFeelPropertiesManager.get()::handleCustomStylesheetFile;
-            default:
-                return null;
-        }
-    }
-
-    @FunctionalInterface
-    public interface SiteResourceHandler {
-        void accept(Resource resource, Container container, User user) throws ServletException, IOException;
+        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
     }
 
     private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)

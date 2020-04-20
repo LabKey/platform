@@ -78,7 +78,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     private static final int MAX_INDEX_SIZE = 900;
 
     private volatile boolean _groupConcatInstalled = false;
-    private volatile Edition _edition = Edition.Unknown;
+    private volatile String _versionYear = null;
+    private volatile Edition _edition = null;
 
     @SuppressWarnings("unused")
     enum Edition
@@ -243,11 +244,15 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
         return MicrosoftSqlServerDialectFactory.PRODUCT_NAME;
     }
 
-    @Nullable
-    @Override
-    public String getProductEdition()
+    void setVersionYear(String versionYear)
     {
-        return _edition.name() + " Edition";
+        _versionYear = versionYear;
+    }
+
+    @Override
+    public String getProductVersion(String dbmdProductVersion)
+    {
+        return _versionYear + " (" + dbmdProductVersion + ")" + (null != _edition ? " " + _edition.name() + " Edition" : "");
     }
 
     @Override
@@ -1654,8 +1659,8 @@ abstract class BaseMicrosoftSqlServerDialect extends SqlDialect
     {
         ClrAssemblyManager.addAdminWarningMessages(warnings);
 
-        if ("2008R2".equals(getProductVersion()))
-            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + getProductVersion() + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
+        if ("2008R2".equals(_versionYear))
+            warnings.add(HtmlString.of("LabKey Server no longer supports " + getProductName() + " " + _versionYear + "; please upgrade. " + MicrosoftSqlServerDialectFactory.RECOMMENDED));
     }
 
     @Override

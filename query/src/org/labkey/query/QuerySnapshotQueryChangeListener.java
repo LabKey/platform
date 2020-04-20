@@ -39,7 +39,7 @@ import java.util.Map;
 public class QuerySnapshotQueryChangeListener implements QueryChangeListener
 {
     @Override
-    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
+    public void queryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
     }
 

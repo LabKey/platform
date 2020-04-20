@@ -469,7 +469,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         RunInfo info = new RunInfo();
         if (runInfo.exists())
         {
-            List<ValidationError> errors = new ArrayList<>();
 
             try (TabLoader loader = new TabLoader(runInfo, false))
             {
@@ -497,9 +496,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             {
                 throw new ValidationException(e.getMessage());
             }
-
-            if (!errors.isEmpty())
-                throw new ValidationException(errors);
 
         }
         return info;

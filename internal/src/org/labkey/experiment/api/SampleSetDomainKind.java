@@ -168,16 +168,25 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     {
         ExpSampleSet ss = getSampleSet(domain);
         if (ss == null)
-        {
             return null;
-        }
-        return (ActionURL) ss.detailsURL();
+
+        return ss.detailsURL();
+    }
+
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateSampleSetURL(container);
     }
 
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return Objects.requireNonNull(PageFlowUtil.urlProvider(ExperimentUrls.class)).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpSampleSet ss = getSampleSet(domain);
+        if (ss == null)
+            return null;
+
+        return ss.urlEditDefinition(containerUser);
     }
 
     @Override
