@@ -166,6 +166,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
     }
 
+    @Override
     abstract public String getKindName();
 
     @Override
@@ -173,7 +174,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         return DatasetDomainKindProperties.class;
     }
-    
+
+    @Override
     public String getTypeLabel(Domain domain)
     {
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
@@ -182,7 +184,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return def.getName();
     }
 
-
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         DatasetDefinition def = getDatasetDefinition(domain.getTypeURI());
@@ -218,7 +220,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return (new Lsid(LSID_PREFIX, "Folder-" + container.getRowId(), objectid)).toString();
     }
 
-
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         Dataset def = getDatasetDefinition(domain.getTypeURI());
@@ -227,7 +229,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return url;
     }
 
-
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         Dataset def = getDatasetDefinition(domain.getTypeURI());
@@ -235,7 +237,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         url.addParameter("datasetId", "" + def.getDatasetId());
         return url;
     }
-
 
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
@@ -262,7 +263,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         return StudyManager.getInstance().getDatasetDefinition(domainURI);
     }
 
-
+    @Override
     public abstract Set<String> getReservedPropertyNames(Domain domain);
 
     @Override
