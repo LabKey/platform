@@ -43,8 +43,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     private final String _debugName;
     private final Stats _stats;
     private final Stats _transactionStats;
-    @Nullable
-    private final StackTraceElement[] _stackTrace;
+    private final @Nullable StackTraceElement[] _stackTrace;
     private final V _nullMarker = (V)NULL_MARKER;
 
 
@@ -60,7 +59,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
 
     @Override
-    public void put(K key, V value)
+    public void put(@NotNull K key, V value)
     {
         try
         {
@@ -79,7 +78,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
 
     @Override
-    public void put(K key, V value, long timeToLive)
+    public void put(@NotNull K key, V value, long timeToLive)
     {
         try
         {
@@ -98,14 +97,14 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
 
     @Override
-    public V get(K key)
+    public V get(@NotNull K key)
     {
         return get(key, null, null);
     }
 
 
     @Override
-    public V get(K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
+    public V get(@NotNull K key, @Nullable Object arg, @Nullable CacheLoader<K, V> loader)
     {
         try
         {
@@ -133,7 +132,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
 
 
     @Override
-    public void remove(K key)
+    public void remove(@NotNull K key)
     {
         try
         {
@@ -230,7 +229,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     }
 
     @Override
-    public TrackingCache getTrackingCache()
+    public TrackingCache<K, V> getTrackingCache()
     {
         return this;
     }
@@ -306,5 +305,11 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
     public DynamicMBean createDynamicMBean()
     {
         return new StandardMBean(this, CacheMXBean.class, true);
+    }
+
+    @Override
+    public Cache<K, V> createTemporaryCache()
+    {
+        throw new UnsupportedOperationException();
     }
 }

@@ -17,9 +17,10 @@
 package org.labkey.experiment.api;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
@@ -38,7 +39,8 @@ import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.SampleSetService;
-import org.labkey.api.exp.property.BaseAbstractDomainKind;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.SamplesSchema;
@@ -46,6 +48,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -57,7 +60,6 @@ import org.labkey.data.xml.domainTemplate.SampleSetTemplateType;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -66,7 +68,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class SampleSetDomainKind extends BaseAbstractDomainKind
+public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKindProperties>
 {
     private static final Logger logger;
     public static final String NAME = "SampleSet";
@@ -112,6 +114,12 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
+    public Class<? extends SampleTypeDomainKindProperties> getTypeClass()
+    {
+        return SampleTypeDomainKindProperties.class;
+    }
+
+    @Override
     public String getStorageSchemaName()
     {
         return PROVISIONED_SCHEMA_NAME;
@@ -133,7 +141,7 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
     {
         Lsid lsid = new Lsid(domainURI);
         String prefix = lsid.getNamespacePrefix();
-        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix))
+        if ("SampleSet".equals(prefix) || "SampleSource".equals(prefix) || "SampleType".equals(prefix))
             return Priority.MEDIUM;
         return null;
     }
@@ -160,16 +168,25 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
     {
         ExpSampleSet ss = getSampleSet(domain);
         if (ss == null)
-        {
             return null;
-        }
-        return (ActionURL) ss.detailsURL();
+
+        return ss.detailsURL();
+    }
+
+    @Override
+    public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getCreateSampleSetURL(container);
     }
 
     @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+        ExpSampleSet ss = getSampleSet(domain);
+        if (ss == null)
+            return null;
+
+        return ss.urlEditDefinition(containerUser);
     }
 
     @Override
@@ -258,7 +275,107 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, @Nullable JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    @NotNull
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, @NotNull GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        return SampleSetService.get().updateSampleSet(original, update, options, container, user, includeWarnings);
+    }
+
+    @Override
+    public void validateOptions(Container container, User user, SampleTypeDomainKindProperties options, String name, Domain domain, GWTDomain updatedDomainDesign)
+    {
+        super.validateOptions(container, user, options, name, domain, updatedDomainDesign);
+
+        // verify and NameExpression values
+        TableInfo materialSourceTI = ExperimentService.get().getTinfoMaterialSource();
+
+        boolean isUpdate = domain != null;
+        if (!isUpdate)
+        {
+            if (name == null)
+            {
+                throw new IllegalArgumentException("You must supply a name for the sample type.");
+            }
+            else
+            {
+                ExpSampleSet ss = SampleSetService.get().getSampleSet(container, user, name);
+                if (ss != null)
+                    throw new IllegalArgumentException("A Sample Type with that name already exists.");
+            }
+        }
+
+        // verify the length of the Name
+        int nameMax = materialSourceTI.getColumn("Name").getScale();
+        if (name != null && name.length() >= nameMax)
+            throw new IllegalArgumentException("Value for Name field may not exceed " + nameMax + " characters.");
+
+        if (options == null)
+        {
+            return;
+        }
+
+        int nameExpMax = materialSourceTI.getColumn("NameExpression").getScale();
+        if (StringUtils.isNotBlank(options.getNameExpression()) && options.getNameExpression().length() > nameExpMax)
+            throw new IllegalArgumentException("Value for Name Expression field may not exceed " + nameExpMax + " characters.");
+
+        Map<String, String> aliasMap = options.getImportAliases();
+        if (aliasMap == null || aliasMap.size() == 0)
+            return;
+
+        SampleSetService ss = SampleSetService.get();
+        ExpSampleSet sampleSet = options.getRowId() >= 0 ? ss.getSampleSet(options.getRowId()) : null;
+        Domain ssDomain = sampleSet != null ? sampleSet.getDomain() : null;
+        Set<String> reservedNames = new CaseInsensitiveHashSet(this.getReservedPropertyNames(ssDomain));
+        Set<String> existingAliases = new CaseInsensitiveHashSet();
+        Set<String> dupes = new CaseInsensitiveHashSet();
+
+        try
+        {
+            if (sampleSet != null)
+                existingAliases = new CaseInsensitiveHashSet(sampleSet.getImportAliasMap().keySet());
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+
+        final Set<String> finalExistingAliases = existingAliases;
+        aliasMap.forEach((key, value) -> {
+            String trimmedKey = StringUtils.trimToNull(key);
+            String trimmedValue = StringUtils.trimToNull(value);
+            if (trimmedKey == null)
+                throw new IllegalArgumentException("Import alias heading cannot be blank");
+
+            if (trimmedValue == null)
+            {
+                throw new IllegalArgumentException("You must specify a valid parent type for the import alias.");
+            }
+
+            if (reservedNames.contains(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Parent alias header is reserved: %1$s", trimmedKey));
+            }
+
+            if (updatedDomainDesign != null && !finalExistingAliases.contains(trimmedKey) && updatedDomainDesign.getFieldByName(trimmedKey) != null)
+            {
+                throw new IllegalArgumentException(String.format("An existing sample type property conflicts with parent alias header: %1$s", trimmedKey));
+            }
+
+            if (!dupes.add(trimmedKey))
+            {
+                throw new IllegalArgumentException(String.format("Duplicate parent alias header found: %1$s", trimmedKey));
+            }
+
+            //Check if parent alias has correct format MaterialInput/<name> or NEW_SAMPLE_SET_ALIAS_VALUE
+            if (!ss.parentAliasHasCorrectFormat(trimmedValue))
+                throw new IllegalArgumentException(String.format("Invalid parent alias header: %1$s", trimmedValue));
+        });
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, @Nullable SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -268,18 +385,30 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
 
-        Object[] idCols = (arguments != null && arguments.containsKey("idCols")) ? ((ArrayList<Object>)arguments.get("idCols")).toArray() : new Object[0];
-        int idCol1 = idCols.length > 0 ? ((Number)idCols[0]).intValue() : -1;
-        int idCol2 = idCols.length > 1 ? ((Number)idCols[1]).intValue() : -1;
-        int idCol3 = idCols.length > 2 ? ((Number)idCols[2]).intValue() : -1;
-        int parentCol = (arguments != null && arguments.get("parentCol") instanceof Number) ? ((Number)arguments.get("parentCol")).intValue() : -1;
+        int idCol1 = -1;
+        int idCol2 = -1;
+        int idCol3 = -1;
+        int parentCol = -1;
+        String nameExpression = null;
+        Map<String, String> aliases = null;
 
-        String nameExpression = (arguments != null && arguments.containsKey("nameExpression")) ? Objects.toString(arguments.get("nameExpression"), null) : null;
+        if (arguments != null)
+        {
+            //These are outdated but some clients still use them, or have existing sample sets that do.
+            List<Integer> idCols = (arguments.getIdCols() != null) ? arguments.getIdCols() : Collections.emptyList();
+            idCol1 = idCols.size() > 0 ? idCols.get(0) : -1;
+            idCol2 = idCols.size() > 1 ? idCols.get(1) : -1;
+            idCol3 = idCols.size() > 2 ? idCols.get(2) : -1;
+            parentCol = arguments.getParentCol() != null ? arguments.getParentCol() : -1;
 
+
+            nameExpression = StringUtils.trimToNull(arguments.getNameExpression());
+            aliases = arguments.getImportAliases();
+        }
         ExpSampleSet ss;
         try
         {
-            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo);
+            ss = SampleSetService.get().createSampleSet(container, user, name, description, properties, indices, idCol1, idCol2, idCol3, parentCol, nameExpression, templateInfo, aliases);
         }
         catch (SQLException e)
         {
@@ -335,5 +464,11 @@ public class SampleSetDomainKind extends BaseAbstractDomainKind
     public UpdateableTableInfo.ObjectUriType getObjectUriColumn()
     {
         return UpdateableTableInfo.ObjectUriType.schemaColumn;
+    }
+
+    @Override
+    public SampleTypeDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    {
+            return new SampleTypeDomainKindProperties(SampleSetService.get().getSampleSet(domain.getDomainURI()));
     }
 }

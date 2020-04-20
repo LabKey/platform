@@ -15,9 +15,12 @@
  */
 package org.labkey.api.jsp;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.jasper.JspC;
+import org.apache.jasper.servlet.JspCServletContext;
+import org.apache.jasper.servlet.TldScanner;
 import org.apache.log4j.Logger;
+import org.apache.tomcat.JarScanner;
+import org.apache.tomcat.util.scan.StandardJarScanner;
 import org.labkey.api.annotations.JavaRuntimeVersion;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ResourceFinder;
@@ -61,9 +64,9 @@ public class RecompilingJspClassLoader extends JspClassLoader
     private static final String DB_SCRIPT_PATH = "/schemas/dbscripts";
 
     @Override
-    public Class loadClass(ServletContext context, String packageName, String jspFilename) throws ClassNotFoundException
+    public Class loadClass(ServletContext context, String jspFilename) throws ClassNotFoundException
     {
-        String compiledJspPath = getCompiledJspPath(packageName, jspFilename);
+        String compiledJspPath = getCompiledJspPath(jspFilename);
         Collection<ResourceFinder> finders = ModuleLoader.getInstance().getResourceFindersForPath(compiledJspPath);
 
         for (ResourceFinder finder : finders)
@@ -73,20 +76,20 @@ public class RecompilingJspClassLoader extends JspClassLoader
             File classFile = new File(jspClassesFileBuildDirectory, JSP_PACKAGE_PATH + compiledJspPath + ".class");
             File sourceFile = null;
             if (null != finder.getSourcePath())
-                sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(packageName, jspFilename)));
+                sourceFile = new File(getCompleteSourcePath(finder.getSourcePath(), getSourceJspPath(jspFilename)));
 
             if (classFile.exists() || (null != sourceFile && sourceFile.exists()))
-                return getCompiledClassFile(classFile, jspJavaFileBuildDirectory, jspClassesFileBuildDirectory, finder, packageName, jspFilename);
+                return getCompiledClassFile(classFile, jspJavaFileBuildDirectory, jspClassesFileBuildDirectory, finder, jspFilename);
         }
 
-        return super.loadClass(context, packageName, jspFilename);
+        return super.loadClass(context, jspFilename);
     }
 
 
     @JavaRuntimeVersion  // Change CompilerTargetVM and CompilerSourceVM settings below
-    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String packageName, String jspFileName)
+    private Class getCompiledClassFile(File classFile, File jspJavaFileBuildDirectory, File jspClassesFileBuildDir, ResourceFinder finder, String jspFileName)
     {
-        String relativePath = getSourceJspPath(packageName, jspFileName);
+        String relativePath = getSourceJspPath(jspFileName);
         // Create File object for JSP source
         String sourcePath = getCompleteSourcePath(finder.getSourcePath(), relativePath);
         File sourceFile = new File(sourcePath);
@@ -94,7 +97,7 @@ public class RecompilingJspClassLoader extends JspClassLoader
         Collection<ResourceFinder> apiResourceFinders = ModuleLoader.getInstance().getResourceFindersForPath("/org/labkey/api/");
         try
         {
-            String className = getJspClassName(packageName, jspFileName);
+            String className = getJspClassName(jspFileName);
 
             synchronized(_classLoaders)
             {
@@ -114,34 +117,36 @@ public class RecompilingJspClassLoader extends JspClassLoader
 
                     ClassPath cp = new ClassPath();
                     cp.addDirectory(new File(finder.getBuildPath(), "/explodedModule/lib"));
-                    // N.B.  Our build references specific tomcat versions (set in the root-level gradle.properties file), whereas
-                    // here we add the tomcat libraries for the local installation to the classpath.  This should mostly be OK, but if seeing
-                    // different behavior between the JSPs from the Gradle build and those compiled while in dev mode, this may
-                    // be a culprit.
-                    cp.addDirectory(getTomcatLib());
-                    // With the Gradle build, api and internal are first-class modules and their libraries are no longer put into WEB-INF/lib
-                    // so we include their individual lib directories in the classpath for the JSPs.
+                    // N.B. Our build references specific tomcat versions (set in the root-level gradle.properties file),
+                    // whereas here we add the tomcat libraries for the local installation to the classpath. This should
+                    // mostly be OK, but if seeing different behavior between the JSPs from the Gradle build and those
+                    // compiled while in dev mode, this may be a culprit.
+                    File tomcatLib = ModuleLoader.getInstance().getTomcatLib();
+                    if (null != tomcatLib)
+                        cp.addDirectory(tomcatLib);
+                    // With the Gradle build, api and internal are first-class modules and their libraries are no longer
+                    // put into WEB-INF/lib so we include their individual lib directories in the classpath for the JSPs.
                     for (ResourceFinder apiFinder : apiResourceFinders)
                         cp.addDirectory(new File(apiFinder.getBuildPath(), "/explodedModule/lib"));
                     cp.addDirectory(getModulesApiLib());
 
                     // Compile the .jsp file
                     JspC jasper = new JspC() {
-//                        This override eliminates the unnecessary TLD scanning during recompile. Commented out for now since it doesn't work with Tomcat 7.x.
-//                        @Override
-//                        protected TldScanner newTldScanner(JspCServletContext context, boolean namespaceAware, boolean validate, boolean blockExternal)
-//                        {
-//                            StandardJarScanner scanner = new StandardJarScanner();
-//                            scanner.setJarScanFilter((jarScanType, s) -> false);
-//                            context.setAttribute(JarScanner.class.getName(), scanner);
-//                            return super.newTldScanner(context, namespaceAware, validate, blockExternal);
-//                        }
+                        // This override eliminates unnecessary TLD scanning during recompile
+                        @Override
+                        protected TldScanner newTldScanner(JspCServletContext context, boolean namespaceAware, boolean validate, boolean blockExternal)
+                        {
+                            StandardJarScanner scanner = new StandardJarScanner();
+                            scanner.setJarScanFilter((jarScanType, s) -> false);
+                            context.setAttribute(JarScanner.class.getName(), scanner);
+                            return super.newTldScanner(context, namespaceAware, validate, blockExternal);
+                        }
                     };
                     jasper.setUriroot(jspJavaFileBuildDirectory.getParent() + "/webapp");
                     jasper.setOutputDir(jspJavaFileBuildDirectory.getAbsolutePath());
                     jasper.setPackage("org.labkey.jsp.compiled");
-                    jasper.setCompilerTargetVM("12");
-                    jasper.setCompilerSourceVM("12");
+                    jasper.setCompilerTargetVM("13");
+                    jasper.setCompilerSourceVM("13");
                     jasper.setCompile(false);
                     jasper.setListErrors(true);
 
@@ -199,7 +204,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
         return ret.toString();
     }
 
-
     private void compileJavaFile(String filePath, String classPath, String jspFilename, String classDirPath) throws Exception
     {
         ByteArrayOutputStream errorStream = new ByteArrayOutputStream();
@@ -209,7 +213,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
         if (0 != ret)
             throw new JspCompilationException(jspFilename, errorStream.toString());
     }
-
 
     private static class JspCompilationException extends ServletException implements HideConfigurationDetails
     {
@@ -229,11 +232,10 @@ public class RecompilingJspClassLoader extends JspClassLoader
         }
     }
 
-
     private static class ClassPath
     {
         private final String SEP = System.getProperty("path.separator");
-        private StringBuilder _path = new StringBuilder();
+        private final StringBuilder _path = new StringBuilder();
 
         private void addFile(String filePath)
         {
@@ -265,32 +267,6 @@ public class RecompilingJspClassLoader extends JspClassLoader
         {
             return _path.toString();
         }
-    }
-
-
-    private File getTomcatLib()
-    {
-        String classPath = System.getProperty("java.class.path", ".");
-
-        for (String path : StringUtils.split(classPath, File.pathSeparatorChar))
-        {
-            if (path.endsWith("/bin/bootstrap.jar"))
-            {
-                path = path.substring(0, path.length() - "/bin/bootstrap.jar".length());
-                if (new File(path, "lib").isDirectory())
-                    return new File(path, "lib");
-            }
-        }
-
-        String tomcat = System.getenv("CATALINA_HOME");
-
-        if (null == tomcat)
-            tomcat = System.getenv("TOMCAT_HOME");
-
-        if (null == tomcat)
-            _log.warn("Could not find CATALINA_HOME environment variable, unlikely to be successful recompiling JSPs");
-
-        return new File(tomcat, "lib");
     }
 
     private String getModulesApiLib()

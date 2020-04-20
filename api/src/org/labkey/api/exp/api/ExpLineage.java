@@ -17,12 +17,8 @@ package org.labkey.api.exp.api;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.exp.Identifiable;
-import org.labkey.api.exp.query.SamplesSchema;
-import org.labkey.api.query.SchemaKey;
+import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 
 import java.util.Collections;
@@ -318,7 +314,7 @@ public class ExpLineage
         return datas;
     }
 
-    public JSONObject toJSON(boolean requestedWithSingleSeed)
+    public JSONObject toJSON(User user, boolean requestedWithSingleSeed, ExperimentJSONConverter.Settings settings)
     {
         Map<String, Identifiable> nodeMeta = processNodes();
         Map<String, Object> values = new HashMap<>();
@@ -328,7 +324,7 @@ public class ExpLineage
         {
             for (Identifiable seed : _seeds)
             {
-                nodes.put(seed.getLSID(), nodeToJSON(seed, new JSONArray(), new JSONArray()));
+                nodes.put(seed.getLSID(), nodeToJSON(seed, user, new JSONArray(), new JSONArray(), settings));
             }
         }
         else
@@ -345,7 +341,7 @@ public class ExpLineage
                     children.put(edge.toChildJSON());
 
                 Identifiable obj = nodeMeta.get(node.getKey());
-                nodes.put(node.getKey(), nodeToJSON(obj, parents, children));
+                nodes.put(node.getKey(), nodeToJSON(obj, user, parents, children, settings));
             }
         }
 
@@ -365,72 +361,19 @@ public class ExpLineage
         return new JSONObject(values);
     }
 
-    private JSONObject nodeToJSON(Identifiable node, JSONArray parents, JSONArray children)
+    private JSONObject nodeToJSON(Identifiable node, User user, JSONArray parents, JSONArray children, ExperimentJSONConverter.Settings settings)
     {
         JSONObject json = new JSONObject();
-        json.put("parents", parents);
-        json.put("children", children);
 
         if (node != null)
         {
-            json.put("name", node.getName());
-            json.put("lsid", node.getLSID());
+            json = ExperimentJSONConverter.serialize(node, user, settings);
+
             json.put("type", node.getLSIDNamespacePrefix());
-
-            // TODO: get rowId and maybe cpasType and schemaName/queryName for assay result row type
-
-            if (node instanceof ExpObject)
-            {
-                json.put("rowId", ((ExpObject)node).getRowId());
-                json.put("url", ((ExpObject)node).detailsURL());
-            }
-
-            if (node instanceof ExpMaterial)
-            {
-                ExpMaterial material = (ExpMaterial) node;
-                json.put("cpasType", material.getCpasType());
-
-                ExpSampleSet ss = material.getSampleSet();
-                if (ss != null)
-                {
-                    json.put("schemaName", SamplesSchema.SCHEMA_NAME);
-                    json.put("queryName", ss.getName());
-                }
-            }
-            else if (node instanceof ExpData)
-            {
-                ExpData data = (ExpData) node;
-                json.put("cpasType", data.getCpasType());
-
-                ExpDataClass dc = data.getDataClass(null);
-                if (dc != null)
-                {
-                    json.put("schemaName", "exp.data");
-                    json.put("queryName", dc.getName());
-                }
-            }
-            else if (node instanceof ExpRun)
-            {
-                ExpRun run = (ExpRun)node;
-
-                ExpProtocol protocol = run.getProtocol();
-                if (protocol != null)
-                {
-                    json.put("cpasType", protocol.getLSID());
-                    AssayService assayService = AssayService.get();
-                    if (assayService != null)
-                    {
-                        AssayProvider provider = assayService.getProvider(run);
-                        if (provider != null)
-                        {
-                            SchemaKey schemaKey = AssayProtocolSchema.schemaName(provider, protocol);
-                            json.put("schemaName", schemaKey.toString());
-                            json.put("queryName", "Runs");
-                        }
-                    }
-                }
-            }
         }
+
+        json.put("parents", parents);
+        json.put("children", children);
 
         return json;
     }

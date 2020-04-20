@@ -45,6 +45,7 @@ import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -325,7 +326,10 @@ public class QueryManager
 
     public void delete(AbstractExternalSchemaDef def)
     {
-        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+        Container c = def.lookupContainer();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(getTableInfoExternalSchema().getColumn("ExternalSchemaId"), def.getExternalSchemaId());
+        Table.delete(getTableInfoExternalSchema(), filter);
         updateExternalSchemas(def.lookupContainer());
     }
 
@@ -484,7 +488,7 @@ public class QueryManager
             l.queryCreated(user, container, scope, schema, queries);
     }
 
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
         QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
@@ -493,7 +497,7 @@ public class QueryManager
     }
 
     // Checks all changes have the correct property and type.
-    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property == null)
         {
@@ -502,7 +506,7 @@ public class QueryManager
         }
 
         boolean valid = true;
-        for (QueryChangeListener.QueryPropertyChange change : changes)
+        for (QueryPropertyChange change : changes)
         {
             if (change.getProperty() != property)
             {

@@ -47,10 +47,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -96,6 +96,15 @@ public interface Module extends Comparable<Module>
      * Name of this module
      */
     String getName();
+
+
+    /**
+     * Can this module be enabled in this container?
+     */
+    default boolean canBeEnabled(Container c)
+    {
+        return true;
+    }
 
     /**
      * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
@@ -331,6 +340,10 @@ public interface Module extends Comparable<Module>
      */
     void setExplodedPath(File path);
 
+    @Nullable
+    File getZippedPath();
+    void setZippedPath(File zipped);
+
     /**
      * Returns a list of sql script file names for a given schema
      *
@@ -393,7 +406,7 @@ public interface Module extends Comparable<Module>
      */
     JSONObject getPageContextJson(ContainerUser context);
 
-    @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
+    @NotNull List<Supplier<ClientDependency>> getClientDependencies(Container c);
 
     @JsonIgnore
     @Nullable UpgradeCode getUpgradeCode();

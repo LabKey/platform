@@ -375,8 +375,7 @@
             name: 'tables',
             fieldLabel: false,
             width: 395,
-            //value: <%=text(new JSONArray(tables).toString())%>,
-            initialValue: <%=text(new JSONArray(tables).toString())%>,
+            initialValue: <%=new JSONArray(tables)%>,
             // Prevent the 'dataloaded' event from being fired when the template changes when creating a new linked schema.
             initiallyLoaded: <%=bean.isInsert()%>,
             disabled: <%=def.getTables() == null && initialTemplate != null%>,

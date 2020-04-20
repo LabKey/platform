@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ page import="org.labkey.api.study.TimepointType" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
     @Override
@@ -34,7 +35,7 @@
 <%
     boolean canEdit = getContainer().hasPermission(getUser(), AdminPermission.class);
     boolean emptyStudy = getStudy().isEmptyStudy();
-    String timepointType = getStudy().getTimepointType().toString();
+    TimepointType timepointType = getStudy().getTimepointType();
     URLHelper cancelLink = getActionURL().getReturnURL();
     if (cancelLink == null)
         cancelLink = new ActionURL(StudyController.ManageStudyAction.class, getContainer());
@@ -84,7 +85,8 @@ function removeProtocolDocument(name, xid)
                     failure: function() {
                         alert('Failed to remove study protocol document.');
                     },
-                    params : { name: name}
+                    params : { name: name},
+                    timeout: 1800000
                 });
             }
         }
@@ -442,8 +444,9 @@ function renderFormPanel(data, editable){
     // the original form didn't include these, but we can decide later
     items.push({
         xtype : 'radiogroup',
-        fieldLabel : "Timepoint Type",
+        fieldLabel : 'Timepoint Type:<%=helpPopup(null, "Studies can assign data to timepoints based on explicit visit assignments (visit-based), calculated dates relative to a start date (date-based), or skip visit bookkeeping completely (continuous). Toggling an existing study will delete any current visit assignments")%>',
         labelWidth : 160,
+        labelSeparator: '',
         width : 500,
         columns : 3,
         vertical : true,
@@ -461,7 +464,7 @@ function renderFormPanel(data, editable){
             xtype: 'radio',
             id : 'dateRadio',
             inputId : 'date',
-            disabled: <%=!emptyStudy%>,
+            disabled: <%= !(emptyStudy || !timepointType.isVisitBased()) %>,
             boxLabel: 'DATE',
             inputValue: 'DATE',
             name: 'TimepointType',
@@ -470,7 +473,7 @@ function renderFormPanel(data, editable){
             xtype: 'radio',
             id : 'continuousRadio',
             inputId : 'continuous',
-            disabled: <%=!emptyStudy%>,
+            disabled: <%= !(emptyStudy || !timepointType.isVisitBased()) %>,
             boxLabel: 'CONTINUOUS',
             inputValue: 'CONTINUOUS',
             name: 'TimepointType',

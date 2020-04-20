@@ -15,19 +15,17 @@
  */
 
 import React from 'react'
-import {List} from "immutable";
 import {Button, Panel} from "react-bootstrap";
-import {ActionURL} from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain, IBannerMessage} from "@labkey/components"
+import { ActionURL, getServerContext } from "@labkey/api";
+import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain} from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
-import "./domainDesigner.scss";
 
 interface IAppState {
     dirty: boolean
     domain: DomainDesign
     domainId: number
-    messages?: List<IBannerMessage>,
+    message?: string,
     queryName: string
     returnUrl: string
     schemaName: string
@@ -45,12 +43,9 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
 
         const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
 
-        let messages = List<IBannerMessage>();
+        let message;
         if ((!schemaName || !queryName) && !domainId) {
-            let msg =  'Missing required parameter: domainId or schemaName and queryName.';
-            let msgType = 'danger';
-            let bannerMsg ={message : msg, messageType : msgType};
-            messages = messages.push(bannerMsg);
+            message = 'Missing required parameter: domainId or schemaName and queryName.';
         }
 
         this.state = {
@@ -58,8 +53,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             queryName,
             domainId,
             returnUrl,
+            message,
             submitting: false,
-            messages,
             showConfirm: false,
             dirty: false,
             includeWarnings: true
@@ -67,7 +62,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     componentDidMount() {
-        const { schemaName, queryName, domainId, messages } = this.state;
+        const { schemaName, queryName, domainId } = this.state;
 
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
@@ -75,9 +70,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     this.setState(() => ({domain}));
                 })
                 .catch(error => {
-                    this.setState(() => ({
-                        messages : messages.set(0, {message: error.exception, messageType: 'danger'})
-                    }));
+                    this.setState(() => ({message: error.exception}));
                 });
         }
 
@@ -94,7 +87,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
-    submitHandler = (navigate : boolean) => {
+    submitHandler() {
         const { domain, submitting, includeWarnings } = this.state;
 
         if (submitting) {
@@ -111,11 +104,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     dirty: false
                 }));
 
-                this.showMessage("Save Successful", 'success', 0);
-
-                if (navigate) {
-                    this.navigate();
-                }
+                this.navigate();
             })
             .catch((badDomain) => {
                 // if there are only warnings then show ConfirmModel
@@ -132,10 +121,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     }));
                 }
             });
-    };
+    }
 
     submitAndNavigate = () => {
-        this.submitHandler(true);
+        this.submitHandler();
     };
 
     confirmWarningAndNavigate = () => {
@@ -144,7 +133,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             showWarnings : false,
             submitting : false
         }), () => {
-            this.submitHandler(true);
+            this.submitHandler();
         });
     };
 
@@ -162,20 +151,6 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         }));
     };
 
-    dismissAlert = (index: any) => {
-        this.setState(() => ({
-            messages: this.state.messages.setIn([index], [{message: undefined, messageType: undefined}])
-        }));
-    };
-
-    showMessage = (message: string, messageType: string, index: number, additionalState?: Partial<IAppState>) => {
-        const { messages } = this.state;
-
-        this.setState(Object.assign({}, additionalState, {
-            messages : messages.set(index, {message: message, messageType: messageType})
-        }));
-    };
-
     onCancelBtnHandler = () => {
         if (this.state.dirty) {
             this.setState(() => ({showConfirm: true}));
@@ -188,7 +163,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     navigate = () => {
         const { returnUrl } = this.state;
         this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', LABKEY.container.path);
+            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
         });
     };
 
@@ -215,7 +190,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         });
 
         // TODO this doc link is specimen specific, we should find a way to pass this in via the domain kind or something like that
-        const rollupURI = LABKEY.helpLinkPrefix + 'specimenCustomProperties';
+        const rollupURI = getServerContext().helpLinkPrefix + 'specimenCustomProperties';
         const suggestion = (
             <p>
                 See the following documentation page for further details: <br/>
@@ -263,8 +238,8 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     }
 
     render() {
-        const { domain, messages, showConfirm, showWarnings } = this.state;
-        const isLoading = domain === undefined && messages === undefined;
+        const { domain, message, showConfirm, showWarnings } = this.state;
+        const isLoading = domain === undefined && message === undefined;
 
         if (isLoading) {
             return <LoadingSpinner/>
@@ -284,9 +259,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                         successBsStyle={'primary'}
                     />
                 }
-                { messages && messages.size > 0 && messages.map((bannerMessage, idx) => {
-                    return (<Alert key={idx} bsStyle={bannerMessage.messageType} onDismiss={() => this.dismissAlert(idx)}>{bannerMessage.message}</Alert>) })
-                }
+                { message && <Alert bsStyle={'danger'}>{message}</Alert>}
                 { domain && this.renderButtons() }
             </>
         )

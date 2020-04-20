@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.assay.AssayController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.exp.api.ExperimentJSONConverter" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.RunDetailsBean> me = (JspView<ModuleAssayProvider.RunDetailsBean>) HttpView.currentView();
@@ -33,7 +34,7 @@
     ExpRun run = bean.expRun;
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
-    JSONObject runJson = AssayJSONConverter.serializeRun(run, provider, protocol, getUser());
+    JSONObject runJson = AssayJSONConverter.serializeRun(run, provider, protocol, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 %>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};

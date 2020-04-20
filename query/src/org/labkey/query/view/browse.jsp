@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="org.labkey.api.query.QueryService" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -29,6 +30,7 @@
 %>
 <%
     String renderId = "query-browser-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
+    QueryService.QueryAnalysisService svc = QueryService.get().getQueryAnalysisService();
 %>
 <div id="<%=h(renderId)%>"></div>
 <!-- Fields required for history management -->
@@ -43,6 +45,7 @@
         Ext4.History.init();
 
         Ext4.create('LABKEY.query.browser.Browser', {
+            hasQueryAnalysisService : <%=svc != null%>,
             renderTo: <%=q(renderId)%>
         });
     });

@@ -24,10 +24,12 @@ import org.labkey.api.assay.plate.PositionImpl;
 import org.labkey.api.assay.plate.WellGroup;
 import org.labkey.api.assay.plate.WellGroupTemplate;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.util.GUID;
+import org.labkey.api.view.ActionURL;
+import org.labkey.assay.PlateController;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -70,6 +72,20 @@ public class PlateTemplateImpl extends PropertySetImpl implements PlateTemplate
         _columns = colCount;
         _container = container;
         _dataFileId = GUID.makeGUID();
+    }
+
+    @Override
+    public @Nullable ActionURL detailsURL()
+    {
+        return new ActionURL(PlateController.DesignerAction.class, getContainer())
+                .addParameter("templateName", getName())
+                .addParameter("plateId", getRowId());
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return null;
     }
 
     @Override

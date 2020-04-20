@@ -21,10 +21,8 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
-import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.files.SupportsFileSystemWatcher;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -37,11 +35,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
-
-import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
-import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 /**
  * User: kevink
@@ -50,8 +43,6 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 public class DirectoryResource extends AbstractResourceCollection implements SupportsFileSystemWatcher
 {
     private static final Cache<Pair<Resolver, Path>, Map<String, Resource>> CHILDREN_CACHE = CacheManager.getBlockingCache(5000, CacheManager.DAY, "DirectoryResource Cache", null);
-    private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
-    private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
     private final File _dir;
     private final Pair<Resolver, Path> _cacheKey;
@@ -63,7 +54,7 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         {
             Map<String, Resource> children = new CaseInsensitiveTreeMap<>();
 
-            if (_dir.isDirectory())
+            if (null != _dir && _dir.isDirectory())
             {
                 File[] files = _dir.listFiles();
                 if (files != null)
@@ -102,12 +93,6 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         super(path, resolver);
         _dir = dir;
         _cacheKey = new Pair<>(_resolver, getPath());
-
-        if (!KEYS_WITH_LISTENERS.contains(_cacheKey))
-        {
-            registerListener(WATCHER, new DirectoryResourceListener(), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
-            KEYS_WITH_LISTENERS.add(_cacheKey);
-        }
     }
 
     public Path getRelativePath(java.nio.file.Path nioPath)
@@ -141,13 +126,13 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
     @Override
     public boolean exists()
     {
-        return _dir.exists();
+        return null != _dir && _dir.exists();
     }
 
     @Override
     public boolean isCollection()
     {
-        return exists() && _dir.isDirectory();
+        return null != _dir && _dir.isDirectory();
     }
 
     @Override
@@ -167,48 +152,34 @@ public class DirectoryResource extends AbstractResourceCollection implements Sup
         return _dir;
     }
 
-    private class DirectoryResourceListener implements FileSystemDirectoryListener
-    {
-        @Override
-        public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
-        {
-            clearChildren();
-        }
-
-        @Override
-        public void overflow()
-        {
-            clearChildren();
-        }
-    }
-
-    // Listen for events in all directories associated with this resource
+    // Listen for events in the directory associated with this resource
     @SafeVarargs
     @Override
     public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
     {
         if (isCollection())
         {
-            try
-            {
-                watcher.addListener(_dir.toPath(), listener, events);
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            registerListener(_dir.toPath(), watcher, listener, events);
+        }
+    }
+
+    @SafeVarargs
+    @Override
+    public final void registerListenerOnParent(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+    {
+        registerListener(_dir.toPath().getParent(), watcher, listener, events);
+    }
+
+    @SafeVarargs
+    private static void registerListener(java.nio.file.Path path, FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+    {
+        try
+        {
+            watcher.addListener(path, listener, events);
+        }
+        catch (IOException e)
+        {
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 }

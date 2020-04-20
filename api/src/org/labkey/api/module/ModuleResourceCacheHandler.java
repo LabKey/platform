@@ -19,7 +19,6 @@ import org.apache.commons.collections4.MultiMapUtils;
 import org.apache.commons.collections4.MultiValuedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
 
 import java.util.Collection;
@@ -45,7 +44,7 @@ public interface ModuleResourceCacheHandler<V>
     V load(Stream<? extends Resource> resources, Module module);
 
     /**
-     * If needed, returns a FileSystemDirectoryListener that implements resource-specific file change handling. The
+     * If needed, returns a ModuleResourceCacheListener that implements resource-specific file change handling. The
      * standard listener clears the module's resource map and then invokes the appropriate method of the chained listener,
      * if present. Note that the listener will be called for every change in the resource roots and all their parent
      * directories up to /resources. Methods will be invoked for changes to directories, resource files, and non-resource
@@ -54,7 +53,7 @@ public interface ModuleResourceCacheHandler<V>
      * @param module Module for which to create the listener
      * @return A directory listener with implementation-specific handling.
      */
-    default @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+    default @Nullable ModuleResourceCacheListener createChainedListener(Module module)
     {
         return null;
     }

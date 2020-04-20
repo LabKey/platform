@@ -797,6 +797,42 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {change: nameChange, keyup:nameChange, scope:this}
         });
 
+
+        formItems.push({
+            xtype : 'radiogroup',
+            fieldLabel : "Timepoint Type",
+            vertical : true,
+            items : [{
+                    xtype: 'radio',
+                    id : 'visitRadio',
+                    inputId : 'visit',
+                    disabled: !(this.studyType === 'VISIT'),
+                    boxLabel: 'Visit',
+                    inputValue: 'VISIT',
+                    value: 'VISIT',
+                    name: 'TimepointType',
+                    checked: this.studyType === 'VISIT'
+                },{
+                    xtype: 'radio',
+                    id : 'dateRadio',
+                    inputId : 'date',
+                    disabled: (this.studyType === 'VISIT'),
+                    boxLabel: 'Date',
+                    inputValue: 'DATE',
+                    name: 'TimepointType',
+                    checked: this.studyType === 'DATE'
+                },{
+                    xtype: 'radio',
+                    id : 'continuousRadio',
+                    inputId : 'continuous',
+                    disabled: (this.studyType === 'VISIT'),
+                    boxLabel: 'Continuous',
+                    inputValue: 'CONTINUOUS',
+                    name: 'TimepointType',
+                    checked: this.studyType === 'CONTINUOUS'
+                }]
+        });
+
         var descriptionTextArea = new Ext.form.TextArea({
             fieldLabel: 'Description',
             name: 'studyDescription',

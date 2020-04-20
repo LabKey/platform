@@ -256,7 +256,7 @@ public class CustomViewUtil
         }
         ret.put("columns", colInfos);
 
-        List<Map<String, Object>> filterInfos = new ArrayList<>();
+        List<Map<String, String>> filterInfos = new ArrayList<>();
         List<Map<String, Object>> sortInfos = new ArrayList<>();
         List<Map<String, Object>> analyticsProvidersInfos = new ArrayList<>();
         try
@@ -264,12 +264,8 @@ public class CustomViewUtil
             CustomViewInfo.FilterAndSort fas = CustomViewInfo.FilterAndSort.fromString(view.getFilterAndSort());
             for (FilterInfo filter : fas.getFilter())
             {
-                Map<String, Object> filterInfo = new HashMap<>();
-                filterInfo.put("fieldKey", filter.getField().toString());
-                filterInfo.put("op", filter.getOp() != null ? filter.getOp().getPreferredUrlKey() : "");
-                filterInfo.put("value", filter.getValue());
                 allKeys.add(filter.getField());
-                filterInfos.add(filterInfo);
+                filterInfos.add(filter.toMap());
             }
 
             for (Sort.SortField sf : fas.getSort())

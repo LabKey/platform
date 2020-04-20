@@ -15,13 +15,16 @@
  */
 package org.labkey.api;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
+import org.json.JSONObject;
 import org.labkey.api.action.ApiXmlWriter;
 import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.LookAndFeelResourceType;
 import org.labkey.api.attachments.SecureDocumentType;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -49,6 +52,7 @@ import org.labkey.api.module.JavaVersion;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleDependencySorter;
 import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleXml;
 import org.labkey.api.module.TomcatVersion;
 import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.AliasManager;
@@ -64,6 +68,7 @@ import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.ReportType;
 import org.labkey.api.security.ApiKeyManager;
 import org.labkey.api.security.ApiKeyManager.ApiKeyMaintenanceTask;
+import org.labkey.api.security.AuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationLogoType;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AvatarType;
@@ -80,9 +85,12 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.writer.ContainerUser;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -196,6 +204,15 @@ public class ApiModule extends CodeOnlyModule
     }
 
     @Override
+    public @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    {
+        List<Factory<Class>> list = new ArrayList<>(super.getIntegrationTestFactories());
+        //TODO: No test cases.
+        //list.add(new JspTestCase("/org/labkey/api/module/testSimpleModule.jsp"));
+        return list;
+    }
+
+    @Override
     public @NotNull Set<Class> getIntegrationTests()
     {
         return Set.of(
@@ -204,6 +221,7 @@ public class ApiModule extends CodeOnlyModule
             AliasManager.TestCase.class,
             ApiKeyManager.TestCase.class,
             AtomicDatabaseInteger.TestCase.class,
+            BlockingCache.BlockingCacheTest.class,
             ContainerDisplayColumn.TestCase.class,
             ContainerFilter.TestCase.class,
             ContainerManager.TestCase.class,
@@ -228,6 +246,7 @@ public class ApiModule extends CodeOnlyModule
             MarkdownService.TestCase.class,
             MimeMap.TestCase.class,
             ModuleHtmlView.TestCase.class,
+            ModuleXml.TestCase.class,
             NestedGroupsTest.class,
             ParameterSubstitutionTest.class,
             Portal.TestCase.class,
@@ -264,5 +283,15 @@ public class ApiModule extends CodeOnlyModule
         return super.getJarFilenames().stream()
             .filter(fn->!fn.startsWith("labkey-client-api-"))
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public JSONObject getPageContextJson(ContainerUser context)
+    {
+        JSONObject json = new JSONObject(getDefaultPageContextJson(context.getContainer()));
+        AuthenticationConfiguration.SSOAuthenticationConfiguration config = AuthenticationManager.getAutoRedirectSSOAuthConfiguration();
+        if (config != null)
+            json.put("AutoRedirectSSOAuthConfiguration", config.getDescription());
+        return json;
     }
 }

@@ -16,7 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
@@ -35,7 +35,7 @@ public class SchemaNameCache
 {
     private static final SchemaNameCache INSTANCE = new SchemaNameCache();
 
-    private final BlockingStringKeyCache<Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(50, CacheManager.YEAR, "Schema names in each scope", new CacheLoader<String, Map<String, String>>()
+    private final BlockingCache<String, Map<String, String>> _cache = CacheManager.getBlockingStringKeyCache(50, CacheManager.YEAR, "Schema names in each scope", new CacheLoader<String, Map<String, String>>()
     {
         @Override
         public Map<String, String> load(String dsName, @Nullable Object argument)

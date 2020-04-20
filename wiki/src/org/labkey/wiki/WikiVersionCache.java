@@ -17,8 +17,8 @@
 package org.labkey.wiki;
 
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -38,7 +38,7 @@ import org.labkey.wiki.model.WikiVersion;
 // other cached objects.  This would require adding wiki rowid to the cache key.
 public class WikiVersionCache
 {
-    private static final StringKeyCache<WikiVersion> CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Versions");
+    private static final Cache<String, WikiVersion> CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Versions");
 
     static WikiVersion getVersion(Container c, final int version)
     {

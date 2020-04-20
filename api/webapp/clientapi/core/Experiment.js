@@ -49,7 +49,7 @@ LABKEY.Experiment = new function()
 
     function _saveBatches(config, createExps)
     {
-        LABKEY.Ajax.request({
+        return LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL("assay", "saveAssayBatch", LABKEY.ActionURL.getContainer()),
             method: 'POST',
             jsonData: {
@@ -147,7 +147,8 @@ LABKEY.Experiment = new function()
             {
                 throw "Either the runIds or the selectionKey config parameter is required.";
             }
-            LABKEY.Ajax.request(
+
+            return LABKEY.Ajax.request(
             {
                 url : LABKEY.ActionURL.buildURL("experiment", "createHiddenRunGroup", config.containerPath),
                 method : 'POST',
@@ -167,7 +168,7 @@ LABKEY.Experiment = new function()
          * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchId The batch id.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>batch</b> A new {@link LABKEY.Exp.RunGroup} object.
          * <li><b>response</b> The original response
@@ -192,7 +193,7 @@ LABKEY.Experiment.loadBatch({
                 return new LABKEY.Exp.RunGroup(json.batch);
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatch", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -217,7 +218,7 @@ LABKEY.Experiment.loadBatch({
          * @param {Number} config.assayId The assay protocol id.
          * @param {Number} config.batchIds The list of batch ids.
          * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>batches</b> The list of {@link LABKEY.Exp.RunGroup} objects.
          * <li><b>response</b> The original response
@@ -244,7 +245,7 @@ LABKEY.Experiment.loadBatch({
                 return batches;
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayBatches", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -268,8 +269,11 @@ LABKEY.Experiment.loadBatch({
          * @param config An object that contains the following configuration parameters
          * @param {Array} config.lsids. The list of run lsids.
          * @param {Array} config.runIds The list of run ids.
-         * @param {function} config.success The function to call when the function finishes successfully.
-         * This function will be called with a the parameters:
+         * @param {Boolean} [config.includeProperties] Include properties set on the experiment objects.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.
+         * @param {function} [config.success] The function to call when the function finishes successfully.
+         * This function will be called with the parameters:
          * <ul>
          * <li><b>runs</b> The list of {@link LABKEY.Exp.Run} objects.
          * <li><b>response</b> The original response
@@ -296,20 +300,54 @@ LABKEY.Experiment.loadBatch({
                 return runs;
             }
 
-            LABKEY.Ajax.request({
+            var jsonData = {};
+            if (config.runIds)
+                jsonData.runIds = config.runIds;
+            if (config.lsids)
+                jsonData.lsids = config.lsids;
+            if (config.includeProperties !== undefined)
+                jsonData.includeProperties = config.includeProperties;
+            if (config.includeInputsAndOutputs !== undefined)
+                jsonData.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.includeRunSteps !== undefined)
+                jsonData.includeRunSteps = config.includeRunSteps;
+
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "getAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 scope: config.scope,
-                jsonData : {
-                    runIds: config.runIds,
-                    lsids: config.lsids
-                },
+                jsonData : jsonData,
                 headers : {
                     'Content-Type' : 'application/json'
                 }
             });
+        },
+
+        /**
+         * Export a run as a XAR archive.
+         * @memberOf LABKEY.Experiment
+         * @function
+         * @name exportRuns
+         * @param config
+         * @param {Number[]} config.runIds Array of ExpRun rowId to export
+         * @param {String} config.lsidOutputType Determines how LSIDs will be translated in the XAR XML file. Defaults to 'FOLDER_RELATIVE'
+         * <ul>
+         *     <li><b>ABSOLUTE</b> Keeps the original LSID from the source server
+         *     <li><b>FOLDER_RELATIVE</b> ?
+         *     <li><b>PARTIAL_FOLDER_RELATIVE</b> ?
+         * </ul>
+         * @param {String} config.exportType Defaults to 'BROWSER_DOWNLOAD'
+         * <ul>
+         *     <li><b>BROWSER_DOWNLOAD</b> Download to web browser
+         *     <li><b>PIPELIE_FILE</b> Write to exportedXars directory in pipeline
+         * </ul>
+         * @param {String} config.fileName The exported archive file name.  Defaults to 'export.xar'
+         */
+        exportRuns: function (config)
+        {
+            throw new Error('dom/Experiment.js required');
         },
 
         /**
@@ -353,11 +391,11 @@ LABKEY.Experiment.saveBatch({
          */
         saveBatch : function (config)
         {
-            _saveBatches(getSaveBatchesConfig(config), function(json) {
+            return _saveBatches(getSaveBatchesConfig(config), function(json) {
                 if (json.batches) {
                     return new LABKEY.Exp.RunGroup(json.batches[0])
                 }
-             });
+            });
         },
 
         saveRuns: function (config)
@@ -373,7 +411,7 @@ LABKEY.Experiment.saveBatch({
                 return runs;
             }
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("assay", "saveAssayRuns.api", LABKEY.ActionURL.getContainer()),
                 method: 'POST',
                 success: getSuccessCallbackWrapper(createExp, LABKEY.Utils.getOnSuccess(config), config.scope),
@@ -416,7 +454,7 @@ LABKEY.Experiment.saveBatch({
          */
         saveBatches : function (config)
         {
-            _saveBatches(getSaveBatchesConfig(config), function(json){
+            return _saveBatches(getSaveBatchesConfig(config), function(json) {
                 var batches = [];
                 if (json.batches) {
                     for (var i = 0; i < json.batches.length; i++) {
@@ -450,7 +488,7 @@ LABKEY.Experiment.saveBatch({
          */
         saveMaterials : function (config)
         {
-            LABKEY.Query.insertRows({
+            return LABKEY.Query.insertRows({
                 schemaName: 'Samples',
                 queryName: config.name,
                 rows: config.materials,
@@ -469,6 +507,9 @@ LABKEY.Experiment.saveBatch({
          * @param {Boolean} [config.children] Include children in the lineage response.  Defaults to true.
          * @param {String} [config.expType] Optional experiment type to filter response -- either "Data", "Material", or "ExperimentRun".  Defaults to include all.
          * @param {String} [config.cpasType] Optional LSID of a SampleSet or DataClass to filter the response.  Defaults to include all.
+         * @param {Boolean} [config.includeProperties] Include node properties in the lineage response.  Defaults to false.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.  Defaults to false.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.  Defaults to false.
          * @static
          */
         lineage : function (config)
@@ -489,15 +530,65 @@ LABKEY.Experiment.saveBatch({
                 params.children = config.children;
             if (config.hasOwnProperty('depth'))
                 params.depth = config.depth;
+            if (config.hasOwnProperty('includeProperties'))
+                params.includeProperties = config.includeProperties;
+            if (config.hasOwnProperty('includeInputsAndOutputs'))
+                params.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.hasOwnProperty('includeRunSteps'))
+                params.includeRunSteps = config.includeRunSteps;
 
             if (config.expType)
                 params.expType = config.expType;
             if (config.cpasType)
                 params.cpasType = config.cpasType;
 
-            LABKEY.Ajax.request({
+            return LABKEY.Ajax.request({
                 method: 'GET',
                 url: LABKEY.ActionURL.buildURL("experiment", "lineage.api"),
+                params: params,
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+                scope: config.scope
+            });
+        },
+
+        /**
+         * Resolve LSIDs.
+         * @param config An object that contains the following configuration parameters
+         * @param {Array} config.lsids. The list of run lsids.
+         * @param {Boolean} [config.includeProperties] Include properties set on the experiment objects.
+         * @param {Boolean} [config.includeInputsAndOutputs] Include run and step inputs and outputs.
+         * @param {Boolean} [config.includeRunSteps] Include run steps.
+         * @param {function} [config.success] The function to call when the function finishes successfully.
+         * This function will be called with the parameters:
+         * <ul>
+         * <li><b>data</b> The list of resolved objects.
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {function} [config.failure] The function to call if this function encounters an error.
+         * This function will be called with the following parameters:
+         * <ul>
+         * <li><b>response</b> The original response
+         * </ul>
+         * @param {object} [config.scope] A scoping object for the success and error callback functions (default to this).
+         * @see The <a href='https://www.labkey.org/Documentation/wiki-page.view?name=moduleassay'>Module Assay</a> documentation for more information.
+         * @static
+         */
+        resolve : function (config)
+        {
+            var params = {};
+            if (config.lsids)
+                params.lsids = config.lsids;
+            if (config.includeProperties !== undefined)
+                params.includeProperties = config.includeProperties;
+            if (config.includeInputsAndOutputs !== undefined)
+                params.includeInputsAndOutputs = config.includeInputsAndOutputs;
+            if (config.includeRunSteps !== undefined)
+                params.includeRunSteps = config.includeRunSteps;
+
+            return LABKEY.Ajax.request({
+                method: 'GET',
+                url: LABKEY.ActionURL.buildURL("experiment", "resolve.api"),
                 params: params,
                 success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -1289,5 +1380,4 @@ LABKEY.Exp.Data.prototype.getContent = function(config)
     });
 
 };
-
 

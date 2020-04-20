@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -46,17 +45,16 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.list.client.ListEditorService;
 import org.labkey.list.controllers.ListController;
 import org.springframework.web.servlet.mvc.Controller;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -399,7 +397,8 @@ public class ListDefinitionImpl implements ListDefinition
         }
         catch (RuntimeSQLException e)
         {
-            processSqlException(e.getSQLException());
+            if (RuntimeSQLException.isConstraintException(e.getSQLException()))
+                throw new ValidationException("The name '" + _def.getName() + "' is already in use.");
             throw e;
         }
         ListManager.get().indexList(_def, true);
@@ -419,12 +418,6 @@ public class ListDefinitionImpl implements ListDefinition
         prop.setType(PropertyService.get().getType(_domain.getContainer(), getKeyType().getPropertyType().getXmlName()));
 
         _domain.setPropertyIndex(prop, 0);
-    }
-
-    private void processSqlException(SQLException e) throws Exception
-    {
-        if (RuntimeSQLException.isConstraintException(e))
-            throw new ListEditorService.ListImportException("The name '" + _def.getName() + "' is already in use.");
     }
 
     public ListItem createListItem()

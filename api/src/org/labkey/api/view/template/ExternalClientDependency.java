@@ -53,7 +53,7 @@ public class ExternalClientDependency extends ClientDependency
     @Override
     protected String getUniqueKey()
     {
-        return getCacheKey(_uri, _mode);
+        return getUniqueKey(_uri, _mode);
     }
 
     @Override

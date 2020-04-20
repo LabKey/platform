@@ -4,14 +4,24 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Iterators;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.jsp.taglib.ErrorsTag;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.ObjectError;
 
+import javax.servlet.jsp.PageContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -40,24 +50,24 @@ public class DOM
         a,
         abbr,
         address,
-        area,
+        area(true),
         article,
         aside,
         audio,
         b,
-        base,
+        base(true),
         bdi,
         bdo,
         big,
         blockquote,
         body,
-        br,
+        br(true),
         button,
         canvas,
         caption,
         cite,
         code,
-        col,
+        col(true),
         colgroup,
         data,
         datalist,
@@ -70,11 +80,12 @@ public class DOM
         dl,
         dt,
         em,
-        embed,
+        embed(true),
         fieldset,
         figcaption,
         figure,
         footer,
+        font,
         form,
         h1,
         h2,
@@ -85,32 +96,25 @@ public class DOM
         head,
         header,
         hgroup,
-        hr,
+        hr(true),
         html,
         i,
         iframe,
-        img,
-        input
-        {
-            @Override
-            protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
-            {
-                return appendElement(builder, name(), attrs);
-            }
-        },
+        img(true),
+        input(true),
         ins,
         kbd,
-        keygen,
+        keygen(true),
         label,
         legend,
         li,
-        link,
+        link(true),
         main,
         map,
         mark,
         menu,
-        menuitem,
-        meta,
+        menuitem(true),
+        meta(true),
         meter,
         nav,
         noindex,
@@ -121,7 +125,7 @@ public class DOM
         option,
         output,
         p,
-        param,
+        param(true),
         picture,
         pre,
         progress,
@@ -135,7 +139,7 @@ public class DOM
         section,
         select,
         small,
-        source,
+        source(true),
         span,
         strong,
         style,
@@ -152,17 +156,29 @@ public class DOM
         time,
         title,
         tr,
-        track,
+        track(true),
         u,
         ul,
         var,
         video,
-        wbr,
+        wbr(true),
         webview;
+
+        final boolean _selfClosing;
+
+        Element()
+        {
+            _selfClosing = false;
+        }
+
+        Element(boolean b)
+        {
+            _selfClosing = b;
+        }
 
         protected Appendable _render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body) throws IOException
         {
-            return appendElement(builder, name(), attrs, body);
+            return appendElement(builder, name(), _selfClosing, attrs, body);
         }
 
         final Appendable render(Appendable builder, Iterable<Map.Entry<Object,Object>> attrs, Object...body)
@@ -594,7 +610,7 @@ public class DOM
     {
         try
         {
-            return unsafe(appendElement(new StringBuilder(), null, null, body).toString());
+            return unsafe(appendElement(new StringBuilder(), null, false, null, body).toString());
         }
         catch (IOException x)
         {
@@ -606,7 +622,7 @@ public class DOM
     {
         try
         {
-            return appendElement(html, null, null, body);
+            return appendElement(html, null, false, null, body);
         }
         catch (IOException x)
         {
@@ -661,7 +677,60 @@ public class DOM
                     Attribute.value,CSRFUtil.getExpectedToken(HttpView.currentContext())));
             return DOM.FORM(attrs, body, csrfInput);
         }
+
+        public static Renderable ERRORS(PageContext pageContext)
+        {
+            int count=0;
+            Enumeration<String> e = pageContext.getAttributeNamesInScope(PageContext.REQUEST_SCOPE);
+            List<Renderable> list = new ArrayList<>();
+            while (e.hasMoreElements())
+            {
+                String s = e.nextElement();
+                if (s.startsWith(BindingResult.MODEL_KEY_PREFIX))
+                {
+                    Object o = pageContext.getAttribute(s, PageContext.REQUEST_SCOPE);
+                    if (o instanceof BindingResult)
+                        list.add(ERRORS((BindingResult)o));
+                }
+            }
+            if (list.isEmpty())
+                return null;
+            return createHtmlFragment(list.toArray());
+        }
+
+
+        public static Renderable ERRORS(BindingResult errors)
+        {
+            return ERRORS(errors.getAllErrors());
+        }
+
+        public static Renderable ERRORS(List<ObjectError> z)
+        {
+            if (null == z || z.isEmpty())
+                return HtmlString.unsafe("");
+            final ViewContext context = HttpView.getRootContext();
+            return DIV(cl("labkey-error"),
+                z.stream().map(error ->
+                {
+                    try
+                    {
+                        if (error instanceof LabKeyError)
+                            return createHtmlFragment((((LabKeyError)error).renderToHTML(context)),BR());
+                        else
+                            return createHtmlFragment(HtmlString.unsafe(PageFlowUtil.filter(context.getMessage(error), true)),BR());
+                    }
+                    catch (NoSuchMessageException nsme)
+                    {
+                        ExceptionUtil.logExceptionToMothership(context.getRequest(), nsme);
+                        Logger log = Logger.getLogger(ErrorsTag.class);
+                        log.error("Failed to find a message: " + error, nsme);
+                        return createHtmlFragment("Unknown error: " + error, BR());
+                    }
+                })
+            );
+        }
     }
+
     @Deprecated /* use LK */
     public static class X extends LK
     {
@@ -735,7 +804,7 @@ public class DOM
         return builder;
     }
 
-    private static Appendable appendElement(Appendable builder, String tagName, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
+    private static Appendable appendElement(Appendable builder, String tagName, boolean selfClosing, Iterable<Map.Entry<Object, Object>> attrs, Object... body) throws IOException
     {
         if (null != tagName)
         {
@@ -747,10 +816,10 @@ public class DOM
                 {
                     Object key = entry.getKey();
                     if (key instanceof DOM.Attribute)
-                        ((DOM.Attribute)key).render(builder, entry.getValue());
+                        ((DOM.Attribute) key).render(builder, entry.getValue());
                     else if (key instanceof String)
                     {
-                        appendAttribute(builder, (String)key, entry.getValue());
+                        appendAttribute(builder, (String) key, entry.getValue());
                     }
                     else
                     {
@@ -758,11 +827,16 @@ public class DOM
                     }
                 }
                 // TODO again horrible hack, make this go away
-                if (attrs instanceof _Attributes && null != ((_Attributes)attrs).callback)
+                if (attrs instanceof _Attributes && null != ((_Attributes) attrs).callback)
                 {
                     builder.append(" ");
                     ((_Attributes) attrs).callback.accept(builder);
                 }
+            }
+            if (selfClosing)
+            {
+                builder.append(" />");
+                return builder;
             }
             builder.append(">");
         }
@@ -1204,6 +1278,14 @@ public class DOM
     public static Renderable FOOTER(Object... body)
     {
         return (html) -> Element.footer.render(html, NOAT, body);
+    }
+    public static Renderable FONT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    {
+        return (html) -> Element.font.render(html, attrs, body);
+    }
+    public static Renderable FONT(Object... body)
+    {
+        return (html) -> Element.font.render(html, NOAT, body);
     }
     public static Renderable FORM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {

@@ -20,9 +20,9 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.labkey.remoteapi.query.SelectRowsResponse;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
-import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
+import org.labkey.test.params.experiment.SampleSetDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -34,6 +34,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.hamcrest.CoreMatchers.hasItem;
 
 @Category({DailyC.class})
 public class VocabularyViewSupportTest extends BaseWebDriverTest
@@ -118,7 +120,7 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         goToProjectHome();
         SampleSetHelper sampleHelper = new SampleSetHelper(this);
-        sampleHelper.createSampleSet(sampleSetName, null);
+        sampleHelper.createSampleSet(new SampleSetDefinition(sampleSetName));
 
         log("call to insertRows with a voc property");
         int sampleSetRowCount = 0;
@@ -171,10 +173,10 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
                                  prop1Value + " " + prop2Value + " " + cityName;
 
         List<String> rowData = drt.getRowDataAsText(0);
-        Assert.assertTrue("Row data does not contain color property value.", rowData.contains(prop1Value));
-        Assert.assertTrue("Row data does not contain year property value.", rowData.contains(String.valueOf(prop2Value)));
-        Assert.assertTrue("Row data does not contain list property value.", rowData.contains(cityName));
-        Assert.assertTrue("Row data does not contain properties property value.", rowData.contains(propertiesValue));
+        Assert.assertThat("Row data does not contain color property value.", rowData, hasItem(prop1Value));
+        Assert.assertThat("Row data does not contain year property value.", rowData, hasItem(String.valueOf(prop2Value)));
+        Assert.assertThat("Row data does not contain list property value.", rowData, hasItem(cityName));
+        Assert.assertThat("Row data does not contain properties property value.", rowData, hasItem(propertiesValue));
     }
 
     @Test

@@ -66,8 +66,9 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         if (_objectId == 0)
         {
             OntologyObject oo = OntologyManager.getOntologyObject(getContainer(), getLSID());
-            if (oo != null)
-                _objectId = oo.getObjectId();
+            if (oo == null)
+                return null;
+            _objectId = oo.getObjectId();
         }
 
         return _objectId;

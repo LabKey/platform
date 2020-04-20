@@ -1422,7 +1422,7 @@ public class UserController extends SpringActionController
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("User Access Details: " + UserManager.getEmailForId(_userId));
+                return root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
             return null;
         }
@@ -2673,7 +2673,8 @@ public class UserController extends SpringActionController
     // Need returnUrl because we stash the current URL in session and return to it after impersonation is complete
     public static class ImpersonateUserForm extends ReturnUrlForm
     {
-        private Integer _userId = null;
+        private Integer _userId;
+        private ValidEmail _email;
 
         public Integer getUserId()
         {
@@ -2683,6 +2684,16 @@ public class UserController extends SpringActionController
         public void setUserId(Integer userId)
         {
             _userId = userId;
+        }
+
+        public ValidEmail getEmail()
+        {
+            return _email;
+        }
+
+        public void setEmail(ValidEmail email)
+        {
+            _email = email;
         }
     }
 
@@ -2724,12 +2735,19 @@ public class UserController extends SpringActionController
             if (getUser().isImpersonated())
                 return "Can't impersonate; you're already impersonating";
 
-            Integer userId = form.getUserId();
-
-            if (null == userId)
-                return "Must specify a user ID";
-
-            User impersonatedUser = UserManager.getUser(userId);
+            User impersonatedUser;
+            if (form.getUserId() != null)
+            {
+                impersonatedUser = UserManager.getUser(form.getUserId());
+            }
+            else if (form.getEmail() != null)
+            {
+                impersonatedUser = UserManager.getUser(form.getEmail());
+            }
+            else
+            {
+                return "Must specify an email or userId";
+            }
 
             if (null == impersonatedUser)
                 return "User doesn't exist";

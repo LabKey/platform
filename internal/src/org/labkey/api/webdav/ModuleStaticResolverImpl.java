@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheListener;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.files.FileSystemDirectoryListener;
@@ -31,10 +32,12 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -60,7 +63,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Date: Jan 7, 2009
  * Time: 3:27:03 PM
  */
-public class ModuleStaticResolverImpl implements WebdavResolver
+public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeListener, CacheListener
 {
     private static ModuleStaticResolverImpl _instance = new ModuleStaticResolverImpl();
 
@@ -76,6 +79,8 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
     private ModuleStaticResolverImpl()
     {
+        ContextListener.addModuleChangeListener(this);
+        CacheManager.addListener(this);
     }
 
     public static WebdavResolver get()
@@ -92,6 +97,20 @@ public class ModuleStaticResolverImpl implements WebdavResolver
     StaticResource _root = null;
     Cache<Path, WebdavResource> _allStaticFiles = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "webdav static files");
 
+
+    @Override
+    public void onModuleChanged(Module m)
+    {
+        clearCaches();
+    }
+
+    @Override
+    public void clearCaches()
+    {
+        _allStaticFiles.clear();
+        CHILDREN_CACHE.clear();
+        initialized.set(false);
+    }
 
     @Override
     public boolean requiresLogin()
@@ -232,16 +251,16 @@ public class ModuleStaticResolverImpl implements WebdavResolver
 
 
     // Parent -> map(name->shortcut,index)
-    Map<Path,Map<String,Pair<Path,String>>> shortcuts = new HashMap<>();
+    private final Map<Path, Map<String, Pair<Path, String>>> shortcuts = new HashMap<>();
 
 
     @NotNull
-    public Map<String,Pair<Path,String>> getShortcuts(Path collection)
+    public Map<String, Pair<Path, String>> getShortcuts(Path collection)
     {
         synchronized (shortcuts)
         {
-            HashMap<String,Pair<Path,String>> ret = new HashMap<>();
-            Map<String,Pair<Path,String>> map = shortcuts.get(collection);
+            HashMap<String, Pair<Path, String>> ret = new HashMap<>();
+            Map<String, Pair<Path, String>> map = shortcuts.get(collection);
             if (null != map)
                 ret.putAll(map);
             return ret;
@@ -592,19 +611,29 @@ public class ModuleStaticResolverImpl implements WebdavResolver
         public final void registerListener(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
         {
             if (isCollection())
-            {
-                File dir = getFile();
+                registerListener(getFile(), watcher, listener, events);
+        }
 
-                if (null != dir)
+        @SafeVarargs
+        @Override
+        public final void registerListenerOnParent(FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+        {
+            if (null != getFile())
+                registerListener(getFile().getParentFile(), watcher, listener, events);
+        }
+
+        @SafeVarargs
+        private void registerListener(File dir, FileSystemWatcher watcher, FileSystemDirectoryListener listener, WatchEvent.Kind<java.nio.file.Path>... events)
+        {
+            if (null != dir)
+            {
+                try
                 {
-                    try
-                    {
-                        watcher.addListener(dir.toPath(), listener, events);
-                    }
-                    catch (IOException e)
-                    {
-                        ExceptionUtil.logExceptionToMothership(null, e);
-                    }
+                    watcher.addListener(dir.toPath(), listener, events);
+                }
+                catch (IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
                 }
             }
         }

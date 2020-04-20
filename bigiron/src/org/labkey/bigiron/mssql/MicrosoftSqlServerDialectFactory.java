@@ -78,14 +78,14 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         if (!md.getDatabaseProductName().equals(getProductName()))
             return null;
 
-        VersionNumber versionNumber = new VersionNumber(md.getDatabaseProductVersion());
+        String jdbcProductVersion = md.getDatabaseProductVersion();
+        VersionNumber versionNumber = new VersionNumber(jdbcProductVersion);
         int version = versionNumber.getVersionInt();
 
-        // Get the appropriate dialect and stash version information
-        SqlDialect dialect = getDialect(version, md.getDatabaseProductVersion(), logWarnings, primaryDataSource);
-        dialect.setDatabaseVersion(version);
+        // Get the appropriate dialect and stash the version year
+        BaseMicrosoftSqlServerDialect dialect = getDialect(version, jdbcProductVersion, logWarnings, primaryDataSource);
         String className = dialect.getClass().getSimpleName();
-        dialect.setProductVersion(className.substring(18, className.indexOf("Dialect")));
+        dialect.setVersionYear(className.substring(18, className.indexOf("Dialect")));
 
         String driverName = md.getDriverName();
 
@@ -95,7 +95,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
         return dialect;
     }
 
-    private SqlDialect getDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
+    private BaseMicrosoftSqlServerDialect getDialect(int version, String databaseProductVersion, boolean logWarnings, boolean primaryDataSource)
     {
         // Good resources for past & current SQL Server version numbers:
         // - http://www.sqlteam.com/article/sql-server-versions
@@ -140,7 +140,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
     }
 
     @Override
-    public Collection<? extends Class> getJUnitTests()
+    public Collection<? extends Class<?>> getJUnitTests()
     {
         return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
     }
@@ -166,6 +166,7 @@ public class MicrosoftSqlServerDialectFactory implements SqlDialectFactory
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
     {
+        @Override
         public void testDialectRetrieval()
         {
             // These should result in bad database exception

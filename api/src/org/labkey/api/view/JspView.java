@@ -85,7 +85,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         setFrame(FrameType.DIV);
         MemTracker.getInstance().put(this);
         _path = jspPath;
-        _page = JspLoader.createPage((String)null, jspPath);
+        _page = JspLoader.createPage(jspPath);
 
         if (_page instanceof JspBase)
             addClientDependencies(((JspBase)_page).getClientDependencies());

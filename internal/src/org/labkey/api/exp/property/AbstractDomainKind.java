@@ -111,7 +111,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
+    public @Nullable T getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
     {
         return null;
     }

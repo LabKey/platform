@@ -13,7 +13,9 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -37,10 +39,27 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
     }
     @NotNull AP getAuthenticationProvider();
     boolean isEnabled();
-    Map<String, Object> getCustomProperties();
+    @NotNull Map<String, Object> getCustomProperties();
+
+    /**
+     * @return Map of all property names and values that are updateable and appropriate for audit logging
+     */
+    default @NotNull Map<String, Object> getLoggingProperties()
+    {
+        HashMap<String, Object> map = new HashMap<>();
+        map.put("description", getDescription());
+        map.put("enabled", isEnabled());
+        map.putAll(getCustomProperties());
+
+        return map;
+    }
 
     interface PrimaryAuthenticationConfiguration<AP extends PrimaryAuthenticationProvider> extends AuthenticationConfiguration<AP>
     {
+        default @Nullable URLHelper logout(HttpServletRequest request, @Nullable URLHelper returnURL)
+        {
+            return null;
+        }
     }
 
     interface LoginFormAuthenticationConfiguration<AP extends LoginFormAuthenticationProvider<?>> extends PrimaryAuthenticationConfiguration<AP>
@@ -58,10 +77,7 @@ public interface AuthenticationConfiguration<AP extends AuthenticationProvider> 
          * of showing the login page.
          * @return boolean indicates if this configuration is set to autoRedirect
          */
-        default boolean isAutoRedirect()
-        {
-            return false;
-        }
+        boolean isAutoRedirect();
     }
 
     interface SecondaryAuthenticationConfiguration<AP extends SecondaryAuthenticationProvider<? extends SecondaryAuthenticationConfiguration<?>>> extends AuthenticationConfiguration<AP>

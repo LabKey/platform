@@ -39,6 +39,7 @@ public interface AppProps
     AppProps _instance = new AppPropsImpl();
 
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
+    String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
@@ -47,6 +48,8 @@ public interface AppProps
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String EXPERIMENTAL_STRICT_RETURN_URL = "strictReturnUrl";
     String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
+
+    String UNKNOWN_VERSION = "Unknown Release Version";
 
     static AppProps getInstance()
     {
@@ -97,8 +100,10 @@ public interface AppProps
     UsageReportingLevel getUsageReportingLevel();
 
     /**
-     * Returns the core module's release version, a string such as 20.3-SNAPSHOT, 20.1.0, or 20.3.7
+     * Returns the core module's release version, a string such as "20.3-SNAPSHOT", "20.1.0", or "20.3.7".
+     * Or "Unknown Release Version".
      */
+    @NotNull
     String getReleaseVersion();
 
     /**
@@ -177,6 +182,7 @@ public interface AppProps
 
     String getBLASTServerBaseURL();
 
+    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - typically ROOT.xml or labkey.xml */
     String getWebappConfigurationFilename();
 
     /**

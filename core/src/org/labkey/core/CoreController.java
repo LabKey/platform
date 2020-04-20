@@ -44,7 +44,6 @@ import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
@@ -102,7 +101,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresLogin;
@@ -193,11 +191,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -749,16 +749,43 @@ public class CoreController extends SpringActionController
                 {
                     folderType = FolderTypeManager.get().getFolderType(folderTypeName);
                 }
+                if (folderType == null)
+                {
+                    folderType = FolderType.NONE;
+                }
 
-                if (null != folderType && Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
+                if (Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
                 {
                     throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
 
-                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
-                if (folderType != null)
+                Set<Module> ensureModules = new HashSet<>();
+                if (json.has("ensureModules") && !json.isNull("ensureModules"))
                 {
-                    newContainer.setFolderType(folderType, getUser());
+                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
+                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    for (String moduleName : requestedModules)
+                    {
+                        Module module = ModuleLoader.getInstance().getModule(moduleName);
+                        if (module == null)
+                            throw new NotFoundException("'" + moduleName + "' was not found.");
+                        else if (module.getRequireSitePermission() && !getContainer().hasEnableRestrictedModules(getUser()))
+                            throw new UnauthorizedException("'" + moduleName + "' is a restricted module for which you do not have permission.");
+                        else
+                            ensureModules.add(module);
+                    }
+                }
+
+                Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
+                if (folderType != FolderType.NONE)
+                {
+                    newContainer.setFolderType(folderType, ensureModules, getUser());
+                }
+                else if (!ensureModules.isEmpty())
+                {
+                    // Custom folder may inherit modules from parent. 'setFolderType' would remove them.
+                    ensureModules.addAll(newContainer.getActiveModules());
+                    newContainer.setActiveModules(ensureModules);
                 }
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));
@@ -2305,8 +2332,6 @@ public class CoreController extends SpringActionController
 
     @RequiresNoPermission
     @AllowedDuringUpgrade
-    // Remove this annotation once @glass is corrected to call dismissWarnings.api and Biologics moves to 19.3
-    @ActionNames("dismissWarnings, dismissCoreWarnings") @RemoveIn20_1
     public class DismissWarningsAction extends MutatingApiAction
     {
         @Override

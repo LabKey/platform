@@ -112,7 +112,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
@@ -753,10 +752,10 @@ public class PageFlowUtil
 
 
     /**
-     * boolean controlling whether or not we compress {@link ObjectOutputStream}s when we render them in HTML forms.
-     *
+     * boolean controlling whether or not we compress JSON-serialized objects when we render them in HTML forms.
      */
     static private final boolean COMPRESS_OBJECT_STREAMS = true;
+
     static public String encodeObject(Object o) throws IOException
     {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -769,7 +768,7 @@ public class PageFlowUtil
         {
             osCompressed = byteArrayOutputStream;
         }
-        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os))
+        try (OutputStream os=osCompressed; Writer w = new OutputStreamWriter(os, StringUtilsLabKey.DEFAULT_CHARSET))
         {
             Class cls = o.getClass();
             final JSONObject json;
@@ -783,20 +782,21 @@ public class PageFlowUtil
                 json = new JSONObject();
                 f.toMap(o, json);
             }
-            // TODO remove class prefixing when we remove decodeObject(String s)
-            w.write(cls.getName() + ":" + json.toString());
+            w.write(json.toString());
         }
         osCompressed.close();
-        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true));
+        return new String(Base64.encodeBase64(byteArrayOutputStream.toByteArray(), true), StringUtilsLabKey.DEFAULT_CHARSET);
     }
 
     public static <T> T decodeObject(Class<T> cls, String encoded) throws IOException
     {
+        assert Object.class != cls;
+
         encoded = StringUtils.trimToNull(encoded);
         if (null == encoded)
             return null;
 
-        byte[] buf = Base64.decodeBase64(encoded.getBytes());
+        byte[] buf = Base64.decodeBase64(encoded.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
         ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(buf);
         InputStream isCompressed;
 
@@ -808,16 +808,9 @@ public class PageFlowUtil
         {
             isCompressed = byteArrayInputStream;
         }
-        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is))
+        try (InputStream is=isCompressed; Reader r = new InputStreamReader(is, StringUtilsLabKey.DEFAULT_CHARSET))
         {
-            // TODO remove class prefixing when we remove decodeObject(String s)
-            String s = IOUtils.toString(r);
-            int i = s.indexOf(":");
-            String clsName = s.substring(0,i);
-            s = s.substring(i+1);
-            JSONObject json = new JSONObject(s);
-            if (Object.class == cls)
-                cls = (Class<T>) Class.forName(clsName);
+            JSONObject json = new JSONObject(IOUtils.toString(r));
 
             if (cls == Map.class || cls == HashMap.class)
                 return (T)json;
@@ -828,7 +821,7 @@ public class PageFlowUtil
                 return (T)o;
             throw new ClassCastException("Could not create class: " + cls.getName());
         }
-        catch (ClassNotFoundException|IllegalArgumentException x)
+        catch (IllegalArgumentException x)
         {
             throw new IOException(x);
         }
@@ -1906,7 +1899,7 @@ public class PageFlowUtil
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
                 (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
-            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace-1.3.0.min.js")).append("\" type=\"text/javascript\"></script>\n");
+            sb.append("<script src=\"").append(staticResourceUrl("/stacktrace.min.js")).append("\" type=\"text/javascript\"></script>\n");
             sb.append("<script src=\"").append(staticResourceUrl("/mothership.js")).append("\" type=\"text/javascript\"></script>\n");
         }
 
@@ -2113,9 +2106,12 @@ public class PageFlowUtil
         JSONObject json = new JSONObject();
 
         // Expose some experimental flags to the client
+        // Note: If you update this set of flags please update enum on client in @labkey/api
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
         experimental.put("useExperimentalCoreUI", useExperimentalCoreUI());
+        experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP));
+        experimental.put(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER));
         experimental.put(AppProps.EXPERIMENTAL_STRICT_RETURN_URL, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL));
         experimental.put(AppProps.EXPERIMENTAL_NO_GUESTS, AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_GUESTS));
         json.put("experimental", experimental);

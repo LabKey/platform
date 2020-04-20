@@ -78,7 +78,7 @@ import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
-import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -107,6 +107,7 @@ import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
 import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
@@ -181,6 +182,7 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
@@ -228,7 +230,6 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -392,27 +393,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerHealthChecks()
     {
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+            {
+                Map<String, Object> healthValues = new HashMap<>();
+                boolean allConnected = true;
+                for (DbScope dbScope : DbScope.getDbScopes())
                 {
-                    Map<String, Object> healthValues = new HashMap<>();
-                    Boolean allConnected = true;
-                    for (DbScope dbScope : DbScope.getDbScopes())
+                    boolean dbConnected;
+                    try (Connection conn = dbScope.getConnection())
                     {
-                        Boolean dbConnected;
-                        try (Connection conn = dbScope.getConnection())
-                        {
-                            dbConnected = conn != null;
-                        }
-                        catch (SQLException e)
-                        {
-                            dbConnected = false;
-                        }
-
-                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                        allConnected &= dbConnected;
+                        dbConnected = conn != null;
+                    }
+                    catch (SQLException e)
+                    {
+                        dbConnected = false;
                     }
 
-                    return new HealthCheck.Result(allConnected, healthValues);
+                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                    allConnected &= dbConnected;
                 }
+
+                return new HealthCheck.Result(allConnected, healthValues);
+            }
         );
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
@@ -786,7 +787,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
-            AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
+            AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -910,6 +911,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
+                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
+                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
+                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
@@ -1074,10 +1079,11 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public Set<Class> getUnitTests()
     {
         return Set.of(
+            CommandLineTokenizer.TestCase.class,
             CopyFileRootPipelineJob.TestCase.class,
+            PostgreSqlVersion.TestCase.class,
             ScriptEngineManagerImpl.TestCase.class,
-            StatsServiceImpl.TestCase.class,
-            CommandLineTokenizer.TestCase.class
+            StatsServiceImpl.TestCase.class
         );
     }
 
@@ -1259,22 +1265,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
     private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
     {
-        switch (name)
-        {
-            case "logoImage":
-                return LookAndFeelPropertiesManager.get()::handleLogoFile;
-            case "iconImage":
-                return LookAndFeelPropertiesManager.get()::handleIconFile;
-            case "customStylesheet":
-                return LookAndFeelPropertiesManager.get()::handleCustomStylesheetFile;
-            default:
-                return null;
-        }
-    }
-
-    @FunctionalInterface
-    public interface SiteResourceHandler {
-        void accept(Resource resource, Container container, User user) throws ServletException, IOException;
+        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
     }
 
     private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)

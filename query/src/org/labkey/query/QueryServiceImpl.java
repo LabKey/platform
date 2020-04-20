@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.labkey.api.assay.AssayService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
+import org.labkey.api.audit.AuditHandler;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -38,15 +40,16 @@ import org.labkey.api.collections.LabKeyCollectors;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.*;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
@@ -142,12 +145,12 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.gwt.client.AuditBehaviorType.SUMMARY;
 
 
-public class QueryServiceImpl implements QueryService
+public class QueryServiceImpl extends AuditHandler implements QueryService
 {
     private static final Logger LOG = Logger.getLogger(QueryServiceImpl.class);
     private static final ResourceRootProvider QUERY_AND_ASSAY_PROVIDER = new ResourceRootProvider()
     {
-        private ResourceRootProvider ASSAY_QUERY = ResourceRootProvider.chain(ResourceRootProvider.getAssayProviders(Path.rootPath), ResourceRootProvider.QUERY);
+        private final ResourceRootProvider ASSAY_QUERY = ResourceRootProvider.chain(ResourceRootProvider.getAssayProviders(Path.rootPath), ResourceRootProvider.QUERY);
 
         @Override
         public void fillResourceRoots(@NotNull Resource topRoot, @NotNull Collection<Resource> roots)
@@ -161,7 +164,7 @@ public class QueryServiceImpl implements QueryService
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleQueryMetadataDef>> MODULE_QUERY_METADATA_DEF_CACHE = ModuleResourceCaches.create("Module query meta data cache", new QueryMetaDataDefResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
     private static final ModuleResourceCache<MultiValuedMap<Path, ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view definitions cache", new CustomViewResourceCacheHandler(), QUERY_AND_ASSAY_PROVIDER);
 
-    private static final FileSystemDirectoryListener INVALIDATE_QUERY_METADATA_HANDLER = new FileSystemDirectoryListener()
+    private static final ModuleResourceCacheListener INVALIDATE_QUERY_METADATA_HANDLER = new ModuleResourceCacheListener()
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -184,6 +187,12 @@ public class QueryServiceImpl implements QueryService
         @Override
         public void overflow()
         {
+        }
+
+        @Override
+        public void moduleChanged(Module module)
+        {
+            QueryService.get().updateLastModified();
         }
     };
 
@@ -385,9 +394,6 @@ public class QueryServiceImpl implements QueryService
         }
     }
 
-
-
-
     static public QueryServiceImpl get()
     {
         return (QueryServiceImpl)QueryService.get();
@@ -418,6 +424,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
+    @Override
     public UserSchema getUserSchema(User user, Container container, String schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
@@ -427,6 +434,7 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
+    @Override
     public UserSchema getUserSchema(User user, Container container, SchemaKey schemaPath)
     {
         QuerySchema schema = DefaultSchema.get(user, container, schemaPath);
@@ -436,27 +444,32 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
+    @Override
     @Deprecated /* Use SchemaKey form instead. */
     public QueryDefinition createQueryDef(User user, Container container, String schema, String name)
     {
         return new CustomQueryDefinitionImpl(user, container, SchemaKey.fromString(schema), name);
     }
 
+    @Override
     public QueryDefinition createQueryDef(User user, Container container, SchemaKey schema, String name)
     {
         return new CustomQueryDefinitionImpl(user, container, schema, name);
     }
 
+    @Override
     public QueryDefinition createQueryDef(User user, Container container, UserSchema schema, String name)
     {
         return new CustomQueryDefinitionImpl(user, container, schema, name);
     }
 
+    @Override
     public ActionURL urlQueryDesigner(User user, Container container, String schema)
     {
         return urlFor(user, container, QueryAction.begin, schema, null);
     }
 
+    @Override
     public ActionURL urlFor(User user, Container container, QueryAction action, @Nullable String schema, @Nullable String query)
     {
         ActionURL ret = null;
@@ -481,6 +494,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     public ActionURL urlDefault(Container container, QueryAction action, @Nullable String schema, @Nullable String query)
     {
         if (action == QueryAction.schemaBrowser)
@@ -494,12 +508,14 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     public DetailsURL urlDefault(Container container, QueryAction action, String schema, String query, Map<String, ?> params)
     {
         ActionURL url = urlDefault(container, action, schema, query);
         return new DetailsURL(url, params);
     }
 
+    @Override
     public DetailsURL urlDefault(Container container, QueryAction action, TableInfo table)
     {
         Map<String, FieldKey> params = new LinkedHashMap<>();
@@ -509,11 +525,13 @@ public class QueryServiceImpl implements QueryService
         return urlDefault(container, action, table.getPublicSchemaName(), table.getPublicName(), params);
     }
 
+    @Override
     public QueryDefinition createQueryDefForTable(UserSchema schema, String tableName)
     {
         return new TableQueryDefinition(schema, tableName);
     }
 
+    @Override
     public Map<String, QueryDefinition> getQueryDefs(User user, @NotNull Container container, String schemaName)
     {
         Map<String, QueryDefinition> ret = new LinkedHashMap<>();
@@ -527,6 +545,7 @@ public class QueryServiceImpl implements QueryService
     /**
      * Get all custom queries in the database (no file-based module queries) in the container hierarchy.
      */
+    @Override
     public List<QueryDefinition> getQueryDefs(User user, @NotNull Container container)
     {
         return new ArrayList<>(getAllQueryDefs(user, container, null, true, false, true, false).values());
@@ -661,6 +680,7 @@ public class QueryServiceImpl implements QueryService
         map.computeIfAbsent(key, (key2) -> new CustomQueryDefinitionImpl(user, c, queryDef));
     }
 
+    @Override
     public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules)
     {
         Collection<Module> modules = new HashSet<>(container.getActiveModules(user));
@@ -682,16 +702,17 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.FILE_EXTENSION))
                 .map(resource -> new ModuleQueryDef(module, resource))
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
+    @Override
     public QueryDefinition getQueryDef(User user, @NotNull Container container, String schema, String name)
     {
         Map<String, QueryDefinition> ret = new CaseInsensitiveHashMap<>();
@@ -892,8 +913,7 @@ public class QueryServiceImpl implements QueryService
             if (schema == null)
                 return null;
 
-            Set<String> tableNames = new HashSet<>();
-            tableNames.addAll(schema.getTableAndQueryNames(true));
+            Set<String> tableNames = new HashSet<>(schema.getTableAndQueryNames(true));
 
             if (tableNames.contains(queryName))
             {
@@ -919,24 +939,20 @@ public class QueryServiceImpl implements QueryService
         return qd;
     }
 
+    @Override
     public CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name)
     {
         Map<String, CustomView> views = getCustomViewMap(user, container, owner, schema, query, false, false);
         return views.get(name);
     }
 
+    @Override
     public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
     {
         return _getCustomViews(user, container, owner, schemaName, queryName, includeInherited, false);
     }
 
-    // TODO: Unused... delete?
-    public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name)
-    {
-        Map<String, CustomView> views = getCustomViewMap(user, container, null, schema, query, false, true);
-        return views.get(name);
-    }
-
+    @Override
     public List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
     {
         return _getCustomViews(user, container, null, schemaName, queryName, includeInherited, true);
@@ -963,6 +979,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(views);
     }
 
+    @Override
     public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
     {
         if (schemaName == null || queryName == null)
@@ -1001,6 +1018,7 @@ public class QueryServiceImpl implements QueryService
         return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
     }
 
+    @Override
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
         Collection<Module> currentModules = new HashSet<>(container.getActiveModules());
@@ -1034,22 +1052,24 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(resource -> StringUtils.endsWithIgnoreCase(resource.getName(), CustomViewXmlReader.XML_FILE_EXTENSION))
                 .map(ModuleCustomViewDef::new)
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
     }
 
+    @Override
     public void writeTables(Container c, User user, VirtualFile dir, Map<String, List<Map<String, Object>>> schemas, ColumnHeaderType header) throws IOException
     {
         TableWriter writer = new TableWriter();
         writer.write(c, user, dir, schemas, header);
     }
 
+    @Override
     public int importCustomViews(User user, Container container, VirtualFile viewDir) throws IOException
     {
         QueryManager mgr = QueryManager.get();
@@ -1093,6 +1113,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
+    @Override
     public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @NotNull User currentUser)
     {
         return getCustomViewProperties(view, currentUser, true);
@@ -1138,6 +1159,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     public @Nullable QuerySnapshotDefinition getSnapshotDef(Container container, String schema, String snapshotName)
     {
         QuerySnapshotDef def = QueryManager.get().getQuerySnapshotDef(container, schema, snapshotName);
@@ -1145,11 +1167,13 @@ public class QueryServiceImpl implements QueryService
         return null != def ? new QuerySnapshotDefImpl(def) : null;
     }
 
+    @Override
     public boolean isQuerySnapshot(Container container, String schema, String name)
     {
         return getSnapshotDef(container, schema, name) != null;
     }
 
+    @Override
     public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schemaName)
     {
         return QueryManager.get().getQuerySnapshots(container, schemaName)
@@ -1193,6 +1217,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
+    @Override
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
         return saveSessionQuery(context.getRequest().getSession(true), container, context.getUser(), schemaName, sql, metadataXml);
@@ -1307,6 +1332,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
     {
         return getSessionQuery(context.getSession(), container, context.getUser(), schemaName,queryName);
@@ -1333,11 +1359,13 @@ public class QueryServiceImpl implements QueryService
         return qdef;
     }
 
+    @Override
     public QuerySnapshotDefinition createQuerySnapshotDef(Container container, QueryDefinition queryDef, String name)
     {
         return new QuerySnapshotDefImpl(queryDef, container, name);
     }
 
+    @Override
     public QuerySnapshotDefinition createQuerySnapshotDef(QueryDefinition queryDef, String name)
     {
         return createQuerySnapshotDef(queryDef.getContainer(), queryDef, name);
@@ -1411,13 +1439,14 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     @NotNull
     public Map<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields)
     {
         return getColumns(table, fields, Collections.emptySet());
     }
 
-
+    @Override
     @NotNull
     public LinkedHashMap<FieldKey, ColumnInfo> getColumns(@NotNull TableInfo table, @NotNull Collection<FieldKey> fields, @NotNull Collection<ColumnInfo> existingColumns)
     {
@@ -1460,6 +1489,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
+    @Override
     public List<DisplayColumn> getDisplayColumns(@NotNull TableInfo table, Collection<Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> fields)
     {
         List<DisplayColumn> ret = new ArrayList<>();
@@ -1490,6 +1520,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
+    @Override
     public Collection<ColumnInfo> ensureRequiredColumns(@NotNull TableInfo table, @NotNull Collection<ColumnInfo> columns,
                                                         @Nullable Filter filter, @Nullable Sort sort, @Nullable Set<FieldKey> unresolvedColumns)
     {
@@ -1750,6 +1781,7 @@ public class QueryServiceImpl implements QueryService
         return ret;
     }
 
+    @Override
     public UserSchema getLinkedSchema(User user, Container c, String name)
     {
         LinkedSchemaDef def = QueryManager.get().getLinkedSchemaDef(c, name);
@@ -1769,6 +1801,7 @@ public class QueryServiceImpl implements QueryService
         return null;
     }
 
+    @Override
     public UserSchema createLinkedSchema(User user, Container c, String name, String sourceContainerId, String sourceSchemaName,
                                          String metadata, String tables, String template)
     {
@@ -1784,6 +1817,7 @@ public class QueryServiceImpl implements QueryService
         return LinkedSchema.get(user, c, newDef);
     }
 
+    @Override
     public void deleteLinkedSchema(User user, Container c, String name)
     {
         try
@@ -1964,6 +1998,7 @@ public class QueryServiceImpl implements QueryService
         return tableTypes;
     }
 
+    @Override
     public TableType parseMetadata(String metadataXML, Collection<QueryException> errors)
     {
         QueryDef def = new QueryDef();
@@ -1982,7 +2017,7 @@ public class QueryServiceImpl implements QueryService
     // Use a WeakHashMap to cache QueryDefs. This means that the cache entries will only be associated directly
     // with the exact same UserSchema instance, regardless of whatever UserSchema.equals() returns. This means
     // that the scope of the cache is very limited, and this is a very conservative cache.
-    private Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<>());
+    private final Map<ObjectIdentityCacheKey, WeakReference<Map<String, List<QueryDef>>>> _metadataCache = Collections.synchronizedMap(new WeakHashMap<>());
 
     /** Hides whatever the underlying key might do for .equals() and .hashCode() and instead relies on pointer equality */
     private static class ObjectIdentityCacheKey
@@ -2163,11 +2198,11 @@ public class QueryServiceImpl implements QueryService
             return unmodifiable(resources
                 .filter(getFilter(ModuleQueryDef.META_FILE_EXTENSION))
                 .map(ModuleQueryMetadataDef::new)
-                .collect(LabKeyCollectors.toMultivaluedMap(def -> def.getPath().getParent(), def -> def)));
+                .collect(LabKeyCollectors.toMultiValuedMap(def -> def.getPath().getParent(), def -> def)));
         }
 
         @Override
-        public @Nullable FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public @Nullable ModuleResourceCacheListener createChainedListener(Module module)
         {
             return INVALIDATE_QUERY_METADATA_HANDLER;
         }
@@ -2719,7 +2754,7 @@ public class QueryServiceImpl implements QueryService
     {
         synchronized(_schemaLinkActions)
         {
-            if (_schemaLinkActions.keySet().contains(actionClass))
+            if (_schemaLinkActions.containsKey(actionClass))
                 throw new IllegalStateException("Schema link action : " + actionClass.getName() + " has previously been registered.");
 
             _schemaLinkActions.put(actionClass, new Pair<>(module, linkLabel));
@@ -2771,7 +2806,7 @@ public class QueryServiceImpl implements QueryService
     }
 
 
-    private static ThreadLocal<HashMap<Environment, Object>> environments = ThreadLocal.withInitial(HashMap::new);
+    private static final ThreadLocal<HashMap<Environment, Object>> environments = ThreadLocal.withInitial(HashMap::new);
 
 
     @Override
@@ -2860,8 +2895,7 @@ public class QueryServiceImpl implements QueryService
 
             if (auditType == SUMMARY)
             {
-                String comment = String.format(action.getCommentSummary(), dataRowCount);
-                AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
+                AuditTypeEvent event = createSummaryAuditRecord(user, c, auditConfigurable, action, dataRowCount, null);
 
                 AuditLogService.get().addEvent(user, event);
             }
@@ -2869,118 +2903,19 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void addAuditEvent(User user, Container c, TableInfo table, AuditAction action, List<Map<String, Object>> ... params)
+    protected DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tinfo, AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
-        if (table.supportsAuditTracking())
-        {
-            AuditConfigurable auditConfigurable = (AuditConfigurable)table;
-            AuditBehaviorType auditType = auditConfigurable.getAuditBehavior();
-
-            // Truncate audit event doesn't accept any params
-            if (action == AuditAction.TRUNCATE)
-            {
-                assert params.length == 0;
-                switch (auditType)
-                {
-                    case NONE:
-                        return;
-
-                    case SUMMARY:
-                    case DETAILED:
-                        String comment = AuditAction.TRUNCATE.getCommentSummary();
-                        AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, null);
-                        AuditLogService.get().addEvent(user, event);
-                        return;
-                }
-            }
-
-            switch (auditType)
-            {
-                case NONE:
-                    return;
-
-                case SUMMARY:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    String comment = String.format(action.getCommentSummary(), rows.size());
-                    AuditTypeEvent event = _createAuditRecord(user, c, auditConfigurable, comment, rows.get(0));
-
-                    AuditLogService.get().addEvent(user, event);
-                    break;
-                }
-                case DETAILED:
-                {
-                    assert (params.length > 0);
-
-                    List<Map<String, Object>> rows = params[0];
-                    for (int i=0; i < rows.size(); i++)
-                    {
-                        Map<String, Object> row = rows.get(i);
-                        String comment = String.format(action.getCommentDetailed(), row.size());
-
-                        QueryUpdateAuditProvider.QueryUpdateAuditEvent event = _createAuditRecord(user, c, auditConfigurable, comment, row);
-
-                        switch (action)
-                        {
-                            case INSERT:
-                            {
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
-                                break;
-                            }
-                            case DELETE:
-                            {
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, row);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-                                break;
-                            }
-                            case UPDATE:
-                            {
-                                assert (params.length >= 2);
-
-                                List<Map<String, Object>> updatedRows = params[1];
-                                Map<String, Object> updatedRow = updatedRows.get(i);
-
-                                // only record modified fields
-                                Map<String, Object> originalRow = new HashMap<>();
-                                Map<String, Object> modifiedRow = new HashMap<>();
-
-                                for (Entry<String, Object> entry : row.entrySet())
-                                {
-                                    if (updatedRow.containsKey(entry.getKey()))
-                                    {
-                                        Object newValue = updatedRow.get(entry.getKey());
-                                        if (!Objects.equals(entry.getValue(), newValue))
-                                        {
-                                            originalRow.put(entry.getKey(), entry.getValue());
-                                            modifiedRow.put(entry.getKey(), newValue);
-                                        }
-                                    }
-                                }
-
-                                String oldRecord = QueryExportAuditProvider.encodeForDataMap(c, originalRow);
-                                if (oldRecord != null)
-                                    event.setOldRecordMap(oldRecord);
-
-                                String newRecord = QueryExportAuditProvider.encodeForDataMap(c, modifiedRow);
-                                if (newRecord != null)
-                                    event.setNewRecordMap(newRecord);
-                                break;
-                            }
-                        }
-                        AuditLogService.get().addEvent(user, event);
-                    }
-                    break;
-                }
-            }
-        }
+        return createAuditRecord(c, tinfo, action.getCommentDetailed(), row);
     }
 
-    private static QueryUpdateAuditProvider.QueryUpdateAuditEvent _createAuditRecord(User user, Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
+    @Override
+    protected AuditTypeEvent createSummaryAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, int rowCount, @Nullable Map<String, Object> row)
+    {
+        return createAuditRecord(c, tInfo, String.format(action.getCommentSummary(), rowCount), row);
+    }
+
+
+    private  QueryUpdateAuditProvider.QueryUpdateAuditEvent createAuditRecord(Container c, AuditConfigurable tinfo, String comment, @Nullable Map<String, Object> row)
     {
         QueryUpdateAuditProvider.QueryUpdateAuditEvent event = new QueryUpdateAuditProvider.QueryUpdateAuditEvent(c.getId(), comment);
 
@@ -3006,7 +2941,7 @@ public class QueryServiceImpl implements QueryService
     {
         if (table.supportsAuditTracking())
         {
-            AuditBehaviorType auditBehavior = ((AuditConfigurable)table).getAuditBehavior();
+            AuditBehaviorType auditBehavior = table.getAuditBehavior();
 
             if (auditBehavior != null && auditBehavior != AuditBehaviorType.NONE)
             {
@@ -3054,7 +2989,7 @@ public class QueryServiceImpl implements QueryService
     }
 
     @Override
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         QueryManager.get().fireQueryChanged(user, container, scope, schema, property, changes);
     }

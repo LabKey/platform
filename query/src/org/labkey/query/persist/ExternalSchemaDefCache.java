@@ -17,7 +17,6 @@ package org.labkey.query.persist;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -25,26 +24,21 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.query.persist.AbstractExternalSchemaDef.SchemaType;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Created by adam on 11/14/2015.
  */
 public class ExternalSchemaDefCache
 {
-    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/Linked Schema Definition Cache", new CacheLoader<Container, ExternalSchemaCollections>()
-    {
-        @Override
-        public ExternalSchemaCollections load(Container c, @Nullable Object argument)
-        {
-            return new ExternalSchemaCollections(c);
-        }
-    });
+    private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/Linked Schema Definition Cache", (c, argument) -> new ExternalSchemaCollections(c));
 
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)
     {
@@ -85,11 +79,12 @@ public class ExternalSchemaDefCache
             Map<Class<? extends AbstractExternalSchemaDef>, Map<String, AbstractExternalSchemaDef>> byName = new HashMap<>();
             Map<Class<? extends AbstractExternalSchemaDef>, Map<Integer, AbstractExternalSchemaDef>> byRowId = new HashMap<>();
 
-            for (SchemaType type : SchemaType.values())
-            {
-                byName.put(type.getSchemaDefClass(), new CaseInsensitiveHashMap<>());
-                byRowId.put(type.getSchemaDefClass(), new HashMap<>());
-            }
+            // Initialize maps for all the schema types as well as AbstractExternalSchemaDef
+            Stream.concat(Arrays.stream(SchemaType.values()).map(SchemaType::getSchemaDefClass), Stream.of(AbstractExternalSchemaDef.class))
+                .forEach(clazz->{
+                    byName.put(clazz, new CaseInsensitiveHashMap<>());
+                    byRowId.put(clazz, new HashMap<>());
+                });
 
             SimpleFilter filter = null != c ? SimpleFilter.createContainerFilter(c) : new SimpleFilter();
 
@@ -98,10 +93,14 @@ public class ExternalSchemaDefCache
                 SchemaType type = SchemaType.valueOf(schemaTypeName);
                 AbstractExternalSchemaDef def = type.handle(rs);
                 byRowId.get(type.getSchemaDefClass()).put(def.getExternalSchemaId(), def);
+                byRowId.get(AbstractExternalSchemaDef.class).put(def.getExternalSchemaId(), def);
 
                 // Don't bother in the null case (site-wide list)... we only need one map and by-name is likely not unique
                 if (null != c)
+                {
                     byName.get(type.getSchemaDefClass()).put(def.getUserSchemaName(), def);
+                    byName.get(AbstractExternalSchemaDef.class).put(def.getUserSchemaName(), def);
+                }
             });
 
             _byName = Collections.unmodifiableMap(byName);

@@ -19,21 +19,18 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
-import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
-import org.labkey.clientLibrary.xml.DependenciesType;
 import org.labkey.clientLibrary.xml.DependencyType;
 import org.labkey.clientLibrary.xml.LibrariesDocument;
 import org.labkey.clientLibrary.xml.LibraryType;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
-import org.labkey.clientLibrary.xml.RequiredModuleType;
 
 import java.util.HashMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Parses and holds dependencies from a LabKey client library (lib.xml) file, which typically reference multiple JS and/or CSS files.
@@ -43,7 +40,7 @@ public class LibClientDependency extends FilePathClientDependency
     private static final Logger _log = Logger.getLogger(LibClientDependency.class);
 
     private final Resource _resource;
-    private final LinkedHashSet<ClientDependency> _children = new LinkedHashSet<>();
+    private final List<Supplier<ClientDependency>> _suppliers = new LinkedList<>();
 
     public LibClientDependency(Path filePath, ModeTypeEnum.Enum mode, Resource r)
     {
@@ -53,9 +50,9 @@ public class LibClientDependency extends FilePathClientDependency
 
     @NotNull
     @Override
-    protected Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
-        return _children;
+        return _suppliers;
     }
 
     @Override
@@ -67,78 +64,64 @@ public class LibClientDependency extends FilePathClientDependency
             Map<String,String> namespaceMap = new HashMap<>();
             namespaceMap.put("", "http://labkey.org/clientLibrary/xml/");
             xmlOptions.setLoadSubstituteNamespaces(namespaceMap);
-
             LibrariesDocument libDoc = LibrariesDocument.Factory.parse(_resource.getInputStream(), xmlOptions);
-            boolean hasJsToCompile = false;
-            boolean hasCssToCompile = false;
+
             if (libDoc != null && libDoc.getLibraries() != null)
             {
                 //dependencies first
-                DependenciesType dependencies = libDoc.getLibraries().getDependencies();
-                if (dependencies != null)
-                {
-                    for (DependencyType s : dependencies.getDependencyArray())
-                    {
-                        ClientDependency cd = fromXML(s);
-                        if (cd != null)
-                            _children.add(cd);
-                        else
-                            _log.error("Unable to load <dependencies> in library " + _filePath.getName());
-                    }
-                }
+                if (libDoc.getLibraries().isSetDependencies())
+                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getDependencies().getDependencyArray(), _filePath.getName()));
 
                 //module contexts
                 if (libDoc.getLibraries().isSetRequiredModuleContext())
-                {
-                    for (RequiredModuleType mt : libDoc.getLibraries().getRequiredModuleContext().getModuleArray())
-                    {
-                        Module m = ModuleLoader.getInstance().getModule(mt.getName());
-                        if (m == null)
-                            _log.error("Unable to find module: '" + mt.getName() + "' in library " + _filePath.getName());
-                        else
-                            _children.add(ClientDependency.fromModule(m));
-                    }
-                }
+                    _suppliers.addAll(getSuppliers(libDoc.getLibraries().getRequiredModuleContext().getModuleArray(), _filePath.getName(), x->true));
 
                 LibraryType library = libDoc.getLibraries().getLibrary();
 
                 // <library> is an optional parameter
                 if (library != null)
                 {
+                    boolean hasJsToCompile = false;
+                    boolean hasCssToCompile = false;
                     boolean compileInProductionMode = !library.isSetCompileInProductionMode() || library.getCompileInProductionMode();
 
                     for (DependencyType s : library.getScriptArray())
                     {
-                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
-                                compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                        ClientDependency cr = fromPath(s.getPath(), mode);
+                        ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
+                        var supplier = supplierFromPath(s.getPath(), mode);
+                        ClientDependency cd = supplier.get();
 
-                        if (!TYPE.lib.equals(cr.getPrimaryType()))
-                            _children.add(cr);
+                        if (null == cd)
+                            continue;
+
+                        TYPE primaryType = cd.getPrimaryType();
+
+                        if (TYPE.lib != primaryType)
+                            _suppliers.add(supplier);
                         else
-                            _log.warn("Libraries cannot include other libraries: " + _filePath);
+                            _log.error("Libraries cannot include other libraries: " + _filePath);
 
                         if (compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
                         {
-                            if (TYPE.js.equals(cr.getPrimaryType()))
+                            if (TYPE.js == primaryType)
                                 hasJsToCompile = true;
-                            if (TYPE.css.equals(cr.getPrimaryType()))
+                            if (TYPE.css == primaryType)
                                 hasCssToCompile = true;
                         }
                     }
-                }
 
-                //add paths to the compiled scripts we expect to have created in the build.  these are production mode only
-                if (hasJsToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
-                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
-                }
+                    //add paths to the compiled scripts we expect to have created in the build. these are production mode only
+                    if (hasJsToCompile)
+                    {
+                        String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
+                        _suppliers.add(supplierFromPath(path, ModeTypeEnum.PRODUCTION));
+                    }
 
-                if (hasCssToCompile)
-                {
-                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
-                    _children.add(fromCache(path, ModeTypeEnum.PRODUCTION));
+                    if (hasCssToCompile)
+                    {
+                        String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
+                        _suppliers.add(supplierFromPath(path, ModeTypeEnum.PRODUCTION));
+                    }
                 }
             }
         }

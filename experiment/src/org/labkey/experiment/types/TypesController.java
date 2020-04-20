@@ -20,8 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
@@ -44,6 +44,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -81,13 +82,18 @@ import java.util.TreeMap;
 
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
-import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.B;
 import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.CODE;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.H2;
 import static org.labkey.api.util.DOM.LI;
 import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TBODY;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.THEAD;
+import static org.labkey.api.util.DOM.TR;
 import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
@@ -626,7 +632,7 @@ public class TypesController extends SpringActionController
         return conceptCount;
     }
 
-    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
+    private static final Cache<String, String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
 
     public static String[] getSemanticTypes()
     {
@@ -718,28 +724,52 @@ public class TypesController extends SpringActionController
 
             return new HtmlView("Check Resolve LSIDs",
                     DIV(H2("Resolving " + objectURIs.size() + " objects"),
-                            UL(objectURIs.stream().map(this::resolve))));
+                            TABLE(THEAD(
+                                    TR(TD(B("Name")),
+                                            TD(B("Query")),
+                                            TD(B("Class")),
+                                            TD(B("LSID")))),
+                                    TBODY(objectURIs.stream().map(this::resolve)))));
         }
+
+        // render a row in the table
+        public DOM.Renderable renderRow(String objectUri, Identifiable obj)
+        {
+            if (obj == null)
+            {
+                return TR(cl("text-warning bg-warning"),
+                        TD(B("Unresolved")),
+                        TD(),
+                        TD(),
+                        TD(lsid(objectUri)));
+            }
+            else
+            {
+                ActionURL url = obj.detailsURL();
+                QueryRowReference ref = obj.getQueryRowReference();
+                return TR(
+                        TD(url != null ? A(at(href, url), obj.getName()) : obj.getName()),
+                        TD(ref != null ? A(at(href, ref.toExecuteQueryURL()), ref.toString()) : null),
+                        TD(obj.getClass().getSimpleName()),
+                        TD(lsid(objectUri)));
+            }
+        }
+
 
         public DOM.Renderable resolve(String objectURI)
         {
             try
             {
                 Identifiable obj = LsidManager.get().getObject(objectURI);
-                if (obj == null)
-                    return LI(cl("text-warning bg-warning"),
-                            "Failed to resolve: ", lsid(objectURI));
-                else
-                {
-                    ActionURL url = LsidManager.get().getDisplayURL(objectURI);
-                    return LI("Resolved '", lsid(objectURI), "' to object (" + obj.getClass().getSimpleName() + "): ",
-                            url != null ? A(at(href, url), obj.getName()) : obj.getName());
-                }
+                return renderRow(objectURI, obj);
             }
             catch (Exception e)
             {
-                return LI(cl("text-danger bg-danger"),
-                        "Error when resolving '", lsid(objectURI), "': ", e.getMessage());
+                return TR(cl("text-danger bg-danger"),
+                        TD("Error"),
+                        TD(),
+                        TD(),
+                        TD(lsid(objectURI), ": ", e.getMessage()));
             }
         }
 

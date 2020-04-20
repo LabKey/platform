@@ -79,8 +79,6 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
-    private int _databaseVersion = 0;
-    private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -309,6 +307,11 @@ public abstract class SqlDialect
         return null;
     }
 
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return false;
+    }
+
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
@@ -430,34 +433,14 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Internal version number
-    public int getDatabaseVersion()
+    // Human readable product version number. Pass through by default; dialects should override this if they can provide
+    // more useful product version information than what's returned from DatabaseMetaData.getDatabaseProductVersion().
+    public @Nullable String getProductVersion(String dbmdProductVersion)
     {
-        return _databaseVersion;
-    }
-
-    public void setDatabaseVersion(int databaseVersion)
-    {
-        _databaseVersion = databaseVersion;
-    }
-
-    // Human readable product version number
-    public String getProductVersion()
-    {
-        return _productVersion;
-    }
-
-    public void setProductVersion(String productVersion)
-    {
-        _productVersion = productVersion;
+        return dbmdProductVersion;
     }
 
     public abstract String getProductName();
-
-    public @Nullable String getProductEdition()
-    {
-        return null;
-    }
 
     public abstract String getSQLScriptPath();
 
@@ -545,6 +528,7 @@ public abstract class SqlDialect
 
     public abstract String getClobLengthFunction();
 
+    /** Literal string search, no wildcards supported */
     public abstract SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch);
 
     public abstract String getSubstringFunction(String s, String start, String length);
@@ -1144,12 +1128,9 @@ public abstract class SqlDialect
 
         public Integer getMaxTotal()
         {
-            // Need to invoke a different method on Tomcat 7 vs. Tomcat 8/9
-            String methodName = ModuleLoader.getInstance().getTomcatVersion().getMaxTotalMethodName();
-
             try
             {
-                return callGetter(methodName);
+                return callGetter("getMaxTotal");
             }
             catch (ServletException e)
             {

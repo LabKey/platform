@@ -19,7 +19,6 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
-import org.labkey.api.annotations.RemoveIn20_1;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentFile;
@@ -85,12 +84,6 @@ public interface AuthenticationProvider
 
     // Most providers don't have a test action
     default @Nullable ActionURL getTestLink()
-    {
-        return null;
-    }
-
-    @RemoveIn20_1  // Not used -- but need to remove usages in compliance and CDS, which don't have a multiAuthUI branch
-    default @Nullable ActionURL getConfigurationLink()
     {
         return null;
     }
@@ -178,10 +171,6 @@ public interface AuthenticationProvider
 
     interface PrimaryAuthenticationProvider<AC extends PrimaryAuthenticationConfiguration<?>> extends AuthenticationProvider, AuthenticationConfigurationFactory<AC>
     {
-        default void logout(HttpServletRequest request)
-        {
-        }
-
         void migrateOldConfiguration(boolean active, User user) throws Throwable;
     }
 
@@ -299,24 +288,24 @@ public interface AuthenticationProvider
 
     class AuthenticationResponse
     {
-        private final PrimaryAuthenticationProvider _provider;
+        private final PrimaryAuthenticationConfiguration<?> _configuration;
         private final @Nullable ValidEmail _email;
         private final @Nullable AuthenticationValidator _validator;
         private final @Nullable FailureReason _failureReason;
         private final @Nullable ActionURL _redirectURL;
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationProvider provider, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull ValidEmail email, @Nullable AuthenticationValidator validator)
         {
-            _provider = provider;
+            _configuration = configuration;
             _email = email;
             _validator = validator;
             _failureReason = null;
             _redirectURL = null;
         }
 
-        private AuthenticationResponse(@NotNull PrimaryAuthenticationProvider provider, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
+        private AuthenticationResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, @NotNull FailureReason failureReason, @Nullable ActionURL redirectURL)
         {
-            _provider = provider;
+            _configuration = configuration;
             _email = null;
             _validator = null;
             _failureReason = failureReason;
@@ -328,9 +317,9 @@ public interface AuthenticationProvider
          * @param email Valid email address of the authenticated user
          * @return A new successful authentication response containing the email address of the authenticated user
          */
-        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationProvider provider, ValidEmail email)
+        public static AuthenticationResponse createSuccessResponse(PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email)
         {
-            return createSuccessResponse(provider, email, null);
+            return createSuccessResponse(configuration, email, null);
         }
 
         /**
@@ -339,19 +328,19 @@ public interface AuthenticationProvider
          * @param validator An authentication validator
          * @return A new successful authentication response containing the email address of the authenticated user and a validator
          */
-        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationProvider provider, ValidEmail email, @Nullable AuthenticationValidator validator)
+        public static AuthenticationResponse createSuccessResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, ValidEmail email, @Nullable AuthenticationValidator validator)
         {
-            return new AuthenticationResponse(provider, email, validator);
+            return new AuthenticationResponse(configuration, email, validator);
         }
 
-        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationProvider provider, FailureReason failureReason)
+        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, FailureReason failureReason)
         {
-            return new AuthenticationResponse(provider, failureReason, null);
+            return new AuthenticationResponse(configuration, failureReason, null);
         }
 
-        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationProvider provider, FailureReason failureReason, @Nullable ActionURL redirectURL)
+        public static AuthenticationResponse createFailureResponse(@NotNull PrimaryAuthenticationConfiguration<?> configuration, FailureReason failureReason, @Nullable ActionURL redirectURL)
         {
-            return new AuthenticationResponse(provider, failureReason, redirectURL);
+            return new AuthenticationResponse(configuration, failureReason, redirectURL);
         }
 
         public boolean isAuthenticated()
@@ -378,9 +367,9 @@ public interface AuthenticationProvider
             return _validator;
         }
 
-        public PrimaryAuthenticationProvider getProvider()
+        public PrimaryAuthenticationConfiguration<?> getConfiguration()
         {
-            return _provider;
+            return _configuration;
         }
 
         public @Nullable ActionURL getRedirectURL()

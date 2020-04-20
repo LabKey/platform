@@ -62,10 +62,8 @@ import org.labkey.list.view.ListsWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,10 +140,6 @@ public class ListModule extends SpringModule
             ss.addDocumentProvider(ListManager.get());
             ss.addSearchCategory(ListManager.listCategory);
         }
-
-        //TODO: Remove once automated test conversion of new list designer is complete
-        AdminConsole.addExperimentalFeatureFlag(ListManager.EXPERIMENTAL_REACT_LIST_DESIGNER, "List Create/Edit",
-                "Uses new List Designer to create and edit lists.", false);
 
         AdminLinkManager.getInstance().addListener((adminNavTree, container, user) ->
         {

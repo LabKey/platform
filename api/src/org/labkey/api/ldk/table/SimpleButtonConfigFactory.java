@@ -27,15 +27,17 @@ import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * User: bimber
  * Date: 5/5/13
- * Time: 11:49 AM
  */
 public class SimpleButtonConfigFactory implements ButtonConfigFactory
 {
@@ -45,7 +47,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     private String _jsHandler = null;
     private Integer _insertPosition = null;
     private Class<? extends Permission> _permission = null;
-    private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private List<Supplier<ClientDependency>> _clientDependencies = new ArrayList<>();
 
     public SimpleButtonConfigFactory(Module owner, String text, DetailsURL url)
     {
@@ -61,7 +63,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _jsHandler = handler;
     }
 
-    public SimpleButtonConfigFactory(Module owner, String text, String handler, LinkedHashSet<ClientDependency> clientDependencies)
+    public SimpleButtonConfigFactory(Module owner, String text, String handler, List<Supplier<ClientDependency>> clientDependencies)
     {
         _owner = owner;
         _text = text;
@@ -69,6 +71,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _clientDependencies = clientDependencies;
     }
 
+    @Override
     public UserDefinedButtonConfig createBtn(final TableInfo ti)
     {
         Container c = ti.getUserSchema().getContainer();
@@ -103,6 +106,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _insertPosition = insertPosition;
     }
 
+    @Override
     public NavTree create(TableInfo ti)
     {
         Container c = ti.getUserSchema().getContainer();
@@ -120,6 +124,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         return _jsHandler;
     }
 
+    @Override
     public boolean isAvailable(TableInfo ti)
     {
         return _owner == null || ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
@@ -131,18 +136,19 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         return true;
     }
 
-    public Set<ClientDependency> getClientDependencies(Container c, User u)
+    @Override
+    public List<Supplier<ClientDependency>> getClientDependencies(Container c, User u)
     {
         return _clientDependencies;
     }
 
-    public void setClientDependencies(ClientDependency... clientDependencies)
+    @SafeVarargs
+    public final void setClientDependencies(Supplier<ClientDependency>... clientDependencies)
     {
-        for (ClientDependency cd : clientDependencies)
-            _clientDependencies.add(cd);
+        setClientDependencies(Arrays.asList(clientDependencies));
     }
 
-    public void setClientDependencies(Collection<ClientDependency> clientDependencies)
+    public void setClientDependencies(Collection<Supplier<ClientDependency>> clientDependencies)
     {
         _clientDependencies.addAll(clientDependencies);
     }
