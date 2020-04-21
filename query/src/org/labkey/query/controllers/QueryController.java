@@ -533,7 +533,10 @@ public class QueryController extends SpringActionController
             sb.append("  <td class=\"labkey-column-header\">Current Status</td>");
             sb.append("  <td class=\"labkey-column-header\">URL</td>");
             sb.append("  <td class=\"labkey-column-header\">Product Name</td>");
-            sb.append("  <td class=\"labkey-column-header\">Product Version</td></tr>\n");
+            sb.append("  <td class=\"labkey-column-header\">Product Version</td>");
+            sb.append("  <td class=\"labkey-column-header\">Max Connections</td>");
+            sb.append("  <td class=\"labkey-column-header\">Active Connections</td>");
+            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td></tr>\n");
 
             int rowCount = 0;
             for (DbScope scope : DbScope.getDbScopes())
@@ -567,11 +570,17 @@ public class QueryController extends SpringActionController
 
                 sb.append(status);
                 sb.append("</td><td>");
-                sb.append(scope.getURL());
+                sb.append(PageFlowUtil.filter(scope.getURL()));
                 sb.append("</td><td>");
-                sb.append(scope.getDatabaseProductName());
+                sb.append(PageFlowUtil.filter(scope.getDatabaseProductName()));
                 sb.append("</td><td>");
-                sb.append(scope.getDatabaseProductVersion());
+                sb.append(PageFlowUtil.filter(scope.getDatabaseProductVersion()));
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getMaxTotal());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getNumActive());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getNumIdle());
                 sb.append("</td></tr>\n");
 
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
