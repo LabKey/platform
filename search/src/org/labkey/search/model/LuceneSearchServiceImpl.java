@@ -1260,53 +1260,25 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             throw new RuntimeException(e);
         }
     }
-
     @Override
     protected void clearIndexedFileSystemFiles(Container container)
     {
+        String davPrefix = "dav:";
         try
         {
             BooleanQuery query = new BooleanQuery.Builder()
+                    // Add container filter
                     .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                    // Add files filter
                     .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
+                    //Limit to just dav files and not attachments or other files
+                    .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
                     .build();
-
-            String davPrefix = "dav:";
-
-            List<Document> matches = findMatches(query, doc -> doc.get(FIELD_NAME.uniqueId.toString()).startsWith(davPrefix));
-            for (Document match : matches)
-            {
-                _indexManager.deleteDocument(match.get(FIELD_NAME.uniqueId.toString()));
-            }
-
+            _indexManager.deleteQuery(query);
         }
         catch (IOException e)
         {
             throw new RuntimeException(e);
-        }
-    }
-
-    private List<Document> findMatches(BooleanQuery query, Predicate<Document> documentFilter) throws IOException
-    {
-        IndexSearcher searcher = _indexManager.getSearcher();
-
-        try
-        {
-            TopDocs docs = searcher.search(query, 1);
-            List<Document> matches = new ArrayList<>();
-            for (ScoreDoc sd : docs.scoreDocs)
-            {
-                Document document = searcher.doc(sd.doc);
-                if (documentFilter.test(document))
-                {
-                    matches.add(document);
-                }
-            }
-            return matches;
-        }
-        finally
-        {
-            _indexManager.releaseSearcher(searcher);
         }
     }
 
