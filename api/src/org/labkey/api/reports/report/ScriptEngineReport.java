@@ -697,10 +697,18 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return ParamReplacementSvc.get().processParamReplacement(script, getReportDir(context.getContainer().getId()), null, replacements, isRStudio);
     }
 
+
+    @Override
+    public ScriptReportDescriptor getDescriptor()
+    {
+        return (ScriptReportDescriptor)super.getDescriptor();
+    }
+
+
     @Override
     public void serializeToFolder(ImportContext ctx, VirtualFile directory) throws IOException
     {
-        ReportDescriptor descriptor = getDescriptor();
+        ScriptReportDescriptor descriptor = getDescriptor();
 
         if (descriptor.getReportId() != null)
         {
@@ -709,6 +717,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
             try (PrintWriter writer = directory.getPrintWriter(scriptFileName))
             {
+                // see ScriptReportDescriptor.shouldSerialize(), skip this property in ReportDescriptor.getDescriptorDocument()
                 writer.write(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
             }
 

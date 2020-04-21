@@ -114,7 +114,7 @@ public class RReport extends ExternalScriptEngineReport
     }
 
     @Override
-    public ReportDescriptor getDescriptor()
+    public ScriptReportDescriptor getDescriptor()
     {
         return super.getDescriptor();
     }

@@ -71,6 +71,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
+
 /**
  * User: migra
  * Date: Mar 6, 2006
@@ -267,7 +269,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
             serializeThumbnail(serializedName, dir, new ReportThumbnailLarge(context.getContainer(), this));
             serializeThumbnail(serializedName, dir, new ReportThumbnailSmall(context.getContainer(), this));
-            serialize(context, dir, String.format("%s.report.xml", serializedName));
+            serialize(context, dir, serializedName + REPORT_METADATA_EXTENSION);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");

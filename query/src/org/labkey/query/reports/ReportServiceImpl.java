@@ -102,6 +102,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
+
 /**
  * User: Karl Lum
  * Date: Dec 21, 2007
@@ -493,13 +495,28 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         if (!skipValidation)
             validateReportPermissions(context, report);
 
-        File f = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getSourceFile().getPath());
-        if (null == f || !f.canWrite())
+        File scriptFile = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getSourceFile().getPath());
+        if (null == scriptFile || !scriptFile.canWrite())
             throw new RuntimeException("This module resource can not be edited");   // shouldn't happen
+        File xmlFile;
+        if (null != descriptor.getMetaDataFile())
+        {
+            xmlFile = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getSourceFile().getPath());
+        }
+        else
+        {
+            xmlFile = new File(scriptFile.getParentFile(), descriptor.getReportName() + REPORT_METADATA_EXTENSION);
+        }
+        if (!(xmlFile.exists() ? xmlFile.isFile() && xmlFile.canWrite() : xmlFile.getParentFile().canWrite()))
+            throw new RuntimeException("This module resource can not be edited");   // shouldn't happen
+
         try
         {
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-            FileUtils.write(f, script, StringUtilsLabKey.DEFAULT_CHARSET);
+            String reportXml = report.getDescriptor().serialize(context.getContainer());
+            // CONSIDER: this use serializeToFolder(), directly?
+            FileUtils.write(scriptFile, script, StringUtilsLabKey.DEFAULT_CHARSET);
+            FileUtils.write(xmlFile, reportXml, StringUtilsLabKey.DEFAULT_CHARSET);
         }
         catch (IOException x)
         {

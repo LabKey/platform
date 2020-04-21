@@ -73,4 +73,12 @@ abstract public class ScriptReportDescriptor extends ReportDescriptor
         }
         return true;
     }
+
+    @Override
+    protected boolean shouldSerialize(String propName)
+    {
+        if (Prop.script.name().equals(propName))
+            return false;
+        return true;
+    }
 }
