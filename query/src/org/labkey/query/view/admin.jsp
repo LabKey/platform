@@ -93,7 +93,7 @@ else
         ActionURL urlEdit = urls.urlUpdateExternalSchema(c, def);
         ActionURL urlView = urls.urlSchemaBrowser(c, def.getUserSchemaName());
         ActionURL urlReload = urls.urlReloadExternalSchema(c, def);
-        ActionURL urlDelete = urls.urlDeleteExternalSchema(c, def);
+        ActionURL urlDelete = urls.urlDeleteSchema(c, def);
 
     %>
         <tr class='<%=getShadeRowClass(i)%>'>
@@ -169,7 +169,7 @@ else
     {
         ActionURL urlView = urls.urlSchemaBrowser(c, linkedSchema.getUserSchemaName());
         ActionURL urlEdit = new ActionURL(QueryController.EditLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
-        ActionURL urlDelete = new ActionURL(QueryController.DeleteLinkedSchemaAction.class, c).addParameter("externalSchemaId", Integer.toString(linkedSchema.getExternalSchemaId()));
+        ActionURL urlDelete = urls.urlDeleteSchema(c, linkedSchema);
 
         Container sourceContainer = linkedSchema.lookupSourceContainer();
 
