@@ -1268,7 +1268,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         {
             BooleanQuery query = new BooleanQuery.Builder()
                     .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
-                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "files")), BooleanClause.Occur.MUST)
+                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
                     .build();
 
             String davPrefix = "dav:";
