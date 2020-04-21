@@ -48,16 +48,6 @@ public class SearchContainerListener extends ContainerManager.AbstractContainerL
     }
 
     @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
-        SearchService ss = SearchService.get();
-        if (null != ss)
-        {
-            ss.reindexContainerFiles(c);
-        }
-    }
-
-    @Override
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
         SearchService ss = SearchService.get();
@@ -65,9 +55,12 @@ public class SearchContainerListener extends ContainerManager.AbstractContainerL
         {
             ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent) propertyChangeEvent;
 
-            if (evt.property == ContainerManager.Property.Name)
+            switch (evt.property)
             {
-                ss.reindexContainerFiles(evt.container);
+                case Name: // Rename
+                case Parent: // Move
+                    ss.reindexContainerFiles(evt.container);
+                    break;
             }
         }
     }

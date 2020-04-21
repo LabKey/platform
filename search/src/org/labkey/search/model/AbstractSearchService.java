@@ -411,7 +411,7 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
             //TODO: make DavCrawler (or a wrapper) a DocumentProvider instead
             //Recrawl files as the container name may be used in paths & Urls. Issue #39696
-            DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
+            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
         };
         queueItem(new Item(defaultTask(), r, PRIORITY.delete));
     }

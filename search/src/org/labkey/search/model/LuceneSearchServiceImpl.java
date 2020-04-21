@@ -1260,6 +1260,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             throw new RuntimeException(e);
         }
     }
+
     @Override
     protected void clearIndexedFileSystemFiles(Container container)
     {
@@ -1274,6 +1275,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     //Limit to just dav files and not attachments or other files
                     .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
                     .build();
+
+            // Run the query before delete, but only if Log4J debug level is set
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
+            }
+
             _indexManager.deleteQuery(query);
         }
         catch (IOException e)
