@@ -1,11 +1,65 @@
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 {
     public static final String EVENT_TYPE = "SampleTimelineEvent";
+
+    public enum SampleTimelineEventType
+    {
+        insert("Sample was registered.", null, "Registered"),
+        delete("Sample was deleted.", null, "Deleted"), // the audit logs for the added samples are created separately from the workflow audit log
+        merge("Sample was registered or updated.", null, "Registered"), // the audit logs for the deleted samples are created separately from the workflow audit log
+        update("Sample was updated.", false, "Updated"),
+        mergeWithLineageUpdate("Sample was registered or updated.", true, "Registered"),
+        lineageUpdate("Sample was updated.", true, "Updated");
+
+        private String _comment;
+        private Boolean _lineageUpdate;
+        private String _actionLabel;
+
+        SampleTimelineEventType(String comment, Boolean isLineageUpdate, String actionLabel)
+        {
+            _comment = comment;
+            _lineageUpdate = isLineageUpdate;
+            _actionLabel = actionLabel;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public Boolean getLineageUpdate()
+        {
+            return _lineageUpdate;
+        }
+
+        public String getActionLabel()
+        {
+            return _actionLabel;
+        }
+
+        public static SampleTimelineEventType getTypeFromEvent(@NotNull SampleTimelineAuditEvent event)
+        {
+            for (SampleTimelineEventType type : SampleTimelineEventType.values())
+            {
+                if (event.getComment().equals(type.getComment()))
+                {
+                    if (type.getLineageUpdate() == null)
+                        return type;
+
+                    if (type.getLineageUpdate().equals(event.getIsLineageUpdate()))
+                        return type;
+                }
+            }
+            return null;
+        }
+    }
 
     private String _sampleLsid;
     private int _sampleId;

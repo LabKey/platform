@@ -889,14 +889,14 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     {
         switch (action) {
             case INSERT:
-                return "Sample was registered.";
+                return SampleTimelineAuditEvent.SampleTimelineEventType.insert.getComment();
             case DELETE:
             case TRUNCATE:
-                return "Sample was deleted.";
+                return SampleTimelineAuditEvent.SampleTimelineEventType.delete.getComment();
             case MERGE:
-                return "Sample was registered or updated.";
+                return SampleTimelineAuditEvent.SampleTimelineEventType.merge.getComment();
             case UPDATE:
-                return "Sample was updated.";
+                return SampleTimelineAuditEvent.SampleTimelineEventType.update.getComment();
         }
         return action.getCommentDetailed();
     }
