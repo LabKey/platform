@@ -255,7 +255,14 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isLookup();
 
-    boolean isDbSequence();
+    boolean hasDbSequence();
+
+    boolean isRootDbSequence();
+
+    default Container getDbSequenceContainer(Container container)
+    {
+        return isRootDbSequence() ? ContainerManager.getRoot() : container;
+    }
 
     @NotNull List<ConditionalFormat> getConditionalFormats();
 

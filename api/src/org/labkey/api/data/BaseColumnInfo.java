@@ -46,6 +46,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
@@ -87,7 +88,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     private Object _defaultValue = null;
     private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private boolean _isAutoIncrement = false;
-    private boolean _isDbSequence = false;
+    private boolean _hasDbSequence = false;
+    private boolean _isRootDbSequence = false;
     private boolean _isKeyField = false;
     private boolean _isReadOnly = false;
     private boolean _isUserEditable = true;
@@ -867,14 +869,25 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     }
 
     @Override
-    public boolean isDbSequence()
+    public boolean hasDbSequence()
     {
-        return _isDbSequence;
+        return _hasDbSequence;
     }
 
-    public void setIsDbSequence(boolean isDbSequence)
+    public void setHasDbSequence(boolean hasDbSequence)
     {
-        _isDbSequence = isDbSequence;
+        _hasDbSequence = hasDbSequence;
+    }
+
+    @Override
+    public boolean isRootDbSequence()
+    {
+        return _isRootDbSequence;
+    }
+
+    public void setIsRootDbSequence(boolean isRootDbSequence)
+    {
+        _isRootDbSequence = isRootDbSequence;
     }
 
     @Override
@@ -1053,8 +1066,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
             setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
             _isAutoIncrement = xmlCol.getIsAutoInc();
-        if (xmlCol.isSetIsDbSequence())
-            _isDbSequence = xmlCol.getIsDbSequence();
+        if (xmlCol.isSetHasDbSequence())
+        {
+            DbSequenceType dbSequenceType = xmlCol.getHasDbSequence();
+            _hasDbSequence = dbSequenceType.getBooleanValue();
+            _isRootDbSequence = dbSequenceType.getRootSequence();
+        }
         if (xmlCol.isSetIsReadOnly())
             _isReadOnly = xmlCol.getIsReadOnly();
         if (xmlCol.isSetIsUserEditable())

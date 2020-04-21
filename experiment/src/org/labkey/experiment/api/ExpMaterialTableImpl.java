@@ -221,7 +221,8 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
                 ret.setShownInInsertView(false);
-                ret.setIsDbSequence(true);
+                ret.setHasDbSequence(true);
+                ret.setIsRootDbSequence(true);
                 return ret;
             }
             case Property:
