@@ -1262,22 +1262,27 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     }
 
     @Override
-    protected void clearIndexedContainerCategory(String id, String category)
+    protected void clearIndexedFileSystemFiles(Container container)
     {
+        String davPrefix = "dav:";
         try
         {
-            BooleanQuery bq = new BooleanQuery.Builder()
-                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), id)), BooleanClause.Occur.MUST)
-                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), category)), BooleanClause.Occur.MUST)
+            BooleanQuery query = new BooleanQuery.Builder()
+                    // Add container filter
+                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                    // Add files filter
+                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
+                    //Limit to just dav files and not attachments or other files
+                    .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
                     .build();
 
             // Run the query before delete, but only if Log4J debug level is set
             if (_log.isDebugEnabled())
             {
-                _log.debug("Deleting " + getDocCount(bq) + " docs from container " + id);
+                _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
             }
 
-            _indexManager.deleteQuery(bq);
+            _indexManager.deleteQuery(query);
         }
         catch (IOException e)
         {
@@ -1565,7 +1570,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
             hit.score = scoreDoc.score;
 
-            // BUG patch see 10734 : Bad URLs for files in search results
+            // BUG patch see Issue 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
             if (hit.url.contains("/%40files?renderAs=DEFAULT/"))
             {
