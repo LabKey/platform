@@ -603,7 +603,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             if(null != warning)
             {
                 ValidationException exception = new ValidationException();
-                exception.addFieldError("Transform", warning);
+                exception.addFieldError("transform", warning);
                 throw exception;
             }
             // if error indicated in transformPropertiesFile
