@@ -505,16 +505,81 @@ public class ExperimentUpgradeCode implements UpgradeCode
     }
 
     // called from exp-20.003-20.004
+    // Changes from an autoIncrement column as the RowId to a DBSequence so the rowId can be more readily available
+    // during creation of materials (particularly during file import).
+    //
+    // This needs to be run after startup because we are altering the primary key column for exp.Materials, and for SQL Server
+    // this means we need to remove some foreign key constraints in other schemas.
+     @DeferredUpgrade
     public static void addDbSequenceForMaterialsRowId(ModuleContext context)
     {
         if (context.isNewInstall())
             return;
 
         SQLFragment frag = new SQLFragment("SELECT MAX(rowId) FROM exp.material");
-        int maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
+        Integer maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
 
         DbSequence sequence = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId"));
-        sequence.ensureMinimum(maxId);
+        if (maxId != null)
+            sequence.ensureMinimum(maxId);
+
+        DbScope scope = DbScope.getLabKeyScope();
+        SQLFragment sql;
+        if (scope.getSqlDialect().isPostgreSQL())
+        {
+            sql = new SQLFragment("ALTER SEQUENCE exp.material_rowid_seq owned by NONE;\n");
+            sql.append("ALTER TABLE exp.material ALTER COLUMN rowId DROP DEFAULT;\n");
+            sql.append("DROP SEQUENCE exp.material_rowid_seq;");
+            new SqlExecutor(scope).execute(sql);
+        }
+        else
+        {
+            // For SQLServer We can't do this modification in place for the RowId column, so we make a copy of the column, drop the original\n" +
+            // column then rename the copy and add back the constraints.\n" +
+            sql = new SQLFragment();
+
+            sql.append("ALTER TABLE exp.material ADD RowId_copy INT NULL;\n");
+            // Drop foreign keys before dropping the original column.  First materialInput
+            sql.append("ALTER TABLE exp.materialInput DROP CONSTRAINT fk_materialinput_material;\n");
+            // now ms2
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'ms2')\n" +
+                        "   ALTER TABLE ms2.ExpressionData DROP CONSTRAINT FK_ExpressionData_SampleId;\n");
+             // and labbook
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'labbook')\n" +
+                            "   ALTER TABLE labbook.LabBookExperimentMaterial DROP CONSTRAINT FK_LabBookExperimentMaterial_MaterialId;\n");
+            // Remove primary key constraint
+            // TODO? -- DROP INDEX IX_CL_Material_RunId ON exp.Material;
+            // Seems to work OK without dropping and recreating this index, but does this cause internal bleeding of some sort?
+            sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
+
+            new SqlExecutor(scope).execute(sql);
+
+            sql = new SQLFragment();
+            // Copy RowId to the new column
+            sql.append("UPDATE exp.material SET RowId_copy = RowId;\n");
+
+            // Now drop the original column
+            sql.append("ALTER TABLE exp.material DROP COLUMN RowId;\n");
+
+            new SqlExecutor(scope).execute(sql);
+
+            sql = new SQLFragment();
+            // Rename the copy to the original name and restore it as as a Non-Null PK
+            sql.append("EXEC sp_rename 'exp.material.RowId_copy', 'RowId', 'COLUMN';\n");
+            sql.append("ALTER TABLE exp.Material ALTER COLUMN RowId INT NOT NULL;\n");
+            sql.append("ALTER TABLE exp.Material ADD CONSTRAINT PK_Material PRIMARY KEY (RowId);\n");
+            // TODO? -- CREATE CLUSTERED INDEX IX_CL_Material_RunId ON exp.Material(RunId);
+            // Add the foreign key constraints back again
+            sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +
+                    "       ALTER TABLE ms2.ExpressionData ADD CONSTRAINT FK_ExpressionData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n"
+            );
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'labbook')\n" +
+                    "       ALTER TABLE labbook.LabBookExperimentMaterial ADD CONSTRAINT FK_LabBookExperimentMaterial_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n"
+            );
+            new SqlExecutor(scope).execute(sql);
+        }
+
     }
 
 }
