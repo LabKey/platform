@@ -195,7 +195,10 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     Set<String> getColumnNameSet();
 
-    String getDbSequenceName(String colName);
+    default String getDbSequenceName(String columnName)
+    {
+        return (this.getSchema().getName() + ":" + this.getName() + ":" + columnName).toLowerCase();
+    }
 
     /**
      * Return a list of ColumnInfos that make up the extended set of

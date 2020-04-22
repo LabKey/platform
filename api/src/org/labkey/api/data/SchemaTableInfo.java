@@ -440,11 +440,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         }
     }
 
-    @Override
-    public String getDbSequenceName(String columnName)
-    {
-        return (this.getSchema().getName() + ":" + this.getName() + ":" + columnName).toLowerCase();
-    }
 
     protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
     {
