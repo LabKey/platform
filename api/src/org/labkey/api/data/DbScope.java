@@ -984,6 +984,11 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            log.info("Data source " + toString() +
+                    ". Max connections: " + _dsProps.getMaxTotal() +
+                    ", active: " + _dsProps.getNumActive() +
+                    ", idle: " + _dsProps.getNumIdle());
+
             if (_transaction.isEmpty())
             {
                 log.info("There are no threads holding connections for the data source '" + toString() + "'");
