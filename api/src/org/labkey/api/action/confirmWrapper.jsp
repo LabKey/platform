@@ -33,7 +33,7 @@
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
 <labkey:errors/>
-<% if (null != me.getErrors() && !me.getErrors().hasErrors()) { %>
+<% if (null == me.getErrors() || !me.getErrors().hasErrors()) { %>
 <labkey:form action="<%=getActionURL().clone().deleteParameters()%>" method="POST">
     <%
     me.include(me.getBody(), out);
