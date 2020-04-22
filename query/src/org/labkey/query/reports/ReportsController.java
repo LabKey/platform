@@ -60,6 +60,8 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.Module;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -84,6 +86,7 @@ import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportJob;
@@ -124,6 +127,8 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -183,6 +188,8 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
+import static org.labkey.api.util.DOM.*;
+import static org.labkey.api.util.HtmlString.NBSP;
 
 /**
  * User: Karl Lum
@@ -799,12 +806,12 @@ public class ReportsController extends SpringActionController
                 return new AjaxScriptReportView(null, form, Mode.create);
             else
             {
-                StringBuilder sb = new StringBuilder();
+                HtmlStringBuilder sb = HtmlStringBuilder.of("");
 
                 for (ValidationError error : reportErrors)
-                    sb.append(error.getMessage()).append("<br>");
+                    sb.append(error.getMessage()).append(HtmlString.unsafe("<br>"));
 
-                return new HtmlView(sb.toString());
+                return new HtmlView(sb.getHtmlString());
             }
         }
 
@@ -958,7 +965,7 @@ public class ReportsController extends SpringActionController
             }
 
             html.append("<table>\n");
-            vbox.addView(new HtmlView(html.toString()));
+            vbox.addView(new HtmlView(HtmlString.unsafe(html.toString())));
 
             if (statusFile != null &&
                     !(PipelineJob.TaskStatus.waiting.matches(statusFile.getStatus()) ||
@@ -990,29 +997,48 @@ public class ReportsController extends SpringActionController
             if (null == _report)
                 throw new NotFoundException("Invalid report identifier, unable to create report.");
 
-            HttpView ret;
+            HttpView reportView;
             try
             {
-                ret = _report.getRunReportView(getViewContext());
+                reportView = _report.getRunReportView(getViewContext());
             }
             catch (RuntimeException e)
             {
-                return new HtmlView("<span class=\"labkey-error\">" + e.getMessage() + ". Unable to create report.</span>");
+                return new HtmlView(SPAN(cl("labkey-error"), e.getMessage(), ". Unable to create report."));
             }
 
-            if (!isPrint() && !(ret instanceof HttpRedirectView) && DiscussionService.get() != null)
+            VBox vbox = new VBox();
+
+            if (_report.getDescriptor().isModuleBased() && _report.canEdit(getUser(), getContainer()))
+            {
+                ModuleReportDescriptor mrd = (ModuleReportDescriptor)_report.getDescriptor();
+                org.labkey.api.module.Module m = mrd.getModule();
+                File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
+                if (null != f)
+                {
+                    var moduleWarning = createHtmlFragment(DIV(cl("labkey-warning-messages"),
+                            "This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.",
+                            BR(),
+                            "Changes to this report will be reflected in all usages across different folders on the server."),
+                            NBSP, BR()
+                    );
+                    vbox.addView(new HtmlView(moduleWarning));
+                }
+            }
+
+            vbox.addView(reportView);
+
+            if (!isPrint() && !(reportView instanceof HttpRedirectView) && DiscussionService.get() != null)
             {
                 DiscussionService service = DiscussionService.get();
                 String title = "Discuss report - " + _report.getDescriptor().getReportName();
                 DiscussionService.DiscussionView discussion = service.getDiscussionArea(getViewContext(), _report.getEntityId(), new ActionURL(CreateScriptReportAction.class, getContainer()), title, true, false);
                 if (discussion != null)
                 {
-                    VBox box = new VBox(ret);
-                    box.addView(discussion);
-                    ret = box;
+                    vbox.addView(discussion);
                 }
             }
-            return ret;
+            return vbox;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1154,7 +1180,7 @@ public class ReportsController extends SpringActionController
                 return box;
             }
             else
-                return new HtmlView("Specified report not found");
+                return new HtmlView(HtmlString.of("Specified report not found"));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -1518,7 +1544,7 @@ public class ReportsController extends SpringActionController
                     return null;
                 }
             }
-            return new HtmlView("Requested Resource not found");
+            return new HtmlView(HtmlString.of("Requested Resource not found"));
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2553,7 +2579,7 @@ public class ReportsController extends SpringActionController
                     return view;
                 }
             }
-            return new HtmlView("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>");
+            return new HtmlView(HtmlString.unsafe("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>"));
         }
 
         public NavTree appendNavTrail(NavTree root)
