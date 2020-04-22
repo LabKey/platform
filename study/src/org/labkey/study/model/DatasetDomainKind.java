@@ -393,13 +393,15 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             {
                 category = ViewCategoryManager.getInstance().getCategory(container, categoryName);
                 if (category != null)
+                {
                     categoryId = category.getRowId();
+                }
                 else
-                    {
-                        String[] parts = ViewCategoryManager.getInstance().decode(categoryName);
-                        category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
-                        categoryId = category.getRowId();
-                    }
+                {
+                    String[] parts = ViewCategoryManager.getInstance().decode(categoryName);
+                    category = ViewCategoryManager.getInstance().ensureViewCategory(container, user, parts);
+                    categoryId = category.getRowId();
+                }
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,

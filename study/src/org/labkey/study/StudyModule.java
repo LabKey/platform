@@ -774,7 +774,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
             ret.put("subject", subject);
             ret.put("timepointType", study.getTimepointType().name());
-            ret.put("studyId", study.getRowId());
         }
 
         return ret;
