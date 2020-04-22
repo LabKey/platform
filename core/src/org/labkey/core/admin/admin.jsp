@@ -88,7 +88,9 @@
                 { %>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
                 } %>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(bean.scope.getDataSourceProperties().getNumActive())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(bean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
             </table>
             <br/>
 <%
