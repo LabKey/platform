@@ -501,7 +501,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         File xmlFile;
         if (null != descriptor.getMetaDataFile())
         {
-            xmlFile = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getSourceFile().getPath());
+            xmlFile = ModuleEditorService.get().getFileForModuleResource(descriptor.getModule(), descriptor.getMetaDataFile().getPath());
         }
         else
         {
