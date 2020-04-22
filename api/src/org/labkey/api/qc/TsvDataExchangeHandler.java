@@ -582,7 +582,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             {
                 cleanFiles(info, result, files, errorFile, transformedFile);
                 ValidationException exception = new ValidationException();
-                exception.addFieldError("Transform", "Background assay import does not support warnings.");
+                exception.addFieldError("transform", "Background assay import does not support warnings.");
                 exception.addFieldError("Warning", warning);
                 throw exception;
             }
