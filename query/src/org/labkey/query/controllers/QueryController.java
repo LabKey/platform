@@ -119,6 +119,7 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
+import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
@@ -184,6 +185,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
+import static org.labkey.api.util.DOM.*;
 
 @SuppressWarnings("DefaultAnnotationParam")
 
@@ -959,7 +961,22 @@ public class QueryController extends SpringActionController
                 Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
+            Renderable moduleWarning = null;
+            if (_queryDef instanceof ModuleCustomQueryDefinition && _queryDef.canEdit(getUser()))
+            {
+                var mcqd = (ModuleCustomQueryDefinition)_queryDef;
+                moduleWarning = DIV(cl("labkey-warning-messages"),
+                        "This SQL query is defined in the '" + mcqd.getModuleName() + "' module in directory '" + mcqd.getSqlFile().getParent() + "'.",
+                                BR(),
+                                "Changes to this query will be reflected in all usages across different folders on the server."
+                        );
+            }
+
+            var sourceQueryView = new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
+            WebPartView ret = sourceQueryView;
+            if (null != moduleWarning)
+                ret = new VBox(new HtmlView(moduleWarning), sourceQueryView);
+            return ret;
         }
 
         @Override
@@ -1215,6 +1232,11 @@ public class QueryController extends SpringActionController
 
             if (null == _queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
+
+            if (!_queryDef.canDelete(getUser()))
+            {
+                errors.reject(ERROR_MSG, "Sorry, this query can not be deleted");
+            }
 
             return new JspView<>("/org/labkey/query/view/deleteQuery.jsp", this, errors);
         }
