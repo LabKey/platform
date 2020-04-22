@@ -71,6 +71,7 @@ import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ContainerUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StringUtilsLabKey;
@@ -102,6 +103,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
+import static org.apache.http.util.TextUtils.isBlank;
 import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
 
 /**
@@ -588,7 +590,18 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     @Override
     public Report getReportByEntityId(Container c, String entityId)
     {
-        return DatabaseReportCache.getReportByEntityId(c, entityId);
+        if (isBlank(entityId))
+            return null;
+        if (GUID.isGUID(entityId))
+        {
+            return DatabaseReportCache.getReportByEntityId(c, entityId);
+        }
+        else
+        {
+            // TODO hack: see ModuleRReportDescriptor.getEntityId()
+            ReportIdentifier id = getReportIdentifier(PageFlowUtil.decode(entityId), null, c);
+            return id.getReport(new DefaultContainerUser(c, null));
+        }
     }
 
     @Override

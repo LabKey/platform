@@ -58,6 +58,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
@@ -125,7 +126,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return false;
     }
 
-    protected boolean hasDescriptorPropertyChanged(String descriptorPropName)
+    protected boolean hasDescriptorPropertyChanged(User user, String descriptorPropName)
     {
         // Content modified if change to the specified descriptor property
         String newPropStr = getDescriptor().getProperty(descriptorPropName);
@@ -133,7 +134,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         String origPropStr = null;
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(ContainerManager.getForId(getContainerId()), getReportId().getRowId());
+            Container c = ContainerManager.getForId(getContainerId());
+            Report origReport = getDescriptor().getReportId().getReport(new DefaultContainerUser(c,user));
             origPropStr = origReport != null ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 
