@@ -534,8 +534,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
         }
         else
         {
-            // For SQLServer We can't do this modification in place for the RowId column, so we make a copy of the column, drop the original\n" +
-            // column then rename the copy and add back the constraints.\n" +
+            // For SQLServer We can't do this modification in place for the RowId column, so we make a copy of the column, drop the original
+            // column then rename the copy and add back the constraints.
             sql = new SQLFragment();
 
             sql.append("ALTER TABLE exp.material ADD RowId_copy INT NULL;\n");
@@ -548,8 +548,6 @@ public class ExperimentUpgradeCode implements UpgradeCode
             sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'labbook')\n" +
                             "   ALTER TABLE labbook.LabBookExperimentMaterial DROP CONSTRAINT FK_LabBookExperimentMaterial_MaterialId;\n");
             // Remove primary key constraint
-            // TODO? -- DROP INDEX IX_CL_Material_RunId ON exp.Material;
-            // Seems to work OK without dropping and recreating this index, but does this cause internal bleeding of some sort?
             sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
 
             new SqlExecutor(scope).execute(sql);
@@ -564,11 +562,10 @@ public class ExperimentUpgradeCode implements UpgradeCode
             new SqlExecutor(scope).execute(sql);
 
             sql = new SQLFragment();
-            // Rename the copy to the original name and restore it as as a Non-Null PK
+            // Rename the copy to the original name and restore it as a Non-Null PK
             sql.append("EXEC sp_rename 'exp.material.RowId_copy', 'RowId', 'COLUMN';\n");
             sql.append("ALTER TABLE exp.Material ALTER COLUMN RowId INT NOT NULL;\n");
             sql.append("ALTER TABLE exp.Material ADD CONSTRAINT PK_Material PRIMARY KEY (RowId);\n");
-            // TODO? -- CREATE CLUSTERED INDEX IX_CL_Material_RunId ON exp.Material(RunId);
             // Add the foreign key constraints back again
             sql.append("ALTER TABLE exp.materialInput ADD CONSTRAINT FK_MaterialInput_Material FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n");
             sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'ms2') \n" +
