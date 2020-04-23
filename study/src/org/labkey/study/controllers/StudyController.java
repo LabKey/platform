@@ -473,8 +473,12 @@ public class StudyController extends BaseStudyController
             else
                 _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, datasetId, false, null);
 
-            ((DatasetDefinition)_def).provisionTable();
-            return true;
+            if (_def != null)
+            {
+                ((DatasetDefinition)_def).provisionTable();
+                return true;
+            }
+            return false;
         }
 
         @Override
