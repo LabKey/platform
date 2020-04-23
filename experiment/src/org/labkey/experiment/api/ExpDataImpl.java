@@ -152,6 +152,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         if (dc != null)
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
 
+        // Issue 40123: see MedImmuneDataHandler MEDIMMUNE_DATA_TYPE, this claims the "Data" namespace
         DataType type = getDataType();
         if (type != null)
         {
