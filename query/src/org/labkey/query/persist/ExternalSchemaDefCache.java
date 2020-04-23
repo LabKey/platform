@@ -15,6 +15,7 @@
  */
 package org.labkey.query.persist;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
@@ -40,6 +41,7 @@ public class ExternalSchemaDefCache
 {
     private static final Cache<Container, ExternalSchemaCollections> EXTERNAL_SCHEMA_DEF_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "External/Linked Schema Definition Cache", (c, argument) -> new ExternalSchemaCollections(c));
 
+    @Nullable
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, @Nullable String userSchemaName, Class<T> clazz)
     {
         if (userSchemaName == null)
@@ -48,11 +50,13 @@ public class ExternalSchemaDefCache
         return getCollections(c).getSchemaDef(userSchemaName, clazz);
     }
 
+    @Nullable
     public static <T extends AbstractExternalSchemaDef> T getSchemaDef(Container c, int rowId, Class<T> clazz)
     {
         return getCollections(c).getSchemaDef(rowId, clazz);
     }
 
+    @NotNull
     public static <T extends AbstractExternalSchemaDef> List<T> getSchemaDefs(@Nullable Container c, Class<T> clazz)
     {
         return getCollections(c).getSchemaDefs(clazz);
@@ -107,16 +111,19 @@ public class ExternalSchemaDefCache
             _byRowId = Collections.unmodifiableMap(byRowId);
         }
 
+        @Nullable
         private <T extends AbstractExternalSchemaDef> T getSchemaDef(String userSchemaName, Class<T> clazz)
         {
             return (T) _byName.get(clazz).get(userSchemaName);
         }
 
+        @Nullable
         private <T extends AbstractExternalSchemaDef> T getSchemaDef(int rowId, Class<T> clazz)
         {
             return (T) _byRowId.get(clazz).get(rowId);
         }
 
+        @NotNull
         private <T extends AbstractExternalSchemaDef> List<T> getSchemaDefs(Class<T> clazz)
         {
             Collection<T> collection = (Collection<T>) _byRowId.get(clazz).values();
