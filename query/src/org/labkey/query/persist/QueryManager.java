@@ -294,37 +294,43 @@ public class QueryManager
         CustomViewCache.uncache(ContainerManager.getForId(view.getContainerId()));
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, ExternalSchemaDef.class);
     }
 
+    @NotNull
     public List<ExternalSchemaDef> getExternalSchemaDefs(@Nullable Container container)
     {
         return ExternalSchemaDefCache.getSchemaDefs(container, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container container, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(container, userSchemaName, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, LinkedSchemaDef.class);
     }
 
+    @NotNull
     public List<LinkedSchemaDef> getLinkedSchemaDefs(@Nullable Container c)
     {
         return ExternalSchemaDefCache.getSchemaDefs(c, LinkedSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, userSchemaName, LinkedSchemaDef.class);
     }
 
-    public void delete(AbstractExternalSchemaDef def)
+    public void delete(@NotNull AbstractExternalSchemaDef def)
     {
         Container c = def.lookupContainer();
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);

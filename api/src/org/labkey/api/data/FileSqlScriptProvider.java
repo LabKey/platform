@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * User: adam
  * Date: Sep 18, 2007
@@ -273,6 +275,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     public File getScriptDirectory(SqlDialect dialect)
     {
+        if (isBlank(_module.getSourcePath()))
+            return null;
+
         String scriptsPath = _module.getSqlScriptsPath(dialect);
         File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), scriptsPath);
 

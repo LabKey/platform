@@ -94,7 +94,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
 
-    private boolean _dirty;
+    protected boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
 
@@ -184,6 +184,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public boolean canEdit(User user)
     {
+        if (!getDefinitionContainer().equals(getContainer()))
+            return false;
         return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 

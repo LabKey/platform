@@ -486,6 +486,8 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
 
         if (!Ext4.isDefined(this.query.canEdit))
             this.query.canEdit = true;
+        if (!Ext4.isDefined(this.query.canDelete))
+            this.query.canDelete = true;
         if (!Ext4.isDefined(this.query.canEditSql))
             this.query.canEditSql = this.query.canEdit;
         if (!Ext4.isDefined(this.query.canEditMetaData))
