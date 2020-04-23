@@ -1243,7 +1243,20 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return l;
     }
 
+    File _resourceDirectory;
+    File NULL_FILE = new File("....");
+
     public File getResourceDirectory()
+    {
+        if (null == _resourceDirectory)
+        {
+            File dir = computeResourceDirectory();
+            _resourceDirectory = null==dir ? NULL_FILE : dir;
+        }
+        return NULL_FILE==_resourceDirectory ? null : _resourceDirectory;
+    }
+
+    protected File computeResourceDirectory()
     {
         // We load resources from the module's source directory if all of the following conditions are true:
         //

@@ -120,6 +120,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("isUserDefined", isUserDefined);
         boolean canEdit = queryDef.canEdit(user);
         resp.put("canEdit", canEdit);
+        resp.put("canDelete", queryDef.canDelete(user));
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 

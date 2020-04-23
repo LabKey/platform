@@ -1138,6 +1138,32 @@ public abstract class SqlDialect
                 return null;
             }
         }
+
+        public Integer getNumActive()
+        {
+            try
+            {
+                return callGetter("getNumActive");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num active from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+        public Integer getNumIdle()
+        {
+            try
+            {
+                return callGetter("getNumIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num idle from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+
     }
 
 

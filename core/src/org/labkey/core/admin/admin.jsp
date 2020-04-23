@@ -88,7 +88,9 @@
                 { %>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
                 } %>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(bean.scope.getDataSourceProperties().getNumActive())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(bean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
             </table>
             <br/>
 <%
@@ -178,8 +180,8 @@
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : HtmlString.EMPTY_STRING%></td>
-                                <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && (!sourcePathMatched || !enlistmentIdMatched)) ? helpPopup(!sourcePathMatched ? "source path not found" : "enlistmentId not found/matched") : HtmlString.EMPTY_STRING%></td>
+                                <td nowrap="true" style="color:<%=h(!devMode?"":enlistmentIdMatched?"green":sourcePathMatched?"yellow":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))
