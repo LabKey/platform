@@ -114,6 +114,10 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     DataSharing getDataSharingEnum();
 
+    boolean getUseTimeKeyField();
+
+    void setUseTimeKeyField(boolean useTimeKeyField);
+
     void setKeyPropertyName(String name);
 
     void save(User user) throws SQLException;

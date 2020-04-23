@@ -26,6 +26,7 @@ public class DatasetDomainKindProperties implements Cloneable
     protected String _sourceAssayName;
     protected String _sourceAssayUrl;
     protected String _dataSharing;
+    protected boolean _useTimeKeyField = false;
 
     protected int _domainId;
 
@@ -65,6 +66,7 @@ public class DatasetDomainKindProperties implements Cloneable
         _tag = ds.getTag();
         _dataSharing = ds.getDataSharingEnum().name();
         _keyPropertyManaged = (ds.getKeyManagementType() != Dataset.KeyManagementType.None);
+        _useTimeKeyField = ds.getUseTimeKeyField();
 
         if (ds.getViewCategory() != null)
         {
@@ -263,4 +265,15 @@ public class DatasetDomainKindProperties implements Cloneable
     {
         _domainId = domainId;
     }
+
+    public boolean isUseTimeKeyField()
+    {
+        return _useTimeKeyField;
+    }
+
+    public void setUseTimeKeyField(boolean useTimeKeyField)
+    {
+        _useTimeKeyField = useTimeKeyField;
+    }
+
 }

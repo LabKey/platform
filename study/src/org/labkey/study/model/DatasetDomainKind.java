@@ -349,6 +349,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         boolean demographics = arguments.isDemographicData();
         boolean isManagedField = arguments.isKeyPropertyManaged();
         String visitDatePropertyName = arguments.getVisitDatePropertyName();
+        Boolean useTimeKeyField = arguments.isUseTimeKeyField();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
         // general dataset validation
@@ -363,7 +364,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Check for usage of Time as Key Field
         String keyPropertyName = arguments.getKeyPropertyName();
-        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName);
         if (useTimeKeyField)
             keyPropertyName = null;
 
@@ -461,7 +461,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         String keyPropertyName = datasetProperties.getKeyPropertyName();
         Integer datasetId = datasetProperties.getDatasetId();
         boolean isManagedField = datasetProperties.isKeyPropertyManaged();
-        boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(keyPropertyName);
+        boolean useTimeKeyField = datasetProperties.isUseTimeKeyField();
         boolean isDemographicData = datasetProperties.isDemographicData();
 
         if (!container.hasPermission(user, AdminPermission.class))
@@ -568,7 +568,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         try
         {
             // Check for usage of Time as Key Field
-            boolean useTimeKeyField = DatasetDomainKindProperties.TIME_KEY_FIELD_KEY.equalsIgnoreCase(datasetProperties.getKeyPropertyName());
+            boolean useTimeKeyField = datasetProperties.isUseTimeKeyField();
             if (useTimeKeyField)
                 datasetProperties.setKeyPropertyName(null);
 

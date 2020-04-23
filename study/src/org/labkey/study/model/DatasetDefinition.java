@@ -823,11 +823,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _type = type;
     }
 
+    @Override
     public boolean getUseTimeKeyField()
     {
         return _useTimeKeyField;
     }
 
+    @Override
     public void setUseTimeKeyField(boolean useTimeKeyField)
     {
         verifyMutability();
