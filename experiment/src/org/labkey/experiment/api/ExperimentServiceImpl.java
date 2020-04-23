@@ -6235,7 +6235,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerDataType(DataType type)
     {
-        _dataTypes.put(type.getNamespacePrefix(), type);
+        DataType existing = _dataTypes.put(type.getNamespacePrefix(), type);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims namespace prefix '" + existing.getNamespacePrefix() + "'");
     }
 
     @Override
@@ -6264,7 +6266,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerProtocolImplementation(ProtocolImplementation impl)
     {
-        _protocolImplementations.put(impl.getName(), impl);
+        ProtocolImplementation existing = _protocolImplementations.put(impl.getName(), impl);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims name '" + existing.getName() + "'");
     }
 
     @Override
@@ -6289,7 +6293,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory)
     {
-        _protocolInputCriteriaFactories.put(factory.getName(), factory);
+        ExpProtocolInputCriteria.Factory existing = _protocolInputCriteriaFactories.put(factory.getName(), factory);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims name '" + existing.getName() + "'");
     }
 
     @NotNull

@@ -465,7 +465,7 @@ public class LineageTest extends ExpProvisionedTableTestHelper
         assertEquals(Set.of(b1, b2), lineage.getNodeChildren(run));
 
         // verify json structure
-        JSONObject json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(false, false, false));
+        JSONObject json = lineage.toJSON(user, true, new ExperimentJSONConverter.Settings(false, false, false, false));
         assertEquals(a1Lsid.toString(), json.getString("seed"));
 
         JSONObject nodes = json.getJSONObject("nodes");

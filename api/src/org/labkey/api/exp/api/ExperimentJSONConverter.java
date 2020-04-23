@@ -67,6 +67,8 @@ public class ExperimentJSONConverter
     public static final String NAME = "name";
     public static final String LSID = "lsid";
     public static final String CPAS_TYPE = "cpasType";
+    // Matches the expType parameted used in the linage api: "Data", "Material", "ExperimentRun", "Object"
+    public static final String EXP_TYPE = "expType";
     public static final String URL = "url";
     public static final String PROPERTIES = "properties";
     public static final String COMMENT = "comment";
@@ -116,17 +118,19 @@ public class ExperimentJSONConverter
         private final boolean includeProperties;
         private final boolean includeInputsAndOutputs;
         private final boolean includeRunSteps;
+        private final boolean includeExpType;
 
         public Settings()
         {
-            this(true, true, false);
+            this(true, true, false, false);
         }
 
-        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
+        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps, boolean includeExpType)
         {
             this.includeProperties = includeProperties;
             this.includeInputsAndOutputs = includeInputsAndOutputs;
             this.includeRunSteps = includeRunSteps;
+            this.includeExpType = includeExpType;
         }
 
         public boolean isIncludeProperties()
@@ -144,14 +148,29 @@ public class ExperimentJSONConverter
             return includeRunSteps;
         }
 
+        public boolean isIncludeExpType()
+        {
+            return includeExpType;
+        }
+
         public Settings withIncludeProperties(boolean b)
         {
-            return new Settings(b, includeInputsAndOutputs, includeRunSteps);
+            return new Settings(b, includeInputsAndOutputs, includeRunSteps, includeExpType);
         }
 
         public Settings withIncludeInputsAndOutputs(boolean b)
         {
-            return new Settings(includeProperties, b, includeRunSteps);
+            return new Settings(includeProperties, b, includeRunSteps, includeExpType);
+        }
+
+        public Settings withIncludeRunSteps(boolean b)
+        {
+            return new Settings(includeProperties, includeInputsAndOutputs, b, includeExpType);
+        }
+
+        public Settings withIncludeExpType(boolean b)
+        {
+            return new Settings(includeProperties, includeInputsAndOutputs, includeRunSteps, b);
         }
     }
 
@@ -176,6 +195,10 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
         jsonObject.put(COMMENT, runGroup.getComments());
+        if (settings.isIncludeExpType())
+        {
+            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
+        }
         return jsonObject;
     }
 
@@ -223,6 +246,10 @@ public class ExperimentJSONConverter
         if (protocol != null)
         {
             jsonObject.put(CPAS_TYPE, protocol.getLSID());
+        }
+        if (settings.isIncludeExpType())
+        {
+            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
         }
 
         if (settings.isIncludeRunSteps())
@@ -492,6 +519,10 @@ public class ExperimentJSONConverter
     public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
     {
         JSONObject json = serializeIdentifiableBean(obj);
+        if (settings.isIncludeExpType())
+        {
+            json.put(ExperimentJSONConverter.EXP_TYPE, "Object");
+        }
 
         if (settings.isIncludeProperties())
         {
@@ -516,6 +547,11 @@ public class ExperimentJSONConverter
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
         JSONObject jsonObject = serializeIdentifiableBean(object);
+        if (settings.isIncludeExpType())
+        {
+            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
+        }
+
         int rowId = object.getRowId();
         if (rowId != 0)
         {
@@ -659,6 +695,10 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, data.getCpasType());
+        if (settings.isIncludeExpType())
+        {
+            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
+        }
 
         return jsonObject;
     }
@@ -702,6 +742,10 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, material.getCpasType());
+        if (settings.isIncludeExpType())
+        {
+            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Material");
+        }
 
         return jsonObject;
     }

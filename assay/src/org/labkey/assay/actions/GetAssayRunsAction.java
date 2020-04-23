@@ -31,7 +31,7 @@ public class GetAssayRunsAction extends ReadOnlyApiAction<GetAssayRunsAction.Ass
     {
         List<JSONObject> runs = new ArrayList<>();
         JSONObject result = new JSONObject();
-        var settings = new ExperimentJSONConverter.Settings(assayRunsForm.includeProperties, assayRunsForm.includeInputsAndOutputs, assayRunsForm.includeRunSteps);
+        var settings = new ExperimentJSONConverter.Settings(assayRunsForm.includeProperties, assayRunsForm.includeInputsAndOutputs, assayRunsForm.includeRunSteps, false);
 
         if (assayRunsForm.getLsids() != null && !assayRunsForm.getLsids().isEmpty())
         {
