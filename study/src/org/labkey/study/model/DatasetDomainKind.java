@@ -32,7 +32,6 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -54,7 +53,6 @@ import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
@@ -66,10 +64,8 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -352,6 +348,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
         boolean isManagedField = arguments.isKeyPropertyManaged();
+        String visitDatePropertyName = arguments.getVisitDatePropertyName();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
 
         // general dataset validation
@@ -409,7 +406,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, description, cohortId, tag);
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, description, cohortId, tag, visitDatePropertyName);
 //            def.setDescription(arguments.getDescription());
 //            def.setCohortId(arguments.getCohortId());
 //            def.setTag(arguments.getTag());

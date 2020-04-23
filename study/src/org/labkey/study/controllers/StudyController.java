@@ -7206,7 +7206,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None, null, null, null);
+                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None, null, null, null, null);
 
                         if (def != null)
                         {
@@ -7223,7 +7223,7 @@ public class StudyController extends BaseStudyController
                         break;
                     case placeHolder:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None, null, null, null);
+                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None, null, null, null, null);
                         if (def != null)
                         {
                             def.provisionTable();
