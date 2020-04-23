@@ -12,8 +12,8 @@ public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
     public enum SampleTimelineEventType
     {
         insert("Sample was registered.", null, "Registered"),
-        delete("Sample was deleted.", null, "Deleted"), // the audit logs for the added samples are created separately from the workflow audit log
-        merge("Sample was registered or updated.", null, "Registered"), // the audit logs for the deleted samples are created separately from the workflow audit log
+        delete("Sample was deleted.", null, "Deleted"),
+        merge("Sample was registered or updated.", null, "Registered"),
         update("Sample was updated.", false, "Updated"),
         mergeWithLineageUpdate("Sample was registered or updated.", true, "Registered"),
         lineageUpdate("Sample was updated.", true, "Updated");
