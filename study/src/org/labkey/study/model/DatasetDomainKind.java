@@ -406,11 +406,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, description, cohortId, tag, visitDatePropertyName);
-//            def.setDescription(arguments.getDescription());
-//            def.setCohortId(arguments.getCohortId());
-//            def.setTag(arguments.getTag());
-//            DatasetDefinition.updateModified(def, new Date());
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType,
+                    description, cohortId, tag, visitDatePropertyName);
 
             if (def.getDomain() != null)
             {

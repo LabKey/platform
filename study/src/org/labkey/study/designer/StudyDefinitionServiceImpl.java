@@ -179,7 +179,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
             if (dsId == -1)
             {
                 DatasetDefinition datasetDefinition = AssayPublishManager.getInstance().createAssayDataset(getUser(), study, assayDefinition.getAssayName(),
-                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None, null, null, null, null);
+                        null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
                 if (datasetDefinition != null)
                 {
                     datasetDefinition.provisionTable();
