@@ -66,6 +66,7 @@ import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -344,6 +345,9 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     {
         arguments.setName(domain.getName());
         String name = arguments.getName();
+        String description = arguments.getDescription();
+        Integer cohortId = arguments.getCohortId();
+        String tag = arguments.getTag();
         Integer datasetId = arguments.getDatasetId();
         String categoryName = arguments.getCategory();
         boolean demographics = arguments.isDemographicData();
@@ -405,7 +409,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType);
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, description, cohortId, tag);
+//            def.setDescription(arguments.getDescription());
+//            def.setCohortId(arguments.getCohortId());
+//            def.setTag(arguments.getTag());
+//            DatasetDefinition.updateModified(def, new Date());
 
             if (def.getDomain() != null)
             {

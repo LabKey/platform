@@ -68,15 +68,11 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleHtmlView;
@@ -129,7 +125,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -7211,7 +7206,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
+                                null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None, null, null, null);
 
                         if (def != null)
                         {
@@ -7228,7 +7223,7 @@ public class StudyController extends BaseStudyController
                         break;
                     case placeHolder:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
-                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None);
+                                null, null, false, Dataset.TYPE_PLACEHOLDER, categoryId, null, false, KeyManagementType.None, null, null, null);
                         if (def != null)
                         {
                             def.provisionTable();
