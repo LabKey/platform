@@ -944,11 +944,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         //get SourcePath property if there is one
         String srcPath = (String)props.get("SourcePath");
 
-        //Ensure property value isn't blank
         if (StringUtils.isNotBlank(srcPath))
             simpleModule.setSourcePath(srcPath);
-        else
-            simpleModule.setSourcePath(moduleDir.getAbsolutePath());
         BeanUtils.populate(simpleModule, props);
         simpleModule.setApplicationContext(parentContext);
 
