@@ -4268,6 +4268,9 @@ public class QueryController extends SpringActionController
                 setTitle("Delete Schema");
 
             AbstractExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), AbstractExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             String schemaName = isBlank(def.getUserSchemaName()) ? "this schema" : "the schema '" + def.getUserSchemaName() + "'";
             return new HtmlView(HtmlString.of("Are you sure you want to delete " + schemaName + "? The tables and queries defined in this schema will no longer be accessible."));
         }
@@ -4276,6 +4279,9 @@ public class QueryController extends SpringActionController
         public boolean handlePost(SchemaForm form, BindException errors)
         {
             AbstractExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), AbstractExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             QueryManager.get().delete(def);
             return true;
         }
@@ -4306,8 +4312,10 @@ public class QueryController extends SpringActionController
             form.validate(errors);
         }
 
+        @Nullable
         protected abstract T getCurrent(int externalSchemaId);
 
+        @NotNull
         protected T getDef(F form, boolean reshow)
         {
             T def;
@@ -4317,12 +4325,21 @@ public class QueryController extends SpringActionController
             {
                 def = form.getBean();
                 T current = getCurrent(def.getExternalSchemaId());
+                if (current == null)
+                    throw new NotFoundException();
+
                 defContainer = current.lookupContainer();
             }
             else
             {
                 form.refreshFromDb();
+                if (!form.isDataLoaded())
+                    throw new NotFoundException();
+
                 def = form.getBean();
+                if (def == null)
+                    throw new NotFoundException();
+
                 defContainer = def.lookupContainer();
             }
 
@@ -4383,6 +4400,7 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
+        @Nullable
         @Override
         protected LinkedSchemaDef getCurrent(int externalId)
         {
@@ -4407,6 +4425,7 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
+        @Nullable
         @Override
         protected ExternalSchemaDef getCurrent(int externalId)
         {
@@ -4772,6 +4791,9 @@ public class QueryController extends SpringActionController
         public boolean handlePost(SchemaForm form, BindException errors)
         {
             ExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), ExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             QueryManager.get().reloadExternalSchema(def);
             _userSchemaName = def.getUserSchemaName();
 
