@@ -1689,6 +1689,7 @@ public class AnnouncementsController extends SpringActionController
             return _stringValues.get("parentid");
         }
 
+        @SuppressWarnings("unused")
         public void setMemberListInput(String memberListInput)
         {
             _memberListInput = memberListInput;
@@ -1825,14 +1826,14 @@ public class AnnouncementsController extends SpringActionController
 
         public boolean isFromDiscussion()
         {
-            String fromDiscussion = (String)get("fromDiscussion");
+            String fromDiscussion = get("fromDiscussion");
 
             return Boolean.parseBoolean(fromDiscussion);
         }
 
         public boolean allowMultipleDiscussions()
         {
-            String fromDiscussion = (String)get("allowMultipleDiscussions");
+            String fromDiscussion = get("allowMultipleDiscussions");
 
             return Boolean.parseBoolean(fromDiscussion);
         }

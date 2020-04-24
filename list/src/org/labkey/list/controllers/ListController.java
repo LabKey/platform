@@ -62,6 +62,7 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.ModuleHtmlView;
@@ -701,7 +702,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
             return count;

@@ -151,7 +151,6 @@ public interface QueryService
      * NOTE: user is not the owner of the custom views, but is used for container and schema permission checks.
      */
     List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
-    CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
     /**
      * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
