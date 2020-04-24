@@ -1367,7 +1367,7 @@ public class ReportsController extends SpringActionController
             ReportIdentifier newId = ReportService.get().saveReportEx(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
             report = newId.getReport(getViewContext());
 
-            if (isManageThumbnails())
+            if (isManageThumbnails() && !report.getDescriptor().isModuleBased())
             {
                 ThumbnailService svc = ThumbnailService.get();
 
