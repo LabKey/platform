@@ -6336,7 +6336,7 @@ public class ExperimentController extends SpringActionController
         @Override
         public Object execute(ResolveLsidsForm form, BindException errors) throws Exception
         {
-            var settings = new ExperimentJSONConverter.Settings(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps(), true);
+            var settings = new ExperimentJSONConverter.Settings(form.isIncludeProperties(), form.isIncludeInputsAndOutputs(), form.isIncludeRunSteps());
             var data = _seeds.stream().map(n -> ExperimentJSONConverter.serialize(n, getUser(), settings)).collect(toList());
             return new ApiSimpleResponse("data", data);
         }
@@ -6350,7 +6350,7 @@ public class ExperimentController extends SpringActionController
         public Object execute(ExpLineageOptions options, BindException errors)
         {
             ExpLineage lineage = ExperimentServiceImpl.get().getLineage(getContainer(), getUser(), _seeds, options);
-            var settings = new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps(), true);
+            var settings = new ExperimentJSONConverter.Settings(options.isIncludeProperties(), options.isIncludeInputsAndOutputs(), options.isIncludeRunSteps());
             return new ApiSimpleResponse(lineage.toJSON(getUser(), options.isSingleSeedRequested(), settings));
         }
     }

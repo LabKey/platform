@@ -84,6 +84,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -194,6 +195,7 @@ public class ExperimentServiceImpl implements ExperimentService
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
+    private Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -311,6 +313,28 @@ public class ExperimentServiceImpl implements ExperimentService
             result.add(getExpProtocol(protocolLSID));
         }
         return result;
+    }
+
+    @Override
+    public @Nullable ExperimentProtocolHandler getExperimentProtocolHandler(@NotNull ExpProtocol protocol)
+    {
+        if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
+        {
+            return getExperimentRunType(protocol);
+        }
+        else if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
+        {
+            return Handler.Priority.findBestHandler(_protocolHandlers, protocol);
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public ExperimentRunType getExperimentRunType(@NotNull ExpProtocol protocol)
+    {
+        Set<ExperimentRunType> types = getExperimentRunTypes(protocol.getContainer());
+        return Handler.Priority.findBestHandler(types, protocol);
     }
 
     @Nullable
@@ -6272,7 +6296,13 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ProtocolImplementation getProtocolImplementation(String name)
+    public void registerProtocolHandler(ExperimentProtocolHandler handler)
+    {
+        _protocolHandlers.add(handler);
+    }
+
+    @Override
+    public @Nullable ProtocolImplementation getProtocolImplementation(String name)
     {
         return _protocolImplementations.get(name);
     }

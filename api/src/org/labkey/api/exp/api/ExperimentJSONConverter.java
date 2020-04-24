@@ -118,19 +118,17 @@ public class ExperimentJSONConverter
         private final boolean includeProperties;
         private final boolean includeInputsAndOutputs;
         private final boolean includeRunSteps;
-        private final boolean includeExpType;
 
         public Settings()
         {
-            this(true, true, false, false);
+            this(true, true, false);
         }
 
-        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps, boolean includeExpType)
+        public Settings(boolean includeProperties, boolean includeInputsAndOutputs, boolean includeRunSteps)
         {
             this.includeProperties = includeProperties;
             this.includeInputsAndOutputs = includeInputsAndOutputs;
             this.includeRunSteps = includeRunSteps;
-            this.includeExpType = includeExpType;
         }
 
         public boolean isIncludeProperties()
@@ -148,29 +146,19 @@ public class ExperimentJSONConverter
             return includeRunSteps;
         }
 
-        public boolean isIncludeExpType()
-        {
-            return includeExpType;
-        }
-
         public Settings withIncludeProperties(boolean b)
         {
-            return new Settings(b, includeInputsAndOutputs, includeRunSteps, includeExpType);
+            return new Settings(b, includeInputsAndOutputs, includeRunSteps);
         }
 
         public Settings withIncludeInputsAndOutputs(boolean b)
         {
-            return new Settings(includeProperties, b, includeRunSteps, includeExpType);
+            return new Settings(includeProperties, b, includeRunSteps);
         }
 
         public Settings withIncludeRunSteps(boolean b)
         {
-            return new Settings(includeProperties, includeInputsAndOutputs, b, includeExpType);
-        }
-
-        public Settings withIncludeExpType(boolean b)
-        {
-            return new Settings(includeProperties, includeInputsAndOutputs, includeRunSteps, b);
+            return new Settings(includeProperties, includeInputsAndOutputs, b);
         }
     }
 
@@ -195,16 +183,14 @@ public class ExperimentJSONConverter
     {
         JSONObject jsonObject = serializeExpObject(runGroup, domain != null ? domain.getProperties() : Collections.emptyList(), settings);
         jsonObject.put(COMMENT, runGroup.getComments());
-        if (settings.isIncludeExpType())
-        {
-            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
-        }
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Experiment");
         return jsonObject;
     }
 
     public static JSONObject serializeRun(ExpRun run, Domain domain, User user, @NotNull Settings settings)
     {
         JSONObject jsonObject = serializeExpObject(run, domain == null ? null : domain.getProperties(), settings);
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
         if (settings.isIncludeProperties())
         {
             jsonObject.put(COMMENT, run.getComments());
@@ -247,10 +233,6 @@ public class ExperimentJSONConverter
         {
             jsonObject.put(CPAS_TYPE, protocol.getLSID());
         }
-        if (settings.isIncludeExpType())
-        {
-            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "ExperimentRun");
-        }
 
         if (settings.isIncludeRunSteps())
         {
@@ -279,6 +261,7 @@ public class ExperimentJSONConverter
         // Just include basic protocol properties for now.
         // See GetProtocolAction and GWTProtocol for serializing an assay protocol with domain fields.
         JSONObject jsonObject = serializeExpObject(protocol, null, DEFAULT_SETTINGS.withIncludeProperties(false));
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Protocol");
         return jsonObject;
     }
 
@@ -371,6 +354,7 @@ public class ExperimentJSONConverter
     protected static JSONObject serializeRunProtocolApplication(@NotNull ExpProtocolApplication protApp, ExpRun run, User user, Settings settings)
     {
         JSONObject json = serializeExpObject(protApp, null, settings);
+        json.put(ExperimentJSONConverter.EXP_TYPE, "ProtocolApplication");
 
         json.put(ACTION_SEQUENCE, protApp.getActionSequence());
         json.put(APPLICATION_TYPE, protApp.getApplicationType().toString());
@@ -519,10 +503,7 @@ public class ExperimentJSONConverter
     public static JSONObject serializeIdentifiable(@NotNull Identifiable obj, Settings settings)
     {
         JSONObject json = serializeIdentifiableBean(obj);
-        if (settings.isIncludeExpType())
-        {
-            json.put(ExperimentJSONConverter.EXP_TYPE, "Object");
-        }
+        json.put(ExperimentJSONConverter.EXP_TYPE, (Object)null);
 
         if (settings.isIncludeProperties())
         {
@@ -547,10 +528,7 @@ public class ExperimentJSONConverter
         // instead and use serializeOntologyProperties(ExpObject) so the object properties will be
         // fetched using ExpObject.getProperty().
         JSONObject jsonObject = serializeIdentifiableBean(object);
-        if (settings.isIncludeExpType())
-        {
-            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
-        }
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Object");
 
         int rowId = object.getRowId();
         if (rowId != 0)
@@ -670,6 +648,7 @@ public class ExperimentJSONConverter
         final ExpDataClass dc = data.getDataClass(user);
 
         JSONObject jsonObject = serializeExpObject(data, null, settings);
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
 
         if (settings.isIncludeProperties())
         {
@@ -695,10 +674,6 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, data.getCpasType());
-        if (settings.isIncludeExpType())
-        {
-            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Data");
-        }
 
         return jsonObject;
     }
@@ -742,10 +717,7 @@ public class ExperimentJSONConverter
         }
 
         jsonObject.put(CPAS_TYPE, material.getCpasType());
-        if (settings.isIncludeExpType())
-        {
-            jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Material");
-        }
+        jsonObject.put(ExperimentJSONConverter.EXP_TYPE, "Material");
 
         return jsonObject;
     }
