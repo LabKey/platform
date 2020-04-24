@@ -342,6 +342,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         arguments.setName(domain.getName());
         String name = arguments.getName();
         String description = arguments.getDescription();
+        String label = arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
         Integer datasetId = arguments.getDatasetId();
@@ -349,13 +350,14 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         boolean demographics = arguments.isDemographicData();
         boolean isManagedField = arguments.isKeyPropertyManaged();
         String visitDatePropertyName = arguments.getVisitDatePropertyName();
-        Boolean useTimeKeyField = arguments.isUseTimeKeyField();
-        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        boolean useTimeKeyField = arguments.isUseTimeKeyField();
+        boolean showByDefault = arguments.isShowByDefault();
 
         // general dataset validation
         validateDatasetProperties(arguments, container, user, domain, null);
 
         // create-case specific validation
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
         TimepointType timepointType = study.getTimepointType();
         if (timepointType.isVisitBased() && getKindName().equals(DateDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME + ".");
@@ -406,8 +408,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             }
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
-                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType,
-                    description, cohortId, tag, visitDatePropertyName);
+                    demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, showByDefault,
+                    label, description, cohortId, tag, visitDatePropertyName);
 
             if (def.getDomain() != null)
             {

@@ -702,13 +702,13 @@ public class AssayPublishManager implements AssayPublishService
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, null, null, null, null);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
-                                                @Nullable String description, @Nullable Integer cohortId, @Nullable String tag, String visitDatePropertyName)
+                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId, @Nullable String tag, String visitDatePropertyName)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
@@ -718,9 +718,11 @@ public class AssayPublishManager implements AssayPublishService
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataset.setShowByDefault(true);
+            newDataset.setShowByDefault(showByDefault);
             newDataset.setType(type);
 
+            if (label != null)
+                newDataset.setLabel(label);
             if (categoryId != null)
                 newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
