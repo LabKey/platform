@@ -547,6 +547,9 @@ public class ExperimentUpgradeCode implements UpgradeCode
              // and labbook
             sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'labbook')\n" +
                             "   ALTER TABLE labbook.LabBookExperimentMaterial DROP CONSTRAINT FK_LabBookExperimentMaterial_MaterialId;\n");
+            // and microarray
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
+                    "   ALTER TABLE microarray.FeatureData DROP CONSTRAINT FK_FeatureData_SampleId;\n");
             // Remove primary key constraint
             sql.append("ALTER TABLE exp.Material DROP CONSTRAINT PK_Material;\n");
 
@@ -574,6 +577,8 @@ public class ExperimentUpgradeCode implements UpgradeCode
             sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE Name = 'labbook')\n" +
                     "       ALTER TABLE labbook.LabBookExperimentMaterial ADD CONSTRAINT FK_LabBookExperimentMaterial_MaterialId FOREIGN KEY (MaterialId) REFERENCES exp.Material (RowId);\n"
             );
+            sql.append("IF EXISTS (SELECT 1 FROM sys.schemas WHERE NAME = 'microarray')\n" +
+                    "   ALTER TABLE microarray.FeatureData ADD CONSTRAINT FK_FeatureData_SampleId FOREIGN KEY (SampleId) REFERENCES exp.material (RowId);\n");
             new SqlExecutor(scope).execute(sql);
         }
 
