@@ -219,6 +219,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // When no sorts are added by views, QueryServiceImpl.createDefaultSort() adds the primary key's default sort direction
                 ret.setSortDirection(Sort.SortDirection.DESC);
                 ret.setFk(new RowIdForeignKey(ret));
+                ret.setUserEditable(false);
                 ret.setHidden(true);
                 ret.setShownInInsertView(false);
                 ret.setHasDbSequence(true);

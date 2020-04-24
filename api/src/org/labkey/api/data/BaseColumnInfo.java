@@ -893,7 +893,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public boolean isReadOnly()
     {
-        return _isReadOnly || _isAutoIncrement || isVersionColumn();
+        return _isReadOnly || _isAutoIncrement || _hasDbSequence || isVersionColumn();
     }
 
     public void setReadOnly(boolean readOnly)
