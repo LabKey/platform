@@ -25,7 +25,6 @@ interface State {
     isLoadingModel: boolean,
     message?: string,
     dirty: boolean,
-    hasDatasetDesignPermission?: boolean,
     returnUrl: string,
     fileImportError: string
 }
@@ -133,6 +132,10 @@ export class App extends PureComponent<any, State> {
         this.navigate(ActionURL.buildURL('study', 'begin', getServerContext().container.path));
     };
 
+    onChange = (model: DatasetModel) => {
+        this.setState(() => ({dirty: true}));
+    };
+
     render() {
         const { isLoadingModel, message, model } = this.state;
 
@@ -151,6 +154,8 @@ export class App extends PureComponent<any, State> {
                     onCancel={this.onCancel}
                     useTheme={true}
                     onComplete={this.onComplete}
+                    successBsStyle={'primary'}
+                    onChange={this.onChange}
                 />
             </>
         )
