@@ -97,6 +97,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -529,10 +530,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     return false;
                 }
 
+                boolean tooBig = isTooBig(fs, type);
+
                 if ("text/html".equals(type))
                 {
                     String html;
-                    if (isTooBig(fs, type))
+                    if (tooBig)
                         html = "<html><body></body></html>";
                     else
                         html = PageFlowUtil.getStreamContentsAsString(is);
@@ -544,7 +547,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
                 else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
                 {
-                    if (isTooBig(fs, type))
+                    if (tooBig)
                         body = "";
                     else
                         body = PageFlowUtil.getStreamContentsAsString(is);
@@ -556,7 +559,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
                     ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
 
-                    parse(r, fs, is, handler, metadata);
+                    parse(r, fs, is, handler, metadata, tooBig);
 
                     body = handler.toString();
 
@@ -932,7 +935,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     // parse the document of the resource, not that parse() and accept() should agree on what is parsable
-    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
+    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata, boolean tooBig) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
             is = new BufferedInputStream(is);
@@ -1687,7 +1690,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assertNotNull(sampledata);
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
-            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
+            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl) ss;
             Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
@@ -1703,13 +1706,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                     if (strict)
                     {
-                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
                     }
                     else
                     {
                         try
                         {
-                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
                         }
                         catch (Throwable t)
                         {
@@ -1756,6 +1759,69 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         else
                             _log.info(file.getName() + ": " + message);
                     }
+                }
+            }
+        }
+
+        /**
+         * This test checks to see if the parsing method handles files it thinks are too big in the manner expected. (get a default body, and as much metadata as reasonable)
+         *
+         * @throws IOException
+         * @throws TikaException
+         * @throws SAXException
+         */
+        @Test
+        public void testOversizedFiles() throws IOException, TikaException, SAXException
+        {
+            //Instead of using oversized sample files we are just going to tell the parsing method they are too big, and trust we can detect it correctly.
+            boolean tooBig = true;
+
+            File sampledata = JunitUtil.getSampleData(null, "fileTypes");
+            assertNotNull(sampledata);
+            assertTrue(sampledata.isDirectory());
+            SearchService ss = SearchService.get();
+            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl) ss;
+            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
+
+            for (File file : sampledata.listFiles(File::isFile))
+            {
+                String docId = "testtika";
+                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getAbsolutePath()), docId, null, "text/plain", null, new URLHelper(false), null);
+                ContentHandler handler = new BodyContentHandler(-1);
+                Metadata metadata = new Metadata();
+
+                try (InputStream is = new FileInputStream(file))
+                {
+                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata, tooBig);
+
+                    String body = handler.toString();
+                    assertTrue("Body for oversized file parsed unexpectedly: " + file.getName(), StringUtils.isBlank(body));
+
+//                    Pair<Integer, String[]> expectation = expectations.get(file.getName());
+//                    assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
+//                    // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
+//                    assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
+//
+//                    if (expectation.first != body.length())
+//                    {
+//                        message = "wrong size " + body.length() + ", expected " + expectation.first;
+//                    }
+//                    else
+//                    {
+//                        for (String s : expectation.second)
+//                        {
+//                            if (!body.contains(s))
+//                            {
+//                                message = "expected text not found \"" + s + "\"";
+//                                break;
+//                            }
+//                        }
+//                    }
+//
+//                    if (null != message)
+//                    {
+//                        _log.info(file.getName() + ": " + message);
+//                    }
                 }
             }
         }
