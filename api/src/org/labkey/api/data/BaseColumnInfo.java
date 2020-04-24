@@ -70,7 +70,7 @@ import java.util.Set;
  *
  * TODO consider also a MutableColumnInfo interface
  */
-public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements ColumnInfo
+public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements MutableColumnInfo
 {
     private static final Logger LOG = Logger.getLogger(ColumnInfo.class);
     private static final Set<String> NON_EDITABLE_COL_NAMES = new CaseInsensitiveHashSet("created", "createdBy", "modified", "modifiedBy", "_ts", "entityId", "container");
@@ -880,21 +880,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
     @Override
     public StringExpression getEffectiveURL()
     {
-        StringExpression result = super.getURL();
-        if (result != null)
-            return result;
-        ForeignKey fk = getFk();
-        if (fk == null)
-            return null;
-
-        try
-        {
-            return fk.getURL(this);
-        }
-        catch (QueryParseException qpe)
-        {
-            return null;
-        }
+        return ColumnInfo.getEffectiveURL(this);
     }
 
     @Override
@@ -1179,7 +1165,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
         }
     }
 
-    private void setSortFieldKeysFromXml(String xml)
+    public void setSortFieldKeysFromXml(String xml)
     {
         List<FieldKey> keys = new ArrayList<>();
         for (String key : xml.split(","))
@@ -1319,45 +1305,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Column
 
     public String toString()
     {
-        StringBuilder sb = new StringBuilder(64);
-
-        sb.append("  ");
-        sb.append(StringUtils.rightPad(getName(), 25));
-        sb.append(" ");
-
-        String typeName = getSqlTypeName();
-        sb.append(typeName);
-
-        //UNDONE: Not supporting fixed decimal
-        if ("VARCHAR".equalsIgnoreCase(typeName) || "CHAR".equalsIgnoreCase(typeName))
-        {
-            sb.append("(");
-            sb.append(_scale);
-            sb.append(") ");
-        }
-        else
-            sb.append(" ");
-
-        //SQL Server specific
-        if (_isAutoIncrement)
-            sb.append("IDENTITY ");
-
-        sb.append(_nullable ? "NULL" : "NOT NULL");
-
-        if (null != _defaultValue)
-        {
-            sb.append(" DEFAULT ");
-            if ("CURRENT_TIMESTAMP".equals(_defaultValue))
-                sb.append(_defaultValue);
-            else
-            {
-                sb.append("'");
-                sb.append(_defaultValue);
-                sb.append("'");
-            }
-        }
-
-        return sb.toString();
+        return ColumnInfo.toString(this);
     }
 
     // UNDONE: Do we still need DomainProperty for this?

@@ -148,15 +148,20 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
-        DataType type = getDataType();
-        if (type != null)
-            return type.getQueryRowReference(this);
-
         ExpDataClassImpl dc = getDataClass();
         if (dc != null)
             return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
-        else
-            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+
+        // Issue 40123: see MedImmuneDataHandler MEDIMMUNE_DATA_TYPE, this claims the "Data" namespace
+        DataType type = getDataType();
+        if (type != null)
+        {
+            QueryRowReference queryRowReference = type.getQueryRowReference(this);
+            if (queryRowReference != null)
+                return queryRowReference;
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
     @Override

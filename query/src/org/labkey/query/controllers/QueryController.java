@@ -119,6 +119,7 @@ import org.labkey.query.CustomViewUtil;
 import org.labkey.query.EditQueriesPermission;
 import org.labkey.query.EditableCustomView;
 import org.labkey.query.LinkedTableInfo;
+import org.labkey.query.ModuleCustomQueryDefinition;
 import org.labkey.query.MetadataTableJSON;
 import org.labkey.query.ModuleCustomView;
 import org.labkey.query.QueryServiceImpl;
@@ -184,6 +185,7 @@ import static java.util.Objects.requireNonNull;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.apache.commons.lang3.StringUtils.trimToEmpty;
 import static org.labkey.api.data.DbScope.NO_OP_TRANSACTION;
+import static org.labkey.api.util.DOM.*;
 
 @SuppressWarnings("DefaultAnnotationParam")
 
@@ -533,7 +535,10 @@ public class QueryController extends SpringActionController
             sb.append("  <td class=\"labkey-column-header\">Current Status</td>");
             sb.append("  <td class=\"labkey-column-header\">URL</td>");
             sb.append("  <td class=\"labkey-column-header\">Product Name</td>");
-            sb.append("  <td class=\"labkey-column-header\">Product Version</td></tr>\n");
+            sb.append("  <td class=\"labkey-column-header\">Product Version</td>");
+            sb.append("  <td class=\"labkey-column-header\">Max Connections</td>");
+            sb.append("  <td class=\"labkey-column-header\">Active Connections</td>");
+            sb.append("  <td class=\"labkey-column-header\">Idle Connections</td></tr>\n");
 
             int rowCount = 0;
             for (DbScope scope : DbScope.getDbScopes())
@@ -567,11 +572,17 @@ public class QueryController extends SpringActionController
 
                 sb.append(status);
                 sb.append("</td><td>");
-                sb.append(scope.getURL());
+                sb.append(PageFlowUtil.filter(scope.getURL()));
                 sb.append("</td><td>");
-                sb.append(scope.getDatabaseProductName());
+                sb.append(PageFlowUtil.filter(scope.getDatabaseProductName()));
                 sb.append("</td><td>");
-                sb.append(scope.getDatabaseProductVersion());
+                sb.append(PageFlowUtil.filter(scope.getDatabaseProductVersion()));
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getMaxTotal());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getNumActive());
+                sb.append("</td><td>");
+                sb.append(scope.getDataSourceProperties().getNumIdle());
                 sb.append("</td></tr>\n");
 
                 Collection<ExternalSchemaDef> dsDefs = byDataSourceName.get(scope.getDataSourceName());
@@ -950,7 +961,22 @@ public class QueryController extends SpringActionController
                 Logger.getLogger(QueryController.class).error("Error", e);
             }
 
-            return new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
+            Renderable moduleWarning = null;
+            if (_queryDef instanceof ModuleCustomQueryDefinition && _queryDef.canEdit(getUser()))
+            {
+                var mcqd = (ModuleCustomQueryDefinition)_queryDef;
+                moduleWarning = DIV(cl("labkey-warning-messages"),
+                        "This SQL query is defined in the '" + mcqd.getModuleName() + "' module in directory '" + mcqd.getSqlFile().getParent() + "'.",
+                                BR(),
+                                "Changes to this query will be reflected in all usages across different folders on the server."
+                        );
+            }
+
+            var sourceQueryView = new JspView<>("/org/labkey/query/view/sourceQuery.jsp", this, errors);
+            WebPartView ret = sourceQueryView;
+            if (null != moduleWarning)
+                ret = new VBox(new HtmlView(moduleWarning), sourceQueryView);
+            return ret;
         }
 
         @Override
@@ -1206,6 +1232,11 @@ public class QueryController extends SpringActionController
 
             if (null == _queryDef)
                 throw new NotFoundException("Query not found: " + form.getQueryName());
+
+            if (!_queryDef.canDelete(getUser()))
+            {
+                errors.reject(ERROR_MSG, "Sorry, this query can not be deleted");
+            }
 
             return new JspView<>("/org/labkey/query/view/deleteQuery.jsp", this, errors);
         }
@@ -4237,6 +4268,9 @@ public class QueryController extends SpringActionController
                 setTitle("Delete Schema");
 
             AbstractExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), AbstractExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             String schemaName = isBlank(def.getUserSchemaName()) ? "this schema" : "the schema '" + def.getUserSchemaName() + "'";
             return new HtmlView(HtmlString.of("Are you sure you want to delete " + schemaName + "? The tables and queries defined in this schema will no longer be accessible."));
         }
@@ -4245,6 +4279,9 @@ public class QueryController extends SpringActionController
         public boolean handlePost(SchemaForm form, BindException errors)
         {
             AbstractExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), AbstractExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             QueryManager.get().delete(def);
             return true;
         }
@@ -4275,8 +4312,10 @@ public class QueryController extends SpringActionController
             form.validate(errors);
         }
 
+        @Nullable
         protected abstract T getCurrent(int externalSchemaId);
 
+        @NotNull
         protected T getDef(F form, boolean reshow)
         {
             T def;
@@ -4286,12 +4325,21 @@ public class QueryController extends SpringActionController
             {
                 def = form.getBean();
                 T current = getCurrent(def.getExternalSchemaId());
+                if (current == null)
+                    throw new NotFoundException();
+
                 defContainer = current.lookupContainer();
             }
             else
             {
                 form.refreshFromDb();
+                if (!form.isDataLoaded())
+                    throw new NotFoundException();
+
                 def = form.getBean();
+                if (def == null)
+                    throw new NotFoundException();
+
                 defContainer = def.lookupContainer();
             }
 
@@ -4352,6 +4400,7 @@ public class QueryController extends SpringActionController
             super(LinkedSchemaForm.class);
         }
 
+        @Nullable
         @Override
         protected LinkedSchemaDef getCurrent(int externalId)
         {
@@ -4376,6 +4425,7 @@ public class QueryController extends SpringActionController
             super(ExternalSchemaForm.class);
         }
 
+        @Nullable
         @Override
         protected ExternalSchemaDef getCurrent(int externalId)
         {
@@ -4741,6 +4791,9 @@ public class QueryController extends SpringActionController
         public boolean handlePost(SchemaForm form, BindException errors)
         {
             ExternalSchemaDef def = ExternalSchemaDefCache.getSchemaDef(getContainer(), form.getExternalSchemaId(), ExternalSchemaDef.class);
+            if (def == null)
+                throw new NotFoundException();
+
             QueryManager.get().reloadExternalSchema(def);
             _userSchemaName = def.getUserSchemaName();
 

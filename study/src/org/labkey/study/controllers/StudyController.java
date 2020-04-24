@@ -73,6 +73,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.ModuleHtmlView;
@@ -2648,9 +2649,8 @@ public class StudyController extends BaseStudyController
             return getDefaultImportView(form, errors);
         }
 
-
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -7729,7 +7729,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             if (null == _study)
                 return 0;

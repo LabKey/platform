@@ -19,8 +19,10 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AnalystPermission;
 import org.labkey.api.security.permissions.BrowserDeveloperPermission;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.TrustedPermission;
+import org.labkey.api.settings.AppProps;
 
 /**
  * Created by davebradlee on 7/23/18.
@@ -33,7 +35,9 @@ public class PlatformDeveloperRole extends AbstractRootContainerRole
                 PlatformDeveloperPermission.class,
                 AnalystPermission.class,
                 BrowserDeveloperPermission.class,
-                TrustedPermission.class);
+                TrustedPermission.class,
+                AppProps.getInstance().isDevMode() ? EditModuleResourcesPermission.class : null
+        );
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
     }

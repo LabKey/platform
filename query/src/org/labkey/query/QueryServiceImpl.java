@@ -694,6 +694,15 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             .collect(Collectors.toList());
     }
 
+    public void uncacheModuleResources(Module module)
+    {
+        MODULE_QUERY_DEF_CACHE.onModuleChanged(module);
+        MODULE_QUERY_METADATA_DEF_CACHE.onModuleChanged(module);
+        MODULE_CUSTOM_VIEW_CACHE.onModuleChanged(module);
+        INVALIDATE_QUERY_METADATA_HANDLER.moduleChanged(module);
+    }
+
+
     private static class QueryDefResourceCacheHandler implements ModuleResourceCacheHandler<MultiValuedMap<Path, ModuleQueryDef>>
     {
         @Override
