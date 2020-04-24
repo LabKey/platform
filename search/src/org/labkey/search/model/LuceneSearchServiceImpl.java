@@ -944,12 +944,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (null != p)
         {
             metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
-            p.parse(is, handler);
+            if (!tooBig)  //Check filesize even if parser set. Issue #40253
+                p.parse(is, handler);
             return;
         }
 
         // Treat files over the size limit as empty files
-        if (isTooBig(fs, r.getContentType()))
+        if (tooBig)
         {
             logAsWarning(r, "The document is too large");
             return;
