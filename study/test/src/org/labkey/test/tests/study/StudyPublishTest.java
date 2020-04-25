@@ -1070,11 +1070,11 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         goToQueryView("study", dataset, true);
         QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
-        designerPage.fieldsPanel()
+        designerPage.getFieldsPanel()
                 .getField(fieldName)
                 .setExcludeFromDateShifting(true);
 
-        designerPage.clickFinish();
+        designerPage.clickSave();
         waitForText("Save Successful");
     }
 
