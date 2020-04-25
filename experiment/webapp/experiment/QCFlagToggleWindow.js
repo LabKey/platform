@@ -5,7 +5,7 @@
  */
 
 Ext.namespace('LABKEY');
-LABKEY.requiresCss('Experiment/QCFlagToggle.css');
+LABKEY.requiresCss('experiment/QCFlagToggle.css');
 Ext.QuickTips.init();
 var $h = Ext.util.Format.htmlEncode;
 

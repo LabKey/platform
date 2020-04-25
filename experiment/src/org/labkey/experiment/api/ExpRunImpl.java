@@ -311,7 +311,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
     @Override
     public String urlFlag(boolean flagged)
     {
-        return AppProps.getInstance().getContextPath() + "/Experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
+        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagRun.gif" : "unflagRun.gif");
     }
 
     @Override
