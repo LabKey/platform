@@ -19,13 +19,23 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
+import org.labkey.api.issues.IssuesDomainKindProperties;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +53,59 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 
     private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
+
+    @Override
+    public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName)
+    {
+        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(container, defName);
+        String sortDirection = IssueManager.getCommentSortDirection(container, defName).name();
+
+        Integer assignedToGroup = null;
+        Group assignedToGroupGroup = IssueManager.getAssignedToGroup(container, defName); // RP TODO: these var names are so confusing lol, think of something better
+        if (assignedToGroupGroup != null)
+            assignedToGroup = assignedToGroupGroup.getUserId();
+
+        Integer assignedToUser = null;
+        User defaultUser = IssueManager.getDefaultAssignedToUser(container, defName);
+        if (defaultUser != null)
+            assignedToUser = defaultUser.getUserId();
+
+        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser);
+    }
+
+    @Override
+    public ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties, Container container)
+    {
+        IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
+
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            names.singularName = properties.getSingularItemName();
+            names.pluralName = properties.getPluralItemName();
+
+            String issueDefName = properties.getIssueDefName();
+            IssueManager.saveEntryTypeNames(container, issueDefName, names);
+            IssueManager.saveCommentSortDirection(container, issueDefName, Sort.SortDirection.fromString(properties.getCommentSortDirection()));
+
+            // RP TODO: names below may be confusing. Consider changing
+            Group group = null;
+            if (properties.getAssignedToGroup() != null)
+                group = SecurityManager.getGroup(properties.getAssignedToGroup());
+            IssueManager.saveAssignedToGroup(container, issueDefName, group);
+
+            User user = null;
+            if (properties.getAssignedToUser() != null)
+                user = UserManager.getUser(properties.getAssignedToUser());
+            IssueManager.saveDefaultAssignedToUser(container, issueDefName, user);
+
+            ValidationException exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            if (!exception.hasErrors())
+            {
+                transaction.commit();
+            }
+            return exception;
+        }
+    }
 
     @Override
     public void registerIssuesListDefProvider(IssuesListDefProvider provider)

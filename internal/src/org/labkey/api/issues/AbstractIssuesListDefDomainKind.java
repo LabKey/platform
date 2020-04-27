@@ -16,6 +16,7 @@
 package org.labkey.api.issues;
 
 import com.google.common.collect.Sets;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
@@ -36,11 +37,13 @@ import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -48,6 +51,7 @@ import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Pair;
@@ -68,7 +72,7 @@ import java.util.stream.Collectors;
 /**
  * Created by davebradlee on 8/3/16.
  */
-public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomainKind
+public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind<IssuesDomainKindProperties>
 {
     protected static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
     protected static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
@@ -268,18 +272,46 @@ public abstract class AbstractIssuesListDefDomainKind extends BaseAbstractDomain
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Class <? extends IssuesDomainKindProperties> getTypeClass()
+    {
+        return IssuesDomainKindProperties.class;
+    }
+
+    @Override
+    public @Nullable IssuesDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    {
+        return IssuesListDefService.get().getIssueDomainKindProperties(container, domain.getName());
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        // TODO
+
+        // Validation:
+        // Will just need to check name is not null
+        // As well as if user has permissions to update, if IssuesDef exists in this container, if domain not found
+
+        // IssueDesigner.save() also is clearing out 'fake property ids' in line 261? Check whether we need to
+
+
+
+    return IssuesListDefService.get().updateIssueDefinition(original, update, options, container);
+//        return super.updateDomain(original, update, options, container, user, includeWarnings);
+    }
+
+    // RP TODO: read thoroughly
+    @Override
+    public Domain createDomain(GWTDomain domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        String providerName = arguments.containsKey("providerName") ? (String)arguments.get("providerName") : null;
-        String singularNoun = arguments.containsKey("singularNoun") ? (String)arguments.get("singularNoun") : getDefaultSingularName();
-        String pluralNoun = arguments.containsKey("pluralNoun") ? (String)arguments.get("pluralNoun") : getDefaultPluralName();
+        String providerName = getKindName();
+        String singularNoun = arguments.getSingularItemName() != null ? arguments.getSingularItemName() : getDefaultSingularName();
+        String pluralNoun = arguments.getPluralItemName() != null ? arguments.getPluralItemName() : getDefaultPluralName();
 
         if (name == null)
             throw new IllegalArgumentException("Issue name must not be null");
-
-        if (providerName == null)
-            providerName = getKindName();
 
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))

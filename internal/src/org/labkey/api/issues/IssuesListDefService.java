@@ -20,6 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -38,6 +41,12 @@ public interface IssuesListDefService
     {
         ServiceRegistry.get().registerService(IssuesListDefService.class, impl);
     }
+
+    // RP TODO: Comment
+    IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName);
+
+    ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                              IssuesDomainKindProperties properties, Container container);
 
     /**
      * Register a provider that will be used as the "Kind" for a new issue list definition creation.
