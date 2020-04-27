@@ -1765,7 +1765,8 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
 
         /**
-         * This test checks to see if the parsing method handles files it thinks are too big in the manner expected. (get a default body, and as much metadata as reasonable)
+         * This test checks to see if the parsing method handles files it thinks are too big in the manner expected.
+         * (get a default body, and as much metadata as reasonable)
          *
          * @throws IOException
          * @throws TikaException
@@ -1797,32 +1798,6 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                     String body = handler.toString();
                     assertTrue("Body for oversized file parsed unexpectedly: " + file.getName(), StringUtils.isBlank(body));
-
-//                    Pair<Integer, String[]> expectation = expectations.get(file.getName());
-//                    assertNotNull("Unexpected file \"" + file.getName() + "\" size " + body.length() + " and body \"" + StringUtils.left(body, 500) + "\"", expectation);
-//                    // If body length is 0 then we expect no strings; if body length > 0 then we expect at least one string
-//                    assertTrue("\"" + file.getName() + "\": invalid expectation, " + expectation, (0 == expectation.first) == (0 == expectation.second.length));
-//
-//                    if (expectation.first != body.length())
-//                    {
-//                        message = "wrong size " + body.length() + ", expected " + expectation.first;
-//                    }
-//                    else
-//                    {
-//                        for (String s : expectation.second)
-//                        {
-//                            if (!body.contains(s))
-//                            {
-//                                message = "expected text not found \"" + s + "\"";
-//                                break;
-//                            }
-//                        }
-//                    }
-//
-//                    if (null != message)
-//                    {
-//                        _log.info(file.getName() + ": " + message);
-//                    }
                 }
             }
         }
