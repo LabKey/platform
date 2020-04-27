@@ -33,9 +33,12 @@ import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.issue.view.IssuesListView;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,6 +87,8 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
             names.pluralName = properties.getPluralItemName();
 
             String issueDefName = properties.getIssueDefName();
+            if (issueDefName == null || issueDefName.length() == 0)
+                throw new IllegalArgumentException("Issue definition name must not be null.");
             IssueManager.saveEntryTypeNames(container, issueDefName, names);
             IssueManager.saveCommentSortDirection(container, issueDefName, Sort.SortDirection.fromString(properties.getCommentSortDirection()));
 

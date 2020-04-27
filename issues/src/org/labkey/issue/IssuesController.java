@@ -1997,6 +1997,11 @@ public class IssuesController extends SpringActionController
         }
     }
 
+//    public class getQueryName extends ReadOnlyApiAction<>
+//    {
+//
+//    }
+
     @RequiresPermission(ReadPermission.class)
     public class RssAction extends SimpleViewAction
     {

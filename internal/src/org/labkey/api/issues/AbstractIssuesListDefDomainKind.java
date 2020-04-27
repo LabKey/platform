@@ -52,6 +52,7 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Pair;
@@ -288,20 +289,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
         // TODO
-
         // Validation:
         // Will just need to check name is not null
         // As well as if user has permissions to update, if IssuesDef exists in this container, if domain not found
+        // IssueDesigner.save() also is clearing out 'fake property ids' in line 261? Check whether we need to too
 
-        // IssueDesigner.save() also is clearing out 'fake property ids' in line 261? Check whether we need to
-
-
-
-    return IssuesListDefService.get().updateIssueDefinition(original, update, options, container);
-//        return super.updateDomain(original, update, options, container, user, includeWarnings);
+        return IssuesListDefService.get().updateIssueDefinition(original, update, options, container);
     }
 
-    // RP TODO: read thoroughly
     @Override
     public Domain createDomain(GWTDomain domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
@@ -309,8 +304,10 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         String providerName = getKindName();
         String singularNoun = arguments.getSingularItemName() != null ? arguments.getSingularItemName() : getDefaultSingularName();
         String pluralNoun = arguments.getPluralItemName() != null ? arguments.getPluralItemName() : getDefaultPluralName();
+        String sortOrder = arguments.getCommentSortDirection();
+        Integer assignedToGroup = arguments.getAssignedToGroup();
 
-        if (name == null)
+        if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Issue name must not be null");
 
         int issueDefId;
