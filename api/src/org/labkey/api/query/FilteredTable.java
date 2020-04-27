@@ -16,6 +16,7 @@
 
 package org.labkey.api.query;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.compliance.TableRules;
@@ -28,6 +29,7 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
@@ -54,6 +56,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 
 /**
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
@@ -728,7 +732,32 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
                 return fk;
             BaseColumnInfo.SchemaForeignKey sfk = (BaseColumnInfo.SchemaForeignKey) fk;
             if (null != sfk.getLookupSchemaName() && !targetSchemaName.equalsIgnoreCase(sfk.getLookupSchemaName()))
+            {
+                if (!equalsIgnoreCase("core",sfk.getLookupSchemaName()))
+                    return fk;
+                // core special cases
+                String target = sfk.getLookupTableName();
+                if (equalsIgnoreCase("users",target))
+                {
+                    var ret = new UserIdQueryForeignKey(schema);
+                    if (null == sfk.getLookupDisplayName() || equalsIgnoreCase(sfk.getLookupDisplayName(),ret.getLookupDisplayName()))
+                        return ret;
+                }
+                if (equalsIgnoreCase("containers",target))
+                {
+                    var ret = new ContainerForeignKey((UserSchema) schema);
+                    if (null == sfk.getLookupDisplayName() || equalsIgnoreCase(sfk.getLookupDisplayName(),ret.getLookupDisplayName()))
+                        return ret;
+                }
+                if (equalsIgnoreCase("viewcategory",target))
+                {
+                    QueryForeignKey.Builder b = sfk.createQueryForeignKey(new QueryForeignKey.Builder(schema, cf));
+                    ForeignKey qfk = null==b ? null : b.build();
+                    if (null != qfk)
+                        return qfk;
+                }
                 return fk;
+            }
             if (!knownTables.contains(sfk.getLookupTableName()))
                 return fk;
             // ask the SFK to transform itself if it can, it's up to this method to validate that this is OK

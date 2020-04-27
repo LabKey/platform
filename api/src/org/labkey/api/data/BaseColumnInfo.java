@@ -65,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.apache.commons.lang3.StringUtils.isBlank;
+
 /**
  * Represents a column (be it a real column in a table or a calculated expression) that's part of
  * a {@link TableInfo}. Knows how to generate SQL to get its own value.
@@ -936,7 +938,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 xmlCol.setScale(_scale);
             if (null != _defaultValue)
                 xmlCol.setDefaultValue(_defaultValue.toString());
-            if (!StringUtils.isBlank(getDisplayWidth()))
+            if (!isBlank(getDisplayWidth()))
                 xmlCol.setDisplayWidth(getDisplayWidth());
             if (null != _format)
                 xmlCol.setFormatString(_format);
@@ -1261,7 +1263,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
      */
     public static String jdbcRsNameFromName(String name)
     {
-        if (StringUtils.isBlank(name))
+        if (isBlank(name))
             return null;
 
         return name.replaceAll("\\s", "_")
@@ -1480,6 +1482,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             // TODO _useRawFKValue _joinWithContainer
             if (_useRawFKValue || _joinWithContainer)
                return null;
+            if (!isBlank(getLookupSchemaName()))
+                builder.schema(getLookupSchemaName());
             return builder.table(_tableName)
                 .key(_lookupKey)
                 .display(_displayColumnName);
