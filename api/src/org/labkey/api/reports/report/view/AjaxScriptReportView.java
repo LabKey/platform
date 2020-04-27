@@ -16,12 +16,25 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+
+import java.io.File;
+import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /*
 * User: adam
@@ -90,6 +103,37 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
         }
 
         init(bean, mode);
+
+        /* add warning to editor */
+
+        // module based report warning
+        if (_report.getDescriptor().isModuleBased() && _report.canEdit(bean.getUser(), bean.getContainer()))
+        {
+            ModuleReportDescriptor mrd = (ModuleReportDescriptor)_report.getDescriptor();
+            org.labkey.api.module.Module m = mrd.getModule();
+            File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
+            if (null != f)
+            {
+                HtmlStringBuilder moduleWarning = HtmlStringBuilder.of("")
+                    .append("This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.")
+                    .append(HtmlString.unsafe("<br>"))
+                    .append("Changes to this report will be reflected in all usages across different folders on the server.")
+                    .append(HtmlString.unsafe("<br>"));
+                bean.addWarning(moduleWarning.getHtmlString());
+            }
+        }
+
+        // external editor warning
+        Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), report);
+        if (null != externalEditorSettings)
+        {
+            Map<String, Object> externalConfig = externalEditorSettings.getValue();
+            if (!StringUtils.isBlank((String)externalConfig.get("warningMsg")))
+            {
+                // This seems very round about, can't AjaxScriptReportView do this?
+                bean.addWarning((String) externalConfig.get("warningMsg"));
+            }
+        }
     }
 
     protected void init(ScriptReportDesignBean bean, Mode mode) throws Exception

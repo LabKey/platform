@@ -1008,24 +1008,6 @@ public class ReportsController extends SpringActionController
             }
 
             VBox vbox = new VBox();
-
-            if (_report.getDescriptor().isModuleBased() && _report.canEdit(getUser(), getContainer()))
-            {
-                ModuleReportDescriptor mrd = (ModuleReportDescriptor)_report.getDescriptor();
-                org.labkey.api.module.Module m = mrd.getModule();
-                File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
-                if (null != f)
-                {
-                    var moduleWarning = createHtmlFragment(DIV(cl("labkey-warning-messages"),
-                            "This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.",
-                            BR(),
-                            "Changes to this report will be reflected in all usages across different folders on the server."),
-                            NBSP, BR()
-                    );
-                    vbox.addView(new HtmlView(moduleWarning));
-                }
-            }
-
             vbox.addView(reportView);
 
             if (!isPrint() && !(reportView instanceof HttpRedirectView) && DiscussionService.get() != null)
