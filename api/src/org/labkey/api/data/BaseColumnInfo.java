@@ -39,6 +39,7 @@ import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.PageFlowUtil;
@@ -1471,6 +1472,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         public Set<FieldKey> getSuggestedColumns()
         {
             return null;
+        }
+
+        /* caller is responsible for making sure this makes sense WRT source and target tables */
+        public QueryForeignKey.Builder createQueryForeignKey(QueryForeignKey.Builder builder)
+        {
+            // TODO _useRawFKValue _joinWithContainer
+            if (_useRawFKValue || _joinWithContainer)
+               return null;
+            return builder.table(_tableName)
+                .key(_lookupKey)
+                .display(_displayColumnName);
         }
     }
 

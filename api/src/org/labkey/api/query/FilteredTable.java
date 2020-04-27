@@ -28,6 +28,7 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -52,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * A table that filters down to a particular set of rows from an underlying, wrapped table/subquery. A typical example
@@ -63,10 +65,10 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
     protected String _publicSchemaName = null;
-
     private boolean _public = true;
-
     @NotNull protected SchemaType _userSchema;
+
+    Function<ForeignKey, ForeignKey> _fixupForeignKeys = Function.identity();
 
     private final @NotNull TableRules _rules;
 
@@ -105,6 +107,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         }
 
         _rules = supportTableRules() ? TableRulesManager.get().getTableRules(getContainer(), userSchema.getUser()) : TableRules.NOOP_TABLE_RULES;
+
+        if (table instanceof SchemaTableInfo)
+            _fixupForeignKeys = new BasicFixUpSchemaForeignKey(userSchema, getContainerFilter(), table.getSchema().getName());
     }
 
     @Override
@@ -493,6 +498,9 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
 
+        if (null != ret.getFk())
+            ret.setFk(_fixupForeignKeys.apply(ret.getFk()));
+
         if (!getPHIDataLoggingColumns().isEmpty() && PHI.NotPHI != column.getPHI() && column.isShouldLog())
         {
             ret.setColumnLogging(new ColumnLogging(true, column.getFieldKey(), column.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
@@ -695,5 +703,38 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             return _userSchema.getContainer().hasPermission(user, perm);
         }
         return super.hasPermission(user, perm);
+    }
+
+    /* CONSIDER: delegate to schema to determine if FK should be left, converted, or vetoed */
+    static class BasicFixUpSchemaForeignKey implements Function<ForeignKey, ForeignKey>
+    {
+        final QuerySchema schema;
+        final ContainerFilter cf;
+        final String targetSchemaName;
+        final Set<String> knownTables;
+
+        BasicFixUpSchemaForeignKey(UserSchema schema, ContainerFilter cf, String targetSchemaName)
+        {
+            this.schema = schema;
+            this.cf = cf;
+            this.targetSchemaName = targetSchemaName;
+            knownTables = schema.getTableNames();
+        }
+
+        @Override
+        public ForeignKey apply(ForeignKey fk)
+        {
+            if (!(fk instanceof BaseColumnInfo.SchemaForeignKey))
+                return fk;
+            BaseColumnInfo.SchemaForeignKey sfk = (BaseColumnInfo.SchemaForeignKey) fk;
+            if (null != sfk.getLookupSchemaName() && !targetSchemaName.equalsIgnoreCase(sfk.getLookupSchemaName()))
+                return fk;
+            if (!knownTables.contains(sfk.getLookupTableName()))
+                return fk;
+            // ask the SFK to transform itself if it can, it's up to this method to validate that this is OK
+            QueryForeignKey.Builder b = sfk.createQueryForeignKey(new QueryForeignKey.Builder(schema, cf));
+            ForeignKey qfk = null==b ? null : b.build();
+            return null==qfk ? fk : qfk;
+        }
     }
 }

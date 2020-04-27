@@ -1696,7 +1696,11 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _locked = b;
         // set columns in the column list as locked, lookup columns created later are not locked
         for (ColumnInfo c : getColumns())
-            ((BaseColumnInfo)c).setLocked(b);
+        {
+            ((BaseColumnInfo) c).setLocked(b);
+            if (c.getFk() instanceof BaseColumnInfo.SchemaForeignKey)
+                LOG.warn("column has SchemaForeignKey: " + getName() + "." + c.getName());
+        }
     }
 
     @Override
