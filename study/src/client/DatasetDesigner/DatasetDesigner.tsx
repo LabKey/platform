@@ -149,6 +149,11 @@ export class App extends PureComponent<any, State> {
 
         return (
             <>
+                {model && model.isFromAssay() &&
+                    <p>
+                        This dataset was created by copying assay data from <a href={model.sourceAssayUrl}>{model.sourceAssayName}</a>.
+                    </p>
+                }
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
