@@ -507,7 +507,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (!useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
             throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column.");
 
-        if (null != keyPropertyName && !useTimeKeyField)
+        if (null != keyPropertyName && !useTimeKeyField && isManagedField)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (!(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))
