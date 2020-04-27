@@ -342,7 +342,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         arguments.setName(domain.getName());
         String name = arguments.getName();
         String description = arguments.getDescription();
-        String label = arguments.getLabel();
+        String label = (arguments.getLabel() == null || arguments.getLabel().length() == 0) ? arguments.getName() : arguments.getLabel();
         Integer cohortId = arguments.getCohortId();
         String tag = arguments.getTag();
         Integer datasetId = arguments.getDatasetId();
@@ -487,9 +487,6 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Label related exceptions
 
-        if (label == null || label.length() == 0)
-            throw new IllegalArgumentException("Dataset label cannot be empty.");
-
         if ((def != null && !def.getLabel().equals(label) || (def == null)) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
             throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\".");
 
@@ -535,13 +532,16 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (!def.canUpdateDefinition(user))
             throw new IllegalArgumentException("Shared dataset can not be edited in this folder.");
 
+        if (datasetProperties.getLabel() == null || datasetProperties.getLabel().length() == 0)
+            throw new IllegalArgumentException("Dataset label cannot be empty.");
+
         if (null == PropertyService.get().getDomain(container, update.getDomainURI()))
             throw new IllegalArgumentException("Domain not found: " + update.getDomainURI() + ".");
 
         if (!def.getTypeURI().equals(original.getDomainURI()) || !def.getTypeURI().equals(update.getDomainURI()))
             throw new IllegalArgumentException("Illegal Argument");
 
-        if ( datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
+        if (datasetProperties.isDemographicData() && !def.isDemographicData() && !StudyManager.getInstance().isDataUniquePerParticipant(def))
         {
             String noun = StudyService.get().getSubjectNounSingular(container);
             throw new IllegalArgumentException("This dataset currently contains more than one row of data per " + noun +
