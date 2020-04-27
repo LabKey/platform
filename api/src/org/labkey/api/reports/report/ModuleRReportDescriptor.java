@@ -179,7 +179,8 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
         if (null == ModuleEditorService.get().getFileForModuleResource(getModule(), getSourceFile().getPath()))
             errors.add(new SimpleValidationError("The source for this module report is not editable."));
         else if (!user.hasRootPermission(EditModuleResourcesPermission.class))
-            errors.add(new SimpleValidationError("You must have EditModuleResourcesPermission (role?) to edit module resources."));
+            // TODO add role name here instead of permission
+            errors.add(new SimpleValidationError("You must have EditModuleResourcesPermission to edit module resources."));
         return errors.isEmpty();
     }
 }
