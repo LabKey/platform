@@ -10,6 +10,7 @@ import org.labkey.api.util.PageFlowUtil;
 
 public class DatasetDomainKindProperties implements Cloneable
 {
+    protected String _entityId;
     protected Integer _datasetId;
     protected String _name;
     protected String _description;
@@ -54,6 +55,7 @@ public class DatasetDomainKindProperties implements Cloneable
     public DatasetDomainKindProperties(Dataset ds)
     {
         this(ds.getContainer());
+        _entityId = ds.getEntityId();
         _datasetId = ds.getDatasetId();
         _name = ds.getName();
         _description = ds.getDescription();
@@ -104,6 +106,16 @@ public class DatasetDomainKindProperties implements Cloneable
     public void setDefinitionIsShared(boolean definitionIsShared)
     {
         _definitionIsShared = definitionIsShared;
+    }
+
+    public String getEntityId()
+    {
+        return _entityId;
+    }
+
+    public void setEntityId(String entityId)
+    {
+        _entityId = entityId;
     }
 
     public Integer getDatasetId()
