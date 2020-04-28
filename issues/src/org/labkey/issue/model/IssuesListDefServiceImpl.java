@@ -131,16 +131,20 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
 
         Group group = null;
         if (properties.getAssignedToGroup() != null)
+        {
             group = SecurityManager.getGroup(properties.getAssignedToGroup());
-        if (null == group)
-            throw new IllegalArgumentException("Group not found.");
+            if (null == group)
+                throw new IllegalArgumentException("Group not found.");
+        }
         IssueManager.saveAssignedToGroup(container, name, group);
 
         User user = null;
         if (properties.getAssignedToUser() != null)
+        {
             user = UserManager.getUser(properties.getAssignedToUser());
-        if (null == user)
-            throw new IllegalArgumentException("User not found.");
+            if (null == user)
+                throw new IllegalArgumentException("User not found.");
+        }
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
     }
