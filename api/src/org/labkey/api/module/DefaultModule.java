@@ -1266,7 +1266,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         // - The module's enlistment ID matches EITHER the enlistment ID in the web server's source root OR the enlistment ID in
         //   the module's sourcePath
         //
-        if (AppProps.getInstance().isDevMode())
+        if (AppProps.getInstance().isLoadingResourcesFromSourceEnabled())
         {
             String sourcePath = getSourcePath();
 

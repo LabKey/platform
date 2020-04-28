@@ -76,6 +76,8 @@ public interface AppProps
 
     boolean isRecompileJspEnabled();
 
+    boolean isLoadingResourcesFromSourceEnabled();
+
     void setProjectRoot(String projectRoot);
 
     /**
