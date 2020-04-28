@@ -1,0 +1,133 @@
+package org.labkey.api.exp.api;
+
+import com.google.gwt.user.client.rpc.IsSerializable;
+import org.labkey.api.util.Pair;
+
+import java.util.List;
+import java.util.Map;
+
+public class ProvenanceRecordingParams implements IsSerializable
+{
+    private String recordingId;
+    private String name;
+    private String description;
+    private List<String> predecessorSteps;
+    private String inputObjectUriProperty;
+    private String outputObjectUriProperty;
+    private Map<String, Object> properties;
+    private List<String> objectInputs;
+    private List<Pair<String,String>> provenanceMap;
+
+    private List<Object> materialInputs;
+    private List<Object> dataInputs;
+
+    public String getRecordingId()
+    {
+        return recordingId;
+    }
+
+    public void setRecordingId(String recordingId)
+    {
+        this.recordingId = recordingId;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public void setDescription(String description)
+    {
+        this.description = description;
+    }
+
+    public List<String> getPredecessorSteps()
+    {
+        return predecessorSteps;
+    }
+
+    public void setPredecessorSteps(List<String> predecessorSteps)
+    {
+        this.predecessorSteps = predecessorSteps;
+    }
+
+    public String getInputObjectUriProperty()
+    {
+        return inputObjectUriProperty;
+    }
+
+    public void setInputObjectUriProperty(String inputObjectUriProperty)
+    {
+        this.inputObjectUriProperty = inputObjectUriProperty;
+    }
+
+    public String getOutputObjectUriProperty()
+    {
+        return outputObjectUriProperty;
+    }
+
+    public void setOutputObjectUriProperty(String outputObjectUriProperty)
+    {
+        this.outputObjectUriProperty = outputObjectUriProperty;
+    }
+
+    public Map<String, Object> getProperties()
+    {
+        return properties;
+    }
+
+    public void setProperties(Map<String, Object> properties)
+    {
+        this.properties = properties;
+    }
+
+    public List<String> getObjectInputs()
+    {
+        return objectInputs;
+    }
+
+    public void setObjectInputs(List<String> objectInputs)
+    {
+        this.objectInputs = objectInputs;
+    }
+
+    public List<Pair<String, String>> getProvenanceMap()
+    {
+        return provenanceMap;
+    }
+
+    public void setProvenanceMap(List<Pair<String, String>> provenanceMap)
+    {
+        this.provenanceMap = provenanceMap;
+    }
+
+    public List<Object> getMaterialInputs()
+    {
+        return materialInputs;
+    }
+
+    public void setMaterialInputs(List<Object> materialInputs)
+    {
+        this.materialInputs = materialInputs;
+    }
+
+    public List<Object> getDataInputs()
+    {
+        return dataInputs;
+    }
+
+    public void setDataInputs(List<Object> dataInputs)
+    {
+        this.dataInputs = dataInputs;
+    }
+}

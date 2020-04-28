@@ -1,18 +1,23 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Service to include non-data {@link ExpObject} and non-material to a run's ProtocolApplication steps for the purposes of lineage.
- * This service can add provenance to an {@link ExpProtocolApplication} using one of teh add Methods.
+ * This service can add provenance to an {@link ExpProtocolApplication} using one of the add Methods.
+ * Also, provides support to record provenance information across LabKey HTTP API calls. - May TBD, 2020
  * */
 public interface ProvenanceService
 {
@@ -25,6 +30,8 @@ public interface ProvenanceService
     String PROVENANCE_OUTPUT_PROPERTY = PROVENANCE_PROPERTY_PREFIX + ":" + PROVENANCE_OBJECT_OUTPUTS;
 
     String PROVENANCE_OBJECT_MAP = "provenanceMap";
+
+    String CURRENT_PROVENANCE_RECORDING_PARAMS = "ProvenanceRecordingParams";
 
     static ProvenanceService get()
     {
@@ -91,5 +98,27 @@ public interface ProvenanceService
      * Get the ExpRun referenced by the set of LSIDs
      */
     Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids);
+
+    /**
+     * Start a recording session, place RecordedActionSet in http session state and
+     * @return a GUID as the recording id.
+     */
+    String startRecording(HttpServletRequest request, @NotNull ProvenanceRecordingParams options);
+
+    /**
+     * Get the current recording session from http session state, and add the actionSet
+     */
+    void addRecordingStep(HttpServletRequest request, String recordingId, RecordedActionSet actionSet);
+
+    /**
+     *  Get the recording from session state and create an ExpRun
+     */
+    ExpRun stopRecording(HttpServletRequest request, String recordingId);
+
+    /**
+     * Helper method to create recording params object
+     */
+    @Nullable
+    ProvenanceRecordingParams createRecordingParams(JSONObject jsonObject);
 
 }
