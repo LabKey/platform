@@ -112,16 +112,14 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         }
     }
 
+    // Note to reviewer: This was intended to hold update and create validation in common, but this seems like the only
+    // bit of validation that makes sense to do in here. Should I just factor out the check, or keep this function as is?
     @Override
     public void validateIssuesProperties(IssuesDomainKindProperties properties)
     {
         String name = properties.getIssueDefName();
-        String commentSortDirection = properties.getCommentSortDirection();
-
         if (name == null || name.length() == 0)
             throw new IllegalArgumentException("Issue name must not be null.");
-
-        Sort.SortDirection.fromString(commentSortDirection);
     }
 
     @Override
