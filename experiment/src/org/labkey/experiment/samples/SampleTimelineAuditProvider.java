@@ -41,7 +41,6 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_TYPE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_NAME_COLUMN_NAME));
-        defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_LSID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(SAMPLE_ID_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(IS_LINEAGE_UPDATE_COLUMN_NAME));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_COMMENT));

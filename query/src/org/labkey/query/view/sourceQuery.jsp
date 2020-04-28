@@ -51,6 +51,7 @@
     }
 
     boolean canEdit = queryDef.canEdit(getUser());
+    boolean canDelete = queryDef.canDelete(getUser());
 %>
 <style type="text/css">
 
@@ -99,6 +100,7 @@
             query     : LABKEY.ActionURL.getParameter('query.queryName'),
             executeUrl: <%= PageFlowUtil.jsString(null==exeUrl ? null : exeUrl.toString()) %>,
             canEdit   : <%= canEdit %>,
+            canDelete : <%= canDelete %>,
             canEditSql   : <%= canEdit && queryDef.isSqlEditable() %>,
             canEditMetaData   : <%=canEdit && queryDef.isMetadataEditable() %>,
             builtIn   : <%= builtIn %>,

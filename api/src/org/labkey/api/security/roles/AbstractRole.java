@@ -33,7 +33,9 @@ import org.labkey.api.security.permissions.Permission;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Abstract base class for roles
@@ -77,8 +79,8 @@ public abstract class AbstractRole implements Role
 
         if (null != perms && perms.length > 0)
         {
-            Set<Class<? extends Permission>> p = new HashSet<>(Arrays.asList(perms));
-            _permissions = Collections.unmodifiableSet(p);
+            _permissions = Arrays.stream(perms).filter(Objects::nonNull)
+                    .collect(Collectors.toUnmodifiableSet());
         }
     }
 

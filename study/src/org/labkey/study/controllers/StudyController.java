@@ -67,13 +67,12 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.pipeline.PipeRoot;
@@ -124,7 +123,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -2618,9 +2616,8 @@ public class StudyController extends BaseStudyController
             return getDefaultImportView(form, errors);
         }
 
-
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -7699,7 +7696,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             if (null == _study)
                 return 0;
