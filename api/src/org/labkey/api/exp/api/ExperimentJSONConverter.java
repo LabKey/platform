@@ -67,7 +67,7 @@ public class ExperimentJSONConverter
     public static final String NAME = "name";
     public static final String LSID = "lsid";
     public static final String CPAS_TYPE = "cpasType";
-    // Matches the expType parameted used in the linage api: "Data", "Material", "ExperimentRun", "Object"
+    // Matches the expType parameter used in the linage api: "Data", "Material", "ExperimentRun", "Object"
     public static final String EXP_TYPE = "expType";
     public static final String URL = "url";
     public static final String PROPERTIES = "properties";

@@ -78,21 +78,9 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
         ExpProtocolImpl protocol = getProtocol();
         if (protocol != null)
         {
-            ProtocolImplementation impl = protocol.getImplementation();
-            if (impl != null)
-            {
-                QueryRowReference ref = impl.getQueryRowReference(protocol, this);
-                if (ref != null)
-                    return ref;
-            }
-
-            ExperimentProtocolHandler handler = ExperimentService.get().getExperimentProtocolHandler(protocol);
-            if (handler != null)
-            {
-                QueryRowReference ref = handler.getQueryRowReference(protocol, this);
-                if (ref != null)
-                    return ref;
-            }
+            QueryRowReference ref = protocol.getCustomQueryRowReference();
+            if (ref != null)
+                return ref;
         }
 
         return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.ProtocolApplications.name(), FieldKey.fromParts(ExpProtocolApplicationTable.Column.RowId), getRowId());

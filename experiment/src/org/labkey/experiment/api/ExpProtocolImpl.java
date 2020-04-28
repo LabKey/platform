@@ -74,6 +74,18 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
+        QueryRowReference ref = getCustomQueryRowReference();
+        if (ref != null)
+            return ref;
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), FieldKey.fromParts(ExpProtocolTable.Column.RowId.name()), getRowId());
+    }
+
+    /**
+     * Return a protocol specific query row reference or null if the default should be used.
+     */
+    /*package*/ @Nullable QueryRowReference getCustomQueryRowReference()
+    {
         ProtocolImplementation impl = getImplementation();
         if (impl != null)
         {
@@ -90,7 +102,7 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
                 return ref;
         }
 
-        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), FieldKey.fromParts(ExpProtocolTable.Column.RowId.name()), getRowId());
+        return null;
     }
 
     public ApplicationType getApplicationType()
