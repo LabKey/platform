@@ -920,7 +920,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public final void setSourcePath(String sourcePath)
     {
-        _sourcePath = sourcePath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _sourcePath = sourcePath;
+        }
     }
 
     @Override
@@ -932,7 +935,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setBuildPath(String buildPath)
     {
-        _buildPath = buildPath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _buildPath = buildPath;
+        }
     }
 
     @Override
@@ -1266,7 +1272,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         // - The module's enlistment ID matches EITHER the enlistment ID in the web server's source root OR the enlistment ID in
         //   the module's sourcePath
         //
-        if (AppProps.getInstance().isLoadingResourcesFromSourceEnabled())
+        if (AppProps.getInstance().isDevMode())
         {
             String sourcePath = getSourcePath();
 

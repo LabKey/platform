@@ -436,9 +436,9 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     }
 
     @Override
-    public boolean isLoadingResourcesFromSourceEnabled()
+    public boolean isIgnoreModuleSource()
     {
-        return isDevMode() && !Boolean.getBoolean("labkey.disableResourcesFromSource");
+        return Boolean.getBoolean("labkey.ignoreModuleSource");
     }
 
     @Override
