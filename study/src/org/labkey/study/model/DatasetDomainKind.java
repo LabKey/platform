@@ -352,6 +352,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         String visitDatePropertyName = arguments.getVisitDatePropertyName();
         boolean useTimeKeyField = arguments.isUseTimeKeyField();
         boolean showByDefault = arguments.isShowByDefault();
+        String dataSharing = arguments.getDataSharing();
 
         // general dataset validation
         validateDatasetProperties(arguments, container, user, domain, null);
@@ -409,7 +410,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
             DatasetDefinition def = AssayPublishManager.getInstance().createAssayDataset(user, study, name, keyPropertyName, datasetId,
                     demographics, Dataset.TYPE_STANDARD, categoryId, null, useTimeKeyField, managementType, showByDefault,
-                    label, description, cohortId, tag, visitDatePropertyName);
+                    label, description, cohortId, tag, visitDatePropertyName, dataSharing);
 
             if (def.getDomain() != null)
             {

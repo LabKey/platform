@@ -702,13 +702,14 @@ public class AssayPublishManager implements AssayPublishService
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null, null);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
-                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId, @Nullable String tag, String visitDatePropertyName)
+                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId,
+                                                @Nullable String tag, String visitDatePropertyName, @Nullable String dataSharing)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
@@ -720,6 +721,13 @@ public class AssayPublishManager implements AssayPublishService
             DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
             newDataset.setShowByDefault(showByDefault);
             newDataset.setType(type);
+            newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
+            newDataset.setKeyManagementType(managementType);
+            newDataset.setDescription(description);
+            newDataset.setCohortId(cohortId);
+            newDataset.setTag(tag);
+            newDataset.setVisitDatePropertyName(visitDatePropertyName);
 
             if (label != null)
                 newDataset.setLabel(label);
@@ -729,15 +737,8 @@ public class AssayPublishManager implements AssayPublishService
                 newDataset.setKeyPropertyName(keyPropertyName);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
-
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
-            newDataset.setKeyManagementType(managementType);
-
-            newDataset.setDescription(description);
-            newDataset.setCohortId(cohortId);
-            newDataset.setTag(tag);
-            newDataset.setVisitDatePropertyName(visitDatePropertyName);
+            if (dataSharing != null)
+                newDataset.setDataSharing(dataSharing);
 
             StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 
