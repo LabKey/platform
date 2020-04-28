@@ -88,30 +88,26 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
         }
     }
 
-    protected Report _report;
-    protected ReportIdentifier _reportId;
+    protected final Report _report;
+    protected final ReportIdentifier _reportId;
 
     public AjaxScriptReportView(@Nullable Report report, ScriptReportDesignBean bean, Mode mode) throws Exception
     {
         super("/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp", bean);
 
         _report = report;
-
-        if (_report != null)
-        {
-            _reportId = _report.getDescriptor().getReportId();
-        }
+        _reportId = null==report ? null : _report.getDescriptor().getReportId();
 
         init(bean, mode);
 
-        /* add warning to editor */
-
-        if (null != _report)
+        /* add warnings to editor */
+        Report r = bean.getReport(bean.getViewContext());
+        if (null != r)
         {
             // module based report warning
-            if (_report.getDescriptor().isModuleBased() && _report.canEdit(bean.getUser(), bean.getContainer()))
+            if (r.getDescriptor().isModuleBased() && r.canEdit(bean.getUser(), bean.getContainer()))
             {
-                ModuleReportDescriptor mrd = (ModuleReportDescriptor) _report.getDescriptor();
+                ModuleReportDescriptor mrd = (ModuleReportDescriptor) r.getDescriptor();
                 org.labkey.api.module.Module m = mrd.getModule();
                 File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
                 if (null != f)
@@ -126,7 +122,7 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
             }
 
             // external editor warning
-            Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), report);
+            Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), r);
             if (null != externalEditorSettings)
             {
                 Map<String, Object> externalConfig = externalEditorSettings.getValue();
