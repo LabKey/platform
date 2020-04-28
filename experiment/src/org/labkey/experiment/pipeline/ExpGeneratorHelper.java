@@ -15,9 +15,11 @@
  */
 package org.labkey.experiment.pipeline;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.ProtocolApplicationParameter;
@@ -39,6 +41,7 @@ import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
 import org.labkey.experiment.ExperimentRunGraph;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -62,23 +65,7 @@ import java.util.Set;
 */
 public class ExpGeneratorHelper
 {
-    static private void addProtocol(PipelineJob job, Map<String, ExpProtocol> protocols, String name)
-    {
-        // Check if we've already dealt with this one
-        if (!protocols.containsKey(name))
-        {
-            // Check if it's in the database already
-            ExpProtocol protocol = ExperimentService.get().getExpProtocol(job.getContainer(), name);
-            if (protocol == null)
-            {
-                protocol = ExperimentService.get().createExpProtocol(job.getContainer(), ExpProtocol.ApplicationType.ProtocolApplication, name);
-                protocol.save(job.getUser());
-            }
-            protocols.put(name, protocol);
-        }
-    }
-
-    static private ExpData addData(PipelineJob job, Map<URI, ExpData> datas, URI originalURI, XarSource source) throws PipelineJobException
+    static private ExpData addData(Container container, User user, Map<URI, ExpData> datas, URI originalURI, XarSource source) throws ExperimentException
     {
         ExpData data = datas.get(originalURI);
         if (data != null)
@@ -89,11 +76,11 @@ public class ExpGeneratorHelper
         if (source != null)
             return addData(datas, originalURI, source);
 
-        return addData(job, datas, originalURI);
+        return addData(container, user, datas, originalURI);
     }
 
     // undone:  does this make sense for non-file based data?
-    static private ExpData addData(Map<URI, ExpData> datas, URI originalURI, XarSource source) throws PipelineJobException
+    static private ExpData addData(Map<URI, ExpData> datas, URI originalURI, XarSource source) throws ExperimentException
     {
         URI uri;
         try
@@ -102,7 +89,7 @@ public class ExpGeneratorHelper
         }
         catch (XarFormatException | URISyntaxException e)
         {
-            throw new PipelineJobException(e);
+            throw new ExperimentException(e);
         }
 
         ExpData data = datas.get(uri);
@@ -116,7 +103,7 @@ public class ExpGeneratorHelper
             }
             catch (XarFormatException e)
             {
-                throw new PipelineJobException(e);
+                throw new ExperimentException(e);
             }
             datas.put(uri, data);
             datas.put(originalURI, data);
@@ -124,23 +111,19 @@ public class ExpGeneratorHelper
         return data;
     }
 
-    static private ExpData addData(PipelineJob job, Map<URI, ExpData> datas, URI originalURI)
+    static private ExpData addData(Container container, User user, Map<URI, ExpData> datas, URI originalURI)
     {
-        Container c = job.getContainer();
-
         // todo: this code shouldn't know about the TransformDataType
-        Lsid lsid = new Lsid(ExperimentService.get().generateGuidLSID(c, ExperimentService.get().getDataType("Transform")));
-        ExpData data = ExperimentService.get().createData(c, FileUtil.uriToString(originalURI), lsid.toString());
+        Lsid lsid = new Lsid(ExperimentService.get().generateGuidLSID(container, ExperimentService.get().getDataType("Transform")));
+        ExpData data = ExperimentService.get().createData(container, FileUtil.uriToString(originalURI), lsid.toString());
 
         if (data != null)
         {
             datas.put(originalURI, data);
-            data.save(job.getUser());
+            data.save(user);
         }
-
         return data;
     }
-
 
     static public ExpRunImpl insertRun(PipelineJob job) throws PipelineJobException, ValidationException
     {
@@ -149,20 +132,87 @@ public class ExpGeneratorHelper
 
     static public ExpRunImpl insertRun(PipelineJob job, @Nullable XarSource source, @Nullable XarWriter xarWriter) throws PipelineJobException, ValidationException
     {
+        Container container = job.getContainer();
+        User user = job.getUser();
+
+        // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
+        List<String> protocolSequences = new ArrayList<>();
+        for (TaskId taskId : job.getTaskPipeline().getTaskProgression())
+        {
+            TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
+            protocolSequences.addAll(factory.getProtocolActionNames());
+        }
+
+        Integer jobId = PipelineService.get().getJobId(user, container, job.getJobGUID());
+
+        // create the main (parent) protocol for the run
+        ExpProtocol parentProtocol;
+        Map<String, ExpProtocol> protocolCache = new HashMap<>();
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+        {
+            for (String name : protocolSequences)
+            {
+                addSequenceProtocol(container, user, protocolCache, name);
+            }
+
+            // Check to make sure that we have a protocol that corresponds with each action
+            for (RecordedAction action : job.getActionSet().getActions())
+            {
+                if (protocolCache.get(action.getName()) == null)
+                {
+                    throw new IllegalArgumentException("Could not find a matching action declaration for " + action.getName());
+                }
+            }
+
+            String protocolObjectId = job.getTaskPipeline().getProtocolIdentifier();
+            Lsid parentProtocolLSID = new Lsid(ExperimentService.get().generateLSID(container, ExpProtocol.class, protocolObjectId));
+            parentProtocol = ensureProtocol(container, user, protocolCache, protocolSequences, parentProtocolLSID, job.getTaskPipeline().getProtocolShortDescription(), job.getLogger());
+
+            transaction.commit();
+        }
+
+        try
+        {
+            ExpRunImpl run = insertRun(container, user,
+                    job.getActionSet(),
+                    job.getDescription(),
+                    jobId,
+                    parentProtocol,
+                    job.getLogger(),
+                    source,
+                    xarWriter);
+
+            // Consider these actions complete. There may be additional runs created later in this job, and they
+            // shouldn't duplicate the actions.
+            job.clearActionSet(run);
+            return run;
+        }
+        catch (ExperimentException e)
+        {
+            throw new PipelineJobException(e);
+        }
+    }
+
+    static public ExpRunImpl insertRun(Container container, User user,
+                                       RecordedActionSet actionSet,
+                                       String runName,
+                                       @Nullable Integer runJobId,
+                                       ExpProtocol protocol,
+                                       @Nullable Logger log,
+                                       @Nullable XarSource source,
+                                       @Nullable XarWriter xarWriter) throws ExperimentException, ValidationException
+    {
         ExpRunImpl run;
         try
         {
-            RecordedActionSet actionSet = job.getActionSet();
             Set<RecordedAction> actions = new LinkedHashSet<>(actionSet.getActions());
-
-            Map<String, ExpProtocol> protocolCache = new HashMap<>();
-            List<String> protocolSequence = new ArrayList<>();
             Map<URI, String> runOutputsWithRoles = new LinkedHashMap<>();
             Map<URI, String> runInputsWithRoles = new HashMap<>();
 
             runInputsWithRoles.putAll(actionSet.getOtherInputs());
 
-            job.info("Checking files referenced by experiment run");
+            if (log != null)
+                log.info("Checking files referenced by experiment run");
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
@@ -195,7 +245,8 @@ public class ExpGeneratorHelper
                         source.getCanonicalDataFileURL(FileUtil.uriToString(dataFile.getURI()));
                 }
             }
-            job.debug("File check complete");
+            if (log != null)
+                log.debug("File check complete");
 
             // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
             // the actions.
@@ -207,74 +258,50 @@ public class ExpGeneratorHelper
                 }
             }
 
-            ExpProtocol parentProtocol;
-            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
-            {
-                // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
-                for (TaskId taskId : job.getTaskPipeline().getTaskProgression())
-                {
-                    TaskFactory<?> factory = PipelineJobService.get().getTaskFactory(taskId);
-
-                    for (String name : factory.getProtocolActionNames())
-                    {
-                        addProtocol(job, protocolCache, name);
-                        protocolSequence.add(name);
-                    }
-                }
-
-                // Check to make sure that we have a protocol that corresponds with each action
-                for (RecordedAction action : actions)
-                {
-                    if (protocolCache.get(action.getName()) == null)
-                    {
-                        throw new IllegalArgumentException("Could not find a matching action declaration for " + action.getName());
-                    }
-                }
-
-                String protocolObjectId = job.getTaskPipeline().getProtocolIdentifier();
-                Lsid parentProtocolLSID = new Lsid(ExperimentService.get().generateLSID(job.getContainer(), ExpProtocol.class, protocolObjectId));
-                parentProtocol = ensureProtocol(job, protocolCache, protocolSequence, parentProtocolLSID, job.getTaskPipeline().getProtocolShortDescription());
-
-                transaction.commit();
-            }
-
-            // Break the protocol insertion and run insertion into two separate transactions
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                run = insertRun(job, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, parentProtocol);
+                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles);
 
                 if (null != xarWriter)
                     xarWriter.writeToDisk(run);
 
                 transaction.commit();
             }
+            catch (PipelineJobException e)
+            {
+                throw new ExperimentException(e);
+            }
+
             ExperimentRunGraph.clearCache(run.getContainer());
         }
         catch (XarFormatException | BatchValidationException e)
         {
-            throw new PipelineJobException(e);
+            throw new ExperimentException(e);
         }
-
-        // Consider these actions complete. There may be additional runs created later in this job, and they
-        // shouldn't duplicate the actions.
-        job.clearActionSet(run);
         return run;
     }
 
-    static private ExpRunImpl insertRun(PipelineJob job, Set<RecordedAction> actions, XarSource source, Map<URI, String> runOutputsWithRoles, Map<URI, String> runInputsWithRoles, ExpProtocol parentProtocol)
-            throws PipelineJobException, ValidationException, BatchValidationException
+    static private ExpRunImpl _insertRun(Container container,
+                                         User user,
+                                         String runName,
+                                         @Nullable Integer runJobId,
+                                         ExpProtocol protocol,
+                                         Set<RecordedAction> actions,
+                                         @Nullable XarSource source,
+                                         Map<URI, String> runOutputsWithRoles,
+                                         Map<URI, String> runInputsWithRoles) throws ExperimentException, ValidationException, BatchValidationException
     {
-        ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(job.getContainer(), job.getDescription());
-        run.setProtocol(parentProtocol);
-
+        ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(container, runName);
+        run.setProtocol(protocol);
         if (null != source)
             run.setFilePathRoot(source.getRoot());
+        if (null != runJobId)
+            run.setJobId(runJobId);
 
-        run.setJobId(PipelineService.get().getJobId(job.getUser(), job.getContainer(), job.getJobGUID()));
-        run.save(job.getUser());
+        run.save(user);
 
         Map<String, ExpProtocolAction> expActionMap = new HashMap<>();
-        List<? extends ExpProtocolAction> expActions = parentProtocol.getSteps();
+        List<? extends ExpProtocolAction> expActions = protocol.getSteps();
         for (ExpProtocolAction action : expActions)
         {
             expActionMap.put(action.getChildProtocol().getName(), action);
@@ -283,13 +310,13 @@ public class ExpGeneratorHelper
         Map<URI, ExpData> datas = new LinkedHashMap<>();
 
         // Set up the inputs to the whole run
-        ExpProtocolApplication inputApp = run.addProtocolApplication(job.getUser(), expActions.get(0), parentProtocol.getApplicationType(), "Run inputs");
+        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
             String role = runInput.getValue();
-            ExpData data = addData(job, datas, uri, source);
-            inputApp.addDataInput(job.getUser(), data, role);
+            ExpData data = addData(container, user, datas, uri, source);
+            inputApp.addDataInput(user, data, role);
         }
 
         // Set up the inputs and outputs for the individual actions
@@ -298,13 +325,13 @@ public class ExpGeneratorHelper
             // Look up the step by its name
             ExpProtocolAction step = expActionMap.get(action.getName());
 
-            ExpProtocolApplication app = run.addProtocolApplication(job.getUser(), step, ExpProtocol.ApplicationType.ProtocolApplication,
+            ExpProtocolApplication app = run.addProtocolApplication(user, step, ExpProtocol.ApplicationType.ProtocolApplication,
                     action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
 
             if (!action.getName().equals(action.getDescription()))
             {
                 app.setName(action.getDescription());
-                app.save(job.getUser());
+                app.save(user);
             }
 
             // Transfer all the protocol parameters
@@ -319,46 +346,46 @@ public class ExpGeneratorHelper
 
                 protAppParam.setValue(paramType.getType(), param.getValue());
 
-                ExperimentServiceImpl.get().loadParameter(job.getUser(), protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), FieldKey.fromParts("ProtocolApplicationId"), app.getRowId());
+                ExperimentServiceImpl.get().loadParameter(user, protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), FieldKey.fromParts("ProtocolApplicationId"), app.getRowId());
             }
 
             // If there are any property settings, transfer them here
             for (Map.Entry<PropertyDescriptor, Object> prop : action.getProps().entrySet())
             {
                 PropertyDescriptor pd = prop.getKey();
-                app.setProperty(job.getUser(), pd, prop.getValue());
+                app.setProperty(user, pd, prop.getValue());
             }
 
             // Set up the inputs
             for (RecordedAction.DataFile dd : action.getInputs())
             {
-                ExpData data = addData(job, datas, dd.getURI(), source);
-                app.addDataInput(job.getUser(), data, dd.getRole());
+                ExpData data = addData(container, user, datas, dd.getURI(), source);
+                app.addDataInput(user, data, dd.getRole());
             }
 
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
-                ExpData outputData = addData(job, datas, dd.getURI(), source);
+                ExpData outputData = addData(container, user, datas, dd.getURI(), source);
                 if (outputData.getSourceApplication() != null)
                 {
                     datas.remove(dd.getURI());
                     datas.remove(outputData.getDataFileURI());     // TODO should look for old pattern, too
                     outputData.setDataFileURI(null);
-                    outputData.save(job.getUser());
+                    outputData.save(user);
 
-                    outputData = addData(job, datas, dd.getURI(), source);
+                    outputData = addData(container, user, datas, dd.getURI(), source);
                     outputData.setSourceApplication(app);
                     if (dd.isGenerated())
                         ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
-                    outputData.save(job.getUser());
+                    outputData.save(user);
                 }
                 else
                 {
                     outputData.setSourceApplication(app);
                     if (dd.isGenerated())
                         ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
-                    outputData.save(job.getUser());
+                    outputData.save(user);
                 }
             }
         }
@@ -366,15 +393,14 @@ public class ExpGeneratorHelper
         if (!runOutputsWithRoles.isEmpty())
         {
             // Set up the outputs for the run
-            ExpProtocolApplication outputApp = run.addProtocolApplication(job.getUser(), expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
+            ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
             for (Map.Entry<URI, String> entry : runOutputsWithRoles.entrySet())
             {
                 URI uri = entry.getKey();
                 String role = entry.getValue();
-                outputApp.addDataInput(job.getUser(), datas.get(uri), role);
+                outputApp.addDataInput(user, datas.get(uri), role);
             }
         }
-
         ExperimentServiceImpl.get().queueSyncRunEdges(run);
 
         return run;
@@ -386,7 +412,11 @@ public class ExpGeneratorHelper
         return result;
     }
 
-    static private ExpProtocol ensureProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsidIn, String description)
+    static private ExpProtocol ensureProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache,
+                                              List<String> protocolSequence,
+                                              Lsid lsidIn,
+                                              String description,
+                                              Logger log)
     {
         Lsid.LsidBuilder lsid = lsidIn.edit();
         int version = 1;
@@ -397,7 +427,7 @@ public class ExpGeneratorHelper
             if (existingProtocol != null)
             {
                 // If so, check if it matches the one we need
-                if (validateProtocol(job, protocolCache, protocolSequence, existingProtocol, description))
+                if (validateProtocol(protocolCache, protocolSequence, existingProtocol, description, log))
                 {
                     // It matches, so use it
                     return existingProtocol;
@@ -411,7 +441,7 @@ public class ExpGeneratorHelper
             else
             {
                 // Don't have a matching one, so create a brand new one with the next version number
-                return createProtocol(job, protocolCache, protocolSequence, lsid.build(), description);
+                return createProtocol(container, user, protocolCache, protocolSequence, lsid.build(), description);
             }
         }
     }
@@ -419,19 +449,19 @@ public class ExpGeneratorHelper
     /**
      * @return true if the stored protocol matches the one we'd generate
      */
-    static private boolean validateProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, ExpProtocol parentProtocol, String description)
+    static private boolean validateProtocol(Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, ExpProtocol parentProtocol, String description, Logger log)
     {
-        job.debug("Checking " + parentProtocol.getLSID() + " to see if it is a match");
+        log.debug("Checking " + parentProtocol.getLSID() + " to see if it is a match");
         List<? extends ExpProtocolAction> existingSteps = parentProtocol.getSteps();
         // Two extra steps in the database, one to mark the run inputs, one to mark the run outputs
         if (existingSteps.size() != protocolSequence.size() + 2)
         {
-            job.debug("Wrong number of steps in existing protocol, expected " + (protocolSequence.size() + 2) + " but was " + existingSteps.size());
+            log.debug("Wrong number of steps in existing protocol, expected " + (protocolSequence.size() + 2) + " but was " + existingSteps.size());
             return false;
         }
         if (!description.equals(parentProtocol.getName()))
         {
-            job.debug("Parent protocol names do not match, expected " + description + " but was " + parentProtocol.getName());
+            log.debug("Parent protocol names do not match, expected " + description + " but was " + parentProtocol.getName());
             return false;
         }
 
@@ -441,19 +471,19 @@ public class ExpGeneratorHelper
             ExpProtocol childProtocol = step.getChildProtocol();
             if (step.getActionSequence() != sequence)
             {
-                job.debug("Wrong sequence number, expected " + sequence + " but was " + step.getActionSequence());
+                log.debug("Wrong sequence number, expected " + sequence + " but was " + step.getActionSequence());
                 return false;
             }
             if (sequence == 1)
             {
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ExperimentRun)
                 {
-                    job.debug("Expected first step to be of type ExperimentRun, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected first step to be of type ExperimentRun, but was " + childProtocol.getApplicationType());
                     return false;
                 }
                 if (childProtocol.getRowId() != parentProtocol.getRowId())
                 {
-                    job.debug("Expected first step to match up with parent protocol rowId " + parentProtocol.getRowId() + " but was " + childProtocol.getRowId());
+                    log.debug("Expected first step to match up with parent protocol rowId " + parentProtocol.getRowId() + " but was " + childProtocol.getRowId());
                     return false;
                 }
             }
@@ -461,19 +491,19 @@ public class ExpGeneratorHelper
             {
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ExperimentRunOutput)
                 {
-                    job.debug("Expected last step to be of type ExperimentRunOutput, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected last step to be of type ExperimentRunOutput, but was " + childProtocol.getApplicationType());
                     return false;
                 }
                 Lsid outputLsid = createOutputProtocolLSID(new Lsid(parentProtocol.getLSID()));
                 String outputName = outputLsid.getObjectId();
                 if (!childProtocol.getName().equals(outputName))
                 {
-                    job.debug("Expected last step to have name " + outputName + " but was " + childProtocol.getName());
+                    log.debug("Expected last step to have name " + outputName + " but was " + childProtocol.getName());
                     return false;
                 }
                 if (!childProtocol.getLSID().equals(outputLsid.toString()))
                 {
-                    job.debug("Expected last step to have LSID " + outputLsid + " but was " + childProtocol.getLSID());
+                    log.debug("Expected last step to have LSID " + outputLsid + " but was " + childProtocol.getLSID());
                     return false;
                 }
             }
@@ -482,45 +512,61 @@ public class ExpGeneratorHelper
                 String protocolName = protocolSequence.get(sequence - 2);
                 if (childProtocol.getApplicationType() != ExpProtocol.ApplicationType.ProtocolApplication)
                 {
-                    job.debug("Expected step with sequence " + sequence + " to be of type ProtocolApplication, but was " + childProtocol.getApplicationType());
+                    log.debug("Expected step with sequence " + sequence + " to be of type ProtocolApplication, but was " + childProtocol.getApplicationType());
                     return false;
                 }
                 if (!childProtocol.getName().equals(protocolName))
                 {
-                    job.debug("Expected step with sequence " + sequence + " to have name " + protocolName + " but was " + childProtocol.getName());
+                    log.debug("Expected step with sequence " + sequence + " to have name " + protocolName + " but was " + childProtocol.getName());
                     return false;
                 }
                 if (childProtocol.getRowId() != protocolCache.get(protocolName).getRowId())
                 {
-                    job.debug("Expected step with sequence " + sequence + " to match up with protocol rowId " + protocolCache.get(protocolName).getRowId() + " but was " + childProtocol.getRowId());
+                    log.debug("Expected step with sequence " + sequence + " to match up with protocol rowId " + protocolCache.get(protocolName).getRowId() + " but was " + childProtocol.getRowId());
                     return false;
                 }
             }
             sequence++;
         }
-        job.debug("Protocols match");
+        log.debug("Protocols match");
         return true;
     }
 
-    static private ExpProtocol createProtocol(PipelineJob job, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsid, String description)
+    static private ExpProtocol createProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsid, String description)
     {
         ExpProtocol parentProtocol;
-        parentProtocol = ExperimentService.get().createExpProtocol(job.getContainer(), ExpProtocol.ApplicationType.ExperimentRun, lsid.getObjectId(), lsid.toString());
+        parentProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, lsid.getObjectId(), lsid.toString());
         parentProtocol.setName(description);
-        parentProtocol.save(job.getUser());
+        parentProtocol.save(user);
 
         int sequence = 1;
-        parentProtocol.addStep(job.getUser(), parentProtocol, sequence++);
+        parentProtocol.addStep(user, parentProtocol, sequence++);
         for (String name : protocolSequence)
         {
-            parentProtocol.addStep(job.getUser(), protocolCache.get(name), sequence++);
+            parentProtocol.addStep(user, protocolCache.get(name), sequence++);
         }
 
         Lsid outputLsid = createOutputProtocolLSID(lsid);
-        ExpProtocol outputProtocol = ExperimentService.get().createExpProtocol(job.getContainer(), ExpProtocol.ApplicationType.ExperimentRunOutput, outputLsid.getObjectId(), outputLsid.toString());
-        outputProtocol.save(job.getUser());
+        ExpProtocol outputProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRunOutput, outputLsid.getObjectId(), outputLsid.toString());
+        outputProtocol.save(user);
 
-        parentProtocol.addStep(job.getUser(), outputProtocol, sequence++);
+        parentProtocol.addStep(user, outputProtocol, sequence++);
         return parentProtocol;
+    }
+
+    static private void addSequenceProtocol(Container container, User user, Map<String, ExpProtocol> protocols, String name)
+    {
+        // Check if we've already dealt with this one
+        if (!protocols.containsKey(name))
+        {
+            // Check if it's in the database already
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(container, name);
+            if (protocol == null)
+            {
+                protocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ProtocolApplication, name);
+                protocol.save(user);
+            }
+            protocols.put(name, protocol);
+        }
     }
 }
