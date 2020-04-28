@@ -42,11 +42,45 @@ public interface IssuesListDefService
         ServiceRegistry.get().registerService(IssuesListDefService.class, impl);
     }
 
-    // RP TODO: Comment
+    /**
+     * Get the domain kind properties of a issue definition.
+     * @param container The container to look in
+     * @param defName The unique name of the issue definition
+     * @return IssuesDomainKindProperties
+     */
     IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName);
 
+    /**
+     * Updates an issue definition.
+     * @param original The previously existing domain
+     * @param update The updated domain
+     * @param properties The updated domain kind properties
+     * @param container The container to look in
+     * @return ValidationException
+     */
     ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                               IssuesDomainKindProperties properties, Container container);
+
+    /**
+     * Performs save of properties group id, user id, and comment sort direction for an issue definition
+     * @param container The container to look in
+     * @param properties The updated issue domain kind properties
+     * @param name The unique name of the issue definition
+     */
+    void saveIssueProperties(Container container, IssuesDomainKindProperties properties, String name);
+
+    /**
+     * Returns name of a GWTDomain as found in IssuesListDefTable
+     * @param domain The domain the name is retrieved from
+     * @return String              
+     */
+    String getNameFromDomain(GWTDomain domain);
+
+    /**
+     * Performs validation on a set of issues domain kind properties
+     * @param properties The updated domain kind properties to validate
+     */
+    void validateIssuesProperties(IssuesDomainKindProperties properties);
 
     /**
      * Register a provider that will be used as the "Kind" for a new issue list definition creation.

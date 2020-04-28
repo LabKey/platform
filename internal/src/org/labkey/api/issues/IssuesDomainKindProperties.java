@@ -5,16 +5,10 @@ public class IssuesDomainKindProperties
     protected String _issueDefName;
     protected String _singularItemName;
     protected String _pluralItemName;
-    protected String _commentSortDirection = "ASC";
-//    protected String _moveToContainer;
-//    protected String _moveToContainerSelect; // RP TODO: Not really convinced these are needed
+    protected String _commentSortDirection;
 
     protected Integer _assignedToGroup;
     protected Integer _assignedToUser;
-
-    public IssuesDomainKindProperties()
-    {
-    }
 
     public IssuesDomainKindProperties(String name, String singularName, String pluralName, String commentSortDirection, Integer assignedToGroup, Integer assignedToUser)
     {
@@ -65,26 +59,6 @@ public class IssuesDomainKindProperties
     {
         _commentSortDirection = commentSortDirection;
     }
-
-//    public String getMoveToContainer()
-//    {
-//        return _moveToContainer;
-//    }
-//
-//    public void setMoveToContainer(String moveToContainer)
-//    {
-//        _moveToContainer = moveToContainer;
-//    }
-//
-//    public String getMoveToContainerSelect()
-//    {
-//        return _moveToContainerSelect;
-//    }
-//
-//    public void setMoveToContainerSelect(String moveToContainerSelect)
-//    {
-//        _moveToContainerSelect = moveToContainerSelect;
-//    }
 
     public Integer getAssignedToGroup()
     {

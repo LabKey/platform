@@ -33,12 +33,10 @@ import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.issue.view.IssuesListView;
+import org.labkey.issue.query.IssuesListDefTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -64,9 +62,9 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         String sortDirection = IssueManager.getCommentSortDirection(container, defName).name();
 
         Integer assignedToGroup = null;
-        Group assignedToGroupGroup = IssueManager.getAssignedToGroup(container, defName); // RP TODO: these var names are so confusing lol, think of something better
-        if (assignedToGroupGroup != null)
-            assignedToGroup = assignedToGroupGroup.getUserId();
+        Group group = IssueManager.getAssignedToGroup(container, defName);
+        if (group != null)
+            assignedToGroup = group.getUserId();
 
         Integer assignedToUser = null;
         User defaultUser = IssueManager.getDefaultAssignedToUser(container, defName);
@@ -87,29 +85,71 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
             names.pluralName = properties.getPluralItemName();
 
             String issueDefName = properties.getIssueDefName();
+
             if (issueDefName == null || issueDefName.length() == 0)
                 throw new IllegalArgumentException("Issue definition name must not be null.");
+
             IssueManager.saveEntryTypeNames(container, issueDefName, names);
-            IssueManager.saveCommentSortDirection(container, issueDefName, Sort.SortDirection.fromString(properties.getCommentSortDirection()));
+            this.saveIssueProperties(container, properties, issueDefName);
 
-            // RP TODO: names below may be confusing. Consider changing
-            Group group = null;
-            if (properties.getAssignedToGroup() != null)
-                group = SecurityManager.getGroup(properties.getAssignedToGroup());
-            IssueManager.saveAssignedToGroup(container, issueDefName, group);
+            User user = (properties.getAssignedToUser() != null) ? UserManager.getUser(properties.getAssignedToUser()) : null;
+            ValidationException exception = new ValidationException();
 
-            User user = null;
-            if (properties.getAssignedToUser() != null)
-                user = UserManager.getUser(properties.getAssignedToUser());
-            IssueManager.saveDefaultAssignedToUser(container, issueDefName, user);
+            if (!original.getDomainURI().equals(update.getDomainURI()))
+            {
+                exception.addGlobalError("Cannot change domainId of an existing issue definition.");
+            }
+            else
+            {
+                exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            }
 
-            ValidationException exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
             if (!exception.hasErrors())
             {
                 transaction.commit();
             }
             return exception;
         }
+    }
+
+    @Override
+    public void validateIssuesProperties(IssuesDomainKindProperties properties)
+    {
+        String name = properties.getIssueDefName();
+        String commentSortDirection = properties.getCommentSortDirection();
+
+        if (name == null || name.length() == 0)
+            throw new IllegalArgumentException("Issue name must not be null.");
+
+        Sort.SortDirection.fromString(commentSortDirection);
+    }
+
+    @Override
+    public void saveIssueProperties(Container container, IssuesDomainKindProperties properties, String name)
+    {
+        IssueManager.saveCommentSortDirection(container, name, Sort.SortDirection.fromString(properties.getCommentSortDirection()));
+
+        Group group = null;
+        if (properties.getAssignedToGroup() != null)
+            group = SecurityManager.getGroup(properties.getAssignedToGroup());
+        if (null == group)
+            throw new IllegalArgumentException("Group not found.");
+        IssueManager.saveAssignedToGroup(container, name, group);
+
+        User user = null;
+        if (properties.getAssignedToUser() != null)
+            user = UserManager.getUser(properties.getAssignedToUser());
+        if (null == user)
+            throw new IllegalArgumentException("User not found.");
+
+        IssueManager.saveDefaultAssignedToUser(container, name, user);
+    }
+
+    @Override
+    public String getNameFromDomain(GWTDomain domain)
+    {
+        return IssuesListDefTable.nameFromLabel(domain.getName());
+
     }
 
     @Override

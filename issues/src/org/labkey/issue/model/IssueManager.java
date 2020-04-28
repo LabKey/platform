@@ -807,7 +807,7 @@ public class IssueManager
     public static void saveCommentSortDirection(Container c, String issueDefName, @NotNull Sort.SortDirection direction)
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, getPropMapName(issueDefName), true);
-        props.put(CAT_COMMENT_SORT, direction.toString());
+        props.put(CAT_COMMENT_SORT, direction.toString()); // expects "DESC"
         props.save();
         uncache();  // uncache the assigned to list
     }

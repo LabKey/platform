@@ -18,7 +18,6 @@ package org.labkey.api.issues;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
@@ -38,12 +37,10 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
-import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -52,7 +49,6 @@ import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.Pair;
@@ -288,12 +284,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        // TODO
-        // Validation:
-        // Will just need to check name is not null
-        // As well as if user has permissions to update, if IssuesDef exists in this container, if domain not found
-        // IssueDesigner.save() also is clearing out 'fake property ids' in line 261? Check whether we need to too
-
+        IssuesListDefService.get().validateIssuesProperties(options);
         return IssuesListDefService.get().updateIssueDefinition(original, update, options, container);
     }
 
@@ -304,16 +295,13 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         String providerName = getKindName();
         String singularNoun = arguments.getSingularItemName() != null ? arguments.getSingularItemName() : getDefaultSingularName();
         String pluralNoun = arguments.getPluralItemName() != null ? arguments.getPluralItemName() : getDefaultPluralName();
-        String sortOrder = arguments.getCommentSortDirection();
-        Integer assignedToGroup = arguments.getAssignedToGroup();
-
-        if (name == null || name.length() == 0)
-            throw new IllegalArgumentException("Issue name must not be null");
 
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
+            IssuesListDefService.get().validateIssuesProperties(arguments);
             issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
+            IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
 
             List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
             List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
