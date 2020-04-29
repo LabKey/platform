@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
@@ -150,15 +149,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     // Subclasses may override this to provide customizations to the column
     protected void initColumn(MutableColumnInfo col)
     {
-        initColumn((BaseColumnInfo)col);
     }
-
-    // Subclasses may override this to provide customizations to the column
-    @Deprecated // seek and destroy
-    protected void initColumn(BaseColumnInfo col)
-    {
-    }
-
 
     @Nullable
     @Override
