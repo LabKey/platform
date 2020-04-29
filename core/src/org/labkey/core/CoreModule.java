@@ -563,7 +563,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects2.jsp", webPart);
 
                     String title = webPart.getPropertyMap().getOrDefault("title", "Projects");
                     view.setTitle(title);
@@ -571,12 +571,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", '" + webPart.getPageId() + "', " + webPart.getIndex() + ");");
+                        customize.setScript("(customizeProjectWebpart" + webPart.getRowId()+"||customizeProjectWebpart)(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
                 }
             },
+            /*** DO NOT MERGE THIS, this is left as projects.jsp to make it easy to compare behavior ***/
             new AlwaysAvailableWebPartFactory("Subfolders")
             {
                 @Override
