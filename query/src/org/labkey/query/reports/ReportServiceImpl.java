@@ -78,6 +78,7 @@ import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.SystemMaintenance.MaintenanceTask;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -89,10 +90,8 @@ import org.labkey.query.xml.ReportDescriptorDocument;
 import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
-import java.nio.charset.Charset;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -515,8 +514,15 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         try
         {
             String script = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-            String reportXml = report.getDescriptor().serialize(context.getContainer());
-            // CONSIDER: this use serializeToFolder(), directly?
+            String reportXml = "";
+            // we want this to act like folder export (don't persist script property), not like database save, so use getDescriptorDocument(ImportContext)
+            FolderImportContext ex = new FolderImportContext(user, c, (File)null, null, null, null);
+            ReportDescriptorDocument reportDoc = report.getDescriptor().getDescriptorDocument(ex);
+            try (StringWriter writer = new StringWriter())
+            {
+                reportDoc.save(writer, XmlBeansUtil.getDefaultSaveOptions());
+                reportXml = writer.toString();
+            }
             FileUtils.write(scriptFile, script, StringUtilsLabKey.DEFAULT_CHARSET);
             FileUtils.write(xmlFile, reportXml, StringUtilsLabKey.DEFAULT_CHARSET);
         }
