@@ -646,7 +646,7 @@ public class WikiManager implements WikiService
         LOG.debug("indexWikiContainerFast(" + wikiName + ")");
 
         SQLFragment f = new SQLFragment();
-        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified,")
+        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
             .append("V.title, V.body, V.renderertype\n");
         f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
         f.append("WHERE P.container = ?");
@@ -676,6 +676,12 @@ public class WikiManager implements WikiService
 
                 if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
+
+                if (!rs.getBoolean("shouldindex"))
+                {
+                    LOG.debug(String.format("Wiki [%1$s] set to not index, skipping.", wikiName));
+                    continue;
+                }
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
