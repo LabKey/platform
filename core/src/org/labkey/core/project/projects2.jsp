@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -88,9 +89,10 @@
     SimpleFilter filter = new SimpleFilter();
     filter.addInClause(new FieldKey(null,"containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"),",")));
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
+    filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),getUser());
     QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
-    // consider: could use ContainerManager, but webpart is setup to do filtering
+    // consider: could use ContainerManager or ContainerFilter.getIds()
     var containers = new TableSelector(core.getTable("Containers",cf), Set.of("name","entityId"),filter,new Sort("name")).getMapCollection();
 
     if (containers.isEmpty())
