@@ -23,19 +23,45 @@ import org.labkey.api.security.User;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.DavCrawler;
 
+import java.beans.PropertyChangeEvent;
+
 public class SearchContainerListener extends ContainerManager.AbstractContainerListener
 {
+    @Override
     public void containerCreated(Container c, User user)
     {
         SearchService ss = SearchService.get();
         if (null != ss)
+        {
             DavCrawler.getInstance().addPathToCrawl(WebdavService.getPath().append(c.getParsedPath()), null);
+        }
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         SearchService ss = SearchService.get();
         if (null != ss)
+        {
             ss.deleteContainer(c.getId());
+        }
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent propertyChangeEvent)
+    {
+        SearchService ss = SearchService.get();
+        if (null != ss)
+        {
+            ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent) propertyChangeEvent;
+
+            switch (evt.property)
+            {
+                case Name: // Rename
+                case Parent: // Move
+                    ss.reindexContainerFiles(evt.container);
+                    break;
+            }
+        }
     }
 }
