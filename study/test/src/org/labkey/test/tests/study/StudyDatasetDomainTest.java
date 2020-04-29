@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 @Category({DailyA.class})
@@ -100,12 +100,12 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         log("Test for an expected error when creating a new domain with a missing property.");
         CreateDomainCommand createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.getDomainDesign().setFields(getColumnWithBlankNameProperty());
-        testForExpectedErrorMessage(createCmd, BLANK_PROPERTY_ERROR_MSG, "CreateDomain");
+        testForExpectedErrorMessage(createCmd, STUDY_DATASET_NAME + " -- " + BLANK_PROPERTY_ERROR_MSG, "CreateDomain");
 
         log("Test for an expected error when creating a new domain with duplicate columns.");
         createCmd = new CreateDomainCommand(DOMAIN_KIND, STUDY_DATASET_NAME);
         createCmd.getDomainDesign().setFields(getColumnsWithDuplicateFields());
-        testForExpectedErrorMessage(createCmd, DUPLICATE_FIELD_ERROR_MSG, "CreateDomain");
+        testForExpectedErrorMessage(createCmd, STUDY_DATASET_NAME + " -- " + DUPLICATE_FIELD_ERROR_MSG, "CreateDomain");
     }
 
     @Test
@@ -189,7 +189,7 @@ public class StudyDatasetDomainTest extends BaseWebDriverTest
         }
         catch (CommandException e)
         {
-            assertTrue("Error message mismatch.", e.getMessage().endsWith(expectedErrorMsg));
+            assertEquals("Error message mismatch.", expectedErrorMsg, e.getMessage());
         }
     }
 

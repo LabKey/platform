@@ -551,18 +551,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     }
 
     private ValidationException updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                                       Container container, User user, DatasetDefinition def)
+                                                       Container container, User user)
     {
-        try
-        {
-            ValidationException exception = new ValidationException();
-            exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
-            return exception;
-        }
-        finally
-        {
-            StudyManager.getInstance().uncache(def);
-        }
+        ValidationException exception = new ValidationException();
+        exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+        return exception;
     }
 
     private ValidationException updateDataset(DatasetDomainKindProperties datasetProperties, String domainURI, ValidationException exception,
@@ -628,25 +621,32 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
                                             DatasetDomainKindProperties datasetProperties, Container container, User user, boolean includeWarnings)
     {
         assert original.getDomainURI().equals(update.getDomainURI());
-
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        DatasetDefinition def = study.getDataset(datasetProperties.getDatasetId());
+        DatasetDefinition def = null;
 
-        validateDatasetProperties(datasetProperties, container, user, update, def);
-
-        checkCanUpdate(def, container, user, datasetProperties, original, update);
+        if (datasetProperties != null)
+        {
+            def = study.getDataset(datasetProperties.getDatasetId());
+            validateDatasetProperties(datasetProperties, container, user, update, def);
+            checkCanUpdate(def, container, user, datasetProperties, original, update);
+        }
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
         {
-            ValidationException exception = updateDomainDescriptor(original, update, container, user, def);
+            ValidationException exception = updateDomainDescriptor(original, update, container, user);
 
-            if (!exception.hasErrors())
+            if (!exception.hasErrors() && def != null)
                 exception = updateDataset(datasetProperties, original.getDomainURI(), exception, study, container, user, def);
 
             if (!exception.hasErrors())
                 transaction.commit();
 
             return exception;
+        }
+        finally
+        {
+            if (def != null)
+                StudyManager.getInstance().uncache(def);
         }
     }
 
