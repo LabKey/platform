@@ -60,6 +60,7 @@ public class ExperimentJSONConverter
     // General experiment object properties
     public static final String ID = "id";
     public static final String ROW_ID = "rowId";
+    public static final String CONTAINER = "container";
     public static final String CREATED = "created";
     public static final String CREATED_BY = "createdBy";
     public static final String MODIFIED = "modified";
@@ -484,6 +485,8 @@ public class ExperimentJSONConverter
         var url = obj.detailsURL();
         if (url != null)
             json.put(URL, url);
+
+        json.put(CONTAINER, obj.getContainer().getId());
 
         QueryRowReference rowRef = obj.getQueryRowReference();
         if (rowRef != null)
