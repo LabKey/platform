@@ -56,10 +56,11 @@ public interface IssuesListDefService
      * @param update The updated domain
      * @param properties The updated domain kind properties
      * @param container The container to look in
+     * @param user
      * @return ValidationException
      */
     ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                              IssuesDomainKindProperties properties, Container container);
+                                              IssuesDomainKindProperties properties, Container container, User user);
 
     /**
      * Performs save of properties group id, user id, and comment sort direction for an issue definition

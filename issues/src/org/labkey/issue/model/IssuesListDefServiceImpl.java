@@ -15,6 +15,7 @@
  */
 package org.labkey.issue.model;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -75,32 +76,29 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties, Container container)
+    public ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties, Container container, User user)
     {
         IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
+            ValidationException exception = new ValidationException();
             names.singularName = properties.getSingularItemName();
             names.pluralName = properties.getPluralItemName();
 
             String issueDefName = properties.getIssueDefName();
 
-            if (issueDefName == null || issueDefName.length() == 0)
-                throw new IllegalArgumentException("Issue definition name must not be null.");
-
-            IssueManager.saveEntryTypeNames(container, issueDefName, names);
-            this.saveIssueProperties(container, properties, issueDefName);
-
-            User user = (properties.getAssignedToUser() != null) ? UserManager.getUser(properties.getAssignedToUser()) : null;
-            ValidationException exception = new ValidationException();
+            if (StringUtils.isBlank(issueDefName))
+                exception.addGlobalError("Issue definition name must not be null.");
 
             if (!original.getDomainURI().equals(update.getDomainURI()))
-            {
                 exception.addGlobalError("Cannot change domainId of an existing issue definition.");
-            }
-            else
+
+            if (!exception.hasErrors())
             {
+                IssueManager.saveEntryTypeNames(container, issueDefName, names);
+                saveIssueProperties(container, properties, issueDefName);
+
                 exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
             }
 
@@ -118,7 +116,7 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     public void validateIssuesProperties(IssuesDomainKindProperties properties)
     {
         String name = properties.getIssueDefName();
-        if (name == null || name.length() == 0)
+        if (StringUtils.isBlank(name))
             throw new IllegalArgumentException("Issue name must not be null.");
     }
 

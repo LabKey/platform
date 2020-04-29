@@ -285,7 +285,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
         IssuesListDefService.get().validateIssuesProperties(options);
-        return IssuesListDefService.get().updateIssueDefinition(original, update, options, container);
+        return IssuesListDefService.get().updateIssueDefinition(original, update, options, container, user);
     }
 
     @Override
