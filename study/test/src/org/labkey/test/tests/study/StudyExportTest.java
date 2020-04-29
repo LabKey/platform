@@ -23,11 +23,11 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -560,7 +560,7 @@ public class StudyExportTest extends StudyManualTest
                 .selectDatasetByLabel(dataset)
                 .clickEditDefinition()
                 .setCategory(category)
-                .save();
+                .clickSave();
     }
 
     private void modifyVisits()
@@ -586,11 +586,11 @@ public class StudyExportTest extends StudyManualTest
                 .selectDatasetByLabel(dataset)
                 .clickEditDefinition();
 
-        PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
-        fieldRow.properties().selectDisplayTab().setDescription(COLUMN_DESC);
-        fieldRow.properties().selectAdvancedTab().setMvEnabled(true);
+        DomainFieldRow fieldRow = editDatasetPage.getFieldsPanel().getField(0);
+        fieldRow.setDescription(COLUMN_DESC);
+        fieldRow.setMissingValuesEnabled(true);
 
-        editDatasetPage.save();
+        editDatasetPage.clickSave();
         // TODO: add lookups for current & other folders
     }
 

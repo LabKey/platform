@@ -33,7 +33,7 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
@@ -106,9 +106,9 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         EditDatasetDefinitionPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDomainEditor.setIsDemographicData(true);
-        datasetDomainEditor.shareDemographics(EditDatasetDefinitionPage.ShareDemographicsBy.PTID);
-        datasetDomainEditor.inferFieldsFromFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
-        datasetDomainEditor.save();
+        datasetDomainEditor.shareDemographics("Share by PandaId");
+        datasetDomainEditor.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
+        datasetDomainEditor.clickSave();
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());
         _containerHelper.createSubfolder(getProjectName(), STUDY1, "Study");
@@ -388,18 +388,16 @@ public class SharedStudyTest extends BaseWebDriverTest
         _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
         createDefaultStudy();
 
-        goToManageStudy();
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
+        goToManageStudy()
+            .goToManageStudy()
+            .manageDatasets()
+            .clickCreateNewDataset()
+            .setName(datasetName)
+            .clickSave();
 
-        setFormElement(Locator.name("typeName"), datasetName);
         // Default dataset ID will overlap shared demographics (5001)
-        clickButton("Next");
-        waitAndClick(Locator.id("partdelete_0"));
-        clickButton("Save");
 
-        assertTextPresent(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
+        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         assertTextPresent("WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.");
         assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));

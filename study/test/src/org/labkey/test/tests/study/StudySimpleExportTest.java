@@ -27,10 +27,9 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.DomainDesignerPage;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -138,10 +137,10 @@ public class StudySimpleExportTest extends StudyBaseTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(TEST_DATASET_NAME)
-                .submit();
-        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
-        fieldsEditor.selectField(0).markForDeletion();
+                .setName(TEST_DATASET_NAME);
+
+        DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
+        fieldsEditor.getField(0).clickRemoveField(true);
         fieldsEditor.addField(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
                 .setValidator(new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"))
                 .setRequired(false));
@@ -152,10 +151,11 @@ public class StudySimpleExportTest extends StudyBaseTest
         // "TestDateTime" format will default to date-time
         fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
         editDatasetPage
-                .save()
-                .clickViewData()
-                .getDataRegion()
-                .clickImportBulkData();
+                .clickSave();
+        //todo:
+//                .clickViewData()
+//                .getDataRegion()
+//                .clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestString\tTestDate\tTestDateTime\nPTID123\t1.0\t999\tABC\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
