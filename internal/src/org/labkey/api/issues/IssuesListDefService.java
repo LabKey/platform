@@ -52,15 +52,15 @@ public interface IssuesListDefService
 
     /**
      * Updates an issue definition.
+     * @param container The container to look in
+     * @param user The user who made the request
      * @param original The previously existing domain
      * @param update The updated domain
      * @param properties The updated domain kind properties
-     * @param container The container to look in
-     * @param user
      * @return ValidationException
      */
-    ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
-                                              IssuesDomainKindProperties properties, Container container, User user);
+    ValidationException updateIssueDefinition(Container container, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                              IssuesDomainKindProperties properties);
 
     /**
      * Performs save of properties group id, user id, and comment sort direction for an issue definition
@@ -80,8 +80,9 @@ public interface IssuesListDefService
     /**
      * Performs validation on a set of issues domain kind properties
      * @param properties The updated domain kind properties to validate
+     * @return
      */
-    void validateIssuesProperties(IssuesDomainKindProperties properties);
+    ValidationException validateIssuesProperties(IssuesDomainKindProperties properties);
 
     /**
      * Register a provider that will be used as the "Kind" for a new issue list definition creation.

@@ -284,24 +284,33 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        IssuesListDefService.get().validateIssuesProperties(options);
-        return IssuesListDefService.get().updateIssueDefinition(original, update, options, container, user);
+        if (options != null)
+        {
+            ValidationException exception = IssuesListDefService.get().validateIssuesProperties(options);
+            if (exception.hasErrors())
+                return exception;
+        }
+        return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);
     }
 
     @Override
     public Domain createDomain(GWTDomain domain, IssuesDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
-        String name = domain.getName();
-        String providerName = getKindName();
-        String singularNoun = arguments.getSingularItemName() != null ? arguments.getSingularItemName() : getDefaultSingularName();
-        String pluralNoun = arguments.getPluralItemName() != null ? arguments.getPluralItemName() : getDefaultPluralName();
-
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
-            IssuesListDefService.get().validateIssuesProperties(arguments);
-            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
+
+            String name = domain.getName();
+            String providerName = getKindName();
+            String singularNoun = (arguments == null || arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
+            String pluralNoun = (arguments == null || arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
+
+            ValidationException exception = IssuesListDefService.get().validateIssuesProperties(arguments);
+            if (exception.hasErrors())
+                throw new IllegalArgumentException(exception.getMessage());
             IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
+
+            issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
 
             List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
             List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();

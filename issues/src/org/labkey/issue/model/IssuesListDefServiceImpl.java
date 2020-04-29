@@ -76,29 +76,29 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     }
 
     @Override
-    public ValidationException updateIssueDefinition(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties, Container container, User user)
+    public ValidationException updateIssueDefinition(Container container, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties)
     {
         IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
             ValidationException exception = new ValidationException();
-            names.singularName = properties.getSingularItemName();
-            names.pluralName = properties.getPluralItemName();
-
-            String issueDefName = properties.getIssueDefName();
-
-            if (StringUtils.isBlank(issueDefName))
-                exception.addGlobalError("Issue definition name must not be null.");
 
             if (!original.getDomainURI().equals(update.getDomainURI()))
                 exception.addGlobalError("Cannot change domainId of an existing issue definition.");
 
-            if (!exception.hasErrors())
+            if (properties != null && !exception.hasErrors())
             {
+                names.singularName = properties.getSingularItemName();
+                names.pluralName = properties.getPluralItemName();
+                String issueDefName = properties.getIssueDefName();
+
                 IssueManager.saveEntryTypeNames(container, issueDefName, names);
                 saveIssueProperties(container, properties, issueDefName);
+            }
 
+            if (!exception.hasErrors())
+            {
                 exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
             }
 
@@ -113,11 +113,13 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     // Note to reviewer: This was intended to hold update and create validation in common, but this seems like the only
     // bit of validation that makes sense to do in here. Should I just factor out the check, or keep this function as is?
     @Override
-    public void validateIssuesProperties(IssuesDomainKindProperties properties)
+    public ValidationException validateIssuesProperties(IssuesDomainKindProperties properties)
     {
+        ValidationException exception = new ValidationException();
         String name = properties.getIssueDefName();
         if (StringUtils.isBlank(name))
-            throw new IllegalArgumentException("Issue name must not be null.");
+            exception.addGlobalError("Issue name must not be null.");
+        return exception;
     }
 
     @Override

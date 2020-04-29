@@ -10,6 +10,9 @@ public class IssuesDomainKindProperties
     private Integer _assignedToGroup;
     private Integer _assignedToUser;
 
+    public IssuesDomainKindProperties()
+    {}
+
     public IssuesDomainKindProperties(String name, String singularName, String pluralName, String commentSortDirection, Integer assignedToGroup, Integer assignedToUser)
     {
         _issueDefName = name;
