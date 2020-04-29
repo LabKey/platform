@@ -87,7 +87,7 @@ public class LinkReport extends BaseRedirectReport
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the link URL string property
-        return hasDescriptorPropertyChanged(REDIRECT_URL);
+        return hasDescriptorPropertyChanged(context.getUser(), REDIRECT_URL);
     }
 
     @Override

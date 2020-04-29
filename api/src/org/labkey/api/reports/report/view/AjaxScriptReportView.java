@@ -16,12 +16,25 @@
 
 package org.labkey.api.reports.report.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ReportUrls;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.UniqueID;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
+
+import java.io.File;
+import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.urlProvider;
 
 /*
 * User: adam
@@ -75,21 +88,51 @@ public class AjaxScriptReportView extends JspView<ScriptReportBean>
         }
     }
 
-    protected Report _report;
-    protected ReportIdentifier _reportId;
+    protected final Report _report;
+    protected final ReportIdentifier _reportId;
 
     public AjaxScriptReportView(@Nullable Report report, ScriptReportDesignBean bean, Mode mode) throws Exception
     {
         super("/org/labkey/api/reports/report/view/ajaxScriptReportDesigner.jsp", bean);
 
         _report = report;
-
-        if (_report != null)
-        {
-            _reportId = _report.getDescriptor().getReportId();
-        }
+        _reportId = null==report ? null : _report.getDescriptor().getReportId();
 
         init(bean, mode);
+
+        /* add warnings to editor */
+        Report r = bean.getReport(bean.getViewContext());
+        if (null != r)
+        {
+            // module based report warning
+            if (r.getDescriptor().isModuleBased() && r.canEdit(bean.getUser(), bean.getContainer()))
+            {
+                ModuleReportDescriptor mrd = (ModuleReportDescriptor) r.getDescriptor();
+                org.labkey.api.module.Module m = mrd.getModule();
+                File f = ModuleEditorService.get().getFileForModuleResource(m, mrd.getSourceFile().getPath());
+                if (null != f)
+                {
+                    HtmlStringBuilder moduleWarning = HtmlStringBuilder.of("")
+                            .append("This report is defined in the '" + m.getName() + "' module in directory '" + f.getParent() + "'.")
+                            .append(HtmlString.unsafe("<br>"))
+                            .append("Changes to this report will be reflected in all usages across different folders on the server.")
+                            .append(HtmlString.unsafe("<br>"));
+                    bean.addWarning(moduleWarning.getHtmlString());
+                }
+            }
+
+            // external editor warning
+            Pair<ActionURL, Map<String, Object>> externalEditorSettings = urlProvider(ReportUrls.class).urlAjaxExternalEditScriptReport(getViewContext(), r);
+            if (null != externalEditorSettings)
+            {
+                Map<String, Object> externalConfig = externalEditorSettings.getValue();
+                if (!StringUtils.isBlank((String) externalConfig.get("warningMsg")))
+                {
+                    // This seems very round about, can't AjaxScriptReportView do this?
+                    bean.addWarning((String) externalConfig.get("warningMsg"));
+                }
+            }
+        }
     }
 
     protected void init(ScriptReportDesignBean bean, Mode mode) throws Exception
