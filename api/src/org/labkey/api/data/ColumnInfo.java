@@ -278,6 +278,15 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     boolean isLookup();
 
+    boolean hasDbSequence();
+
+    boolean isRootDbSequence();
+
+    default Container getDbSequenceContainer(Container container)
+    {
+        return isRootDbSequence() ? ContainerManager.getRoot() : container;
+    }
+
     @NotNull List<ConditionalFormat> getConditionalFormats();
 
     @NotNull List<? extends IPropertyValidator> getValidators();
