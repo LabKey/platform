@@ -50,7 +50,7 @@ import java.util.Set;
  */
 public abstract class ExperimentRunType implements Comparable<ExperimentRunType>, ExperimentProtocolHandler
 {
-    public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_NAME, ExpSchema.TableType.Runs.toString())
+    public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Runs.toString())
     {
         public Priority getPriority(ExpProtocol protocol)
         {
@@ -62,10 +62,15 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     };
 
     private final String _description;
-    private final String _schemaName;
+    private final SchemaKey _schemaName;
     private final String _tableName;
 
     public ExperimentRunType(String description, String schemaName, String tableName)
+    {
+        this(description, SchemaKey.fromString(schemaName), tableName);
+    }
+
+    public ExperimentRunType(String description, SchemaKey schemaName, String tableName)
     {
         _description = description;
         _schemaName = schemaName;
@@ -77,7 +82,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         return _description;
     }
 
-    public String getSchemaName()
+    public SchemaKey getSchemaName()
     {
         return _schemaName;
     }
