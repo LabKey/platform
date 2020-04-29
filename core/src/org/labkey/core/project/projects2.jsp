@@ -126,7 +126,7 @@
         width = HtmlString.of("100px");
     }
     %>
-    <div class="labkey-projects-container" style="background-color: transparent; border-width: 0; height: 349px;">
+    <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
     <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
 <%
     for (Map<String,Object> m : containers)
