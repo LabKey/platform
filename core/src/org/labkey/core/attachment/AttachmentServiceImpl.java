@@ -607,7 +607,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parents, CompareType.IN);
         SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
-        filter.addClause(since);
+
+        if (!since.toSQLFragment(null, null).isEmpty())
+            filter.addClause(since);
 
         final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 

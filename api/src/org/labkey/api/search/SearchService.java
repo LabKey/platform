@@ -97,10 +97,10 @@ public interface SearchService
     }
 
     /**
-     * Delete the index for the container then index it again
+     * Delete the index documents for any files in a container then start a new crawler task for just that container
      * @param c
      */
-    void reindexContainer(Container c);
+    void reindexContainerFiles(Container c);
 
     enum PRIORITY
     {
@@ -460,7 +460,8 @@ public interface SearchService
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            boolean incremental = modifiedSince == null || modifiedSince.compareTo(oldDate) > 0;
+            // Incremental if modifiedSince is set and is more recent than 1967-10-04
+            boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
             
             // no filter
             if (!incremental)
