@@ -76,7 +76,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         nameCol.setURLTargetWindow("_blank");
 
         addTextColumn("ReleaseVersion").setScale(255);
-        BaseColumnInfo schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
+        var schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
         schemaVersionColumn.setDisplayColumnFactory(new SchemaVersionDisplayColumnFactory(schemaVersionColumn.getDisplayColumnFactory()));
         addWrapColumn(getRealTable().getColumn("ClassName"));
 

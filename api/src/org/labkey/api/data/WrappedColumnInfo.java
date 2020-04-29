@@ -882,6 +882,18 @@ public class WrappedColumnInfo
                 }
             };
         }
+
+        @Override
+        public void setHasDbSequence(boolean b)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
+
+        @Override
+        public void setIsRootDbSequence(boolean b)
+        {
+            throw new java.lang.UnsupportedOperationException();
+        }
     }
 
 

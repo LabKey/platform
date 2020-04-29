@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay;
 
+import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MutableColumnInfo;
@@ -25,5 +26,14 @@ public interface AssayColumnInfoRenderer
 {
     boolean isApplicable(ExpProtocol protocol, ColumnInfo columnInfo, Container container, User user);
 
-    void fixupColumnInfo(ExpProtocol protocol, MutableColumnInfo columnInfo);
+    @Deprecated // seek and destroy
+    default void fixupColumnInfo(ExpProtocol protocol, BaseColumnInfo columnInfo)
+    {
+        fixupColumnInfo(protocol, (MutableColumnInfo)columnInfo);
+    }
+
+    default void fixupColumnInfo(ExpProtocol protocol, MutableColumnInfo columnInfo)
+    {
+        fixupColumnInfo(protocol, (BaseColumnInfo)columnInfo);
+    }
 }
