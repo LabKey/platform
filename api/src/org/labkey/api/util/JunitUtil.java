@@ -232,7 +232,6 @@ public class JunitUtil
                         for (java.nio.file.Path path : Arrays.asList(
                                 Paths.get("externalModules"),
                                 Paths.get("server", "modules"),
-                                Paths.get("server", "customModules"),
                                 Paths.get("server", "optionalModules")))
                         {
                             Files.walk(Paths.get(projectRoot).resolve(path), 2)
