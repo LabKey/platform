@@ -1,6 +1,7 @@
 import React from 'react';
 import {
     initQueryGridState,
+    LineageFilter,
     LineageGraph,
     LineageURLResolvers,
 } from '@labkey/components';
@@ -21,6 +22,7 @@ export class RunGraph extends React.Component<RunGraphProps> {
             <LineageGraph
                 distance={1}
                 filterIn={false}
+                filters={[new LineageFilter('expType', null)]}
                 lsid={this.props.context.lsid}
                 urlResolver={LineageURLResolvers.Server}
                 navigate={(node) => {
