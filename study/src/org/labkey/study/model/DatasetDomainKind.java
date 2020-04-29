@@ -380,6 +380,8 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             throw new IllegalArgumentException("Visit based studies require a visit based dataset domain. Please specify a kind name of : " + VisitDatasetDomainKind.KIND_NAME + ".");
         else if (!timepointType.isVisitBased() && getKindName().equals(VisitDatasetDomainKind.KIND_NAME))
             throw new IllegalArgumentException("Date based studies require a date based dataset domain. Please specify a kind name of : " + DateDatasetDomainKind.KIND_NAME + ".");
+        if (timepointType.isVisitBased() && useTimeKeyField)
+            throw new IllegalArgumentException("Additional key property cannot be Time (from Date/Time) for visit based studies.");
 
         // Check for usage of Time as Key Field
         String keyPropertyName = arguments.getKeyPropertyName();
@@ -518,13 +520,16 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (useTimeKeyField && isManagedField)
             throw new IllegalArgumentException("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time).");
 
+        if (useTimeKeyField && keyPropertyName != null)
+            throw new IllegalArgumentException("KeyPropertyName should not be provided when using additional key of Time (from Date/Time).");
+
         if (isDemographicData && (isManagedField || keyPropertyName != null))
             throw new IllegalArgumentException("There cannot be an Additional Key Column if the dataset is Demographic Data.");
 
         if (!useTimeKeyField && null != keyPropertyName && null == domain.getFieldByName(keyPropertyName))
-            throw new IllegalArgumentException("\"Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column.");
+            throw new IllegalArgumentException("Additional Key Column name \"" + keyPropertyName +"\" must be the name of a column.");
 
-        if (null != keyPropertyName && !useTimeKeyField && isManagedField)
+        if (null != keyPropertyName && isManagedField)
         {
             String rangeURI = domain.getFieldByName(keyPropertyName).getRangeURI();
             if (!(rangeURI.endsWith("int") || rangeURI.endsWith("double") || rangeURI.endsWith("string")))

@@ -89,9 +89,9 @@ public class DatasetDomainKindProperties implements Cloneable
         }
     }
 
-    public boolean isDemographics()
+    public void setDemographics(boolean demographics)
     {
-        return _demographics;
+        _demographics = demographics;
     }
 
     public boolean isVisitMapShared()
