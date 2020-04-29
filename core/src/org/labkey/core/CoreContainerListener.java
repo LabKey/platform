@@ -99,25 +99,18 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
         Container c = evt.container;
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
 
         switch (evt.property)
         {
             case Name:
             {
-                if (c.isSearchable())
-                {
-                    //Clear old documents as the container name may be used in paths & Urls. Issue #39696
-                    SearchService.get().reindexContainer(c);
-                }
-
                 String oldValue = (String) evt.getOldValue();
                 String newValue = (String) evt.getNewValue();
-                String message = evt.container.getName() + " was renamed from " + oldValue + " to " + newValue;
-                addAuditEvent(evt.user, evt.container, message);
+                String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
+                addAuditEvent(evt.user, c, message);
                 break;
             }
         }
-
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
     }
 }

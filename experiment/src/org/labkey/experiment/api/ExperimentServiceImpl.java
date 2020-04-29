@@ -40,6 +40,7 @@ import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -271,7 +272,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
-        ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(c.getId(), comment);
+        ExperimentAuditEvent event = new ExperimentAuditEvent(c.getId(), comment);
 
         event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         if (runGroup != null)

@@ -109,9 +109,25 @@ public interface ReportService
      *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
      *       across all reports in the database (regardless of user)
      */
+    @Deprecated
     int saveReport(ContainerUser context, String key, Report report, boolean skipValidation);
+    @Deprecated
+    default int saveReport(ContainerUser context, String key, Report report)
+    {
+        return saveReport(context, key, report, false);
+    }
 
-    int saveReport(ContainerUser context, String key, Report report);
+    /**
+     * Note: almost all cases of saveReport will want to use the version that does not skip validation.
+     *       One example of where we skip validation is in the StudyUpgradeCode which has a method to fix report properties
+     *       across all reports in the database (regardless of user)
+     */
+    ReportIdentifier saveReportEx(ContainerUser context, String key, Report report, boolean skipValidation);
+    default ReportIdentifier saveReportEx(ContainerUser context, String key, Report report)
+    {
+        return saveReportEx(context, key, report, false);
+    }
+
 
     Report getReport(Container c, int reportId);
 

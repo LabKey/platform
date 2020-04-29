@@ -18,9 +18,17 @@ package org.labkey.api.reports.report;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
+
+import java.util.List;
 
 /*
 * User: Dave
@@ -57,6 +65,18 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
         loadMetaData();
         _resource.loadScript();
     }
+
+    /***
+     * TODO This is for compatibility with RStudio editing.  It would be nicer for the RStudio to convert to using ReportIdentifier
+     *
+     * this hack is matched in ReportServiceImpl.getReportByEntityId()
+     */
+    @Override
+    public @Nullable String getEntityId()
+    {
+        return PageFlowUtil.encode(getReportId().toString());
+    }
+
 
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
     {
@@ -150,5 +170,17 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
     public Resource getMetaDataFile()
     {
         return _resource._metaDataFile;
+    }
+
+
+    /* HANDLE the permission checking that is specific to file-based R reports */
+    public boolean canEdit(User user, List<ValidationError> errors)
+    {
+        if (null == ModuleEditorService.get().getFileForModuleResource(getModule(), getSourceFile().getPath()))
+            errors.add(new SimpleValidationError("The source for this module report is not editable."));
+        else if (!user.hasRootPermission(EditModuleResourcesPermission.class))
+            // TODO add role name here instead of permission
+            errors.add(new SimpleValidationError("You must have EditModuleResourcesPermission to edit module resources."));
+        return errors.isEmpty();
     }
 }
