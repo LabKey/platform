@@ -194,7 +194,7 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
-    public void reindexContainer(Container c)
+    public void reindexContainerFiles(Container c)
     {
     }
 
