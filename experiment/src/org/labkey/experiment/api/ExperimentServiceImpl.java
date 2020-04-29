@@ -159,6 +159,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -1978,7 +1979,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return Pair.of(emptySet(), emptySet());
 
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         ExpRun parentRun = start.getRun();
@@ -2036,7 +2037,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return Pair.of(emptySet(), emptySet());
 
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         if (start instanceof ExpData)
@@ -2256,7 +2257,10 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
 
             if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
-                throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
+            {
+                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
+                continue;
+            }
 
             // ensure that the protocol output lineage is in the same container as the request
             if (c != null && !c.equals(seed.getContainer()))
@@ -2269,6 +2273,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
         }
 
+        if (seedObjectIds.isEmpty())
+            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+
         options.setUseObjectIds(true);
         SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
         Set<Integer> dataIds = new HashSet<>();
@@ -2280,7 +2287,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
-            if (seed instanceof ExpRunItem)
+            if (seed instanceof ExpRunItem && !isUnknownMaterial((ExpRunItem)seed))
             {
                 Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate((ExpRunItem)seed, options);
 
@@ -2882,8 +2889,8 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
-            Set<Pair<Integer, Integer>> provenanceStartingInputs = Collections.emptySet();
-            Set<Pair<Integer, Integer>> provenanceFinalOutputs = Collections.emptySet();
+            Set<Pair<Integer, Integer>> provenanceStartingInputs = emptySet();
+            Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
 
             ProvenanceService pvs = ProvenanceService.get();
             if (pvs != null)
