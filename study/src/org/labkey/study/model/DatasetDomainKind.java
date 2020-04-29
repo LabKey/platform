@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
@@ -325,6 +326,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     public boolean canCreateDefinition(User user, Container container)
     {
         return container.hasPermission(user, AdminPermission.class);
+    }
+
+    @Override
+    public Map<String, Object> processArguments(Container container, User user, Map<String, Object> arguments)
+    {
+        Map<String, Object> updatedArguments = new HashMap<>(arguments);
+
+        // For backwards compatibility, map "demographics" => "demographicData"
+        if (arguments.containsKey("demographics"))
+        {
+            updatedArguments.put("demographicData", arguments.get("demographics"));
+            updatedArguments.remove("demographics");
+        }
+
+        return updatedArguments;
     }
 
     @Nullable

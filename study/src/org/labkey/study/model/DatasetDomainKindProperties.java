@@ -10,26 +10,27 @@ import org.labkey.api.util.PageFlowUtil;
 
 public class DatasetDomainKindProperties implements Cloneable
 {
-    protected String _entityId;
-    protected Integer _datasetId;
-    protected String _name;
-    protected String _description;
-    protected String _category;
-    protected String _label;
+    private String _entityId;
+    private Integer _datasetId;
+    private String _name;
+    private String _description;
+    private String _category;
+    private String _label;
 
-    protected String _visitDatePropertyName;
-    protected String _keyPropertyName;
-    protected boolean _keyPropertyManaged = false;
-    protected boolean _demographicData = false;
-    protected Integer _cohortId = null;
-    protected String _tag;
-    protected boolean _showByDefault = true;
-    protected String _sourceAssayName;
-    protected String _sourceAssayUrl;
-    protected String _dataSharing;
-    protected boolean _useTimeKeyField = false;
+    private String _visitDatePropertyName;
+    private String _keyPropertyName;
+    private boolean _keyPropertyManaged = false;
+    private boolean _demographicData = false;
+    private boolean _demographics = false;
+    private Integer _cohortId = null;
+    private String _tag;
+    private boolean _showByDefault = true;
+    private String _sourceAssayName;
+    private String _sourceAssayUrl;
+    private String _dataSharing;
+    private boolean _useTimeKeyField = false;
 
-    protected int _domainId;
+    private int _domainId;
 
     // read-only (not changed in the editor)
     private boolean _definitionIsShared = false;
@@ -86,6 +87,16 @@ public class DatasetDomainKindProperties implements Cloneable
         {
             _domainId = ds.getDomain().getTypeId();
         }
+    }
+
+    public boolean isDemographics()
+    {
+        return _demographics;
+    }
+
+    public void setDemographics(boolean demographics)
+    {
+        _demographics = demographics;
     }
 
     public boolean isVisitMapShared()
