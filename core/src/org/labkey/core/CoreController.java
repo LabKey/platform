@@ -749,12 +749,8 @@ public class CoreController extends SpringActionController
                 {
                     folderType = FolderTypeManager.get().getFolderType(folderTypeName);
                 }
-                if (folderType == null)
-                {
-                    folderType = FolderType.NONE;
-                }
 
-                if (Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
+                if (null != folderType && Container.hasRestrictedModule(folderType) && !getContainer().hasEnableRestrictedModules(getUser()))
                 {
                     throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
@@ -777,13 +773,12 @@ public class CoreController extends SpringActionController
                 }
 
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
-                if (folderType != FolderType.NONE)
+                if (folderType != null)
                 {
-                    newContainer.setFolderType(folderType, ensureModules, getUser());
+                    newContainer.setFolderType(folderType, getUser());
                 }
-                else if (!ensureModules.isEmpty())
+                if (!ensureModules.isEmpty())
                 {
-                    // Custom folder may inherit modules from parent. 'setFolderType' would remove them.
                     ensureModules.addAll(newContainer.getActiveModules());
                     newContainer.setActiveModules(ensureModules);
                 }

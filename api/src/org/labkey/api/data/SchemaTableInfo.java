@@ -440,6 +440,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         }
     }
 
+
     protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
     {
         return new SchemaColumnMetaData(this, _autoLoadMetaData);

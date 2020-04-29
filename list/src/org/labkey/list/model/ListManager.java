@@ -324,7 +324,7 @@ public class ListManager implements SearchService.DocumentProvider
 
     // Index all lists in this container
     @Override
-    public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)   // TODO: Use since?
+    public void enumerateDocuments(@Nullable IndexTask t, final @NotNull Container c, @Nullable Date since)
     {
         final IndexTask task;
         if (null == t)
@@ -348,7 +348,8 @@ public class ListManager implements SearchService.DocumentProvider
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
                 for (ListDefinition list : lists.values())
                 {
-                    indexList(task, list, false);
+                    boolean reindex = since == null || list.getLastIndexed().compareTo(since) > 0;
+                    indexList(task, list, false, reindex);
                 }
             }
             finally
@@ -377,7 +378,7 @@ public class ListManager implements SearchService.DocumentProvider
             Runnable r = () ->
             {
                 ListDefinition list = ListDefinitionImpl.of(def);
-                indexList(task, list, designChange);
+                indexList(task, list, designChange, false);
             };
 
             task.addRunnable(r, SearchService.PRIORITY.item);
@@ -385,7 +386,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
-    private void indexList(@NotNull IndexTask task, ListDefinition list, boolean designChange)
+    private void indexList(@NotNull IndexTask task, ListDefinition list, boolean designChange, final boolean reindex)
     {
         Domain domain = list.getDomain();
 
@@ -397,11 +398,11 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
-        indexEntireList(task, list);
-        indexModifiedItems(task, list);
+        indexEntireList(task, list, reindex);
+        indexModifiedItems(task, list, reindex);
 
         //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-        indexAttachments(task, list, designChange);
+        indexAttachments(task, list, designChange, reindex);
     }
 
 
@@ -432,7 +433,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             //If attachmentIndexing (checked within method) is enabled index attachment file(s)
-            indexAttachments(task, list, false);
+            indexAttachments(task, list, false, false);
         }
     }
 
@@ -485,7 +486,7 @@ public class ListManager implements SearchService.DocumentProvider
         public void run()
         {
             LOG.debug("Indexing entire list: " + _list.getName() + ", " + _list.getListId());
-            indexEntireList(_task, _list);
+            indexEntireList(_task, _list, false);
         }
 
         @Override
@@ -550,7 +551,7 @@ public class ListManager implements SearchService.DocumentProvider
 
 
     // Index all modified items in this list
-    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list)
+    private void indexModifiedItems(@NotNull final IndexTask task, final ListDefinition list, final boolean reindex)
     {
         if (!list.getEachItemIndex())
         {
@@ -558,9 +559,11 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
+        String lastIndexClause = reindex ? "TRUE OR " : ""; //Prepend TRUE if we want to force a reindexing
+
         // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
-        String test = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
-        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(test, new Object[]{list.getModified()}));
+        lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexClause, new Object[]{list.getModified()}));
 
         indexItems(task, list, filter);
     }
@@ -660,8 +663,9 @@ public class ListManager implements SearchService.DocumentProvider
      * Add searchable resources to Indexing task for file attachments
      * @param task indexing task
      * @param list containing file attachments
+     * @param designChange flag indicating change in design
      */
-    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange)
+    private int indexAttachments(@NotNull final IndexTask task, ListDefinition list, boolean designChange, boolean reindex)
     {
         TableInfo listTable = list.getTable(User.getSearchUser());
         if (null == listTable)
@@ -683,12 +687,14 @@ public class ListManager implements SearchService.DocumentProvider
 
         //Get common objects & properties
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
-        AttachmentService as = AttachmentService.get();        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
+        AttachmentService as = AttachmentService.get();
+        FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
 
         // Index all items that have never been indexed
         //   OR where either the list definition
         //   OR list item itself has changed since last indexed
-        String lastIndexedClause = "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
+        String lastIndexedClause = reindex ? "TRUE OR " : "";
+        lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 
         new TableSelector(listTable, filter, null).setJdbcCaching(false).setForDisplay(true).forEachResults(results ->
@@ -730,7 +736,7 @@ public class ListManager implements SearchService.DocumentProvider
         return count.getValue();
     }
 
-    private void indexEntireList(@NotNull IndexTask task, final ListDefinition list)
+    private void indexEntireList(@NotNull IndexTask task, final ListDefinition list, boolean reindex)
     {
         if (!list.getEntireListIndex())
         {
@@ -748,6 +754,8 @@ public class ListManager implements SearchService.DocumentProvider
         // If that didn't hold true then check for entire list data indexing: if the definition has changed or any item has been modified
         if (!needToIndex && setting.indexItemData())
             needToIndex = hasDefinitionChangedSinceLastIndex(list) || hasModifiedItems(list);
+
+        needToIndex |= reindex;
 
         if (!needToIndex)
             return;

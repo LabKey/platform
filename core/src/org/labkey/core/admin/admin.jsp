@@ -51,9 +51,6 @@
     catch (Exception ignored)
     {}
 
-    String edition = bean.scope.getSqlDialect().getProductEdition();
-    String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
-
     int row = 0;
 %>
 <style type="text/css">
@@ -84,14 +81,16 @@
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
                 if (null != location)
                 { %>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
                 } %>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(bean.scope.getDataSourceProperties().getNumActive())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(bean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
             </table>
             <br/>
 <%
@@ -181,8 +180,8 @@
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : HtmlString.EMPTY_STRING%></td>
-                                <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && (!sourcePathMatched || !enlistmentIdMatched)) ? helpPopup(!sourcePathMatched ? "source path not found" : "enlistmentId not found/matched") : HtmlString.EMPTY_STRING%></td>
+                                <td nowrap="true" style="color:<%=h(!devMode?"":enlistmentIdMatched?"green":sourcePathMatched?"yellow":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))

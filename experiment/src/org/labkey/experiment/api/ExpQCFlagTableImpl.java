@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AssayFlagHandler;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -256,7 +257,7 @@ public class ExpQCFlagTableImpl extends ExpTableImpl<ExpQCFlagTable.Column> impl
                         QCState state = qcId != null ? QCStateManager.getInstance().getQCStateForRowId(run.getProtocol().getContainer(), qcId) : null;
                         if (state != null)
                         {
-                            ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(container.getId(), comment);
+                            ExperimentAuditEvent event = new ExperimentAuditEvent(container.getId(), comment);
 
                             event.setProtocolLsid(run.getProtocol().getLSID());
                             event.setRunLsid(run.getLSID());

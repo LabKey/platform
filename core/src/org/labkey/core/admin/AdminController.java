@@ -105,6 +105,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SimpleModule;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
 import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -113,7 +114,6 @@ import org.labkey.api.pipeline.PipelineStatusUrls;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.premium.PremiumService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -154,7 +154,7 @@ import org.labkey.api.settings.ConceptURIProperties;
 import org.labkey.api.settings.DateParsingMode;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.LookAndFeelProperties;
-import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.ResourceType;
 import org.labkey.api.settings.NetworkDriveProps;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
@@ -238,7 +238,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1132,57 +1131,46 @@ public class AdminController extends SpringActionController
         }
     }
 
-    abstract static class ResetResourceAction extends FormHandlerAction
+    public static class ResourceForm
+    {
+        private String _resource;
+
+        public String getResource()
+        {
+            return _resource;
+        }
+
+        public void setResource(String resource)
+        {
+            _resource = resource;
+        }
+
+        public ResourceType getResourceType()
+        {
+            return ResourceType.valueOf(_resource);
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class ResetResourceAction extends FormHandlerAction<ResourceForm>
     {
         @Override
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ResourceForm target, Errors errors)
         {
         }
 
         @Override
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(ResourceForm form, BindException errors) throws Exception
         {
-            getDeleteResourceDelegate().accept(getContainer(), getUser());
+            form.getResourceType().delete(getContainer(), getUser());
             WriteableAppProps.incrementLookAndFeelRevisionAndSave();
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(Object o)
+        public URLHelper getSuccessURL(ResourceForm form)
         {
             return new AdminUrlsImpl().getLookAndFeelResourcesURL(getContainer());
-        }
-
-        protected abstract @NotNull BiConsumer<Container, User> getDeleteResourceDelegate();
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class ResetLogoAction extends ResetResourceAction
-    {
-        @Override
-        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
-        {
-            return LookAndFeelPropertiesManager.get()::deleteExistingLogo;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class ResetFaviconAction extends ResetResourceAction
-    {
-        @Override
-        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
-        {
-            return LookAndFeelPropertiesManager.get()::deleteExistingFavicon;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public static class DeleteCustomStylesheetAction extends ResetResourceAction
-    {
-        @Override
-        protected @NotNull BiConsumer<Container, User> getDeleteResourceDelegate()
-        {
-            return LookAndFeelPropertiesManager.get()::deleteExistingCustomStylesheet;
         }
     }
 
@@ -8150,7 +8138,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getDeleteURL(String name)
         {
-            ActionURL url = PremiumService.get().getDeleteModuleURL(name);
+            ActionURL url = ModuleEditorService.get().getDeleteModuleURL(name);
             if (null != url)
                 return url;
             url = new ActionURL(DeleteModuleAction.class, ContainerManager.getRoot());
@@ -8160,7 +8148,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getUpdateURL(String name)
         {
-            ActionURL url = PremiumService.get().getUpdateModuleURL(name);
+            ActionURL url = ModuleEditorService.get().getUpdateModuleURL(name);
             if (null != url)
                 return url;
             url = new ActionURL(UpdateModuleAction.class, ContainerManager.getRoot());
@@ -8170,7 +8158,7 @@ public class AdminController extends SpringActionController
 
         private ActionURL getCreateURL()
         {
-            ActionURL url = PremiumService.get().getCreateModuleURL();
+            ActionURL url = ModuleEditorService.get().getCreateModuleURL();
             if (null != url)
                 return url;
             url = new ActionURL(CreateModuleAction.class, ContainerManager.getRoot());
@@ -9968,7 +9956,7 @@ public class AdminController extends SpringActionController
         @Override
         protected HttpView getTabView(Object o, boolean reshow, BindException errors)
         {
-            LookAndFeelResourcesBean bean = new LookAndFeelResourcesBean(getContainer());
+            LookAndFeelBean bean = new LookAndFeelBean();
             return new JspView<>("/org/labkey/core/admin/lookAndFeelResources.jsp", bean, errors);
         }
 
@@ -9983,45 +9971,21 @@ public class AdminController extends SpringActionController
             Container c = getContainer();
             Map<String, MultipartFile> fileMap = getFileMap();
 
-            MultipartFile logoFile = fileMap.get("logoImage");
-            if (logoFile != null && !logoFile.isEmpty())
+            for (ResourceType type : ResourceType.values())
             {
-                try
-                {
-                    LookAndFeelPropertiesManager.get().handleLogoFile(logoFile, c, getUser());
-                }
-                catch (Exception e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
+                MultipartFile file = fileMap.get(type.getFieldName());
 
-            MultipartFile iconFile = fileMap.get("iconImage");
-            if (logoFile != null && !iconFile.isEmpty())
-            {
-                try
+                if (file != null && !file.isEmpty())
                 {
-                    LookAndFeelPropertiesManager.get().handleIconFile(iconFile, c, getUser());
-                }
-                catch (Exception e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    return false;
-                }
-            }
-
-            MultipartFile customStylesheetFile = fileMap.get("customStylesheet");
-            if (customStylesheetFile != null && !customStylesheetFile.isEmpty())
-            {
-                try
-                {
-                    LookAndFeelPropertiesManager.get().handleCustomStylesheetFile(customStylesheetFile, c, getUser());
-                }
-                catch (Exception e)
-                {
-                    errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
-                    return false;
+                    try
+                    {
+                        type.save(file, c, getUser());
+                    }
+                    catch (Exception e)
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, e.getMessage());
+                        return false;
+                    }
                 }
             }
 
@@ -10276,21 +10240,6 @@ public class AdminController extends SpringActionController
     }
 
 
-    public static class LookAndFeelResourcesBean extends LookAndFeelBean
-    {
-        public final Attachment customLogo;
-        public final Attachment customFavIcon;
-        public final Attachment customStylesheet;
-
-        LookAndFeelResourcesBean(Container c)
-        {
-            customLogo = AttachmentCache.lookupLogoAttachment(c);
-            customFavIcon = AttachmentCache.lookupFavIconAttachment(new LookAndFeelResourceAttachmentParent(c));
-            customStylesheet = AttachmentCache.lookupCustomStylesheetAttachment(new LookAndFeelResourceAttachmentParent(c));
-        }
-    }
-
-
     public static class TestCase extends AbstractActionPermissionTest
     {
         @Override
@@ -10310,10 +10259,8 @@ public class AdminController extends SpringActionController
 
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
-                    new ResetLogoAction(),
+                    new ResetResourceAction(),
                     new ResetPropertiesAction(),
-                    new ResetFaviconAction(),
-                    new DeleteCustomStylesheetAction(),
                     controller.new SiteValidationAction(),
                     controller.new ResetQueryStatisticsAction(),
                     controller.new FolderAliasesAction(),

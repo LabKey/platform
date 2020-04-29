@@ -46,6 +46,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.StringExpressionFactory.FieldKeyStringExpression;
 import org.labkey.data.xml.ColumnType;
+import org.labkey.data.xml.DbSequenceType;
 import org.labkey.data.xml.PropertiesType;
 
 import java.beans.Introspector;
@@ -87,6 +88,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     private Object _defaultValue = null;
     private String _jdbcDefaultValue = null;  // TODO: Merge with defaultValue, see #17646
     private boolean _isAutoIncrement = false;
+    private boolean _hasDbSequence = false;
+    private boolean _isRootDbSequence = false;
     private boolean _isKeyField = false;
     private boolean _isReadOnly = false;
     private boolean _isUserEditable = true;
@@ -900,9 +903,31 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
+    public boolean hasDbSequence()
+    {
+        return _hasDbSequence;
+    }
+
+    public void setHasDbSequence(boolean hasDbSequence)
+    {
+        _hasDbSequence = hasDbSequence;
+    }
+
+    @Override
+    public boolean isRootDbSequence()
+    {
+        return _isRootDbSequence;
+    }
+
+    public void setIsRootDbSequence(boolean isRootDbSequence)
+    {
+        _isRootDbSequence = isRootDbSequence;
+    }
+
+    @Override
     public boolean isReadOnly()
     {
-        return _isReadOnly || _isAutoIncrement || isVersionColumn();
+        return _isReadOnly || _isAutoIncrement || _hasDbSequence || isVersionColumn();
     }
 
     @Override
@@ -1062,6 +1087,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             setURLTargetWindow(xmlCol.getUrlTarget());
         if (xmlCol.isSetIsAutoInc())
             _isAutoIncrement = xmlCol.getIsAutoInc();
+        if (xmlCol.isSetHasDbSequence())
+        {
+            DbSequenceType dbSequenceType = xmlCol.getHasDbSequence();
+            _hasDbSequence = dbSequenceType.getBooleanValue();
+            _isRootDbSequence = dbSequenceType.getRootSequence();
+        }
         if (xmlCol.isSetIsReadOnly())
             _isReadOnly = xmlCol.getIsReadOnly();
         if (xmlCol.isSetIsUserEditable())
@@ -1198,6 +1229,17 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
                 LOG.error("Can't instantiate DisplayColumnFactory: " + displayColumnClassName, e);
             }
         }
+    }
+
+    public void setSortFieldKeysFromXml(String xml)
+    {
+        List<FieldKey> keys = new ArrayList<>();
+        for (String key : xml.split(","))
+        {
+            keys.add(FieldKey.fromString(key));
+        }
+
+        setSortFieldKeys(keys);
     }
 
     public static String labelFromName(String name)

@@ -94,14 +94,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
 
-    private boolean _dirty;
+    protected boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
 
     // todo: spec 25628 making _cache static prevents the entire map of all tableInfos from being reloaded each time GetQueryViewsAction instantiates a new copy of QueryDefintionImpl
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
-    private  Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
+    private final Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
     private Map<String, TableType> _metadataTableMap = null;
 
@@ -184,6 +184,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public boolean canEdit(User user)
     {
+        if (!getDefinitionContainer().equals(getContainer()))
+            return false;
         return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 

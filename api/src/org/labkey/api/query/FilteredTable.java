@@ -130,6 +130,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     @Override
+    public String getDbSequenceName(String columnName)
+    {
+        return (_rootTable.getSchema().getName() + ":" + _rootTable.getName() + ":" + columnName).toLowerCase();
+    }
+
+    @Override
     public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTable, Collection<QueryException> errors)
     {
         if (_rootTable instanceof SchemaTableInfo)
