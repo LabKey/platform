@@ -13,7 +13,7 @@ import '@labkey/components/dist/components.css';
 initQueryGridState();
 
 interface RunGraphProps {
-    context: AppContext
+    context: AppContext;
 }
 
 export class RunGraph extends React.Component<RunGraphProps> {
@@ -26,7 +26,7 @@ export class RunGraph extends React.Component<RunGraphProps> {
                 lsid={this.props.context.lsid}
                 urlResolver={LineageURLResolvers.Server}
                 navigate={(node) => {
-                    if (node && node.lineageNode && node.lineageNode.links.lineage) {
+                    if (node?.lineageNode?.links?.lineage) {
                         window.location.href = node.lineageNode.links.lineage;
                     }
                 }}
