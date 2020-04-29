@@ -21,7 +21,7 @@ public class DatasetDomainKindProperties implements Cloneable
     private String _keyPropertyName;
     private boolean _keyPropertyManaged = false;
     private boolean _demographicData = false;
-    private boolean _demographics = false;
+    private boolean _demographics = false; // Included only for backwards compatibility. Use _demographicData instead
     private Integer _cohortId = null;
     private String _tag;
     private boolean _showByDefault = true;
@@ -92,11 +92,6 @@ public class DatasetDomainKindProperties implements Cloneable
     public boolean isDemographics()
     {
         return _demographics;
-    }
-
-    public void setDemographics(boolean demographics)
-    {
-        _demographics = demographics;
     }
 
     public boolean isVisitMapShared()
