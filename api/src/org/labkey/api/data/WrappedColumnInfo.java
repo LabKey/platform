@@ -27,7 +27,6 @@ public class WrappedColumnInfo
      * use wrapCopy() instead (e.g. for PropertyColumn.copyAttributes())
      *
      * NOTE: BaseColumnInfo.copyAttribtuesFrom() does not copy displayField/filterField, here we drop it if the parentTables don't match
-     */
     public static MutableColumnInfo wrapDelegating(TableInfo parent_, FieldKey fieldKey_, ColumnInfo delegate_, String label_, String alias_)
     {
         AbstractWrappedColumnInfo inner = new AbstractWrappedColumnInfo(delegate_)
@@ -95,6 +94,7 @@ public class WrappedColumnInfo
         };
         return new MutableColumnInfoWrapper(inner);
     }
+     */
 
 
     /*

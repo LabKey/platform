@@ -42,7 +42,8 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
     }
 
 
-    /* Wrap a column that comes from inner table tableAlias (may or may not be getRealTable()) */
+    /* DISABLED FOR NOW
+    Wrap a column that comes from inner table tableAlias (may or may not be getRealTable())
     @Override
     public MutableColumnInfo wrapColumnFromJoinedTable(String name, ColumnInfo underlyingColumn)
     {
@@ -60,6 +61,7 @@ public class FilteredTableDelegating<SchemaType extends UserSchema> extends Filt
         assert ret.getParentTable() == this;
         return ret;
     }
+     */
 
     @Override
     public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
