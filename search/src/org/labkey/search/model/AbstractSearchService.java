@@ -397,12 +397,23 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
         DavCrawler.getInstance().startFull(WebdavService.getPath(), true);
     }
 
-    public void reindexContainer(Container c)
+    /**
+     * Delete any existing index file documents, and start a new indexing task for container
+     * @param c Container to reindex
+     */
+    @Override
+    public void reindexContainerFiles(Container c)
     {
-        deleteContainer(c.getId());
+        //Create new runnable instead of using existing methods so they can be run within the same job.
+        Runnable r = () -> {
+            //Remove old items
+            clearIndexedFileSystemFiles(c);
 
-        //Recrawl documents/files as the container name may be used in paths & Urls. Issue #39696
-        DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getId()), true);
+            //TODO: make DavCrawler (or a wrapper) a DocumentProvider instead
+            //Recrawl files as the container name may be used in paths & Urls. Issue #39696
+            DavCrawler.getInstance().startFull(WebdavService.getPath().append(c.getParsedPath()), true);
+        };
+        queueItem(new Item(defaultTask(), r, PRIORITY.delete));
     }
 
     private void queueItem(Item i)
@@ -1111,6 +1122,13 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     protected abstract void deleteDocument(String id);
     protected abstract void deleteDocumentsForPrefix(String prefix);
     protected abstract void deleteIndexedContainer(String id);
+
+    /**
+     * Delete the index documents for file system files within a container
+     * @param container target container
+     */
+    protected abstract void clearIndexedFileSystemFiles(Container container);
+
     protected abstract void shutDown();
 
     public boolean processAndIndex(String id, WebdavResource r, Throwable[] handledException)

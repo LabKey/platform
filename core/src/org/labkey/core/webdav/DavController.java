@@ -167,25 +167,7 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -3819,7 +3801,7 @@ public class DavController extends SpringActionController
                 }
             }
 
-            //Remember source children prior to move so we can remove from index
+            //Remember source children prior to move so we can remove from index. Issue #39696
             Collection<? extends WebdavResource> movedChildren = null;
             if (src.isCollection())
                 movedChildren = src.list();
@@ -3925,7 +3907,6 @@ public class DavController extends SpringActionController
 
         _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
-
 
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
