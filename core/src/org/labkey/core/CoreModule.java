@@ -563,7 +563,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects2.jsp", webPart);
+                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
                     String title = webPart.getPropertyMap().getOrDefault("title", "Projects");
                     view.setTitle(title);
@@ -577,7 +577,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
             },
-            /*** DO NOT MERGE THIS, this is left as projects.jsp to make it easy to compare behavior ***/
             new AlwaysAvailableWebPartFactory("Subfolders")
             {
                 @Override

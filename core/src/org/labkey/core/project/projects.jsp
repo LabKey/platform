@@ -19,426 +19,361 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
+<%@ page import="org.labkey.api.query.QuerySchema" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="java.util.Comparator" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
     public void addClientDependencies(ClientDependencies dependencies)
     {
-        dependencies.add("Ext4ClientApi"); // needed for labkey-combo
-        dependencies.add("/extWidgets/IconPanel.js");
         dependencies.add("extWidgets/IconPanel.css");
     }
 %>
 <%
-    JspView<Portal.WebPart> me = (JspView) HttpView.currentView();
-    int webPartId = me.getModelBean().getRowId();
-    JSONObject jsonProps = new JSONObject(me.getModelBean().getPropertyMap());
-    String renderTarget = "project-" + me.getModelBean().getIndex();
+    JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
+    Portal.WebPart webPart = me.getModelBean();
+    int webPartId = webPart.getRowId();
     boolean isRootAdmin = getUser().hasRootAdminPermission();
     boolean hasPermission;
 
+    Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hasCreateButton", "false", "iconSize", "large", "labelPosition", "bottom", "noun", "Project");
+    Map<String,String> properties = new HashMap<>(defaultProperties);
+    properties.putAll(me.getModelBean().getPropertyMap());
+
     Container target;
-    String containerPath = (String)jsonProps.get("containerPath");
-    if(containerPath == null || "".equals(containerPath))
+    String containerPath = properties.get("containerPath");
+    if (isBlank(containerPath))
     {
-        hasPermission = true; //this means current container
+        hasPermission = true;
         target = getContainer();
     }
     else
     {
         target = ContainerManager.getForPath(containerPath);
         if (target == null)
-        {
-            // Could also be an entityId
             target = ContainerManager.getForId(containerPath);
-        }
         hasPermission = target != null && target.hasPermission(getUser(), ReadPermission.class);
+    }
 
-        //normalize entityId vs path.
-        if (target != null)
+    if (target == null)
+    {
+        %>The target project/folder has been deleted. To reset, remove the webpart and re-add it.<%
+        return;
+    }
+    else if (!hasPermission)
+    {
+        %>You do not have permission to view this folder.<%
+        return;
+    }
+
+    SimpleFilter filter = new SimpleFilter();
+    filter.addInClause(new FieldKey(null,"containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"),",")));
+    filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
+    filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
+    ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),getUser());
+    QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
+    // consider: could use ContainerManager or ContainerFilter.getIds()
+    var containers = new TableSelector(core.getTable("Containers",cf), Set.of("name","entityId"),filter, (Sort)null).getArrayList(Map.class);
+    containers.sort((m1, m2) -> StringUtils.compareIgnoreCase(String.valueOf(m1.get("name")),String.valueOf(m2.get("name"))));
+
+    if (containers.isEmpty())
+    {
+        if (getUser().isGuest())
         {
-            jsonProps.put("containerPath", target.getPath());
+            %>Please log in to view the <%=h(properties.get("noun").toLowerCase())%> list.<%
+        }
+        else {
+            %>No <%=h(properties.get("noun").toLowerCase())%>s to display.<%
+        }
+        return;
+    }
+
+
+    boolean details = false;
+    HtmlString faX;
+    HtmlString width;
+    if (StringUtils.equals("small",properties.get("iconSize")))
+    {
+        faX = HtmlString.of("fa-lg");
+        width = HtmlString.of("67px");
+        details = StringUtils.equals("side",properties.get("labelPosition"));
+    }
+    else if (StringUtils.equals("medium",properties.get("iconSize")))
+    {
+        faX = HtmlString.of("fa-3x");
+        width = HtmlString.of("67px");
+    }
+    else
+    {
+        faX = HtmlString.of("fa-5x");
+        width = HtmlString.of("100px");
+    }
+    %>
+    <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
+    <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
+<%
+    for (Map<String,Object> m : containers)
+    {
+        Container c = ContainerManager.getForId((String)m.get("entityId"));
+        if (null != c)
+        {
+            HtmlString projectName = HtmlString.of(c.getProject().getName());
+            // data-project can be use in style sheet to hide projects e.g.
+            // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
+            if (details) {
+                %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-side"><span class="fa fa-folder-open fa-lg"></span></div><span class="thumb-label-side"><%=h(c.getName())%></span></a></div></div><%
+            } else {
+                %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-bottom"><span class="fa fa-folder-open <%=faX%>"></span></div><span class="thumb-label-bottom"><%=h(c.getName())%></span></a></div></div><%
+            }
         }
     }
 %>
-<div id="<%=text(renderTarget)%>"></div>
+    </div>
+    <div><%
+        if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
+        {
+            if ((StringUtils.equals("Project",properties.get("noun")) && isRootAdmin) ||
+                StringUtils.equals("Subfolder",properties.get("noun")) && getContainer().hasPermission(getUser(), AdminPermission.class))
+            {
+                Container c = getContainer();
+                if (StringUtils.equals("project",properties.get("containerTypes")))
+                    c = ContainerManager.getRoot();
+                %><%=button("Create New " + properties.get("noun")).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
+            }
+        }%>
+    </div>
+</div>
+
+
 <script type="text/javascript">
 
-Ext4.onReady(function() {
-
-    if (<%=target == null%>) {
-        Ext4.get('<%=text(renderTarget)%>').update('The target project/folder has been deleted. To reset, remove the webpart and re-add it');
-        return;
-    }
-
-    if (!<%=hasPermission%>) {
-        Ext4.get('<%=text(renderTarget)%>').update('You do not have permission to view this folder');
-        return;
-    }
-
-    //assume server-supplied webpart config
-    var config = <%= PageFlowUtil.jsString(jsonProps.toString()) %>;
-    config = Ext4.decode(config);
-    config.hideCreateButton = config.hideCreateButton === 'true';
-    if (config.containerTypes) {
-        config.noun = config.containerTypes.match(/project/) ? 'Project' : 'Subfolder';
-    }
-
-    Ext4.applyIf(config, {
-        containerTypes: 'project',
-        containerFilter: 'CurrentAndSiblings',
-        containerPath: !config.containerTypes || config.containerTypes === 'project' ? LABKEY.Security.getHomeContainer() : null,
-        hideCreateButton: false,
-        iconSize: 'large',
-        labelPosition: 'bottom',
-        noun: 'Project'
-    });
-
-    function getFilterArray(panel) {
-        var filterArray = [];
-        if (panel.containerTypes)
-            filterArray.push(LABKEY.Filter.create('containerType', panel.containerTypes, LABKEY.Filter.Types.EQUALS_ONE_OF));
-
-        //exclude system-generated containers
-        if (LABKEY.Security.getHomeContainer())
-            filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL));
-        if (LABKEY.Security.getSharedContainer())
-            filterArray.push(LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL));
-
-        if (panel.containerFilter === 'CurrentAndFirstChildren') {
-            //NOTE: path is not directly filterable, so we settle for Client-side filtering
-            panel.store.on('load', function () {
-                var path = this.containerPath || LABKEY.Security.currentContainer.path;
-                this.filterBy(function (rec) {
-                    return rec.get('Path') !== path;
-                })
-            }, null, {single: true});
-        }
-
-        return filterArray;
-    }
-
-    var store = Ext4.create('LABKEY.ext4.Store', {
-        containerPath: config.containerPath,
-        schemaName: 'core',
-        queryName: 'Containers',
-        containerFilter: config.containerFilter,
-        columns: 'Name,SortOrder,DisplayName,EntityId,Path,ContainerType,iconurl',
-        autoLoad: false,
-        sorters: [{
-            sorterFn: function(rec1, rec2){
-                // Issue 36731: use natural sort for projects webpart to match the nav menu ordering
-                var sort1 = rec1.get('SortOrder') + rec1.get('DisplayName');
-                var sort2 = rec2.get('SortOrder') + rec2.get('DisplayName');
-                return LABKEY.internal.SortUtil.naturalSort(sort1, sort2);
-            }
-        }],
-        metadata: {
-            url: {
-                createIfDoesNotExist: true,
-                setValueOnLoad: true,
-                getInitialValue: function(val, rec) {
-                    return LABKEY.ActionURL.buildURL('project', 'start', rec.get('Path'))
-                }
-            }
-        }
-    });
-
-    var panelCfg = {
-        id: 'projects-panel-<%=webPartId%>',
-        iconField: 'iconurl',
-        iconCls: 'fa-folder-open',
-        labelField: 'DisplayName',
-        urlField: 'url',
-        region : 'center',
-        overflowY : 'auto',
-        sizeContainer : true,
-        iconSize: config.iconSize,
-        labelPosition: config.labelPosition,
-        hideCreateButton: config.hideCreateButton,
-        noun: config.noun,
-        showMenu: false,
-        width: '100%',
-        border: false,
-        frame: false,
-        header : false,
-        buttonAlign: 'left',
-        emptyText: (LABKEY.Security.currentUser.isGuest ? 'Please log in to view the ' + config.noun.toLowerCase() + ' list.' : 'No ' + config.noun.toLowerCase() + 's to display.'),
-        deferEmptyText: false,
-        store: store
-    };
-
-    //NOTE: separated to differentiate site/app admins from those w/ admin permission in this container (projects require site/app admin)
-    if (((config.noun === 'Project') && <%=isRootAdmin%>)
-            || ((config.noun === 'Subfolder') && LABKEY.Security.currentUser.isAdmin)) {
-        panelCfg.buttons = [{
-            text: 'Create New ' + config.noun,
-            hidden: config.hideCreateButton,
-            handler: function() {
-                var isProject = panel.containerTypes && panel.containerTypes.match(/project/),
-                    params = { returnUrl: <%= q(getActionURL().toString()) %> };
-
-                window.location = LABKEY.ActionURL.buildURL('admin', 'createFolder', (isProject ? '/' : config.containerPath), params);
-            }
-        }]
-    }
-
-    var panel = Ext4.create('LABKEY.ext.IconPanel', panelCfg);
-    Ext4.apply(panel, config);
-    panel.getFilterArray = getFilterArray;
-
-    panel.store.filterArray = getFilterArray(panel);
-    panel.store.load();
-
-    var container = Ext4.create('Ext.container.Container', {
-        renderTo : <%=PageFlowUtil.jsString(renderTarget)%>,
-        layout   : 'border',
-        height   : 400,
-        border   : false, frame : false,
-        style    : 'background-color: transparent;',
-        cls      : 'labkey-projects-container',
-        items    : [panel]
-    });
-});
-
-    /**
-     * Called by Server to handle customization actions.
-     */
-    function customizeProjectWebpart(webpartId, pageId, index) {
-
-        Ext4.onReady(function(){
-            var panel = Ext4.getCmp('projects-panel-' + webpartId);
-
-            if (panel) {
-                function shouldCheck(btn){
-                    var data = panel.down('#dataView').renderData;
-                    return (btn.iconSize==data.iconSize && btn.labelPosition==data.labelPosition)
-                }
-                Ext4.create('Ext.window.Window', {
-                    title: 'Customize Webpart',
-                    modal: true,
-                    width: 400,
-                    border: false,
-                    layout: 'fit',
-                    items: [{
-                        xtype: 'form',
-                        border: false,
-                        bodyStyle: 'padding: 5px;',
-                        items: [{
-                            xtype: 'textfield',
-                            name: 'title',
-                            fieldLabel: 'Title',
-                            itemId: 'title',
-                            value: panel.title || 'Projects'
-                        },{
-                            xtype: 'radiogroup',
-                            name: 'style',
-                            itemId: 'style',
-                            fieldLabel: 'Icon Style',
-                            border: false,
-                            columns: 1,
-                            defaults: {
-                                xtype: 'radio',
-                                width: 300
-                            },
-                            items: [{
-                                boxLabel: 'Details',
-                                inputValue: {iconSize: 'small',labelPosition: 'side'},
-                                checked: shouldCheck({iconSize: 'small',labelPosition: 'side'}),
-                                name: 'style'
-                            },{
-                                boxLabel: 'Medium',
-                                inputValue: {iconSize: 'medium',labelPosition: 'bottom'},
-                                checked: shouldCheck({iconSize: 'medium',labelPosition: 'bottom'}),
-                                name: 'style'
-                            },{
-                                boxLabel: 'Large',
-                                inputValue: {iconSize: 'large',labelPosition: 'bottom'},
-                                checked: shouldCheck({iconSize: 'large',labelPosition: 'bottom'}),
-                                name: 'style'
-                            }]
-                        },{
-                            xtype: 'radiogroup',
-                            name: 'folderTypes',
-                            itemId: 'folderTypes',
-                            fieldLabel: 'Folders To Display',
-                            border: false,
-                            columns: 1,
-                            defaults: {
-                                xtype: 'radio',
-                                width: 300
-                            },
-                            items: [{
-                                boxLabel: 'All Projects',
-                                inputValue: 'project',
-                                checked: panel.containerTypes && panel.containerTypes.match(/project/),
-                                name: 'folderTypes'
-                            },{
-                                boxLabel: 'Subfolders',
-                                inputValue: 'subfolders',
-                                checked: panel.containerTypes && panel.containerTypes.match(/folder/) && !panel.store.containerPath,
-                                name: 'folderTypes'
-                            },{
-                                boxLabel: 'Specific Folder',
-                                inputValue: 'folder',
-                                checked: panel.containerTypes && panel.containerTypes.match(/folder/) && panel.store.containerPath,
-                                name: 'folderTypes'
-                            },{
-                                xtype: 'labkey-combo',
-                                itemId: 'containerPath',
-                                width: 200,
-                                disabled: panel.containerTypes && !panel.containerTypes.match(/folder/) || !panel.store.containerPath,
-                                displayField: 'Path',
-                                valueField: 'EntityId',
-                                initialValue: panel.store.containerPath,
-                                value: panel.store.containerPath,
-                                store: Ext4.create('LABKEY.ext4.Store', {
-                                    schemaName: 'core',
-                                    queryName: 'Containers',
-                                    containerFilter: 'AllFolders',
-                                    columns: 'Name,Path,EntityId',
-                                    autoLoad: true,
-                                    //sort: '-Path',
-                                    filterArray: [
-                                        LABKEY.Filter.create('type', 'workbook', LABKEY.Filter.Types.NOT_EQUAL),
-                                        LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL),
-                                        LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL)
-                                    ],
-                                    listeners: {
-                                        load: function(store){
-                                            //NOTE: the raw value of the path column is name, so we sort locally
-                                            store.sort('Path', 'ASC');
-                                            store.fireEvent('datachanged');
-                                        }
-                                    }
-                                })
-                            },{
-                                xtype: 'checkbox',
-                                boxLabel: 'Include Direct Children Only',
-                                disabled: (panel.containerTypes && panel.containerTypes.match(/project/)) || !panel.store.containerPath,
-                                checked: (panel.store.containerFilter == 'CurrentAndFirstChildren'),
-                                itemId: 'directDescendants'
-                            },{
-                                xtype: 'checkbox',
-                                boxLabel: 'Include Workbooks',
-                                disabled: (panel.containerTypes && panel.containerTypes.match(/project/)) || !panel.store.containerPath,
-                                checked: (panel.containerTypes.match(/project/) || panel.containerTypes.match(/workbook/)),
-                                itemId: 'includeWorkbooks'
-                            },{
-                                xtype: 'checkbox',
-                                boxLabel: 'Hide Create Button',
-                                checked: panel.hideCreateButton,
-                                itemId: 'hideCreateButton'
-                            }],
-                            listeners: {
-                                buffer: 20,
-                                change: function(field, val){
-                                    var window = field.up('form');
-                                    window.down('#containerPath').setDisabled(val.folderTypes != 'folder');
-                                    window.down('#includeWorkbooks').setDisabled(val.folderTypes != 'folder');
-                                    window.down('#directDescendants').setDisabled(val.folderTypes != 'folder');
-
-                                    window.doLayout();
-                                    field.up('window').doLayout();
-
-                                }
-                            }
-                        }]
-                    }],
-                    buttons: [{
-                        text: 'Submit',
-                        handler: function(btn) {
-                            var mode = btn.up('window').down('#folderTypes').getValue().folderTypes;
-
-                            if(mode === 'project'){
-                                panel.store.containerFilter = 'CurrentAndSiblings';
-                                panel.containerTypes = 'project';
-                                panel.store.containerPath = LABKEY.Security.getHomeContainer();
-                                panel.store.filterArray = panel.getFilterArray(panel);
-                                panel.noun = 'Project';
-                            }
-                            else if(mode === 'subfolders'){
-                                panel.store.containerFilter = 'CurrentAndFirstChildren';
-                                panel.containerTypes = 'folder';
-                                panel.store.containerPath = null;
-                                panel.store.filterArray = panel.getFilterArray(panel);
-                                panel.noun = 'Folder';
-                            }
-                            else {
-                                var container = btn.up('window').down('#containerPath').getValue();
-                                if(!container){
-                                    alert('Must choose a folder');
-                                    return;
-                                }
-                                panel.store.containerPath = container;
-
-                                panel.store.containerFilter = 'Current'; //null;  //use default
-                                panel.containerTypes = ['folder'];
-                                if(btn.up('window').down('#includeWorkbooks').getValue())
-                                    panel.containerTypes.push('workbook');
-                                panel.containerTypes = panel.containerTypes.join(';');
-                                panel.noun = 'Subfolder';
-
-                                var directDescendants = btn.up('window').down('#directDescendants').getValue();
-                                panel.store.containerFilter = directDescendants ? 'CurrentAndFirstChildren' : 'CurrentAndSubfolders';
-                                panel.store.filterArray = panel.getFilterArray(panel);
-                            }
-
-                            panel.store.load();
-
-                            var hideCreateButton = btn.up('window').down('#hideCreateButton').getValue();
-                            panel.hideCreateButton = hideCreateButton;
-
-                            if (panel.getDockedItems().length > 0) {
-                                var createBtn = panel.getDockedItems()[0].down('button');
-                                if (createBtn) {
-                                    createBtn.setVisible(!hideCreateButton);
-                                    createBtn.setText('Create New ' + panel.noun);
-                                }
-                            }
-
-                            var styleField = btn.up('window').down('#style').getValue().style;
-                            panel.resizeIcons.call(panel, styleField);
-                            btn.up('window').hide();
-
-                            var title = btn.up('window').down('#title').getValue();
-                            panel.title = title;
-                            LABKEY.Utils.setWebpartTitle(title, webpartId);
-
-                            var values = {
-                                containerPath: panel.store.containerPath,
-                                title: title,
-                                containerTypes: panel.containerTypes,
-                                containerFilter: panel.store.containerFilter,
-                                webPartId: webpartId,
-                                hideCreateButton: panel.hideCreateButton,
-                                iconSize: panel.iconSize,
-                                labelPosition: panel.labelPosition
-                            };
-
-                            Ext4.Ajax.request({
-                                url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, values),
-                                method : 'POST',
-                                failure : LABKEY.Utils.onError,
-                                scope : this
-                            });
-                        },
-                        scope: this
-                    },{
-                        text: 'Cancel',
-                        handler: function(btn){
-                            btn.up('window').hide();
-                        },
-                        scope: this
-                    }]
-                }).show();
-            }
+    function customizeProjectWebpart<%=webPartId%>(webpartId, pageId, index)
+    {
+        LABKEY.requiresScript(["Ext4","Ext4ClientApi"], function()
+        {
+            Ext4.onReady(function() {
+                var config = <%= HtmlString.unsafe(new JSONObject(properties).toString()) %>;
+                _customizeProjectWebpart<%=webPartId%>(Ext4, <%=webPart.getRowId()%>, <%=q(webPart.getPageId())%>, <%=webPart.getIndex()%>, config);
+            });
         });
+    }
+
+    function _customizeProjectWebpart<%=webPartId%>(Ext4, webpartId, pageId, index, config)
+    {
+        function shouldCheck(btn){
+            return (btn.iconSize===config.iconSize && btn.labelPosition===config.labelPosition)
+        }
+        Ext4.create('Ext.window.Window', {
+            title: 'Customize Webpart',
+            modal: true,
+            width: 400,
+            border: false,
+            layout: 'fit',
+            items: [{
+                xtype: 'form',
+                border: false,
+                bodyStyle: 'padding: 5px;',
+                items: [{
+                    xtype: 'textfield',
+                    name: 'title',
+                    fieldLabel: 'Title',
+                    itemId: 'title',
+                    value: config.title
+                },{
+                    xtype: 'radiogroup',
+                    name: 'style',
+                    itemId: 'style',
+                    fieldLabel: 'Icon Style',
+                    border: false,
+                    columns: 1,
+                    defaults: {
+                        xtype: 'radio',
+                        width: 300
+                    },
+                    items: [{
+                        boxLabel: 'Details',
+                        inputValue: {iconSize: 'small',labelPosition: 'side'},
+                        checked: shouldCheck({iconSize: 'small',labelPosition: 'side'}),
+                        name: 'style'
+                    },{
+                        boxLabel: 'Medium',
+                        inputValue: {iconSize: 'medium',labelPosition: 'bottom'},
+                        checked: shouldCheck({iconSize: 'medium',labelPosition: 'bottom'}),
+                        name: 'style'
+                    },{
+                        boxLabel: 'Large',
+                        inputValue: {iconSize: 'large',labelPosition: 'bottom'},
+                        checked: shouldCheck({iconSize: 'large',labelPosition: 'bottom'}),
+                        name: 'style'
+                    }]
+                },{
+                    xtype: 'radiogroup',
+                    name: 'folderTypes',
+                    itemId: 'folderTypes',
+                    fieldLabel: 'Folders To Display',
+                    border: false,
+                    columns: 1,
+                    defaults: {
+                        xtype: 'radio',
+                        width: 300
+                    },
+                    items: [{
+                        boxLabel: 'All Projects',
+                        inputValue: 'project',
+                        checked: config.containerTypes && config.containerTypes.match(/project/),
+                        name: 'folderTypes'
+                    },{
+                        boxLabel: 'Subfolders',
+                        inputValue: 'subfolders',
+                        checked: config.containerTypes && config.containerTypes.match(/folder/) && !config.containerPath,
+                        name: 'folderTypes'
+                    },{
+                        boxLabel: 'Specific Folder',
+                        inputValue: 'folder',
+                        checked: config.containerTypes && config.containerTypes.match(/folder/) && config.containerPath,
+                        name: 'folderTypes'
+                    },{
+                        xtype: 'labkey-combo',
+                        itemId: 'containerPath',
+                        width: 200,
+                        disabled: config.containerTypes && !config.containerTypes.match(/folder/) || !config.containerPath,
+                        displayField: 'Path',
+                        valueField: 'EntityId',
+                        initialValue: config.containerPath,
+                        value: config.containerPath,
+                        store: Ext4.create('LABKEY.ext4.Store', {
+                            schemaName: 'core',
+                            queryName: 'Containers',
+                            containerFilter: 'AllFolders',
+                            columns: 'Name,Path,EntityId',
+                            autoLoad: true,
+                            //sort: '-Path',
+                            filterArray: [
+                                LABKEY.Filter.create('type', 'workbook', LABKEY.Filter.Types.NOT_EQUAL),
+                                LABKEY.Filter.create('name', LABKEY.Security.getHomeContainer(), LABKEY.Filter.Types.NOT_EQUAL),
+                                LABKEY.Filter.create('name', LABKEY.Security.getSharedContainer(), LABKEY.Filter.Types.NOT_EQUAL)
+                            ],
+                            listeners: {
+                                load: function(store){
+                                    //NOTE: the raw value of the path column is name, so we sort locally
+                                    store.sort('Path', 'ASC');
+                                    store.fireEvent('datachanged');
+                                }
+                            }
+                        })
+                    },{
+                        xtype: 'checkbox',
+                        boxLabel: 'Include Direct Children Only',
+                        disabled: (config.containerTypes && config.containerTypes.match(/project/)) || !config.containerPath,
+                        checked: (config.containerFilter === 'CurrentAndFirstChildren'),
+                        itemId: 'directDescendants'
+                    },{
+                        xtype: 'checkbox',
+                        boxLabel: 'Include Workbooks',
+                        disabled: (config.containerTypes && config.containerTypes.match(/project/)) || !config.containerPath,
+                        checked: (config.containerTypes.match(/project/) || config.containerTypes.match(/workbook/)),
+                        itemId: 'includeWorkbooks'
+                    },{
+                        xtype: 'checkbox',
+                        boxLabel: 'Hide Create Button',
+                        checked: config.hideCreateButton,
+                        itemId: 'hideCreateButton'
+                    }],
+                    listeners: {
+                        buffer: 20,
+                        change: function(field, val){
+                            var window = field.up('form');
+                            window.down('#containerPath').setDisabled(val.folderTypes !== 'folder');
+                            window.down('#includeWorkbooks').setDisabled(val.folderTypes !== 'folder');
+                            window.down('#directDescendants').setDisabled(val.folderTypes !== 'folder');
+
+                            window.doLayout();
+                            field.up('window').doLayout();
+
+                        }
+                    }
+                }]
+            }],
+            buttons: [{
+                text: 'Submit',
+                handler: function(btn) {
+                    var mode = btn.up('window').down('#folderTypes').getValue().folderTypes;
+
+                    if(mode === 'project'){
+                        config.containerFilter = 'CurrentAndSiblings';
+                        config.containerTypes = 'project';
+                        config.containerPath = LABKEY.Security.getHomeContainer();
+                        config.noun = 'Project';
+                    }
+                    else if(mode === 'subfolders'){
+                        config.containerFilter = 'CurrentAndFirstChildren';
+                        config.containerTypes = 'folder';
+                        config.containerPath = null;
+                        config.noun = 'Folder';
+                    }
+                    else {
+                        var container = btn.up('window').down('#containerPath').getValue();
+                        if(!container){
+                            alert('Must choose a folder');
+                            return;
+                        }
+                        config.containerPath = container;
+
+                        config.containerFilter = 'Current'; //null;  //use default
+                        config.containerTypes = ['folder'];
+                        if(btn.up('window').down('#includeWorkbooks').getValue())
+                            config.containerTypes.push('workbook');
+                        config.containerTypes = config.containerTypes.join(';');
+                        config.noun = 'Subfolder';
+
+                        var directDescendants = btn.up('window').down('#directDescendants').getValue();
+                        config.containerFilter = directDescendants ? 'CurrentAndFirstChildren' : 'CurrentAndSubfolders';
+                    }
+
+                    config.hideCreateButton =  btn.up('window').down('#hideCreateButton').getValue();
+                    config.iconSize = btn.up('window').down('#style').getValue().style.iconSize;
+                    config.labelPosition = btn.up('window').down('#style').getValue().style.labelPosition;
+                    config.title = btn.up('window').down('#title').getValue();
+                    config.webPartId = webpartId;
+
+                    Ext4.Ajax.request({
+                        url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, config),
+                        method : 'POST',
+                        failure : LABKEY.Utils.onError,
+                        success : function() {window.location.reload();},
+                        scope : this
+                    });
+                },
+                scope: this
+            },{
+                text: 'Cancel',
+                handler: function(btn){
+                    btn.up('window').hide();
+                },
+                scope: this
+            }]
+        }).show();
     }
 
 </script>
