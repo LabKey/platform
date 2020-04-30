@@ -437,7 +437,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setWidth(col.getWidth());
         setFk(col.getFk());
         setPropertyURI(col.getPropertyURI());
-        setSortFieldKeys(col.getSortFieldKeys());
+        setSortFieldKeys(col._sortFieldKeys);
         if (col.getConceptURI() != null)
             setConceptURI(col.getConceptURI());
         if (col.getRangeURI() != null)
@@ -1791,7 +1791,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public List<FieldKey> getSortFieldKeys()
     {
-        return _sortFieldKeys;
+        if (null != _sortFieldKeys && !_sortFieldKeys.isEmpty())
+            return _sortFieldKeys;
+        if (null != getParentTable() && !getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName()))
+            return null;
+        return Collections.singletonList(getFieldKey());
     }
 
     @Override

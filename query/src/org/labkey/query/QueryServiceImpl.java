@@ -2682,7 +2682,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 			if (usePrimaryKey && !column.isKeyField())
 				continue;
 			List<FieldKey> sortFields = column.getSortFieldKeys();
-			if (sortFields != null)
+			if (sortFields != null && !sortFields.isEmpty())
 			{
                 for (FieldKey sortField : sortFields)
                 {
