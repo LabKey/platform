@@ -18,10 +18,13 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.exception.OutOfRangeException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
@@ -206,7 +209,16 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     protected void save(User user, TableInfo table, boolean ensureObject)
     {
         assert ensureObject;
-        super.save(user, table, true);
+        boolean isInsert = false;
+        if (getRowId() == 0)
+        {
+            isInsert = true;
+            long longId = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId")).next();
+            if (longId > Integer.MAX_VALUE)
+                throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
+            setRowId((int) longId);
+        }
+        super.save(user, table, true, isInsert);
     }
 
     @Override
