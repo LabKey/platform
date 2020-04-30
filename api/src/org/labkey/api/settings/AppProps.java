@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -75,6 +76,21 @@ public interface AppProps
     boolean isCachingAllowed();
 
     boolean isRecompileJspEnabled();
+
+    /**
+     * Indicates whether modules' "sourcePath" and "buildPath" values be ignored. This allows a server to run in devMode
+     * without the risk of loading unwanted resources from a source tree that may not match the deployed server.
+     *
+     * <strong>WARNING</strong>: Setting this flag will interfere with the population of module beans, resulting in a
+     * mismatch between deployed modules and their properties on the server.
+     *
+     * @return value of the 'labkey.ignoreModuleSource' system property. Defaults to <code>false</code>
+     *
+     * @see org.labkey.api.module.DefaultModule#setSourcePath(String)
+     * @see org.labkey.api.module.DefaultModule#setBuildPath(String)
+     * @see DefaultModule#computeResourceDirectory()
+     */
+    boolean isIgnoreModuleSource();
 
     void setProjectRoot(String projectRoot);
 
