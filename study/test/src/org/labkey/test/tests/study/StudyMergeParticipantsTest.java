@@ -21,7 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 
@@ -156,15 +156,16 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         // Create alias dataset and insert some data
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(ALIAS_DATASET)
-                .submit();
+                .setName(ALIAS_DATASET);
+
+        // todo:
         clickButton("Import Fields", "Paste tab-delimited");
         setFormElement(Locator.name("tsv"), "Property\tNotNull\n" + ALIAS_COLUMN + "\tTRUE\n" + SOURCE_COLUMN + "\tTRUE");
         clickButton("Import", ALIAS_COLUMN);
         click(Locator.radioButtonById("button_dataField"));
         selectOptionByValue(Locator.name("list_dataField"), SOURCE_COLUMN);
         editDatasetPage
-                .save()
+                .clickSave()
                 .clickViewData()
                 .getDataRegion()
                 .clickImportBulkData();

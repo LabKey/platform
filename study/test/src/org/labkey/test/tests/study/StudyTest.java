@@ -34,7 +34,7 @@ import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
@@ -699,11 +699,11 @@ public class StudyTest extends StudyBaseTest
             // Test Bad Field Names -- #13607
             clickButton("Manage");
             EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
-            editDatasetPage.getFieldsEditor()
+            editDatasetPage.getFieldsPanel()
                     .addField(new FieldDefinition("Bad Name").setLabel("Bad Name").setType(FieldDefinition.ColumnType.String));
-            editDatasetPage
-                    .save()
-                    .clickViewData();
+            editDatasetPage.clickSave();
+            new DatasetPropertiesPage(getDriver())
+                .clickViewData();
             _customizeViewsHelper.openCustomizeViewPanel();
             _customizeViewsHelper.addColumn("Bad Name", "Bad Name");
             _customizeViewsHelper.applyCustomView();
@@ -1190,11 +1190,14 @@ public class StudyTest extends StudyBaseTest
                 .selectDatasetByLabel(DEMOGRAPHICS_TITLE)
                 .clickEditDefinition();
         editDatasetPage
-                .getFieldsEditor()
+                .getFieldsPanel()
                 .addField(new FieldDefinition("VisitDay").setLabel("VisitDay").setType(FieldDefinition.ColumnType.Integer));
-        editDatasetPage.setVisitDate("DEMdt")
-                .save()
-                .clickViewData();
+        editDatasetPage.openAdvancedDatasetSettings()
+                .selectVisitDateColumn("DEMdt")
+                .clickApply()
+                .clickSave();
+        new DatasetPropertiesPage(getDriver())
+            .clickViewData();
 
         // Edit 1 item changing sequence from 101; then edit again and change back and set VisitDay to something
         clickAndWait(Locator.tagWithAttribute("a", "data-original-title","edit").index(0));

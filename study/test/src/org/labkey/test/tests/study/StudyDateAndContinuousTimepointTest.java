@@ -8,8 +8,8 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -68,13 +68,12 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(datasetName)
-                .submit();
+                .setName(datasetName);
 
-        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
-        fieldsEditor.selectField(0).markForDeletion();
+        DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
+        fieldsEditor.getField(0).clickRemoveField(true);
         fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
-        editDatasetPage.save();
+        editDatasetPage.clickSave();
 
         log("Inserting rows in the dataset");
         goToProjectHome();
