@@ -82,6 +82,10 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.data.ChildOfCompareType;
 import org.labkey.experiment.api.data.ChildOfMethod;
+import org.labkey.experiment.api.data.ImmediateChildOfCompareType;
+import org.labkey.experiment.api.data.ImmediateChildOfMethod;
+import org.labkey.experiment.api.data.ImmediateParentOfCompareType;
+import org.labkey.experiment.api.data.ImmediateParentOfMethod;
 import org.labkey.experiment.api.data.ParentOfCompareType;
 import org.labkey.experiment.api.data.ParentOfMethod;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
@@ -164,8 +168,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
+        QueryService.get().addCompareType(new ImmediateChildOfCompareType());
+        QueryService.get().addCompareType(new ImmediateParentOfCompareType());
         QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), null, 2, 2);
         QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), null, 2, 2);
+        QueryService.get().registerMethod(ImmediateChildOfMethod.NAME, new ImmediateChildOfMethod(), null, 2, 2);
+        QueryService.get().registerMethod(ImmediateParentOfMethod.NAME, new ImmediateParentOfMethod(), null, 2, 2);
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());

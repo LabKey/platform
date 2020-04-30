@@ -29,7 +29,12 @@ public class ChildOfMethod extends AbstractMethodInfo
     {
         SQLFragment fieldKeyFrag = arguments[0];
         SQLFragment lsidFrag = arguments[1];
-        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createChildOfOptions());
+        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createChildOfOptions(getDepth()));
+    }
+
+    protected int getDepth()
+    {
+        return 0;
     }
 
 }

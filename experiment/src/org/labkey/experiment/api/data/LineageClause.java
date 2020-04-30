@@ -33,9 +33,12 @@ import java.util.Map;
  */
 public abstract class LineageClause extends CompareType.CompareClause
 {
-    public LineageClause(@NotNull FieldKey fieldKey, Object value)
+    private int _depth;
+
+    public LineageClause(@NotNull FieldKey fieldKey, Object value, int depth)
     {
         super(fieldKey, CompareType.MEMBER_OF, value);
+        _depth = depth;
     }
 
     protected ExpRunItem getStart()
@@ -46,6 +49,11 @@ public abstract class LineageClause extends CompareType.CompareClause
 
         // TODO: support rowId as well
         return LineageHelper.getStart(String.valueOf(o));
+    }
+
+    protected int getDepth()
+    {
+        return _depth;
     }
 
     protected abstract ExpLineageOptions createOptions();

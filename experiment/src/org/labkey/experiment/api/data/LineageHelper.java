@@ -38,21 +38,23 @@ public class LineageHelper
         return svc.generateExperimentTreeSQLLsidSeeds(runsToInvestigate, options);
     }
 
-    static ExpLineageOptions createChildOfOptions()
+    static ExpLineageOptions createChildOfOptions(int depth)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setForLookup(true);
         options.setParents(false);
         options.setChildren(true);
+        options.setDepth(depth);
         return options;
     }
 
-    static ExpLineageOptions createParentOfOptions()
+    static ExpLineageOptions createParentOfOptions(int depth)
     {
         ExpLineageOptions options = new ExpLineageOptions();
         options.setForLookup(true);
         options.setParents(true);
         options.setChildren(false);
+        options.setDepth(depth);
         return options;
     }
 

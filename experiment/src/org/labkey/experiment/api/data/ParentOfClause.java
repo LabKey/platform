@@ -25,14 +25,14 @@ import org.labkey.api.query.FieldKey;
  */
 public class ParentOfClause extends LineageClause
 {
-    public ParentOfClause(@NotNull FieldKey fieldKey, Object value)
+    public ParentOfClause(@NotNull FieldKey fieldKey, Object value, int depth)
     {
-        super(fieldKey, value);
+        super(fieldKey, value, depth);
     }
 
     protected ExpLineageOptions createOptions()
     {
-        return LineageHelper.createParentOfOptions();
+        return LineageHelper.createParentOfOptions(getDepth());
     }
 
     protected String getLsidColumn()

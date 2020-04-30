@@ -19,7 +19,11 @@ public class ParentOfMethod extends AbstractMethodInfo
     {
         SQLFragment fieldKeyFrag = arguments[0];
         SQLFragment lsidFrag = arguments[1];
-        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createParentOfOptions());
+        return LineageHelper.createInSQL(fieldKeyFrag, lsidFrag, LineageHelper.createParentOfOptions(getDepth()));
     }
 
+    protected int getDepth()
+    {
+        return 0;
+    }
 }
