@@ -15,62 +15,49 @@
  */
 
 import React, {PureComponent} from "react";
-import {Alert, DatasetDesignerPanels, DatasetModel, fetchDatasetDesign, getDatasetProperties, LoadingSpinner} from "@labkey/components";
+import {Alert, DatasetDesignerPanels, DatasetModel, fetchDatasetDesign, getDatasetProperties, LoadingSpinner, BeforeUnload} from "@labkey/components";
 import { ActionURL, Domain, getServerContext } from "@labkey/api";
 import "@labkey/components/dist/components.css"
 
 interface State {
-    datasetId: number,
     model: DatasetModel,
     isLoadingModel: boolean,
     message?: string,
-    dirty: boolean,
-    returnUrl: string,
     fileImportError: string
 }
 
 export class App extends PureComponent<any, State> {
+
+    private _dirty = false;
+
     constructor(props) {
         super(props);
 
-        const { datasetId } = ActionURL.getParameters();
-
         this.state = {
             model: undefined,
-            datasetId : datasetId,
-            returnUrl : undefined,
             isLoadingModel: true,
-            dirty: false,
             fileImportError: undefined
         };
     }
 
     componentDidMount() {
-        const { datasetId } = this.state;
+        const { datasetId } = ActionURL.getParameters();
 
         if (datasetId) {
-            this.loadExistingDataset();
+            this.loadExistingDataset(datasetId);
         }
         else {
             this.createNewDataset();
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    loadExistingDataset() {
-        const { datasetId } = this.state;
-
+    loadExistingDataset(datasetId: number) {
         fetchDatasetDesign(datasetId)
             .then((model: DatasetModel) => {
                 this.setState(() => ({model, isLoadingModel: false}));
@@ -91,11 +78,10 @@ export class App extends PureComponent<any, State> {
     }
 
     navigate(defaultUrl: string) {
-        const { returnUrl } = this.state;
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || defaultUrl;
-        });
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || defaultUrl;
     }
 
     navigateOnComplete(model: DatasetModel) {
@@ -133,7 +119,7 @@ export class App extends PureComponent<any, State> {
     };
 
     onChange = (model: DatasetModel) => {
-        this.setState(() => ({dirty: true}));
+        this._dirty = true;
     };
 
     render() {
@@ -148,7 +134,7 @@ export class App extends PureComponent<any, State> {
         }
 
         return (
-            <>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 {model && model.isFromAssay() &&
                     <p>
                         This dataset was created by copying assay data from <a href={model.sourceAssayUrl}>{model.sourceAssayName}</a>.
@@ -162,7 +148,7 @@ export class App extends PureComponent<any, State> {
                     successBsStyle={'primary'}
                     onChange={this.onChange}
                 />
-            </>
+            </BeforeUnload>
         )
     }
 }

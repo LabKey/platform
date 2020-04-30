@@ -23,40 +23,35 @@ import {
     ListModel,
     fetchListDesign,
     getListProperties,
-    ConfirmModal
+    ConfirmModal,
+    BeforeUnload
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
 
 type State = {
-    listId: number,
-    returnUrl: string,
     hasDesignListPermission?: boolean,
     isLoadingModel: boolean,
     message?: string,
-    dirty: boolean,
     model?: ListModel
     fileImportError: string
 }
 
-export class App extends React.Component<{}, State>
-{
+export class App extends React.Component<{}, State> {
+
+    private _dirty = false;
+
     constructor(props) {
         super(props);
 
-        const { listId, returnUrl } = ActionURL.getParameters();
-
         this.state = {
-            listId,
-            returnUrl,
             isLoadingModel: true,
-            dirty: false,
             fileImportError: undefined
         };
     }
 
     componentDidMount() {
-        const { listId } = this.state;
+        const listId = ActionURL.getParameter('listId');
 
         Security.getUserPermissions({
             containerPath: getServerContext().container.path,
@@ -74,26 +69,20 @@ export class App extends React.Component<{}, State>
         });
 
         if (listId) {
-            this.loadExistingList();
+            this.loadExistingList(listId);
         } else {
             this.createNewListTemplate();
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
-    loadExistingList() {
-        fetchListDesign(this.state.listId)
+    loadExistingList(listId: number) {
+        fetchListDesign(listId)
             .then((model: ListModel) => {
                 this.setState(() => ({model, isLoadingModel: false}));
             })
@@ -147,15 +136,14 @@ export class App extends React.Component<{}, State>
     }
 
     onChange = (model: ListModel) => {
-        this.setState(() => ({dirty: true}));
+        this._dirty = true;
     };
 
     navigate(defaultUrl: string) {
-        const { returnUrl } = this.state;
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || defaultUrl;
-        });
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || defaultUrl;
     }
 
     renderFileImportErrorConfirm() {
@@ -190,7 +178,7 @@ export class App extends React.Component<{}, State>
         }
 
         return (
-            <>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 {fileImportError && this.renderFileImportErrorConfirm()}
                 {hasDesignListPermission &&
                     <ListDesignerPanels
@@ -202,7 +190,7 @@ export class App extends React.Component<{}, State>
                         successBsStyle={'primary'}
                     />
                 }
-            </>
+            </BeforeUnload>
         );
     }
 }
