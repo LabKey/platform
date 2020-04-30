@@ -6,8 +6,10 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
@@ -119,6 +121,6 @@ public interface ProvenanceService
      * Helper method to create recording params object
      */
     @Nullable
-    ProvenanceRecordingParams createRecordingParams(JSONObject jsonObject);
+    ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject) throws ValidationException;
 
 }

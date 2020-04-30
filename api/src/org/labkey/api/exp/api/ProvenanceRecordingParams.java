@@ -11,6 +11,7 @@ public class ProvenanceRecordingParams implements IsSerializable
     private String recordingId;
     private String name;
     private String description;
+
     private List<String> predecessorSteps;
     private String inputObjectUriProperty;
     private String outputObjectUriProperty;
@@ -18,8 +19,8 @@ public class ProvenanceRecordingParams implements IsSerializable
     private List<String> objectInputs;
     private List<Pair<String,String>> provenanceMap;
 
-    private List<Object> materialInputs;
-    private List<Object> dataInputs;
+    private List<ExpMaterial> materialInputs;
+    private List<ExpData> dataInputs;
 
     public String getRecordingId()
     {
@@ -111,22 +112,22 @@ public class ProvenanceRecordingParams implements IsSerializable
         this.provenanceMap = provenanceMap;
     }
 
-    public List<Object> getMaterialInputs()
+    public List<ExpMaterial> getMaterialInputs()
     {
         return materialInputs;
     }
 
-    public void setMaterialInputs(List<Object> materialInputs)
+    public void setMaterialInputs(List<ExpMaterial> materialInputs)
     {
         this.materialInputs = materialInputs;
     }
 
-    public List<Object> getDataInputs()
+    public List<ExpData> getDataInputs()
     {
         return dataInputs;
     }
 
-    public void setDataInputs(List<Object> dataInputs)
+    public void setDataInputs(List<ExpData> dataInputs)
     {
         this.dataInputs = dataInputs;
     }
