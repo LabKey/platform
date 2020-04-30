@@ -24,6 +24,10 @@ export class RunGraph extends React.Component<RunGraphProps> {
                 filterIn={false}
                 filters={[new LineageFilter('expType', null)]}
                 lsid={this.props.context.lsid}
+                request={{
+                    includeInputsAndOutputs: true,
+                    includeRunSteps: true,
+                }}
                 urlResolver={LineageURLResolvers.Server}
                 navigate={(node) => {
                     if (node?.lineageNode?.links?.lineage) {
