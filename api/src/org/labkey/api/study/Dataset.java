@@ -42,6 +42,13 @@ import java.util.Set;
  */
 public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T>
 {
+    enum DataSharing
+    {
+        NONE,
+        ALL,
+        PTID
+    }
+
     Set<String> getDefaultFieldNames();
 
     /**
@@ -100,6 +107,16 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     @Nullable
     String getKeyPropertyName();
+
+    String getTag();
+
+    String getVisitDatePropertyName();
+
+    DataSharing getDataSharingEnum();
+
+    boolean getUseTimeKeyField();
+
+    void setUseTimeKeyField(boolean useTimeKeyField);
 
     void setKeyPropertyName(String name);
 
