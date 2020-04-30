@@ -2978,6 +2978,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .text(function(d) { return geom.yAes.getValue(d); });
 
         if (geom.clickFn) {
+            // Improve discoverability of the click handler
+            barWrappers.attr('cursor', 'pointer');
+
             barWrappers.on('click', function(data) {
                 geom.clickFn(d3.event, data, layer);
             });
