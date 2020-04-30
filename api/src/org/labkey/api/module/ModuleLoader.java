@@ -131,6 +131,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Drives the process of initializing all of the modules at startup time and otherwise managing their life cycle.
@@ -2158,7 +2159,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public void registerResourcePrefix(String prefix, String name, String sourcePath, String buildPath)
     {
-        if (null == prefix)
+        if (null == prefix || isEmpty(sourcePath) || isEmpty(buildPath))
             return;
 
         if (!new File(sourcePath).isDirectory() || !new File(buildPath).isDirectory())
