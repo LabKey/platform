@@ -2116,11 +2116,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     public void remapSortFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
-        if (getSortFieldKeys() == null)
+        if (_sortFieldKeys == null)
             return;
 
         List<FieldKey> remappedKeys = new ArrayList<>();
-        for (FieldKey key : getSortFieldKeys())
+        for (FieldKey key : _sortFieldKeys)
         {
             remappedKeys.add(FieldKey.remap(key, parent, remap));
         }
