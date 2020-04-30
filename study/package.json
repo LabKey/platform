@@ -1,5 +1,5 @@
 {
-  "name": "query",
+  "name": "study",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -13,19 +13,19 @@
     "build:watch": {
       "command": "webpack-dev-server --config ../webpack/dev.config.js",
       "env": {
-        "LK_MODULE": "query",
+        "LK_MODULE": "study",
         "NODE_ENV": "development"
       }
     },
     "build:prod": {
       "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
-        "LK_MODULE": "query",
+        "LK_MODULE": "study",
         "NODE_ENV": "production"
       }
     },
     "clean": {
-      "command": "rimraf resources/web/query/gen && rimraf resources/views/queryMetadataEditor*"
+      "command": "rimraf resources/web/query/gen && rimraf resources/views/datasetDesigner*"
     }
   },
   "dependencies": {
