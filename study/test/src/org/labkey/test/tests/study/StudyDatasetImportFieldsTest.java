@@ -20,7 +20,7 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 
@@ -74,11 +74,12 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
         clickButton("Create Study");
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName("Test Dataset");
+                .setName("Test Dataset")
+                .submit();
         waitForElement(Locator.name("ff_name0"));
         setFormElement(Locator.name("ff_name0"), INITIAL_COL);
         editDatasetPage
-                .clickSave()
+                .save()
                 .clickViewData();
         DataRegionTable.DataRegion(getDriver()).find().clickInsertNewRow();
         waitForElement(Locator.name("quf_ParticipantId"));
@@ -98,7 +99,7 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
         clickButton("Import", 0);
         waitForText(REPLACEMENT_COL);
         editDatasetPage
-                .clickSave()
+                .save()
                 .clickViewData();
         //waitForText("47");
         waitForText("No data to show.");

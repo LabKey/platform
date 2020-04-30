@@ -21,13 +21,14 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ext4.RadioButton;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -282,8 +283,8 @@ public class StudyScheduleTest extends StudyBaseTest
                 EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
 
                 // add a single name field
-                datasetDesignerPage.getFieldsPanel().getField(0).setName("antigenName");
-                datasetDesignerPage.clickSave();
+                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
+                datasetDesignerPage.save();
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));
@@ -369,8 +370,8 @@ public class StudyScheduleTest extends StudyBaseTest
                 EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
 
                 // add a single name field
-                datasetDesignerPage.getFieldsPanel().getField(0).setName("antigenName");
-                datasetDesignerPage.clickSave();
+                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
+                datasetDesignerPage.save();
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Import data from file"));

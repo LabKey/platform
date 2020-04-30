@@ -24,7 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.pages.DesignerController.DesignerTester;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -219,13 +219,15 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName("Simple");
-        editDatasetPage.getFieldsPanel()
-                .manuallyDefineFields("Value");
+                .setName("Simple")
+                .submit();
+        editDatasetPage.getFieldsEditor()
+                .selectField(0).setName("Value");
         editDatasetPage
-                .clickSave();
-//        new ManageDatasetsPage(getDriver())
-//                .clickImportBulkData();
+                .save()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();

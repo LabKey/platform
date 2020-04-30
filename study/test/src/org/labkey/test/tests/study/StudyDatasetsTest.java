@@ -31,8 +31,8 @@ import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PagingWidget;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.TimeChartWizard;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -191,7 +191,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
                 .clickEditDefinition();
 
         editDatasetPage
-                .setName(newName)
+                .setDatasetName(newName)
                 .setDatasetLabel(newLabel);
 
         for (String fieldName : fieldNames)
@@ -199,7 +199,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             assertTextPresent(fieldName);
         }
 
-        editDatasetPage.clickSave();
+        editDatasetPage.save();
 
         // fix dataset label references in report and view mappings
         for (Map.Entry<String, String> entry : EXPECTED_REPORTS.entrySet())

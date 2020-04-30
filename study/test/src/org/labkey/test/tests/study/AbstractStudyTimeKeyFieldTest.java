@@ -20,10 +20,10 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.DatasetPropertiesPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.core.admin.LookAndFeelSettingsPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 
 import java.io.File;
 import java.util.HashMap;
@@ -64,7 +64,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
@@ -78,7 +78,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
         //editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys");
-        editDatasetDefinitionPage.clickSave();
+        editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
@@ -92,7 +92,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
@@ -106,7 +106,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
@@ -121,7 +121,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
@@ -136,7 +136,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
@@ -164,7 +164,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage definitionPage = propertiesPage.clickEditDefinition();
         definitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         definitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = definitionPage.clickSave();
+        propertiesPage = definitionPage.save();
         dataPage = propertiesPage.clickViewData();
         dates.forEach((d) -> Assert.assertTrue("date was in wrong format", isDateTime(d)));
     }
@@ -176,7 +176,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.clickSave();
+        propertiesPage = editDatasetDefinitionPage.save();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         Map<String,String> kvp = new HashMap<>();

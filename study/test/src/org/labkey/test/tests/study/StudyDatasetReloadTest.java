@@ -21,7 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 

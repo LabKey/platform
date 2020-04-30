@@ -19,7 +19,7 @@ package org.labkey.test.tests.study;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
@@ -174,7 +174,7 @@ public abstract class StudyManualTest extends StudyTest
                 .selectDatasetByName("DEM-1")
                 .clickEditDefinition()
                 .setDescription(DEMOGRAPHICS_DESCRIPTION)
-                .clickSave();
+                .save();
     }
 
 
@@ -203,8 +203,8 @@ public abstract class StudyManualTest extends StudyTest
         clickFolder(getFolderName());
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName("verifyAssay");
-        editDatasetPage.clickSave();
+                .setName("verifyAssay")
+                .submit();
 
         waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
 
@@ -230,7 +230,7 @@ public abstract class StudyManualTest extends StudyTest
         tabPane.setImportAliases("aliasedColumn");
 
         editDatasetPage
-                .clickSave()
+                .save()
                 .clickViewData()
                 .getDataRegion()
                 .clickImportBulkData();
