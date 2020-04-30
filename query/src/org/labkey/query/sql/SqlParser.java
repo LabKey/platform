@@ -97,6 +97,10 @@ public class SqlParser
     final SqlDialect _dialect;
     Container _container = null;
 
+    final int maxPoolSize = 3;
+    final static ArrayList<_SqlParser> _parserPool = new ArrayList<_SqlParser>();
+
+
     //
     // PUBLIC
     //
@@ -116,15 +120,29 @@ public class SqlParser
         _container = c;
     }
 
+    /** see also _SqlParser.close() for AutoCloseable behavior */
+    private _SqlParser getAntlrParser()
+    {
+        synchronized (_parserPool)
+        {
+            if (_parserPool.isEmpty())
+                return new _SqlParser();
+            return _parserPool.remove(_parserPool.size()-1);
+        }
+    }
+
     // for testing only
     public Tree rawQuery(String str) throws Exception
     {
-        _parseErrors = new ArrayList<>();
-        _SqlParser parser = new _SqlParser(str, _parseErrors);
-        ParserRuleReturnScope selectScope = parser.statement();
-        if (!_parseErrors.isEmpty())
-            throw _parseErrors.get(0);
-        return (Tree)selectScope.getTree();
+        try (var parser = getAntlrParser())
+        {
+            _parseErrors = new ArrayList<>();
+            parser.reset(str, _parseErrors);
+            ParserRuleReturnScope selectScope = parser.statement();
+            if (!_parseErrors.isEmpty())
+                throw _parseErrors.get(0);
+            return (Tree) selectScope.getTree();
+        }
     }
 
 
@@ -132,13 +150,13 @@ public class SqlParser
 	{
 		_parseErrors = new ArrayList<>();
         _parseWarnings = null==warnings ? new ArrayList<QueryParseException>() : warnings;
-		try
+		try (var parser = getAntlrParser())
 		{
- 			_SqlParser parser = new _SqlParser(str, _parseErrors);
+            parser.reset(str, _parseErrors);
             ParserRuleReturnScope selectScope = null;
 			try
 			{
-				selectScope = parser.statement();
+				selectScope = parser.parseSelect();
                 int last = parser.getTokenStream().LA(1);
 				if (EOF != last)
                 {
@@ -280,13 +298,13 @@ public class SqlParser
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<>();
-        try
+        try (var parser = getAntlrParser())
         {
-            _SqlParser parser = new _SqlParser(str, _parseErrors);
+            parser.reset(str, _parseErrors);
             ParserRuleReturnScope exprScope = null;
             try
             {
-                exprScope = parser.expression();
+                exprScope = parser.parseExpression();
                 int last = parser.getTokenStream().LA(1);
                 if (EOF != last)
                     //noinspection ThrowableInstanceNeverThrown
@@ -1347,16 +1365,28 @@ public class SqlParser
     }
 
 
-    private static class _SqlParser extends SqlBaseParser
+    private class _SqlParser extends SqlBaseParser implements AutoCloseable
 	{
-        final ArrayList<Exception> _errors;
-        
-		public _SqlParser(String str, ArrayList<Exception> errors)
-		{
-			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
+        ArrayList<Exception> _errors;
+
+        public _SqlParser()
+        {
+            super(null);
             setTreeAdaptor(new LabKeyTreeAdaptor());
-            _errors = errors;
+            _errors = null;
             assert MemTracker.getInstance().put(this);
+        }
+
+        public _SqlParser(String str, ArrayList<Exception> errors)
+		{
+		    this();
+		    reset(str, errors);
+        }
+
+        public void reset(String str, ArrayList<Exception> errors)
+        {
+            _errors = errors;
+            setTokenStream(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
         }
 
         public boolean isSqlType(String type)
@@ -1380,7 +1410,19 @@ public class SqlParser
 		{
 			_errors.add(ex);
 		}
-	}
+
+        @Override
+        public void close() throws Exception
+        {
+            _errors = null;
+            setTokenStream(null);
+            synchronized (_parserPool)
+            {
+                if (_parserPool.size() < maxPoolSize)
+                    _parserPool.add(this);
+            }
+        }
+    }
 
 
 	QNode qnode(CommonTree n, LinkedList<QNode> children)
@@ -1887,6 +1929,7 @@ public class SqlParser
         @Test
         public void testSql()
         {
+            long start = System.currentTimeMillis();
             for (String sql : testSql)
             {
                 try
@@ -1913,6 +1956,8 @@ public class SqlParser
                     fail(sql);
                 }
             }
+            long end = System.currentTimeMillis();
+            System.out.println("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
         }
 
         @Test
