@@ -22,7 +22,7 @@ public class UserIdForeignKey extends LookupForeignKey
 {
     private final UserSchema _userSchema;
 
-    static public ColumnInfo initColumn(BaseColumnInfo column)
+    static public <COL extends MutableColumnInfo> COL initColumn(COL column)
     {
         column.setFk(new UserIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()

@@ -91,6 +91,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     }
 
     @Override
+    // TODO MutableColumnRenderProperties
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         to._checkLocked();

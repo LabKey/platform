@@ -16,8 +16,8 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.ExpQCFlag;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.query.ExpQCFlagTable;
@@ -73,9 +73,9 @@ public interface AssayFlagHandler
             return null;
     }
 
-    BaseColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable);
+    MutableColumnInfo createFlagColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName, boolean editable);
 
-    BaseColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName);
+    MutableColumnInfo createQCEnabledColumn(ExpProtocol protocol, ExpRunTable runTable, String schemaName);
 
     /**
      * Give assay flag handlers an opportunity to change the assay query schema QCFlags table when it is created,
