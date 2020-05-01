@@ -169,13 +169,13 @@ public class LookAndFeelPropertiesManager
             @Override
             public String getShortLabel()
             {
-                return "Favorite icon";
+                return "Favicon";
             }
 
             @Override
-            public String getLongLabel()
+            public HtmlString getHelpPopup()
             {
-                return "Favorite icon (displayed in user's favorites or bookmarks, .ico file only)";
+                return HtmlString.unsafe(PageFlowUtil.helpPopup("Favicon", "Displayed in user's favorites or bookmarks, .ico file only", false, 300));
             }
 
             @Override
