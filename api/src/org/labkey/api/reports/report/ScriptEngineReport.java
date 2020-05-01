@@ -717,7 +717,8 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
             try (PrintWriter writer = directory.getPrintWriter(scriptFileName))
             {
-                writer.write(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
+                String script = StringUtils.defaultString(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
+                writer.write(script);
             }
 
             super.serializeToFolder(ctx, directory);
