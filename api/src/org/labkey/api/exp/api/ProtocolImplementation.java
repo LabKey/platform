@@ -16,13 +16,15 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentProtocolHandler;
 import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 
 import java.util.List;
 
-public class ProtocolImplementation
+public class ProtocolImplementation implements ExperimentProtocolHandler
 {
     final protected String _name;
     public ProtocolImplementation(String name)
@@ -60,7 +62,35 @@ public class ProtocolImplementation
     {
     }
 
+    @Override
+    public @Nullable Priority getPriority(ExpProtocol protocol)
+    {
+        if (getName().equals(protocol.getImplementationName()))
+            return Priority.HIGH;
+
+        return null;
+    }
+
+    /**
+     * Get a query reference for the protocol type.
+     */
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol)
+    {
+        return null;
+    }
+
+    /**
+     * Get a query reference for the run of the protocol type.
+     */
     public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpRun run)
+    {
+        return null;
+    }
+
+    /**
+     * Get a query reference for the protocol application of the protocol type.
+     */
+    public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpProtocolApplication app)
     {
         return null;
     }

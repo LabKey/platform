@@ -245,6 +245,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setFieldKey(FieldKey key)
     {
         checkLocked();
@@ -278,6 +279,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setAlias(String alias)
     {
         checkLocked();
@@ -296,9 +298,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setRequired(col.isRequiredSet());
         setAutoIncrement(col.isAutoIncrement());
         setScale(col.getScale());
-        _sqlTypeName = ((BaseColumnInfo)col)._sqlTypeName;
-        _jdbcType = ((BaseColumnInfo)col)._jdbcType;
-        _propertyType = ((BaseColumnInfo)col)._propertyType;
+        if (col instanceof BaseColumnInfo)
+        {
+            _sqlTypeName = ((BaseColumnInfo) col)._sqlTypeName;
+            _jdbcType = ((BaseColumnInfo) col)._jdbcType;
+            _propertyType = ((BaseColumnInfo) col)._propertyType;
+        }
+        else
+        {
+            _sqlTypeName = col.getSqlTypeName();
+            _jdbcType = col.getJdbcType();
+            _propertyType = col.getPropertyType();
+        }
 
         // We intentionally do not copy "isHidden", since it is usually not applicable.
         // URL copy/rewrite is handled separately
@@ -315,10 +326,15 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     public void setExtraAttributesFrom(ColumnInfo col)
     {
         checkLocked();
-        if (((BaseColumnInfo)col)._label != null)
-            setLabel(col.getLabel());
-        if (((BaseColumnInfo)col)._shortLabel != null)
-            setShortLabel(col.getShortLabel());
+        if (col instanceof BaseColumnInfo)
+        {
+            setExtraAttributesFrom((BaseColumnInfo) col);
+            return;
+        }
+
+        setLabel(col.getLabelValue());
+        // TODO if (col.isShortLabelSet())
+        setShortLabel(col.getShortLabel());
         setJdbcDefaultValue(col.getJdbcDefaultValue());
         setDescription(col.getDescription());
         if (col.isFormatStringSet())
@@ -331,14 +347,18 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // Don't call the getter, because if it hasn't been explicitly set we want to
         // fetch the value lazily so we don't have to traverse FKs to get the display
         // field at this point.
-        setInputLength(((BaseColumnInfo)col)._inputLength);
-        setInputType(((BaseColumnInfo)col)._inputType);
+        // TODO if (col.isInputLengthSet())
+        setInputLength(col.getInputLength());
+        // TODO if (col.isInputTypeSet())
+        setInputType(col.getInputType());
 
         setInputRows(col.getInputRows());
         if (!isKeyField() && !col.isNullable())
             setNullable(col.isNullable());
-        setRequired(((BaseColumnInfo)col)._required);
-        setReadOnly(((BaseColumnInfo)col)._isReadOnly);
+        // TODO if (col.isRequiredSet())
+        setRequired(col.isRequired());
+        // TODO if (col.isReadOnlySet())
+        setReadOnly(col.isReadOnly());
         setDisplayColumnFactory(col.getDisplayColumnFactory());
         setTextAlign(col.getTextAlign());
         setWidth(col.getWidth());
@@ -362,8 +382,81 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
         // hide the fact that these values can be null internally. It's important to preserve the notion
         // of unset values on the new columninfo.
-        _measure = ((BaseColumnInfo)col)._measure;
-        _dimension = ((BaseColumnInfo)col)._dimension;
+        // TODO if (col.isMeasureSet())
+        _measure = col.isMeasure();
+        _dimension = col.isDimension();
+
+        setRecommendedVariable(col.isRecommendedVariable());
+        setDefaultScale(col.getDefaultScale());
+        setMvColumnName(col.getMvColumnName());
+        setRawValueColumn(col.isRawValueColumn());
+        setMvIndicatorColumn(col.isMvIndicatorColumn());
+        setFacetingBehaviorType(col.getFacetingBehaviorType());
+        setExcludeFromShifting(col.isExcludeFromShifting());
+        setPHI(col.getPHI());
+        setShouldLog(col.isShouldLog());
+
+        setCrosstabColumnDimension(col.getCrosstabColumnDimension());
+        setCrosstabColumnMember(col.getCrosstabColumnMember());
+
+        setCalculated(col.isCalculated());
+    }
+
+    /*
+     * copy "non-core" attributes, e.g. leave key and type information alone
+     */
+    public void setExtraAttributesFrom(BaseColumnInfo col)
+    {
+        checkLocked();
+        if (col._label != null)
+            setLabel(col.getLabel());
+        if (col._shortLabel != null)
+            setShortLabel(col.getShortLabel());
+        setJdbcDefaultValue(col.getJdbcDefaultValue());
+        setDescription(col.getDescription());
+        if (col.isFormatStringSet())
+            setFormat(col.getFormat());
+        if (col.getExcelFormatString() != null)
+            setExcelFormatString(col.getExcelFormatString());
+        if (col.getTsvFormatString() != null)
+            setTsvFormatString(col.getTsvFormatString());
+        setTextExpression(col.getTextExpression());
+        // Don't call the getter, because if it hasn't been explicitly set we want to
+        // fetch the value lazily so we don't have to traverse FKs to get the display
+        // field at this point.
+        setInputLength(col._inputLength);
+        setInputType(col._inputType);
+
+        setInputRows(col.getInputRows());
+        if (!isKeyField() && !col.isNullable())
+            setNullable(col.isNullable());
+        setRequired(col._required);
+        setReadOnly(col._isReadOnly);
+        setDisplayColumnFactory(col.getDisplayColumnFactory());
+        setTextAlign(col.getTextAlign());
+        setWidth(col.getWidth());
+        setFk(col.getFk());
+        setPropertyURI(col.getPropertyURI());
+        setSortFieldKeys(col._sortFieldKeys);
+        if (col.getConceptURI() != null)
+            setConceptURI(col.getConceptURI());
+        if (col.getRangeURI() != null)
+            setRangeURI(col.getRangeURI());
+        setIsUnselectable(col.isUnselectable());
+        setDefaultValueType(col.getDefaultValueType());
+        setDefaultValue(col.getDefaultValue());
+        setImportAliasesSet(col.getImportAliasSet());
+        setShownInDetailsView(col.isShownInDetailsView());
+        setShownInInsertView(col.isShownInInsertView());
+        setShownInUpdateView(col.isShownInUpdateView());
+        setConditionalFormats(col.getConditionalFormats());
+        setValidators(col.getValidators());
+
+        // Intentionally do not use set/get methods for dimension and measure, since the set/get methods
+        // hide the fact that these values can be null internally. It's important to preserve the notion
+        // of unset values on the new columninfo.
+        _measure = col._measure;
+        _dimension = col._dimension;
 
         setRecommendedVariable(col.isRecommendedVariable());
         setDefaultScale(col.getDefaultScale());
@@ -432,6 +525,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setMetaDataName(String metaDataName)
     {
         checkLocked();
@@ -473,18 +567,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _propertyURI;
     }
 
+    @Override
     public void setPropertyURI(String propertyURI)
     {
         checkLocked();
         _propertyURI = propertyURI;
     }
 
+    @Override
     public void setConceptURI(String conceptURI)
     {
         checkLocked();
         _conceptURI = conceptURI;
     }
 
+    @Override
     public void setRangeURI(String rangeURI)
     {
         checkLocked();
@@ -542,6 +639,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return isStringType() || isDateTimeType() || isBooleanType() ? "left" : "right";
     }
 
+    @Override
     public void setTextAlign(String textAlign)
     {
         checkLocked();
@@ -554,6 +652,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _jdbcDefaultValue;
     }
 
+    @Override
     public void setJdbcDefaultValue(String jdbcDefaultValue)
     {
         checkLocked();
@@ -566,6 +665,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _defaultValue;
     }
 
+    @Override
     public void setDefaultValue(Object defaultValue)
     {
         checkLocked();
@@ -594,78 +694,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
-    @Nullable
-    public List<ColumnInfo> getSortFields()
-    {
-        if (getParentTable() == null)
-            return Collections.singletonList(this);
-
-        List<ColumnInfo> sortCols = new ArrayList<>();
-        if (_sortFieldKeys != null)
-        {
-            boolean foundAllInCache = true;
-            for (FieldKey sortFieldKey : _sortFieldKeys)
-            {
-                ColumnInfo column = _cachedSortColumns.get(sortFieldKey);
-                if (column != null)
-                {
-                    sortCols.add(column);
-                }
-                else
-                {
-                    foundAllInCache = false;
-                    break;
-                }
-            }
-            if (foundAllInCache)
-            {
-                return sortCols;
-            }
-
-            // The column may be on a separate table via a lookup, so use QueryService to resolve it
-            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), _sortFieldKeys);
-            if (columns.size() != _sortFieldKeys.size() || columns.values().contains(null))
-            {
-                //if we cannot resolve any of the intended columns, rather than proceed
-                // with just 1 of them, default back to the original column
-                StringBuilder msg = new StringBuilder("Unable to resolve one or more sortFieldKeys for column: " + getFieldKey() + " on table: " + (getParentTable() != null ? getParentTable().getName() : "") + ".  The fieldKeys are: ");
-                msg.append(StringUtils.join(_sortFieldKeys, ","));
-                LOG.warn(msg);
-
-                sortCols = new ArrayList<>();
-                sortCols.add(this);
-            }
-            else
-            {
-                for (FieldKey fk : _sortFieldKeys)
-                {
-                    ColumnInfo column = columns.get(fk);
-                    _cachedSortColumns.put(fk, column);
-                    sortCols.add(column);
-                }
-            }
-        }
-        else
-        {
-            sortCols.add(this);
-        }
-
-        if (sortCols.size() > 0)
-        {
-            for (ColumnInfo sortCol : sortCols)
-            {
-                //is this the right place to do this check?
-                if (!getParentTable().getSqlDialect().isSortableDataType(sortCol.getSqlTypeName()))
-                    return null;
-            }
-
-            return sortCols;
-        }
-
-        return null;
-    }
-
-    @Override
     public ColumnInfo getFilterField()
     {
         return this;
@@ -685,12 +713,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return java.util.Date.class.isAssignableFrom(getJdbcType().cls) || isNumericType();
     }
 
+    @Override
     public void setDisplayField(ColumnInfo field)
     {
         checkLocked();
         _displayField = field;
     }
 
+    @Override
     public void setWidth(String width)
     {
         checkLocked();
@@ -730,6 +760,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setUserEditable(boolean editable)
     {
         checkLocked();
@@ -737,6 +768,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setDisplayColumnFactory(DisplayColumnFactory factory)
     {
         checkLocked();
@@ -755,6 +787,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _shouldLog;
     }
 
+    @Override
     public void setShouldLog(boolean shouldLog)
     {
         checkLocked();
@@ -862,6 +895,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isAutoIncrement;
     }
 
+    @Override
     public void setAutoIncrement(boolean autoIncrement)
     {
         checkLocked();
@@ -896,6 +930,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isReadOnly || _isAutoIncrement || _hasDbSequence || isVersionColumn();
     }
 
+    @Override
     public void setReadOnly(boolean readOnly)
     {
         checkLocked();
@@ -1333,7 +1368,6 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return booleanFromString(o.toString());
     }
 
-
     public String toString()
     {
         return ColumnInfo.toString(this);
@@ -1745,6 +1779,8 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+
+    @Override
     public void setSqlTypeName(String sqlTypeName)
     {
         checkLocked();
@@ -1755,15 +1791,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     @Override
     public List<FieldKey> getSortFieldKeys()
     {
-        return _sortFieldKeys;
+        if (null != _sortFieldKeys && !_sortFieldKeys.isEmpty())
+            return _sortFieldKeys;
+        if (null != getParentTable() && !getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName()))
+            return null;
+        return Collections.singletonList(getFieldKey());
     }
 
+    @Override
     public void setSortFieldKeys(List<FieldKey> sortFieldKeys)
     {
         checkLocked();
         _sortFieldKeys = sortFieldKeys;
     }
 
+    @Override
     public void setJdbcType(JdbcType type)
     {
         checkLocked();
@@ -1802,18 +1844,21 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _fk;
     }
 
+    @Override
     public void clearFk()
     {
         checkLocked();
         _fk = null;
     }
 
+    @Override
     public void setFk(@Nullable ForeignKey fk)
     {
         checkLocked();
         _fk = fk;
     }
 
+    @Override
     public void setFk(@NotNull Builder<ForeignKey> b)
     {
         checkLocked();
@@ -1837,6 +1882,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setKeyField(boolean keyField)
     {
         checkLocked();
@@ -1855,6 +1901,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _mvColumnName;
     }
 
+    @Override
     public void setMvColumnName(FieldKey mvColumnName)
     {
         checkLocked();
@@ -1867,6 +1914,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isMvIndicatorColumn;
     }
 
+    @Override
     public void setMvIndicatorColumn(boolean mvIndicatorColumn)
     {
         checkLocked();
@@ -1879,6 +1927,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isRawValueColumn;
     }
 
+    @Override
     public void setRawValueColumn(boolean rawColumn)
     {
         checkLocked();
@@ -1895,6 +1944,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isUnselectable;
     }
 
+    @Override
     public void setIsUnselectable(boolean b)
     {
         checkLocked();
@@ -1909,6 +1959,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
 
+    @Override
     public void setParentTable(TableInfo parentTable)
     {
         checkLocked();
@@ -1966,6 +2017,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _defaultValueType;
     }
 
+    @Override
     public void setDefaultValueType(DefaultValueType defaultValueType)
     {
         checkLocked();
@@ -1985,6 +2037,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _conditionalFormats;
     }
 
+    @Override
     public void setConditionalFormats(@NotNull List<ConditionalFormat> formats)
     {
         checkLocked();
@@ -1999,6 +2052,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _validators;
     }
 
+    @Override
     public void setValidators(List<? extends IPropertyValidator> validators)
     {
         checkLocked();
@@ -2062,11 +2116,11 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     public void remapSortFieldKeys(@Nullable FieldKey parent, @Nullable Map<FieldKey, FieldKey> remap)
     {
-        if (getSortFieldKeys() == null)
+        if (_sortFieldKeys == null)
             return;
 
         List<FieldKey> remappedKeys = new ArrayList<>();
-        for (FieldKey key : getSortFieldKeys())
+        for (FieldKey key : _sortFieldKeys)
         {
             remappedKeys.add(FieldKey.remap(key, parent, remap));
         }
@@ -2084,6 +2138,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         setDisplayColumnFactory(remapped);
     }
 
+    @Override
     public void checkLocked()
     {
         if (_locked)
@@ -2092,6 +2147,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
 
     boolean _locked;
 
+    @Override
     public void setLocked(boolean b)
     {
         if (_locked && !b)
@@ -2099,6 +2155,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _locked = b;
     }
 
+    @Override
     public boolean isLocked()
     {
         return _locked;
@@ -2110,6 +2167,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _calculated;
     }
 
+    @Override
     public void setCalculated(boolean calculated)
     {
         checkLocked();
@@ -2125,6 +2183,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return false;
     }
 
+    @Override
     public void setColumnLogging(ColumnLogging columnLogging)
     {
         checkLocked();

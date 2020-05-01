@@ -23,6 +23,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UnionContainerFilter;
@@ -55,7 +56,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -108,7 +109,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         }
     }
 
-    private BaseColumnInfo setupNonEditableCol (BaseColumnInfo col)
+    private MutableColumnInfo setupNonEditableCol (MutableColumnInfo col)
     {
         col.setUserEditable(false);
         col.setReadOnly(true);

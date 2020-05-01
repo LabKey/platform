@@ -102,4 +102,8 @@ public interface MutableColumnInfo extends MutableColumnRenderProperties, Column
     void setCalculated(boolean calculated);
 
     void setColumnLogging(ColumnLogging columnLogging);
+
+    void setHasDbSequence(boolean b);
+
+    void setIsRootDbSequence(boolean b);
 }

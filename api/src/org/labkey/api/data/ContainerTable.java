@@ -96,7 +96,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         DetailsURL detailsURL = new DetailsURL(url);
         setDetailsURL(detailsURL);
 
-        var col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
+        MutableColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
         col.setURL(detailsURL);
         this.addColumn(col);

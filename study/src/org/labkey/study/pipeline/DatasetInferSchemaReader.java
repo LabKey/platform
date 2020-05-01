@@ -143,6 +143,10 @@ public class DatasetInferSchemaReader extends DatasetFileReader implements Schem
 
                     for (ColumnDescriptor col : columns)
                     {
+                        // filter out the built-in types
+                        if (DatasetDefinition.isDefaultFieldName(col.getColumnName(), _study))
+                            continue;
+
                         PropertyType pt = PropertyType.getFromURI(null, col.getRangeURI(), null);
                         ImportTypesHelper.Builder pdb = new ImportTypesHelper.Builder(_study.getContainer(), pt);
 
