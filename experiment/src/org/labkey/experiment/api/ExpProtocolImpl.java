@@ -26,6 +26,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentProtocolHandler;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -72,7 +74,35 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     @Override
     public @Nullable QueryRowReference getQueryRowReference()
     {
+        QueryRowReference ref = getCustomQueryRowReference();
+        if (ref != null)
+            return ref;
+
         return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), FieldKey.fromParts(ExpProtocolTable.Column.RowId.name()), getRowId());
+    }
+
+    /**
+     * Return a protocol specific query row reference or null if the default should be used.
+     */
+    /*package*/ @Nullable QueryRowReference getCustomQueryRowReference()
+    {
+        ProtocolImplementation impl = getImplementation();
+        if (impl != null)
+        {
+            QueryRowReference ref = impl.getQueryRowReference(this);
+            if (ref != null)
+                return ref;
+        }
+
+        ExperimentProtocolHandler handler = ExperimentService.get().getExperimentProtocolHandler(this);
+        if (handler != null)
+        {
+            QueryRowReference ref = handler.getQueryRowReference(this);
+            if (ref != null)
+                return ref;
+        }
+
+        return null;
     }
 
     public ApplicationType getApplicationType()
@@ -91,10 +121,14 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         }
     }
 
-    public ProtocolImplementation getImplementation()
+    public @Nullable String getImplementationName()
     {
-        String implName = (String) getProperty(ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor());
-        return ExperimentService.get().getProtocolImplementation(implName);
+        return (String) getProperty(ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor());
+    }
+
+    public @Nullable ProtocolImplementation getImplementation()
+    {
+        return ExperimentService.get().getProtocolImplementation(getImplementationName());
     }
 
     public int getRowId()
