@@ -12,7 +12,8 @@ import java.util.Set;
 
 /**
  * <code>
- * Filter.create('lsid', '{json:}', Filter.Types.EXP_LINEAGE_OF)
+ * Filter.create('lsid', '{json:["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1]}', Filter.Types.EXP_LINEAGE_OF)
+ * Filter.create('lsid', ["urn:lsid:labkey.com:Data.Folder-123:1aec9396-3fa2-1038-86f4-495e1672e522",1], Filter.Types.EXP_LINEAGE_OF)
  * </code>
  */
 public class LineageCompareType extends CompareType
