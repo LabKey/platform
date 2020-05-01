@@ -20,14 +20,17 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 
 import java.io.File;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,6 +62,43 @@ public class RecordedAction
     private Date _startTime;
     private Date _endTime;
     private Integer _recordCount;
+
+    // Provenance map (list of from and to pairs)
+    private List<Pair<String,String>> _provenanceMap;
+    // Set of lsids
+    private Set<String> _materialInputs = new HashSet<>();
+    // Set of lsids
+    private Set<String> _dataInputs = new HashSet<>();
+
+    public List<Pair<String, String>> getProvenanceMap()
+    {
+        return _provenanceMap;
+    }
+
+    public void setProvenanceMap(List<Pair<String, String>> provenanceMap)
+    {
+        _provenanceMap = provenanceMap;
+    }
+
+    public Set<String> getMaterialInputs()
+    {
+        return _materialInputs;
+    }
+
+    public void setMaterialInputs(Set<String> materialInputs)
+    {
+        _materialInputs = materialInputs;
+    }
+
+    public Set<String> getDataInputs()
+    {
+        return _dataInputs;
+    }
+
+    public void setDataInputs(Set<String> dataInputs)
+    {
+        _dataInputs = dataInputs;
+    }
 
     /** No-args constructor to support de-serialization in Java 7 and beyond */
     @SuppressWarnings({"UnusedDeclaration"})
