@@ -24,10 +24,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.util.ResultSetUtil;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
