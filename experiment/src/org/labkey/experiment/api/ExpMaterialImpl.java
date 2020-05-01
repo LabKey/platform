@@ -213,7 +213,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
         if (getRowId() == 0)
         {
             isInsert = true;
-            long longId = DbSequenceManager.get(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId")).next();
+            long longId = DbSequenceManager.getPreallocatingSequence(ContainerManager.getRoot(), ExperimentService.get().getTinfoMaterial().getDbSequenceName("RowId")).next();
             if (longId > Integer.MAX_VALUE)
                 throw new OutOfRangeException(longId, 0, Integer.MAX_VALUE);
             setRowId((int) longId);
