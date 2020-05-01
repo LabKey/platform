@@ -76,9 +76,15 @@ public class SamplesSchema extends AbstractExpSchema
 
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                return new SamplesSchema(schema.getUser(), schema.getContainer());
+                return new SamplesSchema(schema);
             }
         });
+    }
+
+    public SamplesSchema(DefaultSchema schema)
+    {
+        this(schema.getUser(), schema.getContainer());
+        setDefaultSchema(schema);
     }
 
     public SamplesSchema(User user, Container container)
