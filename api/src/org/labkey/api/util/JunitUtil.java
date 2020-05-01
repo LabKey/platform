@@ -18,6 +18,7 @@ package org.labkey.api.util;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assume;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.Module;
@@ -218,46 +219,32 @@ public class JunitUtil
             }
             else
             {
-                // Modules have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
+                // Modules might have null sourcePath on TeamCity, so crawl for test/sampledata directories and populate
                 // a map the first time, then stash the map for future lookups.
-                String buildPath = module.getBuildPath();
+                String name = module.getExplodedPath().getName();
 
-                // We don't know if the build machine used Windows or Linux separators, so search for both
-                int idx = StringUtils.lastIndexOfAny(buildPath, "/", "\\");
-
-                if (-1 != idx)
+                synchronized (MAP_LOCK)
                 {
-                    String name = buildPath.substring(idx + 1);
-
-                    synchronized (MAP_LOCK)
+                    if (null == _sampleDataDirectories)
                     {
-                        if (null == _sampleDataDirectories)
+                        Map<String, File> map = new CaseInsensitiveHashMap<>();
+
+                        for (java.nio.file.Path path : Arrays.asList(
+                                Paths.get("externalModules"),
+                                Paths.get("server", "modules"),
+                                Paths.get("server", "optionalModules")))
                         {
-                            Map<String, File> map = new HashMap<>();
-
-                            for (java.nio.file.Path path : Arrays.asList(
-                                    Paths.get("externalModules"),
-                                    Paths.get("server", "modules"),
-                                    Paths.get("server", "customModules"),
-                                    Paths.get("server", "optionalModules")))
-                            {
-                                Files.walk(Paths.get(projectRoot).resolve(path), 2)
-                                    .filter(Files::isDirectory)
-                                    .map(p -> p.resolve(SAMPLE_DATA_PATH))
-                                    .filter(p -> Files.isDirectory(p))
-                                    .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
-                            }
-
-                            _sampleDataDirectories = Collections.unmodifiableMap(map);
+                            Files.walk(Paths.get(projectRoot).resolve(path), 2)
+                                .filter(Files::isDirectory)
+                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                                .filter(p -> Files.isDirectory(p))
+                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
                         }
 
-                        sampleDataDir = _sampleDataDirectories.get(name);
+                        _sampleDataDirectories = Collections.unmodifiableMap(map);
                     }
-                }
-                else
-                {
-                    // buildPath is null or not parseable
-                    sampleDataDir = null;
+
+                    sampleDataDir = _sampleDataDirectories.get(name);
                 }
             }
         }

@@ -31,6 +31,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -116,7 +117,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return result;
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -219,8 +220,11 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 // When no sorts are added by views, QueryServiceImpl.createDefaultSort() adds the primary key's default sort direction
                 ret.setSortDirection(Sort.SortDirection.DESC);
                 ret.setFk(new RowIdForeignKey(ret));
+                ret.setUserEditable(false);
                 ret.setHidden(true);
                 ret.setShownInInsertView(false);
+                ret.setHasDbSequence(true);
+                ret.setIsRootDbSequence(true);
                 return ret;
             }
             case Property:
@@ -273,7 +277,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
-    public BaseColumnInfo createPropertyColumn(String alias)
+    public MutableColumnInfo createPropertyColumn(String alias)
     {
         var ret = super.createPropertyColumn(alias);
         if (_ss != null)
@@ -554,7 +558,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
 
             // TODO missing values? comments? flags?
             DomainProperty dp = domain.getPropertyByURI(dbColumn.getPropertyURI());
-            var propColumn = wrapColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn, ExprColumn.STR_TABLE_ALIAS);
+            var propColumn = copyColumnFromJoinedTable(null==dp?dbColumn.getName():dp.getName(), dbColumn);
             if (null != dp)
             {
                 PropertyColumn.copyAttributes(schema.getUser(), propColumn, dp.getPropertyDescriptor(), schema.getContainer(),

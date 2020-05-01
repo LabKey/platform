@@ -920,7 +920,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
 
     public final void setSourcePath(String sourcePath)
     {
-        _sourcePath = sourcePath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _sourcePath = sourcePath;
+        }
     }
 
     @Override
@@ -932,7 +935,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @SuppressWarnings({"UnusedDeclaration"})
     public final void setBuildPath(String buildPath)
     {
-        _buildPath = buildPath;
+        if (!AppProps.getInstance().isIgnoreModuleSource())
+        {
+            _buildPath = buildPath;
+        }
     }
 
     @Override

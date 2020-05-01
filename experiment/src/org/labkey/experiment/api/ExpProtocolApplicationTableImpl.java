@@ -20,6 +20,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -53,7 +54,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
+    public MutableColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
     {
         switch (column)
         {

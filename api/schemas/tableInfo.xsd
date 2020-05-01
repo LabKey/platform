@@ -451,6 +451,15 @@
                     </xs:documentation>
 				</xs:annotation>
 			</xs:element>
+            <xs:element name="hasDbSequence" type="dat:DbSequenceType" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        True if the column is assigned an automatically incrementing value by the Java code for every
+                        new row inserted. Unlike autoInc columns, the value for this column can be available during
+                        insert without requiring additional selection to occur.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
 			<xs:element name="isDisplayColumn" type="xs:boolean" minOccurs="0">
 				<xs:annotation>
 					<xs:documentation>
@@ -1259,6 +1268,26 @@
             </xs:enumeration>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="DbSequenceType">
+        <xs:annotation>
+            <xs:documentation>
+                Used to indicate that this column is backed by a Java-generated DbSequence.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:boolean">
+                <xs:attribute name="rootSequence" default="false" type="xs:boolean" >
+                    <xs:annotation>
+                        <xs:documentation>
+                            Indicates that the sequence is to be created using the root container rather than the
+                            container in which the objects are scoped.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
     <xs:simpleType name="DefaultValueEnumType">
         <xs:annotation>

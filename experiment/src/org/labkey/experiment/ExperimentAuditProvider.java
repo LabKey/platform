@@ -18,18 +18,19 @@ package org.labkey.experiment;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.audit.data.ExperimentAuditColumn;
 import org.labkey.api.audit.data.ProtocolColumn;
 import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.data.RunGroupColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -41,7 +42,6 @@ import org.labkey.api.query.UserSchema;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -53,8 +53,6 @@ import java.util.Set;
  */
 public class ExperimentAuditProvider extends AbstractAuditTypeProvider implements AuditTypeProvider
 {
-    public static final String EVENT_TYPE = "ExperimentAuditEvent";
-
     public static final String COLUMN_NAME_PROTOCOL_LSID = "ProtocolLsid";
     public static final String COLUMN_NAME_RUN_LSID = "RunLsid";
     public static final String COLUMN_NAME_PROTOCOL_RUN = "ProtocolRun";
@@ -87,7 +85,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public String getEventName()
     {
-        return EVENT_TYPE;
+        return ExperimentAuditEvent.EVENT_TYPE;
     }
 
     @Override
@@ -130,7 +128,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_PROTOCOL_LSID.equalsIgnoreCase(col.getName()))
                 {
@@ -190,100 +188,6 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
         return defaultVisibleColumns;
     }
 
-    public static class ExperimentAuditEvent extends AuditTypeEvent
-    {
-        private String _protocolLsid;
-        private String _runLsid;
-        private String _protocolRun;
-        private int _runGroup;
-        private String _message;
-        private Integer _qcState;
-
-        public ExperimentAuditEvent()
-        {
-            super();
-        }
-
-        public ExperimentAuditEvent(String container, String comment)
-        {
-            super(EVENT_TYPE, container, comment);
-        }
-
-        public String getProtocolLsid()
-        {
-            return _protocolLsid;
-        }
-
-        public void setProtocolLsid(String protocolLsid)
-        {
-            _protocolLsid = protocolLsid;
-        }
-
-        public String getRunLsid()
-        {
-            return _runLsid;
-        }
-
-        public void setRunLsid(String runLsid)
-        {
-            _runLsid = runLsid;
-        }
-
-        public String getProtocolRun()
-        {
-            return _protocolRun;
-        }
-
-        public void setProtocolRun(String protocolRun)
-        {
-            _protocolRun = protocolRun;
-        }
-
-        public int getRunGroup()
-        {
-            return _runGroup;
-        }
-
-        public void setRunGroup(int runGroup)
-        {
-            _runGroup = runGroup;
-        }
-
-        public String getMessage()
-        {
-            return _message;
-        }
-
-        public void setMessage(String message)
-        {
-            _message = message;
-        }
-
-        public Integer getQcState()
-        {
-            return _qcState;
-        }
-
-        public void setQcState(Integer qcState)
-        {
-            _qcState = qcState;
-        }
-
-        @Override
-        public Map<String, Object> getAuditLogMessageElements()
-        {
-            Map<String, Object> elements = new LinkedHashMap<>();
-            elements.put("protocolLsid", getProtocolLsid());
-            elements.put("protocolRun", getProtocolRun());
-            elements.put("runGroup", getRunGroup());
-            elements.put("runLsid", getRunLsid());
-            elements.put("message", getMessage());
-            elements.put("qcState", getQcState());
-            elements.putAll(super.getAuditLogMessageElements());
-            return elements;
-        }
-    }
-
     public static class ExperimentAuditDomainKind extends AbstractAuditDomainKind
     {
         public static final String NAME = "ExperimentAuditDomain";
@@ -293,7 +197,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
 
         public ExperimentAuditDomainKind()
         {
-            super(EVENT_TYPE);
+            super(ExperimentAuditEvent.EVENT_TYPE);
 
             Set<PropertyDescriptor> fields = new LinkedHashSet<>();
             fields.add(createPropertyDescriptor(COLUMN_NAME_PROTOCOL_LSID, PropertyType.STRING));

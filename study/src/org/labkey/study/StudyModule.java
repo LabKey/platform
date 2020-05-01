@@ -136,7 +136,6 @@ import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.DatasetChartReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
@@ -358,7 +357,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
-        ReportService.get().registerReport(new ExportExcelReport());
         ReportService.get().registerReport(new StudyChartQueryReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
@@ -401,6 +399,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
         AdminConsole.addExperimentalFeatureFlag(StudyQuerySchema.EXPERIMENTAL_STUDY_SUBSCHEMAS, "Use sub-schemas in Study",
                 "Separate study tables into three groups 'datasets', 'specimens', and 'design'", false);
+        AdminConsole.addExperimentalFeatureFlag(StudyManager.EXPERIMENTAL_DATASET_DESIGNER, "Dataset Designer", "Displays remodeled Dataset Designer page.", false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
 
@@ -759,7 +758,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Container c = context.getContainer();
         Map<String, String> moduleProperties = getDefaultPageContextJson(c);
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         StudyService studyService = StudyService.get();
         JSONObject ret = new JSONObject(moduleProperties);
 

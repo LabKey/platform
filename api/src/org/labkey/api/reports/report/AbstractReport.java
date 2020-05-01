@@ -58,6 +58,7 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
 import java.io.File;
@@ -71,6 +72,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.labkey.api.reports.report.ScriptReportDescriptor.REPORT_METADATA_EXTENSION;
+
 /**
  * User: migra
  * Date: Mar 6, 2006
@@ -78,7 +81,7 @@ import java.util.Map;
  */
 public abstract class AbstractReport implements Report, Cloneable // TODO: Remove this and switch to a builder pattern.
 {
-    private ReportDescriptor _descriptor;
+    protected ReportDescriptor _descriptor;
 
     public String getDescriptorType()
     {
@@ -123,7 +126,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return false;
     }
 
-    protected boolean hasDescriptorPropertyChanged(String descriptorPropName)
+    protected boolean hasDescriptorPropertyChanged(User user, String descriptorPropName)
     {
         // Content modified if change to the specified descriptor property
         String newPropStr = getDescriptor().getProperty(descriptorPropName);
@@ -131,7 +134,8 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         String origPropStr = null;
         if (getReportId() != null)
         {
-            Report origReport = ReportService.get().getReport(ContainerManager.getForId(getContainerId()), getReportId().getRowId());
+            Container c = ContainerManager.getForId(getContainerId());
+            Report origReport = getDescriptor().getReportId().getReport(new DefaultContainerUser(c,user));
             origPropStr = origReport != null ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 
@@ -267,7 +271,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
 
             serializeThumbnail(serializedName, dir, new ReportThumbnailLarge(context.getContainer(), this));
             serializeThumbnail(serializedName, dir, new ReportThumbnailSmall(context.getContainer(), this));
-            serialize(context, dir, String.format("%s.report.xml", serializedName));
+            serialize(context, dir, serializedName + REPORT_METADATA_EXTENSION);
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
@@ -383,8 +387,7 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
     }
 
 
-    @Override
-    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    protected final boolean hasEditPermissions(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
         {
@@ -406,10 +409,26 @@ public abstract class AbstractReport implements Report, Cloneable // TODO: Remov
         return errors.isEmpty();
     }
 
-    public boolean canEdit(User user, Container container)
-    {
-        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<>());
 
+    /*
+     * By default this method will return canEdit()==false for module based reports.
+     * Sub-class can override this method, and call hasEditPermissions()
+     * instead of super.canEdit() to avoid this check.
+     */
+    @Override
+    public boolean canEdit(User user, Container container, List<ValidationError> errors)
+    {
+        if (getDescriptor().isModuleBased())
+        {
+            errors.add(new SimpleValidationError("This module report is not editable"));
+            return false;
+        }
+        return hasEditPermissions(user, container, errors);
+    }
+
+    public final boolean canEdit(User user, Container container)
+    {
+        return canEdit(user, container, new ArrayList<>());
     }
 
     public boolean canShare(User user, Container container, List<ValidationError> errors)

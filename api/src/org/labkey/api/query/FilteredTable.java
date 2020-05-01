@@ -28,6 +28,7 @@ import org.labkey.api.data.ColumnLogging;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
@@ -35,6 +36,7 @@ import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.WrappedColumnInfo;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -128,6 +130,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
 
     @Override
+    public String getDbSequenceName(String columnName)
+    {
+        return (_rootTable.getSchema().getName() + ":" + _rootTable.getName() + ":" + columnName).toLowerCase();
+    }
+
+    @Override
     public void loadFromXML(QuerySchema schema, @Nullable Collection<TableType> xmlTable, Collection<QueryException> errors)
     {
         if (_rootTable instanceof SchemaTableInfo)
@@ -172,7 +180,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     {
         for (ColumnInfo col : getRealTable().getColumns())
         {
-            BaseColumnInfo newCol = addWrapColumn(col);
+            var newCol = addWrapColumn(col);
             if (preserveHidden && col.isHidden())
             {
                 newCol.setHidden(col.isHidden());
@@ -287,12 +295,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _filter.addAllClauses(filter);
     }
 
-    public BaseColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn, String tableAlias)
+    public MutableColumnInfo wrapColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
     {
-        ExprColumn ret = new ExprColumn(this, alias, underlyingColumn.getValueSql(tableAlias), underlyingColumn.getJdbcType());
-        ret.copyAttributesFrom(underlyingColumn);
-        ret.copyURLFrom(underlyingColumn, null, null);
-        ret.setLabel(null);  // The alias should be used to generate the default label, not whatever was in underlyingColumn; name might be set later (e.g., meta data override)
+        return copyColumnFromJoinedTable(alias, underlyingColumn);
+    }
+
+    // identical to wrapColumnFromJoinedTable, but see FilteredTableDelegating where this is != wrapColumnFromJoinedTable */
+    public MutableColumnInfo copyColumnFromJoinedTable(String alias, ColumnInfo underlyingColumn)
+    {
+        var ret = WrappedColumnInfo.wrapAsCopy(this, new FieldKey(null,alias), underlyingColumn, null, null);
         if (underlyingColumn.isKeyField() && getColumn(underlyingColumn.getName()) != null)
         {
             ret.setKeyField(false);
@@ -301,16 +312,17 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         {
             ret.setColumnLogging(new ColumnLogging(true, underlyingColumn.getFieldKey(), underlyingColumn.getParentTable(), getPHIDataLoggingColumns(), getPHILoggingComment(), getSelectQueryAuditProvider()));
         }
+        assert ret.getParentTable() == this;
         return ret;
     }
 
-    public BaseColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
+    public MutableColumnInfo wrapColumn(String alias, ColumnInfo underlyingColumn)
     {
         assert underlyingColumn.getParentTable() == _rootTable;
-        return wrapColumnFromJoinedTable(alias, underlyingColumn, ExprColumn.STR_TABLE_ALIAS);
+        return wrapColumnFromJoinedTable(alias, underlyingColumn);
     }
 
-    public BaseColumnInfo wrapColumn(ColumnInfo underlyingColumn)
+    public MutableColumnInfo wrapColumn(ColumnInfo underlyingColumn)
     {
         return wrapColumn(underlyingColumn.getName(), underlyingColumn);
     }
@@ -458,20 +470,26 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return "*";
     }
 
+
+    protected AliasManager getAliasManager()
+    {
+        if (null == _aliasManager)
+            _aliasManager = new AliasManager(getSchema());
+        return _aliasManager;
+    }
+
     @Override
-    public BaseColumnInfo addColumn(BaseColumnInfo column)
+    public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
-        BaseColumnInfo ret = column;
+        MutableColumnInfo ret = column;
 
         // Choke point for handling all column filtering and transforming, e.g., respecting PHI annotations
         if (_rules.getColumnInfoFilter().test(column))
         {
             ColumnInfo transformed = _rules.getColumnInfoTransformer().apply(column);
-            if (null == _aliasManager)
-                _aliasManager = new AliasManager(getSchema());
-            _aliasManager.ensureAlias(column);
-            ret = super.addColumn((BaseColumnInfo)transformed);
+            getAliasManager().ensureAlias(column);
+            ret = super.addColumn((MutableColumnInfo)transformed);
         }
 
         return ret;
@@ -488,7 +506,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return result;
     }
 
-    public BaseColumnInfo addWrapColumn(String name, ColumnInfo column)
+    public MutableColumnInfo addWrapColumn(String name, ColumnInfo column)
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         BaseColumnInfo ret = new AliasedColumn(this, name, column);
@@ -520,12 +538,12 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return null;
     }
 
-    public BaseColumnInfo addWrapColumn(ColumnInfo column)
+    public MutableColumnInfo addWrapColumn(ColumnInfo column)
     {
         return addWrapColumn(column.getName(), column);
     }
 
-    public void propagateKeyField(ColumnInfo orig, BaseColumnInfo wrapped)
+    public void propagateKeyField(ColumnInfo orig, MutableColumnInfo wrapped)
     {
         // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
         // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table

@@ -99,7 +99,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
@@ -675,55 +674,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelConfigureAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            setHelpTopic(new HelpTopic("exportExcel"));
-
-            return new JspView<>("/org/labkey/study/reports/configureExportExcel.jsp", getStudyRedirectIfNull());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Export study data to spreadsheet");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelAction extends SimpleViewAction<ExportForm>
-    {
-        public ModelAndView getView(ExportForm form, BindException errors) throws Exception
-        {
-            ExportExcelReport report;
-            if (form.getReportId() != null)
-            {
-                Report r = form.getReportId().getReport(getViewContext());
-                if (!(r instanceof ExportExcelReport))
-                {
-                    throw new NotFoundException();
-                }
-                report = (ExportExcelReport) r;
-            }
-            else
-            {
-                report = new ExportExcelReport();
-                report.setLocationId(form.getLocationId());
-            }
-
-            User user = getUser();
-            StudyImpl study = getStudyRedirectIfNull();
-
-            report.runExportToExcel(getViewContext(), study, user, errors);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
 
     @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>

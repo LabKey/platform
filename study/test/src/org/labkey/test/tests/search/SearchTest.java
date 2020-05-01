@@ -108,7 +108,6 @@ public abstract class SearchTest extends StudyBaseTest
     {
         Log4jUtils.setLogLevel("org.labkey.search", ManagerPage.LoggingLevel.DEBUG);
         Log4jUtils.setLogLevel("org.labkey.wiki", ManagerPage.LoggingLevel.DEBUG);
-        SearchAdminAPIHelper.pauseCrawler(getDriver()); //necessary for the alternate ID testing
         _searchHelper.initialize();
         enableEmailRecorder();
     }

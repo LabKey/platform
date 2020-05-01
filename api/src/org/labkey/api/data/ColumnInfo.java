@@ -161,8 +161,6 @@ public interface ColumnInfo extends ColumnRenderProperties
     // TODO return a FieldKey instead of a ColumnInfo
     @Nullable ColumnInfo getDisplayField();
 
-    @Nullable List<ColumnInfo> getSortFields();
-
     // TODO return a FieldKey instead of a ColumnInfo
     ColumnInfo getFilterField();
 
@@ -277,6 +275,15 @@ public interface ColumnInfo extends ColumnRenderProperties
     DefaultValueType getDefaultValueType();
 
     boolean isLookup();
+
+    boolean hasDbSequence();
+
+    boolean isRootDbSequence();
+
+    default Container getDbSequenceContainer(Container container)
+    {
+        return isRootDbSequence() ? ContainerManager.getRoot() : container;
+    }
 
     @NotNull List<ConditionalFormat> getConditionalFormats();
 
