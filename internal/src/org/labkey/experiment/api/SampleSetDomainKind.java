@@ -64,7 +64,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -467,8 +466,9 @@ public class SampleSetDomainKind extends AbstractDomainKind<SampleTypeDomainKind
     }
 
     @Override
-    public SampleTypeDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public SampleTypeDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-            return new SampleTypeDomainKindProperties(SampleSetService.get().getSampleSet(domain.getDomainURI()));
+        ExpSampleSet sampleSet = domain != null ? SampleSetService.get().getSampleSet(domain.getDomainURI()) : null;
+        return new SampleTypeDomainKindProperties(sampleSet);
     }
 }

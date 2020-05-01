@@ -22,7 +22,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -278,6 +277,18 @@ public class DomainUtil
             gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
             gwtDomain.setInstructions(kind.getDomainEditorInstructions());
         }
+        return gwtDomain;
+    }
+
+    public static GWTDomain<GWTPropertyDescriptor> getTemplateDomainForDomainKind(DomainKind kind)
+    {
+        GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
+        gwtDomain.setAllowAttachmentProperties(kind.allowAttachmentProperties());
+        gwtDomain.setAllowFileLinkProperties(kind.allowFileLinkProperties());
+        gwtDomain.setAllowFlagProperties(kind.allowFlagProperties());
+        gwtDomain.setShowDefaultValueSettings(kind.showDefaultValueSettings());
+        gwtDomain.setInstructions(kind.getDomainEditorInstructions());
+        gwtDomain.setDefaultValueOptions(kind.getDefaultValueOptions(null), kind.getDefaultDefaultType(null));
         return gwtDomain;
     }
 

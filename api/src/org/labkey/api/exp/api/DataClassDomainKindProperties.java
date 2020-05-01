@@ -1,6 +1,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 public class DataClassDomainKindProperties
 {
@@ -16,8 +17,11 @@ public class DataClassDomainKindProperties
     public DataClassDomainKindProperties()
     {}
 
-    public DataClassDomainKindProperties(ExpDataClass dc)
+    public DataClassDomainKindProperties(@Nullable ExpDataClass dc)
     {
+        if (dc == null)
+            return;
+
         this.rowId = dc.getRowId();
         this.lsid = dc.getLSID();
         this.name = dc.getName();
