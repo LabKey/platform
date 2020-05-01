@@ -51,7 +51,7 @@ interface IAppState {
 
 export class App extends PureComponent<any, Partial<IAppState>> {
 
-    private _dirty = false;
+    private _dirty: boolean = false;
 
     constructor(props) {
         super(props);

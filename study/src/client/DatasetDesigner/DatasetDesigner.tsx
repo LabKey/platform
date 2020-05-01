@@ -28,7 +28,7 @@ interface State {
 
 export class App extends PureComponent<any, State> {
 
-    private _dirty = false;
+    private _dirty: boolean = false;
 
     constructor(props) {
         super(props);
