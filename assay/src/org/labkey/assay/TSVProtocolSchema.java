@@ -218,7 +218,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
-                BaseColumnInfo columnInfo = wrapColumn(col);
+                var columnInfo = wrapColumn(col);
                 if (col.getName().equals("Lsid"))
                 {
                     columnInfo.setHidden(true);

@@ -32,7 +32,6 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.StudyManager;
 
 import java.io.IOException;
 import java.io.Writer;

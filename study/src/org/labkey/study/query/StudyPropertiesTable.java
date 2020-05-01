@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -154,7 +155,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
-    private BaseColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
+    private MutableColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
     {
         var columnInfo = addWrapColumn(_rootTable.getColumn(columnName));
         columnInfo.setUserEditable(userEditable);

@@ -448,6 +448,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
     }
 
     @Override
+    // TODO MutableColumnRenderProperties
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
         super.copyTo(to);

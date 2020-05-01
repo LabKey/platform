@@ -19,6 +19,7 @@ import org.labkey.api.assay.AbstractAssayProvider;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssaySchema;
 import org.labkey.api.data.BaseColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.query.PropertyColumnDecorator;
@@ -42,7 +43,7 @@ public class SpecimenPropertyColumnDecorator implements PropertyColumnDecorator
     }
 
     @Override
-    public void decorateColumn(BaseColumnInfo columnInfo, PropertyDescriptor pd)
+    public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
     {
         if (AbstractAssayProvider.SPECIMENID_PROPERTY_NAME.equals(pd.getName()) && pd.getLookupQuery() == null && pd.getLookupSchema() == null)
         {

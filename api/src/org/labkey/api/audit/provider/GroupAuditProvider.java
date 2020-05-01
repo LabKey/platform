@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
@@ -133,7 +134,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         return new DefaultAuditTypeTable(GroupAuditProvider.this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
                 {

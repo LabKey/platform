@@ -21,6 +21,11 @@ public class QueryRowReference
     final @NotNull String _queryName;
     final @NotNull List<Pair<FieldKey, Object>> _pkFilters;
 
+    public QueryRowReference(@NotNull Container c, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull Enum pkCol, int pkValue)
+    {
+        this(c, schemaKey, queryName, List.of(Pair.of(FieldKey.fromParts(pkCol), pkValue)));
+    }
+
     public QueryRowReference(@NotNull Container c, @NotNull SchemaKey schemaKey, @NotNull String queryName, @NotNull FieldKey pkCol, int pkValue)
     {
         this(c, schemaKey, queryName, List.of(Pair.of(pkCol, pkValue)));

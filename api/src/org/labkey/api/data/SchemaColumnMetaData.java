@@ -306,16 +306,16 @@ public class SchemaColumnMetaData
         return Collections.unmodifiableList(_columns);
     }
 
-    protected void addColumn(BaseColumnInfo column)
+    protected void addColumn(MutableColumnInfo column)
     {
-        if(getColumn(column.getName()) != null)
+        if (getColumn(column.getName()) != null)
             _log.warn("Duplicate column '" + column.getName() + "' on table '" + _tinfo.getName() + "'");
 
         _columns.add(column);
 //        assert !column.isAliasSet();       // TODO: Investigate -- had to comment this out since ExprColumn() sets alias
         assert null == column.getFieldKey().getParent();
         assert column.getName().equals(column.getFieldKey().getName());
-        assert column.lockName();
+        assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         // set alias explicitly, so that getAlias() won't call makeLegalName() and mangle it
         column.setAlias(column.getName());
         _colMap = null;
