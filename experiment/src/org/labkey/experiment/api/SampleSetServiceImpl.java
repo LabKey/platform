@@ -105,6 +105,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.singleton;
+import static org.labkey.api.audit.SampleTimelineAuditEvent.SAMPLE_TIMELINE_EVENT_TYPE;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTCOMMIT;
 import static org.labkey.api.data.DbScope.CommitTaskOption.POSTROLLBACK;
 import static org.labkey.api.exp.api.ExperimentJSONConverter.CPAS_TYPE;
@@ -887,24 +888,14 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
 
     protected String getCommentDetailed(QueryService.AuditAction action)
     {
-        switch (action) {
-            case INSERT:
-                return "Sample was registered.";
-            case DELETE:
-            case TRUNCATE:
-                return "Sample was deleted.";
-            case MERGE:
-                return "Sample was registered or updated.";
-            case UPDATE:
-                return "Sample was updated.";
-        }
-        return action.getCommentDetailed();
+        String comment = SampleTimelineAuditEvent.SampleTimelineEventType.getActionCommentDetailed(action);
+        return StringUtils.isEmpty(comment) ? action.getCommentDetailed() : comment;
     }
 
     @Override
     public DetailedAuditTypeEvent createDetailedAuditRecord(User user, Container c, AuditConfigurable tInfo, QueryService.AuditAction action, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
     {
-        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow);
+        return createAuditRecord(c, getCommentDetailed(action), row, updatedRow, action);
     }
 
     @Override
@@ -925,6 +916,11 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
     }
 
     private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow)
+    {
+        return createAuditRecord(c, comment, row, updatedRow, null);
+    }
+
+    private SampleTimelineAuditEvent createAuditRecord(Container c, String comment, @Nullable Map<String, Object> row, Map<String, Object> updatedRow, @Nullable QueryService.AuditAction action)
     {
         SampleTimelineAuditEvent event = new SampleTimelineAuditEvent(c.getId(), comment);
 
@@ -960,6 +956,15 @@ public class SampleSetServiceImpl extends AuditHandler implements SampleSetServi
                 event.setSampleId((Integer) row.get(ROW_ID));
             if (row.containsKey(NAME))
                 event.setSampleName(String.valueOf(row.get(NAME)));
+        }
+
+        if (action != null)
+        {
+            Map<String, Object> eventMetadata = new HashMap<>();
+            SampleTimelineAuditEvent.SampleTimelineEventType timelineEventType = SampleTimelineAuditEvent.SampleTimelineEventType.getTypeFromAction(action);
+            if (timelineEventType != null)
+                eventMetadata.put(SAMPLE_TIMELINE_EVENT_TYPE, action);
+            event.setMetadata(AbstractAuditTypeProvider.encodeForDataMap(c, eventMetadata));
         }
 
         return event;

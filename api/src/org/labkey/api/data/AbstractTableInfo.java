@@ -511,7 +511,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
 
     /** @return null or BaseColumnInfo, will throw if column exists and is locked */
     @Nullable
-    public BaseColumnInfo getMutableColumn(@NotNull String colName)
+    public MutableColumnInfo getMutableColumn(@NotNull String colName)
     {
         return getMutableColumn(colName, true);
     }
@@ -522,15 +522,15 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
      *                        perform in resolveColumn() for backwards compatibility
      */
     @Nullable
-    public BaseColumnInfo getMutableColumn(@NotNull String colName, boolean resolveIfNeeded)
+    public MutableColumnInfo getMutableColumn(@NotNull String colName, boolean resolveIfNeeded)
     {
         checkLocked();
         ColumnInfo col = getColumn(colName, resolveIfNeeded);
         if (null == col)
             return null;
         // all columns extend BaseColumnInfo for now
-        ((BaseColumnInfo)col).checkLocked();
-        return (BaseColumnInfo) col;
+        ColumnInfo.checkIsMutable(col);
+        return (MutableColumnInfo) col;
     }
 
     @Override
@@ -541,16 +541,17 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return getColumn(name.getName());
     }
 
-    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
-    public BaseColumnInfo getMutableColumn(@NotNull FieldKey name)
+    /* returns null or MutableColumnInfo, will throw if column exists and is locked */
+    @Nullable
+    public MutableColumnInfo getMutableColumn(@NotNull FieldKey name)
     {
         checkLocked();
         ColumnInfo col = getColumn(name);
         if (null == col)
             return null;
         // all columns extend BaseColumnInfo for now
-        ((BaseColumnInfo)col).checkLocked();
-        return (BaseColumnInfo) col;
+        ColumnInfo.checkIsMutable(col);
+        return (MutableColumnInfo) col;
     }
 
 
@@ -634,7 +635,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return _columnMap.remove(column.getName()) != null;
     }
 
-    public BaseColumnInfo addColumn(BaseColumnInfo column)
+    public MutableColumnInfo addColumn(MutableColumnInfo column)
     {
         checkLocked();
         // Not true if this is a VirtualTableInfo
@@ -649,7 +650,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _columnMap.put(column.getName(), column);
         // Clear the cached resolved columns so we regenerate it if the shape of the table changes
         _resolvedColumns.clear();
-        assert column.lockName();
+        assert !(column instanceof BaseColumnInfo) || ((BaseColumnInfo)column).lockName();
         return column;
     }
 
@@ -949,7 +950,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         return Collections.unmodifiableMap(ret);
     }
 
-    public boolean safeAddColumn(BaseColumnInfo column)
+    public boolean safeAddColumn(MutableColumnInfo column)
     {
         checkLocked();
         if (getColumn(column.getName(), false) != null)
@@ -1216,7 +1217,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
                         {
                             try
                             {
-                                initColumnFromXml(schema, column, xmlColumn, errors);
+                                initColumnFromXml(schema, (BaseColumnInfo)column, xmlColumn, errors);
                             }
                             catch (IllegalArgumentException e)
                             {
@@ -1696,7 +1697,8 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
         _locked = b;
         // set columns in the column list as locked, lookup columns created later are not locked
         for (ColumnInfo c : getColumns())
-            ((BaseColumnInfo)c).setLocked(b);
+            if (c instanceof MutableColumnInfo)
+                ((MutableColumnInfo)c).setLocked(b);
     }
 
     @Override

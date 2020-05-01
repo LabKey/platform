@@ -1,11 +1,71 @@
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.query.QueryService;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class SampleTimelineAuditEvent extends DetailedAuditTypeEvent
 {
     public static final String EVENT_TYPE = "SampleTimelineEvent";
+
+    public static final String SAMPLE_TIMELINE_EVENT_TYPE = "SampleTimelineEventType";
+    public enum SampleTimelineEventType
+    {
+        INSERT("Sample was registered.", "Registered"),
+        DELETE("Sample was deleted.", "Deleted"),
+        TRUNCATE("Sample was deleted.", "Deleted"),
+        MERGE("Sample was registered or updated.", "Registered"),
+        UPDATE("Sample was updated.", "Updated");
+
+        private String _comment;
+        private String _actionLabel;
+
+        SampleTimelineEventType(String comment, String actionLabel)
+        {
+            _comment = comment;
+            _actionLabel = actionLabel;
+        }
+
+        public String getComment()
+        {
+            return _comment;
+        }
+
+        public String getActionLabel()
+        {
+            return _actionLabel;
+        }
+
+        public static String getActionCommentDetailed(@NotNull QueryService.AuditAction action)
+        {
+            SampleTimelineEventType type = getTypeFromAction(action);
+            return type == null ? null : type.getComment();
+        }
+
+        public static SampleTimelineEventType getTypeFromAction(@NotNull QueryService.AuditAction action)
+        {
+            return getTypeFromName(action.name());
+        }
+
+        public static SampleTimelineEventType getTypeFromName(@Nullable String name)
+        {
+            if (null == name)
+                return null;
+
+            for (SampleTimelineEventType type : SampleTimelineEventType.values())
+            {
+                if (type.name().equalsIgnoreCase(name))
+                {
+                    return type;
+                }
+            }
+            return null;
+        }
+
+    }
 
     private String _sampleLsid;
     private int _sampleId;
