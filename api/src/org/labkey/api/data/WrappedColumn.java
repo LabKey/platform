@@ -23,7 +23,7 @@ import org.labkey.api.query.ExprColumn;
  * User: jeckels
  * Date: Nov 11, 2008
  *
- * User WrappedColumnInfo.wrap() instead
+ * Use WrappedColumnInfo.wrap() instead
  */
 @Deprecated
 public class WrappedColumn extends ExprColumn

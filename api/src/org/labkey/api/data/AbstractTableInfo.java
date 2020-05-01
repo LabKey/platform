@@ -542,6 +542,7 @@ abstract public class AbstractTableInfo implements TableInfo, AuditConfigurable,
     }
 
     /* returns null or MutableColumnInfo, will throw if column exists and is locked */
+    @Nullable
     public MutableColumnInfo getMutableColumn(@NotNull FieldKey name)
     {
         checkLocked();
