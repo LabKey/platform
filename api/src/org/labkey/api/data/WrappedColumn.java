@@ -22,7 +22,10 @@ import org.labkey.api.query.ExprColumn;
  * underlying value, but formats it differently, or makes it a lookup to a different target query.
  * User: jeckels
  * Date: Nov 11, 2008
+ *
+ * Use WrappedColumnInfo.wrap() instead
  */
+@Deprecated
 public class WrappedColumn extends ExprColumn
 {
     private final ColumnInfo _col;

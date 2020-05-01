@@ -62,7 +62,6 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -72,6 +71,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -410,7 +410,7 @@ public class AssayController extends SpringActionController
             {
                 Object defaultValue = defaults.get(column.getFieldKey());
                 if (defaultValue != null)
-                    ((BaseColumnInfo)column).setDefaultValue(defaultValue.toString());
+                    ((MutableColumnInfo)column).setDefaultValue(defaultValue.toString());
 
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }

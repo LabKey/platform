@@ -43,6 +43,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
@@ -828,7 +829,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             // Allow registered AssayColumnInfoRenderer to replace display column for the given domain properties
             AssayColumnInfoRenderer renderer = AssayService.get().getAssayColumnInfoRenderer(_protocol, col, getContainer(), getUser());
             if (renderer != null)
-                renderer.fixupColumnInfo(_protocol, (BaseColumnInfo)col);
+                renderer.fixupColumnInfo(_protocol, (MutableColumnInfo)col);
 
             rgn.addColumn(col);
             if (columnNameToPropertyName != null)

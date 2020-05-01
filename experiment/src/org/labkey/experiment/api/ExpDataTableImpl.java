@@ -36,6 +36,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -225,7 +226,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return super.resolveColumn(name);
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -598,7 +599,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return _run;
     }
 
-    public BaseColumnInfo addDataInputColumn(String alias, String role)
+    public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
                 "\nFROM exp.datainput" +
@@ -618,7 +619,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return doAdd(ret);
     }
 
-    public BaseColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
+    public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
             "\nFROM exp.materialInput" +
@@ -674,7 +675,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     }
 
 
-    public BaseColumnInfo addInputRunCountColumn(String alias)
+    public MutableColumnInfo addInputRunCountColumn(String alias)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
                 "FROM exp.ProtocolApplication INNER JOIN Exp.DataInput ON exp.ProtocolApplication.RowId = Exp.DataInput.TargetApplicationId " +

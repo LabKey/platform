@@ -15,8 +15,8 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.query.ExpMaterialProtocolInputTable;
 import org.labkey.api.query.FieldKey;
@@ -46,7 +46,7 @@ public class ExpMaterialProtocolInputTableImpl extends ExpProtocolInputTableImpl
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
