@@ -28,7 +28,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Descriptor for how to sort a query to a database. May include multiple columns, with separate ascending/descending
@@ -500,7 +502,14 @@ public class Sort
             }
             else
             {
-                List<ColumnInfo> sortFields = colinfo.getSortFields();
+                List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
+                List<ColumnInfo> sortFields = null;
+                if (sortFieldKeys != null)
+                    sortFields = sortFieldKeys.stream()
+                            .map(columns::get)
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.toList());
+
                 if (sortFields != null)
                 {
                     for (ColumnInfo sortCol : sortFields)

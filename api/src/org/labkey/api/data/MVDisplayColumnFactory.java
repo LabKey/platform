@@ -61,7 +61,7 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
     
 
-    private static BaseColumnInfo[] createMvColumns(AbstractTableInfo table, BaseColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
+    private static BaseColumnInfo[] createMvColumns(AbstractTableInfo table, MutableColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
         String mvColumnName = property.getName() + MvColumn.MV_INDICATOR_SUFFIX;
 
@@ -91,7 +91,7 @@ public class MVDisplayColumnFactory implements DisplayColumnFactory
     }
 
 
-    public static void addMvColumns(AbstractTableInfo table, BaseColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
+    public static void addMvColumns(AbstractTableInfo table, MutableColumnInfo valueColumn, DomainProperty property, ColumnInfo colObjectId, Container container, User user)
     {
         ColumnInfo[] newColumns = createMvColumns(table, valueColumn, property, colObjectId, container, user);
         for (ColumnInfo column : newColumns)

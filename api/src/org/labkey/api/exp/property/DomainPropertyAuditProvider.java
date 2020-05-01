@@ -19,10 +19,9 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -109,7 +108,7 @@ public class DomainPropertyAuditProvider extends AbstractAuditTypeProvider
         return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, DEFAULT_VISIBLE_COLUMNS)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_DOMAIN_EVENT_ID.equalsIgnoreCase(col.getName()))
                 {
