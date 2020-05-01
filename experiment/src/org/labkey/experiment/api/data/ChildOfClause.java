@@ -25,21 +25,18 @@ import org.labkey.api.query.FieldKey;
  */
 public class ChildOfClause extends LineageClause
 {
-    public ChildOfClause(@NotNull FieldKey fieldKey, Object value, int depth)
+    public ChildOfClause(@NotNull FieldKey fieldKey, Object value)
     {
-        super(fieldKey, value, depth);
+        super(fieldKey, value);
     }
 
+    @Override
     protected ExpLineageOptions createOptions()
     {
-        return LineageHelper.createChildOfOptions(getDepth());
+        return LineageHelper.createChildOfOptions(0);
     }
 
-    protected String getLsidColumn()
-    {
-        return "lsid";
-    }
-
+    @Override
     protected String filterTextType()
     {
         return "child of";

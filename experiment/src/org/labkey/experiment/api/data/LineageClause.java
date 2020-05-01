@@ -31,18 +31,28 @@ import java.util.Map;
  * User: kevink
  * Date: 3/16/16
  */
-public abstract class LineageClause extends CompareType.CompareClause
+public class LineageClause extends CompareType.CompareClause
 {
+    private String _lsid;
     private int _depth;
 
-    public LineageClause(@NotNull FieldKey fieldKey, Object value, int depth)
+    public LineageClause(@NotNull FieldKey fieldKey, Object value)
     {
         super(fieldKey, CompareType.MEMBER_OF, value);
+    }
+
+    public LineageClause(@NotNull FieldKey fieldKey, Object value, String lsid, int depth)
+    {
+        this(fieldKey, value);
+        _lsid = lsid;
         _depth = depth;
     }
 
     protected ExpRunItem getStart()
     {
+        if (null != _lsid)
+            return LineageHelper.getStart(_lsid);
+
         Object o = getParamVals().length == 0 ? null : getParamVals()[0];
         if (o == null)
             return null;
@@ -56,9 +66,15 @@ public abstract class LineageClause extends CompareType.CompareClause
         return _depth;
     }
 
-    protected abstract ExpLineageOptions createOptions();
+    protected ExpLineageOptions createOptions()
+    {
+        return _depth < 0 ? LineageHelper.createParentOfOptions(_depth) : LineageHelper.createChildOfOptions(_depth);
+    }
 
-    protected abstract String getLsidColumn();
+    protected String getLsidColumn()
+    {
+        return "lsid";
+    }
 
     @Override
     public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -80,7 +96,10 @@ public abstract class LineageClause extends CompareType.CompareClause
         return sql;
     }
 
-    protected abstract String filterTextType();
+    protected String filterTextType()
+    {
+        return " lineage of";
+    }
 
     @Override
     protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)

@@ -937,7 +937,7 @@ public abstract class CompareType
         return QueryService.get().getCompareTypes();
     }
 
-    private static Set<String> parseParams(Object value_, String separator)
+    protected static Set<String> parseParams(Object value_, String separator)
     {
         if (value_ == null)
             return Collections.emptySet();
