@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>file_node_orange_64x64</title>
+    <desc>Created with Sketch.</desc>
+    <g id="file_node_orange_64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <line x1="17.9357" y1="36.0354" x2="33.9357" y2="36.0354" id="Stroke-22" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="17.9357" y1="44.0354" x2="45.9357" y2="44.0354" id="Stroke-24" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="17.9357" y1="52.0354" x2="41.9357" y2="52.0354" id="Stroke-26" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="17.9357" y1="12.0354" x2="29.9357" y2="12.0354" id="Stroke-15" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="17.9357" y1="20.0354" x2="33.9357" y2="20.0354" id="Stroke-17" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <line x1="17.9357" y1="28.0354" x2="37.9357" y2="28.0354" id="Stroke-19" stroke="#FFA500" stroke-width="2" stroke-linecap="round"></line>
+        <path d="M38,6 L38,16 C38,17.1045695 38.8954305,18 40,18 L50,18 L50,18" id="Path-7" stroke="#FFA500" stroke-width="2" fill="#FFCC81"></path>
+        <path d="M14,8 L14,56 C14,57.1045695 14.8954305,58 16,58 L48,58 C49.1045695,58 50,57.1045695 50,56 L50,18.8284271 C50,18.2979941 49.7892863,17.7892863 49.4142136,17.4142136 L38.5857864,6.58578644 C38.2107137,6.21071368 37.7020059,6 37.1715729,6 L16,6 C14.8954305,6 14,6.8954305 14,8 Z" id="Body" stroke="#FFA500" stroke-width="2"></path>
+    </g>
+</svg>

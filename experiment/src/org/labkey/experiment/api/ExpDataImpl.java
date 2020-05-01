@@ -139,7 +139,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         DataType dataType = getDataType();
         if (dataType != null)
         {
-            return dataType.getDetailsURL(this);
+            ActionURL url = dataType.getDetailsURL(this);
+            if (url != null)
+                return url;
         }
 
         return _object.detailsURL();
