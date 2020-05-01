@@ -90,13 +90,13 @@ public final class TableExtension
         return columns;
     }
 
-    public BaseColumnInfo addExtensionColumn(String baseColName, @Nullable String newColName)
+    public MutableColumnInfo addExtensionColumn(String baseColName, @Nullable String newColName)
     {
         ColumnInfo baseCol = _extensionTable.getColumn(baseColName);
         return addExtensionColumn(baseCol, newColName);
     }
 
-    public BaseColumnInfo addExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
+    public MutableColumnInfo addExtensionColumn(ColumnInfo baseCol, @Nullable String newColName)
     {
         var aliased = wrapExtensionColumn(baseCol, newColName);
         return _primaryTable.addColumn(aliased);

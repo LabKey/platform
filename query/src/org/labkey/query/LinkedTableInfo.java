@@ -17,13 +17,13 @@ package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.flag.FlagForeignKey;
@@ -120,7 +120,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    protected void fixupWrappedColumn(BaseColumnInfo wrap, ColumnInfo col)
+    protected void fixupWrappedColumn(MutableColumnInfo wrap, ColumnInfo col)
     {
         super.fixupWrappedColumn(wrap, col);
 
@@ -168,7 +168,7 @@ public class LinkedTableInfo extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public BaseColumnInfo wrapColumn(ColumnInfo col)
+    public MutableColumnInfo wrapColumn(ColumnInfo col)
     {
         if ("Container".equalsIgnoreCase(col.getName()) || "Folder".equalsIgnoreCase(col.getName()))
         {

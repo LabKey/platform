@@ -38,24 +38,24 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
+    public static MutableColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn)
     {
         return addOORColumns(table, numberColumn, oorIndicatorColumn, numberColumn.getLabel());
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
+    public static MutableColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption)
     {
         return addOORColumns(table, numberColumn, oorIndicatorColumn, caption, true);
     }
 
     /** @return the merged value/indicator OOR ColumnInfo */
-    public static BaseColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption, boolean fromRealTable)
+    public static MutableColumnInfo addOORColumns(FilteredTable table, ColumnInfo numberColumn, ColumnInfo oorIndicatorColumn, String caption, boolean fromRealTable)
     {
-        BaseColumnInfo combinedCol = fromRealTable ? table.addWrapColumn(numberColumn) : table.addColumn((BaseColumnInfo)numberColumn);
+        var combinedCol = fromRealTable ? table.addWrapColumn(numberColumn) : table.addColumn((MutableColumnInfo)numberColumn);
         combinedCol.setLabel(caption);
 
-        BaseColumnInfo wrappedOORIndicatorCol = fromRealTable ? table.addWrapColumn(oorIndicatorColumn) : table.addColumn((BaseColumnInfo)oorIndicatorColumn);
+        var wrappedOORIndicatorCol = fromRealTable ? table.addWrapColumn(oorIndicatorColumn) : table.addColumn((MutableColumnInfo)oorIndicatorColumn);
         wrappedOORIndicatorCol.setLabel(caption + " OOR Indicator");
 
         // Only add new columns if there is no name conflict with either the real or virtual table
@@ -68,7 +68,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
             return null;
         }
 
-        BaseColumnInfo wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
+        var wrappedNumberColumn = table.addColumn(new AliasedColumn(table, numberColumn.getName() + NUMBER_COLUMN_SUFFIX, numberColumn));
         wrappedNumberColumn.setPropertyURI(null);
         wrappedNumberColumn.setLabel(caption + " " + NUMBER_COLUMN_SUFFIX);
         wrappedNumberColumn.setShownInInsertView(false);
@@ -91,7 +91,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
 //        inRangeSQL.append(numberColumn.getName());
         inRangeSQL.append(" ELSE NULL END");
 
-        BaseColumnInfo inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
+        var inRangeColumn = table.addColumn(new ExprColumn(table, numberColumn.getName() + IN_RANGE_COLUMN_SUFFIX,
                     inRangeSQL, numberColumn.getJdbcType(), wrappedNumberColumn, wrappedOORIndicatorCol));
         inRangeColumn.setLabel(caption + " In Range");
         inRangeColumn.setFormat(numberColumn.getFormat());
