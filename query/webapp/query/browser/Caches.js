@@ -239,13 +239,6 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             var callback = LABKEY.Utils.getOnSuccess(config);
             this.currentContainer = container;
 
-/*
-            if (!json || !json.success) {
-                if (callback)
-                    callback.call(this, json, response, options);
-                return;
-            }
-*/
             if (json && json.success) {
 
                 var key,toKey,fromKey;
@@ -326,8 +319,8 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                                 fixupJsonResponse.call(this, LABKEY.Utils.decode(resp.responseText), resp, options, c);
                             }
                             catch (e) {
-                                let msg = e.message + " - analyze query JSON: " + resp.responseText;
-                                this.logErrorToServer(resp.responseURL, msg);
+                                console.warn('Invalid JSON returned from analyzeQueries.api : ' + resp.responseText);
+                                console.warn('Response URL : ' + resp.responseURL);
 
                                 // pass in a null json response and finish processing this container
                                 fixupJsonResponse.call(this, null, resp, options, c);
@@ -361,19 +354,5 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
             currentContainer: this.currentContainer,
             progress: 1.0 - (this.containers.length / this.totalContainers)
         };
-    },
-
-    logErrorToServer : function(url, msg) {
-
-        LABKEY.Ajax.request({
-            url: LABKEY.ActionURL.buildURL('admin', 'logClientException.api'),
-            method: 'POST',
-            jsonData : {
-                username: LABKEY.user ? LABKEY.user.email : "Unknown",
-                requestURL: url,
-                referrerURL: document.URL,
-                stackTrace: msg
-            }
-        });
     }
 });
