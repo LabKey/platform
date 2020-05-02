@@ -327,7 +327,7 @@ Ext4.define('LABKEY.query.browser.cache.QueryDependencies', {
                             }
                             catch (e) {
                                 let msg = e.message + " - analyze query JSON: " + resp.responseText;
-                                this.logErrorToServer(LABKEY.ActionURL.buildURL('query', 'analyzeQueries.api', c), msg);
+                                this.logErrorToServer(resp.responseURL, msg);
 
                                 // pass in a null json response and finish processing this container
                                 fixupJsonResponse.call(this, null, resp, options, c);
