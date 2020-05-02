@@ -38,7 +38,6 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -140,10 +139,9 @@ public class StudySimpleExportTest extends StudyBaseTest
                 .setName(TEST_DATASET_NAME);
 
         DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
-        fieldsEditor.getField(0).clickRemoveField(true);
-        fieldsEditor.addField(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
-                .setValidator(new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"))
-                .setRequired(false));
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+                .setValidator(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
+                        "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999")).setRequired(false));
         fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
                 .setRequired(true));
         // Format "TestDate" as "Date"
@@ -151,11 +149,10 @@ public class StudySimpleExportTest extends StudyBaseTest
         // "TestDateTime" format will default to date-time
         fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
         editDatasetPage
-                .clickSave();
-        //todo:
-//                .clickViewData()
-//                .getDataRegion()
-//                .clickImportBulkData();
+            .clickSave()
+            .clickViewData()
+            .getDataRegion()
+            .clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestString\tTestDate\tTestDateTime\nPTID123\t1.0\t999\tABC\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");

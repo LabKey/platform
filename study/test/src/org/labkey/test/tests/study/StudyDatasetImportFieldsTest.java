@@ -22,7 +22,6 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.tests.StudyBaseTest;
-import org.labkey.test.util.DataRegionTable;
 
 @Category(DailyC.class)
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -75,12 +74,15 @@ public class StudyDatasetImportFieldsTest extends StudyBaseTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName("Test Dataset");
-        waitForElement(Locator.name("ff_name0"));
-        setFormElement(Locator.name("ff_name0"), INITIAL_COL);
+        editDatasetPage
+                .getFieldsPanel()
+                .manuallyDefineFields(INITIAL_COL);
+
         editDatasetPage
                 .clickSave()
-                .clickViewData();
-        DataRegionTable.DataRegion(getDriver()).find().clickInsertNewRow();
+                .clickViewData()
+                .getDataRegion()
+                .clickInsertNewRow();
         waitForElement(Locator.name("quf_ParticipantId"));
         setFormElement(Locator.name("quf_ParticipantId"), "47");
         setFormElement(Locator.name("quf_SequenceNum"), "47");
