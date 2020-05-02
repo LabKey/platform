@@ -2690,7 +2690,7 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
                 return sortFieldKeys.stream().map(f -> columns.get(f)).collect(Collectors.toList());
         }
 
-        if (null != col.getParentTable() && !col.getParentTable().getSqlDialect().isSortableDataType(col.getSqlTypeName()))
+        if (!col.isSortable())
             return null;
         return Collections.singletonList(col);
     }
@@ -2702,7 +2702,8 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
 	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
 	     */
-	    Map<FieldKey,ColumnInfo> available = columns.stream().collect(Collectors.toMap(ColumnInfo::getFieldKey,c->c));
+	    Map<FieldKey,ColumnInfo> available = new HashMap<>();
+	    columns.forEach(c -> {if (!available.containsKey(c.getFieldKey())) available.put(c.getFieldKey(),c);});
 
 		for (ColumnInfo column : columns)
 		{
@@ -2711,11 +2712,9 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
             List<ColumnInfo> sortFields = resolveSortFieldKeys(column, available);
 			if (sortFields != null && !sortFields.isEmpty())
 			{
-                for (ColumnInfo sortField : sortFields)
-                {
-                    sort.appendSortColumn(sortField.getFieldKey(), column.getSortDirection(), false);
-                }
-                    return;
+			    // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
+			    sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+                return;
 			}
 		}
 	}

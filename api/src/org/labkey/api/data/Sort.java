@@ -502,13 +502,20 @@ public class Sort
             }
             else
             {
-                List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
                 List<ColumnInfo> sortFields = null;
-                if (sortFieldKeys != null)
+                List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
+                if (null == sortFieldKeys)
+                {
+                    if (colinfo.isSortable())
+                        sortFields = Collections.singletonList(colinfo);
+                }
+                else
+                {
                     sortFields = sortFieldKeys.stream()
                             .map(columns::get)
                             .filter(Objects::nonNull)
                             .collect(Collectors.toList());
+                }
 
                 if (sortFields != null)
                 {
