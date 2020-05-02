@@ -28,7 +28,8 @@
             testShowAllTotalRows: testShowAllTotalRows,
             testGetBaseFilters: testGetBaseFilters,
             testFilterOnSortColumn: testFilterOnSortColumn,
-            testButtonBarConfig: testButtonBarConfig
+            testButtonBarConfig: testButtonBarConfig,
+            testRespectExcludingPrefixes: testRespectExcludingPrefixes
         };
 
         var PAGE_OFFSET = 4;
@@ -598,7 +599,6 @@
                 },
                 listeners: {
                     render: function(qwp) {
-                        debugger;
                         if (initialLoad) {
                             initialLoad = false;
                             var filterCount = getFilterMessageBoxCount();
@@ -667,7 +667,7 @@
                                     }
                                     else if (loadCount === 3) {
                                         loadCount++;
-                                        if (assertPagingCount(dr, 3, 4)) {
+                                        if (assertPagingCount(dr, 3, TOTAL_EXPECTED_ROWS)) {
                                             LABKEY.Utils.signalWebDriverTest('testHidePagingCount');
                                         }
                                     }
@@ -848,6 +848,41 @@
 
                             LABKEY.Utils.signalWebDriverTest('testButtonBarConfig');
                         }
+                    }
+                }
+            });
+        }
+
+        function testRespectExcludingPrefixes() {
+            var loadCount = 0;
+            new LABKEY.QueryWebPart({
+                title: 'Exclude specified parameter prefixes (Regression #40226)',
+                schemaName: 'Samples',
+                queryName: 'sampleDataTest1',
+                maxRows: 2, // split into 3 pages of results
+                offset: 4, // start on the 3rd page
+                sort: '-id',
+                renderTo: RENDERTO,
+                failure: function() {
+                    alert('Failed test: testRespectExcludingPrefixes failed to load');
+                },
+                listeners: {
+                    render: function(dr) {
+                        setTimeout(function() {
+                            if (loadCount === 0) {
+                                if (assertPagingCount(dr, 5, 6, 6)) {
+                                    loadCount++;
+
+                                    // filter to a result that includes rows on multiple page
+                                    dr.addFilter(LABKEY.Filter.create('Id', [6,5,4,3,2].join(';'), LABKEY.Filter.Types.IN));
+                                }
+                            }
+                            else if (loadCount === 1) {
+                                if (assertPagingCount(dr, 1, 2, 5)) {
+                                    LABKEY.Utils.signalWebDriverTest('testRespectExcludingPrefixes');
+                                }
+                            }
+                        }, 100);
                     }
                 }
             });
