@@ -194,7 +194,7 @@ public class AssayManager implements AssayService
     @Nullable
     public AssayProvider getProvider(ExpProtocol protocol)
     {
-        return Handler.Priority.findBestHandler(getAssayProviders(), protocol);
+        return null == protocol ? null : Handler.Priority.findBestHandler(getAssayProviders(), protocol);
     }
 
     @Override
