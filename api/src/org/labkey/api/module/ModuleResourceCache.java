@@ -18,8 +18,6 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Assert;
-import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
@@ -320,18 +318,6 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
             if (null != _chainedListener)
                 _chainedListener.moduleChanged(module);
-        }
-    }
-
-    // Not a real test... just simulates what module loading should do when a module is created or updated
-    public static class TestCase extends Assert
-    {
-        @Test
-        public void simpletestModuleChanged()
-        {
-            Module simpletest = ModuleLoader.getInstance().getModule("simpletest");
-            ContextListener.fireModuleChangeEvent(simpletest);
-            simpletest.getModuleResolver().clear();
         }
     }
 }
