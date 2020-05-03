@@ -18,6 +18,8 @@ package org.labkey.api.module;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
@@ -87,6 +89,7 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
             @Override
             public V load(@NotNull Module module, Object argument)
             {
+                @SuppressWarnings("unchecked")
                 ModuleResourceCache<V> cache = (ModuleResourceCache<V>)argument;
                 Resource resourceRoot = new FileListenerResource(module.getModuleResource(Path.rootPath), module, cache);
                 Stream<Resource> resourceRoots = getResourceRoots(resourceRoot, provider, extraProviders);
@@ -173,23 +176,26 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
     public void ensureListener(Resource resource, Module module)
     {
         assert resource.isCollection();
-        Path path = resource.getPath();
+        DirectoryResource mdr = (DirectoryResource) resource;
 
-        if (_pathsWithListeners.add(module.getName() + ":" + path.toString()))
+        if (_pathsWithListeners.add(getPathsWithListenersKey(module, mdr.getDir().toPath())))
         {
             LOG.debug("registering a listener on: " + resource.toString());
-            DirectoryResource mdr = (DirectoryResource) resource;
             mdr.registerListener(_watcher, getListener(module), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
         }
     }
 
+    private String getPathsWithListenersKey(Module module, java.nio.file.Path path)
+    {
+        return module.getName() + ":" + path.toString();
+    }
 
     private static class FileListenerResource extends ResourceWrapper
     {
         private final Module _module;
-        private final ModuleResourceCache _cache;
+        private final ModuleResourceCache<?> _cache;
 
-        public FileListenerResource(Resource resource, Module module, ModuleResourceCache cache)
+        public FileListenerResource(Resource resource, Module module, ModuleResourceCache<?> cache)
         {
             super(resource);
             _module = module;
@@ -286,6 +292,16 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
         }
 
         @Override
+        public void directoryDeleted(java.nio.file.Path directory)
+        {
+            _pathsWithListeners.remove(getPathsWithListenersKey(_module, directory));
+            moduleChanged(_module);
+
+            if (null != _chainedListener)
+                _chainedListener.directoryDeleted(directory);
+        }
+
+        @Override
         public void overflow()
         {
             LOG.warn("Overflow!!");
@@ -304,6 +320,18 @@ public final class ModuleResourceCache<V> implements ModuleChangeListener
 
             if (null != _chainedListener)
                 _chainedListener.moduleChanged(module);
+        }
+    }
+
+    // Not a real test... just simulates what module loading should do when a module is created or updated
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void simpletestModuleChanged()
+        {
+            Module simpletest = ModuleLoader.getInstance().getModule("simpletest");
+            ContextListener.fireModuleChangeEvent(simpletest);
+            simpletest.getModuleResolver().clear();
         }
     }
 }

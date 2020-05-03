@@ -95,19 +95,19 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
         public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
@@ -123,25 +123,30 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
                 .forEach(pair->invalidateSchema(pair.getKey(), pair.getValue()));
         }
 
-        private void uncacheDbSchema(java.nio.file.Path entry)
+        private void uncacheDbSchema(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            String filename = entry.toString();
-
-            if (isSchemaXmlFile(filename))
+            // Makes sure we're in /resources/schemas, not /resources. For example, module.xml lives in /resources and
+            // it's definitely not a schema xml file.
+            if (directory.endsWith(QueryService.MODULE_SCHEMAS_DIRECTORY))
             {
-                String fullyQualified = FileUtil.getBaseName(filename);
+                String filename = entry.toString();
 
-                // Special case "labkey" schema, which gets added to all module data sources
-                if ("labkey".equalsIgnoreCase(fullyQualified))
+                if (isSchemaXmlFile(filename))
                 {
-                    // Invalidate "labkey" in every scope if its meta data changes
-                    for (DbScope scope : DbScope.getDbScopes())
-                        invalidateSchema(scope, "labkey");
-                }
-                else
-                {
-                    Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
-                    invalidateSchema(pair.getKey(), pair.getValue());
+                    String fullyQualified = FileUtil.getBaseName(filename);
+
+                    // Special case "labkey" schema, which gets added to all module data sources
+                    if ("labkey".equalsIgnoreCase(fullyQualified))
+                    {
+                        // Invalidate "labkey" in every scope if its meta data changes
+                        for (DbScope scope : DbScope.getDbScopes())
+                            invalidateSchema(scope, "labkey");
+                    }
+                    else
+                    {
+                        Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
+                        invalidateSchema(pair.getKey(), pair.getValue());
+                    }
                 }
             }
         }

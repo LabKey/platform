@@ -81,7 +81,7 @@ public interface QuerySchema extends SchemaTreeNode
     @Nullable
     VisualizationProvider createVisualizationProvider();
 
-    // marker interface to indicate that this is schema is bound to a container, does and does not itself have tables
+    // marker interface to indicate that this schema is bound to a container, does and does not itself have tables
     // e.g. DefaultSchema, FolderSchema, etc
     interface ContainerSchema extends QuerySchema
     {

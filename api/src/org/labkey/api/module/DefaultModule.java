@@ -41,7 +41,6 @@ import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleXml.ModuleXmlCacheHandler;
 import org.labkey.api.query.OlapSchemaInfo;
-import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -1089,7 +1088,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @Override
-    public final Resolver getModuleResolver()
+    public final ModuleResourceResolver getModuleResolver()
     {
         if (_resolver == null)
             _resolver = new ModuleResourceResolver(this, getResourceDirectory());

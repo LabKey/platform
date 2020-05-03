@@ -109,11 +109,13 @@ public class ModuleResourceResolver implements Resolver
         DirectoryResource.clearResourceCache(this);
     }
 
+    @Override
     public Path getRootPath()
     {
         return Path.emptyPath;
     }
 
+    @Override
     @Nullable
     public Resource lookup(Path path)
     {
@@ -178,7 +180,16 @@ public class ModuleResourceResolver implements Resolver
         {
             LOG.debug(entry + " deleted");
             java.nio.file.Path nioPath = directory.resolve(entry);
-            _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            if (Files.isDirectory(nioPath))
+                _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
+        }
+
+        @Override
+        public void directoryDeleted(java.nio.file.Path directory)
+        {
+            LOG.debug("Directory " + directory + " deleted");
+            _pathsWithListeners.remove(_root.getRelativePath(directory));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 
