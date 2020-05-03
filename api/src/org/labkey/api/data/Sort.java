@@ -504,17 +504,15 @@ public class Sort
             {
                 List<ColumnInfo> sortFields = null;
                 List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
-                if (null == sortFieldKeys)
+                if (null != sortFieldKeys)
+                {
+                    if (sortFieldKeys.stream().allMatch(sk -> null != columns.get(sk)))
+                        sortFields = sortFieldKeys.stream().map(columns::get).collect(Collectors.toList());
+                }
+                if (null == sortFields || sortFields.isEmpty())
                 {
                     if (colinfo.isSortable())
                         sortFields = Collections.singletonList(colinfo);
-                }
-                else
-                {
-                    sortFields = sortFieldKeys.stream()
-                            .map(columns::get)
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
                 }
 
                 if (sortFields != null)
