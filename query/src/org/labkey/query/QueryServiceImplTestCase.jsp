@@ -61,10 +61,14 @@
         FilteredTable wrapped = new FilteredTable(listTable, schema, null);
         wrapped.wrapAllColumns(true);
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"C")));
+        // add xyz as duplciate of C so we can test isSorted(C) even when C is not selected
+        wrapped.addWrapColumn("xyz", listTable.getColumn("C"));
 
         var A = wrapped.getColumn("A");
         var B = wrapped.getColumn("B");
         var C = wrapped.getColumn("C");
+        var xyz = wrapped.getColumn("xyz");
+
         // test choose PK
         SQLFragment test1 = QueryServiceImpl.get().getSelectSQL(wrapped,
                 List.of(C,B,A), null,
@@ -91,22 +95,20 @@
 
         // test explicit not in select list
         SQLFragment test4 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,B), null,
+                List.of(A,B,xyz), null,
                 new Sort("C"), 1000, 0, true);
         assertTrue(test4.toDebugString().contains("ORDER BY C ASC"));
-        assertFalse(isSorted(test4,1));
-        assertFalse(isSorted(test4,2));
+        assertTrue(isSorted(test4,3));
         test4 = null;
 
         // test sortFieldKeys
         SQLFragment test5 = QueryServiceImpl.get().getSelectSQL(wrapped,
-                List.of(A,B), null,
+                List.of(A,B,xyz), null,
                 new Sort("B"), 1000, 0, true);
         assertFalse(test5.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(test5.toDebugString().contains("ORDER BY C ASC"));
         assertTrue(test5.toDebugString().contains("testGetSelectSqlSort.C AS C"));
-        assertFalse(isSorted(test5,1));
-        assertFalse(isSorted(test5,2));
+        assertTrue(isSorted(test5,3));
         test5 = null;
 
         /* broken sortFieldsKey */
