@@ -107,7 +107,6 @@
                 new Sort("B"), 1000, 0, true);
         assertFalse(test5.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(test5.toDebugString().contains("ORDER BY C ASC"));
-        assertTrue(test5.toDebugString().contains("testGetSelectSqlSort.C AS C"));
         assertTrue(isSorted(test5,3));
         test5 = null;
 
