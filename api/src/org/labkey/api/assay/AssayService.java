@@ -71,7 +71,7 @@ public interface AssayService
     AssayProvider getProvider(String providerName);
 
     @Nullable
-    AssayProvider getProvider(ExpProtocol protocol);
+    AssayProvider getProvider(@Nullable ExpProtocol protocol);
 
     @Nullable
     AssayProvider getProvider(ExpRun run);

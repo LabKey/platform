@@ -2675,20 +2675,46 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
 	}
 
 
+	/* see if columns in column.getSortFieldKeys() are resolvable, so we avoid proposing a default sort that won't work */
+	private static List<ColumnInfo> resolveSortFieldKeys(ColumnInfo col, Map<FieldKey,ColumnInfo>  selectColumns)
+    {
+        List<FieldKey> sortFieldKeys = col.getSortFieldKeys();
+        if (null != sortFieldKeys && !sortFieldKeys.isEmpty())
+        {
+            // fast way: see if all columns are already selected
+            if (sortFieldKeys.stream().allMatch(f ->null != selectColumns.get(f)))
+                return sortFieldKeys.stream().map(selectColumns::get).collect(Collectors.toList());
+            // slow way: use QueryService
+            Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(col.getParentTable(), sortFieldKeys);
+            if (columns.size() == sortFieldKeys.size() && !columns.containsValue(null))
+                return sortFieldKeys.stream().map(f -> columns.get(f)).collect(Collectors.toList());
+        }
+
+        if (!col.isSortable())
+            return null;
+        return Collections.singletonList(col);
+    }
+
+
 	private static void addSortableColumns(Sort sort, Collection<ColumnInfo> columns, boolean usePrimaryKey)
 	{
+	    /* There is a bit of a chicken-and-egg problem here
+	        we need to know what we want to sort on before calling ensureRequiredColumns, but we don't know for sure we
+	        which columns we can sort on until we validate which columns are available (because of getSortFieldKeys)
+	     */
+	    Map<FieldKey,ColumnInfo> available = new HashMap<>();
+	    columns.forEach(c -> {if (!available.containsKey(c.getFieldKey())) available.put(c.getFieldKey(),c);});
+
 		for (ColumnInfo column : columns)
 		{
 			if (usePrimaryKey && !column.isKeyField())
 				continue;
-			List<FieldKey> sortFields = column.getSortFieldKeys();
+            List<ColumnInfo> sortFields = resolveSortFieldKeys(column, available);
 			if (sortFields != null && !sortFields.isEmpty())
 			{
-                for (FieldKey sortField : sortFields)
-                {
-                    sort.appendSortColumn(sortField, column.getSortDirection(), false);
-                }
-				return;
+			    // NOTE: we don't need to expando the list here, Sort.getOrderByClause() will do that
+			    sort.appendSortColumn(column.getFieldKey(), column.getSortDirection(), false);
+                return;
 			}
 		}
 	}

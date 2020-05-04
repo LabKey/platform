@@ -27,7 +27,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -63,7 +62,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.AuditBehaviorType;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
@@ -113,7 +111,6 @@ import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
-import org.labkey.list.view.ListImportServiceImpl;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.labkey.list.view.ListQueryForm;
 import org.labkey.list.view.ListQueryView;
@@ -221,17 +218,6 @@ public class ListController extends SpringActionController
             return root.addChild("Available Lists");
         }
     }
-
-    @RequiresPermission(DesignListPermission.class)
-    public class DomainImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new ListImportServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
