@@ -88,7 +88,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
                                 return dc;
                             });
                         }
-                        col.setName(pd.getName());
+                        col.setFieldKey(new FieldKey(null,pd.getName()));
                     }
                 }
             }

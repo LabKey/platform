@@ -44,6 +44,7 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -75,6 +76,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -136,6 +139,7 @@ import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Dataset;
 import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.MasterPatientIndexService;
@@ -418,10 +422,19 @@ public class StudyController extends BaseStudyController
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
         private Dataset _def;
+
         @Override
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER))
+            {
+                // TODO do we need the getStudyRedirectIfNull() part here?
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
+            }
+            else
+            {
+                return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+            }
         }
 
         @Override
@@ -461,7 +474,6 @@ public class StudyController extends BaseStudyController
             else
                 _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, datasetId, false, null);
 
-
             if (_def != null)
             {
                 ((DatasetDefinition)_def).provisionTable();
@@ -498,6 +510,21 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
+    {
+        @Override
+        public Object execute(DatasetForm form, BindException errors) throws Exception
+        {
+            DatasetDomainKindProperties properties = DatasetManager.get().getDatasetDomainKindProperties(getContainer(), form.getDatasetId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("Dataset does not exist in this container for datasetId " + form.getDatasetIdStr() + ".");
+        }
+    }
+
     @RequiresPermission(AdminPermission.class)
     @SuppressWarnings("unchecked")
     public class EditTypeAction extends SimpleViewAction<DatasetForm>
@@ -508,6 +535,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            if (null == form.getDatasetId())
+                throw new NotFoundException("Invalid datasetId.");
             DatasetDefinition def = study.getDataset(form.getDatasetId());
             _def = def;
             if (null == def)
@@ -519,6 +548,7 @@ public class StudyController extends BaseStudyController
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
+
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
@@ -526,6 +556,11 @@ public class StudyController extends BaseStudyController
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }
+
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER))
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
+
+            // TODO to be deleted with GWT version of dataset designer (lines below this to the end of the method)
             Map<String,String> props = PageFlowUtil.map(
                     "studyId", ""+study.getRowId(),
                     "datasetId", ""+form.getDatasetId(),
@@ -6128,7 +6163,7 @@ public class StudyController extends BaseStudyController
     {
         private String _name;
         private String _label;
-        private int _datasetId;
+        private Integer _datasetId;
         private String _category;
         private boolean _showByDefault;
         private String _visitDatePropertyName;
@@ -6183,12 +6218,12 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        public int getDatasetId()
+        public Integer getDatasetId()
         {
             return _datasetId;
         }
 
-        public void setDatasetId(int datasetId)
+        public void setDatasetId(Integer datasetId)
         {
             _datasetId = datasetId;
         }

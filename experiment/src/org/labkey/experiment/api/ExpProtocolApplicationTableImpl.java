@@ -20,6 +20,7 @@ import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpSampleSet;
@@ -30,6 +31,8 @@ import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+
+import java.util.List;
 
 public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApplicationTable.Column> implements ExpProtocolApplicationTable
 {
@@ -53,7 +56,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
+    public MutableColumnInfo createColumn(String alias, ExpProtocolApplicationTable.Column column)
     {
         switch (column)
         {
@@ -63,6 +66,8 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
                 return rowIdColumnInfo;
             case Name:
                 return wrapColumn(alias, _rootTable.getColumn("Name"));
+            case Comments:
+                return wrapColumn(alias, _rootTable.getColumn("Comments"));
             case LSID:
                 return wrapColumn(alias, _rootTable.getColumn("LSID"));
             case Run:
@@ -77,6 +82,16 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("ProtocolLSID"));
                 columnInfo.setFk(getExpSchema().getProtocolForeignKey(getContainerFilter(), "LSID"));
                 return columnInfo;
+            case ActivityDate:
+                return wrapColumn(alias, _rootTable.getColumn("ActivityDate"));
+            case StartTime:
+                return wrapColumn(alias, _rootTable.getColumn("StartTime"));
+            case EndTime:
+                return wrapColumn(alias, _rootTable.getColumn("EndTime"));
+            case RecordCount:
+                return wrapColumn(alias, _rootTable.getColumn("RecordCount"));
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
         }
         throw new IllegalArgumentException("Unknown column " + column);
     }
@@ -148,11 +163,26 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         addColumn(Column.RowId);
         addColumn(Column.Name);
         setTitleColumn(Column.Name.toString());
+        addColumn(Column.Comments);
         addColumn(Column.Run);
         addColumn(Column.LSID).setHidden(true);
         addColumn(Column.Protocol);
         addColumn(Column.Type);
         addColumn(Column.ActionSequence).setHidden(true);
+        addColumn(Column.ActivityDate);
+        addColumn(Column.StartTime);
+        addColumn(Column.EndTime);
+        addColumn(Column.RecordCount);
+        addColumn(Column.Properties).setHidden(true);
+
+        setDefaultVisibleColumns(List.of(
+                FieldKey.fromParts(Column.Name),
+                FieldKey.fromParts(Column.Run),
+                FieldKey.fromParts(Column.Protocol),
+                FieldKey.fromParts(Column.Type)
+        ));
+
+        _populated = true;
     }
 
     @Override

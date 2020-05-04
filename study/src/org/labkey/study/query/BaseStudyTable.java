@@ -27,6 +27,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -137,7 +138,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected BaseColumnInfo addWrapParticipantColumn(String rootTableColumnName)
+    protected MutableColumnInfo addWrapParticipantColumn(String rootTableColumnName)
     {
         final String subjectColName = StudyService.get().getSubjectColumnName(getContainer());
         final String subjectTableName = StudyService.get().getSubjectTableName(getContainer());
@@ -198,7 +199,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
     }
 
 
-    protected BaseColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
+    protected MutableColumnInfo addWrapLocationColumn(String wrappedName, String rootTableColumnName)
     {
         var locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         locationColumn.setFk(new LookupForeignKey("RowId")
@@ -212,12 +213,12 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return addColumn(locationColumn);
     }
 
-    protected BaseColumnInfo addContainerColumn()
+    protected MutableColumnInfo addContainerColumn()
     {
         return addContainerColumn(false);
     }
 
-    protected BaseColumnInfo addContainerColumn(boolean isProvisioned)
+    protected MutableColumnInfo addContainerColumn(boolean isProvisioned)
     {
         BaseColumnInfo containerCol;
         if (isProvisioned)
@@ -269,9 +270,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         return addSpecimenVisitColumn(timepointType, aliasVisitColumn, isProvisioned);
     }
 
-    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, BaseColumnInfo aliasVisitColumn, boolean isProvisioned)
+    protected ColumnInfo addSpecimenVisitColumn(TimepointType timepointType, MutableColumnInfo aliasVisitColumn, boolean isProvisioned)
     {
-        BaseColumnInfo visitColumn = null;
+        MutableColumnInfo visitColumn = null;
         var visitDescriptionColumn = addWrapColumn(_rootTable.getColumn("VisitDescription"));
 
         // add the sequenceNum column so we have it for later queries

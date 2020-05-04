@@ -612,7 +612,12 @@ public class ParticipantGroupManager
             {
                 // don't let the database catch the invalid ptid, so we can show a more reasonable error
                 if (!participantIdMap.containsKey(id))
+                {
+                    // issue 38130 - we may have already emptied out the participant IDs in this group and put it back in the
+                    // cache
+                    GROUP_CACHE.remove(getCacheKey(group.getCategoryId()));
                     throw new ValidationException(String.format("The %s ID specified : %s does not exist in this study. Please enter a valid identifier.", study.getSubjectNounSingular(), id));
+                }
 
                 executor.execute(sql.getSQL(), group.getRowId(), id, participantIdMap.get(id));
             }

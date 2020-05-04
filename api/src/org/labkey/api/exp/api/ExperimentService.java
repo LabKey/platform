@@ -28,6 +28,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentProtocolHandler;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -760,9 +761,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerProtocolImplementation(ProtocolImplementation impl);
 
+    void registerProtocolHandler(ExperimentProtocolHandler handler);
+
     void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
-    ProtocolImplementation getProtocolImplementation(String name);
+    @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
     ExpProtocolApplication getExpProtocolApplication(int rowId);
 
@@ -826,6 +829,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
 
     List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
+
+    @Nullable
+    ExperimentProtocolHandler getExperimentProtocolHandler(@NotNull ExpProtocol protocol);
+
+    @Nullable
+    ExperimentRunType getExperimentRunType(@NotNull ExpProtocol protocol);
 
     @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);

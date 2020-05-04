@@ -42,6 +42,7 @@
     ViewContext context = getViewContext();
     ExperimentRunGraphModel model = (ExperimentRunGraphModel)HttpView.currentModel();
     boolean isSummaryView = !model.isDetail();
+    boolean isBetaViewEnabled = getActionURL().getParameter("betaGraph") != null;
 
     String uniqueId = "" + UniqueID.getServerSessionScopedUID();
     String appId = "run-graph-app-" + uniqueId;
@@ -67,11 +68,11 @@
 %>
 <%=button("Toggle Beta Graph (new!)").id(toggleBtnId).style("display: inline-block; float: right;")%>
 <ul id="run-graph-tab-bar" class="nav nav-tab" role="tablist" style="display: none;">
-    <li class="active"><a href="#<%=h(graphTabId)%>" role="tab" data-toggle="tab">Original</a></li>
-    <li><a href="#<%=h(graphTabBetaId)%>" role="tab" data-toggle="tab">Beta</a></li>
+    <li class="<%=h(isBetaViewEnabled ? "" : "active")%>>"><a href="#<%=h(graphTabId)%>" role="tab" data-toggle="tab">Original</a></li>
+    <li class="<%=h(isBetaViewEnabled ? "active" : "")%>>"><a href="#<%=h(graphTabBetaId)%>" role="tab" data-toggle="tab">Beta</a></li>
 </ul>
 <div class="tab-content">
-    <div class="tab-pane active" id="<%=h(graphTabId)%>">
+    <div class="tab-pane <%=h(isBetaViewEnabled ? "" : "active")%>" id="<%=h(graphTabId)%>">
 <%
         }
 %>
@@ -112,14 +113,14 @@
     {
 %>
     </div>
-    <div class="tab-pane" id="<%=h(graphTabBetaId)%>">
+    <div class="tab-pane <%=h(isBetaViewEnabled ? "active" : "")%>" id="<%=h(graphTabBetaId)%>">
         <div id="<%=h(appId)%>"></div>
     </div>
 </div>
 <script type="application/javascript">
     (function($) {
         $(function() {
-            var nextIdx = 1;
+            var nextIdx = <%=isBetaViewEnabled ? 0 : 1%>;
             var tabIds = [<%=q(graphTabId)%>, <%=q(graphTabBetaId)%>];
 
             $(<%=q("#" + toggleBtnId)%>).click(function(e) {
