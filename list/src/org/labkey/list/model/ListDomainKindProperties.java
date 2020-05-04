@@ -7,38 +7,38 @@ import java.util.Date;
 /* Java bean used in marshalling and unmarshalling*/
 public class ListDomainKindProperties implements Cloneable
 {
-    protected int listId;
-    protected String name;
-    protected int domainId;
-    protected String keyName;
-    protected String keyType;
+    private int listId;
+    private String name;
+    private int domainId;
+    private String keyName;
+    private String keyType;
 
-    protected String titleColumn;
-    protected String description;
-    protected Date lastIndexed;
+    private String titleColumn;
+    private String description;
+    private Date lastIndexed;
 
-    protected boolean allowDelete = true;
-    protected boolean allowUpload = true;
-    protected boolean allowExport = true;
+    private boolean allowDelete = true;
+    private boolean allowUpload = true;
+    private boolean allowExport = true;
 
-    protected int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
+    private int discussionSetting = ListDefinition.DiscussionSetting.None.getValue();
 
     //Index Entire List as a Single Document
-    protected String entireListTitleTemplate = "";
-    protected int entireListIndexSetting = ListDefinition.IndexSetting.MetaData.getValue();
-    protected int entireListBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
+    private String entireListTitleTemplate = "";
+    private int entireListIndexSetting = ListDefinition.IndexSetting.MetaData.getValue();
+    private int entireListBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
     //Index Each Item as a Separate Document
-    protected String eachItemTitleTemplate = "";
-    protected int eachItemBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
+    private String eachItemTitleTemplate = "";
+    private int eachItemBodySetting = ListDefinition.BodySetting.TextOnly.getValue();
 
-    protected boolean entireListIndex = false;
-    protected String entireListBodyTemplate = null;
+    private boolean entireListIndex = false;
+    private String entireListBodyTemplate = null;
 
-    protected boolean eachItemIndex = false;
-    protected String eachItemBodyTemplate = null;
+    private boolean eachItemIndex = false;
+    private String eachItemBodyTemplate = null;
 
-    protected boolean fileAttachmentIndex = false;
+    private boolean fileAttachmentIndex = false;
 
     public ListDomainKindProperties()
     {

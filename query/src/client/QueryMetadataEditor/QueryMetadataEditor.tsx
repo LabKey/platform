@@ -19,6 +19,7 @@ import React, {PureComponent} from 'react';
 import {Button} from "react-bootstrap";
 import {
     Alert,
+    BeforeUnload,
     ConfirmModal,
     DomainDesign,
     DomainField,
@@ -34,7 +35,6 @@ import "@labkey/components/dist/components.css"
 import "./queryMetadataEditor.scss";
 
 interface IAppState {
-    dirty: boolean,
     domain: DomainDesign,
     messages?: List<IBannerMessage>,
     queryName: string,
@@ -50,6 +50,8 @@ interface IAppState {
 }
 
 export class App extends PureComponent<any, Partial<IAppState>> {
+
+    private _dirty: boolean = false;
 
     constructor(props) {
         super(props);
@@ -71,7 +73,6 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             messages,
             showAlias : false,
             showSave: true,
-            dirty: false,
             showEditSourceConfirmationModal: false,
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
@@ -98,19 +99,19 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                     }));
                 });
         }
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
     onChangeHandler = (newDomain, dirty) => {
-        this.setState((state) => ({
+        this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
+
+        this.setState(() => ({
             domain: newDomain,
-            dirty: state.dirty || dirty, // if the state is already dirty, leave it as such
             showSave: true
         }));
     };
@@ -129,8 +130,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this.setState(() => ({
             showResetConfirmationModal: false,
             showViewDataConfirmationModal: false,
-            showEditSourceConfirmationModal: false,
-            dirty: false
+            showEditSourceConfirmationModal: false
         }), () => {
             if (showViewDataConfirmationModal) {
                 this.navigateToViewData();
@@ -156,6 +156,8 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     onAddAliasField = (domainField: DomainField): any => {
+        this._dirty = true;
+
         const { domain } = this.state;
         const newFields = domain.fields.push(domainField);
         const newDomain = domain.set('fields', newFields) as DomainDesign;
@@ -163,15 +165,12 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         this.setState(() => ({
             showAlias: false,
             domain: newDomain,
-            showSave: true,
-            dirty: true
+            showSave: true
         }));
     };
 
     onConfirmEditSource = () => {
-        const { dirty } = this.state;
-
-        if (dirty) {
+        if (this._dirty) {
             this.onSaveBtnHandler(this.navigateToEditSource);
         }
         else {
@@ -180,17 +179,17 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     navigateToViewData = () => {
-        const { schemaName, queryName } = this.state;
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName});
+        const { schemaName, queryName } = this.state;
+        window.location.href =  ActionURL.buildURL('query', 'executeQuery', getServerContext().container.path, {
+            schemaName: schemaName,
+            ['query.queryName']: queryName
         });
     };
 
     onConfirmViewData = () => {
-        const { dirty } = this.state;
-
-        if (dirty) {
+        if (this._dirty) {
             this.onSaveBtnHandler(this.navigateToViewData);
         }
         else {
@@ -202,22 +201,16 @@ export class App extends PureComponent<any, Partial<IAppState>> {
         const { domain, schemaName, messages, navigateAfterSave, userDefinedQuery } = this.state;
         saveQueryMetadata(domain, schemaName, userDefinedQuery)
             .then(() => {
+                this._dirty = false;
                 this.showMessage("Save Successful", 'success', 0);
 
-                if (navigateAfterSave) {
-                    this.setState(() => ({
-                        showSave: false,
-                        dirty: false
-                    }), () => {
+                this.setState(() => ({
+                    showSave: false
+                }), () => {
+                    if (navigateAfterSave) {
                         onSaveNavigation();
-                    });
-                }
-                else {
-                    this.setState(() => ({
-                        showSave: false,
-                        dirty: false
-                    }));
-                }
+                    }
+                });
             })
             .catch((error) => {
                 this.setState(() => ({
@@ -227,21 +220,21 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     navigateToEditSource = () =>  {
-        const { schemaName, queryName } = this.state;
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href =  ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {schemaName: schemaName, ['query.queryName']: queryName}) + '#metadata';
-        });
+        const { schemaName, queryName } = this.state;
+        window.location.href =  ActionURL.buildURL('query', 'sourceQuery', getServerContext().container.path, {
+            schemaName: schemaName,
+            ['query.queryName']: queryName
+        }) + '#metadata';
     };
 
     editSourceBtnHandler = () => {
-        const { dirty } = this.state;
-
         this.setState(() => ({
             navigateAfterSave: true
         }));
 
-        if (dirty) {
+        if (this._dirty) {
             this.setState(() => ({
                 showEditSourceConfirmationModal: true
             }));
@@ -252,13 +245,11 @@ export class App extends PureComponent<any, Partial<IAppState>> {
     };
 
     viewDataBtnHandler = () => {
-        const { dirty } = this.state;
-
         this.setState(() => ({
             navigateAfterSave: true
         }));
 
-        if (dirty) {
+        if (this._dirty) {
             this.setState(() => ({
                 showViewDataConfirmationModal: true
             }));
@@ -327,7 +318,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
             return <LoadingSpinner/>
         }
         return (
-            <>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 {
                     domain &&
                     <DomainForm
@@ -390,7 +381,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                     this.renderConfirmationModal("Save Changes?", "Do you want to save your changes?",
                         this.onConfirmViewData, this.dismissChangeConfirmation, "Yes, Save", "No, View Data")
                 }
-            </>
+            </BeforeUnload>
         )
     }
 }
