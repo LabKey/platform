@@ -164,7 +164,7 @@ public class LineageTableInfo extends VirtualTable
                     if (null == _table)
                         _table = getUserSchema().getCachedLookupTableInfo(getClass().getName() + "/Samples/" + ss.getRowId() + "/" + ss.getName(), () ->
                         {
-                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema.getUser(), _userSchema.getContainer());
+                            SamplesSchema samplesSchema = new SamplesSchema(_userSchema);
                             var ret = samplesSchema.getSampleTable(ss, null);
                             ret.setLocked(true);
                             return ret;
