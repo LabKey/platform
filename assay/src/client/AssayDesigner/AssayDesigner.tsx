@@ -16,7 +16,7 @@
 import React from 'react'
 import {Panel} from "react-bootstrap";
 import {ActionURL, Security, Utils, getServerContext} from "@labkey/api";
-import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol} from "@labkey/components";
+import {Alert, LoadingSpinner, PermissionTypes, DomainFieldsDisplay, AssayProtocolModel, AssayDesignerPanels, fetchProtocol, BeforeUnload} from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
 
@@ -29,10 +29,11 @@ type State = {
     isLoadingModel: boolean,
     hasDesignAssayPerm?: boolean
     message?: string
-    dirty: boolean
 }
 
 export class App extends React.Component<any, State> {
+
+    private _dirty: boolean  = false;
 
     constructor(props)
     {
@@ -46,13 +47,15 @@ export class App extends React.Component<any, State> {
             returnUrl = returnUrl + '=' + rowId
         }
 
+        // default to dirty state for assay copy case
+        this._dirty = copy || false;
+
         this.state = {
             protocolId: rowId,
             providerName,
             copy,
             isLoadingModel: true,
-            returnUrl,
-            dirty: copy || false // default to dirty state for assay copy case
+            returnUrl
         };
     }
 
@@ -97,26 +100,18 @@ export class App extends React.Component<any, State> {
                 isLoadingModel: false
             }));
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
 
     navigate(defaultUrl: string) {
-        const { returnUrl } = this.state;
+        this._dirty = false;
 
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || defaultUrl;
-        });
+        window.location.href = this.state.returnUrl || defaultUrl;
     }
 
     onCancel = () => {
@@ -128,7 +123,7 @@ export class App extends React.Component<any, State> {
     };
 
     onChange = (model: AssayProtocolModel) => {
-        this.setState(() => ({dirty: true}));
+        this._dirty = true;
     };
 
     renderReadOnlyView() {
@@ -213,12 +208,12 @@ export class App extends React.Component<any, State> {
         }
 
         return (
-            <>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 {hasDesignAssayPerm
                     ? this.renderDesignerView()
                     : this.renderReadOnlyView()
                 }
-            </>
+            </BeforeUnload>
         )
     }
 }
