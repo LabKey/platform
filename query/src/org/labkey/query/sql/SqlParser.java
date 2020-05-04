@@ -60,6 +60,7 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.SoftReference;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -88,7 +89,7 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-	private static Logger _log = Logger.getLogger(SqlParser.class);
+	private static final Logger _log = Logger.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
     List<QueryParseException> _parseWarnings;
@@ -96,10 +97,41 @@ public class SqlParser
     ArrayList<QParameter> _parameters;
     final SqlDialect _dialect;
     Container _container = null;
+    final static SoftPool<_SqlParser> _parserPool = new SoftPool<>();
 
-    final int maxPoolSize = 3;
-    final static ArrayList<_SqlParser> _parserPool = new ArrayList<_SqlParser>();
-
+    static class SoftPool<T>
+    {
+        final int maxPoolSize=3;
+        final ArrayList<SoftReference<T>> _pool = new ArrayList<>();
+        @Nullable
+        public synchronized T get()
+        {
+            while (!_pool.isEmpty())
+            {
+                SoftReference<T> r = _pool.remove(0);
+                T t = r.get();
+                if (null != t)
+                    return t;
+            }
+            return null;
+        }
+        public synchronized void put(T t)
+        {
+            if (_pool.size()<maxPoolSize)
+            {
+                _pool.add(new SoftReference<T>(t));
+                return;
+            }
+            for (int i=0 ; i<_pool.size() ; i++)
+            {
+                if (null==_pool.get(i).get())
+                {
+                    _pool.set(i, new SoftReference<>(t));
+                    return;
+                }
+            }
+        }
+    }
 
     //
     // PUBLIC
@@ -125,9 +157,10 @@ public class SqlParser
     {
         synchronized (_parserPool)
         {
-            if (_parserPool.isEmpty())
-                return new _SqlParser();
-            return _parserPool.remove(_parserPool.size()-1);
+            _SqlParser ret = _parserPool.get();
+            if (null == ret)
+                return ret = new _SqlParser();
+            return ret;
         }
     }
 
@@ -1416,11 +1449,7 @@ public class SqlParser
         {
             _errors = null;
             setTokenStream(null);
-            synchronized (_parserPool)
-            {
-                if (_parserPool.size() < maxPoolSize)
-                    _parserPool.add(this);
-            }
+            _parserPool.put(this);
         }
     }
 
@@ -1957,7 +1986,7 @@ public class SqlParser
                 }
             }
             long end = System.currentTimeMillis();
-            System.out.println("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
+//            System.out.println("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
         }
 
         @Test
