@@ -15,10 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.query.ExpDataInputTable;
@@ -41,7 +41,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
+    public MutableColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
     {
         switch (column)
         {
