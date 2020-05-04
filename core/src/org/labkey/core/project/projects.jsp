@@ -357,6 +357,7 @@
                     config.title = btn.up('window').down('#title').getValue();
                     config.webPartId = webpartId;
 
+                    config['@hideCreateButton'] = '1'; // for spring binding of boolean
                     Ext4.Ajax.request({
                         url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, config),
                         method : 'POST',
