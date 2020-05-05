@@ -333,6 +333,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             hideValidators: true,
                             phiLevelDisabled: true,
                             hideAddFieldsButton: true,
+                            hideTextOptions: true,
                         }}
                     />
                 }

@@ -126,6 +126,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
+import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -6708,7 +6709,7 @@ public class QueryController extends SpringActionController
             if (null != propertyService)
             {
                 ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                propertyService.configureObjectMapper(mapper, null);
+                mapper.addMixIn(MetadataTableJSON.class, MetadataTableJSONMixin.class);
                 return mapper;
             }
             else
