@@ -19,6 +19,7 @@ package org.labkey.query.reports;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
@@ -56,6 +57,7 @@ import org.labkey.api.reports.report.DbReportIdentifier;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
+import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
@@ -91,6 +93,7 @@ import org.labkey.query.xml.ReportDescriptorType;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -861,7 +864,7 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Nullable
-    private Report deserialize(Container container, User user, XmlObject reportXml) throws IOException, XmlValidationException
+    private Report deserialize(Container container, User user, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
     {
         if (null != reportXml)
         {
@@ -870,7 +873,25 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
             if (report != null)
-                report.getDescriptor().setReportId(new DbReportIdentifier(-1));
+            {
+                ReportDescriptor descriptor = report.getDescriptor();
+                descriptor.setReportId(new DbReportIdentifier(-1));
+
+                // if this is an R report look for report source in separate file
+                if (descriptor instanceof RReportDescriptor && xmlFileName.toLowerCase().endsWith(".report.xml"))
+                {
+                    String baseName = xmlFileName.substring(0, xmlFileName.length() - ".report.xml".length());
+                    InputStream is = root.getInputStream(baseName + ".R");
+                    if (null == is)
+                        is = root.getInputStream(baseName + ".r");
+                    if (null != is)
+                    {
+                        String script = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
+                        if (!StringUtils.isBlank(script))
+                            descriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
+                    }
+                }
+            }
 
             return report;
         }
@@ -879,9 +900,9 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
     @Override @Nullable
-    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, XmlValidationException
+    public Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, XmlValidationException
     {
-        Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml);
+        Report report = deserialize(ctx.getContainer(), ctx.getUser(), reportXml, root, xmlFileName);
         if (report != null)
         {
             ReportDescriptor descriptor = report.getDescriptor();

@@ -36,13 +36,13 @@
 <labkey:form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0 class="lk-fields-table">
-<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=2>"), HtmlString.unsafe("</td></tr>"))%>
+<%=getTroubleshooterWarning(canUpdate, HtmlString.unsafe("<tr><td colspan=4>"), HtmlString.unsafe("</td></tr>"))%>
 <tr>
     <td colspan=2>&nbsp;</td>
 </tr>
 
 <tr>
-    <td colspan=2>Customize the header logo, responsive logo, favorite icon, and stylesheet used <%=h(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
+    <td colspan=4>Customize the header logo, responsive logo, favicon, and stylesheet used <%=h(c.isRoot() ? "throughout the site" : "in this project")%> (<%=bean.helpLink%>)</td>
 </tr>
 <tr>
     <td colspan=2>&nbsp;</td>
@@ -52,11 +52,11 @@
     {
 %>
     <tr>
-        <td class="labkey-form-label" rowspan="<%=rowSpan%>"><%=h(type.getLongLabel())%><%=type.getHelpPopup()%></td>
+        <td class="labkey-form-label" style="width: 150px;" rowspan="<%=rowSpan%>"><%=h(type.getLongLabel())%><%=type.getHelpPopup()%></td>
         <td>
             <% if (type.isSet(getContainer()))
             { %>
-            Currently using a custom <%=h(type.getShortLabel().toLowerCase())%>. <%=type.getViewLink(getContainer()).target("_view")%> <%=canUpdate ? link(type.getDeleteText(), urlFor(ResetResourceAction.class).addParameter("resource", type.name())).usePost() : HtmlString.EMPTY_STRING%>
+            Currently using a custom <%=h(type.getShortLabel().toLowerCase())%>.</td><td><%=type.getViewLink(getContainer()).target("_view")%></td><td><%=canUpdate ? link(type.getDeleteText(), urlFor(ResetResourceAction.class).addParameter("resource", type.name())).usePost() : HtmlString.NBSP%>
             <% } else { %>
             <%=h(type.getDefaultText())%>.
             <% } %>
