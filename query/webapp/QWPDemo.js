@@ -868,16 +868,20 @@
                 },
                 listeners: {
                     render: function(dr) {
+                        loadCount++;
+                        // timeout is used here to defer displaying error until after region is rendered.
+                        // Less confusing when comparing error against current region state.
                         setTimeout(function() {
-                            if (loadCount === 0) {
+                            if (loadCount === 1) {
+                                // Expect to be on the last page of 3 (results 5-6 of 6)
                                 if (assertPagingCount(dr, 5, 6, 6)) {
-                                    loadCount++;
 
                                     // filter to a result that includes rows on multiple page
                                     dr.addFilter(LABKEY.Filter.create('Id', [6,5,4,3,2].join(';'), LABKEY.Filter.Types.IN));
                                 }
                             }
-                            else if (loadCount === 1) {
+                            else if (loadCount === 2) {
+                                // Expect to be on the first page of 3 (results 1-2 of 5)
                                 if (assertPagingCount(dr, 1, 2, 5)) {
                                     LABKEY.Utils.signalWebDriverTest('testRespectExcludingPrefixes');
                                 }
