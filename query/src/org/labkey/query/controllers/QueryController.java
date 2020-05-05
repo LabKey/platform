@@ -50,6 +50,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -6709,7 +6710,7 @@ public class QueryController extends SpringActionController
             if (null != propertyService)
             {
                 ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                mapper.addMixIn(MetadataTableJSON.class, MetadataTableJSONMixin.class);
+                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
                 return mapper;
             }
             else
