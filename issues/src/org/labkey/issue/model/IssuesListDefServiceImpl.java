@@ -132,7 +132,8 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         {
             group = SecurityManager.getGroup(properties.getAssignedToGroup());
             if (null == group)
-                throw new IllegalArgumentException("Group not found.");
+                throw new IllegalArgumentException("'" + properties.getAssignedToGroup().toString() +
+                        "' group not found. Please refer to core.Groups for a valid list of groups.");
         }
         IssueManager.saveAssignedToGroup(container, name, group);
 
@@ -141,7 +142,8 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
         {
             user = UserManager.getUser(properties.getAssignedToUser());
             if (null == user)
-                throw new IllegalArgumentException("User not found.");
+                throw new IllegalArgumentException("'" + properties.getAssignedToUser().toString() +
+                        "' user not found. Please refer to core.Users for a valid list of users.");
         }
 
         IssueManager.saveDefaultAssignedToUser(container, name, user);
