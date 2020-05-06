@@ -1,9 +1,15 @@
+<%@ page import="org.junit.AfterClass" %>
+<%@ page import="org.junit.BeforeClass" %>
 <%@ page import="org.junit.Test" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.PropertyStorageSpec" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.SqlSelector" %>
 <%@ page import="org.labkey.api.data.TableInfo" %>
-<%@ page import="static org.junit.Assert.*" %>
 <%@ page import="org.labkey.api.exp.list.ListDefinition" %>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.exp.property.Domain" %>
@@ -16,38 +22,25 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.util.JunitUtil" %>
 <%@ page import="org.labkey.api.util.TestContext" %>
+<%@ page import="org.labkey.query.QueryServiceImpl" %>
 <%@ page import="org.postgresql.util.ReaderInputStream" %>
 <%@ page import="java.io.StringReader" %>
-<%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.query.QueryServiceImpl" %>
-<%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
-<%@ page import="org.labkey.api.data.Sort" %>
 <%@ page import="java.sql.SQLException" %>
-<%@ page import="org.labkey.api.data.SqlSelector" %>
-<%@ page import="org.labkey.api.data.DbScope" %>
+<%@ page import="java.util.Arrays" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspTest.DRT" %>
 <%!
+    final static String tableName = "testGetSelectSqlSort";
     DbScope scope = null;
 
     @Test
     public void testGetSelectSqlSort() throws Exception
     {
-        final String tableName = "testGetSelectSqlSort";
         User user = TestContext.get().getUser();
         Container c = JunitUtil.getTestContainer();
-
         ListService s = ListService.get();
         ListDefinition list = s.getList(c, tableName);
-        if (null != list)
-            list.delete(user);
-        list = s.createList(c, tableName, ListDefinition.KeyType.Integer, null);
-        list.setKeyName("A");
-        Domain d = list.getDomain();
-        d.addProperty(new PropertyStorageSpec("A", JdbcType.INTEGER));
-        d.addProperty(new PropertyStorageSpec("B", JdbcType.INTEGER));
-        d.addProperty(new PropertyStorageSpec("C", JdbcType.INTEGER));
-        list.save(user,true);
 
         var data = new ReaderInputStream(new StringReader("A,B,C\n6,4,3\n1,8,6\n7,1,9\n2,5,1\n8,9,4\n3,2,7\n9,6,10\n4,10,2\n10,3,5\n5,7,8\n"));
         list.insertListItems(user, c, new TabLoader.CsvFactory().createLoader(data,true), new BatchValidationException(), null, null, false, false);
@@ -61,7 +54,7 @@
         FilteredTable wrapped = new FilteredTable(listTable, schema, null);
         wrapped.wrapAllColumns(true);
         (wrapped.getMutableColumn("B")).setSortFieldKeys(Arrays.asList(new FieldKey(null,"C")));
-        // add xyz as duplciate of C so we can test isSorted(C) even when C is not selected
+        // add xyz as duplicate of C so we can test isSorted(C) even when C is not selected
         wrapped.addWrapColumn("xyz", listTable.getColumn("C"));
 
         var A = wrapped.getColumn("A");
@@ -134,6 +127,36 @@
 
         list.delete(user);
     }
+
+    @BeforeClass
+    public static void createList() throws Exception
+    {
+        deleteList();
+
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        ListService s = ListService.get();
+        ListDefinition list = s.createList(c, tableName, ListDefinition.KeyType.Integer, null);
+        list.setKeyName("A");
+        Domain d = list.getDomain();
+        d.addProperty(new PropertyStorageSpec("A", JdbcType.INTEGER));
+        d.addProperty(new PropertyStorageSpec("B", JdbcType.INTEGER));
+        d.addProperty(new PropertyStorageSpec("C", JdbcType.INTEGER));
+        list.save(user,true);
+    }
+
+
+    @AfterClass
+    public static void deleteList() throws Exception
+    {
+        User user = TestContext.get().getUser();
+        Container c = JunitUtil.getTestContainer();
+        ListService s = ListService.get();
+        Map<String, ListDefinition> m = s.getLists(c);
+        if (m.containsKey(tableName))
+            m.get(tableName).delete(user);
+    }
+
 
     boolean isSorted(SQLFragment sqlf, int col) throws SQLException
     {
