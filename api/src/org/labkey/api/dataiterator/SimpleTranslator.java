@@ -1152,7 +1152,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         target.getColumns().forEach(columnInfo -> {
             if (columnInfo.hasDbSequence())
             {
-                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()));
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100);
             }
         });
     }
