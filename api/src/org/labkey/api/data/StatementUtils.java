@@ -726,6 +726,12 @@ public class StatementUtils
             if (done.contains(name))
                 continue;
             done.add(name);
+            if (Operation.merge == _operation)
+            {
+                ColumnInfo updatableColumn = updatable.getColumn(column.getName());
+                if (updatableColumn != null && updatableColumn.hasDbSequence())
+                    continue;
+            }
 
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))
