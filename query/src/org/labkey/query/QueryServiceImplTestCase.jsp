@@ -124,8 +124,6 @@
         assertTrue(test7.toDebugString().contains("ORDER BY B ASC"));
         assertTrue(isSorted(test7,2));
         test7 = null;
-
-        list.delete(user);
     }
 
     @BeforeClass
