@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -1349,12 +1350,12 @@ public abstract class CompareType
         if (col.getJdbcType() != JdbcType.VARCHAR)
             return false;
 
-        if (!(col instanceof LookupColumn) || (col instanceof AliasedColumn && ((AliasedColumn)col).getColumn() instanceof LookupColumn))
-            return false;
-
-        String propertyURI = col.getPropertyURI();
-        if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
-            return true;
+        if (col instanceof LookupColumn || (col instanceof AliasedColumn && ((AliasedColumn)col).getColumn() instanceof LookupColumn))
+        {
+            String propertyURI = col.getPropertyURI();
+            if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
+                return true;
+        }
 
         return false;
     }
@@ -2211,6 +2212,15 @@ public abstract class CompareType
             // expand the '~me~' filter parameter value
             assertEquals(user.getUserId(), CompareType.convertParamValue(createdByCol, ME_FILTER_PARAM_VALUE));
             assertEquals(user.getDisplayName(user), CompareType.convertParamValue(createdByDisplayCol, ME_FILTER_PARAM_VALUE));
+
+            // Issue 40361: query-selectDistinct.api doesn't work when a ~me~ filter exists
+            // The logic checking isUserDisplayColumn() for QAliasedColumn was incorrect
+            var createdByDisplayNameFieldKey = FieldKey.fromParts("CreatedBy", "DisplayName");
+            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(containerTable, List.of(createdByDisplayNameFieldKey));
+            ColumnInfo qAliasedCreatedByDisplayCol = cols.get(createdByDisplayNameFieldKey);
+            assertNotNull(qAliasedCreatedByDisplayCol);
+            assertFalse(isUserIdColumn(qAliasedCreatedByDisplayCol));
+            assertTrue(isUserDisplayColumn(qAliasedCreatedByDisplayCol));
 
             // create PropertyDescriptor with lookup to core.Users table
             PropertyDescriptor userPd = new PropertyDescriptor();

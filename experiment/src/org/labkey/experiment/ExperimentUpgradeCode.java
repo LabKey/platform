@@ -513,9 +513,22 @@ public class ExperimentUpgradeCode implements UpgradeCode
      @DeferredUpgrade
     public static void addDbSequenceForMaterialsRowId(ModuleContext context)
     {
-        if (context.isNewInstall())
-            return;
+        _addDbSequenceForMaterialRowId();
+    }
 
+    // called from exp-20.004-20.005
+    // The previous method originally mistakenly did not update RowId column for new installs,
+    // leaving databases bootstrapped after the previous upgrade script was implemented in a strange state.
+    // This method will fix up the databases where that removal of autoIncrement was missed.
+    @DeferredUpgrade
+    public static void addDbSequenceForMaterialsRowIdIfMissed(ModuleContext context)
+    {
+        if (ExperimentService.get().getTinfoMaterial().getColumn("RowId").isAutoIncrement())
+            _addDbSequenceForMaterialRowId();
+    }
+
+    private static void _addDbSequenceForMaterialRowId()
+    {
         SQLFragment frag = new SQLFragment("SELECT MAX(rowId) FROM exp.material");
         Integer maxId = new SqlSelector(ExperimentService.get().getSchema(), frag).getObject(Integer.class);
 

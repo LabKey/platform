@@ -104,7 +104,12 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
 
     protected void save(User user, TableInfo table, boolean ensureObject)
     {
-        if (getRowId() == 0)
+        save(user, table, ensureObject, getRowId() == 0);
+    }
+
+    protected void save(User user, TableInfo table, boolean ensureObject, boolean isInsert)
+    {
+        if (isInsert)
         {
             if (ensureObject)
             {

@@ -180,7 +180,7 @@ public interface ReportService
      * parameters. Imported reports are always treated as new reports even if they were exported from
      * the same container.
      */
-    Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root) throws IOException, SQLException, XmlValidationException;
+    Report importReport(ImportContext ctx, XmlObject reportXml, VirtualFile root, String xmlFileName) throws IOException, SQLException, XmlValidationException;
 
     /**
      * Runs maintenance on the report service.
