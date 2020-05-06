@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.56.2-fb-FixDomainFormDisplayOptions.2"
+    "@labkey/components": "0.56.3-fb-FixDomainFormDisplayOptions.1"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",

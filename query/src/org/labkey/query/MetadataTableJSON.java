@@ -98,7 +98,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     {
         UserSchema schema = QueryService.get().getUserSchema(user, container, schemaName);
         QueryDef queryDef = QueryManager.get().getQueryDef(schema.getContainer(), schema.getSchemaName(), this.getName(), this.isUserDefinedQuery());
-        TableInfo rawTableInfo = schema.getTable(this.getName(), true);
+        TableInfo rawTableInfo = schema.getTable(this.getName(), false);
 
         TablesDocument doc = null;
         TableType xmlTable = null;
@@ -318,7 +318,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
             String originalURL = rawColumnInfo.getURL() == null ? null : rawColumnInfo.getURL().toString();
             if (shouldStoreValue(metadataColumnJSON.getURL(), originalURL))
             {
-                if (metadataColumnJSON.getURL() != null && !metadataColumnJSON.getURL().equals(""))
+                if (metadataColumnJSON.getURL() != null)
                 {
                     try
                     {
@@ -330,35 +330,36 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         throw new MetadataUnavailableException(e.getMessage());
                     }
                 }
-                else
-                {
-                    xmlColumn.unsetUrl();
-                }
+            }
+            else if (xmlColumn.isSetUrl())
+            {
+                xmlColumn.unsetUrl();
             }
 
             // Set the ImportAliases
             Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
-            // when there is no existing import aliases, add import aliases xml
-            if (metadataColumnJSON.getImportAliases() != null && importAliasSet.isEmpty())
+            if (metadataColumnJSON.getImportAliases() != null)
             {
-                addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
-            }
-            // add-to/remove-from existing import aliases set
-            else if (metadataColumnJSON.getImportAliases() != null)
-            {
-                if (xmlColumn.getImportAliases() != null)
+                Set<String> passedImportAliasSet = ColumnRenderPropertiesImpl.convertToSet(metadataColumnJSON.getImportAliases());
+
+                if (shouldStoreValue(importAliasSet, passedImportAliasSet))
+                {
+                    // add-to/remove-from existing import aliases set
+                    if (xmlColumn.getImportAliases() != null)
+                    {
+                        xmlColumn.unsetImportAliases();
+                    }
+                    // when there is no existing import aliases, add import aliases xml
+                    if (!metadataColumnJSON.getImportAliases().equals(""))
+                    {
+                        addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
+                    }
+                }
+                // wipe off import aliases xml
+                else if (xmlColumn.isSetImportAliases())
                 {
                     xmlColumn.unsetImportAliases();
                 }
-                if (!metadataColumnJSON.getImportAliases().equals(""))
-                {
-                    addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
-                }
-            }
-            // wipe off import aliases xml
-            else if (xmlColumn.isSetImportAliases())
-            {
-                xmlColumn.unsetImportAliases();
             }
 
             // Set the FK
