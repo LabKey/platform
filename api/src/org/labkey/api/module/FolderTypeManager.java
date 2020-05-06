@@ -104,7 +104,7 @@ public class FolderTypeManager
     {
         if (!ModuleLoader.getInstance().isStartupInProgress() && !ModuleLoader.getInstance().isStartupComplete())
         {
-            throw new IllegalStateException("Don't call registerFolderType() this early.  It will cause WebPart to get populated from ALL modules");
+            throw new IllegalStateException("Don't call registerFolderType() this early; it can cause WebParts to get populated from modules that are about to be pruned.");
         }
         if (_javaFolderTypes.containsKey(folderType.getName()))
         {
