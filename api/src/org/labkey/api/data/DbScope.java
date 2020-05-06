@@ -1123,14 +1123,32 @@ public class DbScope
         }
     }
 
-
+    // Return an unmodifiable, sorted list of schema names in this module
     public static @NotNull List<String> getSchemaNames(Module module)
     {
-        return SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream()
-            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .collect(Collectors.toCollection(ArrayList::new));
+        // Don't use the cache until startup is complete. The cache registers file listeners with module references,
+        // and that ends up "leaking" modules if we haven't yet pruned them based on supported database, etc.
+        return getSchemaNames(module, ModuleLoader.getInstance().isStartupComplete());
     }
 
+    private static List<String> getSchemaNames(Module module, boolean useCache)
+    {
+        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .sorted()
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    // Verify that the two ways for determining schema names yield identical results
+    public static class SchemaNameTestCase extends Assert
+    {
+        @Test
+        public void testSchemaNames()
+        {
+            ModuleLoader.getInstance().getModules()
+                .forEach(m->assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+        }
+    }
 
     @JsonIgnore
     public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)
