@@ -1142,8 +1142,9 @@ public class QueryController extends SpringActionController
                 {
                     if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
-                        // delete the query in order to reset the metadata over a built-in query
-                        queryDef.delete(getUser());
+                        // delete the query in order to reset the metadata over a built-in query, but don't
+                        // fire the listener because we haven't actually deleted the table. See issue 40365
+                        queryDef.delete(getUser(), false);
                     }
                 }
                 else
