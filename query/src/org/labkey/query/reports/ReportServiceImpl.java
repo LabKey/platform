@@ -609,6 +609,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             // TODO hack: see ModuleRReportDescriptor.getEntityId()
             ReportIdentifier id = getReportIdentifier(PageFlowUtil.decode(entityId), null, c);
+            if (null == id)
+                return null;
             return id.getReport(new DefaultContainerUser(c, null));
         }
     }
