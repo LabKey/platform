@@ -334,6 +334,7 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                             phiLevelDisabled: true,
                             hideAddFieldsButton: true,
                             hideTextOptions: true,
+                            disableMvEnabled: true,
                         }}
                     />
                 }
