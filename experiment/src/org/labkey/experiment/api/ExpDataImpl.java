@@ -302,9 +302,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
         if (flagged)
         {
-            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
+            return AppProps.getInstance().getContextPath() + "/experiment/flagData.png";
         }
-        return AppProps.getInstance().getContextPath() + "/Experiment/images/unflagData.png";
+        return AppProps.getInstance().getContextPath() + "/experiment/images/unflagData.png";
     }
 
     @Override
