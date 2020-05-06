@@ -14,8 +14,8 @@ public class ProvenanceRecordingParams implements IsSerializable
     private String description;
 
     private List<String> predecessorSteps = Collections.emptyList();
-    private String inputObjectUriProperty;
-    private String outputObjectUriProperty;
+    private String inputObjectUriProperty = ProvenanceService.PROVENANCE_INPUT_PROPERTY;
+    private String outputObjectUriProperty = "lsid";
     private Map<String, Object> properties = Collections.emptyMap();
     private List<String> objectInputs = Collections.emptyList();
     private List<Pair<String,String>> provenanceMap = Collections.emptyList();

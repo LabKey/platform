@@ -2,9 +2,11 @@ package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.services.ServiceRegistry;
@@ -105,17 +107,17 @@ public interface ProvenanceService
      * Start a recording session, place RecordedActionSet in http session state and
      * @return a GUID as the recording id.
      */
-    String startRecording(HttpServletRequest request, @NotNull ProvenanceRecordingParams options);
+    String startRecording(ViewContext context, JSONObject jsonObject) throws ValidationException;
 
     /**
      * Get the current recording session from http session state, and add the actionSet
      */
-    void addRecordingStep(HttpServletRequest request, String recordingId, RecordedActionSet actionSet);
+    void addRecordingStep(HttpServletRequest request, String recordingId, RecordedAction action);
 
     /**
      *  Get the recording from session state and create an ExpRun
      */
-    ExpRun stopRecording(HttpServletRequest request, String recordingId);
+    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action);
 
     /**
      * Helper method to create recording params object
@@ -123,4 +125,14 @@ public interface ProvenanceService
     @Nullable
     ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject) throws ValidationException;
 
+    /**
+     * Helper method to construct a RecordedAction from a ProvenanceRecordingParams object.
+     */
+    @Nullable
+    RecordedAction createRecordedAction(ViewContext context, ProvenanceRecordingParams params);
+
+    /**
+     * Extract the provenance map information from the data rows
+     */
+    List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows);
 }
