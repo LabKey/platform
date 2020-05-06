@@ -16,6 +16,7 @@
 package org.labkey.api.issues;
 
 import com.google.common.collect.Sets;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -284,12 +285,9 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
-        if (options != null)
-        {
-            ValidationException exception = IssuesListDefService.get().validateIssuesProperties(options);
-            if (exception.hasErrors())
-                return exception;
-        }
+        if (options != null && StringUtils.isBlank(options.getIssueDefName()))
+            throw new IllegalArgumentException("Issue name must not be null.");
+
         return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);
     }
 
@@ -299,15 +297,14 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
         int issueDefId;
         try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(_lock))
         {
-
             String name = domain.getName();
             String providerName = getKindName();
-            String singularNoun = (arguments == null || arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
-            String pluralNoun = (arguments == null || arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
+            String singularNoun = (arguments != null && arguments.getSingularItemName() != null) ? arguments.getSingularItemName() : getDefaultSingularName();
+            String pluralNoun = (arguments != null && arguments.getPluralItemName() != null) ? arguments.getPluralItemName() : getDefaultPluralName();
 
-            ValidationException exception = IssuesListDefService.get().validateIssuesProperties(arguments);
-            if (exception.hasErrors())
-                throw new IllegalArgumentException(exception.getMessage());
+            if (StringUtils.isBlank(name))
+                throw new IllegalArgumentException("Issue name must not be null.");
+
             IssuesListDefService.get().saveIssueProperties(container, arguments,  IssuesListDefService.get().getNameFromDomain(domain));
 
             issueDefId = IssuesListDefService.get().createIssueListDef(container, user, providerName, name, singularNoun, pluralNoun);
