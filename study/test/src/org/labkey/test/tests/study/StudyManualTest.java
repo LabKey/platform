@@ -18,7 +18,7 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
@@ -204,31 +204,43 @@ public abstract class StudyManualTest extends StudyTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName("verifyAssay");
-        editDatasetPage.clickSave();
 
-        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+        DomainFormPanel formPanel = editDatasetPage.getFieldsPanel();
+        formPanel.manuallyDefineFields(new FieldDefinition("SampleId", FieldDefinition.ColumnType.String)
+            .setLabel("Sample Id"));
+        formPanel.addField(new FieldDefinition("DateField", FieldDefinition.ColumnType.DateAndTime)
+            .setLabel("DateField").setDescription("This is a date field"));
+        formPanel.addField(new FieldDefinition("NumberField", FieldDefinition.ColumnType.Decimal)
+                .setLabel("NumberField").setDescription("This is a number"));
+        formPanel.addField(new FieldDefinition("TextField", FieldDefinition.ColumnType.String)
+                .setLabel("TextField").setDescription("This is a text field"));
+        formPanel.addField("otherData").setLabel("Other Data")
+                .setType(FieldDefinition.ColumnType.String).setImportAliases("aliasedColumn");
 
-        checkRadioButton(Locator.radioButtonByName("additionalKey").index(1));
+       // editDatasetPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
 
-        clickButton("Import Fields", 0);
-        waitForElement(Locator.xpath("//textarea[@id='schemaImportBox']"), WAIT_FOR_JAVASCRIPT);
+//        checkRadioButton(Locator.radioButtonByName("additionalKey").index(1));
 
-        setFormElement(Locator.id("schemaImportBox"), "Property\tLabel\tRangeURI\tNotNull\tDescription\n" +
-                "SampleId\tSample Id\txsd:string\ttrue\tstring\n" +
-                "DateField\tDateField\txsd:dateTime\tfalse\tThis is a date field\n" +
-                "NumberField\tNumberField\txsd:double\ttrue\tThis is a number\n" +
-                "TextField\tTextField\txsd:string\tfalse\tThis is a text field");
+//        clickButton("Import Fields", 0);
+//        waitForElement(Locator.xpath("//textarea[@id='schemaImportBox']"), WAIT_FOR_JAVASCRIPT);
+//
+//        setFormElement(Locator.id("schemaImportBox"), "Property\tLabel\tRangeURI\tNotNull\tDescription\n" +
+//                "SampleId\tSample Id\txsd:string\ttrue\tstring\n" +
+//                "DateField\tDateField\txsd:dateTime\tfalse\tThis is a date field\n" +
+//                "NumberField\tNumberField\txsd:double\ttrue\tThis is a number\n" +
+//                "TextField\tTextField\txsd:string\tfalse\tThis is a text field");
+//
+//        clickButton("Import", 0);
+//        waitForElement(Locator.xpath("//input[@name='ff_label3']"), WAIT_FOR_JAVASCRIPT);
+//
+//        click(Locator.radioButtonById("button_dataField"));
+//
+//        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
+//        PropertiesEditor.FieldRow row = editor.addField(new FieldDefinition("otherData").setLabel("Other Data").setType(FieldDefinition.ColumnType.String));
+//        PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
+//        tabPane.setImportAliases("aliasedColumn");
 
-        clickButton("Import", 0);
-        waitForElement(Locator.xpath("//input[@name='ff_label3']"), WAIT_FOR_JAVASCRIPT);
-
-        click(Locator.radioButtonById("button_dataField"));
-
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-        PropertiesEditor.FieldRow row = editor.addField(new FieldDefinition("otherData").setLabel("Other Data").setType(FieldDefinition.ColumnType.String));
-        PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
-        tabPane.setImportAliases("aliasedColumn");
-
+        editDatasetPage.setAdditionalKeyColManagedField("SampleId");
         editDatasetPage
                 .clickSave()
                 .clickViewData()

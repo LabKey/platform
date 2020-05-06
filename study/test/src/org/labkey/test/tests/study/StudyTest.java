@@ -31,7 +31,6 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
@@ -774,42 +773,35 @@ public class StudyTest extends StudyBaseTest
     {
         log("creating the participant/visit comment dataset");
         clickFolder(getFolderName());
-        clickAndWait(Locator.linkWithText("Manage Study"));
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-
-        setFormElement(Locator.name("typeName"), PARTICIPANT_CMT_DATASET);
-        clickButton("Next");
-        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+        EditDatasetDefinitionPage editDatasetPage = goToManageStudy()
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName(PARTICIPANT_CMT_DATASET);
 
         // set the demographic data checkbox
-        checkCheckbox(Locator.xpath("//input[@name='demographicData']"));
+        editDatasetPage.setIsDemographicData(true);
 
         // add a comment field
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-        PropertiesEditor.FieldRow row = editor.selectField(0);
-        row.setName(COMMENT_FIELD_NAME);
-        row.setLabel(PARTICIPANT_COMMENT_LABEL);
-        row.setType(FieldDefinition.ColumnType.MultiLine);
-        clickButton("Save");
+        editDatasetPage.getFieldsPanel()
+                .manuallyDefineFields(COMMENT_FIELD_NAME)
+                .setLabel(PARTICIPANT_COMMENT_LABEL)
+                .setType(FieldDefinition.ColumnType.MultiLine);
+        DatasetPropertiesPage propertiesPage = editDatasetPage.clickSave();
 
         if(isVisitBased)
         {
             log("creating the participant/visit comment dataset");
-            clickAndWait(Locator.linkWithText("Manage Datasets"));
-            clickAndWait(Locator.linkWithText("Create New Dataset"));
-
-            setFormElement(Locator.name("typeName"), PARTICIPANT_VISIT_CMT_DATASET);
-            clickButton("Next");
-            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+            editDatasetPage = propertiesPage.clickManageDatasets()
+                    .clickCreateNewDataset()
+                    .setName(PARTICIPANT_VISIT_CMT_DATASET);
 
             // add a comment field
-            editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-            row = editor.selectField(0);
-            row.setName(COMMENT_FIELD_NAME);
-            row.setLabel(PARTICIPANT_VISIT_COMMENT_LABEL);
-            row.setType(FieldDefinition.ColumnType.MultiLine);
-            clickButton("Save");
+            editDatasetPage.getFieldsPanel()
+                    .manuallyDefineFields(COMMENT_FIELD_NAME)
+                    .setLabel(PARTICIPANT_VISIT_COMMENT_LABEL)
+                    .setType(FieldDefinition.ColumnType.MultiLine);
+
+            editDatasetPage.clickSave();
         }
         log("configure comments");
         clickTab("Manage");
