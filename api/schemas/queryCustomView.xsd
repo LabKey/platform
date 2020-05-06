@@ -124,6 +124,7 @@
             <xsd:enumeration value="containsnoneof"/>
             <xsd:enumeration value="memberof"/>
             <xsd:enumeration value="exp:childof"/>
+            <xsd:enumeration value="exp:lineageof"/>
             <xsd:enumeration value="exp:parentof"/>
             <xsd:enumeration value="q"/>
             <xsd:enumeration value="where"/>
