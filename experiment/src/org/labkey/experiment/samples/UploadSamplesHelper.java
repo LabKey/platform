@@ -43,6 +43,8 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -405,7 +407,12 @@ public abstract class UploadSamplesHelper
 
         if (isMerge)
         {
-            Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = ExperimentService.get().getParents(c, user, runItem);
+            ExpLineageOptions options = new ExpLineageOptions();
+            options.setChildren(false);
+            options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
+
+            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
             if (currentParents.first != null)
             {
                 Map<ExpData, String> existingParentData = new HashMap<>();
