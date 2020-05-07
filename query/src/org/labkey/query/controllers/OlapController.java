@@ -863,7 +863,7 @@ public class OlapController extends SpringActionController
             String containerFilterName = getAnnotation(_cube,"ContainerFilter");
             if (null != containerFilterName)
             {
-                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getUser());
+                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getContainer(), getUser());
                 if (null == cf)
                     throw new ConfigurationException("Container filter from olap configuration file not found : " + containerFilterName);
             }
@@ -1228,7 +1228,7 @@ public class OlapController extends SpringActionController
         if (cf instanceof DataspaceContainerFilter)
         {
             DataspaceContainerFilter dscf = (DataspaceContainerFilter)cf;
-            Collection<GUID> guids = dscf.getIds(getContainer(),ReadPermission.class, null);
+            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
             List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
             return Collections.unmodifiableCollection(ret);
         }

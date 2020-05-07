@@ -274,7 +274,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
 
         if (_dataClass.getContainer().equals(getContainer()))
         {
-            setContainerFilter(new ContainerFilter.CurrentPlusExtras(getUserSchema().getUser(), _dataClass.getContainer()));
+            setContainerFilter(new ContainerFilter.CurrentPlusExtras(getUserSchema().getContainer(), getUserSchema().getUser(), _dataClass.getContainer()));
         }
 
 

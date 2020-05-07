@@ -673,7 +673,7 @@ public class DatasetQueryView extends StudyQueryView
             if (dcf.isSubsetOfStudies())
             {
                 // DISPLAY the current subset
-                Collection<GUID> ids = dcf.getIds(dqs.getContainer(), ReadPermission.class, null);
+                Collection<GUID> ids = dcf.generateIds(dqs.getContainer(), ReadPermission.class, null);
                 ArrayList<String> labels = new ArrayList<>(ids.size());
                 for (GUID id : ids)
                 {

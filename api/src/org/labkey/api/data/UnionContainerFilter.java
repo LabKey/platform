@@ -35,6 +35,7 @@ public class UnionContainerFilter extends ContainerFilter
 
     public UnionContainerFilter(ContainerFilter... filters)
     {
+        super(null, null);
         _filters = filters;
     }
 

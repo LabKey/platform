@@ -494,7 +494,7 @@ public class QuerySettings
             return null;
         ContainerFilter cf = null;
         if (getContainerFilterName() != null)
-            cf = ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser());
+            cf = ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getContainer(), schema.getUser());
         TableInfo table = schema.getTable(queryName, cf);
         return table;
     }
@@ -519,7 +519,7 @@ public class QuerySettings
             ret = schema.getQueryDefForTable(queryName);
 
         if (ret != null && getContainerFilterName() != null)
-            ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getUser()));
+            ret.setContainerFilter(ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getContainer(), schema.getUser()));
 
         return ret;
     }

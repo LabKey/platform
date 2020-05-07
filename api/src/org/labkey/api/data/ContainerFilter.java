@@ -34,6 +34,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,13 +56,33 @@ import java.util.stream.Collectors;
  */
 public abstract class ContainerFilter
 {
+    final protected Container _container;
+    final protected User _user;
+
+    protected ContainerFilter(Container container, User user)
+    {
+        _container = container;
+        _user = user;
+    }
+
     /**
      * Users of ContainerFilter should use getSQLFragment() or createFilterClause(), not build up their own SQL using
      * the IDs.
      * @return null if no filtering should be done, otherwise the set of valid container ids
+     *
+     * TODO eventually make this protected, callers should use getIds()
      */
     @Nullable
     public abstract Collection<GUID> getIds(Container currentContainer);
+
+    public Collection<GUID> getIds()
+    {
+        if (null == _container)
+        {
+            assert this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter;
+        }
+        return getIds(_container);
+    }
 
     /**
      * @return The set of container types to be included based on their parent container's id
@@ -90,13 +111,28 @@ public abstract class ContainerFilter
 
     // return a string such that a.getCacheKey().equals(b.getCacheKey()) => a.equals(b)
     // This is purposefully abstract, to force the implementer to consider if getDefaultCacheKey() is appropriate
+    // TODO make this protected, callers should eventually call getCacheKey()
     abstract public String getCacheKey(Container c);
+
+    public final String getCacheKey()
+    {
+        if (null == _container)
+        {
+            assert this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter;
+        }
+        return getCacheKey(_container);
+    }
 
     /**
      * If we can't find the name, we default to CURRENT
      */
     @NotNull
     public static ContainerFilter getContainerFilterByName(@Nullable String name, @NotNull User user)
+    {
+        return getContainerFilterByName(name, null, user);
+    }
+    @NotNull
+    public static ContainerFilter getContainerFilterByName(@Nullable String name, Container container, @NotNull User user)
     {
         Type type = Type.Current;
         try
@@ -110,7 +146,7 @@ public abstract class ContainerFilter
         {
             // Revert to Current
         }
-        return type.create(user);
+        return type.create(container, user);
     }
 
     /**
@@ -318,103 +354,103 @@ public abstract class ContainerFilter
     public enum Type
     {
         Current("Current folder")
-        {
-            public ContainerFilter create(User user)
-            {
-                return CURRENT;
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentContainerFilter(c, user);
+                    }
+                },
         CurrentWithUser("Current folder with permissions applied to user")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new ContainerFilterWithUser(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new ContainerFilterWithPermission(c, user);
+                    }
+                },
         CurrentAndFirstChildren("Current folder and first children that are not workbooks")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentAndFirstChildren(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentAndFirstChildren(c, user);
+                    }
+                },
         CurrentAndSubfolders("Current folder and subfolders")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentAndSubfolders(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentAndSubfolders(c, user);
+                    }
+                },
         CurrentAndSiblings("Current folder and siblings")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentAndSiblings(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentAndSiblings(c, user);
+                    }
+                },
         CurrentOrParentAndWorkbooks("Current folder and/or parent if the current folder is a workbook, plus all workbooks in this series")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentOrParentAndWorkbooks(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentOrParentAndWorkbooks(c, user);
+                    }
+                },
         CurrentPlusProject("Current folder and project")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentPlusProject(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentPlusProject(c, user);
+                    }
+                },
         CurrentAndParents("Current folder and parent folders")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentAndParents(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentAndParents(c, user);
+                    }
+                },
         Project("Project folder")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new Project(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new Project(c, user);
+                    }
+                },
         CurrentPlusProjectAndShared("Current folder, project, and Shared project")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new CurrentPlusProjectAndShared(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new CurrentPlusProjectAndShared(c, user);
+                    }
+                },
         AssayLocation("Current folder, project, and Shared project")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new AssayLocation(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new AssayLocation(c, user);
+                    }
+                },
         WorkbookAndParent("Current workbook and parent")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new WorkbookAndParent(user);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new WorkbookAndParent(c, user);
+                    }
+                },
         StudyAndSourceStudy("Current study and its source/parent study")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new StudyAndSourceStudy(user, false);
-            }
-        },
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new StudyAndSourceStudy(c, user, false);
+                    }
+                },
         AllFolders("All folders")
-        {
-            public ContainerFilter create(User user)
-            {
-                return new AllFolders(user);
-            }
-        };
+                {
+                    public ContainerFilter create(Container c, User user)
+                    {
+                        return new AllFolders(user);
+                    }
+                };
 
 
         private final String _description;
@@ -430,14 +466,35 @@ public abstract class ContainerFilter
             return _description;
         }
 
-        public abstract ContainerFilter create(User user);
+        public abstract ContainerFilter create(Container container, User user);
+
+        public ContainerFilter create(ContainerUser cu)
+        {
+            return create(cu.getContainer(), cu.getUser());
+        }
+
+        @Deprecated // Container parameter is going to be removed from getIds() etc
+        public ContainerFilter create(User user)
+        {
+            return create(null, user);
+        }
     }
 
-    public static final ContainerFilter CURRENT = new ContainerFilter()
+    @Deprecated // use ContainerFilter.Type.Current.create(container, null)
+    public static final ContainerFilter CURRENT = new CurrentContainerFilter(null, null);
+
+    public static class CurrentContainerFilter extends ContainerFilter
     {
+        CurrentContainerFilter(Container c, User u)
+        {
+            // CurrentContainerFilter does not validate permission
+            super(c,null);
+        }
+
         @Override
         public String getCacheKey(Container c)
         {
+            assert null == _container || _container.equals(c);
             return "CURRENT/" + c.getEntityId();
         }
 
@@ -460,13 +517,14 @@ public abstract class ContainerFilter
 
     /* TODO ContainerFilter -- Consolidate with InternalNoContainerFilter
     /** Use this with extreme caution - it doesn't check permissions */
-    public static final ContainerFilter EVERYTHING = new ContainerFilter()
+    public static final ContainerFilter EVERYTHING = new ContainerFilter(null, null)
     {
         @Override
         public String getCacheKey(Container c)
         {
             return "EVERYTHING";
         }
+
         public Collection<GUID> getIds(Container currentContainer)
         {
             return null;
@@ -478,13 +536,16 @@ public abstract class ContainerFilter
         }
     };
 
-    public static class ContainerFilterWithUser extends ContainerFilter
+    public static class ContainerFilterWithPermission extends ContainerFilter
     {
-        protected final User _user;
-
-        public ContainerFilterWithUser(User user)
+        @Deprecated
+        public ContainerFilterWithPermission(User user)
         {
-            _user = user;
+            super(null, user);
+        }
+        public ContainerFilterWithPermission(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
@@ -501,13 +562,17 @@ public abstract class ContainerFilter
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
         {
             SecurityLogger.indent("ContainerFilter");
-            Collection<GUID> ids = getIds(container, permission, roles);
+            Collection<GUID> ids;
+            if (permission == ReadPermission.class && null == roles)
+                ids = getIds(container);
+            else
+                 ids = generateIds(container, permission, roles);
             SecurityLogger.outdent();
             return getSQLFragment(schema, container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
         // each ContainerFilterWithUser subclass should override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
             Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, permission, roles))
@@ -517,11 +582,15 @@ public abstract class ContainerFilter
             return result;
         }
 
+        Collection<GUID> _cached = null;
+
         // If a permission is not explicitly passed, then use ReadPermission by default.  Otherwise, subclasses
-        // of ContainerFilterWithUser should override getIds method above that takes a permission.
-        public Collection<GUID> getIds(Container currentContainer)
+        // of ContainerFilterWithUser should override generateIds method above that takes a permission.
+        public final Collection<GUID> getIds(Container currentContainer)
         {
-            return getIds(currentContainer, ReadPermission.class, null);
+            if (null == _cached && (null != _container && _container.equals(currentContainer)))
+                _cached = generateIds(currentContainer, ReadPermission.class, null);
+            return _cached;
         }
 
         public Type getType()
@@ -536,6 +605,7 @@ public abstract class ContainerFilter
 
         public SimpleContainerFilter(Collection<Container> containers)
         {
+            super(null, null);
             _ids = toIds(containers);
         }
 
@@ -557,7 +627,7 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class SimpleContainerFilterWithUser extends ContainerFilterWithUser
+    public static class SimpleContainerFilterWithUser extends ContainerFilterWithPermission
     {
         private final Collection<GUID> _ids;
 
@@ -568,7 +638,7 @@ public abstract class ContainerFilter
 
         public SimpleContainerFilterWithUser(User user, Collection<Container> containers)
         {
-            super(user);
+            super(null, user);
             _ids = toIds(containers);
         }
 
@@ -580,7 +650,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
             Set<GUID> result;
             result = _ids.stream()
@@ -598,18 +668,17 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentPlusExtras extends ContainerFilterWithUser
+    public static class CurrentPlusExtras extends ContainerFilterWithPermission
     {
         private final Collection<Container> _extraContainers;
 
-        public CurrentPlusExtras(User user, Container... extraContainers)
+        public CurrentPlusExtras(Container current, User user, Container... extraContainers)
         {
-            this(user, Arrays.asList(extraContainers));
+            this(current, user, Arrays.asList(extraContainers));
         }
-
-        public CurrentPlusExtras(User user, Collection<Container> extraContainers)
+        public CurrentPlusExtras(Container current, User user, Collection<Container> extraContainers)
         {
-            super(user);
+            super(current, user);
 
             //Note: dont force upstream code to consider this
             _extraContainers = new ArrayList<>(extraContainers);
@@ -619,14 +688,18 @@ public abstract class ContainerFilter
         @Override
         public String getCacheKey(Container c)
         {
+            assert null == _container || _container.equals(c);
+
             StringBuilder sb = new StringBuilder(super.getCacheKey(c));
             _extraContainers.stream().map(Container::getEntityId).forEach(id -> sb.append(id).append("/"));
             return sb.toString();
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
                 containers.add(currentContainer);
@@ -646,16 +719,18 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentAndFirstChildren extends ContainerFilterWithUser
+    public static class CurrentAndFirstChildren extends ContainerFilterWithPermission
     {
-        public CurrentAndFirstChildren(User user)
+        public CurrentAndFirstChildren(Container c, User user)
         {
-            super(user);
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = new HashSet<>();
             for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, roles))
             {
@@ -675,24 +750,35 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentAndSubfolders extends ContainerFilterWithUser
+    public static class CurrentAndSubfolders extends ContainerFilterWithPermission
     {
+        @Deprecated
         public CurrentAndSubfolders(User user)
         {
-            super(user);
+            super(null, user);
+        }
+
+        @Deprecated
+        public CurrentAndSubfolders(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean allowNulls)
         {
+            assert null == _container || _container.equals(container);
+
             if (_user.hasRootAdminPermission() && container.isRoot())
                 return new SQLFragment("1 = 1");
             return super.getSQLFragment(schema,containerColumnSQL, container, permission, roles, allowNulls);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             List<Container> containers = new ArrayList<>(removeDuplicatedContainers(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
             if (currentContainer.hasPermission(_user, perm, roles))
                 containers.add(currentContainer);
@@ -706,16 +792,23 @@ public abstract class ContainerFilter
     }
 
 
-    public static class CurrentPlusProject extends ContainerFilterWithUser
+    public static class CurrentPlusProject extends ContainerFilterWithPermission
     {
+        @Deprecated
         public CurrentPlusProject(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public CurrentPlusProject(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
                 containers.add(currentContainer);
@@ -733,16 +826,18 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentAndParents extends ContainerFilterWithUser
+    public static class CurrentAndParents extends ContainerFilterWithPermission
     {
-        public CurrentAndParents(User user)
+        public CurrentAndParents(Container c, User user)
         {
-            super(user);
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = new HashSet<>();
             do
             {
@@ -762,16 +857,23 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class AssayLocation extends ContainerFilterWithUser
+    public static class AssayLocation extends ContainerFilterWithPermission
     {
+        @Deprecated
         public AssayLocation(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public AssayLocation(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = currentContainer.getContainersFor(ContainerType.DataType.protocol);
             return containers.stream()
                     .filter(container -> container.hasPermission(_user, perm, roles))
@@ -786,16 +888,18 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class WorkbookAndParent extends ContainerFilterWithUser
+    public static class WorkbookAndParent extends ContainerFilterWithPermission
     {
-        public WorkbookAndParent(User user)
+        public WorkbookAndParent(Container c, User user)
         {
-            super(user);
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
             {
@@ -815,16 +919,23 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentOrParentAndWorkbooks extends ContainerFilterWithUser
+    public static class CurrentOrParentAndWorkbooks extends ContainerFilterWithPermission
     {
+        @Deprecated
         public CurrentOrParentAndWorkbooks(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public CurrentOrParentAndWorkbooks(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<GUID> result = new HashSet<>();
 
             if (currentContainer.isWorkbook())
@@ -848,16 +959,18 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class CurrentAndSiblings extends ContainerFilterWithUser
+    public static class CurrentAndSiblings extends ContainerFilterWithPermission
     {
-        public CurrentAndSiblings(User user)
+        public CurrentAndSiblings(Container c, User user)
         {
-            super(user);
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<GUID> result = new HashSet<>();
 
             if (currentContainer.isRoot() && currentContainer.hasPermission(_user, perm, roles))
@@ -885,25 +998,35 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class StudyAndSourceStudy extends ContainerFilterWithUser
+    public static class StudyAndSourceStudy extends ContainerFilterWithPermission
     {
         private boolean _skipPermissionChecks;
 
+        @Deprecated
         public StudyAndSourceStudy(User user, boolean skipPermissionChecks)
         {
-            super(user);
+            super(null, user);
+            _skipPermissionChecks = skipPermissionChecks;
+        }
+        public StudyAndSourceStudy(Container c, User user, boolean skipPermissionChecks)
+        {
+            super(c, user);
             _skipPermissionChecks = skipPermissionChecks;
         }
 
         @Override
         public String getCacheKey(Container c)
         {
+            assert null == _container || _container.equals(c);
+
             return super.getCacheKey(c) + _skipPermissionChecks;
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<GUID> result = new HashSet<>();
             if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm, roles))
             {
@@ -933,15 +1056,20 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class Project extends ContainerFilterWithUser
+    public static class Project extends ContainerFilterWithPermission
     {
+        @Deprecated
         public Project(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public Project(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
             Container project = currentContainer.getProject();
             if (null == project || !project.hasPermission(_user, permission, roles))
@@ -956,16 +1084,23 @@ public abstract class ContainerFilter
     }
 
 
-    public static class CurrentPlusProjectAndShared extends ContainerFilterWithUser
+    public static class CurrentPlusProjectAndShared extends ContainerFilterWithPermission
     {
+        @Deprecated
         public CurrentPlusProjectAndShared(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public CurrentPlusProjectAndShared(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
                 containers.add(currentContainer);
@@ -988,16 +1123,23 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class AllInProject extends ContainerFilterWithUser
+    public static class AllInProject extends ContainerFilterWithPermission
     {
+        @Deprecated
         public AllInProject(User user)
         {
-            super(user);
+            super(null, user);
+        }
+        public AllInProject(Container c, User user)
+        {
+            super(c, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
+            assert null == _container || _container.equals(currentContainer);
+
             Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
             if (project == null)
             {
@@ -1016,15 +1158,15 @@ public abstract class ContainerFilter
         }
     }
 
-    public static class AllFolders extends ContainerFilterWithUser
+    public static class AllFolders extends ContainerFilterWithPermission
     {
         public AllFolders(User user)
         {
-            super(user);
+            super(null, user);
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             if (_user.hasRootAdminPermission())
             {
@@ -1051,11 +1193,11 @@ public abstract class ContainerFilter
     }
 
 
-    public static class InternalNoContainerFilter extends ContainerFilterWithUser
+    public static class InternalNoContainerFilter extends ContainerFilterWithPermission
     {
         public InternalNoContainerFilter(User user)
         {
-            super(user);
+            super(null, user);
         }
 
         @Override
@@ -1089,7 +1231,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             throw new IllegalStateException();
         }
@@ -1151,9 +1293,9 @@ public abstract class ContainerFilter
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            if (_filter instanceof ContainerFilterWithUser)
+            if (_filter instanceof ContainerFilterWithPermission)
             {
-                ContainerFilterWithUser filter = (ContainerFilterWithUser) _filter;
+                ContainerFilterWithPermission filter = (ContainerFilterWithPermission) _filter;
                 return filter.getSQLFragment(_schema, _fieldKey, _container, _permission, _roles);
             }
             return _filter.getSQLFragment(_schema, _fieldKey, _container, columnMap);
@@ -1195,15 +1337,15 @@ public abstract class ContainerFilter
             assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(null).getCacheKey(null));
             assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(user).getCacheKey(home));
 
-            assertEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, shared).getCacheKey(home));
-            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, shared).getCacheKey(test));
-            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, test).getCacheKey(home));
-            assertNotEquals(new CurrentPlusExtras(user, shared).getCacheKey(home), new CurrentPlusExtras(user, home).getCacheKey(shared));
+            assertEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(home, user, shared).getCacheKey());
+            assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(test, user, shared).getCacheKey());
+            assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(home, user, test).getCacheKey());
+            assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(shared, user, home).getCacheKey());
 
             for (var type : Type.values())
             {
-                assertEquals(type.name(), type.create(user).getCacheKey(home), type.create(user).getCacheKey(home));
-                assertNotEquals(type.name(), type.create(user).getCacheKey(home), type.create(user).getCacheKey(shared));
+                assertEquals(type.name(), type.create(home, user).getCacheKey(), type.create(home, user).getCacheKey());
+                assertNotEquals(type.name(), type.create(home, user).getCacheKey(), type.create(shared, user).getCacheKey());
             }
 
             for (var outer : Type.values())

@@ -90,7 +90,7 @@ public class PublishController extends SpringActionController
         {
             ContainerFilter containerFilter = ContainerFilter.CURRENT;
             if (form.getContainerFilterName() != null)
-                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
+                containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 
             _protocol = form.getProtocol();
             VBox view = new VBox();

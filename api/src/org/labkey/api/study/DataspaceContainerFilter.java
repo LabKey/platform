@@ -124,7 +124,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
     }
 
     @Override
-    public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+    public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
     {
         HashSet<GUID> allowedContainers = new HashSet<>();
         if (_containerIds != null && !_containerIds.isEmpty())
@@ -138,7 +138,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         }
         else
         {
-            allowedContainers.addAll(super.getIds(currentContainer, perm, roles));
+            allowedContainers.addAll(super.generateIds(currentContainer, perm, roles));
         }
         Container project = currentContainer.getProject();
         if (_includeProject && null != project &&  project.hasPermission(_user, perm, roles))

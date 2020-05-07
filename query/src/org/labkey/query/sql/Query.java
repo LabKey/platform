@@ -135,8 +135,8 @@ public class Query
     // TableInfos handed to Query that will be used if a table isn't found.
     private Map<String, TableInfo> _tableMap;
 
-    private ArrayList<QueryException> _parseErrors = new ArrayList<>();
-    private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
+    private final ArrayList<QueryException> _parseErrors = new ArrayList<>();
+    private final ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
 
     private TablesDocument _metadata = null;
     private ContainerFilter _containerFilter;
@@ -148,10 +148,10 @@ public class Query
     String _debugName = null;
 	String _querySource;
     ArrayList<QParameter> _parameters;
-    private Set<SchemaKey> _resolvedTables = new HashSet<>();
+    private final Set<SchemaKey> _resolvedTables = new HashSet<>();
 
     // for displaying dependency graph in UI
-    private HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
+    private final HashSetValuedHashMap<QueryService.DependencyObject, QueryService.DependencyObject> _dependencies = new HashSetValuedHashMap<>();
 
     final IdentityHashMap<QueryTable, Map<FieldKey, QueryRelation.RelationColumn>> qtableColumnMaps = new IdentityHashMap<>();
 
@@ -2144,7 +2144,7 @@ public class Query
             }
 
             GUID testGUID = new GUID("01234567-ABCD-ABCD-ABCD-012345679ABC");
-            ContainerFilter custom = new ContainerFilter()
+            ContainerFilter custom = new ContainerFilter(null, null)
             {
                 @Override
                 public String getCacheKey(Container c)

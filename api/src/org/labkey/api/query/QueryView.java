@@ -2932,7 +2932,7 @@ public class QueryView extends WebPartView<Object>
             filterName = _customView.getContainerFilterName();
 
         if (filterName != null)
-            return ContainerFilter.getContainerFilterByName(filterName, getUser());
+            return ContainerFilter.getContainerFilterByName(filterName, getContainer(), getUser());
 
         return null;
     }

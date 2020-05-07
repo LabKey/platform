@@ -184,7 +184,7 @@ public class QueryHelper
         if (view == null)
             throw new IllegalStateException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
 
-        return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _user);
+        return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _c, _user);
     }
 
     public @NotNull Results select(List<FieldKey> columns, @Nullable SimpleFilter filter)

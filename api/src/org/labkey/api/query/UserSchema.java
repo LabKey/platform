@@ -48,6 +48,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -63,7 +64,7 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
 
-abstract public class UserSchema extends AbstractSchema implements MemTrackable
+abstract public class UserSchema extends AbstractSchema implements MemTrackable, ContainerUser
 {
     protected final String _name;
     protected final SchemaKey _path;

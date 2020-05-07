@@ -38,6 +38,7 @@ public class StudyContainerFilter extends ContainerFilter
 
     public StudyContainerFilter(AssaySchema schema)
     {
+        super(schema.getContainer(), schema.getUser());
         _schema = schema;
     }
 
@@ -49,6 +50,8 @@ public class StudyContainerFilter extends ContainerFilter
 
     public Collection<GUID> getIds(Container currentContainer)
     {
+        assert _container.equals(currentContainer);
+
         if (_ids == null)
         {
             if (_schema.getUser().hasRootAdminPermission())

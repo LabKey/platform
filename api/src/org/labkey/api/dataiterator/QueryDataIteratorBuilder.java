@@ -99,7 +99,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
     public void setContainerFilter(String containerFilterName)
     {
-        _containerFilter = ContainerFilter.getContainerFilterByName(containerFilterName, _user);
+        _containerFilter = ContainerFilter.getContainerFilterByName(containerFilterName, _container, _user);
     }
 
     public void setColumns(List<String> columns)

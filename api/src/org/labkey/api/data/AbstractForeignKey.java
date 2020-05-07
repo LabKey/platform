@@ -119,7 +119,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         if (null != _sourceSchema && _sourceSchema.getContainer().isWorkbook())
         {
-            if (null == cf || cf == ContainerFilter.CURRENT)
+            if (null == cf || cf.getType() == ContainerFilter.Type.Current)
                 cf = new ContainerFilter.CurrentOrParentAndWorkbooks(_sourceSchema.getUser());
         }
         return cf;

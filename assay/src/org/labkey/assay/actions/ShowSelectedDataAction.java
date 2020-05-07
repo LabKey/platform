@@ -60,7 +60,7 @@ public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDat
 
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
+            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
         String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";
