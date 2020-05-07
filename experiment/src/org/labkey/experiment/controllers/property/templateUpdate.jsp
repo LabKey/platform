@@ -24,7 +24,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
         dependencies.add("internal/jQuery");
-        dependencies.add("Experiment/domainTemplate.js");
+        dependencies.add("experiment/domainTemplate.js");
     }
 %>
 <%

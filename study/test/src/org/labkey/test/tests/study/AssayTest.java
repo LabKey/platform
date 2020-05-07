@@ -264,8 +264,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.name("quf_Flags"), "This Flag Has Been Edited");
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
 
         // Try a delete
         dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));
