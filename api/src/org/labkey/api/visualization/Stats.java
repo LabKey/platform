@@ -50,25 +50,28 @@ public class Stats
     /**
      * Returns the standard deviation.
      *
-     * @param values An array of double.
-     * @returns {double}
+     * @param values An array of values. Nulls are ignored.
      */
-    public static double getStdDev(Double[] values)
+    public static double getStdDev(Double[] values, boolean isBiasCorrected)
     {
         if (values == null || values.length == 0)
             return 0;
 
         double mean = getMean(values);
-        Double[] squareDiffs = new Double[values.length];
-        for (int i = 0; i < values.length; i++)
+        double sumSquareDiffs = 0.0;
+        int count = 0;
+
+        for (Double value : values)
         {
-            if(values[i] != null)
+            if (value != null)
             {
-                Double diff = values[i] - mean;
-                squareDiffs[i] = diff * diff;
+                double diff = value - mean;
+                sumSquareDiffs += diff * diff;
+                count++;
             }
         }
-        return Math.sqrt(getMean(squareDiffs));
+
+        return Math.sqrt(sumSquareDiffs / (double)(count - (isBiasCorrected ? 1 : 0)));
     }
 
     /**
@@ -87,7 +90,7 @@ public class Stats
             return new double[0];
 
         double mean = getMean(values);
-        double stdDEV = getStdDev(values);
+        double stdDEV = getStdDev(values, true);
         if (stdDEV == 0) // in the case when all values are equal, calculation has to abort, special case CUSUM to all be 0
         {
             return new double[values.length];
