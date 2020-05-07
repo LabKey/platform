@@ -145,9 +145,9 @@ public class StudySimpleExportTest extends StudyBaseTest
         fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
                 .setRequired(true));
         // Format "TestDate" as "Date"
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
         // "TestDateTime" format will default to date-time
-        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateAndTime));
         editDatasetPage
             .clickSave()
             .clickViewData()

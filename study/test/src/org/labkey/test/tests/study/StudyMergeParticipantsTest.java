@@ -157,13 +157,13 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
         EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(ALIAS_DATASET);
+        editDatasetPage.getFieldsPanel()
+                .manuallyDefineFields("Property");
+        editDatasetPage.getFieldsPanel()
+                .addField(ALIAS_COLUMN).setRequiredField(true);
+        editDatasetPage.getFieldsPanel()
+                .addField(SOURCE_COLUMN).setRequiredField(true);
 
-        // todo:
-        clickButton("Import Fields", "Paste tab-delimited");
-        setFormElement(Locator.name("tsv"), "Property\tNotNull\n" + ALIAS_COLUMN + "\tTRUE\n" + SOURCE_COLUMN + "\tTRUE");
-        clickButton("Import", ALIAS_COLUMN);
-        click(Locator.radioButtonById("button_dataField"));
-        selectOptionByValue(Locator.name("list_dataField"), SOURCE_COLUMN);
         editDatasetPage
                 .clickSave()
                 .clickViewData()
