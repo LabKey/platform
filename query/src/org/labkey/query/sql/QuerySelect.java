@@ -2146,7 +2146,7 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
-                    _colinfo = expr.createColumnInfo(_sti, _aliasManager.decideAlias(getAlias()), _query);
+                    _colinfo = expr.createColumnInfo(_sti, to.getName(), _query);
                 }
                 to.copyAttributesFrom(_colinfo);
                 if (_selectStarColumn)
