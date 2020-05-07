@@ -69,6 +69,8 @@ import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
@@ -90,6 +92,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
@@ -1968,21 +1971,32 @@ public class IssuesController extends SpringActionController
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
-            if (issueListDef == null)
+
+            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.EXPERIMENTAL_ISSUES_LIST_DEF);
+
+            if(experimentalFlagEnabled)
             {
-                return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
             }
-            Domain domain = issueListDef.getDomain(getUser());
+            else
+            {
+                if (issueListDef == null)
+                {
+                    return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
+                }
 
-            Map<String, String> props = new HashMap<>();
-            props.put("typeURI", domain.getTypeURI());
-            props.put("defName", issueDefName);
-            props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
-            props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
-            props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
-            props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
+                Domain domain = issueListDef.getDomain(getUser());
 
-            return new GWTView("org.labkey.issues.Designer", props);
+                Map<String, String> props = new HashMap<>();
+                props.put("typeURI", domain.getTypeURI());
+                props.put("defName", issueDefName);
+                props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
+                props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
+                props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
+                props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
+
+                return new GWTView("org.labkey.issues.Designer", props);
+            }
         }
 
         @Override
