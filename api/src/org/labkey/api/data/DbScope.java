@@ -33,11 +33,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resolver;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
@@ -1094,10 +1091,9 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName)
     {
-        // First try the canonical schema name (which could differ in casing from the requested name)
-        Resource resource = schema.getSchemaResource();
+        TablesDocument tablesDoc = getSchemaXml(schema);
 
-        if (null == resource)
+        if (null == tablesDoc)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
             LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
@@ -1109,18 +1105,14 @@ public class DbScope
         }
         else
         {
-            String filename = resource.getName();
-
-            // I don't like this... should either improve Resolver (add getModule()?) or revise getResource() to take a Resource
-            Resolver resolver = resource.getResolver();
-            assert resolver instanceof ModuleResourceResolver;
-            Module module = ((ModuleResourceResolver) resolver).getModule();
-
-            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResourceMap(module).get(filename);
-
-            if (null != tablesDoc)
-                schema.setTablesDocument(tablesDoc);
+            schema.setTablesDocument(tablesDoc);
         }
+    }
+
+    public static @Nullable TablesDocument getSchemaXml(DbSchema schema)
+    {
+        String filename = schema.getResourcePrefix() + ".xml";
+        return SCHEMA_XML_CACHE.getResourceMap(schema.getModule()).get(filename);
     }
 
     // Return an unmodifiable, sorted list of schema names in this module

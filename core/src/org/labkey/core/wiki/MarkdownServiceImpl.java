@@ -41,6 +41,7 @@ public class MarkdownServiceImpl implements MarkdownService
         LabkeyScriptEngineManager svc = ServiceRegistry.get().getService(LabkeyScriptEngineManager.class);
         engine = svc.getEngineByName("nashorn");
 
+        // Can't pull from ScriptReferenceImpl.SCRIPT_CACHE because it compiles via Rhino
         Module module = ModuleLoader.getInstance().getCoreModule();
         Path path = Path.parse("scripts/").append("markdown-it.js");
         Resource r = module.getModuleResource(path);
