@@ -232,6 +232,7 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TableSelectTestCase.class,
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
+            DbScope.SchemaNameTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
             DomTestCase.class,

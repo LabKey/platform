@@ -49,7 +49,7 @@ public class ModuleResourceResolver implements Resolver
 
     // This ends up one per module; Consider: single static set to track all registered listeners?
     private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final Module _module;
+    private final String _moduleName;
     private final DirectoryResource _root;
     private final CacheLoader<String, Resource> RESOURCE_LOADER = (key, argument) -> {
         Path normalized = (Path)argument;
@@ -69,7 +69,7 @@ public class ModuleResourceResolver implements Resolver
 
     ModuleResourceResolver(Module module, File dir)
     {
-        _module = module;
+        _moduleName = module.getName();
         _root = new DirectoryResource(this, Path.emptyPath, dir);
     }
 
@@ -104,16 +104,18 @@ public class ModuleResourceResolver implements Resolver
     // Clear all resources from the cache for just this module
     public void clear()
     {
-        String prefix = _module.getName();  // Remove all entries having a key that starts with this module name
-        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(prefix));
+        // Remove all entries having a key that starts with this module name
+        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(_moduleName));
         DirectoryResource.clearResourceCache(this);
     }
 
+    @Override
     public Path getRootPath()
     {
         return Path.emptyPath;
     }
 
+    @Override
     @Nullable
     public Resource lookup(Path path)
     {
@@ -121,7 +123,7 @@ public class ModuleResourceResolver implements Resolver
             return null;
 
         Path normalized = path.normalize();
-        String cacheKey = _module.getName() + ":" + normalized;
+        String cacheKey = _moduleName + ":" + normalized;
 
         return CACHE.get(cacheKey, normalized, RESOURCE_LOADER);
     }
@@ -153,15 +155,15 @@ public class ModuleResourceResolver implements Resolver
 
     public String toString()
     {
-        return _module.getName();
+        return _moduleName;
     }
 
     public Module getModule()
     {
-        return _module;
+        return ModuleLoader.getInstance().getModule(_moduleName);
     }
 
-    public class ModuleResourceResolverListener implements FileSystemDirectoryListener
+    private class ModuleResourceResolverListener implements FileSystemDirectoryListener
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
