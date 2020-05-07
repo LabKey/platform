@@ -2008,10 +2008,11 @@ if (!LABKEY.DataRegions) {
             viewName = (this.view && this.view.name) || this.viewName || '';
 
         var userFilter = this.getUserFilterArray().map(function(filter) {
-            fields.push(filter.fieldKey);
+            var fieldKey = filter.getColumnName();
+            fields.push(fieldKey);
 
             return {
-                fieldKey: filter.getColumnName(),
+                fieldKey: fieldKey,
                 op: filter.getFilterType().getURLSuffix(),
                 value: filter.getValue()
             };
