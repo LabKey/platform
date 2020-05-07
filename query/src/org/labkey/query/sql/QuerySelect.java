@@ -1212,12 +1212,12 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return null;
 
+        resolveFields();
+        if (!getParseErrors().isEmpty())
+            return null;
+
         // mark all top level columns selected, since we want to generate column info for all columns
         markAllSelected(_query);
-
-        final SQLFragment sql = getSql();
-        if (null == sql)
-            return null;
 
         QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
