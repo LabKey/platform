@@ -235,6 +235,11 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     List<FieldKey> getSortFieldKeys();
 
+    default boolean isSortable()
+    {
+        return null != getParentTable() && getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName());
+    }
+
     @NotNull JdbcType getJdbcType();
 
     ForeignKey getFk();

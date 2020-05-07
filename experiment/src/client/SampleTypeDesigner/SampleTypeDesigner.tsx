@@ -43,7 +43,7 @@ const UPDATE_SAMPLE_SET_ACTION = 'updateMaterialSource';
 
 export class App extends React.PureComponent<any, State> {
 
-    private _dirty = false;
+    private _dirty: boolean = false;
 
     constructor(props) {
         super(props);

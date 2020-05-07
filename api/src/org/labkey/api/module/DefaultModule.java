@@ -164,10 +164,6 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     final public void initialize()
     {
-        SupportedDatabase coreType = SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
-        if (!getSupportedDatabasesSet().contains(coreType))
-            throw new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
-
         for (String dsName : ModuleLoader.getInstance().getModuleDataSourceNames(this))
         {
             Throwable t = DbScope.getDataSourceFailure(dsName);
