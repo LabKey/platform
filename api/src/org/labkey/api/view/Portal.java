@@ -64,6 +64,7 @@ import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.ModuleChangeListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.springframework.beans.MutablePropertyValues;
@@ -94,7 +95,7 @@ import static org.labkey.api.util.DOM.Attribute.*;
  * Manages the configuration of portal pages, which can be configured by admins to show
  * a desired set of {@link WebPartView} sections.
  */
-public class Portal
+public class Portal implements ModuleChangeListener
 {
     private static final Logger LOG = Logger.getLogger(Portal.class);
     private static final WebPartBeanLoader FACTORY = new WebPartBeanLoader();
@@ -1438,6 +1439,13 @@ public class Portal
             initMaps();
 
         return _viewMap;
+    }
+
+    @Override
+    public void onModuleChanged(Module m)
+    {
+        // force releasing of WebPartFactory objects
+        clearMaps();
     }
 
     private synchronized static void initMaps()

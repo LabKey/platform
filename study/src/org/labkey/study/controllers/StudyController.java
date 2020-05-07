@@ -535,6 +535,8 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            if (null == form.getDatasetId())
+                throw new NotFoundException("Invalid datasetId.");
             DatasetDefinition def = study.getDataset(form.getDatasetId());
             _def = def;
             if (null == def)

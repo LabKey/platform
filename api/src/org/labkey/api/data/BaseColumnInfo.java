@@ -1789,13 +1789,12 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
     }
 
     @Override
+    @Nullable
     public List<FieldKey> getSortFieldKeys()
     {
-        if (null != _sortFieldKeys && !_sortFieldKeys.isEmpty())
-            return _sortFieldKeys;
-        if (null != getParentTable() && !getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName()))
+        if (null == _sortFieldKeys || _sortFieldKeys.isEmpty())
             return null;
-        return Collections.singletonList(getFieldKey());
+        return _sortFieldKeys;
     }
 
     @Override

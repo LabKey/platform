@@ -149,6 +149,11 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return _object.getRowId();
     }
 
+    protected void setRowId(int rowId)
+    {
+        _object.setRowId(rowId);
+    }
+
     public User getCreatedBy()
     {
         return _object.getCreatedBy() == null ? null : UserManager.getUser(_object.getCreatedBy().intValue());

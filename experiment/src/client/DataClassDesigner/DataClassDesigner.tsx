@@ -27,7 +27,7 @@ type State = {
 
 export class App extends React.Component<any, State> {
 
-    private _dirty = false;
+    private _dirty: boolean = false;
 
     constructor(props)
     {
