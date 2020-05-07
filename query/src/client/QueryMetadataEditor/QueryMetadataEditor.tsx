@@ -328,11 +328,13 @@ export class App extends PureComponent<any, Partial<IAppState>> {
                         onChange={this.onChangeHandler}
                         useTheme={false}
                         domainFormDisplayOptions= {{
-                            showRequired: false,
+                            hideRequired: true,
                             isDragDisabled: true,
-                            showValidators: false,
+                            hideValidators: true,
                             phiLevelDisabled: true,
-                            showAddFieldsButton: false
+                            hideAddFieldsButton: true,
+                            hideTextOptions: true,
+                            disableMvEnabled: true,
                         }}
                     />
                 }

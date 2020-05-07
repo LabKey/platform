@@ -52,6 +52,7 @@ import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.RecordedAction;
@@ -130,6 +131,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
+import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -6736,7 +6738,7 @@ public class QueryController extends SpringActionController
             if (null != propertyService)
             {
                 ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                propertyService.configureObjectMapper(mapper, null);
+                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
                 return mapper;
             }
             else
