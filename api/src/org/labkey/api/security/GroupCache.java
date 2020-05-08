@@ -17,7 +17,6 @@ package org.labkey.api.security;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
@@ -31,16 +30,11 @@ import org.labkey.api.data.SqlSelector;
 public class GroupCache
 {
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(10000, CacheManager.DAY, "Groups", new CacheLoader<Integer, Group>()
-    {
-        @Override
-        public Group load(Integer groupId, Object argument)
-        {
-            SQLFragment sql = new SQLFragment("SELECT * FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
-            SqlSelector selector = new SqlSelector(CORE.getSchema(), sql);
+    private static final BlockingCache<Integer, Group> CACHE = CacheManager.getBlockingCache(20000, CacheManager.DAY, "Groups", (groupId, argument) -> {
+        SQLFragment sql = new SQLFragment("SELECT * FROM " + CORE.getTableInfoPrincipals() + " WHERE Type <> 'u' AND UserId = ?", groupId);
+        SqlSelector selector = new SqlSelector(CORE.getSchema(), sql);
 
-            return selector.getObject(Group.class);
-        }
+        return selector.getObject(Group.class);
     });
 
 
