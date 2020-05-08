@@ -37,7 +37,7 @@ public class DbCache
 {
     private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(100);
 
-    public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
+    public static int DEFAULT_CACHE_SIZE = 5000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
 
     public static <K> DatabaseCache<String, K> getCacheGeneric(TableInfo tinfo)
