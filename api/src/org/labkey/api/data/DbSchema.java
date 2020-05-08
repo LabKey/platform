@@ -147,19 +147,10 @@ public class DbSchema
         }
     }
 
-
-    public Resource getSchemaResource()
+    Module getModule()
     {
-        return getSchemaResource(getResourcePrefix());
+        return _module;
     }
-
-
-    public Resource getSchemaResource(String xmlFilePrefix)
-    {
-        Resource r = _module.getModuleResource("/schemas/" + xmlFilePrefix + ".xml");
-        return null != r && r.isFile() ? r : null;
-    }
-
 
     public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
