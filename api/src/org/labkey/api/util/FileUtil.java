@@ -78,7 +78,7 @@ public class FileUtil
             String[] children = dir.list();
 
             if (null == children) // 17562
-                return false;
+                return true;
 
             for (String aChildren : children)
             {
@@ -127,15 +127,16 @@ public class FileUtil
         // http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FileUtils.html
         if (!Files.isSymbolicLink(dir.toPath()))
         {
+            // this returns true if !dir.isDirectory()
             boolean success = deleteDirectoryContents(dir, log);
             if (!success)
                 return false;
         }
 
         // The directory is now either a sym-link or empty, so delete it
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5 ; i++)
         {
-            if (dir.delete())
+            if (dir.delete() || !dir.exists())
                 return true;
 
             // Issue 39579: Folder import sometimes fails to delete temp directory
@@ -153,7 +154,13 @@ public class FileUtil
             }
         }
 
-        return dir.delete();
+        if (dir.exists())
+        {
+            log.warn("dumping thread because server could not delete directory: " + dir.getAbsolutePath());
+            DebugInfoDumper.dumpThreads(log);
+        }
+
+        return !dir.exists();
     }
 
     public static void deleteDir(@NotNull Path dir) throws IOException
