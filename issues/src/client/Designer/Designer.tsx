@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 import React from 'react'
-// import { ActionURL, Security, Domain, getServerContext } from "@labkey/api";
+import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
     PermissionTypes,
     IssuesListDefModel,
-    ConfirmModal,
-    BeforeUnload
+    BeforeUnload,
+    IssuesListDefDesignerPanels,
+    fetchIssuesListDefDesign
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -29,7 +30,8 @@ import "@labkey/components/dist/components.css"
 type State = {
     isLoadingModel: boolean,
     message?: string,
-    model?: IssuesListDefModel
+    model?: IssuesListDefModel,
+    hasDesignIssuesAdminPermission?: boolean
 }
 
 export class App extends React.Component<{}, State> {
@@ -41,10 +43,36 @@ export class App extends React.Component<{}, State> {
 
         this.state = {
             isLoadingModel: true,
+            hasDesignIssuesAdminPermission: true //TODO: remove once Security.getUserPermissions(..) is fixed in componentDidMount()
         };
     }
 
     componentDidMount() {
+        const issueDefName = ActionURL.getParameter('issueDefName');
+
+        //TODO: this throws error, need to investigate
+        // Security.getUserPermissions({
+        //     containerPath: getServerContext().container.path,
+        //     success: (data) => {
+        //         this.setState(() => ({
+        //             hasDesignIssuesAdminPermission: data.container.effectivePermissions.indexOf(PermissionTypes.Admin) > -1
+        //         }));
+        //     },
+        //     failure: (error) => {
+        //         this.setState(() => ({
+        //             message: error.exception,
+        //             hasDesignIssuesAdminPermission: false
+        //         }));
+        //     }
+        // });
+
+        fetchIssuesListDefDesign(issueDefName)
+            .then((model: IssuesListDefModel) => {
+                this.setState(() => ({model, isLoadingModel: false}));
+            })
+            .catch((error) => {
+                this.setState(() => ({message: error.exception, isLoadingModel: false}));
+            });
     }
 
     handleWindowBeforeUnload = (event) => {
@@ -55,7 +83,7 @@ export class App extends React.Component<{}, State> {
 
 
     onCancel = () => {
-        // this.navigate(ActionURL.buildURL('issues', 'begin', getServerContext().container.path));
+        this.navigate(ActionURL.buildURL('issues', 'begin', getServerContext().container.path));
     };
 
     onChange = (model: IssuesListDefModel) => {
@@ -69,12 +97,43 @@ export class App extends React.Component<{}, State> {
         // window.location.href = returnUrl || defaultUrl;
     }
 
+    onComplete = (model: IssuesListDefModel, fileImportError?: string) => {
+        if (fileImportError) {
+            this.setState(() => ({model}));
+        }
+        // else {
+        //     this.navigateOnComplete(model);
+        // }
+    };
 
     render() {
 
+        const { isLoadingModel, message, model, hasDesignIssuesAdminPermission } = this.state;
+
+        if (message) {
+            return <Alert>{message}</Alert>
+        }
+
+        if (isLoadingModel || hasDesignIssuesAdminPermission === undefined) {
+            return <LoadingSpinner/>
+        }
+
+        if (!hasDesignIssuesAdminPermission) {
+            return <Alert>You do not have sufficient permissions to create or edit a issues list definition design.</Alert>
+        }
+
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                <h1>Hello</h1>
+                {hasDesignIssuesAdminPermission &&
+                <IssuesListDefDesignerPanels
+                        initModel={model}
+                        onCancel={this.onCancel}
+                        onComplete={this.onComplete}
+                        onChange={this.onChange}
+                        useTheme={true}
+                        successBsStyle={'primary'}
+                />
+                }
             </BeforeUnload>
         );
     }

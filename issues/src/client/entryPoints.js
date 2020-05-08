@@ -7,7 +7,7 @@ module.exports = {
     apps: [{
         name: 'designer',
         title: 'Issues List Definition Designer',
-        permission: 'read', //TODO: should this be 'admin' instead?
+        permission: 'admin',
         path: './src/client/Designer'
     }]
 };
