@@ -229,7 +229,9 @@ public class JunitUtil
                     {
                         Map<String, File> map = new CaseInsensitiveHashMap<>();
 
-                        for (java.nio.file.Path path : Arrays.asList(Paths.get("server", "modules")))
+                        for (java.nio.file.Path path : Arrays.asList(
+                                Paths.get("externalModules"),
+                                Paths.get("server", "modules")))
                         {
                             Files.walk(Paths.get(projectRoot).resolve(path), 2)
                                 .filter(Files::isDirectory)
