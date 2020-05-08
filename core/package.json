@@ -50,7 +50,7 @@
       }
     },
     "build-pages:watch": {
-      "command": "webpack-dev-server --config ../webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/watch.config.js",
       "env": {
         "LK_MODULE": "core",
         "NODE_ENV": "development"
