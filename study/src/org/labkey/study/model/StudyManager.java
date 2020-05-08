@@ -1044,12 +1044,12 @@ public class StudyManager
             }
 
             if (existingVisit.getSequenceNumMin().compareTo(existingVisit.getSequenceNumMax()) > 0)
-                throw new VisitCreationException("Corrupt existing visit " + existingVisit.getLabel() +
+                throw new VisitCreationException("Corrupt existing visit " + existingVisit +
                         ": SequenceNumMin must be less than or equal to SequenceNumMax");
             boolean disjoint = (visit.getSequenceNumMax().compareTo(existingVisit.getSequenceNumMin()) < 0) || (visit.getSequenceNumMin().compareTo(existingVisit.getSequenceNumMax()) > 0);
             if (!disjoint)
             {
-                throw new VisitCreationException("New visit " + visit.toString() + " overlaps existing visit " + existingVisit.toString());
+                throw new VisitCreationException("New visit " + visit + " overlaps existing visit " + existingVisit);
             }
         }
 

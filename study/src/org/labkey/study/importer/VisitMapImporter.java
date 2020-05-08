@@ -214,11 +214,11 @@ public class VisitMapImporter
         {
             // This visit's min should be less than or equal to its max
             if (r.getSequenceNumMin().compareTo(r.getSequenceNumMax()) > 0)
-                throw new VisitMapImportException("Visit " + (r.toString()) + " has a sequence number minimum that's greater than its sequence number maximum.");
+                throw new VisitMapImportException("Visit " + r + " has a sequence number minimum that's greater than its sequence number maximum.");
 
             // This visit's min should be greater than the previous visit's max
             if (r.getSequenceNumMin().compareTo(max) <= 0)
-                throw new VisitMapImportException("Visit " + (r.toString()) + " range overlaps with another record in the visit map.");
+                throw new VisitMapImportException("Visit " + r + " range overlaps with another record in the visit map.");
 
             max = r.getSequenceNumMax();
         }
@@ -296,7 +296,7 @@ public class VisitMapImporter
                 {
                     if (visitManager.isVisitOverlapping(visit))
                     {
-                        throw new VisitMapImportException("Visit " + visit.toString() + ": range overlaps with an existing visit in this study.");
+                        throw new VisitMapImportException("Visit " + visit + ": range overlaps with an existing visit in this study.");
                     }
 
                     StudyManager.getInstance().updateVisit(user, visit);
