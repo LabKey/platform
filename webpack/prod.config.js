@@ -19,44 +19,54 @@ for (let i = 0; i < entryPoints.apps.length; i++) {
 
     entries[entryPoint.name] = entryPoint.path + '/app.tsx';
 
-    // Skip generation of module views for apps that do not need it
-    if (entryPoint.generateViews === false) {
-        continue;
+    // Generate dependencies via lib.xml rather than view.xml
+    if (entryPoint.generateLib === true) {
+        plugins = plugins.concat([
+            new HtmlWebpackPlugin({
+                inject: false,
+                module: process.env.LK_MODULE,
+                name: entryPoint.name,
+                title: entryPoint.title,
+                permission: entryPoint.permission,
+                filename: '../../../web/' + process.env.LK_MODULE + '/gen/' + entryPoint.name + '.lib.xml',
+                template: '../webpack/lib.template.xml'
+            }),
+        ]);
+    } else {
+        plugins = plugins.concat([
+            new HtmlWebpackPlugin({
+                inject: false,
+                module: process.env.LK_MODULE,
+                name: entryPoint.name,
+                title: entryPoint.title,
+                permission: entryPoint.permission,
+                filename: '../../../views/' + entryPoint.name + '.view.xml',
+                template: '../webpack/app.view.template.xml'
+            }),
+            new HtmlWebpackPlugin({
+                inject: false,
+                filename: '../../../views/' + entryPoint.name + '.html',
+                template: '../webpack/app.template.html'
+            }),
+            new HtmlWebpackPlugin({
+                inject: false,
+                mode: 'dev',
+                module: process.env.LK_MODULE,
+                name: entryPoint.name,
+                title: entryPoint.title,
+                permission: entryPoint.permission,
+                filename: '../../../views/' + entryPoint.name + 'Dev.view.xml',
+                template: '../webpack/app.view.template.xml'
+            }),
+            new HtmlWebpackPlugin({
+                inject: false,
+                mode: 'dev',
+                name: entryPoint.name,
+                filename: '../../../views/' + entryPoint.name + 'Dev.html',
+                template: '../webpack/app.template.html'
+            })
+        ]);
     }
-
-    plugins = plugins.concat([
-        new HtmlWebpackPlugin({
-            inject: false,
-            module: process.env.LK_MODULE,
-            name: entryPoint.name,
-            title: entryPoint.title,
-            permission: entryPoint.permission,
-            filename: '../../../views/' + entryPoint.name + '.view.xml',
-            template: '../webpack/app.view.template.xml'
-        }),
-        new HtmlWebpackPlugin({
-            inject: false,
-            filename: '../../../views/' + entryPoint.name + '.html',
-            template: '../webpack/app.template.html'
-        }),
-        new HtmlWebpackPlugin({
-            inject: false,
-            mode: 'dev',
-            module: process.env.LK_MODULE,
-            name: entryPoint.name,
-            title: entryPoint.title,
-            permission: entryPoint.permission,
-            filename: '../../../views/' + entryPoint.name + 'Dev.view.xml',
-            template: '../webpack/app.view.template.xml'
-        }),
-        new HtmlWebpackPlugin({
-            inject: false,
-            mode: 'dev',
-            name: entryPoint.name,
-            filename: '../../../views/' + entryPoint.name + 'Dev.html',
-            template: '../webpack/app.template.html'
-        })
-    ]);
 }
 
 plugins.push(new MiniCssExtractPlugin());
@@ -73,7 +83,7 @@ module.exports = {
     output: {
         path: constants.outputPath(__dirname),
         publicPath: './', // allows context path to resolve in both js/css
-        filename: '[name].js'
+        filename: '[name].[contenthash].js'
     },
 
     module: {
@@ -84,13 +94,18 @@ module.exports = {
         extensions: constants.extensions.TYPESCRIPT
     },
 
-    // TODO: re-enable this once we understand the interactions of the chunks and splitting better
-    //       NOTE: that this will require changes to the app.view.template.xml
-    // optimization: {
-    //     splitChunks: {
-    //         chunks: 'all'
-    //     }
-    // },
+    optimization: {
+        splitChunks: {
+            maxSize: 2 * 1000000, // 2 MB
+            cacheGroups: {
+                commons: {
+                    test: /[\\/]node_modules[\\/]/,
+                    name: 'vendors',
+                    chunks: 'all'
+                }
+            }
+        }
+    },
 
     plugins: plugins
 };
