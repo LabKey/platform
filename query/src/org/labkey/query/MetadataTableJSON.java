@@ -338,18 +338,28 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
 
             // Set the ImportAliases
             Set<String> importAliasSet = rawColumnInfo.getImportAliasSet();
-            if (metadataColumnJSON.getImportAliases() != null && importAliasSet.isEmpty())
+            if (metadataColumnJSON.getImportAliases() != null)
             {
-                addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
-            }
-            else if (metadataColumnJSON.getImportAliases() != null && !importAliasSet.contains(metadataColumnJSON.getImportAliases()))
-            {
-                xmlColumn.unsetImportAliases();
-                addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
-            }
-            else if (xmlColumn.isSetImportAliases())
-            {
-                xmlColumn.unsetImportAliases();
+                Set<String> passedImportAliasSet = ColumnRenderPropertiesImpl.convertToSet(metadataColumnJSON.getImportAliases());
+
+                if (shouldStoreValue(importAliasSet, passedImportAliasSet))
+                {
+                    // add-to/remove-from existing import aliases set
+                    if (xmlColumn.getImportAliases() != null)
+                    {
+                        xmlColumn.unsetImportAliases();
+                    }
+                    // when there is no existing import aliases, add import aliases xml
+                    if (!metadataColumnJSON.getImportAliases().equals(""))
+                    {
+                        addImportAliases(xmlColumn, metadataColumnJSON.getImportAliases());
+                    }
+                }
+                // wipe off import aliases xml
+                else if (xmlColumn.isSetImportAliases())
+                {
+                    xmlColumn.unsetImportAliases();
+                }
             }
 
             // Set the FK
@@ -612,7 +622,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
                         }
                         if (column.isSetImportAliases())
                         {
-                            String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<String>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
+                            String importAliases = ColumnRenderPropertiesImpl.convertToString(new HashSet<>(Arrays.asList(column.getImportAliases().getImportAliasArray())));
                             metadataColumnJSON.setImportAliases(importAliases);
                         }
                         if (column.isSetColumnTitle())

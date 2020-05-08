@@ -714,7 +714,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
             if (rowId != null)
             {
                 ActionURL graphURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getRunGraphURL(ctx.getContainer(), ((Number)rowId).intValue());
-                out.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/Experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
+                out.write("<a href=\"" + graphURL.getLocalURIString() + "\" title=\"Experiment run graph\"><img src=\"" + AppProps.getInstance().getContextPath() + "/experiment/images/graphIcon.gif\" height=\"18\" width=\"18\"/></a>");
             }
         }
     }
