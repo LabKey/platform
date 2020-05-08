@@ -112,7 +112,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                     visitList.add(visit);
             }
             //Resort the visit list
-            visitList.sort((v1, v2) -> v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : (int) (v1.getSequenceNumMinDouble() - v2.getSequenceNumMinDouble()));
+            visitList.sort((v1, v2) -> v1.getDisplayOrder() != v2.getDisplayOrder() ? v1.getDisplayOrder() - v2.getDisplayOrder() : v1.getSequenceNumMin().compareTo(v2.getSequenceNumMin()));
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
@@ -217,7 +217,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
 
     private static boolean _inSequence(VisitImpl v, double seq)
     {
-        assert v.getSequenceNumMinDouble() <= v.getSequenceNumMaxDouble();
+        assert v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) <= 0;
         return seq >= v.getSequenceNumMaxDouble() && seq <= v.getSequenceNumMaxDouble();
     }
 
@@ -234,6 +234,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
             ret = new AliasedColumn(name, _colParticipantId);
         }
         ret.setFk(new AbstractForeignKey(getUserSchema(), cf) {
+            @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayFieldName)
             {
                 TableInfo table = getLookupTableInfo();
@@ -254,6 +255,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                         parent, table.getColumn(_study.getSubjectColumnName()), displayField);
             }
 
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 try

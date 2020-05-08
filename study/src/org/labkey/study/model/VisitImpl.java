@@ -452,6 +452,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         ObjectFactory.Registry.register(VisitImpl.class, _f);
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -495,6 +496,10 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         return _sequenceMin.compareTo(seqnum) <= 0 && _sequenceMax.compareTo(seqnum) >= 0;
     }
 
+    public String toString()
+    {
+        return (null != _label ? _label + " (" : "(") + getSequenceString() + ")";
+    }
 
     public static class TestCase extends Assert
     {
