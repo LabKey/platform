@@ -157,7 +157,7 @@ public class FileUtil
         if (dir.exists())
         {
             log.warn("dumping thread because server could not delete directory: " + dir.getAbsolutePath());
-            DebugInfoDumper.dumpThreads(log);
+            DebugInfoDumper.dumpThreads(1);
         }
 
         return !dir.exists();
