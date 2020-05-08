@@ -77,10 +77,7 @@ public abstract class ContainerFilter
 
     public Collection<GUID> getIds()
     {
-        if (null == _container)
-        {
-            assert this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter;
-        }
+        assert null != _container || this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter || this instanceof AllFolders;
         return getIds(_container);
     }
 
@@ -106,7 +103,7 @@ public abstract class ContainerFilter
 
     public String getDefaultCacheKey(Container c)
     {
-        return getClass().getName() + "/" + c.getId();
+        return getClass().getName() + "/" + (null==c?"-":c.getId());
     }
 
     // return a string such that a.getCacheKey().equals(b.getCacheKey()) => a.equals(b)
@@ -116,10 +113,7 @@ public abstract class ContainerFilter
 
     public final String getCacheKey()
     {
-        if (null == _container)
-        {
-            assert this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter;
-        }
+        assert null != _container || this instanceof InternalNoContainerFilter || this instanceof SimpleContainerFilter || this instanceof AllFolders;
         return getCacheKey(_container);
     }
 
@@ -517,24 +511,7 @@ public abstract class ContainerFilter
 
     /* TODO ContainerFilter -- Consolidate with InternalNoContainerFilter
     /** Use this with extreme caution - it doesn't check permissions */
-    public static final ContainerFilter EVERYTHING = new ContainerFilter(null, null)
-    {
-        @Override
-        public String getCacheKey(Container c)
-        {
-            return "EVERYTHING";
-        }
-
-        public Collection<GUID> getIds(Container currentContainer)
-        {
-            return null;
-        }
-
-        public Type getType()
-        {
-            return null;
-        }
-    };
+    public static final ContainerFilter EVERYTHING = new InternalNoContainerFilter();
 
     public static class ContainerFilterWithPermission extends ContainerFilter
     {
@@ -1190,14 +1167,20 @@ public abstract class ContainerFilter
         {
             return Type.AllFolders;
         }
+
+        @Override
+        public String getCacheKey(Container c)
+        {
+            return super.getCacheKey(null);
+        }
     }
 
 
     public static class InternalNoContainerFilter extends ContainerFilterWithPermission
     {
-        public InternalNoContainerFilter(User user)
+        public InternalNoContainerFilter()
         {
-            super(null, user);
+            super(null, null);
         }
 
         @Override
@@ -1238,7 +1221,7 @@ public abstract class ContainerFilter
 
         public Type getType()
         {
-            return Type.AllFolders;
+            return null;
         }
     }
 
@@ -1320,7 +1303,6 @@ public abstract class ContainerFilter
         public void testCacheKey()
         {
             Container home = ContainerManager.getHomeContainer();
-            Container root = ContainerManager.getRoot();
             Container shared = ContainerManager.getSharedContainer();
             Container test = JunitUtil.getTestContainer();
             User user = TestContext.get().getUser();
@@ -1334,8 +1316,8 @@ public abstract class ContainerFilter
             assertEquals(new SimpleContainerFilterWithUser(user, test).getCacheKey(home), new SimpleContainerFilterWithUser(user, test).getCacheKey(test));
             assertNotEquals(new SimpleContainerFilterWithUser(user, home).getCacheKey(home), new SimpleContainerFilterWithUser(user, test).getCacheKey(home));
 
-            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(null).getCacheKey(null));
-            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter(user).getCacheKey(home));
+            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter().getCacheKey(null));
+            assertEquals(EVERYTHING.getCacheKey(null), new InternalNoContainerFilter().getCacheKey(home));
 
             assertEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(home, user, shared).getCacheKey());
             assertNotEquals(new CurrentPlusExtras(home, user, shared).getCacheKey(), new CurrentPlusExtras(test, user, shared).getCacheKey());
@@ -1345,7 +1327,11 @@ public abstract class ContainerFilter
             for (var type : Type.values())
             {
                 assertEquals(type.name(), type.create(home, user).getCacheKey(), type.create(home, user).getCacheKey());
-                assertNotEquals(type.name(), type.create(home, user).getCacheKey(), type.create(shared, user).getCacheKey());
+                assertEquals(type.name(), type.create(home, user).getCacheKey(), type.create(null, user).getCacheKey(home));
+                if (type == Type.AllFolders)
+                    assertEquals(type.name(), type.create(home, user).getCacheKey(), type.create(shared, user).getCacheKey());
+                else
+                    assertNotEquals(type.name(), type.create(home, user).getCacheKey(), type.create(shared, user).getCacheKey());
             }
 
             for (var outer : Type.values())
