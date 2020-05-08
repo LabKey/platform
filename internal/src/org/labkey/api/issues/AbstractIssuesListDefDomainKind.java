@@ -286,7 +286,7 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
                                                      @Nullable IssuesDomainKindProperties options, Container container, User user, boolean includeWarnings)
     {
         if (options != null && StringUtils.isBlank(options.getIssueDefName()))
-            throw new IllegalArgumentException("Issue name must not be null.");
+            return new ValidationException("Issue name must not be null.");
 
         return IssuesListDefService.get().updateIssueDefinition(container, user, original, update, options);
     }
