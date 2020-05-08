@@ -24,9 +24,9 @@ Ext4.define('LABKEY.internal.FlagColumn', {
 
     imgClassUnflagged: '',
 
-    imgSrcFlagged: LABKEY.contextPath + '/Experiment/flagDefault.gif',
+    imgSrcFlagged: LABKEY.contextPath + '/experiment/flagDefault.gif',
 
-    imgSrcUnflagged: LABKEY.contextPath + '/Experiment/unflagDefault.gif',
+    imgSrcUnflagged: LABKEY.contextPath + '/experiment/unflagDefault.gif',
 
     imgTitle: 'Flag for review',
 
