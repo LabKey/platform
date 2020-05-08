@@ -2662,14 +2662,14 @@ public class StudyController extends BaseStudyController
                 return -1;
             }
 
+            // Allow for mapping of the ParticipantId and Sequence Num (i.e. timepoint column),
+            // these are passed in for the "create dataset from a file and import data" case
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
-
-            // participant id and sequence num i.e. timepoint type are passed in import dataset from a file case
-            if (null != _form.getParticipantId() && null != _form.getSequenceNum())
-            {
+            if (null != _form.getParticipantId())
                 columnMap.put(_form.getParticipantId(),"ParticipantId");
+            if (null != _form.getSequenceNum())
                 columnMap.put(_form.getSequenceNum(),"Sequence Num");
-            }
+
             Pair<List<String>, UploadLog> result;
             result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
 
