@@ -37,8 +37,6 @@ public interface Study extends StudyEntity
 {
     List<? extends Visit> getVisits(Visit.Order order);
 
-    Map<String, Double> getVisitAliases();
-
     Dataset getDataset(int id);
 
     Dataset getDatasetByName(String name);

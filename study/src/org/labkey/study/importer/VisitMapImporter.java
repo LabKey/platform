@@ -39,6 +39,7 @@ import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -60,22 +61,25 @@ public class VisitMapImporter
         // As of 15.1, XML is the only supported visit map format. We'll leave the enum in place in case we want to support other formats in the future.
         @SuppressWarnings({"UnusedDeclaration"})
         Xml
-                {
-                    public VisitMapReader getReader(String contents, Logger logger) throws VisitMapParseException
-                    {
-                        return new XmlVisitMapReader(contents);
-                    }
+        {
+            @Override
+            public VisitMapReader getReader(String contents, Logger logger) throws VisitMapParseException
+            {
+                return new XmlVisitMapReader(contents);
+            }
 
-                    public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws VisitMapParseException, IOException
-                    {
-                        return new XmlVisitMapReader(file.getXmlBean(name));
-                    }
+            @Override
+            public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws VisitMapParseException, IOException
+            {
+                return new XmlVisitMapReader(file.getXmlBean(name));
+            }
 
-                    public String getExtension()
-                    {
-                        return ".xml";
-                    }
-                };
+            @Override
+            public String getExtension()
+            {
+                return ".xml";
+            }
+        };
 
         abstract public VisitMapReader getReader(String contents, Logger logger) throws VisitMapParseException;
 
@@ -91,11 +95,6 @@ public class VisitMapImporter
 
             throw new IllegalStateException("Unknown visit map extension for file " + name);
         }
-    }
-
-    public boolean isEnsureDatasets()
-    {
-        return _ensureDatasets;
     }
 
     public void setEnsureDatasets(boolean ensureDatasets)
@@ -187,7 +186,7 @@ public class VisitMapImporter
 
         for (VisitMapRecord record : records)
         {
-            String errorMsg = "Visit " + (record.getVisitLabel()) + " range overlaps with another record in the visit map.";
+            String errorMsg = "Visit " + StringUtils.defaultString(record.getVisitLabel(), record.toString()) + " range overlaps with another record in the visit map.";
 
             if (uniqueSequenceNums.contains(record.getSequenceNumMin()))
                 throw new VisitMapImportException(errorMsg);
@@ -206,7 +205,7 @@ public class VisitMapImporter
             return;
 
         // Sort by SequenceNumMin
-        records.sort((o1, o2) -> o1.getSequenceNumMin().compareTo(o2.getSequenceNumMin()));
+        records.sort(Comparator.comparing(VisitMapRecord::getSequenceNumMin));
 
         // Initialize to less than the smallest min
         BigDecimal max = records.get(0).getSequenceNumMin().subtract(BigDecimal.ONE);
@@ -297,8 +296,7 @@ public class VisitMapImporter
                 {
                     if (visitManager.isVisitOverlapping(visit))
                     {
-                        String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMinDouble();
-                        throw new VisitMapImportException("Visit " + visitLabel + " range overlaps with an existing visit in this study.");
+                        throw new VisitMapImportException("Visit " + visit.toString() + ": range overlaps with an existing visit in this study.");
                     }
 
                     StudyManager.getInstance().updateVisit(user, visit);

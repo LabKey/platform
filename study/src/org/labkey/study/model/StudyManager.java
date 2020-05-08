@@ -1026,7 +1026,7 @@ public class StudyManager
             throw new VisitCreationException("Visit container does not match study");
         visit.setContainer(visitStudy.getContainer());
 
-        if (visit.getSequenceNumMinDouble() > visit.getSequenceNumMaxDouble())
+        if (visit.getSequenceNumMin().compareTo(visit.getSequenceNumMax()) > 0)
             throw new VisitCreationException("SequenceNumMin must be less than or equal to SequenceNumMax");
 
         if (null == existingVisits)
@@ -1037,27 +1037,24 @@ public class StudyManager
 
         for (VisitImpl existingVisit : existingVisits)
         {
-            if (existingVisit.getSequenceNumMinDouble() < visit.getSequenceNumMinDouble())
+            if (existingVisit.getSequenceNumMin().compareTo(visit.getSequenceNumMin()) < 0)
             {
                 prevChronologicalOrder = existingVisit.getChronologicalOrder();
                 prevDisplayOrder = existingVisit.getDisplayOrder();
             }
 
-            if (existingVisit.getSequenceNumMinDouble() > existingVisit.getSequenceNumMaxDouble())
+            if (existingVisit.getSequenceNumMin().compareTo(existingVisit.getSequenceNumMax()) > 0)
                 throw new VisitCreationException("Corrupt existing visit " + existingVisit.getLabel() +
                         ": SequenceNumMin must be less than or equal to SequenceNumMax");
-            boolean disjoint = visit.getSequenceNumMaxDouble() < existingVisit.getSequenceNumMinDouble() ||
-                    visit.getSequenceNumMinDouble() > existingVisit.getSequenceNumMaxDouble();
+            boolean disjoint = (visit.getSequenceNumMax().compareTo(existingVisit.getSequenceNumMin()) < 0) || (visit.getSequenceNumMin().compareTo(existingVisit.getSequenceNumMax()) > 0);
             if (!disjoint)
             {
-                String visitLabel = visit.getLabel() != null ? visit.getLabel() : ""+visit.getSequenceNumMinDouble();
-                String existingVisitLabel = existingVisit.getLabel() != null ? existingVisit.getLabel() : ""+existingVisit.getSequenceNumMinDouble();
-                throw new VisitCreationException("New visit " + visitLabel + " overlaps existing visit " + existingVisitLabel);
+                throw new VisitCreationException("New visit " + visit.toString() + " overlaps existing visit " + existingVisit.toString());
             }
         }
 
         // if our visit doesn't have a display order or chronological order set, but the visit before our new visit
-        // (based on sequencenum) does, then assign the previous visit's order info to our new visit.  This won't always
+        // (based on sequencenum) does, then assign the previous visit's order info to our new visit. This won't always
         // be exactly right, but it's better than having all newly created visits appear at the beginning of the display
         // and chronological lists:
         if (visit.getDisplayOrder() == 0 && prevDisplayOrder > 0)
@@ -1270,13 +1267,13 @@ public class StudyManager
 
         // Now load custom mapping, overwriting any existing standard labels
         for (VisitAlias alias : customMapping)
-            map.put(alias.getName(), alias.getSequenceNum());
+            map.put(alias.getName(), alias.getSequenceNumDouble());
 
         return map;
     }
 
 
-    // Return the custom import mapping (optinally provided by the admin), ordered by sequence num then row id (which
+    // Return the custom import mapping (optionally provided by the admin), ordered by sequence num then row id (which
     // maintains import order in the case where multiple names map to the same sequence number).
     public Collection<VisitAlias> getCustomVisitImportMapping(Study study)
     {
@@ -1304,7 +1301,7 @@ public class StudyManager
             if (null != label)
             {
                 boolean overridden = labels.contains(label) || customMap.containsKey(label);
-                list.add(new VisitAlias(label, visit.getSequenceNumMinDouble(), visit.getSequenceString(), overridden));
+                list.add(new VisitAlias(label, visit.getSequenceNumMin(), visit.getSequenceString(), overridden));
 
                 if (!overridden)
                     labels.add(label);
@@ -1318,7 +1315,7 @@ public class StudyManager
     public static class VisitAlias
     {
         private String _name;
-        private double _sequenceNum;
+        private BigDecimal _sequenceNum;
         private String _sequenceString;
         private boolean _overridden;  // For display purposes -- we show all visits and gray out the ones that are not used
 
@@ -1327,7 +1324,7 @@ public class StudyManager
         {
         }
 
-        public VisitAlias(String name, double sequenceNum, @Nullable String sequenceString, boolean overridden)
+        public VisitAlias(String name, BigDecimal sequenceNum, @Nullable String sequenceString, boolean overridden)
         {
             _name = name;
             _sequenceNum = sequenceNum;
@@ -1335,9 +1332,10 @@ public class StudyManager
             _overridden = overridden;
         }
 
+        @Deprecated // Pass in sequenceNum as BigDecimal instead
         public VisitAlias(String name, double sequenceNum)
         {
-            this(name, sequenceNum, null, false);
+            this(name, new BigDecimal(sequenceNum).stripTrailingZeros(), null, false);
         }
 
         public String getName()
@@ -1350,15 +1348,21 @@ public class StudyManager
             _name = name;
         }
 
-        public double getSequenceNum()
+        @Deprecated
+        public double getSequenceNumDouble()
+        {
+            return _sequenceNum.doubleValue();
+        }
+
+        public BigDecimal getSequenceNum()
         {
             return _sequenceNum;
         }
 
         @SuppressWarnings({"UnusedDeclaration"})
-        public void setSequenceNum(double sequenceNum)
+        public void setSequenceNum(BigDecimal sequenceNum)
         {
-            _sequenceNum = sequenceNum;
+            _sequenceNum = sequenceNum.stripTrailingZeros();
         }
 
         public boolean isOverridden()
@@ -1377,6 +1381,11 @@ public class StudyManager
                 return getSequenceNumString();
             else
                 return _sequenceString;
+        }
+
+        public String toString()
+        {
+            return _name + " (" + VisitImpl.formatSequenceNum(_sequenceNum) + ")";
         }
     }
 
@@ -2301,6 +2310,17 @@ public class StudyManager
         return null;
     }
 
+    public VisitImpl getVisitForSequence(Study study, BigDecimal seqNum)
+    {
+        List<VisitImpl> visits = getVisits(study, Visit.Order.SEQUENCE_NUM);
+        for (VisitImpl v : visits)
+        {
+            if (seqNum.compareTo(v.getSequenceNumMin()) >= 0 && seqNum.compareTo(v.getSequenceNumMax()) <= 0)
+                return v;
+        }
+        return null;
+    }
+
     public List<DatasetDefinition> getDatasetDefinitions(Study study)
     {
         return getDatasetDefinitions(study, null);
@@ -2554,9 +2574,9 @@ public class StudyManager
 
 
     // domainURI -> <Container,DatasetId>
-    private static Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(1000, CacheManager.DAY, "Domain->Dataset map");
+    private static final Cache<String, Pair<String, Integer>> domainCache = CacheManager.getCache(5000, CacheManager.DAY, "Domain->Dataset map");
 
-    private CacheLoader<String, Pair<String, Integer>> loader = (domainURI, argument) -> {
+    private static final CacheLoader<String, Pair<String, Integer>> loader = (domainURI, argument) -> {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT Container, DatasetId FROM study.Dataset WHERE TypeURI=?");
         sql.add(domainURI);
@@ -2771,14 +2791,13 @@ public class StudyManager
                         expService.deleteExperimentRunsByRowIds(study.getContainer(), user, run.getRowId());
                     });
                 }
-
             });
         }
 
         deleteDatasetType(study, user, ds);
-        try {
-            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(),
-                    StudySchema.getInstance().getSchemaName(), ds.getName());
+        try
+        {
+            QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(study.getContainer(), StudySchema.getInstance().getSchemaName(), ds.getName());
             if (def != null)
                 def.delete(user);
         }
@@ -5878,6 +5897,7 @@ public class StudyManager
             validateNewVisit(newVisit, existingVisits, seqNumMin, seqNumMax);
             assertEquals("Labels don't match", label, newVisit.getLabel());
         }
+
         private void validateNewVisit(VisitImpl newVisit, List<VisitImpl> existingVisits, double seqNumMin, double seqNumMax)
         {
             for (VisitImpl existingVisit : existingVisits)
