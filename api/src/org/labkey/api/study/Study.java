@@ -24,7 +24,6 @@ import org.labkey.api.security.User;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +35,9 @@ import java.util.Map;
 public interface Study extends StudyEntity
 {
     List<? extends Visit> getVisits(Visit.Order order);
+
+    @SuppressWarnings("unused")  // Used by cdisc_ODM StudyArchiveWriter.java
+    Map<String, Double> getVisitAliases();
 
     Dataset getDataset(int id);
 

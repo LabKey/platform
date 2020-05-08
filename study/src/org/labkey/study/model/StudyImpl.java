@@ -230,6 +230,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
+    public Map<String, Double> getVisitAliases()
+    {
+        return StudyManager.getInstance().getCustomVisitImportMapping(this)
+            .stream()
+            .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNumDouble));
+    }
+
+    @Override
     public DatasetDefinition getDataset(int id)
     {
         return StudyManager.getInstance().getDatasetDefinition(this, id);
