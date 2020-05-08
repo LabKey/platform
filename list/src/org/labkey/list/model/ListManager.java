@@ -355,7 +355,7 @@ public class ListManager implements SearchService.DocumentProvider
                     }
                     catch (Exception ex)
                     {
-                        LOG.error("Error indexing list '" + list.getName() + "' in continainer '" + c.getPath() + "'.", ex);
+                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + c.getPath() + "'.", ex);
                     }
                 }
             }
