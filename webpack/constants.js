@@ -132,9 +132,7 @@ module.exports = {
         }, {});
     },
     processPlugins: function(entryPoints) {
-        let allPlugins = [];
-
-        entryPoints.apps.reduce((plugins, app) => {
+        let allPlugins = entryPoints.apps.reduce((plugins, app) => {
             // Generate dependencies via lib.xml rather than view.xml
             if (app.generateLib === true) {
                 plugins = plugins.concat([
@@ -184,7 +182,7 @@ module.exports = {
                 ]);
             }
             return plugins;
-        }, allPlugins);
+        }, []);
 
         allPlugins.push(new MiniCssExtractPlugin());
 
