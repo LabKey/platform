@@ -86,7 +86,7 @@ public class Stats
      */
     public static double[] getCUSUMS(Double[] values, boolean negative, boolean transform, boolean forcePositiveResult, Double epsilon)
     {
-            if (values == null || values.length < 2)
+        if (values == null || values.length < 2)
             return new double[0];
 
         double mean = getMean(values);
