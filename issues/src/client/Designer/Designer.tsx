@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, getServerContext, Domain } from "@labkey/api";
+import { ActionURL, getServerContext, Domain, Security } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -43,28 +43,26 @@ export class App extends React.Component<{}, State> {
 
         this.state = {
             isLoadingModel: true,
-            hasDesignIssuesAdminPermission: true //TODO: remove once Security.getUserPermissions(..) is fixed in componentDidMount()
         };
     }
 
     componentDidMount() {
         const issueDefName = ActionURL.getParameter('issueDefName');
 
-        //TODO: this throws error, need to investigate
-        // Security.getUserPermissions({
-        //     containerPath: getServerContext().container.path,
-        //     success: (data) => {
-        //         this.setState(() => ({
-        //             hasDesignIssuesAdminPermission: data.container.effectivePermissions.indexOf(PermissionTypes.Admin) > -1
-        //         }));
-        //     },
-        //     failure: (error) => {
-        //         this.setState(() => ({
-        //             message: error.exception,
-        //             hasDesignIssuesAdminPermission: false
-        //         }));
-        //     }
-        // });
+        Security.getUserPermissions({
+            containerPath: getServerContext().container.path,
+            success: (data) => {
+                this.setState(() => ({
+                    hasDesignIssuesAdminPermission: data.container.effectivePermissions.indexOf(PermissionTypes.Admin) > -1
+                }));
+            },
+            failure: (error) => {
+                this.setState(() => ({
+                    message: error.exception,
+                    hasDesignIssuesAdminPermission: false
+                }));
+            }
+        });
 
         fetchIssuesListDefDesign(issueDefName)
             .then((model: IssuesListDefModel) => {
