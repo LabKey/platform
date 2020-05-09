@@ -2668,7 +2668,10 @@ public class StudyController extends BaseStudyController
             if (null != _form.getParticipantId())
                 columnMap.put(_form.getParticipantId(),"ParticipantId");
             if (null != _form.getSequenceNum())
-                columnMap.put(_form.getSequenceNum(),"Sequence Num");
+            {
+                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "Sequence Num";
+                columnMap.put(_form.getSequenceNum(), column);
+            }
 
             Pair<List<String>, UploadLog> result;
             result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
