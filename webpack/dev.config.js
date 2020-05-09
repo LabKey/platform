@@ -13,16 +13,16 @@ __dirname = lkModule;
 module.exports = {
     context: constants.context(__dirname),
 
-    mode: 'production',
+    mode: 'development',
 
-    devtool: 'source-map',
+    devtool: 'eval',
 
     entry: constants.processEntries(entryPoints),
 
     output: {
         path: constants.outputPath(__dirname),
         publicPath: './', // allows context path to resolve in both js/css
-        filename: '[name].[contenthash].js'
+        filename: '[name].js'
     },
 
     module: {
@@ -31,19 +31,6 @@ module.exports = {
 
     resolve: {
         extensions: constants.extensions.TYPESCRIPT
-    },
-
-    optimization: {
-        splitChunks: {
-            maxSize: 2 * 1000000, // 2 MB
-            cacheGroups: {
-                commons: {
-                    test: /[\\/]node_modules[\\/]/,
-                    name: 'vendors',
-                    chunks: 'all'
-                }
-            }
-        }
     },
 
     plugins: constants.processPlugins(entryPoints),

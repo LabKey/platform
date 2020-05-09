@@ -5,6 +5,8 @@
     "setup": "npm ci",
     "prebuild": "bnr clean",
     "build": "bnr build-themes:dev && bnr build-pages:prod",
+    "prebuild-dev": "bnr clean",
+    "build-dev": "bnr build-themes:dev && bnr build-pages:dev",
     "prebuild-prod": "bnr clean",
     "build-prod": "bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
@@ -40,6 +42,13 @@
       "command": "node build.js && node webpack/themes/buildThemes.js",
       "env": {
         "NODE_ENV": "production"
+      }
+    },
+    "build-pages:dev": {
+      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
+      "env": {
+        "LK_MODULE": "list",
+        "NODE_ENV": "development"
       }
     },
     "build-pages:prod": {

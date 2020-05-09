@@ -6,6 +6,7 @@
 const devMode = process.env.NODE_ENV !== 'production';
 const lkModule = process.env.LK_MODULE;
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 module.exports = {
@@ -123,5 +124,70 @@ module.exports = {
     },
     outputPath: function(dir) {
         return path.resolve(dir, '../resources/web/' + lkModule + '/gen');
+    },
+    processEntries: function(entryPoints) {
+        return entryPoints.apps.reduce((entries, app) => {
+            entries[app.name] = app.path + '/app.tsx';
+            return entries;
+        }, {});
+    },
+    processPlugins: function(entryPoints) {
+        let allPlugins = [];
+
+        entryPoints.apps.reduce((plugins, app) => {
+            // Generate dependencies via lib.xml rather than view.xml
+            if (app.generateLib === true) {
+                plugins = plugins.concat([
+                    new HtmlWebpackPlugin({
+                        inject: false,
+                        module: lkModule,
+                        name: app.name,
+                        title: app.title,
+                        permission: app.permission,
+                        filename: '../../../web/' + lkModule + '/gen/' + app.name + '.lib.xml',
+                        template: '../webpack/lib.template.xml'
+                    }),
+                ]);
+            } else {
+                plugins = plugins.concat([
+                    new HtmlWebpackPlugin({
+                        inject: false,
+                        module: lkModule,
+                        name: app.name,
+                        title: app.title,
+                        permission: app.permission,
+                        filename: '../../../views/' + app.name + '.view.xml',
+                        template: '../webpack/app.view.template.xml'
+                    }),
+                    new HtmlWebpackPlugin({
+                        inject: false,
+                        filename: '../../../views/' + app.name + '.html',
+                        template: '../webpack/app.template.html'
+                    }),
+                    new HtmlWebpackPlugin({
+                        inject: false,
+                        mode: 'dev',
+                        module: lkModule,
+                        name: app.name,
+                        title: app.title,
+                        permission: app.permission,
+                        filename: '../../../views/' + app.name + 'Dev.view.xml',
+                        template: '../webpack/app.view.template.xml'
+                    }),
+                    new HtmlWebpackPlugin({
+                        inject: false,
+                        mode: 'dev',
+                        name: app.name,
+                        filename: '../../../views/' + app.name + 'Dev.html',
+                        template: '../webpack/app.template.html'
+                    })
+                ]);
+            }
+            return plugins;
+        }, allPlugins);
+
+        allPlugins.push(new MiniCssExtractPlugin());
+
+        return allPlugins;
     }
 };
