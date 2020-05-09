@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, getServerContext } from "@labkey/api";
+import { ActionURL, getServerContext, Domain } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
@@ -90,20 +90,31 @@ export class App extends React.Component<{}, State> {
         this._dirty = true;
     };
 
-    navigate(defaultUrl: string) {
+    navigate = (defaultUrl: string) => {
         this._dirty = false;
 
-        // const returnUrl = ActionURL.getParameter('returnUrl');
-        // window.location.href = returnUrl || defaultUrl;
-    }
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || defaultUrl;
+    };
 
-    onComplete = (model: IssuesListDefModel, fileImportError?: string) => {
-        if (fileImportError) {
-            this.setState(() => ({model}));
+    navigateOnComplete = (model: IssuesListDefModel) => {
+
+        if (model.issueDefName) {
+            this.navigate(ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName}));
         }
-        // else {
-        //     this.navigateOnComplete(model);
-        // }
+        else {
+            Domain.getDomainDetails({
+                containerPath: getServerContext().container.path,
+                domainId: model.domain.domainId,
+                success: (data) => {
+                    const newModel = IssuesListDefModel.create(data);
+                    this.navigate(ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: newModel.issueDefName}));
+                },
+                failure: (error) => {
+                    this.navigate(ActionURL.buildURL('issues', 'begin', getServerContext().container.path));
+                }
+            });
+        }
     };
 
     render() {
@@ -128,7 +139,7 @@ export class App extends React.Component<{}, State> {
                 <IssuesListDefDesignerPanels
                         initModel={model}
                         onCancel={this.onCancel}
-                        onComplete={this.onComplete}
+                        onComplete={this.navigateOnComplete}
                         onChange={this.onChange}
                         useTheme={true}
                         successBsStyle={'primary'}
