@@ -21,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -48,8 +47,6 @@ import org.labkey.study.query.DatasetTableImpl;
 import org.labkey.study.query.ParticipantGroupFilterClause;
 import org.labkey.study.query.StudyQuerySchema;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -175,6 +172,7 @@ public class SequenceVisitManager extends VisitManager
      * TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
      * TDOO: see 19867: Speed issues when inserting into study datasets
      */
+    @Override
     protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DatasetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Logger logger)
     {
         info(logger, "SequenceVisitManager: updateParticipantVisitTableAfterInsert");
@@ -223,6 +221,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
+    @Override
     protected void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -488,6 +487,7 @@ public class SequenceVisitManager extends VisitManager
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
+    @Override
     protected void updateVisitTable(User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -512,6 +512,7 @@ public class SequenceVisitManager extends VisitManager
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
+    @Override
     protected SQLFragment getDatasetSequenceNumsSQL(Study study)
     {
         SQLFragment sql = new SQLFragment();
@@ -524,8 +525,6 @@ public class SequenceVisitManager extends VisitManager
         return sql;
     }
 
-
-
     private String generateSequenceToVisit(StudyImpl study, String sn)
     {
         List<VisitImpl> visits = study.getVisits(Visit.Order.SEQUENCE_NUM);
@@ -533,12 +532,13 @@ public class SequenceVisitManager extends VisitManager
             return "-1";
         return generateSequenceToVisit(visits, sn, 1);
     }
+
     private String generateSequenceToVisit(List<VisitImpl> visits, String sn, int indent)
     {
         if (visits.size() <= 16)
         {
             StringBuilder sb = new StringBuilder();
-            boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMinDouble()==v.getSequenceNumMaxDouble());
+            boolean allEqual = visits.stream().allMatch(v -> v.getSequenceNumMin().equals(v.getSequenceNumMax()));
             if (allEqual)
             {
                 _indent(sb,indent);
@@ -558,7 +558,7 @@ public class SequenceVisitManager extends VisitManager
                 _indent(sb,indent); sb.append("CASE");
                 for (VisitImpl v : visits)
                 {
-                    if (v.getSequenceNumMinDouble() == v.getSequenceNumMaxDouble())
+                    if (v.getSequenceNumMin().equals(v.getSequenceNumMax()))
                     {
                         _indent(sb, indent);
                         sb.append(" WHEN ").append(sn).append(" = ");
