@@ -2371,9 +2371,9 @@ experiment/src/org/labkey/experiment/XARExportOptions.jsp -text
 experiment/src/org/labkey/experiment/XarExportPipelineJob.java -text
 experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
-experiment/webapp/Experiment/domainTemplate.js -text
-experiment/webapp/Experiment/QCFlagToggle.css -text
-experiment/webapp/Experiment/QCFlagToggleWindow.js -text
+experiment/webapp/experiment/domainTemplate.js -text
+experiment/webapp/experiment/QCFlagToggle.css -text
+experiment/webapp/experiment/QCFlagToggleWindow.js -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 filecontent/module.properties -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-14.20.sql -text
