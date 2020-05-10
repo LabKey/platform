@@ -90,7 +90,7 @@ public class Stats
             return new double[0];
 
         double mean = getMean(values);
-        double stdDEV = getStdDev(values, true);
+        double stdDEV = getStdDev(values, false);
         if (stdDEV == 0) // in the case when all values are equal, calculation has to abort, special case CUSUM to all be 0
         {
             return new double[values.length];
