@@ -7,6 +7,7 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -79,6 +80,12 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
+        return createTableInfo(userSchema, cf, false);
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf, boolean skipSeeAuditLogPerm)
+    {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, getDefaultVisibleColumns())
         {
             @Override
@@ -109,6 +116,16 @@ public class SampleTimelineAuditProvider extends AbstractAuditTypeProvider
                     col.setLabel("Lineage Update?");
                 }
             }
+
+            @Override
+            protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+            {
+                if (!skipSeeAuditLogPerm)
+                    return super.getContainerFilterClause(filter, fieldKey);
+
+                return filter.createFilterClause(getSchema(), fieldKey, getContainer());
+            }
+
         };
         table.setTitleColumn(SAMPLE_NAME_COLUMN_NAME);
         appendValueMapColumns(table);

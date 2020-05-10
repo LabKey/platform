@@ -50,6 +50,8 @@ public interface AuditTypeProvider
 
     TableInfo createTableInfo(UserSchema schema, ContainerFilter cf);
 
+    TableInfo createTableInfo(UserSchema schema, ContainerFilter cf, boolean skipSeeAuditLogPerm);
+
     <K extends AuditTypeEvent> Class<K> getEventClass();
 
     /**

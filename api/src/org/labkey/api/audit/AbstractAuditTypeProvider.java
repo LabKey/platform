@@ -300,6 +300,12 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, getDefaultVisibleColumns());
     }
 
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf, boolean skipSeeAuditLogPerm)
+    {
+        return createTableInfo(userSchema, cf);
+    }
+
     public List<FieldKey> getDefaultVisibleColumns()
     {
         return null;

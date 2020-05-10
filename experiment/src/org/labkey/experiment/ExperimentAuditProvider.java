@@ -31,6 +31,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -125,6 +126,12 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
     @Override
     public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf)
     {
+        return createTableInfo(userSchema, cf, false);
+    }
+
+    @Override
+    public TableInfo createTableInfo(UserSchema userSchema, ContainerFilter cf, boolean skipSeeAuditLogPerm)
+    {
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
@@ -177,6 +184,16 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     col.setFk(new QueryForeignKey(CoreSchema.getInstance().getTableInfoQCState(), null, "RowId", "Label"));
                 }
             }
+
+            @Override
+            protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+            {
+                if (!skipSeeAuditLogPerm)
+                    return super.getContainerFilterClause(filter, fieldKey);
+
+                return filter.createFilterClause(getSchema(), fieldKey, getContainer());
+            }
+
         };
 
         return table;
