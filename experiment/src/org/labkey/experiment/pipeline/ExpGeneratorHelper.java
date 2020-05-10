@@ -207,9 +207,7 @@ public class ExpGeneratorHelper
         {
             Set<RecordedAction> actions = new LinkedHashSet<>(actionSet.getActions());
             Map<URI, String> runOutputsWithRoles = new LinkedHashMap<>();
-            Map<URI, String> runInputsWithRoles = new HashMap<>();
-
-            runInputsWithRoles.putAll(actionSet.getOtherInputs());
+            Map<URI, String> runInputsWithRoles = new HashMap<>(actionSet.getOtherInputs());
 
             if (log != null)
                 log.info("Checking files referenced by experiment run");
@@ -217,17 +215,11 @@ public class ExpGeneratorHelper
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
                 {
-                    if (runInputsWithRoles.get(dataFile.getURI()) == null)
-                    {
-                        // For inputs, don't stomp over the role specified the first time a file was used as an input
-                        runInputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
-                        // This can be slow over network file systems so do it outside of the database
-                        // transaction. The XarSource caches the results so it'll be fast once we start inserting.
+                    // For inputs, don't stomp over the role specified the first time a file was used as an input
+                    runInputsWithRoles.computeIfAbsent(dataFile.getURI(), k -> dataFile.getRole());
 
-                        // consider: this shouldn't be part of the ExpGeneratorHelper code
-                        if (null != source)
-                            source.getCanonicalDataFileURL(FileUtil.uriToString(dataFile.getURI()));
-                    }
+                    // This can be slow over network file systems so do it outside of the database
+                    // transaction. The XarSource caches the results so it'll be fast once we start inserting.
                 }
                 for (RecordedAction.DataFile dataFile : action.getOutputs())
                 {
@@ -240,23 +232,13 @@ public class ExpGeneratorHelper
                     // This can be slow over network file systems so do it outside of the database
                     // transaction. The XarSource caches the results so it'll be fast once we start inserting.
 
-                    // consider: this shouldn't be part of the ExpGeneratorHelper code
-                    if (null != source)
-                        source.getCanonicalDataFileURL(FileUtil.uriToString(dataFile.getURI()));
+                    // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
+                    // the actions.
+                    runInputsWithRoles.remove(dataFile.getURI());
                 }
             }
             if (log != null)
                 log.debug("File check complete");
-
-            // Files count as inputs to the run if they're used by one of the actions and weren't produced by one of
-            // the actions.
-            for (RecordedAction action : actions)
-            {
-                for (RecordedAction.DataFile dataFile : action.getOutputs())
-                {
-                    runInputsWithRoles.remove(dataFile.getURI());
-                }
-            }
 
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {

@@ -7,8 +7,8 @@ import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
@@ -36,6 +36,9 @@ public interface ProvenanceService
     String PROVENANCE_OBJECT_MAP = "provenanceMap";
 
     String CURRENT_PROVENANCE_RECORDING_PARAMS = "ProvenanceRecordingParams";
+
+    String PROVENANCE_PROTOCOL = "ProvenanceProtocol";
+    String PROVENANCE_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:ProvenanceProtocol";
 
     static ProvenanceService get()
     {
@@ -117,7 +120,7 @@ public interface ProvenanceService
     /**
      *  Get the recording from session state and create an ExpRun
      */
-    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action);
+    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container);
 
     /**
      * Helper method to create recording params object

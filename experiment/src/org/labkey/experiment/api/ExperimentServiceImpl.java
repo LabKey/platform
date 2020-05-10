@@ -83,6 +83,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryRowReference;
@@ -410,6 +411,20 @@ public class ExperimentServiceImpl implements ExperimentService
         run.setLSID(generateGuidLSID(container, "Run"));
         run.setContainer(container);
         return new ExpRunImpl(run);
+    }
+
+    @Override
+    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId, ExpProtocol protocol)
+    {
+        try
+        {
+            return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, null, null, null);
+        }
+        catch (ExperimentException | ValidationException e)
+        {
+            LOG.error(e);
+        }
+        return null;
     }
 
     @Override
