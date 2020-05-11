@@ -78,7 +78,8 @@ import java.util.stream.Collectors;
 public class ListImporter
 {
     private static final String TYPE_NAME_COLUMN = "ListName";
-    private ListImportContext _importContext;
+
+    private final ListImportContext _importContext;
 
     public ListImporter(){
         _importContext = new ListImportContext(null, false);

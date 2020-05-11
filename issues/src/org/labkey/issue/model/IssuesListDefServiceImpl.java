@@ -15,7 +15,6 @@
  */
 package org.labkey.issue.model;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -108,18 +107,6 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
             }
             return exception;
         }
-    }
-
-    // Note to reviewer: This was intended to hold update and create validation in common, but this seems like the only
-    // bit of validation that makes sense to do in here. Should I just factor out the check, or keep this function as is?
-    @Override
-    public ValidationException validateIssuesProperties(IssuesDomainKindProperties properties)
-    {
-        ValidationException exception = new ValidationException();
-        String name = properties.getIssueDefName();
-        if (StringUtils.isBlank(name))
-            exception.addGlobalError("Issue name must not be null.");
-        return exception;
     }
 
     @Override

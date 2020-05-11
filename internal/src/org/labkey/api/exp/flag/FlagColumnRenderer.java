@@ -89,9 +89,9 @@ public class FlagColumnRenderer extends DataColumn
                 unflagSrc = flagCol.urlFlag(false);
         }
         if (null == flagSrc)
-            flagSrc = AppProps.getInstance().getContextPath() +"/Experiment/flagDefault.gif";
+            flagSrc = AppProps.getInstance().getContextPath() +"/experiment/flagDefault.gif";
         if (null == unflagSrc)
-            unflagSrc = AppProps.getInstance().getContextPath() +"/Experiment/unflagDefault.gif";
+            unflagSrc = AppProps.getInstance().getContextPath() +"/experiment/unflagDefault.gif";
 
         try
         {
