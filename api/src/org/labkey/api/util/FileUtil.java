@@ -143,13 +143,13 @@ public class FileUtil
             // wait a little then try again
             try
             {
-                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+                log.error("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 Thread.sleep(1000);
             }
             catch (InterruptedException e)
             {
                 // give up
-                log.warn("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+                log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 return false;
             }
         }
