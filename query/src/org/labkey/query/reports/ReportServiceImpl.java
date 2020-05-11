@@ -883,14 +883,22 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 if (descriptor instanceof RReportDescriptor && xmlFileName.toLowerCase().endsWith(".report.xml"))
                 {
                     String baseName = xmlFileName.substring(0, xmlFileName.length() - ".report.xml".length());
-                    InputStream is = root.getInputStream(baseName + ".R");
-                    if (null == is)
-                        is = root.getInputStream(baseName + ".r");
-                    if (null != is)
+                    InputStream is = null;
+                    try
                     {
-                        String script = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
-                        if (!StringUtils.isBlank(script))
-                            descriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
+                        is = root.getInputStream(baseName + ".R");
+                        if (null == is)
+                            is = root.getInputStream(baseName + ".r");
+                        if (null != is)
+                        {
+                            String script = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
+                            if (!StringUtils.isBlank(script))
+                                descriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
+                        }
+                    }
+                    finally
+                    {
+                        IOUtils.closeQuietly(is);
                     }
                 }
             }
