@@ -18,16 +18,12 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.DefaultQueryUpdateService;
-import org.labkey.api.query.DuplicateKeyException;
-import org.labkey.api.query.InvalidKeyException;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -68,7 +64,7 @@ public class VisitUpdateService extends DefaultQueryUpdateService
             throw new ValidationException("A visit must include SequenceNumMin");
 
         VisitImpl visit = VisitImpl.fromMap(newRow, container);
-        VisitImpl currentVisit = studyManager.getVisitForSequence(study, visit.getSequenceNumMinDouble());
+        VisitImpl currentVisit = studyManager.getVisitForSequence(study, visit.getSequenceNumMin());
 
         if (null != currentVisit)
         {
