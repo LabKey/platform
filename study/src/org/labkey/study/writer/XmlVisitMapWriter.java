@@ -34,7 +34,6 @@ import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +48,13 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public static final String FILENAME = "visit_map.xml";
 
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
@@ -89,10 +90,10 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 
                 visitXml.setSequenceNum(visit.getSequenceNumMinDouble());
 
-                if (visit.getSequenceNumMinDouble() != visit.getSequenceNumMaxDouble())
+                if (!visit.getSequenceNumMin().equals(visit.getSequenceNumMax()))
                     visitXml.setMaxSequenceNum(visit.getSequenceNumMaxDouble());
 
-                if (null != visit.getProtocolDayDouble())
+                if (null != visit.getProtocolDay())
                     visitXml.setProtocolDay(visit.getProtocolDayDouble());
 
                 if (null != visit.getCohort())
@@ -155,7 +156,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 Alias aliasXml = ia.addNewAlias();
                 aliasXml.setName(alias.getName());
-                aliasXml.setSequenceNum(alias.getSequenceNum());
+                aliasXml.setSequenceNum(alias.getSequenceNumDouble());
             }
         }
 

@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -84,6 +85,8 @@ public class DataColumn extends DisplayColumn
         _displayColumn = getDisplayField(col, withLookups);
         _nowrap = _displayColumn.isNoWrap();
         _sortFieldKeys = _displayColumn.getSortFieldKeys();
+        if (null == _sortFieldKeys && _displayColumn.isSortable())
+            _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();

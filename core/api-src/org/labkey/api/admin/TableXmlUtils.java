@@ -22,14 +22,12 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SchemaTableInfo;
-import org.labkey.api.resource.Resource;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.OntologyType;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 
-import java.io.InputStream;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -71,25 +69,10 @@ public class TableXmlUtils
         try
         {
             TablesDocument tablesDocFromDatabaseMetaData = createXmlDocumentFromDatabaseMetaData(schema.getScope(), schema.getName(), false);
+            TablesDocument tablesDocFromXml = DbScope.getSchemaXml(schema);
 
-            if (null != tablesDocFromDatabaseMetaData)
-            {
-                Resource r = schema.getSchemaResource();
-
-                if (null != r)
-                {
-                    try (InputStream xmlStream = r.getInputStream())
-                    {
-                        if (null != xmlStream)
-                        {
-                            TablesDocument tablesDocFromXml = TablesDocument.Factory.parse(xmlStream);
-
-                            if (null != tablesDocFromXml)
-                                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, resultList, errorOnXmlMiss);
-                        }
-                    }
-                }
-            }
+            if (null != tablesDocFromXml)
+                compareTableDocuments(tablesDocFromDatabaseMetaData, tablesDocFromXml, bFull, bCaseSensitive, null, resultList, errorOnXmlMiss);
         }
         catch (Exception e)
         {

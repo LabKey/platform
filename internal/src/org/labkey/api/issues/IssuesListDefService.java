@@ -20,6 +20,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -38,6 +41,41 @@ public interface IssuesListDefService
     {
         ServiceRegistry.get().registerService(IssuesListDefService.class, impl);
     }
+
+    /**
+     * Get the domain kind properties of a issue definition.
+     * @param container The container to look in
+     * @param defName The unique name of the issue definition
+     * @return IssuesDomainKindProperties
+     */
+    IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName);
+
+    /**
+     * Updates an issue definition.
+     * @param container The container to look in
+     * @param user The user who made the request
+     * @param original The previously existing domain
+     * @param update The updated domain
+     * @param properties The updated domain kind properties
+     * @return ValidationException
+     */
+    ValidationException updateIssueDefinition(Container container, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                              IssuesDomainKindProperties properties);
+
+    /**
+     * Performs save of properties group id, user id, and comment sort direction for an issue definition
+     * @param container The container to look in
+     * @param properties The updated issue domain kind properties
+     * @param name The unique name of the issue definition
+     */
+    void saveIssueProperties(Container container, IssuesDomainKindProperties properties, String name);
+
+    /**
+     * Returns name of a GWTDomain as found in IssuesListDefTable
+     * @param domain The domain the name is retrieved from
+     * @return String              
+     */
+    String getNameFromDomain(GWTDomain domain);
 
     /**
      * Register a provider that will be used as the "Kind" for a new issue list definition creation.

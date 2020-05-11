@@ -80,6 +80,14 @@ public class DbSequenceManager
         return _sequences.computeIfAbsent(key, (k) -> new DbSequence.Preallocate(c, name, ensure(c, name, id), batchSize));
     }
 
+    /* This is not a recommended, but if you get stuck and need to reserve a block at once */
+    public static long reserveSequentialBlock(DbSequence seq, int count)
+    {
+        if (!(seq instanceof DbSequence.Preallocate))
+            throw new IllegalStateException();
+        return ((DbSequence.Preallocate)seq).reserveSequentialBlock(count);
+    }
+
 
     private static int ensure(Container c, String name, int id)
     {

@@ -1,1 +1,1 @@
-EXEC core.executeJavaUpgradeCode 'addDbSequenceForMaterialsRowId';
+EXEC core.executeJavaInitializationCode  'addDbSequenceForMaterialsRowId';

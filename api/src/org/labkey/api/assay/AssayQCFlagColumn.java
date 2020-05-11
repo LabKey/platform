@@ -77,7 +77,7 @@ public class AssayQCFlagColumn extends ExprColumn
                     {
                         return new LinkedHashSet<>(Arrays.asList(
                             ClientDependency.fromPath("clientapi/ext3"),
-                            ClientDependency.fromPath("Experiment/QCFlagToggleWindow.js")
+                            ClientDependency.fromPath("experiment/QCFlagToggleWindow.js")
                         ));
                     }
 

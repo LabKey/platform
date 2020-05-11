@@ -25,7 +25,6 @@ import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -47,17 +46,12 @@ public class VisitImporter implements InternalStudyImporter
     @Override
     public String getDataType() { return StudyArchiveDataTypes.VISIT_MAP; }
 
-
-    public boolean isEnsureDatasets()
-    {
-        return _ensureDatasets;
-    }
-
     public void setEnsureDatasets(boolean ensureDatasets)
     {
         _ensureDatasets = ensureDatasets;
     }
 
+    @Override
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, ImportException, ValidationException
     {
         if (!ctx.isDataTypeSelected(getDataType()))
