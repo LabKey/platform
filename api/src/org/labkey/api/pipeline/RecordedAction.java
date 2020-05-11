@@ -64,18 +64,18 @@ public class RecordedAction
     private Integer _recordCount;
 
     // Provenance map (list of from and to pairs)
-    private List<Pair<String,String>> _provenanceMap;
+    private Set<Pair<String,String>> _provenanceMap;
     // Set of lsids
     private Set<String> _materialInputs = new HashSet<>();
     // Set of lsids
     private Set<String> _dataInputs = new HashSet<>();
 
-    public List<Pair<String, String>> getProvenanceMap()
+    public Set<Pair<String, String>> getProvenanceMap()
     {
         return _provenanceMap;
     }
 
-    public void setProvenanceMap(List<Pair<String, String>> provenanceMap)
+    public void setProvenanceMap(Set<Pair<String, String>> provenanceMap)
     {
         _provenanceMap = provenanceMap;
     }

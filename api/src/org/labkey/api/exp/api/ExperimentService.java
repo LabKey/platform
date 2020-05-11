@@ -130,8 +130,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun createRunForProvenanceRecording(Container container, User user,
                                            RecordedActionSet actionSet,
                                            String runName,
-                                           @Nullable Integer runJobId,
-                                           ExpProtocol protocol);
+                                           @Nullable Integer runJobId);
 
     void queueSyncRunEdges(int runId);
 

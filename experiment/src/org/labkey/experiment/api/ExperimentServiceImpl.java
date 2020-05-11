@@ -83,6 +83,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -414,10 +415,35 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId, ExpProtocol protocol)
+    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId)
     {
         try
         {
+            ExpProtocol protocol;
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
+            {
+                List<String> sequenceProtocols = new ArrayList<>();
+                Map<String, ExpProtocol> protocolCache = new HashMap<>();
+                for (RecordedAction ra : actionSet.getActions())
+                {
+                    String stepName = ra.getName();
+                    sequenceProtocols.add(stepName);
+                    if (!protocolCache.containsKey(stepName))
+                    {
+                        // Check if it's in the database already
+                        ExpProtocol stepProtocol = ExperimentService.get().getExpProtocol(container, stepName);
+                        if (stepProtocol == null)
+                        {
+                            stepProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ProtocolApplication, stepName);
+                            stepProtocol.save(user);
+                        }
+                        protocolCache.put(stepName, stepProtocol);
+                    }
+                }
+                Lsid provenanceLsid = new Lsid(ProvenanceService.PROVENANCE_PROTOCOL_LSID);
+                protocol = ExpGeneratorHelper.createProtocol(container, user, protocolCache, sequenceProtocols, provenanceLsid, runName);
+                transaction.commit();
+            }
             return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, null, null, null);
         }
         catch (ExperimentException | ValidationException e)

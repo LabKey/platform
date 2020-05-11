@@ -30,6 +30,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -274,6 +275,7 @@ public class ExpGeneratorHelper
                                          Map<URI, String> runInputsWithRoles) throws ExperimentException, ValidationException, BatchValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(container, runName);
+        ProvenanceService pvs = ProvenanceService.get();
         run.setProtocol(protocol);
         if (null != source)
             run.setFilePathRoot(source.getRoot());
@@ -369,6 +371,12 @@ public class ExpGeneratorHelper
                         ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
                     outputData.save(user);
                 }
+            }
+
+            // add in any provenance mappings
+            if (pvs != null && !action.getProvenanceMap().isEmpty())
+            {
+                pvs.addProvenance(container, app, action.getProvenanceMap());
             }
         }
 
@@ -514,7 +522,7 @@ public class ExpGeneratorHelper
         return true;
     }
 
-    static private ExpProtocol createProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsid, String description)
+    static public ExpProtocol createProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache, List<String> protocolSequence, Lsid lsid, String description)
     {
         ExpProtocol parentProtocol;
         parentProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, lsid.getObjectId(), lsid.toString());
