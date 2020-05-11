@@ -57,7 +57,7 @@
     boolean isRootAdmin = getUser().hasRootAdminPermission();
     boolean hasPermission;
 
-    Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hasCreateButton", "false", "iconSize", "large", "labelPosition", "bottom", "noun", "Project");
+    Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hideCreateButton", "false", "iconSize", "large", "labelPosition", "bottom", "noun", "Project");
     Map<String,String> properties = new HashMap<>(defaultProperties);
     properties.putAll(me.getModelBean().getPropertyMap());
 
@@ -88,7 +88,7 @@
     }
 
     SimpleFilter filter = new SimpleFilter();
-    filter.addInClause(new FieldKey(null,"containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"),",")));
+    filter.addInClause(new FieldKey(null,"containerType"), Arrays.asList(StringUtils.split(properties.get("containerTypes"),";")));
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
     filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),getUser());
@@ -106,65 +106,67 @@
         else {
             %>No <%=h(properties.get("noun").toLowerCase())%>s to display.<%
         }
-        return;
-    }
-
-
-    boolean details = false;
-    HtmlString faX;
-    HtmlString width;
-    if (StringUtils.equals("small",properties.get("iconSize")))
-    {
-        faX = HtmlString.of("fa-lg");
-        width = HtmlString.of("67px");
-        details = StringUtils.equals("side",properties.get("labelPosition"));
-    }
-    else if (StringUtils.equals("medium",properties.get("iconSize")))
-    {
-        faX = HtmlString.of("fa-3x");
-        width = HtmlString.of("67px");
     }
     else
     {
-        faX = HtmlString.of("fa-5x");
-        width = HtmlString.of("100px");
-    }
-    %>
-    <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
-    <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
-<%
-    for (Map<String,Object> m : containers)
-    {
-        Container c = ContainerManager.getForId((String)m.get("entityId"));
-        if (null != c)
+        boolean details = false;
+        HtmlString faX;
+        HtmlString width;
+        if (StringUtils.equals("small",properties.get("iconSize")))
         {
-            HtmlString projectName = HtmlString.of(c.getProject().getName());
-            // data-project can be use in style sheet to hide projects e.g.
-            // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
-            if (details) {
-                %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-side"><span class="fa fa-folder-open fa-lg"></span></div><span class="thumb-label-side"><%=h(c.getName())%></span></a></div></div><%
-            } else {
-                %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-bottom"><span class="fa fa-folder-open <%=faX%>"></span></div><span class="thumb-label-bottom"><%=h(c.getName())%></span></a></div></div><%
+            faX = HtmlString.of("fa-lg");
+            width = HtmlString.of("67px");
+            details = StringUtils.equals("side",properties.get("labelPosition"));
+        }
+        else if (StringUtils.equals("medium",properties.get("iconSize")))
+        {
+            faX = HtmlString.of("fa-3x");
+            width = HtmlString.of("67px");
+        }
+        else
+        {
+            faX = HtmlString.of("fa-5x");
+            width = HtmlString.of("100px");
+        }
+        %>
+        <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
+        <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
+    <%
+        for (Map<String,Object> m : containers)
+        {
+            Container c = ContainerManager.getForId((String)m.get("entityId"));
+            if (null != c)
+            {
+                HtmlString projectName = HtmlString.of(c.getProject().getName());
+                String displayName = StringUtils.defaultIfBlank(c.getTitle(), c.getName());
+                // data-project can be use in style sheet to hide projects e.g.
+                // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
+                if (details) {
+                    %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-side"><span class="fa fa-folder-open fa-lg"></span></div><span class="thumb-label-side"><%=h(displayName)%></span></a></div></div><%
+                } else {
+                    %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-bottom"><span class="fa fa-folder-open <%=faX%>"></span></div><span class="thumb-label-bottom"><%=h(displayName)%></span></a></div></div><%
+                }
             }
         }
+    %>
+        </div>
+        <div><%
+            if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
+            {
+                if ((StringUtils.equals("Project",properties.get("noun")) && isRootAdmin) ||
+                    StringUtils.equals("Subfolder",properties.get("noun")) && getContainer().hasPermission(getUser(), AdminPermission.class))
+                {
+                    Container c = getContainer();
+                    if (StringUtils.equals("project",properties.get("containerTypes")))
+                        c = ContainerManager.getRoot();
+                    %><%=button("Create New " + properties.get("noun")).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
+                }
+            }%>
+        </div>
+    </div>
+<%
     }
 %>
-    </div>
-    <div><%
-        if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
-        {
-            if ((StringUtils.equals("Project",properties.get("noun")) && isRootAdmin) ||
-                StringUtils.equals("Subfolder",properties.get("noun")) && getContainer().hasPermission(getUser(), AdminPermission.class))
-            {
-                Container c = getContainer();
-                if (StringUtils.equals("project",properties.get("containerTypes")))
-                    c = ContainerManager.getRoot();
-                %><%=button("Create New " + properties.get("noun")).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
-            }
-        }%>
-    </div>
-</div>
-
 
 <script type="text/javascript">
 
@@ -297,7 +299,7 @@
                     },{
                         xtype: 'checkbox',
                         boxLabel: 'Hide Create Button',
-                        checked: config.hideCreateButton,
+                        checked: config.hideCreateButton==='true'||config.hideCreateButton===true,
                         itemId: 'hideCreateButton'
                     }],
                     listeners: {
