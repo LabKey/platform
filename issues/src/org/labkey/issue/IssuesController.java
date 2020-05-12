@@ -28,6 +28,8 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -80,8 +82,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -148,6 +153,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -2009,6 +2015,120 @@ public class IssuesController extends SpringActionController
 
             return root;
         }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class GetUsersForGroupAction extends ReadOnlyApiAction<GroupIdForm>
+    {
+        @Override
+        public Object execute(GroupIdForm form, BindException errors)
+        {
+            //derived from IssueServiceAction.getUsersForGroup()
+            List<UserGroup> users = new ArrayList<>();
+
+            if (null != form.getGroupId())
+            {
+                Group group = SecurityManager.getGroup(form.getGroupId());
+                if (group != null)
+                {
+                    for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
+                    {
+                        if (getContainer().hasPermission(user, UpdatePermission.class))
+                        {
+                            UserGroup usergrp = new UserGroup();
+                            usergrp.setGroupId(group.getUserId());
+                            usergrp.setGroupName(group.getName());
+                            usergrp.setUserId(user.getUserId());
+                            usergrp.setUserName(user.getDisplayName(getUser()));
+                            users.add(usergrp);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // all project users
+                for (User user : SecurityManager.getProjectUsers(getContainer()))
+                {
+                    if (getContainer().hasPermission(user, UpdatePermission.class))
+                    {
+                        UserGroup projectUsers = new UserGroup();
+                        projectUsers.setUserId(user.getUserId());
+                        projectUsers.setUserName(user.getDisplayName(getUser()));
+                        users.add(projectUsers);
+                    }
+                }
+            }
+
+            users.sort(Comparator.comparing(UserGroup::getUserName, String.CASE_INSENSITIVE_ORDER));
+            return users;
+        }
+    }
+
+    public static class GroupIdForm
+    {
+        Integer groupId;
+
+        public Integer getGroupId()
+        {
+            return groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            this.groupId = groupId;
+        }
+
+    }
+
+    public static class UserGroup
+    {
+        int userId;
+        String userName;
+        int groupId;
+        String groupName;
+
+        public int getUserId()
+        {
+            return userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            this.userId = userId;
+        }
+
+        public String getUserName()
+        {
+            return userName;
+        }
+
+        public void setUserName(String userName)
+        {
+            this.userName = userName;
+        }
+
+        public int getGroupId()
+        {
+            return groupId;
+        }
+
+        public void setGroupId(int groupId)
+        {
+            this.groupId = groupId;
+        }
+
+        public String getGroupName()
+        {
+            return groupName;
+        }
+
+        public void setGroupName(String groupName)
+        {
+            this.groupName = groupName;
+        }
+
     }
 
     @RequiresPermission(ReadPermission.class)
