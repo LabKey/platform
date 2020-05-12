@@ -143,7 +143,7 @@ public class FileUtil
             // wait a little then try again
             try
             {
-                log.error("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 Thread.sleep(1000);
             }
             catch (InterruptedException e)
@@ -152,12 +152,6 @@ public class FileUtil
                 log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
                 return false;
             }
-        }
-
-        if (dir.exists())
-        {
-            log.warn("dumping thread because server could not delete directory: " + dir.getAbsolutePath());
-            DebugInfoDumper.dumpThreads(1);
         }
 
         return !dir.exists();
