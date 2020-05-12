@@ -57,7 +57,7 @@
     boolean isRootAdmin = getUser().hasRootAdminPermission();
     boolean hasPermission;
 
-    Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hideCreateButton", "false", "iconSize", "large", "labelPosition", "bottom", "noun", "Project");
+    Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hideCreateButton", "false", "iconSize", "large", "labelPosition", "bottom");
     Map<String,String> properties = new HashMap<>(defaultProperties);
     properties.putAll(me.getModelBean().getPropertyMap());
 
@@ -75,6 +75,9 @@
             target = ContainerManager.getForId(containerPath);
         hasPermission = target != null && target.hasPermission(getUser(), ReadPermission.class);
     }
+
+    String containerTypes = properties.get("containerTypes");
+    String noun = !isBlank(containerTypes) && !"project".equals(containerTypes) ? "Subfolder" : "Project";
 
     if (target == null)
     {
@@ -101,10 +104,10 @@
     {
         if (getUser().isGuest())
         {
-            %>Please log in to view the <%=h(properties.get("noun").toLowerCase())%> list.<%
+            %>Please log in to view the <%=h(noun)%> list.<%
         }
         else {
-            %>No <%=h(properties.get("noun").toLowerCase())%>s to display.<%
+            %>No <%=h(noun.toLowerCase())%>s to display.<%
         }
     }
     else
@@ -131,7 +134,7 @@
         %>
         <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
         <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
-    <%
+<%
         for (Map<String,Object> m : containers)
         {
             Container c = ContainerManager.getForId((String)m.get("entityId"));
@@ -148,25 +151,25 @@
                 }
             }
         }
-    %>
-        </div>
-        <div><%
-            if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
-            {
-                if ((StringUtils.equals("Project",properties.get("noun")) && isRootAdmin) ||
-                    StringUtils.equals("Subfolder",properties.get("noun")) && getContainer().hasPermission(getUser(), AdminPermission.class))
-                {
-                    Container c = getContainer();
-                    if (StringUtils.equals("project",properties.get("containerTypes")))
-                        c = ContainerManager.getRoot();
-                    %><%=button("Create New " + properties.get("noun")).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
-                }
-            }%>
-        </div>
-    </div>
-<%
-    }
 %>
+        </div>
+        </div>
+<%
+    } // !containers.isEmpty()
+%>
+    <div><%
+        if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
+        {
+            if ((StringUtils.equals("Project",noun) && isRootAdmin) ||
+                StringUtils.equals("Subfolder",noun) && getContainer().hasPermission(getUser(), AdminPermission.class))
+            {
+                Container c = getContainer();
+                if (StringUtils.equals("project",properties.get("containerTypes")))
+                    c = ContainerManager.getRoot();
+                %><%=button("Create New " + noun).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
+            }
+        }%>
+    </div>
 
 <script type="text/javascript">
 
