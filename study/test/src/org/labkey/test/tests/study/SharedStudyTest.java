@@ -34,6 +34,7 @@ import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.ManageDatasetsPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
@@ -388,10 +389,11 @@ public class SharedStudyTest extends BaseWebDriverTest
         _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
         createDefaultStudy();
 
-        goToManageStudy()
+        ManageDatasetsPage datasetsPage = goToManageStudy()
             .goToManageStudy()
-            .manageDatasets()
-            .clickCreateNewDataset()
+            .manageDatasets();
+        assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
+        datasetsPage.clickCreateNewDataset()
             .setName(datasetName)
             .clickSave();
 
