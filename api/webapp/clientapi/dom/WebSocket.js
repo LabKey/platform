@@ -22,17 +22,13 @@ LABKEY.WebSocket = new function ()
     function websocketOnMessage (evt) {
         var json = JSON.parse(evt.data);
         var event = json.event;
-        console.info("websocket.onmessage", event);
 
         var list = _callbacks[event] || [];
         list.forEach(function(cb){cb(json)});
     }
 
     function websocketOnclose(evt) {
-        console.info("websocket.onclose", evt);
-
-        if (evt.wasClean)
-        {
+        if (evt.wasClean) {
             // first chance at handling the event goes to any registered callback listeners
             if (_callbacks[evt.code]) {
                 _callbacks[evt.code].forEach(function(cb){cb(evt)});
