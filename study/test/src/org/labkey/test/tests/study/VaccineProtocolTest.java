@@ -223,9 +223,10 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         editDatasetPage.getFieldsPanel()
                 .manuallyDefineFields("Value");
         editDatasetPage
-                .clickSave();
-//        new ManageDatasetsPage(getDriver())
-//                .clickImportBulkData();
+                .clickSave()
+                .clickViewData()
+                .getDataRegion()
+                .clickImportBulkData();
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
 
         _customizeViewsHelper.openCustomizeViewPanel();

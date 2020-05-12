@@ -65,6 +65,9 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
+        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
+        editDatasetDefinitionPage.setDataRowUniquenessType(EditDatasetDefinitionPage.DataRowUniquenessType.PTID_TIMEPOINT);
+        propertiesPage = editDatasetDefinitionPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
@@ -76,8 +79,8 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setDataRowUniquenessType(EditDatasetDefinitionPage.DataRowUniquenessType.PTID_TIMEPOINT);
-        editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys for dataset " + dataset);
+        editDatasetDefinitionPage.setDataRowUniquenessType(EditDatasetDefinitionPage.DataRowUniquenessType.PTID_ONLY);
+        editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("This dataset currently contains more than one row of data per Mouse. Demographic data includes one row of data per Mouse.");
         editDatasetDefinitionPage.clickCancel();
 
         DatasetInsertPage insertPage =goToDataset(folder, dataset)
@@ -108,7 +111,8 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
         editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
         propertiesPage = editDatasetDefinitionPage.clickSave();
-        ImportDataPage importPage = propertiesPage.clickViewData().importBulkData();
+        dataPage = propertiesPage.clickViewData();
+        ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
         importPage.submitExpectingError("Duplicates were found in the database or imported data");
     }
