@@ -150,7 +150,7 @@ public abstract class ContainerFilter
     @NotNull
     public static ContainerFilter getContainerFilterByName(@Nullable String name, Container container, @NotNull User user)
     {
-        Type type = getContainerFilterTypeByName(name);
+        Type type = getType(name);
         if (null == type)
             type = Type.Current;
         return type.create(container, user);
