@@ -9,7 +9,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -65,7 +65,7 @@ public class StudyDateAndContinuousTimepointTest extends BaseWebDriverTest
         portalHelper.addWebPart("Datasets");
 
         log("Creating a new dataset");
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(datasetName);

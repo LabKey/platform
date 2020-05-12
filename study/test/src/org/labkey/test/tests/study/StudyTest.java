@@ -33,7 +33,7 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.categories.Specimen;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
@@ -697,7 +697,7 @@ public class StudyTest extends StudyBaseTest
 
             // Test Bad Field Names -- #13607
             clickButton("Manage");
-            EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+            DatasetDesignerPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
             editDatasetPage.getFieldsPanel()
                     .addField(new FieldDefinition("Bad Name").setLabel("Bad Name").setType(FieldDefinition.ColumnType.String));
             editDatasetPage.clickSave();
@@ -773,7 +773,7 @@ public class StudyTest extends StudyBaseTest
     {
         log("creating the participant/visit comment dataset");
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = goToManageStudy()
+        DatasetDesignerPage editDatasetPage = goToManageStudy()
                 .manageDatasets()
                 .clickCreateNewDataset()
                 .setName(PARTICIPANT_CMT_DATASET);
@@ -1178,7 +1178,7 @@ public class StudyTest extends StudyBaseTest
     protected void verifyParticipantVisitDay()
     {
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByLabel(DEMOGRAPHICS_TITLE)
                 .clickEditDefinition();
         editDatasetPage

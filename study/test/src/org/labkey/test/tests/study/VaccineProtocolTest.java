@@ -24,7 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.pages.DesignerController.DesignerTester;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -216,7 +216,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 12");
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName("Simple");

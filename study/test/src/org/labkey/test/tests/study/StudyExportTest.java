@@ -27,7 +27,7 @@ import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -582,7 +582,7 @@ public class StudyExportTest extends StudyManualTest
 
     private void modifyDatasetColumn(String dataset)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByLabel(dataset)
                 .clickEditDefinition();
 

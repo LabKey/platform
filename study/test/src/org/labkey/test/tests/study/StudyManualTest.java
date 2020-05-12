@@ -19,7 +19,7 @@ package org.labkey.test.tests.study;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
@@ -201,7 +201,7 @@ public abstract class StudyManualTest extends StudyTest
     protected void createCustomAssays()
     {
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName("verifyAssay");
 

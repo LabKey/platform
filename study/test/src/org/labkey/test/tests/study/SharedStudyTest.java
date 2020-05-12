@@ -33,8 +33,8 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
-import org.labkey.test.pages.study.ManageDatasetsPage;
+import org.labkey.test.pages.ManageDatasetsPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
@@ -105,7 +105,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         createDataspaceProject(getProjectName(), PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", true, true);
 
-        EditDatasetDefinitionPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
+        DatasetDesignerPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
         datasetDomainEditor.setIsDemographicData(true);
         datasetDomainEditor.shareDemographics("Share by PandaId");
         datasetDomainEditor.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));

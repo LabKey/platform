@@ -33,7 +33,7 @@ import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
 import org.labkey.test.pages.TimeChartWizard;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -160,7 +160,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void createDataset(@LoggedParam String name)
     {
-        EditDatasetDefinitionPage definitionPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
             .clickCreateNewDataset()
             .setName(name);
 
@@ -174,7 +174,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void renameDataset(String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(orgName)
                 .clickEditDefinition();
 
@@ -219,7 +219,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void deleteFields(String name)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(name)
                 .clickEditDefinition();
 
@@ -237,7 +237,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void checkFieldsPresent(String name, String... items)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(name)
                 .clickEditDefinition();
 

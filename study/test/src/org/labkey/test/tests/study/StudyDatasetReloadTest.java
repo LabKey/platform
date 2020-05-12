@@ -21,7 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.LogMethod;
 
@@ -73,7 +73,7 @@ public class StudyDatasetReloadTest extends StudyBaseTest
         assertElementPresent(Locator.tagWithText("td", "Staff Code").append("/../td/input[last()][@checked]"));     // MV
         assertElementPresent(Locator.tagWithText("td", "VisitDay").append("/../td/input[last()][not(@checked)]"));  // MV
 
-        EditDatasetDefinitionPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
+        DatasetDesignerPage editDatasetPage = new DatasetPropertiesPage(getDriver()).clickEditDefinition();
         assertFalse("Study import set demographics bit incorrectly", editDatasetPage.isDemographicsData());
 
         goToManageStudy();

@@ -29,7 +29,7 @@ import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ImportDataPage;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -133,7 +133,7 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         log("Do Setup: create simple dataset with one ptid and one visit");
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(TEST_DATASET_NAME);

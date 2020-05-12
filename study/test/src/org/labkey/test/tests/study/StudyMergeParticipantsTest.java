@@ -21,7 +21,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.pages.dataset.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 
@@ -154,7 +154,7 @@ public class StudyMergeParticipantsTest extends StudyBaseTest
     {
 
         // Create alias dataset and insert some data
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
                 .setName(ALIAS_DATASET);
         editDatasetPage.getFieldsPanel()
