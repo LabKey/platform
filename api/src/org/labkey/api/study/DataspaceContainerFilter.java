@@ -60,7 +60,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
 
     public DataspaceContainerFilter(User user, Container project)
     {
-        super(user);
+        super(project, user);
         List<GUID> containerIds = null;
         ViewContext context = HttpView.hasCurrentView() ? HttpView.currentContext() : null;
         if (project != null && context != null)
@@ -75,9 +75,9 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
         _includeProject = false;
     }
 
-    public DataspaceContainerFilter(User user, List<GUID> containerIds)
+    public DataspaceContainerFilter(Container c, User user, List<GUID> containerIds)
     {
-        super(user);
+        super(c, user);
         _containerIds = null==containerIds ? null : new ArrayList<>(containerIds);
         _allowOptimizePermissionsCheck = false;
         _includeProject = false;
@@ -85,7 +85,7 @@ public class DataspaceContainerFilter extends ContainerFilter.AllInProject
 
     private DataspaceContainerFilter(DataspaceContainerFilter src, boolean allowOptimize, boolean includeProject)
     {
-        super(src._user);
+        super(src._container, src._user);
         _containerIds = src._containerIds;
         _allowOptimizePermissionsCheck = allowOptimize;
         _includeProject = includeProject;

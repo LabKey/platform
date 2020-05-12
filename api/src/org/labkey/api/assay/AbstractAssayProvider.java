@@ -209,7 +209,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             filter.addInClause(getTableMetadata(protocol).getResultRowIdFieldKey(), dataKeys.keySet());
 
             AssayProtocolSchema schema = createProtocolSchema(user, assayDataContainer, protocol, study);
-            TableInfo dataTable = schema.createDataTable(new ContainerFilter.CurrentAndSubfolders(user));
+            TableInfo dataTable = schema.createDataTable(ContainerFilter.Type.CurrentAndSubfolders.create(schema));
 
             FieldKey objectIdFK = getTableMetadata(protocol).getResultRowIdFieldKey();
             FieldKey runLSIDFK = new FieldKey(getTableMetadata(protocol).getRunFieldKeyFromResults(), ExpRunTable.Column.LSID.toString());

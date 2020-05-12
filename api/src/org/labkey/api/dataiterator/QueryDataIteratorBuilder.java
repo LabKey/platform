@@ -19,7 +19,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultSchema;
@@ -51,7 +50,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
     final User _user;
     final SchemaKey _schemaKey;
     final QuerySchema _schema;
-    ContainerFilter _containerFilter;
+    ContainerFilter.Type _containerFilterType;
     List<String> _columns;
 
     final Map<String,Object> _parameters = new CaseInsensitiveHashMap<>();
@@ -99,7 +98,7 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
 
     public void setContainerFilter(String containerFilterName)
     {
-        _containerFilter = ContainerFilter.getContainerFilterByName(containerFilterName, _container, _user);
+        _containerFilterType = ContainerFilter.getType(containerFilterName);
     }
 
     public void setColumns(List<String> columns)
@@ -130,8 +129,8 @@ public class QueryDataIteratorBuilder implements DataIteratorBuilder
         else
             qd = qs.createQueryDef(_user, _container, _schemaKey, "source");
 
-        if (null != _containerFilter)
-            qd.setContainerFilter(_containerFilter);
+        if (null != _containerFilterType)
+            qd.setContainerFilter(_containerFilterType.create(_container,_user));
 
         qd.setSql(sql);
         ArrayList<QueryException> qerrors = new ArrayList<>();

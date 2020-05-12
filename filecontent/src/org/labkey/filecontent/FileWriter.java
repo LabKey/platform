@@ -76,15 +76,13 @@ public class FileWriter extends BaseFolderWriter
         {
             VirtualFile virtualRoot = vf.getDir(DIR_NAME);
 
-            // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
-            // also exclude the "./cache" and "./unzip" directories as those are LabKey created as well
-            List<String> dirsToExclude = Arrays.asList(PipelineService.EXPORT_DIR, PipelineService.UNZIP_DIR, PipelineService.CACHE_DIR);
-
             for (WebdavResource child : resource.list())
             {
                 if (child.isCollection())
                 {
-                    if (dirsToExclude.stream().noneMatch(child.getName()::equalsIgnoreCase))
+                    // In-line first level of recursion to be able to exclude the "./export" directory, as we may be writing into it right now
+                    // also exclude the "./cache" and "./unzip" directories as those are LabKey created as well
+                    if (!PipelineService.doNotIndexDirectories.contains(child.getName()))
                     {
                         virtualRoot.getDir(child.getName()).saveWebdavTree(child, ctx.getUser());
                     }

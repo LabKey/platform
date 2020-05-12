@@ -44,7 +44,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
@@ -67,8 +66,8 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -1235,7 +1234,7 @@ public class OlapController extends SpringActionController
         // TODO optimize, this is round-about since cf probabaly implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
         SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
-        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), getContainer(), new HashMap<FieldKey,ColumnInfo>()));
+        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
         return Collections.unmodifiableCollection(list);
     }

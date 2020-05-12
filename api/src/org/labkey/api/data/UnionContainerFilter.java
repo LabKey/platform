@@ -40,11 +40,11 @@ public class UnionContainerFilter extends ContainerFilter
     }
 
     @Override
-    public String getCacheKey(Container c)
+    public String getCacheKey()
     {
-        StringBuilder sb = new StringBuilder(getClass().getName()).append("/").append(c.getId()).append("/");
+        StringBuilder sb = new StringBuilder(getDefaultCacheKey(_container,_user)).append("/");
         for (var cf : _filters)
-            sb.append(cf.getCacheKey(c)).append("/");
+            sb.append(cf.getCacheKey()).append("/");
         return sb.toString();
     }
 
@@ -75,11 +75,5 @@ public class UnionContainerFilter extends ContainerFilter
     public String toString()
     {
         return getClass().getName();
-    }
-
-    @Override
-    public SimpleFilter.FilterClause createFilterClause(DbSchema schema, FieldKey containerFilterColumn, Container container)
-    {
-        return super.createFilterClause(schema, containerFilterColumn, container);
     }
 }

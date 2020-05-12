@@ -472,7 +472,7 @@ public class DatasetQueryView extends StudyQueryView
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
                         c,
                         protocol,
-                        new ContainerFilter.CurrentAndSubfolders(getUser()));
+                        ContainerFilter.Type.CurrentAndSubfolders.create(getSchema()));
                 ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                 bar.add(viewAssayButton);
             }

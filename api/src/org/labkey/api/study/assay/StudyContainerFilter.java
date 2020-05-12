@@ -43,9 +43,9 @@ public class StudyContainerFilter extends ContainerFilter
     }
 
     @Override
-    public String getCacheKey(Container c)
+    public String getCacheKey()
     {
-        return super.getDefaultCacheKey(c);
+        return super.getDefaultCacheKey(_container, _user);
     }
 
     public Collection<GUID> getIds(Container currentContainer)

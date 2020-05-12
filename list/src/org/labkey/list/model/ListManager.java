@@ -559,7 +559,7 @@ public class ListManager implements SearchService.DocumentProvider
             return;
         }
 
-        String lastIndexClause = reindex ? "TRUE OR " : ""; //Prepend TRUE if we want to force a reindexing
+        String lastIndexClause = reindex ? "(1=1) OR " : ""; //Prepend TRUE if we want to force a reindexing
 
         // Index all items that have never been indexed OR where either the list definition or list item itself has changed since last indexed
         lastIndexClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
@@ -693,7 +693,7 @@ public class ListManager implements SearchService.DocumentProvider
         // Index all items that have never been indexed
         //   OR where either the list definition
         //   OR list item itself has changed since last indexed
-        String lastIndexedClause = reindex ? "TRUE OR " : "";
+        String lastIndexedClause = reindex ? "(1=1) OR " : "";
         lastIndexedClause += "LastIndexed IS NULL OR LastIndexed < ? OR (Modified IS NOT NULL AND LastIndexed < Modified)";
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause(lastIndexedClause, new Object[]{list.getModified()}));
 

@@ -57,6 +57,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.labkey.api.webdav.WebdavService.NOCRAWL_DIRECTORYNAME;
+import static org.labkey.api.webdav.WebdavService.NOCRAWL_FILENAME;
+
 /**
  * User: matthewb
  * Date: Nov 18, 2009
@@ -591,14 +594,14 @@ public class DavCrawler implements ShutdownListener
             return true;
 
         // google convention
-        if (path.contains("no_crawl"))
+        if (path.contains(NOCRAWL_DIRECTORYNAME))
             return true;
 
         File f = r.getFile();
         if (null != f)
         {
             // labkey convention
-            if (new File(f,".nocrawl").exists())
+            if (new File(f, NOCRAWL_FILENAME).exists())
                 return true;
             // postgres
             if (new File(f,"PG_VERSION").exists())

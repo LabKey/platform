@@ -88,7 +88,7 @@ public class PublishController extends SpringActionController
         @Override
         public ModelAndView getView(PublishHistoryForm form, BindException errors)
         {
-            ContainerFilter containerFilter = ContainerFilter.CURRENT;
+            ContainerFilter containerFilter = ContainerFilter.current(getContainer());
             if (form.getContainerFilterName() != null)
                 containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 
@@ -105,7 +105,7 @@ public class PublishController extends SpringActionController
                 SimpleFilter filter = new SimpleFilter();
                 if (_protocol.getRowId() != -1)
                     filter.addCondition(FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_PROTOCOL), _protocol.getRowId());
-                filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER), getContainer()));
+                filter.addCondition(containerFilter.createFilterClause(ExperimentService.get().getSchema(), FieldKey.fromParts(AssayAuditProvider.COLUMN_NAME_CONTAINER)));
 
                 settings.setBaseFilter(filter);
                 settings.setQueryName(AssayAuditProvider.ASSAY_PUBLISH_AUDIT_EVENT);

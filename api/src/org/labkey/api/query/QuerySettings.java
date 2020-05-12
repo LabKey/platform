@@ -492,10 +492,7 @@ public class QuerySettings
         String queryName = getQueryName();
         if (queryName == null)
             return null;
-        ContainerFilter cf = null;
-        if (getContainerFilterName() != null)
-            cf = ContainerFilter.getContainerFilterByName(getContainerFilterName(), schema.getContainer(), schema.getUser());
-        TableInfo table = schema.getTable(queryName, cf);
+        TableInfo table = schema.getTableCFF(queryName, ContainerFilter.getType(getContainerFilterName()));
         return table;
     }
 

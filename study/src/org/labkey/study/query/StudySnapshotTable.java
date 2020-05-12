@@ -54,7 +54,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema().getUser());
+        return ContainerFilter.Type.CurrentWithUser.create(getUserSchema());
     }
 
     public StudySnapshotTable(StudyQuerySchema schema, ContainerFilter cf)
@@ -183,7 +183,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), AdminPermission.class, null);
+        return filter.createFilterClause(getSchema(), fieldKey, AdminPermission.class, null);
     }
 
     @Override

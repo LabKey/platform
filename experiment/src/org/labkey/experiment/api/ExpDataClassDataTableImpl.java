@@ -98,7 +98,7 @@ public class ExpDataClassDataTableImpl extends ExpRunItemTableImpl<ExpDataClassD
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return new ContainerFilter.CurrentPlusProjectAndShared(_userSchema.getUser());
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(_userSchema);
     }
 
     public ExpDataClassDataTableImpl(String name, UserSchema schema, ContainerFilter cf, @NotNull ExpDataClassImpl dataClass)

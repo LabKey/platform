@@ -421,7 +421,7 @@ public class DefaultStudyDesignImporter
                     if (_tableInfo instanceof ContainerFilterable)
                     {
                         currentFilter = _tableInfo.getContainerFilter();
-                        ((ContainerFilterable)_tableInfo).setContainerFilter(new ContainerFilter.Project(_user));
+                        ((ContainerFilterable)_tableInfo).setContainerFilter(ContainerFilter.Type.Project.create(_tableInfo.getUserSchema()));
                     }
 
                     Set<String> columnNames = new HashSet<>();

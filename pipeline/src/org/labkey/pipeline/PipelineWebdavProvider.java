@@ -33,7 +33,6 @@ import org.labkey.pipeline.api.PipeRootImpl;
 import org.labkey.pipeline.api.PipelineServiceImpl;
 
 import java.io.File;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -86,7 +85,7 @@ public class PipelineWebdavProvider implements WebdavService.Provider
     }
 
 
-    private class PipelineFolderResource extends FileSystemResource
+    private static class PipelineFolderResource extends FileSystemResource
     {
         Container c;
 
@@ -134,9 +133,12 @@ public class PipelineWebdavProvider implements WebdavService.Provider
 
         public FileSystemResource find(String name)
         {
-            if (_files != null)
-                return new FileSystemResource(this, name);
-            return null;
+            if (_files == null)
+                return null;
+            var ret = new FileSystemResource(this, name);
+            if (PipelineServiceImpl.doNotIndexDirectories.contains(name))
+                ret.setShouldIndex(false);
+            return ret;
         }
     }
 }

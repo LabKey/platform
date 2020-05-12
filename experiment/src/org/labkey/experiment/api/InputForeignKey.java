@@ -51,13 +51,13 @@ public class InputForeignKey extends LookupForeignKey
         super(null);
         _schema = schema;
         _type = type;
-        _filter = filter == null ? ContainerFilter.Type.Current.create(schema.getUser()) : filter;
+        _filter = filter == null ? ContainerFilter.current(schema.getContainer()) : filter;
     }
 
     @Override
     public TableInfo getLookupTableInfo()
     {
-        String key = getClass().getName() + "/" + _type.toString() + "/" + _filter.getCacheKey(_schema.getContainer());
+        String key = getClass().getName() + "/" + _type.toString() + "/" + _filter.getCacheKey();
         return _schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
     }
 

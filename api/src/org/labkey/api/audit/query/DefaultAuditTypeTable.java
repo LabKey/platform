@@ -143,7 +143,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     {
         User user = (null == getUserSchema()) ? null : getUserSchema().getUser();
         Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), CanSeeAuditLogPermission.class, roles);
+        return filter.createFilterClause(getSchema(), fieldKey, CanSeeAuditLogPermission.class, roles);
     }
 
     // Subclasses may override this to provide customizations to the column

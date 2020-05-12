@@ -128,6 +128,6 @@ public class DatasetsTable extends FilteredTable<StudyQuerySchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getContainer());
     }
 }
