@@ -2019,6 +2019,33 @@ public class IssuesController extends SpringActionController
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
+    public class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            //derived from IssueServiceAction.getProjectGroups()
+            List<Principal> groups = new ArrayList<>();
+
+            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
+                String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+
+                Principal principal = new Principal();
+                principal.setActive(group.isActive());
+                principal.setDisplayName(displayText);
+                principal.setName(group.getName());
+                principal.setType(group.getType());
+                principal.setUserId(group.getUserId());
+                groups.add(principal);
+            });
+
+            return groups;
+
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
     public class GetUsersForGroupAction extends ReadOnlyApiAction<GroupIdForm>
     {
         @Override
@@ -2082,6 +2109,64 @@ public class IssuesController extends SpringActionController
 
     }
 
+    public static class Principal
+    {
+        int userId;
+        String name;
+        String displayName;
+        String type;
+        boolean active;
+
+        public int getUserId()
+        {
+            return userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            this.userId = userId;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getDisplayName()
+        {
+            return displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            this.displayName = displayName;
+        }
+
+        public String getType()
+        {
+            return type;
+        }
+
+        public void setType(String type)
+        {
+            this.type = type;
+        }
+
+        public boolean isActive()
+        {
+            return active;
+        }
+
+        public void setActive(boolean active)
+        {
+            this.active = active;
+        }
+    }
     public static class UserGroup
     {
         int userId;

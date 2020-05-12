@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.57.0-fb-issuesdesigner-story3-6800.9"
+    "@labkey/components": "0.57.0-fb-issuesdesigner-story3-6800.5"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
