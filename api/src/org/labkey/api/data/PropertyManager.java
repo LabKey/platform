@@ -105,12 +105,20 @@ public class PropertyManager
         return STORE.getProperties(user, container, category);
     }
 
+    private static void assertWritableProperties(@Nullable PropertyMap writableProps, boolean create)
+    {
+        // getWritableProperties() will return null if an existing map is not found and create is false.
+        if (writableProps == null)
+            assert !create;
+        else
+            assert !writableProps.isModified();
+    }
 
     /** For global system properties that get attached to the root container. */
     public static PropertyMap getWritableProperties(String category, boolean create)
     {
         PropertyMap ret = STORE.getWritableProperties(category, create);
-        assert !ret.isModified();
+        assertWritableProperties(ret, create);
         return ret;
     }
 
@@ -118,7 +126,7 @@ public class PropertyManager
     public static PropertyMap getWritableProperties(Container container, String category, boolean create)
     {
         PropertyMap ret = STORE.getWritableProperties(container, category, create);
-        assert !ret.isModified();
+        assertWritableProperties(ret, create);
         return ret;
     }
 
@@ -126,7 +134,7 @@ public class PropertyManager
     public static PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
         PropertyMap ret = STORE.getWritableProperties(user, container, category, create);
-        assert !ret.isModified();
+        assertWritableProperties(ret, create);
         return ret;
     }
 
