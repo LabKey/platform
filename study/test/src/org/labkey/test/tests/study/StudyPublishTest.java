@@ -220,6 +220,8 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
+        goToProjectHome();  // the prior operation leaves the test on the query metadata editor, scrolled down
+                            // which pins the project menu under a header
         navigateToFolder(getProjectName(), getFolderName());
 
         //webpart needed for republish test
@@ -1028,6 +1030,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         else if (location == PublishLocation.project)
         {
             Locator projectTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", getProjectName()));
+            scrollIntoView(projectTreeNode, true);
             doubleClick(projectTreeNode);
         }
         else
