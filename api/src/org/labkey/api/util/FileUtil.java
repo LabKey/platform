@@ -141,20 +141,11 @@ public class FileUtil
 
             // Issue 39579: Folder import sometimes fails to delete temp directory
             // wait a little then try again
-            try
-            {
-                log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
-                Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                // give up
-                log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
-                return false;
-            }
+            log.warn("Failed to delete file.  Sleep and try to delete again: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+            try {Thread.sleep(1000);} catch (InterruptedException x) {/* pass */}
         }
-
-        return !dir.exists();
+        log.error("Failed to delete file after 5 attempts: " + FileUtil.getAbsoluteCaseSensitiveFile(dir));
+        return false;
     }
 
     public static void deleteDir(@NotNull Path dir) throws IOException
