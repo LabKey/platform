@@ -15,33 +15,36 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.api.data.ContainerFilter" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.data.JdbcType" %>
+<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
+<%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="org.labkey.api.data.SimpleFilter" %>
-<%@ page import="org.labkey.api.query.FieldKey" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
-<%@ page import="org.labkey.api.data.ContainerFilter" %>
-<%@ page import="org.labkey.api.query.QuerySchema" %>
-<%@ page import="org.labkey.api.query.DefaultSchema" %>
-<%@ page import="org.labkey.api.data.TableSelector" %>
-<%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.data.Sort" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.admin.AdminUrls" %>
-<%@ page import="org.labkey.api.data.JdbcType" %>
-<%@ page import="org.labkey.api.data.SQLFragment" %>
+<%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.HashSet" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.Objects" %>
+<%@ page import="java.util.Set" %>
+<%@ page import="java.util.stream.Collectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     @Override
@@ -49,12 +52,16 @@
     {
         dependencies.add("extWidgets/IconPanel.css");
     }
+
+    String displayName(Container c)
+    {
+        return StringUtils.defaultIfBlank(c.getTitle(), c.getName());
+    }
 %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     int webPartId = webPart.getRowId();
-    boolean isRootAdmin = getUser().hasRootAdminPermission();
     boolean hasPermission;
 
     Map<String,String> defaultProperties = Map.of("containerTypes", "project", "containerFilter", "CurrentAndSiblings", "hideCreateButton", "false", "iconSize", "large", "labelPosition", "bottom");
@@ -95,10 +102,15 @@
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
     filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),getUser());
-    QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
-    // consider: could use ContainerManager or ContainerFilter.getIds()
-    var containers = new TableSelector(core.getTable("Containers",cf), Set.of("name","entityId"),filter, (Sort)null).getArrayList(Map.class);
-    containers.sort((m1, m2) -> StringUtils.compareIgnoreCase(String.valueOf(m1.get("name")),String.valueOf(m2.get("name"))));
+    Collection<GUID> ids = cf.getIds(target);
+    Set<GUID> set = null==ids ? Collections.emptySet() : new HashSet<>(ids);
+    if (cf.getType() == ContainerFilter.Type.CurrentAndFirstChildren)
+        set.remove(target.getEntityId());
+    List<Container> containers = set.stream()
+        .map(ContainerManager::getForId)
+        .filter(Objects::nonNull)
+        .sorted(Comparator.comparingInt(Container::getSortOrder).thenComparing(this::displayName))
+        .collect(Collectors.toList());
 
     if (containers.isEmpty())
     {
@@ -135,20 +147,16 @@
         <div class="labkey-projects-container" style="background-color: transparent; border-width: 0;">
         <div class="labkey-iconpanel" style="width: 100%; right: auto; left: 0; top: 0; margin: 0;">
 <%
-        for (Map<String,Object> m : containers)
+        for (Container c : containers)
         {
-            Container c = ContainerManager.getForId((String)m.get("entityId"));
-            if (null != c)
-            {
-                HtmlString projectName = HtmlString.of(c.getProject().getName());
-                String displayName = StringUtils.defaultIfBlank(c.getTitle(), c.getName());
-                // data-project can be use in style sheet to hide projects e.g.
-                // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
-                if (details) {
-                    %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-side"><span class="fa fa-folder-open fa-lg"></span></div><span class="thumb-label-side"><%=h(displayName)%></span></a></div></div><%
-                } else {
-                    %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-bottom"><span class="fa fa-folder-open <%=faX%>"></span></div><span class="thumb-label-bottom"><%=h(displayName)%></span></a></div></div><%
-                }
+            HtmlString projectName = HtmlString.of(c.getProject().getName());
+            String displayName = displayName(c);
+            // data-project can be use in style sheet to hide projects e.g.
+            // <style>div[data-project="StudyVerifyProject"]{display:none !important;}</style>
+            if (details) {
+                %><div data-project="<%=projectName%>" class="thumb-wrap"><div style="width: 100%;" class="tool-icon thumb-wrap thumb-wrap-side"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-side"><span class="fa fa-folder-open fa-lg"></span></div><span class="thumb-label-side"><%=h(displayName)%></span></a></div></div><%
+            } else {
+                %><div data-project="<%=projectName%>" style="display: inline-block;" class="thumb-wrap"><div style="width: <%=width%>;" class="tool-icon thumb-wrap thumb-wrap-bottom"><a href="<%=h(c.getStartURL(getUser()))%>"><div class="thumb-img-bottom"><span class="fa fa-folder-open <%=faX%>"></span></div><span class="thumb-label-bottom"><%=h(displayName)%></span></a></div></div><%
             }
         }
 %>
@@ -160,12 +168,11 @@
     <div><%
         if (Boolean.TRUE != JdbcType.BOOLEAN.convert(properties.get("hideCreateButton")))
         {
-            if ((StringUtils.equals("Project",noun) && isRootAdmin) ||
-                StringUtils.equals("Subfolder",noun) && getContainer().hasPermission(getUser(), AdminPermission.class))
+            boolean isProject = StringUtils.equals("project",properties.get("containerTypes"));
+            Container c = isProject ? ContainerManager.getRoot() : target;
+            if ((c.isRoot() && getUser().hasRootAdminPermission()) ||
+                (!c.isRoot() && c.hasPermission(getUser(), AdminPermission.class)))
             {
-                Container c = getContainer();
-                if (StringUtils.equals("project",properties.get("containerTypes")))
-                    c = ContainerManager.getRoot();
                 %><%=button("Create New " + noun).href(urlProvider(AdminUrls.class).getCreateFolderURL(c, getActionURL()))%><%
             }
         }%>
