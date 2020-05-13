@@ -26,6 +26,7 @@ import org.labkey.api.exp.ProtocolApplicationParameter;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -309,7 +310,7 @@ public class ExpGeneratorHelper
             // Look up the step by its name
             ExpProtocolAction step = expActionMap.get(action.getName());
 
-            ExpProtocolApplication app = run.addProtocolApplication(user, step, ExpProtocol.ApplicationType.ProtocolApplication,
+            ExpProtocolApplication app = run.addProtocolApplication(user, step, step.getChildProtocol().getApplicationType(),
                     action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
 
             if (!action.getName().equals(action.getDescription()))
@@ -345,6 +346,15 @@ public class ExpGeneratorHelper
             {
                 ExpData data = addData(container, user, datas, dd.getURI(), source);
                 app.addDataInput(user, data, dd.getRole());
+            }
+
+            // material inputs
+            for (String lsid : action.getMaterialInputs())
+            {
+                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                material.setRun(run);
+
+                app.addMaterialInput(user, material, null, null);
             }
 
             // Set up the outputs
