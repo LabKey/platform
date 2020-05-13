@@ -434,7 +434,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         ExpProtocol stepProtocol = ExperimentService.get().getExpProtocol(container, stepName);
                         if (stepProtocol == null)
                         {
-                            stepProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ProtocolApplication, stepName);
+                            stepProtocol = ExperimentService.get().createExpProtocol(container, ExperimentRun, stepName);
                             stepProtocol.save(user);
                         }
                         protocolCache.put(stepName, stepProtocol);
