@@ -88,13 +88,13 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (!visit.isShowByDefault())
                     visitXml.setShowByDefault(visit.isShowByDefault());
 
-                visitXml.setSequenceNum(visit.getSequenceNumMinDouble());
+                visitXml.setSequenceNum(visit.getSequenceNumMin());
 
                 if (!visit.getSequenceNumMin().equals(visit.getSequenceNumMax()))
-                    visitXml.setMaxSequenceNum(visit.getSequenceNumMaxDouble());
+                    visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
 
                 if (null != visit.getProtocolDay())
-                    visitXml.setProtocolDay(visit.getProtocolDayDouble());
+                    visitXml.setProtocolDay(visit.getProtocolDay());
 
                 if (null != visit.getCohort())
                     visitXml.setCohort(visit.getCohort().getLabel());
@@ -156,7 +156,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 Alias aliasXml = ia.addNewAlias();
                 aliasXml.setName(alias.getName());
-                aliasXml.setSequenceNum(alias.getSequenceNumDouble());
+                aliasXml.setSequenceNum(alias.getSequenceNum());
             }
         }
 
