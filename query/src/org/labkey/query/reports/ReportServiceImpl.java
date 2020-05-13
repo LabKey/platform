@@ -54,6 +54,7 @@ import org.labkey.api.reports.report.AbstractReportIdentifier;
 import org.labkey.api.reports.report.ChartReport;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.ModuleJavaScriptReportDescriptor;
 import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportDescriptor;
 import org.labkey.api.reports.report.ModuleReportIdentifier;
@@ -355,10 +356,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
             int rowid = _saveDbReport(context, key, report, skipValidation).getRowId();
             return new DbReportIdentifier(rowid);
         }
+
+        ReportDescriptor descriptor = report.getDescriptor();
+
         // NOTE there are module reports other than R
-        else if (id instanceof ModuleReportIdentifier && report.getDescriptor() instanceof ModuleRReportDescriptor)
+        if (id instanceof ModuleReportIdentifier &&
+                (descriptor instanceof ModuleRReportDescriptor || descriptor instanceof ModuleJavaScriptReportDescriptor))
         {
-            return _saveModuleRReport(context, key, report, skipValidation);
+            return _saveModuleReport(context, key, report, skipValidation);
         }
         else
         {
@@ -483,14 +488,14 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
     }
 
 
-    private ReportIdentifier _saveModuleRReport(ContainerUser context, String key, Report report, boolean skipValidation)
+    private ReportIdentifier _saveModuleReport(ContainerUser context, String key, Report report, boolean skipValidation)
     {
         if (!(report.getDescriptor() instanceof ModuleReportDescriptor) || !(report.getDescriptor().getReportId() instanceof ModuleReportIdentifier))
             throw new IllegalStateException("This should be a module report!");
 
         User user = context.getUser();
         Container c = context.getContainer();
-        ModuleRReportDescriptor descriptor = (ModuleRReportDescriptor)report.getDescriptor();
+        ModuleReportDescriptor descriptor = (ModuleReportDescriptor)report.getDescriptor();
 
         report.beforeSave(context);
 
@@ -609,6 +614,8 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
         {
             // TODO hack: see ModuleRReportDescriptor.getEntityId()
             ReportIdentifier id = getReportIdentifier(PageFlowUtil.decode(entityId), null, c);
+            if (null == id)
+                return null;
             return id.getReport(new DefaultContainerUser(c, null));
         }
     }
@@ -881,14 +888,23 @@ public class ReportServiceImpl extends AbstractContainerListener implements Repo
                 if (descriptor instanceof RReportDescriptor && xmlFileName.toLowerCase().endsWith(".report.xml"))
                 {
                     String baseName = xmlFileName.substring(0, xmlFileName.length() - ".report.xml".length());
-                    InputStream is = root.getInputStream(baseName + ".R");
-                    if (null == is)
-                        is = root.getInputStream(baseName + ".r");
-                    if (null != is)
+                    InputStream is = null;
+                    try
                     {
-                        String script = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
-                        if (!StringUtils.isBlank(script))
-                            descriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
+                        is = root.getInputStream(baseName + ".R");
+                        if (null == is)
+                            is = root.getInputStream(baseName + ".r");
+                        if (null != is)
+                        {
+                            String script = IOUtils.toString(is, StringUtilsLabKey.DEFAULT_CHARSET);
+                            if (!StringUtils.isBlank(script))
+                                descriptor.setProperty(ScriptReportDescriptor.Prop.script, script);
+                        }
+                    }
+                    finally
+                    {
+                        // not using try with resources because of trying to open .R and .r
+                        IOUtils.closeQuietly(is);
                     }
                 }
             }

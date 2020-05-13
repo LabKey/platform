@@ -50,6 +50,7 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.AuditBehaviorType;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
@@ -126,6 +127,7 @@ import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.TableXML;
 import org.labkey.query.audit.QueryExportAuditProvider;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
+import org.labkey.query.model.MetadataTableJSONMixin;
 import org.labkey.query.persist.AbstractExternalSchemaDef;
 import org.labkey.query.persist.CstmView;
 import org.labkey.query.persist.ExternalSchemaDef;
@@ -1142,8 +1144,9 @@ public class QueryController extends SpringActionController
                 {
                     if (QueryManager.get().getQueryDef(getContainer(), form.getSchemaName(), form.getQueryName(), false) != null)
                     {
-                        // delete the query in order to reset the metadata over a built-in query
-                        queryDef.delete(getUser());
+                        // delete the query in order to reset the metadata over a built-in query, but don't
+                        // fire the listener because we haven't actually deleted the table. See issue 40365
+                        queryDef.delete(getUser(), false);
                     }
                 }
                 else
@@ -6707,7 +6710,7 @@ public class QueryController extends SpringActionController
             if (null != propertyService)
             {
                 ObjectMapper mapper = JsonUtil.DEFAULT_MAPPER.copy();
-                propertyService.configureObjectMapper(mapper, null);
+                mapper.addMixIn(GWTPropertyDescriptor.class, MetadataTableJSONMixin.class);
                 return mapper;
             }
             else

@@ -79,7 +79,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     private StringProperty redactedText = new StringProperty();
     private BooleanProperty isPrimaryKey = new BooleanProperty(false);
     private StringProperty lockType = new StringProperty(LockedPropertyType.NotLocked.name());
-    private BooleanProperty disablePhiLevel = new BooleanProperty(false);
 
     // for controlling the property editor (not persisted or user settable)
 //    private boolean isEditable = true;
@@ -140,7 +139,6 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRedactedText(s.getRedactedText());
         setIsPrimaryKey(s.getIsPrimaryKey());
         setLockType(s.getLockType());
-        setDisablePhiLevel(s.getDisablePhiLevel());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -558,16 +556,6 @@ public class GWTPropertyDescriptor implements IsSerializable
     public void setLockType(String lockType)
     {
         this.lockType.set(lockType);
-    }
-
-    public boolean getDisablePhiLevel()
-    {
-        return disablePhiLevel.booleanValue();
-    }
-
-    public void setDisablePhiLevel(boolean disablePhiLevel)
-    {
-        this.disablePhiLevel.setBool(disablePhiLevel);
     }
 
     public String debugString()

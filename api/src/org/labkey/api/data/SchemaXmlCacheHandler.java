@@ -29,8 +29,11 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -54,6 +57,18 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
             });
 
         return unmodifiable(map);
+    }
+
+    // Return an unmodifiable list of schema.xml filenames in this module, bypassing the cache and file listeners. Handy
+    // at startup, so we don't register listeners and leak modules before pruning occurs.
+    public static List<String> getFilenames(Module module)
+    {
+        Resource schemas = module.getModuleResource(QueryService.MODULE_SCHEMAS_PATH);
+
+        return null == schemas ? Collections.emptyList() : schemas.list().stream()
+            .map(Resource::getName)
+            .filter(SchemaXmlCacheHandler::isSchemaXmlFile)
+            .collect(Collectors.toUnmodifiableList());
     }
 
     private static boolean isSchemaXmlFile(String filename)
