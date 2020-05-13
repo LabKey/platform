@@ -29,6 +29,7 @@ import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
 import org.labkey.study.visitmanager.SequenceVisitManager;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -58,7 +59,7 @@ public class SequenceNumImportHelper
             _defaultSequenceNum = VisitImpl.DEMOGRAPHICS_VISIT;
         else
             _defaultSequenceNum = null;
-        for (Map.Entry<String, Double> entry : StudyManager.getInstance().getVisitImportMap(study, true).entrySet())
+        for (Map.Entry<String, BigDecimal> entry : StudyManager.getInstance().getVisitImportMap(study, true).entrySet())
             _translateMap.put(entry.getKey(), String.valueOf(entry.getValue()));
         if (_timetype.isVisitBased())
             _sequenceNumMap = new StudySequenceVisitMap(study);

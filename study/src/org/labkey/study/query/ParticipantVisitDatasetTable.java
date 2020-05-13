@@ -43,6 +43,7 @@ import org.labkey.study.model.VisitDataset;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.visitmanager.VisitManager;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -58,7 +59,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     private final StudyImpl _study;
     private final DatasetDefinition _dataset;
     private final ColumnInfo _colParticipantId;
-    private final Map<Double,ColumnInfo> _seqColumnMap = new HashMap<>();
+    private final Map<BigDecimal, ColumnInfo> _seqColumnMap = new HashMap<>();
 
     public ParticipantVisitDatasetTable(StudyQuerySchema schema, ContainerFilter cf, DatasetDefinition dsd, ColumnInfo colParticipantId)
     {
@@ -91,13 +92,13 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
             }
         }
 
-        Set<Double> sequenceSet = new TreeSet<>();
+        Set<BigDecimal> sequenceSet = new TreeSet<>();
         for (VisitDataset vds : vdsList)
         {
             VisitImpl visit = visitRowIdMap.get(vds.getVisitRowId());
             if (null == visit)
                 continue;
-            sequenceSet.add(visit.getSequenceNumMinDouble());
+            sequenceSet.add(visit.getSequenceNumMin());
         }
         //Now find all the sequenceNums where data actually exists.
         //Make sure their visits show up...
@@ -106,8 +107,9 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         {
             for (Double d : currentSequenceNumbers)
             {
-                sequenceSet.add(d);
-                VisitImpl visit = visitManager.findVisitBySequence(d.doubleValue());
+                BigDecimal seq = BigDecimal.valueOf(d);  // TODO: Migrate getSequenceNumsForDataset() to BigDecimal
+                sequenceSet.add(seq);
+                VisitImpl visit = visitManager.findVisitBySequence(seq);
                 if (null != visit && visitIds.add(visit.getRowId()))
                     visitList.add(visit);
             }
@@ -116,9 +118,9 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         }
 
         // duplicate label check a) two visits with same label b) two sequences with same visit
-        MultiValuedMap<String, Double> labelMap = new ArrayListValuedHashMap<>();
+        MultiValuedMap<String, BigDecimal> labelMap = new ArrayListValuedHashMap<>();
 
-        for (double seq : sequenceSet)
+        for (BigDecimal seq : sequenceSet)
         {
             VisitImpl visit = visitManager.findVisitBySequence(seq);
             if (null == visit)
@@ -134,7 +136,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
             boolean hasSequenceRange = !visit.getSequenceNumMin().equals(visit.getSequenceNumMax());
 
             // add columns for each sequence, show if there is a sequence range
-            for (double seq : sequenceSet)
+            for (BigDecimal seq : sequenceSet)
             {
                 if (!_inSequence(visit, seq))
                     continue;
@@ -168,9 +170,9 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     {
         private final Study _study;
         private final VisitImpl _visit;
-        private final double _sequenceNum;
+        private final BigDecimal _sequenceNum;
         
-        PVDatasetLookupColumn(Study study, VisitImpl visit, double sequenceNum, ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
+        PVDatasetLookupColumn(Study study, VisitImpl visit, BigDecimal sequenceNum, ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
         {
             super(foreignKey, lookupKey, lookupColumn);
             copyAttributesFrom(lookupColumn);
@@ -215,14 +217,14 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
     }
 
 
-    private static boolean _inSequence(VisitImpl v, double seq)
+    private static boolean _inSequence(VisitImpl v, BigDecimal seq)
     {
         assert v.getSequenceNumMin().compareTo(v.getSequenceNumMax()) <= 0;
-        return seq >= v.getSequenceNumMaxDouble() && seq <= v.getSequenceNumMaxDouble();
+        return v.isInRange(seq);
     }
 
     
-    protected BaseColumnInfo createVisitDatasetColumn(String name, ContainerFilter cf, final double sequenceNum, @NotNull final VisitImpl visit)
+    protected BaseColumnInfo createVisitDatasetColumn(String name, ContainerFilter cf, final BigDecimal sequenceNum, @NotNull final VisitImpl visit)
     {
         BaseColumnInfo ret;
         if (_colParticipantId == null)
@@ -270,6 +272,7 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
                 }
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 return null;
@@ -278,11 +281,12 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
         return ret;
     }
 
+    private static final BigDecimal NEG_ONE = new BigDecimal(-1);
 
     @Override
     protected ColumnInfo resolveColumn(String name)
     {
-        double seq = -1;
+        BigDecimal seq = NEG_ONE;
         if (name.startsWith("seq"))
         {
             try
@@ -301,15 +305,15 @@ public class ParticipantVisitDatasetTable extends VirtualTable<StudyQuerySchema>
 
         for (VisitImpl v : StudyManager.getInstance().getVisits(_study, Visit.Order.SEQUENCE_NUM))
         {
-            if (name.equals(v.getLabel()) || (seq != -1 && seq >= v.getSequenceNumMinDouble() && seq <= v.getSequenceNumMaxDouble()))
+            if (name.equals(v.getLabel()) || (!NEG_ONE.equals(seq) && v.isInRange(seq)))
             {
                 if (null != visitMatch)
                     return null;        // ambiguous
                 visitMatch = v;
-                seq = v.getSequenceNumMinDouble();
+                seq = v.getSequenceNumMin();
             }
         }
-        if (-1 == seq)
+        if (NEG_ONE.equals(seq))
             return null;
 
         if (visitMatch == null)

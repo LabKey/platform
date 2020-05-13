@@ -47,9 +47,6 @@ public interface Visit extends StudyEntity
 
     BigDecimal getProtocolDay();
 
-    @Deprecated // Use getProtocolDay()
-    Double getProtocolDayDouble();
-
     Integer getCohortId();
 
     Integer getId();
