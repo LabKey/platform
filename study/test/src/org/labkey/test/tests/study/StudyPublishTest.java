@@ -220,7 +220,8 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
-        goToProjectHome();  // the prior operation leaves the test on the query metadata editor, scrolled down
+        scrollToTop();  // the prior operation leaves the test on the query metadata editor, scrolled down
+
                             // which pins the project menu under a header
         navigateToFolder(getProjectName(), getFolderName());
 
