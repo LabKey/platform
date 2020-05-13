@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.57.1-fb-datasetDesigner-story4-7205.5"
+    "@labkey/components": "0.57.1-fb-datasetDesigner-story4-7205.7"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
