@@ -27,10 +27,9 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.DomainDesignerPage;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.domain.DomainFormPanel;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -39,7 +38,6 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -135,27 +133,26 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         log("Do Setup: create simple dataset with one ptid and one visit");
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(TEST_DATASET_NAME)
-                .submit();
-        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
-        fieldsEditor.selectField(0).markForDeletion();
-        fieldsEditor.addField(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
-                .setValidator(new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"))
-                .setRequired(false));
+                .setName(TEST_DATASET_NAME);
+
+        DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+                .setValidator(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
+                        "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999")).setRequired(false));
         fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
                 .setRequired(true));
         // Format "TestDate" as "Date"
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
         // "TestDateTime" format will default to date-time
-        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateAndTime));
         editDatasetPage
-                .save()
-                .clickViewData()
-                .getDataRegion()
-                .clickImportBulkData();
+            .clickSave()
+            .clickViewData()
+            .getDataRegion()
+            .clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestString\tTestDate\tTestDateTime\nPTID123\t1.0\t999\tABC\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
