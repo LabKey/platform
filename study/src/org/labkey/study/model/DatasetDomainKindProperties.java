@@ -15,6 +15,8 @@ public class DatasetDomainKindProperties implements Cloneable
     private String _name;
     private String _description;
     private String _category;
+    private Integer _categoryId; // Included only for backwards compatibility. Use _category instead
+    private String _categoryName; // Included only for backwards compatibility. Use _category instead
     private String _label;
 
     private String _visitDatePropertyName;
@@ -294,4 +296,13 @@ public class DatasetDomainKindProperties implements Cloneable
         _useTimeKeyField = useTimeKeyField;
     }
 
+    public void setCategoryId(Integer categoryId)
+    {
+        _categoryId = categoryId;
+    }
+
+    public void setCategoryName(String categoryName)
+    {
+        _categoryName = categoryName;
+    }
 }

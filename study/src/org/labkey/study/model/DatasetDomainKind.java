@@ -72,6 +72,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_KEY;
+
 /**
  * User: matthewb
  * Date: May 4, 2007
@@ -340,6 +342,25 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
             updatedArguments.remove("demographics");
         }
 
+        // For backwards compatibility, map "categoryId" and "categoryName" => "category"
+        if (arguments.containsKey("categoryId"))
+        {
+            if (arguments.containsKey("categoryName"))
+                throw new IllegalArgumentException("Category ID and category name cannot both be specified.");
+
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(container, (Integer)arguments.get("categoryId"));
+            if (category == null)
+                throw new IllegalArgumentException("Unable to find a category with the ID : " + arguments.get("categoryId") + " in this folder.");
+
+            updatedArguments.put("category", category.getLabel());
+            updatedArguments.remove("categoryId");
+        }
+        else if (arguments.containsKey("categoryName"))
+        {
+            updatedArguments.put("category", arguments.get("categoryName"));
+            updatedArguments.remove("categoryName");
+        }
+
         return updatedArguments;
     }
 
@@ -520,7 +541,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
         if (useTimeKeyField && isManagedField)
             throw new IllegalArgumentException("Additional key cannot be a managed field if KeyPropertyName is Time (from Date/Time).");
 
-        if (useTimeKeyField && keyPropertyName != null)
+        if (useTimeKeyField && !(keyPropertyName == null || keyPropertyName.equals(TIME_KEY_FIELD_KEY)))
             throw new IllegalArgumentException("KeyPropertyName should not be provided when using additional key of Time (from Date/Time).");
 
         if (isDemographicData && (isManagedField || keyPropertyName != null))
