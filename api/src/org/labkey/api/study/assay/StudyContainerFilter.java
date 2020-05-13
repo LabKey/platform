@@ -48,10 +48,8 @@ public class StudyContainerFilter extends ContainerFilter
         return super.getDefaultCacheKey(_container, _user);
     }
 
-    public Collection<GUID> getIds(Container currentContainer)
+    public Collection<GUID> getIds()
     {
-        assert _container.equals(currentContainer);
-
         if (_ids == null)
         {
             if (_schema.getUser().hasRootAdminPermission())

@@ -2160,7 +2160,7 @@ public class Query
 
                 @NotNull
                 @Override
-                public Collection<GUID> getIds(Container currentContainer)
+                public Collection<GUID> getIds()
                 {
                     return Collections.singletonList(testGUID);
                 }

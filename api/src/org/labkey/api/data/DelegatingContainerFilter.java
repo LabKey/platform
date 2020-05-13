@@ -64,7 +64,7 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
         if (cf instanceof ContainerFilterWithPermission)
             return ((ContainerFilterWithPermission)cf).generateIds(currentContainer, permission, roles);
 
-        return cf.getIds(currentContainer);
+        return cf.getIds();
     }
 
     @Nullable

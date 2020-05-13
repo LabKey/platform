@@ -49,12 +49,12 @@ public class UnionContainerFilter extends ContainerFilter
     }
 
     @Override @Nullable
-    public Collection<GUID> getIds(Container currentContainer)
+    public Collection<GUID> getIds()
     {
         Set<GUID> result = new HashSet<>();
         for (ContainerFilter filter : _filters)
         {
-            Collection<GUID> ids = filter.getIds(currentContainer);
+            Collection<GUID> ids = filter.getIds();
             if (ids == null)
             {
                 // Null means don't filter

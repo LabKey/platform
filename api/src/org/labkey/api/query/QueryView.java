@@ -2891,7 +2891,7 @@ public class QueryView extends WebPartView<Object>
                     Set<Container> containers = new HashSet<>();
                     if (ContainerFilter.Type.AllFolders != filter.getType())
                     {
-                        Collection<GUID> containerIds = filter.getIds(getContainer());
+                        Collection<GUID> containerIds = filter.getIds();
                         if (null != containerIds)
                         {
                             for (GUID id : containerIds)

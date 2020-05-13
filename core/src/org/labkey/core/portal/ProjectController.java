@@ -1395,7 +1395,7 @@ public class ProjectController extends SpringActionController
                 form.setIncludeSubfolders(false);
                 form.setMultipleContainers(true);
                 ContainerFilter cf = form.getContainerFilter().create(getContainer(), getUser());
-                Collection<GUID> ids = cf.getIds(getContainer());
+                Collection<GUID> ids = cf.getIds();
                 List<Container> list;
                 if (null == ids)
                 {

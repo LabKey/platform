@@ -72,16 +72,9 @@ public abstract class ContainerFilter
      * the IDs.
      *
      * @return null if no filtering should be done, otherwise the set of valid container ids
-     * <p>
-     * TODO eventually make this protected, callers should use getIds()
      */
     @Nullable
-    public abstract Collection<GUID> getIds(Container currentContainer);
-
-    public Collection<GUID> getIds()
-    {
-        return getIds(_container);
-    }
+    public abstract Collection<GUID> getIds();
 
     /**
      * @return The set of container types to be included based on their parent container's id
@@ -521,9 +514,9 @@ public abstract class ContainerFilter
             return "CURRENT/" + _container.getEntityId();
         }
 
-        public Collection<GUID> getIds(Container currentContainer)
+        public Collection<GUID> getIds()
         {
-            return Collections.singleton(currentContainer.getEntityId());
+            return Collections.singleton(_container.getEntityId());
         }
 
         @Override
@@ -565,7 +558,7 @@ public abstract class ContainerFilter
             SecurityLogger.indent("ContainerFilter");
             Collection<GUID> ids;
             if (permission == ReadPermission.class && null == roles)
-                ids = getIds(_container);
+                ids = getIds();
             else
                  ids = generateIds(_container, permission, roles);
             SecurityLogger.outdent();
@@ -587,16 +580,15 @@ public abstract class ContainerFilter
 
         // If a permission is not explicitly passed, then use ReadPermission by default.  Otherwise, subclasses
         // of ContainerFilterWithUser should override generateIds method above that takes a permission.
-        public final Collection<GUID> getIds(Container currentContainer)
+        public final Collection<GUID> getIds()
         {
-            assert null==currentContainer || null==_container || _container.equals(currentContainer);
             if (null != _container)
             {
                 if (null == _cached)
                     _cached = generateIds(_container, ReadPermission.class, null);
                 return _cached;
             }
-            return generateIds(currentContainer, ReadPermission.class, null);
+            return generateIds(_container, ReadPermission.class, null);
         }
 
         public Type getType()
@@ -622,7 +614,7 @@ public abstract class ContainerFilter
             return getClass().getName() + "/" + StringUtils.join(_ids, ";");
         }
 
-        public Collection<GUID> getIds(Container currentContainer)
+        public Collection<GUID> getIds()
         {
             return _ids;
         }
