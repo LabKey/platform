@@ -446,10 +446,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
 
-            if (getQueryTable().getPublicSchemaName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
-                SampleSetService.get().addAuditEvent(user, container, getQueryTable(), auditBehavior, auditAction, parameters);
-            else
-                QueryService.get().addAuditEvent(user, container, getQueryTable(), auditBehavior, auditAction, parameters);
+            getQueryTable().addAuditEvent(user, container, auditBehavior, auditAction, parameters);
         }
     }
 
