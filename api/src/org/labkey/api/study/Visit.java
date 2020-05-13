@@ -64,7 +64,7 @@ public interface Visit extends StudyEntity
 
     String getDescription();
 
-    public enum Type
+    enum Type
     {
         SCREENING('X', "Screening"),
         PREBASELINE('P', "Scheduled pre-baseline visit"),
@@ -82,7 +82,7 @@ public interface Visit extends StudyEntity
         private final char _code;
         private final String _meaning;
 
-        private Type(char code, String meaning)
+        Type(char code, String meaning)
         {
             _code = code;
             _meaning = meaning;
@@ -109,7 +109,7 @@ public interface Visit extends StudyEntity
         }
     }
 
-    public enum Order
+    enum Order
     {
         CHRONOLOGICAL("ChronologicalOrder,SequenceNumMin"),
         DISPLAY("DisplayOrder,SequenceNumMin"),
@@ -128,7 +128,7 @@ public interface Visit extends StudyEntity
         }
     }
 
-    public enum SequenceHandling
+    enum SequenceHandling
     {
         normal,             // as determined by TimepointType
         logUniqueByDate     // append days since start of study in fractional part of sequencenum

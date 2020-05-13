@@ -78,13 +78,6 @@ public interface IssuesListDefService
     String getNameFromDomain(GWTDomain domain);
 
     /**
-     * Performs validation on a set of issues domain kind properties
-     * @param properties The updated domain kind properties to validate
-     * @return
-     */
-    ValidationException validateIssuesProperties(IssuesDomainKindProperties properties);
-
-    /**
      * Register a provider that will be used as the "Kind" for a new issue list definition creation.
      * @param provider the provider that defines the domain for the issue list definition.
      */

@@ -348,8 +348,15 @@ public class ListManager implements SearchService.DocumentProvider
                 QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, c);
                 for (ListDefinition list : lists.values())
                 {
-                    boolean reindex = since == null || list.getLastIndexed().compareTo(since) > 0;
-                    indexList(task, list, false, reindex);
+                    try
+                    {
+                        boolean reindex = since == null || list.getLastIndexed() == null || list.getLastIndexed().compareTo(since) > 0;
+                        indexList(task, list, false, reindex);
+                    }
+                    catch (Exception ex)
+                    {
+                        LOG.error("Error indexing list '" + list.getName() + "' in container '" + c.getPath() + "'.", ex);
+                    }
                 }
             }
             finally
