@@ -1464,7 +1464,7 @@ public class ExperimentController extends SpringActionController
             }
             catch (FileNotFoundException e)
             {
-                getViewContext().getResponse().sendRedirect(getViewContext().getRequest().getContextPath() + "/Experiment/ExperimentRunNotFound.gif");
+                getViewContext().getResponse().sendRedirect(getViewContext().getRequest().getContextPath() + "/experiment/ExperimentRunNotFound.gif");
             }
             finally
             {
