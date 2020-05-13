@@ -375,7 +375,7 @@ public class AssayPublishManager implements AssayPublishService
 
     private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
     {
-        if (lsids.isEmpty())
+        if (lsids.isEmpty() || null == protocol)
             return;
 
         // If provenance module is not present, do nothing
