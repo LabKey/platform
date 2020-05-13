@@ -57,9 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.labkey.api.webdav.WebdavService.NOCRAWL_DIRECTORYNAME;
-import static org.labkey.api.webdav.WebdavService.NOCRAWL_FILENAME;
-
 /**
  * User: matthewb
  * Date: Nov 18, 2009
@@ -72,7 +69,7 @@ import static org.labkey.api.webdav.WebdavService.NOCRAWL_FILENAME;
  *  By default every known directory will be scanned for new folders every 12hrs
  *
  * 2) FileUpdater
- *  When a new directory or file is found it is queued up for indexing, this is where throttling 
+ *  When a new directory or file is found it is queued up for indexing, this is where throttling
  *  will occur (when implemented)
  *
  * The SearchService also has its own thread pool we use when we find files to index, but the
@@ -106,7 +103,7 @@ public class DavCrawler implements ShutdownListener
             this.lastIndexed = indexed;
             this.modified = modified;
         }
-        
+
         Date lastIndexed;
         Date modified;
         //long length;
@@ -143,11 +140,11 @@ public class DavCrawler implements ShutdownListener
 
         void clearFailedDocuments();
     }
-    
+
 
     final static Logger _log = Logger.getLogger(DavCrawler.class);
 
-    
+
     DavCrawler()
     {
         ContextListener.addShutdownListener(this);
@@ -158,7 +155,7 @@ public class DavCrawler implements ShutdownListener
     static DavCrawler _instance = new DavCrawler();
     volatile boolean _shuttingDown = false;
 
-    
+
     public static DavCrawler getInstance()
     {
         return _instance;
@@ -198,10 +195,10 @@ public class DavCrawler implements ShutdownListener
         }
     }
 
-    
+
     /**
      * Aggressively scan the file system for new directories and new/updated files to index
-     * 
+     *
      * @param path
      * @param force if (force==true) then don't check lastindexed and modified dates
      */
@@ -239,7 +236,7 @@ public class DavCrawler implements ShutdownListener
 
     private final LinkedList<Pair<String, Date>> _recent = new LinkedList<>();
 
-    
+
     class IndexDirectoryJob implements Runnable, SearchService.TaskListener
     {
         SearchService.IndexTask _task;
@@ -249,7 +246,7 @@ public class DavCrawler implements ShutdownListener
         Date _lastCrawl=null;
         Date _nextCrawl=null;
         Date _indexTime = null;
-        
+
         IndexDirectoryJob(Path path, Date last, Date next)
         {
             _path = path;
@@ -281,7 +278,7 @@ public class DavCrawler implements ShutdownListener
         public void run()
         {
             boolean isCrawlerThread = Thread.currentThread() == _crawlerThread;
-            
+
             _listingRateLimiter.add(1, isCrawlerThread);
 
             _log.debug("IndexDirectoryJob.run(" + _path + ")");
@@ -502,7 +499,7 @@ public class DavCrawler implements ShutdownListener
         if (!_shuttingDown && ss.isBusy())
             ss.waitForIdle();
     }
-    
+
 
     Thread _crawlerThread = new Thread("DavCrawler")
     {
@@ -527,7 +524,7 @@ public class DavCrawler implements ShutdownListener
                     }
                     else
                     {
-                        _wait(_crawlerEvent, _defaultWait);                  
+                        _wait(_crawlerEvent, _defaultWait);
                     }
                 }
                 catch (InterruptedException x)
@@ -567,7 +564,7 @@ public class DavCrawler implements ShutdownListener
         }
         return crawlQueue.isEmpty() ? null : crawlQueue.removeFirst();
     }
-    
+
 
     static boolean skipContainer(WebdavResource r)
     {
@@ -585,7 +582,7 @@ public class DavCrawler implements ShutdownListener
 
         // if symbolic link
         //  return true;
-        
+
         if (name.startsWith("."))
             return true;
 
@@ -594,14 +591,14 @@ public class DavCrawler implements ShutdownListener
             return true;
 
         // google convention
-        if (path.contains(NOCRAWL_DIRECTORYNAME))
+        if (path.contains("no_crawl"))
             return true;
 
         File f = r.getFile();
         if (null != f)
         {
             // labkey convention
-            if (new File(f, NOCRAWL_FILENAME).exists())
+            if (new File(f,".nocrawl").exists())
                 return true;
             // postgres
             if (new File(f,"PG_VERSION").exists())

@@ -257,7 +257,6 @@ import static org.labkey.api.view.FolderManagement.NOT_ROOT;
 import static org.labkey.api.view.FolderManagement.PROJECTS_ONLY;
 import static org.labkey.api.view.FolderManagement.ROOT;
 import static org.labkey.api.view.FolderManagement.addTab;
-import static org.labkey.api.webdav.WebdavService.NOCRAWL_FILENAME;
 
 /**
  * User: Karl Lum
@@ -4557,8 +4556,6 @@ public class AdminController extends SpringActionController
                         PHI.NotPHI, false, false, false, new StaticLoggerGetter(Logger.getLogger(FolderWriterImpl.class)));
                 FolderWriterImpl writer = new FolderWriterImpl();
                 String zipFileName = FileUtil.makeFileNameWithTimestamp(sourceContainer.getName(), "folder.zip");
-                pipelineUnzipDir.mkdirs();
-                new File(pipelineUnzipDir,NOCRAWL_FILENAME).createNewFile();
                 try (ZipFile zip = new ZipFile(pipelineUnzipDir, zipFileName))
                 {
                     writer.write(sourceContainer, ctx, zip);

@@ -98,7 +98,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.webdav.WebdavService.NOCRAWL_FILENAME;
 
 
 /**
@@ -452,7 +451,7 @@ public class PipelineManager
             {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
-                ActionURL url = StatusController.urlDetails(_statusFile); 
+                ActionURL url = StatusController.urlDetails(_statusFile);
 
                 _template.setOriginatingUser(user);
                 _template.setDataUrl(url.getURIString());
@@ -847,8 +846,6 @@ public class PipelineManager
                 if (!importDir.exists() || importDir.listFiles(s -> !s.equals(archiveFile.getName())).length == 0)
                 {
                     // Only unzip once
-                    importDir.mkdirs();
-                    new File(importDir, NOCRAWL_FILENAME).createNewFile();
                     ZipUtil.unzipToDirectory(archiveFile, importDir);
                 }
 

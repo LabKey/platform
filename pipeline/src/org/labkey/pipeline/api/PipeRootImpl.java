@@ -416,7 +416,6 @@ public class PipeRootImpl implements PipeRoot
         File importDir = getImportDirectory();
         if (importDir.exists() && !FileUtil.deleteDir(importDir, logger))
         {
-            DebugInfoDumper.dumpThreads(1);
             throw new DirectoryNotDeletedException("Could not delete the directory \"" + PipelineService.UNZIP_DIR + "\"");
         }
     }

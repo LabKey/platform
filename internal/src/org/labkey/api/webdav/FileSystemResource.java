@@ -611,10 +611,6 @@ public class FileSystemResource extends AbstractWebdavResource
         return getActionsHelper(user, getExpData());
     }
 
-    public void setShouldIndex(boolean b)
-    {
-        _shouldIndex = b;
-    }
 
     @Override
     public boolean shouldIndex()

@@ -42,7 +42,6 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Capabilities provided by the Pipeline module to other modules. These methods are only available to code
@@ -55,8 +54,6 @@ public interface PipelineService extends PipelineStatusFile.StatusReader, Pipeli
     String UNZIP_DIR = "unzip";
     String EXPORT_DIR = "export";
     String CACHE_DIR = "cache";
-
-    Set<String> doNotIndexDirectories = Set.of(PipelineService.EXPORT_DIR, PipelineService.UNZIP_DIR, PipelineService.CACHE_DIR);
 
     String PRIMARY_ROOT = "PRIMARY";
     

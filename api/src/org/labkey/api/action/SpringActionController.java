@@ -24,7 +24,6 @@ import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
@@ -101,7 +100,7 @@ import static org.labkey.api.view.template.PageConfig.Template.Dialog;
  *
  * This class acts pretty much as DispatchServlet.  However, it does not follow all the rules/conventions of DispatchServlet.
  * Whenever a discrepancy is found that someone cares about, please go ahead and make a change in the direction of better
- * compatibility. 
+ * compatibility.
  */
 public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver, ApplicationContextAware
 {
@@ -249,7 +248,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             throw new UnauthorizedException();
         }
     }
-    
+
     protected ViewBackgroundInfo getViewBackgroundInfo()
     {
         ViewContext vc = getViewContext();
@@ -299,7 +298,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         return HttpView.viewFromString(viewName);
     }
-    
+
 
     /** returns an uninitialized instance of the named action */
     public Controller resolveAction(String name)
@@ -526,19 +525,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     protected void handleException(HttpServletRequest request, HttpServletResponse response, Throwable x)
     {
-        // OK, if we get here with a deadlock exception AND this is a get AND we haven't committed the response yet,
-        // ASK the caller to retry
-        if (x instanceof Exception && SqlDialect.isTransactionException((Exception)x) &&
-                "GET".equals(request.getMethod()) && !response.isCommitted())
-        {
-            if (!request.getQueryString().contains("_retry_=1"))
-            {
-                String retry = request.getRequestURI() + "?_retry_=1&" + request.getQueryString();
-                ExceptionUtil.doErrorRedirect(response, retry);
-                return;
-            }
-        }
-
         ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());

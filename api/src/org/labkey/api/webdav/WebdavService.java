@@ -39,9 +39,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class WebdavService
 {
-    public static final String NOCRAWL_FILENAME = ".nocrawl";
-    public static final String NOCRAWL_DIRECTORYNAME = "no_crawl";
-
     private static final List<WebdavResolver> _rootResolvers = new CopyOnWriteArrayList<>();
     private static final WebdavService _instance;
 
