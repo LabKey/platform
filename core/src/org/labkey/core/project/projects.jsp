@@ -24,22 +24,24 @@
 <%@ page import="org.labkey.api.data.JdbcType" %>
 <%@ page import="org.labkey.api.data.SQLFragment" %>
 <%@ page import="org.labkey.api.data.SimpleFilter" %>
+<%@ page import="org.labkey.api.data.Sort" %>
+<%@ page import="org.labkey.api.data.TableInfo" %>
+<%@ page import="org.labkey.api.data.TableSelector" %>
+<%@ page import="org.labkey.api.query.DefaultSchema" %>
 <%@ page import="org.labkey.api.query.FieldKey" %>
+<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
+<%@ page import="org.labkey.api.query.QuerySchema" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.util.GUID" %>
 <%@ page import="org.labkey.api.util.HtmlString" %>
-<%@ page import="static org.apache.commons.lang3.StringUtils.isBlank" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="java.util.Collection" %>
-<%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.HashMap" %>
-<%@ page import="java.util.HashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Objects" %>
@@ -102,8 +104,12 @@
     filter.addClause(new SimpleFilter.InClause(new FieldKey(null,"entityId"), Set.of(ContainerManager.getHomeContainer().getId(), ContainerManager.getSharedContainer().getId()), false, true));
     filter.addClause(new SimpleFilter.SQLClause(new SQLFragment("Name NOT LIKE '\\_%' ESCAPE '\\'")));
     ContainerFilter cf = ContainerFilter.getContainerFilterByName(properties.get("containerFilter"),getUser());
-    Collection<GUID> ids = cf.getIds(target);
-    Set<GUID> set = null==ids ? Collections.emptySet() : new HashSet<>(ids);
+    QuerySchema core = DefaultSchema.get(getUser(),target).getSchema("core");
+    TableInfo t = core.getTable("Containers",cf);
+    Set<GUID> set = new TableSelector(t, List.of(t.getColumn("entityId"),t.getColumn("name")),filter, (Sort)null)
+            .stream(String.class)
+            .map(GUID::new)
+            .collect(Collectors.toSet());
     if (cf.getType() == ContainerFilter.Type.CurrentAndFirstChildren)
         set.remove(target.getEntityId());
     List<Container> containers = set.stream()
