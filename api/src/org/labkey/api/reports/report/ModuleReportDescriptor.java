@@ -16,8 +16,15 @@
 package org.labkey.api.reports.report;
 
 import org.labkey.api.module.Module;
+import org.labkey.api.moduleeditor.api.ModuleEditorService;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationError;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.EditModuleResourcesPermission;
 import org.labkey.api.util.Path;
+
+import java.util.List;
 
 /**
  * User: klum
@@ -35,4 +42,17 @@ public interface ModuleReportDescriptor
      */
     Path getReportPath();
     Resource getSourceFile();
+    Resource getMetaDataFile();
+    String getReportName();
+    ReportIdentifier getReportId();
+
+    default boolean canEdit(User user, List<ValidationError> errors)
+    {
+        if (null == ModuleEditorService.get().getFileForModuleResource(getModule(), getSourceFile().getPath()))
+            errors.add(new SimpleValidationError("The source for this module report is not editable."));
+        else if (!user.hasRootPermission(EditModuleResourcesPermission .class))
+            // TODO add role name here instead of permission
+            errors.add(new SimpleValidationError("You must have EditModuleResourcesPermission to edit module resources."));
+        return errors.isEmpty();
+    }
 }

@@ -880,9 +880,9 @@ public class RReport extends ExternalScriptEngineReport
 
         // TODO consider: create subclass ModuleRReport
         // Why aren't these two checks consistent???
-        if (getDescriptor().getDescriptorType().equals(ModuleRReportDescriptor.TYPE))
+        if (getDescriptor() instanceof ModuleReportDescriptor)
         {
-            if (!((ModuleRReportDescriptor)getDescriptor()).canEdit(user, errors))
+            if (!((ModuleReportDescriptor)getDescriptor()).canEdit(user, errors))
                 return false;
         }
         else if (getDescriptor().isModuleBased())
