@@ -2669,7 +2669,7 @@ public class StudyController extends BaseStudyController
                 columnMap.put(_form.getParticipantId(),"ParticipantId");
             if (null != _form.getSequenceNum())
             {
-                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "Sequence Num";
+                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "SequenceNum";
                 columnMap.put(_form.getSequenceNum(), column);
             }
 
