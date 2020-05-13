@@ -466,7 +466,7 @@ public class QuerySnapshotTest extends StudyBaseTest
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
                 .setDatasetLabel(newLabel)
-                .save();
+                .clickSave();
     }
 
     @LogMethod
@@ -475,8 +475,8 @@ public class QuerySnapshotTest extends StudyBaseTest
         _studyHelper.goToManageDatasets()
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
-                .setDatasetName(newName)
-                .save();
+                .setName(newName)
+                .clickSave();
     }
 
     @LogMethod
