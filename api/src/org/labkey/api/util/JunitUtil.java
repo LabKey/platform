@@ -229,14 +229,12 @@ public class JunitUtil
                     {
                         Map<String, File> map = new CaseInsensitiveHashMap<>();
 
-                        for (java.nio.file.Path path : Arrays.asList(Paths.get("server", "modules")))
-                        {
-                            Files.walk(Paths.get(projectRoot).resolve(path), 2)
-                                .filter(Files::isDirectory)
-                                .map(p -> p.resolve(SAMPLE_DATA_PATH))
-                                .filter(p -> Files.isDirectory(p))
-                                .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
-                        }
+                        java.nio.file.Path path = Paths.get("server", "modules");
+                        Files.walk(Paths.get(projectRoot).resolve(path), 2)
+                            .filter(Files::isDirectory)
+                            .map(p -> p.resolve(SAMPLE_DATA_PATH))
+                            .filter(p -> Files.isDirectory(p))
+                            .forEach(p -> map.put(p.getName(p.getNameCount() - 3).toString(), p.toFile()));
 
                         _sampleDataDirectories = Collections.unmodifiableMap(map);
                     }
