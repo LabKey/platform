@@ -31,6 +31,7 @@ import org.labkey.study.xml.VisitMapDocument;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -92,8 +93,8 @@ public class XmlVisitMapReader implements VisitMapReader
 
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
         {
-            double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
-            Double protocolDay = null;
+            BigDecimal maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
+            BigDecimal protocolDay = null;
             if (visitXml.isSetProtocolDay())
                 protocolDay = visitXml.getProtocolDay();
             else if (TimepointType.DATE == timepointType)

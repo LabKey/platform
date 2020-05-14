@@ -1937,7 +1937,6 @@ core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/credits/tomcat_jars.txt -text
-core/resources/module.xml -text
 core/resources/schemas/dbscripts/postgresql/core-18.20-18.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
@@ -3542,10 +3541,8 @@ study/src/org/labkey/study/query/VisitUpdateService.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
-study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/reports/DatasetChartReport.java -text
 study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
-study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text

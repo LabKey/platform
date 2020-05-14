@@ -15,7 +15,16 @@
  */
 
 import React, {PureComponent} from "react";
-import {Alert, DatasetDesignerPanels, DatasetModel, fetchDatasetDesign, getDatasetProperties, LoadingSpinner, BeforeUnload} from "@labkey/components";
+import {
+    Alert,
+    DatasetDesignerPanels,
+    DatasetModel,
+    fetchDatasetDesign,
+    getDatasetProperties,
+    LoadingSpinner,
+    BeforeUnload,
+    ConfirmModal
+} from "@labkey/components";
 import { ActionURL, Domain, getServerContext } from "@labkey/api";
 import "@labkey/components/dist/components.css"
 
@@ -122,8 +131,23 @@ export class App extends PureComponent<any, State> {
         this._dirty = true;
     };
 
+    renderFileImportErrorConfirm() {
+        return (
+            <ConfirmModal
+                title='Error Importing File'
+                msg={<>
+                    <p>There was an error while trying to import the selected file. Please review the error below and go to the newly created datasets' import data page to try again.</p>
+                    <ul><li>{this.state.fileImportError}</li></ul>
+                </>}
+                confirmVariant='primary'
+                onConfirm={() => this.navigateOnComplete(this.state.model)}
+                confirmButtonText='OK'
+            />
+        )
+    }
+
     render() {
-        const { isLoadingModel, message, model } = this.state;
+        const { isLoadingModel, message, model, fileImportError } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
@@ -140,6 +164,7 @@ export class App extends PureComponent<any, State> {
                         This dataset was created by copying assay data from <a href={model.sourceAssayUrl}>{model.sourceAssayName}</a>.
                     </p>
                 }
+                {fileImportError && this.renderFileImportErrorConfirm()}
                 <DatasetDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
