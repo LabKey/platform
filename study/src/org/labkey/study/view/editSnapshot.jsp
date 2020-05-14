@@ -42,9 +42,6 @@
     boolean showHistory = BooleanUtils.toBoolean(getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";
 
-    boolean showDataset = BooleanUtils.toBoolean(getActionURL().getParameter("showDataset"));
-    String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
-
     final Study study = StudyManager.getInstance().getStudy(getContainer());
     final Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
 %>
@@ -65,6 +62,7 @@
     <%= button("Update Snapshot").submit(true).onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")%>
     <% if (def != null && dsDef != null) {
         ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
+        ActionURL editDatasetURL = new ActionURL(StudyController.EditTypeAction.class, getContainer()).addParameter("datasetId", dsDef.getDatasetId()).addReturnURL(getActionURL());
     %>
         <%= button("Delete Snapshot")
                 .href(deleteSnapshotURL)
@@ -72,6 +70,6 @@
                 .onClick("this.form.action='"+deleteSnapshotURL+"'; return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')")
         %>
         <%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %>
-        <%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %>
+        <%= button("Edit Dataset Definition").href(editDatasetURL) %>
     <% } %>
 </labkey:form>

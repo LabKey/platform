@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -83,8 +83,8 @@
                     <tr>
                         <td style="padding-right: 10px">Automatic&nbsp;Refresh</td><td>
                             <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();">
-                            <select name="updateDelay" id="updateDelay" style="display:<%= text(bean.getUpdateDelay() == 0 ? "none" : "block") %>">
-                                <labkey:options value="<%=text(String.valueOf(bean.getUpdateDelay()))%>" map="<%=updateDelay%>"></labkey:options>
+                            <select name="updateDelay" id="updateDelay" style="display:<%= HtmlString.unsafe(bean.getUpdateDelay() == 0 ? "none" : "block") %>">
+                                <labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options>
                             </select>
                         </td>
                     </tr>
