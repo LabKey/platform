@@ -560,7 +560,8 @@ public abstract class ContainerFilter
             return getSQLFragment(schema, _container, containerColumnSQL, ids, allowNulls, getIncludedChildTypes());
         }
 
-        // each ContainerFilterWithUser subclass should override
+        /** return null means return all rows (1=1),  empty collection means return no rows (1=0) */
+        @Nullable
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
             Set<GUID> result = new HashSet<>();
@@ -1177,7 +1178,7 @@ public abstract class ContainerFilter
         @Override
         public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            throw new IllegalStateException();
+            return null;
         }
 
         public Type getType()
