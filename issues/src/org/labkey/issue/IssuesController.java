@@ -1980,17 +1980,17 @@ public class IssuesController extends SpringActionController
 
             boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.EXPERIMENTAL_ISSUES_LIST_DEF);
 
+            if (issueListDef == null)
+            {
+                return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
+            }
+
             if(experimentalFlagEnabled)
             {
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
             }
             else
             {
-                if (issueListDef == null)
-                {
-                    return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
-                }
-
                 Domain domain = issueListDef.getDomain(getUser());
 
                 Map<String, String> props = new HashMap<>();
@@ -2025,34 +2025,30 @@ public class IssuesController extends SpringActionController
         public Object execute(Object form, BindException errors)
         {
             //derived from IssueServiceAction.getProjectGroups()
-            List<Principal> groups = new ArrayList<>();
+            List<UserGroupForm> groups = new ArrayList<>();
 
             SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
-                String displayText = (group.isProjectGroup() ? "" : "Site:") + group.getName();
+                String displayText = (group.isProjectGroup() ? "" : "Site: ") + group.getName();
 
-                Principal principal = new Principal();
-                principal.setActive(group.isActive());
-                principal.setDisplayName(displayText);
-                principal.setName(group.getName());
-                principal.setType(group.getType());
-                principal.setUserId(group.getUserId());
-                groups.add(principal);
+                UserGroupForm userGroups = new UserGroupForm();
+                userGroups.setUserId(group.getUserId());
+                userGroups.setDisplayName(displayText);
+                groups.add(userGroups);
             });
 
             return groups;
-
         }
     }
 
     @Marshal(Marshaller.Jackson)
     @RequiresPermission(AdminPermission.class)
-    public class GetUsersForGroupAction extends ReadOnlyApiAction<GroupIdForm>
+    public class GetUsersForGroupAction extends ReadOnlyApiAction<UserGroupForm>
     {
         @Override
-        public Object execute(GroupIdForm form, BindException errors)
+        public Object execute(UserGroupForm form, BindException errors)
         {
             //derived from IssueServiceAction.getUsersForGroup()
-            List<UserGroup> users = new ArrayList<>();
+            List<UserGroupForm> users = new ArrayList<>();
 
             if (null != form.getGroupId())
             {
@@ -2063,11 +2059,10 @@ public class IssuesController extends SpringActionController
                     {
                         if (getContainer().hasPermission(user, UpdatePermission.class))
                         {
-                            UserGroup usergrp = new UserGroup();
-                            usergrp.setGroupId(group.getUserId());
-                            usergrp.setGroupName(group.getName());
+                            UserGroupForm usergrp = new UserGroupForm();
+                            usergrp.setGroupId(form.groupId);
                             usergrp.setUserId(user.getUserId());
-                            usergrp.setUserName(user.getDisplayName(getUser()));
+                            usergrp.setDisplayName(user.getDisplayName(getUser()));
                             users.add(usergrp);
                         }
                     }
@@ -2080,22 +2075,24 @@ public class IssuesController extends SpringActionController
                 {
                     if (getContainer().hasPermission(user, UpdatePermission.class))
                     {
-                        UserGroup projectUsers = new UserGroup();
+                        UserGroupForm projectUsers = new UserGroupForm();
                         projectUsers.setUserId(user.getUserId());
-                        projectUsers.setUserName(user.getDisplayName(getUser()));
+                        projectUsers.setDisplayName(user.getDisplayName(getUser()));
                         users.add(projectUsers);
                     }
                 }
             }
 
-            users.sort(Comparator.comparing(UserGroup::getUserName, String.CASE_INSENSITIVE_ORDER));
+            users.sort(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER));
             return users;
         }
     }
 
-    public static class GroupIdForm
+    public static class UserGroupForm
     {
         Integer groupId;
+        Integer userId;
+        String displayName;
 
         public Integer getGroupId()
         {
@@ -2105,36 +2102,6 @@ public class IssuesController extends SpringActionController
         public void setGroupId(Integer groupId)
         {
             this.groupId = groupId;
-        }
-
-    }
-
-    public static class Principal
-    {
-        int userId;
-        String name;
-        String displayName;
-        String type;
-        boolean active;
-
-        public int getUserId()
-        {
-            return userId;
-        }
-
-        public void setUserId(int userId)
-        {
-            this.userId = userId;
-        }
-
-        public String getName()
-        {
-            return name;
-        }
-
-        public void setName(String name)
-        {
-            this.name = name;
         }
 
         public String getDisplayName()
@@ -2147,73 +2114,15 @@ public class IssuesController extends SpringActionController
             this.displayName = displayName;
         }
 
-        public String getType()
-        {
-            return type;
-        }
-
-        public void setType(String type)
-        {
-            this.type = type;
-        }
-
-        public boolean isActive()
-        {
-            return active;
-        }
-
-        public void setActive(boolean active)
-        {
-            this.active = active;
-        }
-    }
-    public static class UserGroup
-    {
-        int userId;
-        String userName;
-        int groupId;
-        String groupName;
-
-        public int getUserId()
+        public Integer getUserId()
         {
             return userId;
         }
 
-        public void setUserId(int userId)
+        public void setUserId(Integer userId)
         {
             this.userId = userId;
         }
-
-        public String getUserName()
-        {
-            return userName;
-        }
-
-        public void setUserName(String userName)
-        {
-            this.userName = userName;
-        }
-
-        public int getGroupId()
-        {
-            return groupId;
-        }
-
-        public void setGroupId(int groupId)
-        {
-            this.groupId = groupId;
-        }
-
-        public String getGroupName()
-        {
-            return groupName;
-        }
-
-        public void setGroupName(String groupName)
-        {
-            this.groupName = groupName;
-        }
-
     }
 
     @RequiresPermission(ReadPermission.class)
