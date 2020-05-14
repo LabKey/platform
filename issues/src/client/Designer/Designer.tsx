@@ -63,14 +63,21 @@ export class App extends React.Component<{}, State> {
         }
     };
 
-
     onCancel = () => {
-        this.navigate(ActionURL.buildURL('issues', 'begin', getServerContext().container.path));
+        this.navigate(this.getIssuesListUrl(this.state.model));
     };
 
     onChange = (model: IssuesListDefModel) => {
         this._dirty = true;
     };
+
+    getIssuesListUrl(model: IssuesListDefModel): string {
+        if (model.issueDefName) {
+            return ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName});
+        }
+
+        return ActionURL.buildURL('issues', 'begin', getServerContext().container.path);
+    }
 
     navigate = (defaultUrl: string) => {
         this._dirty = false;
@@ -80,9 +87,8 @@ export class App extends React.Component<{}, State> {
     };
 
     navigateOnComplete = (model: IssuesListDefModel) => {
-
         if (model.issueDefName) {
-            this.navigate(ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName}));
+            this.navigate(this.getIssuesListUrl(model));
         }
         else {
             Domain.getDomainDetails({
@@ -90,17 +96,16 @@ export class App extends React.Component<{}, State> {
                 domainId: model.domain.domainId,
                 success: (data) => {
                     const newModel = IssuesListDefModel.create(data);
-                    this.navigate(ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: newModel.issueDefName}));
+                    this.navigate(this.getIssuesListUrl(newModel));
                 },
                 failure: (error) => {
-                    this.navigate(ActionURL.buildURL('issues', 'begin', getServerContext().container.path));
+                    this.navigate(this.getIssuesListUrl(model));
                 }
             });
         }
     };
 
     render() {
-
         const { isLoadingModel, message, model } = this.state;
 
         if (message) {
