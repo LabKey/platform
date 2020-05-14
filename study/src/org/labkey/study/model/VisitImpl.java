@@ -265,13 +265,6 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
-    @Deprecated // Use getProtocolDay()
-    public Double getProtocolDayDouble()
-    {
-        return null == _protocolDay ? null : _protocolDay.doubleValue();
-    }
-
-    @Override
     public BigDecimal getProtocolDay()
     {
         return _protocolDay;
@@ -299,11 +292,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     // only 4 scale digits
-    @Deprecated // return BigDecimal instead
-    public static double parseSequenceNum(String s)
+    public static BigDecimal parseSequenceNum(String s)
     {
-        double d = Double.parseDouble(s);
-        return Math.round(d * SCALE_FACTOR) / SCALE_FACTOR;
+        return new BigDecimal(s);
     }
 
 
@@ -373,8 +364,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
         Map<String, Object> map = new HashMap<>();
         map.put("rowid", getRowId());
-        map.put("sequencenummin", getSequenceNumMinDouble());
-        map.put("sequencenummax", getSequenceNumMaxDouble());
+        map.put("sequencenummin", getSequenceNumMin());
+        map.put("sequencenummax", getSequenceNumMax());
         map.put("label", getLabel());
         map.put("typecode", getTypeCode());
         map.put("container", getContainer());
@@ -385,7 +376,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         map.put("chronologicalorder", getChronologicalOrder());
         map.put("sequencenumhandling", getSequenceNumHandling());
         map.put("description", getDescription());
-        map.put("protocolday", getProtocolDayDouble());
+        map.put("protocolday", getProtocolDay());
 
         return map;
     }
@@ -477,19 +468,11 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         }
     }
 
-    @Deprecated // Use BigDecimal version instead
-    public static double calcDefaultDateBasedProtocolDay(double sequenceMin, double sequenceMax)
-    {
-        return (double)Math.round((sequenceMin + sequenceMax)/2);
-    }
-
-
     public static BigDecimal calcDefaultDateBasedProtocolDay(BigDecimal sequenceMin, BigDecimal sequenceMax)
     {
         // Average and round, which is what the double version does
         return sequenceMin.add(sequenceMax).divide(BigDecimal.valueOf(2)).setScale(0, RoundingMode.HALF_UP);
     }
-
 
     public boolean isInRange(BigDecimal seqnum)
     {

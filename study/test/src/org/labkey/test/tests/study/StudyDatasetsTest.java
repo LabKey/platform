@@ -29,10 +29,11 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.LookAndFeelScatterPlot;
 import org.labkey.test.components.LookAndFeelTimeChart;
 import org.labkey.test.components.PagingWidget;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.ext4.Window;
 import org.labkey.test.components.study.DatasetFacetPanel;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.TimeChartWizard;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -159,39 +160,26 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void createDataset(@LoggedParam String name)
     {
-        _studyHelper.goToManageDatasets();
+        DatasetDesignerPage definitionPage = _studyHelper.goToManageDatasets()
+            .clickCreateNewDataset()
+            .setName(name);
 
-        waitForText("Create New Dataset");
-        click(Locator.xpath("//a[text()='Create New Dataset']"));
-        waitForElement(Locator.xpath("//input[@name='typeName']"));
-        setFormElement(Locator.xpath("//input[@name='typeName']"), name);
-        clickButton("Next");
-
-        waitForElement(Locator.xpath("//input[@id='name0-input']"));
-        assertTextNotPresent("XTest");
-        setFormElement(Locator.xpath("//input[@id='name0-input']"), "XTest");
-        mouseOver(Locator.xpath("//input[@id='name0-input']")); // Moving the mouse because leaving it where it was puts it over the 'move down' icon, which causes a pop-up, which can interfere with following click.
-        clickButtonContainingText("Add Field", 0);
-        waitForElement(Locator.xpath("//input[@id='name1-input']"));
-        assertTextNotPresent("YTest");
-        setFormElement(Locator.xpath("//input[@id='name1-input']"), "YTest");
-        mouseOver(Locator.xpath("//input[@id='name1-input']")); // Moving the mouse because leaving it where it was puts it over the 'move down' icon, which causes a pop-up, which can interfere with following click.
-        clickButtonContainingText("Add Field", 0);
-        waitForElement(Locator.xpath("//input[@id='name2-input']"));
-        assertTextNotPresent("ZTest");
-        setFormElement(Locator.xpath("//input[@id='name2-input']"), "ZTest");
-        clickButton("Save");
+        DomainFormPanel panel = definitionPage.getFieldsPanel();
+        panel.manuallyDefineFields("XTest");
+        panel.addField("YTest");
+        panel.addField("ZTest");
+        definitionPage.clickSave();
     }
 
     @LogMethod
     protected void renameDataset(String orgName, String newName, String orgLabel, String newLabel, String... fieldNames)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(orgName)
                 .clickEditDefinition();
 
         editDatasetPage
-                .setDatasetName(newName)
+                .setName(newName)
                 .setDatasetLabel(newLabel);
 
         for (String fieldName : fieldNames)
@@ -199,7 +187,7 @@ public class StudyDatasetsTest extends BaseWebDriverTest
             assertTextPresent(fieldName);
         }
 
-        editDatasetPage.save();
+        editDatasetPage.clickSave();
 
         // fix dataset label references in report and view mappings
         for (Map.Entry<String, String> entry : EXPECTED_REPORTS.entrySet())
@@ -231,26 +219,25 @@ public class StudyDatasetsTest extends BaseWebDriverTest
     @LogMethod
     protected void deleteFields(String name)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(name)
                 .clickEditDefinition();
 
-        waitForElement(Locator.xpath("//div[@id='partdelete_2']"));
-        click(Locator.id("partdelete_2"));
-        clickButtonContainingText("OK", 0);
-        waitForElement(Locator.xpath("//div[@id='partdelete_1']"));
-        click(Locator.id("partdelete_1"));
+        editDatasetPage.getFieldsPanel()
+                .getField("ZTest").clickRemoveField(true);
+        editDatasetPage.getFieldsPanel()
+                .getField("YTest").clickRemoveField(true);
 
-        assertTextPresent("XTest");
-        assertElementNotPresent(Locator.xpath("//input[@id='name1-input']"));
-        assertElementNotPresent(Locator.xpath("//input[@id='name2-input']"));
-        clickButton("Save");
+        List<String> remainingFields = editDatasetPage.getFieldsPanel().fieldNames();
+        assertEquals(Arrays.asList("XTest"), remainingFields);
+
+        editDatasetPage.clickSave();
     }
 
     @LogMethod
     protected void checkFieldsPresent(String name, String... items)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByName(name)
                 .clickEditDefinition();
 

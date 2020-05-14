@@ -75,6 +75,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -230,11 +231,11 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public Map<String, Double> getVisitAliases()
+    public Map<String, BigDecimal> getVisitAliases()
     {
         return StudyManager.getInstance().getCustomVisitImportMapping(this)
             .stream()
-            .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNumDouble));
+            .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
     }
 
     @Override
