@@ -12,6 +12,7 @@ assay/node_modules
 list/node_modules
 query/node_modules
 study/node_modules
+issues/node_modules
 
 # These files are copied to this location
 core/resources/scripts/Ext.js
@@ -79,3 +80,9 @@ list/resources/views/designer.html
 list/resources/views/designer.view.xml
 list/resources/views/designerDev.html
 list/resources/views/designerDev.view.xml
+
+issues/resources/web/issues/gen
+issues/resources/views/designer.html
+issues/resources/views/designer.view.xml
+issues/resources/views/designerDev.html
+issues/resources/views/designerDev.view.xml
