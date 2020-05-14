@@ -50,7 +50,7 @@
 %>
 
 <%  if (def != null) { %>
-<table>
+<table class="lk-fields-table">
     <tr><td class="labkey-form-label">Name</td><td><%=h(def.getName())%></td>
     <tr><td class="labkey-form-label">Created By</td><td><%=h(def.getCreatedBy().getDisplayName(getUser()))%></td>
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy().getDisplayName(getUser()))%></td>
@@ -59,25 +59,19 @@
     <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=h(queryDef != null ? queryDef.getSql() : null)%></textarea></td>
 </table>
 <%  } %>
-
+<br/>
 <labkey:form action="" method="POST">
     <input type="hidden" name="updateSnapshot" value="true">
-    <table>
-        <tr><td>&nbsp;</td></tr>
-        <tr>
-            <td><%= button("Update Snapshot").submit(true)
-                .onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")
-            %></td>
-<%      if (def != null && dsDef != null) {
-            ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
-%>
-            <td><%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %></td>
-            <td><%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %></td>
-            <td><%= button("Delete Snapshot")
-                    .href(deleteSnapshotURL)
-                    .submit(true)
-                    .onClick("this.form.action='"+deleteSnapshotURL+"'; return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')") %></td>
-<%      } %>
-        </tr>
-    </table>
+    <%= button("Update Snapshot").submit(true).onClick("this.form.action='';return confirm('Updating will replace all existing data with a new set of data. Continue?');")%>
+    <% if (def != null && dsDef != null) {
+        ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", dsDef.getDatasetId());
+    %>
+        <%= button("Delete Snapshot")
+                .href(deleteSnapshotURL)
+                .submit(true)
+                .onClick("this.form.action='"+deleteSnapshotURL+"'; return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')")
+        %>
+        <%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %>
+        <%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %>
+    <% } %>
 </labkey:form>
