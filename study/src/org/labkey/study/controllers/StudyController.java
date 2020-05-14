@@ -2609,6 +2609,8 @@ public class StudyController extends BaseStudyController
             }
 
             _def = StudyManager.getInstance().getDatasetDefinition(_study, form.getDatasetId());
+            if (null == _def && null != form.getName())
+                _def = StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName());
             if (null == _def)
                throw new NotFoundException("Dataset not found");
             if (null == _def.getTypeURI())
@@ -2660,7 +2662,17 @@ public class StudyController extends BaseStudyController
                 return -1;
             }
 
+            // Allow for mapping of the ParticipantId and Sequence Num (i.e. timepoint column),
+            // these are passed in for the "create dataset from a file and import data" case
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
+            if (null != _form.getParticipantId())
+                columnMap.put(_form.getParticipantId(),"ParticipantId");
+            if (null != _form.getSequenceNum())
+            {
+                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "SequenceNum";
+                columnMap.put(_form.getSequenceNum(), column);
+            }
+
             Pair<List<String>, UploadLog> result;
             result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
 
@@ -6116,7 +6128,9 @@ public class StudyController extends BaseStudyController
         private String typeURI;
         private String tsv;
         private String keys;
-
+        private String _participantId;
+        private String _sequenceNum;
+        private String _name;
 
         public int getDatasetId()
         {
@@ -6156,6 +6170,36 @@ public class StudyController extends BaseStudyController
         public void setTypeURI(String typeURI)
         {
             this.typeURI = typeURI;
+        }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            _participantId = participantId;
+        }
+
+        public String getSequenceNum()
+        {
+            return _sequenceNum;
+        }
+
+        public void setSequenceNum(String sequenceNum)
+        {
+            _sequenceNum = sequenceNum;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
         }
     }
 
