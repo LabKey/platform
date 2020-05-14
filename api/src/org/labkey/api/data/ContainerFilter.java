@@ -136,11 +136,6 @@ public abstract class ContainerFilter
      * If we can't find the name, we default to CURRENT
      */
     @NotNull
-    public static ContainerFilter getContainerFilterByName(@Nullable String name, @NotNull User user)
-    {
-        return getContainerFilterByName(name, null, user);
-    }
-    @NotNull
     public static ContainerFilter getContainerFilterByName(@Nullable String name, Container container, @NotNull User user)
     {
         Type type = getType(name);
@@ -933,7 +928,7 @@ public abstract class ContainerFilter
 
     public static class CurrentAndSiblings extends ContainerFilterWithPermission
     {
-        public CurrentAndSiblings(Container c, User user)
+        CurrentAndSiblings(Container c, User user)
         {
             super(c, user);
         }
