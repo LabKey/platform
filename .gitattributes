@@ -1937,7 +1937,6 @@ core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/credits/tomcat_jars.txt -text
-core/resources/module.xml -text
 core/resources/schemas/dbscripts/postgresql/core-18.20-18.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
@@ -2371,9 +2370,9 @@ experiment/src/org/labkey/experiment/XARExportOptions.jsp -text
 experiment/src/org/labkey/experiment/XarExportPipelineJob.java -text
 experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
-experiment/webapp/Experiment/domainTemplate.js -text
-experiment/webapp/Experiment/QCFlagToggle.css -text
-experiment/webapp/Experiment/QCFlagToggleWindow.js -text
+experiment/webapp/experiment/domainTemplate.js -text
+experiment/webapp/experiment/QCFlagToggle.css -text
+experiment/webapp/experiment/QCFlagToggleWindow.js -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 filecontent/module.properties -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-14.20.sql -text
@@ -3542,10 +3541,8 @@ study/src/org/labkey/study/query/VisitUpdateService.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
-study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/reports/DatasetChartReport.java -text
 study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
-study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text

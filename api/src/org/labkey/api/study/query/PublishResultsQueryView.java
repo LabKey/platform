@@ -103,7 +103,7 @@ public class PublishResultsQueryView extends ResultsQueryView
     private final Map<Object, String> _reshowDates;
     private final Map<Object, String> _reshowPtids;
     private final Map<Object, String> _reshowTargetStudies;
-    private boolean _includeTimestamp;
+    private final boolean _includeTimestamp;
 
     private List<ActionButton> _buttons = null;
 

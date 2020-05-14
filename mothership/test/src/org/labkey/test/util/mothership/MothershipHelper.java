@@ -160,8 +160,7 @@ public class MothershipHelper
     public void setIgnoreExceptions(boolean ignore) throws IOException, CommandException
     {
         // Find the current server GUID
-        test.goToAdmin();
-        String serverGUID = test.getText(Locator.tagWithText("td", "Server GUID").followingSibling("td"));
+        String serverGUID = test.goToAdminConsole().getServerGUID();
 
         Connection connection = test.createDefaultConnection(true);
         // Find the corresponding serverInstallationId

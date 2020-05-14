@@ -102,6 +102,10 @@ public class FolderTypeManager
 
     public void registerFolderType(Module sourceModule, FolderType folderType)
     {
+        if (!ModuleLoader.getInstance().isStartupInProgress() && !ModuleLoader.getInstance().isStartupComplete())
+        {
+            throw new IllegalStateException("Don't call registerFolderType() this early; it can cause WebParts to get populated from modules that are about to be pruned.");
+        }
         if (_javaFolderTypes.containsKey(folderType.getName()))
         {
             String msg = "Unable to register folder type " + folderType.getName() + " from module " + sourceModule.getName() +

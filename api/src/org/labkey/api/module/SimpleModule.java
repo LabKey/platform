@@ -49,7 +49,6 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 
 /*
 * User: Dave
@@ -157,10 +156,7 @@ public class SimpleModule extends SpringModule
     @NotNull
     public Collection<String> getSchemaNames()
     {
-        List<String> schemaNames = DbScope.getSchemaNames(this);
-        Collections.sort(schemaNames);  // Alphabetical is better than random
-
-        return Collections.unmodifiableList(schemaNames);
+        return DbScope.getSchemaNames(this);
     }
 
     @Override

@@ -56,14 +56,6 @@ class VisitMapRecord
     private final String _sequenceNumHandling;
     private final List<VisitTagRecord> _visitTagRecords;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, @Nullable Double protocolDay, String visitType, String visitLabel, String visitDescription,
-                          String cohort, int visitDatePlate, Collection<Integer> requiredPlates, Collection<Integer> optionalPlates, boolean showByDefault,
-                          int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)
-    {
-        this(BigDecimal.valueOf(sequenceNumberMin), BigDecimal.valueOf(sequenceNumberMax), null != protocolDay ? BigDecimal.valueOf(protocolDay) : null, visitType, visitLabel,
-             visitDescription, cohort, visitDatePlate, requiredPlates, optionalPlates, showByDefault, displayOrder, chronologicalOrder, sequenceNumHandling, visitTagRecords);
-    }
-
     public VisitMapRecord(@NotNull BigDecimal sequenceNumberMin, @NotNull BigDecimal sequenceNumberMax, @Nullable BigDecimal protocolDay, String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, Collection<Integer> requiredPlates, Collection<Integer> optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)

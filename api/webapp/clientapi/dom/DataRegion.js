@@ -1185,7 +1185,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.getParameter = function(paramName) {
         var param = null;
 
-        _getParameters(this).forEach(function(pair) {
+        $.each(_getParameters(this), function(i, pair) {
             if (pair.length > 0 && pair[0] === paramName) {
                 param = pair.length > 1 ? pair[1] : '';
                 return false;
@@ -2008,10 +2008,11 @@ if (!LABKEY.DataRegions) {
             viewName = (this.view && this.view.name) || this.viewName || '';
 
         var userFilter = this.getUserFilterArray().map(function(filter) {
-            fields.push(filter.fieldKey);
+            var fieldKey = filter.getColumnName();
+            fields.push(fieldKey);
 
             return {
-                fieldKey: filter.getColumnName(),
+                fieldKey: fieldKey,
                 op: filter.getFilterType().getURLSuffix(),
                 value: filter.getValue()
             };
@@ -2382,7 +2383,7 @@ if (!LABKEY.DataRegions) {
             cols = this.columns;
 
         if (isString(columnIdentifier) && LABKEY.Utils.isArray(cols)) {
-            ['fieldKey', 'name', 'displayField', 'caption'].forEach(function(key) {
+            $.each(['fieldKey', 'name', 'displayField', 'caption'], function(i, key) {
                 $.each(cols, function(c, col) {
                     if (isString(col[key]) && col[key] == columnIdentifier) {
                         column = col;
@@ -2817,7 +2818,7 @@ if (!LABKEY.DataRegions) {
 
     var _removeAnalyticsProviderFromView = function(view, colFieldKey, providerName, isSummaryStatistic) {
         var indexToRemove = null;
-        view.analyticsProviders.forEach(function(existingProvider, index) {
+        $.each(view.analyticsProviders, function(index, existingProvider) {
             if (existingProvider.fieldKey === colFieldKey && existingProvider.name === providerName) {
                 indexToRemove = index;
                 return false;
@@ -3088,7 +3089,7 @@ if (!LABKEY.DataRegions) {
                     return region.name + prefix;
                 });
 
-                pairs.forEach(function(pair) {
+                $.each(pairs, function(i, pair) {
                     p = pair.split('=', 2);
                     key = p[0] = decodeURIComponent(p[0]);
                     lastIdx = key.indexOf(LAST);
@@ -3103,7 +3104,7 @@ if (!LABKEY.DataRegions) {
 
                     var stop = false;
                     if (skip) {
-                        skipPrefixSet.forEach(function(skipPrefix) {
+                        $.each(skipPrefixSet, function(j, skipPrefix) {
                             if (LABKEY.Utils.isString(skipPrefix)) {
 
                                 // Special prefix that should remove all filters, but no other parameters
