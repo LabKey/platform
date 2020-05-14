@@ -245,7 +245,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
         File scriptsDir = getScriptDirectory(schema.getSqlDialect());
 
-        if (!scriptsDir.exists())
+        if (scriptsDir == null || !scriptsDir.exists())
             throw new IllegalStateException("SQL scripts directory not found");
 
         File file = new File(scriptsDir, description);

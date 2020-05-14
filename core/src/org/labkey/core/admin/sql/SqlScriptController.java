@@ -1006,7 +1006,7 @@ public class SqlScriptController extends SpringActionController
         {
             File dir = provider.getScriptDirectory(dialect);
 
-            if (dir.exists())
+            if (dir != null && dir.exists())
             {
                 File[] files = dir.listFiles();
 
