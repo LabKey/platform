@@ -30,8 +30,7 @@ import "@labkey/components/dist/components.css"
 type State = {
     isLoadingModel: boolean,
     message?: string,
-    model?: IssuesListDefModel,
-    hasDesignIssuesAdminPermission?: boolean
+    model?: IssuesListDefModel
 }
 
 export class App extends React.Component<{}, State> {
@@ -48,21 +47,6 @@ export class App extends React.Component<{}, State> {
 
     componentDidMount() {
         const issueDefName = ActionURL.getParameter('issueDefName');
-
-        Security.getUserPermissions({
-            containerPath: getServerContext().container.path,
-            success: (data) => {
-                this.setState(() => ({
-                    hasDesignIssuesAdminPermission: data.container.effectivePermissions.indexOf(PermissionTypes.Admin) > -1
-                }));
-            },
-            failure: (error) => {
-                this.setState(() => ({
-                    message: error.exception,
-                    hasDesignIssuesAdminPermission: false
-                }));
-            }
-        });
 
         fetchIssuesListDefDesign(issueDefName)
             .then((model: IssuesListDefModel) => {
@@ -117,23 +101,19 @@ export class App extends React.Component<{}, State> {
 
     render() {
 
-        const { isLoadingModel, message, model, hasDesignIssuesAdminPermission } = this.state;
+        const { isLoadingModel, message, model } = this.state;
 
         if (message) {
             return <Alert>{message}</Alert>
         }
 
-        if (isLoadingModel || hasDesignIssuesAdminPermission === undefined) {
+        if (isLoadingModel) {
             return <LoadingSpinner/>
-        }
-
-        if (!hasDesignIssuesAdminPermission) {
-            return <Alert>You do not have sufficient permissions to create or edit a issues list definition design.</Alert>
         }
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {hasDesignIssuesAdminPermission &&
+                {
                 <IssuesListDefDesignerPanels
                         initModel={model}
                         onCancel={this.onCancel}
