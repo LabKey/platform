@@ -90,7 +90,6 @@ public class SiteAdminMenu extends NavTreeMenu
         AdminUrls adminUrls = PageFlowUtil.urlProvider(AdminUrls.class);
 
         ActionURL consoleUrl = adminUrls.getAdminConsoleURL();
-        consoleUrl.setFragment("info");
         if (null != context && null != context.getActionURL())
         {
             if (null == context.getActionURL().getReturnURL())
