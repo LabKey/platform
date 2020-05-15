@@ -70,7 +70,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         writeAssaySpecimenVisitMap(ctx, vf);
 
         // assay schedule lookup values can have data stored at both the project and folder level
-        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+        ContainerFilter containerFilter = ContainerFilter.Type.CurrentPlusProject.create(schema);
 
         // export the study design tables (no need to export tableinfo's as these are non-extensible)
         Set<String> designTableNames = new HashSet<>();

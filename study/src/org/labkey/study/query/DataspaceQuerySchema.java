@@ -76,7 +76,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
     @Override
     public ContainerFilter getDefaultContainerFilter()
     {
-        return new DataspaceContainerFilter(getUser(), _sharedStudyContainerFilter);
+        return new DataspaceContainerFilter(getContainer(), getUser(), _sharedStudyContainerFilter);
     }
 
 

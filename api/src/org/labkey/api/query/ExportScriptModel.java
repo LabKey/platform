@@ -265,7 +265,7 @@ public abstract class ExportScriptModel
         String containerFilterName = _view.getSettings().getSortFilterURL().getParameter(_view.getDataRegionName() + DataRegion.CONTAINER_FILTER_NAME);
 
         if (containerFilterName != null)
-            return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getUser());
+            return ContainerFilter.getContainerFilterByName(containerFilterName, _view.getContainer(), _view.getUser());
         else
             return _view.getQueryDef().getContainerFilter();
     }
