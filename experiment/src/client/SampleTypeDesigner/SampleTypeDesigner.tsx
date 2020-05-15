@@ -15,7 +15,6 @@
  */
 
 import React from 'react'
-import { Map } from "immutable";
 import { ActionURL, getServerContext } from "@labkey/api";
 import {
     Alert,
@@ -35,8 +34,6 @@ interface State {
     sampleType?: DomainDetails
     isLoading: boolean,
     message?: string
-    name?: string
-    nameReadOnly?: boolean
 }
 
 const UPDATE_SAMPLE_SET_ACTION = 'updateMaterialSource';
@@ -48,9 +45,7 @@ export class App extends React.PureComponent<any, State> {
     constructor(props) {
         super(props);
 
-        const { name, nameReadOnly } = ActionURL.getParameters();
         const action = ActionURL.getAction();
-
         let message;
         if (action === UPDATE_SAMPLE_SET_ACTION && !this.getRowIdParam()) {
             message = 'RowId parameter not supplied. Unable to determine which Sample Set to edit.';
@@ -59,8 +54,6 @@ export class App extends React.PureComponent<any, State> {
         this.state = {
             isLoading: true,
             message,
-            name,
-            nameReadOnly,
         };
     }
 
@@ -73,6 +66,8 @@ export class App extends React.PureComponent<any, State> {
         // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
         const rowId = this.getRowIdParam();
+        const { name, nameReadOnly } = ActionURL.getParameters();
+
         if (rowId) {
             //Get SampleType from experiment service
             getSampleSet({rowId})
@@ -81,37 +76,34 @@ export class App extends React.PureComponent<any, State> {
                     const {domainId} = sampleSet;
 
                     // Then query for actual domain design
-                    this.fetchSampleTypeDomain(domainId);
+                    getSampleTypeDetails(undefined, domainId)
+                        .then((sampleType: DomainDetails) => {
+                            this.setState(()=> ({sampleType, isLoading: false}));
+                        }).catch(error => {
+                            this.setState(() => ({message: 'Sample set does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
+                        }
+                    );
                 })
                 .catch(error => {
-                    console.error(error);
                     this.setState(() => ({message: 'Sample set does not exist in this container for rowId ' + rowId + '.', isLoading: false}));
                 });
         }
         else {
             //Creating a new Sample Type
-            this.setState(()=>({
-                isLoading: false,
-                sampleType: DomainDetails.create(Map<string, any> ({
-                    domainDesign: {name: this.state.name},
-                    nameReadOnly: this.state.nameReadOnly
-                }))
-            }));
-        }
-    }
+            getSampleTypeDetails()
+                .then((sampleType: DomainDetails) => {
+                    // allow for support of URL params for a name value that is readOnly
+                    const updatedSampleType = sampleType.merge({
+                        nameReadOnly,
+                        domainDesign: sampleType.domainDesign.merge({ name })
+                    }) as DomainDetails;
 
-    /**
-     * Look up full Sample Type domain, including fields
-     **/
-    fetchSampleTypeDomain(domainId) {
-        getSampleTypeDetails(undefined, domainId)
-            .then( sampleType => {
-                this.setState(()=> ({sampleType, isLoading: false}));
-            }).catch(error => {
-                console.error(error);
-                this.setState(() => ({message: 'Sample set does not exist in this container for domainId ' + domainId + '.', isLoading: false}));
-            }
-        );
+                    this.setState(()=> ({sampleType: updatedSampleType, isLoading: false}));
+                }).catch(error => {
+                    this.setState(() => ({message: error.exception, isLoading: false}));
+                }
+            );
+        }
     }
 
     handleWindowBeforeUnload = (event: any) => {

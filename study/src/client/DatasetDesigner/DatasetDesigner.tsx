@@ -20,12 +20,12 @@ import {
     DatasetDesignerPanels,
     DatasetModel,
     fetchDatasetDesign,
-    getDatasetProperties,
     LoadingSpinner,
     BeforeUnload,
     ConfirmModal
 } from "@labkey/components";
 import { ActionURL, Domain, getServerContext } from "@labkey/api";
+
 import "@labkey/components/dist/components.css"
 
 interface State {
@@ -52,21 +52,6 @@ export class App extends PureComponent<any, State> {
     componentDidMount() {
         const { datasetId } = ActionURL.getParameters();
 
-        if (datasetId) {
-            this.loadExistingDataset(datasetId);
-        }
-        else {
-            this.createNewDataset();
-        }
-    }
-
-    handleWindowBeforeUnload = (event) => {
-        if (this._dirty) {
-            event.returnValue = 'Changes you made may not be saved.';
-        }
-    };
-
-    loadExistingDataset(datasetId: number) {
         fetchDatasetDesign(datasetId)
             .then((model: DatasetModel) => {
                 this.setState(() => ({model, isLoadingModel: false}));
@@ -76,15 +61,11 @@ export class App extends PureComponent<any, State> {
             });
     }
 
-    createNewDataset() {
-        getDatasetProperties()
-            .then((model: DatasetModel) => {
-                this.setState(() => ({model, isLoadingModel: false}))
-            })
-            .catch((error) => {
-                this.setState(() => ({message: error.exception, isLoadingModel: false}));
-            })
-    }
+    handleWindowBeforeUnload = (event) => {
+        if (this._dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    };
 
     navigate(defaultUrl: string) {
         this._dirty = false;
