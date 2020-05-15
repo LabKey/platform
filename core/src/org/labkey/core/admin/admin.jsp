@@ -62,8 +62,8 @@
 <div class="row">
     <div class="col-sm-12 col-md-3">
         <div id="lk-admin-nav" class="list-group">
-            <a href="#info" class="list-group-item">Server Information</a>
             <a href="#links" class="list-group-item">Settings</a>
+            <a href="#info" class="list-group-item">Server Information</a>
             <a href="#modules" class="list-group-item">Module Information</a>
             <a href="#users" class="list-group-item">Active Users</a>
         </div>
@@ -243,7 +243,7 @@
 <script type="text/javascript">
     +function($) {
 
-        var defaultRoute = "info";
+        var defaultRoute = "links";
 
         function loadRoute(hash) {
             if (!hash || hash === '#') {

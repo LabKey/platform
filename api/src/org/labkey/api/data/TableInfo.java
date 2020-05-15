@@ -114,6 +114,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
+    /** Log an audit event to capture a data change made to this table */
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+    }
+
     enum IndexType
     {
         Primary(org.labkey.data.xml.IndexType.Type.PRIMARY, true),

@@ -451,7 +451,7 @@ public class PipelineManager
             {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
-                ActionURL url = StatusController.urlDetails(_statusFile); 
+                ActionURL url = StatusController.urlDetails(_statusFile);
 
                 _template.setOriginatingUser(user);
                 _template.setDataUrl(url.getURIString());

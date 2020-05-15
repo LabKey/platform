@@ -145,7 +145,7 @@ public class SurveyModule extends DefaultModule
     {
         Collection<String> results = new ArrayList<>();
 
-        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.CURRENT);
+        SurveyDesign[] surveyDesigns = SurveyManager.get().getSurveyDesigns(c, ContainerFilter.current(c));
         if(surveyDesigns.length > 0)
         {
             results.add(StringUtilsLabKey.pluralize(surveyDesigns.length, " survey design"));

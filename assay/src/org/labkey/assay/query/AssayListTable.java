@@ -46,7 +46,7 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 {
     public AssayListTable(AssaySchemaImpl schema)
     {
-        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.AssayLocation(schema.getUser()));
+        super(ExperimentService.get().getTinfoProtocol(), schema, new ContainerFilter.AssayLocation(schema.getContainer(), schema.getUser()));
         setDescription("Contains all of the assay definitions visible in this folder");
         addCondition(_rootTable.getColumn("ApplicationType"), ExpProtocol.ApplicationType.ExperimentRun.toString());
         setName(AssaySchema.ASSAY_LIST_TABLE_NAME);

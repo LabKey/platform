@@ -83,7 +83,7 @@ public class MultiValuedForeignKey implements ForeignKey
     //TODO ContainerFilter
     protected ContainerFilter getLookupContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return null;    // use default on target table
     }
 
     // TODO: better name?

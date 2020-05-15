@@ -49,6 +49,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpDataTable;
@@ -56,15 +57,18 @@ import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
@@ -115,6 +119,20 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 return createPropertyColumn("Property");
         }
         return result;
+    }
+
+    @Override
+    public void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    {
+        if (getUserSchema().getName().equalsIgnoreCase(SamplesSchema.SCHEMA_NAME))
+        {
+            // Special case sample auditing to help build a useful timeline view
+            SampleSetService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+        }
+        else
+        {
+            super.addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+        }
     }
 
     public MutableColumnInfo createColumn(String alias, Column column)
@@ -436,9 +454,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (getContainer().getProject() != null)
                     containers.add(getContainer().getProject());
                 containers.add(ContainerManager.getSharedContainer());
-                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
 
-                if (null != _containerFilter && _containerFilter != ContainerFilter.CURRENT)
+                if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
                     cf = new UnionContainerFilter(_containerFilter, cf);
                 return cf;
             }

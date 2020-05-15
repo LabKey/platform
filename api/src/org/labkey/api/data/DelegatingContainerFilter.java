@@ -32,7 +32,7 @@ import java.util.Set;
 
 // TODO ContainerFilter remove uses of this class, we should always know the ContainerFilter at construction time
 @Deprecated
-public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWithUser
+public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWithPermission
 {
     private final TableInfo _source;
     private final boolean _promoteWorkbooksToParentContainer;
@@ -47,7 +47,7 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
      */
     public DelegatingContainerFilter(TableInfo source, boolean promoteWorkbooksToParentContainer)
     {
-        super(null);
+        super(null, null);
         _source = source;
         _promoteWorkbooksToParentContainer = promoteWorkbooksToParentContainer;
     }
@@ -57,22 +57,14 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
      * permission.  See issue 19515
      */
     @Nullable
-    public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+    public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
     {
         currentContainer = getContainer(currentContainer);
         ContainerFilter cf = _source.getContainerFilter();
-        if (cf instanceof ContainerFilterWithUser)
-            return ((ContainerFilterWithUser)cf).getIds(currentContainer, permission, roles);
+        if (cf instanceof ContainerFilterWithPermission)
+            return ((ContainerFilterWithPermission)cf).generateIds(currentContainer, permission, roles);
 
-        return cf.getIds(currentContainer);
-    }
-
-
-    @Nullable
-    public Collection<GUID> getIds(Container currentContainer)
-    {
-        currentContainer = getContainer(currentContainer);
-        return _source.getContainerFilter().getIds(currentContainer);
+        return cf.getIds();
     }
 
     @Nullable

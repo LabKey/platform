@@ -58,11 +58,7 @@ public class ShowSelectedDataAction extends SimpleRedirectAction<ShowSelectedDat
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
         int[] selectedIds = PageFlowUtil.toInts(selection);
 
-        ContainerFilter containerFilter = null;
-        if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
-
-        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
+        ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getContainer(), form.getProtocol(), ContainerFilter.getType(form.getContainerFilterName()), selectedIds);
         String maxRowsKey = AssayProtocolSchema.DATA_TABLE_NAME + ".maxRows";
         applyLastFilterParameter(url, maxRowsKey);
         String sortKey = AssayProtocolSchema.DATA_TABLE_NAME + ".sort";

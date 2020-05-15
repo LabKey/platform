@@ -1237,12 +1237,12 @@ public class StudyManager
     }
 
 
-    public Map<String, Double> getVisitImportMap(Study study, boolean includeStandardMapping)
+    public Map<String, BigDecimal> getVisitImportMap(Study study, boolean includeStandardMapping)
     {
         Collection<VisitAlias> customMapping = getCustomVisitImportMapping(study);
         List<VisitImpl> visits = includeStandardMapping ? StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM) : Collections.emptyList();
 
-        Map<String, Double> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
+        Map<String, BigDecimal> map = new CaseInsensitiveHashMap<>((customMapping.size() + visits.size()) * 3 / 4);
 
 //        // allow prepended "visit"
 //        for (Visit visit : visits)
@@ -1262,12 +1262,12 @@ public class StudyManager
 
             // Use the **first** instance of each label
             if (null != label && !map.containsKey(label))
-                map.put(label, visit.getSequenceNumMinDouble());
+                map.put(label, visit.getSequenceNumMin());
         }
 
         // Now load custom mapping, overwriting any existing standard labels
         for (VisitAlias alias : customMapping)
-            map.put(alias.getName(), alias.getSequenceNumDouble());
+            map.put(alias.getName(), alias.getSequenceNum());
 
         return map;
     }
@@ -1290,7 +1290,7 @@ public class StudyManager
     {
         List<VisitAlias> list = new LinkedList<>();
         Set<String> labels = new CaseInsensitiveHashSet();
-        Map<String, Double> customMap = getVisitImportMap(study, false);
+        Map<String, BigDecimal> customMap = getVisitImportMap(study, false);
 
         List<VisitImpl> visits = StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM);
 
@@ -1332,10 +1332,9 @@ public class StudyManager
             _overridden = overridden;
         }
 
-        @Deprecated // Pass in sequenceNum as BigDecimal instead
-        public VisitAlias(String name, double sequenceNum)
+        public VisitAlias(String name, BigDecimal sequenceNum)
         {
-            this(name, new BigDecimal(sequenceNum).stripTrailingZeros(), null, false);
+            this(name, sequenceNum.stripTrailingZeros(), null, false);
         }
 
         public String getName()
@@ -1346,12 +1345,6 @@ public class StudyManager
         public void setName(String name)
         {
             _name = name;
-        }
-
-        @Deprecated
-        public double getSequenceNumDouble()
-        {
-            return _sequenceNum.doubleValue();
         }
 
         public BigDecimal getSequenceNum()
