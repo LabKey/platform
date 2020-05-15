@@ -80,7 +80,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
         VBox result = new VBox();
         if (_protocol != null && !form.isCopy())
         {
-            result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.CURRENT));
+            result.addView(new AssayHeaderView(_protocol, form.getProvider(), false, false, ContainerFilter.current(getViewContext().getContainer())));
         }
 
         result.addView(ModuleHtmlView.get(ModuleLoader.getInstance().getModule("assay"), "assayDesigner"));

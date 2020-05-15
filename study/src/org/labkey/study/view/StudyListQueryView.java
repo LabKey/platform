@@ -45,6 +45,6 @@ public class StudyListQueryView extends QueryView
     @Override
     protected @Nullable ContainerFilter getContainerFilter()
     {
-        return ContainerFilter.Type.CurrentAndSubfolders.create(getUser());
+        return ContainerFilter.Type.CurrentAndSubfolders.create(getSchema());
     }
 }

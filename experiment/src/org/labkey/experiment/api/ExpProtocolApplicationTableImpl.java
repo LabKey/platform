@@ -52,7 +52,7 @@ public class ExpProtocolApplicationTableImpl extends ExpTableImpl<ExpProtocolApp
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoExperimentRun(), "er");
         sqlFragment.append(" WHERE er.RowId = RunId)    ");
 
-        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
+        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), containerFK);
     }
 
     @Override

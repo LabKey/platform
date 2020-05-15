@@ -165,7 +165,7 @@ public class SamplesSchema extends AbstractExpSchema
             public @Nullable TableInfo getLookupTableInfo()
             {
                 ContainerFilter cf = getLookupContainerFilter();
-                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey(getContainer());
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
                 return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
             }
 

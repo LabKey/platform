@@ -234,9 +234,9 @@ public class SharedStudyController extends BaseStudyController
             else
             {
                 DataspaceContainerFilter dcf = new DataspaceContainerFilter(getUser(), getContainer());
-                Collection<GUID> c = dcf.getIds(getContainer());
+                Collection<GUID> c = dcf.getIds();
                 if (null != c)
-                    data.setContainers(new ArrayList<>(dcf.getIds(getContainer())));
+                    data.setContainers(new ArrayList<>(dcf.getIds()));
             }
             return success(data);
         }

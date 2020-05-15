@@ -735,7 +735,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 Set<GUID> filterIds = null;
                 if (null != _studyContainerFilter)
                 {
-                    Collection<GUID> studyContainerFilterIds = _studyContainerFilter.getIds(_schema.getContainer());
+                    Collection<GUID> studyContainerFilterIds = _studyContainerFilter.getIds();
                     if (null != studyContainerFilterIds)
                         filterIds = new HashSet<>(studyContainerFilterIds);
                 }

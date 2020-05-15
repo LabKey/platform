@@ -165,6 +165,8 @@ public class IssueManager
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
+    public static final String EXPERIMENTAL_ISSUES_LIST_DEF = "experiemental-listdesigner";
+
     private IssueManager()
     {
     }

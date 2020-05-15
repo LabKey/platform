@@ -345,7 +345,7 @@ public class LocationTable extends BaseStudyTable
 
     public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)
     {
-        Collection<GUID> ids = cFilter.getIds(root);
+        Collection<GUID> ids = cFilter.getIds();
 
         if (null == ids)
         {

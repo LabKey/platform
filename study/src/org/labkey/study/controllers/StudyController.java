@@ -1970,7 +1970,7 @@ public class StudyController extends BaseStudyController
             String containerFilterName = form.getContainerFilter();
 
             if (null != containerFilterName)
-                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getUser()));
+                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser()));
             else
                 return Collections.singleton(getContainer());
         }

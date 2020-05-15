@@ -256,10 +256,10 @@ public class IssueListDef extends Entity
             if (ContainerManager.getSharedContainer().equals(domainContainer))
                 containerFilter = new ContainerFilter.AllFolders(user);
             else if (domainContainer.isProject())
-                containerFilter = new ContainerFilter.CurrentAndSubfolders(user);
+                containerFilter = ContainerFilter.Type.CurrentAndSubfolders.create(domainContainer, user);
 
             if (containerFilter != null)
-                return containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"), domainContainer);
+                return containerFilter.createFilterClause(IssuesSchema.getInstance().getSchema(), FieldKey.fromParts("container"));
         }
         return null;
     }

@@ -54,6 +54,7 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter.Type containerFilterType, int... runIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
     @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId);
 

@@ -454,9 +454,9 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 if (getContainer().getProject() != null)
                     containers.add(getContainer().getProject());
                 containers.add(ContainerManager.getSharedContainer());
-                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getUser(), containers);
+                ContainerFilter cf = new ContainerFilter.CurrentPlusExtras(_userSchema.getContainer(), _userSchema.getUser(), containers);
 
-                if (null != _containerFilter && _containerFilter != ContainerFilter.CURRENT)
+                if (null != _containerFilter && _containerFilter.getType() != ContainerFilter.Type.Current)
                     cf = new UnionContainerFilter(_containerFilter, cf);
                 return cf;
             }

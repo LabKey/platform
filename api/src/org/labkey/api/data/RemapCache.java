@@ -90,7 +90,7 @@ public class RemapCache
                 // TODO ContainerFilter test usages of this code
                 ContainerFilter containerFilter = null;
                 if (_containerFilterType != null)
-                    containerFilter = _containerFilterType.create(_user);
+                    containerFilter = _containerFilterType.create(_container, _user);
                 TableInfo table = schema.getTable(_queryName, containerFilter);
                 if (table == null)
                     throw new NotFoundException("Table not found: " + _queryName);
