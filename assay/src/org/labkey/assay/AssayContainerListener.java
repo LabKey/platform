@@ -73,7 +73,7 @@ public class AssayContainerListener implements ContainerListener
     {
         List<ExpProtocol> assayProtocolsInUse = new ArrayList<>();
         // Build a list of all assay designs that are in use
-        for (ExpProtocol protocol : ExperimentService.get().getExpProtocolsUsedByRuns(c, new ContainerFilter.CurrentAndSubfolders(user)))
+        for (ExpProtocol protocol : ExperimentService.get().getExpProtocolsUsedByRuns(c, ContainerFilter.Type.CurrentAndSubfolders.create(c, user)))
         {
             // Not all protocols are assay designs, so filter them based on looking up their provider
             if (AssayService.get().getProvider(protocol) != null)

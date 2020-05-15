@@ -213,11 +213,6 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         MemTracker.getInstance().put(this);
     }
 
-    public TableInfo getTable(String name)
-    {
-        throw new IllegalStateException("Use getTable(Name, ContainerFilter)");
-    }
-
     public TableInfo getTable(String name, ContainerFilter cf)
     {
         return null;

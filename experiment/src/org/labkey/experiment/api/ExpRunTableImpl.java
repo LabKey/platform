@@ -211,7 +211,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         else if (getContainer().isProject())
         {
             // If we're in a project, look in subfolders
-            setContainerFilter(new ContainerFilter.CurrentAndSubfolders(_userSchema.getUser()));
+            setContainerFilter(ContainerFilter.Type.CurrentAndSubfolders.create(_userSchema));
         }
     }
 
@@ -321,7 +321,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                     {
                         ContainerFilter cf = getLookupContainerFilter();
                         UserSchema schema = getUserSchema();
-                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey(schema.getContainer());
+                        String key = getClass().getName() + "/RunGroups.RowId.fk/" + cf.getCacheKey();
                         // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
                         return schema.getCachedLookupTableInfo(key, this::createLookupTableInfo);
                     }

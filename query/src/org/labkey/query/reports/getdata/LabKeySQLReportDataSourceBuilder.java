@@ -47,6 +47,6 @@ public class LabKeySQLReportDataSourceBuilder extends AbstractReportDataSourceBu
         {
             throw new IllegalStateException("No SQL set");
         }
-        return new LabKeySQLReportDataSource(user, container, getSchemaKey(), getContainerFilter(user), getParameters(), getSql());
+        return new LabKeySQLReportDataSource(user, container, getSchemaKey(), getContainerFilter(container, user), getParameters(), getSql());
     }
 }

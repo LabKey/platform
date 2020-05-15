@@ -181,6 +181,8 @@ public class OntologyManager
         {
             String typeURI = key.first;
             Container c = ContainerManager.getForId(key.second);
+            if (null == c)
+                return Collections.emptyList();
             SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
                     " FROM " + getTinfoPropertyDescriptor() + " PD " +
                     "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +

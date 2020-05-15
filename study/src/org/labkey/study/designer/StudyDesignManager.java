@@ -125,8 +125,8 @@ public class StudyDesignManager
     public StudyDesignInfo[] getStudyDesignsForAllFolders(User u, Container root)
     {
         SimpleFilter filter = new SimpleFilter();
-        ContainerFilter cf = new ContainerFilter.CurrentAndSubfolders(u);
-        filter.addClause(cf.createFilterClause(getSchema(), FieldKey.fromParts("Container"), root));
+        ContainerFilter cf = ContainerFilter.Type.CurrentAndSubfolders.create(root, u);
+        filter.addClause(cf.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
 
         return new TableSelector(getStudyDesignTable(), filter, null).getArray(StudyDesignInfo.class);
     }
@@ -638,8 +638,8 @@ public class StudyDesignManager
             SimpleFilter filter = new SimpleFilter();
             if (includeProject)
             {
-                ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(user);
-                filter.addCondition(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"), c));
+                ContainerFilter containerFilter = ContainerFilter.Type.CurrentPlusProject.create(c, user);
+                filter.addCondition(containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container")));
             }
             else
                 filter = SimpleFilter.createContainerFilter(c);
