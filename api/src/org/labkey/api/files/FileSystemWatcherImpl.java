@@ -18,12 +18,19 @@ package org.labkey.api.files;
 import org.apache.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
+import org.junit.Assert;
+import org.junit.Test;
+import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.writer.PrintWriters;
 
 import javax.annotation.Nullable;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -39,6 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
@@ -431,6 +439,133 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         public FileSystemDirectoryListener getListener()
         {
             return _listener;
+        }
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void testFileWatchers() throws IOException, InterruptedException
+        {
+            File root = FileUtil.createTempDirectory("fileWatcherTest");
+            File testFolder = new File(root, "test");
+
+            // Do it twice to ensure that everything gets cleaned up on directory delete and a new watcher can be added
+            // to a new version of the same directory
+            test(testFolder);
+            test(testFolder);
+        }
+
+        private void test(File testFolder) throws IOException, InterruptedException
+        {
+            assertTrue(testFolder.mkdir());
+            Path testPath = testFolder.toPath();
+            FileSystemWatcher fsw = FileSystemWatchers.get();
+            assertTrue(fsw instanceof FileSystemWatcherImpl);
+            FileSystemWatcherImpl watcher = (FileSystemWatcherImpl)fsw;
+
+            Set<String> created = new ConcurrentHashSet<>();
+            Set<String> deleted = new ConcurrentHashSet<>();
+            Set<String> modified = new ConcurrentHashSet<>();
+            Set<String> directoryDeleted = new ConcurrentHashSet<>();
+            AtomicInteger overflow = new AtomicInteger(0);
+            AtomicInteger events = new AtomicInteger(0);
+
+            watcher.addListener(testPath, new FileSystemDirectoryListener()
+            {
+                @Override
+                public void entryCreated(Path directory, Path entry)
+                {
+                    created.add(entry.toString());
+                    events.incrementAndGet();
+                }
+
+                @Override
+                public void entryDeleted(Path directory, Path entry)
+                {
+                    deleted.add(entry.toString());
+                    events.incrementAndGet();
+                }
+
+                @Override
+                public void entryModified(Path directory, Path entry)
+                {
+                    modified.add(entry.toString());
+                    events.incrementAndGet();
+                }
+
+                @Override
+                public void directoryDeleted(Path directory)
+                {
+                    directoryDeleted.add(directory.toString());
+                    events.incrementAndGet();
+                }
+
+                @Override
+                public void overflow()
+                {
+                    overflow.incrementAndGet();
+                }
+            }, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+
+            PathListenerManager plm = watcher._listenerMap.get(testPath);
+            assertNotNull(plm);
+            assertEquals(1, plm._list.size());
+
+            File a = new File(testFolder, "a");
+            File b = new File(testFolder, "b");
+            File c = new File(testFolder, "c");
+
+            assertTrue(a.createNewFile());
+            assertTrue(b.createNewFile());
+            assertTrue(c.createNewFile());
+
+            try (PrintWriter pw = PrintWriters.getPrintWriter(a))
+            {
+                pw.println("Hello World");
+            }
+
+            try (PrintWriter pw = PrintWriters.getPrintWriter(c))
+            {
+                pw.println("Hello World");
+            }
+
+            assertTrue(a.delete());
+            assertTrue(b.delete());
+
+            FileUtil.deleteDir(testFolder);
+
+            waitForEvents(events, 14);
+
+            assertEquals(3, created.size());
+            assertTrue(created.containsAll(Set.of("a", "b", "c")));
+            // Note: Modified is called on delete as well
+            assertEquals(3, modified.size());
+            assertTrue(created.containsAll(Set.of("a", "b", "c")));
+            assertEquals(3, deleted.size());
+            assertTrue(created.containsAll(Set.of("a", "b", "c")));
+            assertEquals(1, directoryDeleted.size());
+            assertEquals(0, overflow.get());
+
+            plm = watcher._listenerMap.get(testPath);
+            assertNull(plm);
+        }
+
+        private void waitForEvents(AtomicInteger events, int targetCount) throws InterruptedException
+        {
+            int maxSleepSeconds = 10;
+            int i = 0;
+
+            while (events.get() < targetCount && i < maxSleepSeconds)
+            {
+                //noinspection BusyWait
+                Thread.sleep(1000);
+                i++;
+            }
+
+            LOG.info("That took " + i + " seconds!");
+//            assertTrue(expectedEventCount <= events.get());
+            LOG.info("Actual event count: " + events.get());
         }
     }
 }
