@@ -23,6 +23,9 @@ public class ProvenanceRecordingParams implements IsSerializable
     private List<ExpMaterial> materialInputs = Collections.emptyList();
     private List<ExpData> dataInputs = Collections.emptyList();
 
+    private List<ExpMaterial> materialOutputs = Collections.emptyList();
+    private List<ExpData> dataOutputs = Collections.emptyList();
+
     public String getRecordingId()
     {
         return recordingId;
@@ -131,5 +134,25 @@ public class ProvenanceRecordingParams implements IsSerializable
     public void setDataInputs(List<ExpData> dataInputs)
     {
         this.dataInputs = dataInputs;
+    }
+
+    public List<ExpMaterial> getMaterialOutputs()
+    {
+        return materialOutputs;
+    }
+
+    public void setMaterialOutputs(List<ExpMaterial> materialOutputs)
+    {
+        this.materialOutputs = materialOutputs;
+    }
+
+    public List<ExpData> getDataOutputs()
+    {
+        return dataOutputs;
+    }
+
+    public void setDataOutputs(List<ExpData> dataOutputs)
+    {
+        this.dataOutputs = dataOutputs;
     }
 }
