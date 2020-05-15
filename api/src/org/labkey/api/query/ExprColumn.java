@@ -20,10 +20,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * {@link ColumnInfo} backed by a {@link SQLFragment} with the expression to generate the desired value. A typical way
@@ -67,6 +69,27 @@ public class ExprColumn extends BaseColumnInfo
     {
         this(parent, FieldKey.fromParts(name), sql, type, dependentColumns);
     }
+
+    public static MutableColumnInfo create(TableInfo parent, String name, JdbcType type, SQLFragment sqlf, ColumnInfo ... dependentColumns)
+    {
+        return new ExprColumn(parent, name, sqlf, type, dependentColumns);
+    }
+
+    /* NOTE: we could pass tableAlias to sqlFn(), but some code already uses STR_TABLE_ALIAS, and the fn() might be kinda expensive so we'll stick with needed to use string replacement */
+    public static MutableColumnInfo create(TableInfo parent, FieldKey name, JdbcType type, Supplier<SQLFragment> sqlFn, ColumnInfo ... dependentColumns)
+    {
+        return new ExprColumn(parent, name, null, type, dependentColumns)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                if (null == _sql)
+                    _sql = sqlFn.get();
+                return super.getValueSql(tableAlias);
+            }
+        };
+    }
+
 
     public SQLFragment getValueSql(String tableAlias)
     {
