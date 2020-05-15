@@ -27,7 +27,9 @@ import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
+import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -624,22 +626,18 @@ public class StudyExportTest extends StudyManualTest
     {
         navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), "fileImportDataset");
-        click(Locator.checkboxByName("fileImport"));
-        clickButton("Next");
+        DatasetDesignerPage datasetDesignerPage = new ManageStudyPage(getDriver())
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName("fileImportDataset");
+        datasetDesignerPage.getFieldsPanel()
+                .setInferFieldFile(DATASET_DATA_FILE);
+        datasetDesignerPage.setAutoImport(true)
+                .setPreviewMappedColumn("Mice", "name")
+                .setPreviewMappedColumn("Visits", "visit number")
+                .clickSave()
+                .clickViewData();
 
-        waitForElement(Locator.xpath("//input[@name='uploadFormElement']"), WAIT_FOR_JAVASCRIPT);
-
-        setFormElement(Locator.name("uploadFormElement"), DATASET_DATA_FILE);
-
-        waitForElement(Locator.xpath("//span[@id='button_Import']"), WAIT_FOR_JAVASCRIPT);
-
-        selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "name");
-        selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit number");
-
-        clickButton("Import", defaultWaitForPage);
         waitForElement(Locator.paginationText(9));
         assertTextPresent("kevin", "chimpanzee");
     }
