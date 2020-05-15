@@ -56,8 +56,11 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
 
     @Override
-    public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName)
+    public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, @Nullable String defName)
     {
+        if (defName == null)
+            return new IssuesDomainKindProperties();
+
         IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(container, defName);
         String sortDirection = IssueManager.getCommentSortDirection(container, defName).name();
 
