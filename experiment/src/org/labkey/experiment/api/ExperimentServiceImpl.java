@@ -264,7 +264,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
-        Set<String> roles = getDataInputRoles(container, ContainerFilter.CURRENT);
+        Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container));
         // Remove case-only dupes
         Set<String> dedupedRoles = new CaseInsensitiveHashSet();
         roles.removeIf(role -> !dedupedRoles.add(role));
@@ -638,8 +638,8 @@ public class ExperimentServiceImpl implements ExperimentService
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
 
         // SampleSet may live in different container
-        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"), container);
+        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
         filter.addClause(clause);
 
         Set<String> selectNames = new LinkedHashSet<>();
@@ -1680,7 +1680,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.Type.Current.create(null), getTinfoMaterialInput(), types);
+        return getInputRoles(container, ContainerFilter.Type.Current.create(container, null), getTinfoMaterialInput(), types);
     }
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)

@@ -87,7 +87,7 @@ public class VisualizationVisitTagTable extends VirtualTable
             from.append("\nWHERE ");
 
             // TODO: this is a temp fix for the Dataspace usecase
-            from.append(new ContainerFilter.AllInProject(_user).getSQLFragment(getSchema(), new SQLFragment("study.Participant.Container"), _study.getContainer()));
+            from.append(ContainerFilter.Type.AllInProject.create(_study.getContainer(), _user).getSQLFragment(getSchema(), new SQLFragment("study.Participant.Container")));
 
             from.append(") ").append(innerAlias);
             from.append(joinString);

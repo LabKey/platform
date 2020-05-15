@@ -101,7 +101,7 @@ public class AssayRunType extends ExperimentRunType
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (provider != null)
         {
-            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.CURRENT);
+            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.current(_protocol.getContainer()));
             header.render(request, response);
             response.getWriter().write("<p/>\n");
         }

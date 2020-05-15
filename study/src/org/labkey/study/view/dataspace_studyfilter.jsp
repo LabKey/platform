@@ -59,7 +59,7 @@
     {
         DataspaceQuerySchema schema = new DataspaceQuerySchema((StudyImpl)study, getUser(), true);
         ContainerFilter cf = schema.getDefaultContainerFilter();
-        Collection<GUID> containerIds = cf.getIds(getContainer());
+        Collection<GUID> containerIds = cf.getIds();
         if (null != containerIds)
         {
             for (GUID id : containerIds)

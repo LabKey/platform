@@ -72,7 +72,7 @@ public abstract class AbstractContainerFilterable extends AbstractTableInfo
 
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getUserSchema().getContainer());
     }
 
     /**

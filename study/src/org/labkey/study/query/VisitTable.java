@@ -51,7 +51,7 @@ public class VisitTable extends BaseStudyTable
             {
                 // fix up container filter to include project if dataspace study with shard visits
                 if (schema.getContainer().isProject() && study.getShareVisitDefinitions())
-                    cf = new ContainerFilter.Project(schema.getUser());
+                    cf = ContainerFilter.Type.Project.create(schema);
             }
             else
             {
@@ -59,7 +59,7 @@ public class VisitTable extends BaseStudyTable
                 // If shared visits are enabled, only show visits from the project level.
                 Study visitStudy = StudyManager.getInstance().getSharedStudy(study);
                 if (visitStudy != null && visitStudy.getShareVisitDefinitions())
-                    cf = new ContainerFilter.Project(schema.getUser());
+                    cf = ContainerFilter.Type.Project.create(schema);
             }
         }
         _setContainerFilter(cf);

@@ -596,7 +596,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
      */
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer());
+        return filter.createFilterClause(getSchema(), fieldKey);
     }
 
     public Container getContainer()

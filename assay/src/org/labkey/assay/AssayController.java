@@ -985,10 +985,14 @@ public class AssayController extends SpringActionController
 
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
         {
-            return getAssayResultsURL(container, protocol, null, runIds);
+            return getAssayResultsURL(container, protocol, (ContainerFilter.Type)null, runIds);
         }
 
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... runIds)
+        {
+            return getAssayResultsURL(container, protocol, null==containerFilter?null:containerFilter.getType(), runIds);
+        }
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter.Type containerFilterType, int... runIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -1031,8 +1035,8 @@ public class AssayController extends SpringActionController
                 result.addFilter(resultsTableName,
                         tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
-            if (containerFilter != null && containerFilter.getType() != null)
-                result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
+            if (containerFilterType != null)
+                result.addParameter("Data." + QueryParam.containerFilterName, containerFilterType.name());
             return result;
         }
 
