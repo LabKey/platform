@@ -18,6 +18,7 @@ package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.compliance.TableRules;
 import org.labkey.api.compliance.TableRulesManager;
 import org.labkey.api.data.AbstractTableInfo;
@@ -61,6 +62,8 @@ import java.util.Set;
  */
 public class FilteredTable<SchemaType extends UserSchema> extends AbstractContainerFilterable implements ContainerFilterable
 {
+    final private static ButtonBarConfig BUTTONBAR_NOTSET = new ButtonBarConfig(new JSONObject());
+
     final private SimpleFilter _filter;
     @NotNull protected final TableInfo _rootTable;
     AliasManager _aliasManager = null;
@@ -87,8 +90,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _description = _rootTable.getDescription();
         _importMsg = _rootTable.getImportMessage();
         _importTemplates = _rootTable.getRawImportTemplates();
-        // UNDONE: lazy load button bar config????
-        _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
+        _buttonBarConfig = BUTTONBAR_NOTSET;        // lazy copy button bar when asked
         if (_rootTable.supportsAuditTracking())
             _auditBehaviorType = _rootTable.getAuditBehavior();
 
@@ -713,5 +715,19 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
             return _userSchema.getContainer().hasPermission(user, perm);
         }
         return super.hasPermission(user, perm);
+    }
+
+    @Override
+    public ButtonBarConfig getButtonBarConfig()
+    {
+        if (_buttonBarConfig == BUTTONBAR_NOTSET)
+            _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
+        return _buttonBarConfig;
+    }
+
+    @Override
+    public void setButtonBarConfig(ButtonBarConfig buttonBarConfig)
+    {
+        super.setButtonBarConfig(buttonBarConfig);
     }
 }

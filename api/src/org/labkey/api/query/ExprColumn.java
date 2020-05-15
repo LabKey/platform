@@ -34,7 +34,7 @@ public class ExprColumn extends BaseColumnInfo
     /** Placeholder that is later substituted with the table/subquery alias during SQL generation */
     public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
 
-    private SQLFragment _sql;
+    protected SQLFragment _sql;
     private ColumnInfo[] _dependentColumns;
 
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
