@@ -44,7 +44,7 @@ public abstract class ExpProtocolInputTableImpl<C extends Enum> extends ExpTable
         sqlFragment.append(ExperimentServiceImpl.get().getTinfoProtocol(), "p");
         sqlFragment.append(" WHERE p.RowId = ProtocolId)");
 
-        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, getContainer(), false), containerFK);
+        addCondition(getContainerFilter().getSQLFragment(getSchema(), sqlFragment, false), containerFK);
     }
 
     protected MutableColumnInfo createRowIdColumn(String alias)

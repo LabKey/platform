@@ -20,6 +20,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UnionContainerFilter;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -63,7 +64,7 @@ public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
     @Override
     protected ContainerFilter getDefaultContainerFilter()
     {
-        return new ContainerFilter.CurrentPlusProjectAndShared(getUserSchema().getUser());
+        return ContainerFilter.Type.CurrentPlusProjectAndShared.create(getUserSchema());
     }
 
     @Override

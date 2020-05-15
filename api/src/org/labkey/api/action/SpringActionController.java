@@ -100,7 +100,7 @@ import static org.labkey.api.view.template.PageConfig.Template.Dialog;
  *
  * This class acts pretty much as DispatchServlet.  However, it does not follow all the rules/conventions of DispatchServlet.
  * Whenever a discrepancy is found that someone cares about, please go ahead and make a change in the direction of better
- * compatibility. 
+ * compatibility.
  */
 public abstract class SpringActionController implements Controller, HasViewContext, ViewResolver, ApplicationContextAware
 {
@@ -248,7 +248,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             throw new UnauthorizedException();
         }
     }
-    
+
     protected ViewBackgroundInfo getViewBackgroundInfo()
     {
         ViewContext vc = getViewContext();
@@ -298,7 +298,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         return HttpView.viewFromString(viewName);
     }
-    
+
 
     /** returns an uninitialized instance of the named action */
     public Controller resolveAction(String name)
