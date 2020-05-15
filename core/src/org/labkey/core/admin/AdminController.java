@@ -68,10 +68,7 @@ import org.labkey.api.admin.HealthCheckRegistry;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.admin.TableXmlUtils;
-import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.attachments.LookAndFeelResourceAttachmentParent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.provider.ContainerAuditProvider;
@@ -138,6 +135,8 @@ import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ApplicationAdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.TroubleShooterPermission;
@@ -246,8 +245,21 @@ import java.util.stream.Collectors;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Configuration;
 import static org.labkey.api.settings.AdminConsole.SettingsLinkType.Diagnostics;
-import static org.labkey.api.util.DOM.*;
-import static org.labkey.api.util.DOM.Attribute.*;
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.Attribute.style;
+import static org.labkey.api.util.DOM.Attribute.title;
+import static org.labkey.api.util.DOM.BR;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.LI;
+import static org.labkey.api.util.DOM.SPAN;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.UL;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
+import static org.labkey.api.util.DOM.createHtmlFragment;
 import static org.labkey.api.util.HtmlString.NBSP;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.view.FolderManagement.EVERY_CONTAINER;
@@ -7087,7 +7099,7 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(DeletePermission.class)
     public class DeleteWorkbooksAction extends SimpleRedirectAction<ReturnUrlForm>
     {
         public void validateCommand(ReturnUrlForm target, Errors errors)
@@ -7115,7 +7127,8 @@ public class AdminController extends SpringActionController
         }
     }
 
-    @RequiresPermission(AdminPermission.class)
+    //NOTE: some types of containers can be deleted by non-admin users, provided they have DeletePermission on the parent
+    @RequiresPermission(DeletePermission.class)
     public class DeleteFolderAction extends FormViewAction<ManageFoldersForm>
     {
         private List<Container> _deleted = new ArrayList<>();
@@ -7136,9 +7149,11 @@ public class AdminController extends SpringActionController
                         throw new UnauthorizedException();
                     }
 
-                    if (!target.hasPermission(getUser(), AdminPermission.class))
+                    Class<? extends Permission> permClass = target.getPermissionNeededToDelete();
+                    if (!target.hasPermission(getUser(), permClass))
                     {
-                        throw new UnauthorizedException("Cannot delete folder: " + target.getName() + ". Admin permissions are required");
+                        Permission perm = RoleManager.getPermission(permClass);
+                        throw new UnauthorizedException("Cannot delete folder: " + target.getName() + ". " + perm.getName() + " permission required");
                     }
 
                     if (!ContainerManager.hasTreePermission(target, getUser(), AdminPermission.class))
