@@ -426,14 +426,15 @@ public class StudyController extends BaseStudyController
         @Override
         public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
         {
+            StudyImpl study = getStudyRedirectIfNull();
+
             if (AppProps.getInstance().isExperimentalFeatureEnabled(StudyManager.EXPERIMENTAL_DATASET_DESIGNER))
             {
-                // TODO do we need the getStudyRedirectIfNull() part here?
                 return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
             }
             else
             {
-                return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
+                return new StudyJspView<>(study, "importDataType.jsp", form, errors);
             }
         }
 
@@ -5125,32 +5126,7 @@ public class StudyController extends BaseStudyController
             }
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
-                StudyImpl study = getStudyRedirectIfNull();
-                Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
-                        replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
-                        replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
-
-                if (dsDef == null)
-                    throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                Map<String,String> props = PageFlowUtil.map(
-                        "studyId", String.valueOf(study.getRowId()),
-                        "datasetId", String.valueOf(dsDef.getDatasetId()),
-                        "typeURI", dsDef.getTypeURI(),
-                        "timepointType", String.valueOf(study.getTimepointType()),
-                        ActionURL.Param.returnUrl.name(), url.getLocalURIString(),
-                        ActionURL.Param.cancelUrl.name(), url.getLocalURIString(),
-                        "create", "false");
-
-                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-                HttpView view = new StudyGWTView(gwt.client.org.labkey.study.dataset.client.Designer.class, props);
-
-                // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                return new VBox(text, view);
+                throw new NotFoundException("Unable to edit the created dataset definition.");
             }
             return null;
         }
@@ -5171,7 +5147,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
+        private Dataset createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
@@ -5241,8 +5217,12 @@ public class StudyController extends BaseStudyController
                         DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
+
+                    return def;
                 }
             }
+
+            return dsDef;
         }
 
         @Override
@@ -5254,7 +5234,18 @@ public class StudyController extends BaseStudyController
             {
                 if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
                 {
-                    createDataset(form, errors);
+                    Dataset def = createDataset(form, errors);
+                    if (!errors.hasErrors() && def != null)
+                    {
+                        ActionURL returnUrl = getViewContext().cloneActionURL()
+                            .replaceParameter("ff_snapshotName", form.getSnapshotName())
+                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
+                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+
+                        _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
+                                .addParameter("datasetId", def.getDatasetId())
+                                .addReturnURL(returnUrl);
+                    }
                 }
                 else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
                 {
@@ -5313,51 +5304,19 @@ public class StudyController extends BaseStudyController
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
 
+            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
             if (provider != null)
             {
-                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
-                boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
-
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form));
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors));
 
+                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 if (showHistory)
                 {
                     HttpView historyView = provider.createAuditView(form);
                     if (historyView != null)
                         box.addView(historyView);
-                }
-
-                if (showDataset)
-                {
-                    // create the GWT dataset designer
-                    StudyImpl study = getStudyRedirectIfNull();
-                    Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                    if (dsDef == null)
-                        throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                    ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
-                    Map<String,String> props = PageFlowUtil.map(
-                            "studyId", String.valueOf(study.getRowId()),
-                            "datasetId", String.valueOf(dsDef.getDatasetId()),
-                            "typeURI", dsDef.getTypeURI(),
-                            "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
-                            ActionURL.Param.returnUrl.name(), returnURL.toString(),
-                            ActionURL.Param.cancelUrl.name(), returnURL.toString(),
-                            "create", "false");
-
-                    HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
-                            "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new StudyGWTView(new StudyApplication.DatasetDesigner(), props);
-
-                    // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                    ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                    box.addView(text);
-                    box.addView(view);
                 }
             }
             return box;
