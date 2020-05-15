@@ -66,8 +66,10 @@ public interface PropertyService
     /** Get all the domains in the specified container and optionally project and shared. */
     List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared);
 
-    /** Get all the domains in the specified container and specified Domain Kinds. */
+    /** Get all the domains in the specified container and specified Domain Kinds. THIS IS SLOW */
     List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
+
+    List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared);
 
     Stream<? extends Domain> getDomainsStream(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
 

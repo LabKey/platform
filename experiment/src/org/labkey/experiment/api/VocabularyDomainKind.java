@@ -121,6 +121,8 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
     @Override
     public Priority getPriority(String domainURI)
     {
+        if (!domainURI.contains(getKindName()))
+            return null;
         Lsid lsid = new Lsid(domainURI);
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }

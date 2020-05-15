@@ -28,7 +28,6 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -52,7 +51,7 @@ public class Lsid
     private final String objectId;
     private final String version;
     private final boolean valid;
-    private final int hashCode;
+    private int hashCode;
 
 
     /**
@@ -67,7 +66,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = b.valid;
-        this.hashCode = this.toString().hashCode();
     }
 
 
@@ -87,7 +85,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
-        this.hashCode = this.toString().hashCode();
     }
 
     /**
@@ -107,7 +104,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
-        this.hashCode = this.toString().hashCode();
     }
 
 
@@ -119,7 +115,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(objectId,"");
         this.version = version;
         this.valid = valid;
-        this.hashCode = this.toString().hashCode();
     }
 
     // Keep in sync with getSqlExpressionToExtractObjectId() (below)
@@ -216,6 +211,9 @@ public class Lsid
 
     public int hashCode()
     {
+        // this.toString() is expensive, don't use unless someone asks
+        if (0 == hashCode)
+            hashCode = toString().hashCode();
         return hashCode;
     }
 
