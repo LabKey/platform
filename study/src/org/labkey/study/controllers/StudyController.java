@@ -417,7 +417,7 @@ public class StudyController extends BaseStudyController
 		}
 	}
 
-
+    // TODO to be deleted with GWT version of dataset designer
     @RequiresPermission(AdminPermission.class)
     public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
     {
@@ -7211,7 +7211,6 @@ public class StudyController extends BaseStudyController
                 {
                     case defineManually:
                     case placeHolder:
-                    case importFromFile:
                         if (StringUtils.isEmpty(form.getName()))
                             errors.reject(ERROR_MSG, "A Dataset name must be specified.");
                         else if (StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName()) != null)
@@ -7253,7 +7252,6 @@ public class StudyController extends BaseStudyController
 
                 switch (form.getType())
                 {
-                    case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
@@ -7263,12 +7261,7 @@ public class StudyController extends BaseStudyController
                             def.provisionTable();
                         }
 
-                        ActionURL redirect;
-                        if (form.getType() == DefineDatasetForm.Type.defineManually)
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-                        else
-                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-
+                        ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
@@ -7282,7 +7275,6 @@ public class StudyController extends BaseStudyController
                         break;
 
                     case linkManually:
-                    case linkImport:
                         def = StudyManager.getInstance().getDatasetDefinition(_study, form.getExpectationDataset());
                         if (def != null)
                         {
@@ -7294,11 +7286,7 @@ public class StudyController extends BaseStudyController
                             // add a cancel url to rollback either the manual link or import from file link
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
-                            if (form.getType() == DefineDatasetForm.Type.linkManually)
-                                redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            else
-                                redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
                             redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
@@ -7358,12 +7346,10 @@ public class StudyController extends BaseStudyController
     {
         enum Type
         {
-            importFromFile,
             defineManually,
             placeHolder,
             linkToTarget,
             linkManually,
-            linkImport,
         }
 
         private ViewContext _context;

@@ -327,16 +327,11 @@ if (!pipelineSet)
                 }
             });
 
-            var importRadio = {
-                boxLabel: 'Import data from file',
-                name: 'deftype',
-                inputValue: 'linkImport',
-                checked: 'true'
-            };
             var manualRadio = {
-                boxLabel: 'Define dataset manually',
+                boxLabel: 'Define dataset manually or from a file',
                 name:'deftype',
-                inputValue:'linkManually'
+                inputValue:'linkManually',
+                checked: 'true'
             };
 
             var existingRadio = {
@@ -349,7 +344,7 @@ if (!pipelineSet)
                 columns: 1,
                 vertical: true,
                 margin: '10 0 0 45',
-                items: [importRadio, manualRadio, existingRadio],
+                items: [manualRadio, existingRadio],
                 listeners: {
                     scope: this,
                     change: function(rgroup, newValue){

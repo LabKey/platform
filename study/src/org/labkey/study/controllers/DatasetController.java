@@ -272,6 +272,7 @@ public class DatasetController extends BaseStudyController
 
     }
 
+    // TODO to be deleted with GWT version of dataset designer
     @RequiresPermission(AdminPermission.class)
     public class DefineAndImportDatasetAction extends SimpleViewAction<DatasetIdForm>
     {
