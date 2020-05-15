@@ -137,7 +137,8 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         final WatchKey watchKey;
 
         // ensure we catch variations such as both nfs and nfs4
-        if (null != fileStoreType && (fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs")))
+        boolean pollingWatcher = null != fileStoreType && (fileStoreType.startsWith("cifs") || fileStoreType.startsWith("smbfs") || fileStoreType.startsWith("nfs"));
+        if (pollingWatcher)
         {
             LOG.debug("Detected network file system type '" + fileStoreType + "'. Create polling file watcher service and register this directory there for directory: " + directory.toAbsolutePath().toString());
             watchKey = _pollingWatcher.register(directory, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
@@ -149,6 +150,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         }
 
         plm.setFileStoreType(fileStoreType);
+        plm.setPollingWatcher(pollingWatcher);
         plm.setWatchKey(watchKey);
     }
 
@@ -329,6 +331,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         private volatile String _fileStoreType;
         private volatile WatchKey _watchKey;
+        private volatile boolean _pollingWatcher;
 
         private boolean _directoryDeleteListenerOnParent = false;
 
@@ -351,6 +354,16 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         private void setFileStoreType(String fileStoreType)
         {
             _fileStoreType = fileStoreType;
+        }
+
+        public boolean isPollingWatcher()
+        {
+            return _pollingWatcher;
+        }
+
+        public void setPollingWatcher(boolean pollingWatcher)
+        {
+            _pollingWatcher = pollingWatcher;
         }
 
         private WatchKey getWatchKey()
