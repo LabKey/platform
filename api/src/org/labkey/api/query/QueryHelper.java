@@ -175,18 +175,6 @@ public class QueryHelper
         return viewFilter;
     }
 
-    private ContainerFilter getViewContainerFilter()
-    {
-        if (_viewName == null)
-            return null;
-
-        CustomView view = getCustomView();
-        if (view == null)
-            throw new IllegalStateException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
-
-        return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _user);
-    }
-
     public @NotNull Results select(List<FieldKey> columns, @Nullable SimpleFilter filter)
     {
         return select(columns, filter, null);

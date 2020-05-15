@@ -25,11 +25,12 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collection;
 import java.util.Set;
 
-public interface QuerySchema extends SchemaTreeNode
+public interface QuerySchema extends SchemaTreeNode, ContainerUser
 {
     User getUser();
 
@@ -41,14 +42,34 @@ public interface QuerySchema extends SchemaTreeNode
 
     DbSchema getDbSchema();
 
-    @Deprecated
-    TableInfo getTable(String name);
+    /** getTable(name) is equivalent to getTable(name, null) */
+    default TableInfo getTable(String name)
+    {
+        return getTable(name, null);
+    }
 
-    TableInfo getTable(String name, ContainerFilter cf);
+    /** Consider using getTableWithFactory(String, ContainerFilter.Factory) instead */
+    TableInfo getTable(String name, @Nullable ContainerFilter cf);
+
+    /**
+     * The schema already knows its container and user, we don't need to redundantly create a ContainerFilter with the
+     * same info.
+     *
+     * NOTE: getTable(String,ContainerFilter) takes @Nullable ContainerFilter, therefore getTable(String,ContainerFilter.Factory)
+     * would cause a lot of ambiguous code errors.
+     *
+     * @param name Name of requested table
+     * @param factory ContainerFilter factory, null means use default (usually ContainerFilter.Type.Current)
+     * @return TableInfo
+     */
+    default TableInfo getTableCFF(String name, ContainerFilter.Factory factory)
+    {
+        return getTable(name, null==factory ? getDefaultContainerFilter() : factory.create(this.getContainer(), this.getUser()));
+    }
 
     default ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getContainer());
     }
 
     Set<String> getTableNames();

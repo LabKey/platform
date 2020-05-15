@@ -52,13 +52,13 @@ public abstract class AbstractReportDataSourceBuilder
         _schemaKey = schemaKey;
     }
 
-    public ContainerFilter getContainerFilter(User user)
+    public ContainerFilter getContainerFilter(Container container, User user)
     {
         if (_containerFilterName == null)
         {
             return null;
         }
-        return ContainerFilter.getContainerFilterByName(_containerFilterName, user);
+        return ContainerFilter.getContainerFilterByName(_containerFilterName, container, user);
     }
 
     public void setContainerFilter(String containerFilterName)
