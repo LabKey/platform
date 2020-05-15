@@ -18,6 +18,7 @@ public class ProvenanceRecordingParams implements IsSerializable
     private String outputObjectUriProperty = "lsid";
     private Map<String, Object> properties = Collections.emptyMap();
     private List<String> objectInputs = Collections.emptyList();
+    private List<String> objectOutputs = Collections.emptyList();
     private List<Pair<String,String>> provenanceMap = Collections.emptyList();
 
     private List<ExpMaterial> materialInputs = Collections.emptyList();
@@ -134,6 +135,16 @@ public class ProvenanceRecordingParams implements IsSerializable
     public void setDataInputs(List<ExpData> dataInputs)
     {
         this.dataInputs = dataInputs;
+    }
+
+    public List<String> getObjectOutputs()
+    {
+        return objectOutputs;
+    }
+
+    public void setObjectOutputs(List<String> objectOutputs)
+    {
+        this.objectOutputs = objectOutputs;
     }
 
     public List<ExpMaterial> getMaterialOutputs()

@@ -23,6 +23,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
 import org.labkey.test.params.experiment.SampleSetDefinition;
+import org.labkey.test.tests.provenance.ProvenanceAssayHelper;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -38,7 +39,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.hasItem;
 
 @Category({DailyC.class})
-public class VocabularyViewSupportTest extends BaseWebDriverTest
+public class VocabularyViewSupportTest extends ProvenanceAssayHelper
 {
 
     @BeforeClass
@@ -251,17 +252,6 @@ public class VocabularyViewSupportTest extends BaseWebDriverTest
 
         _listHelper.createList(getProjectName(), listName, ListHelper.ListColumnType.AutoInteger, "Key", columns);
         goToManageLists();
-    }
-
-    private DomainResponse createDomain(String domainKind, String domainName, String description, List<PropertyDescriptor> fields) throws IOException, CommandException
-    {
-        CreateDomainCommand domainCommand = new CreateDomainCommand(domainKind, domainName);
-        domainCommand.getDomainDesign().setFields(fields);
-        domainCommand.getDomainDesign().setDescription(description);
-
-        DomainResponse domainResponse = domainCommand.execute(createDefaultConnection(false), getProjectName());
-        GetDomainCommand getDomainCommand = new GetDomainCommand(domainResponse.getDomain().getDomainId());
-        return getDomainCommand.execute(createDefaultConnection(false), getProjectName());
     }
 
 }
