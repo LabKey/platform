@@ -241,9 +241,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
-        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, container);
-        createURL.addParameter("autoDatasetId", "true");
-        return createURL;
+        return new ActionURL(StudyController.DefineDatasetTypeAction.class, container);
     }
 
     @Override

@@ -16,22 +16,18 @@
 
 package org.labkey.study.controllers;
 
-import gwt.client.org.labkey.study.dataset.client.DatasetImporter;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
-import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -42,24 +38,19 @@ import org.labkey.api.view.DetailsView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.study.StudySchema;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.query.DatasetTableImpl;
-import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.PrintWriter;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: jgarms
@@ -272,61 +263,6 @@ public class DatasetController extends BaseStudyController
 
     }
 
-    // TODO to be deleted with GWT version of dataset designer
-    @RequiresPermission(AdminPermission.class)
-    public class DefineAndImportDatasetAction extends SimpleViewAction<DatasetIdForm>
-    {
-        public ModelAndView getView(DatasetIdForm form, BindException errors)
-        {
-            Map<String,String> props = new HashMap<>();
-
-            Study study = getStudyRedirectIfNull();
-            Dataset def = study.getDataset(form.getDatasetId());
-            if (null == def)
-                throw new NotFoundException("Invalid dataset id");
-
-            props.put("typeURI", def.getTypeURI());
-
-            props.put("timepointType", study.getTimepointType().toString());
-
-            props.put("subjectColumnName", study.getSubjectColumnName());
-
-            // Cancel should delete the dataset
-            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
-            if (cancelUrl == null)
-            {
-                ActionURL url = new ActionURL(
-                    StudyController.DeleteDatasetAction.class, getContainer()).addParameter("id", form.getDatasetId());
-                cancelUrl = url.getLocalURIString();
-            }
-            props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
-
-            ActionURL successURL = new ActionURL(
-                StudyController.DatasetAction.class, getContainer()).addParameter("datasetId", form.getDatasetId());
-            props.put(ActionURL.Param.returnUrl.name(), successURL.getLocalURIString());
-
-            // need a comma-separated list of base columns
-            Set<String> baseColumnNames = def.getDefaultFieldNames();
-            StringBuilder sb = new StringBuilder(DatasetTableImpl.QCSTATE_LABEL_COLNAME);
-            for (String baseColumnName : baseColumnNames)
-            {
-                sb.append(",");
-                sb.append(baseColumnName);
-            }
-            props.put("baseColumnNames", sb.toString());
-
-            return new StudyGWTView(DatasetImporter.class, props);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            _appendManageStudy(root);
-            root.addChild("Manage Datasets", new ActionURL(StudyController.ManageTypesAction.class, getContainer()));
-            root.addChild("Define Dataset from File");
-            return root;
-        }
-    }
-
     public static class DatasetIdForm
     {
         private int datasetId;
@@ -339,15 +275,6 @@ public class DatasetController extends BaseStudyController
         public void setDatasetId(int datasetId)
         {
             this.datasetId = datasetId;
-        }
-    }
-
-    @RequiresPermission(AdminPermission.class)
-    public class DomainImportServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new DatasetImportServiceImpl(getViewContext());
         }
     }
 

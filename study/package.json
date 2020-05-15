@@ -25,7 +25,7 @@
       }
     },
     "clean": {
-      "command": "rimraf resources/web/query/gen && rimraf resources/views/datasetDesigner*"
+      "command": "rimraf resources/web/study/gen && rimraf resources/views/datasetDesigner*"
     }
   },
   "dependencies": {

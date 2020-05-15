@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 %>
-<%@ page import="gwt.client.org.labkey.study.dataset.client.model.GWTDataset"%>
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.pipeline.PipelineService"%>
 <%@ page import="org.labkey.api.security.User"%>
@@ -46,6 +45,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
+<%@ page import="static org.labkey.study.model.DatasetDomainKindProperties.TIME_KEY_FIELD_DISPLAY" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -185,7 +185,7 @@ if (!pipelineSet)
                 <td class=labkey-form-label>Additional Key Column</td>
                 <td><%=h(dataset.getKeyPropertyName() != null ?
                                  h(dataset.getKeyPropertyName()) :
-                                 dataset.getUseTimeKeyField() ? h(GWTDataset.TIME_KEY_FIELD_DISPLAY) :
+                                 dataset.getUseTimeKeyField() ? h(TIME_KEY_FIELD_DISPLAY) :
                                  "None")%></td>
 
                 <td class=labkey-form-label>Tag</td>
