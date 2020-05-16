@@ -15,6 +15,7 @@
  */
 package org.labkey.api.files;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.log4j.Logger;
 import org.imca_cat.pollingwatchservice.PathWatchService;
 import org.imca_cat.pollingwatchservice.PollingWatchService;
@@ -548,13 +549,17 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
             FileUtil.deleteDir(testFolder);
 
-            waitForEvents(events, 14);
+            // On Windows, modified events are called on delete as well, but not on Linux
+            int expectedEventCount = SystemUtils.IS_OS_WINDOWS ? 14 : 9;
+            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
+
+            waitForEvents(events, expectedEventCount);
 
             assertEquals(3, created.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
             // Note: Modified is called on delete as well
-            assertEquals(3, modified.size());
-            assertTrue(created.containsAll(Set.of("a", "b", "c")));
+            assertEquals(expectedModified.size(), modified.size());
+            assertTrue(created.containsAll(expectedModified));
             assertEquals(3, deleted.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
             assertEquals(1, directoryDeleted.size());
