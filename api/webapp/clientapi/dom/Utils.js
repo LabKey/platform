@@ -84,8 +84,15 @@ LABKEY.Utils = new function(impl, $) {
          );
 
         modal.find('.modal-content').html(html.join(''));
-        if (fn && typeof fn === 'function') {
+        if (LABKEY.Utils.isFunction(fn)) {
             fn.apply(this, args);
+        }
+
+        // Some views may not be able to access the modal.modal() method
+        if (!LABKEY.Utils.isFunction(modal.modal)) {
+            console.warn('LABKEY.Utils.displayModal() unable to display modal.');
+            console.warn(title, msg);
+            return;
         }
 
         // prevent the modal from being closed by clicking outside the dialog
