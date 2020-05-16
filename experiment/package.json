@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.58.0"
+    "@labkey/components": "0.59.2-fb-lineage-fixes-duex.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
