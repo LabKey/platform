@@ -217,7 +217,7 @@ public abstract class StudyManualTest extends StudyTest
         formPanel.addField("otherData").setLabel("Other Data")
                 .setType(FieldDefinition.ColumnType.String).setImportAliases("aliasedColumn");
 
-        editDatasetPage.setAdditionalKeyColManagedField("SampleId");
+        editDatasetPage.setAdditionalKeyColDataField("SampleId");
         editDatasetPage
                 .clickSave()
                 .clickViewData()
