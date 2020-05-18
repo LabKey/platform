@@ -75,7 +75,11 @@ public class ExprColumn extends BaseColumnInfo
         return new ExprColumn(parent, name, sqlf, type, dependentColumns);
     }
 
-    /* NOTE: we could pass tableAlias to sqlFn(), but some code already uses STR_TABLE_ALIAS, and the fn() might be kinda expensive so we'll stick with needed to use string replacement */
+
+    /*
+     * Use this 'constructor' to create an ExprColumn whose SQL is generated on demand.  This is useful if generating
+     * the SQL is at all expensive.  Most TableInfo objects are not used for generating SQL and do not need to get this value.
+     */
     public static MutableColumnInfo create(TableInfo parent, FieldKey name, JdbcType type, Supplier<SQLFragment> sqlFn, ColumnInfo ... dependentColumns)
     {
         return new ExprColumn(parent, name, null, type, dependentColumns)
