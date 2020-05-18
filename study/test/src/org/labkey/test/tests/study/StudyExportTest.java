@@ -46,9 +46,7 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 25)
 public class StudyExportTest extends StudyManualTest
 {
-    private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";
-
     private static final File DATASET_DATA_FILE = TestFileUtils.getSampleData("dataLoading/excel/dataset_data.xls");
     private static final String HIDDEN_DATASET = "URS-1: Screening Urinalysis";
     private static final String MODIFIED_DATASET = "Quality Control Report"; // Empty dataset.
@@ -459,7 +457,7 @@ public class StudyExportTest extends StudyManualTest
 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
 
         DataRegionTable.DataRegion(getDriver()).find().clickEditRow(0);
         setFormElement(Locator.name("quf_DEMbdt"), "2001-11-11");
@@ -472,7 +470,7 @@ public class StudyExportTest extends StudyManualTest
         clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
-        setFormElement(Locator.name("quf_SequenceNum"), "123");
+        //setFormElement(Locator.name("quf_SequenceNum"), "123");
         setFormElement(Locator.name("quf_DEMdt"), "1/1/2018");
         setFormElement(Locator.name("quf_DEMbdt"), "1/1/1980");
         setFormElement(Locator.name("quf_DEMsex"), "Male");
@@ -495,7 +493,7 @@ public class StudyExportTest extends StudyManualTest
         pushLocation();
         clickAndWait(Locator.linkWithText(TEST_ADD_ENTRY));
         assertTextPresent("Mouse - " + TEST_ADD_ENTRY,
-                "DEM-1: Demographics");
+                DEMOGRAPHICS_DATASET);
         popLocation();
 
         log("Test deleting rows in a dataset");
@@ -512,30 +510,6 @@ public class StudyExportTest extends StudyManualTest
 
         // Test creating and importing a dataset from an excel file
         doTestDatasetImport();
-    }
-
-    protected boolean comparePaths(String path1, String path2)
-    {
-        String[] parseWith = { "/", "\\\\" };
-        for (String parser1 : parseWith)
-        {
-            String[] path1Split = path1.split(parser1);
-            for  (String parser2 : parseWith)
-            {
-                String[] path2Split = path2.split(parser2);
-                if (path1Split.length == path2Split.length)
-                {
-                    int index = 0;
-                    while (path1Split[index].compareTo(path2Split[index]) == 0)
-                    {
-                        index++;
-                        if (index > path2Split.length - 1)
-                            return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private void changeDatasetOrder(String value)
