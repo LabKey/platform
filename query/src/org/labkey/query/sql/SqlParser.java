@@ -1411,7 +1411,7 @@ public class SqlParser
     }
 
 
-    private class _SqlParser extends SqlBaseParser implements AutoCloseable
+    private static class _SqlParser extends SqlBaseParser implements AutoCloseable
     {
         ArrayList<Exception> _errors;
 
