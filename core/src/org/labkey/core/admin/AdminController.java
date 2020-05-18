@@ -10272,6 +10272,11 @@ public class AdminController extends SpringActionController
                     controller.new ClearDeletedTabFoldersAction()
             );
 
+            // @RequiresPermission(DeletePermission.class)
+            assertForUpdateOrDeletePermission(user,
+                    controller.new DeleteFolderAction()
+            );
+
             // @RequiresPermission(AdminPermission.class)
             assertForAdminPermission(user,
                     new ResetResourceAction(),
@@ -10287,7 +10292,6 @@ public class AdminController extends SpringActionController
                     controller.new CreateFolderAction(),
                     controller.new SetFolderPermissionsAction(),
                     controller.new SetInitialFolderSettingsAction(),
-                    controller.new DeleteFolderAction(),
                     controller.new ReorderFoldersAction(),
                     controller.new ReorderFoldersApiAction(),
                     controller.new RevertFolderAction(),
