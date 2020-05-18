@@ -29,25 +29,28 @@ import java.nio.file.Path;
 public interface FileSystemDirectoryListener
 {
     /**
-     *  A new entry (file or directory) was created in the watched directory. Invoked only if the event was listed at registration time.
-     * @param directory
-     * @param entry
+     * A new entry (file or directory) was created in the watched directory. Invoked only if the event was listed at registration time.
      */
     void entryCreated(Path directory, Path entry);
 
     /**
      * An entry (file or directory) in the directory was deleted. Invoked only if the event was listed at registration time
-     * @param directory
-     * @param entry
      */
     void entryDeleted(Path directory, Path entry);
 
     /**
      * An entry (file or directory) in the directory was changed. Invoked only if the event was listed at registration time.
-     * @param directory
-     * @param entry
      */
     void entryModified(Path directory, Path entry);
+
+    /**
+     * The directory being watched has been deleted. This listener will be unregistered and never invoked again. Perform
+     * any clean-up that might be needed (e.g., remove the directory from "ensure" lists so it can be re-registered if the
+     * directory reappears).
+     */
+    default void directoryDeleted(Path directory)
+    {
+    }
 
     /**
      * Indicates that events might have been lost or discarded. The method is always invoked when overflow occurs (regardless of registration).

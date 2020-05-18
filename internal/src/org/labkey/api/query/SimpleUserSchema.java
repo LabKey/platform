@@ -72,10 +72,11 @@ import java.util.stream.Collectors;
  */
 public class SimpleUserSchema extends UserSchema
 {
+    private static final Logger _log = Logger.getLogger(SimpleUserSchema.class);
+
     // CaseInsensitiveTreeSet preserves case of the table names (from XML), unlike CaseInsensitiveHashSet
     private final Set<String> _available = new CaseInsensitiveTreeSet();
     protected Set<String> _visible;
-    private static Logger _log = Logger.getLogger(SimpleUserSchema.class);
 
     public SimpleUserSchema(String name, @Nullable String description, User user, Container container, DbSchema dbschema)
     {

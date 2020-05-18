@@ -191,7 +191,7 @@ public class IssueValidation
                 }
                 if (issue.getIssueId() == relatedId)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "As issue may not be related to itself");
+                    errors.reject(SpringActionController.ERROR_MSG, "An issue may not be related to itself");
                     return;
                 }
 
