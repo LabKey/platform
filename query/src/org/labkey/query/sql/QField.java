@@ -180,7 +180,7 @@ public class QField extends QInternalExpr
                 return rcol.getValueSql();  // delay call in case this causes unnecessary
             }
         };
-        getRelationColumn().copyColumnAttributesTo(ret, false);
+        getRelationColumn().copyColumnAttributesTo(ret);
         return ret;
     }
 
