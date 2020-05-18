@@ -50,6 +50,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -97,10 +98,25 @@ public class SqlParser
     ArrayList<QParameter> _parameters;
     final SqlDialect _dialect;
     Container _container = null;
+
     final static SoftPool<_SqlParser> _parserPool = new SoftPool<>();
 
-    static class SoftPool<T>
+    static class SoftPool<T> implements MemTrackerListener
     {
+        SoftPool()
+        {
+            MemTracker.get().register(this);
+            assert MemTracker.get().put(this);
+        }
+
+        @Override
+        public synchronized void beforeReport(Set<Object> set)
+        {
+            set.add(SqlParser._parserPool);
+            for (var r : _pool)
+                set.add(r.get());
+        }
+
         final int maxPoolSize=3;
         final ArrayList<SoftReference<T>> _pool = new ArrayList<>();
         @Nullable
@@ -119,7 +135,7 @@ public class SqlParser
         {
             if (_pool.size()<maxPoolSize)
             {
-                _pool.add(new SoftReference<T>(t));
+                _pool.add(new SoftReference<>(t));
                 return;
             }
             for (int i=0 ; i<_pool.size() ; i++)
@@ -157,7 +173,7 @@ public class SqlParser
     {
         _SqlParser ret = _parserPool.get();
         if (null == ret)
-            return ret = new _SqlParser();
+            ret = new _SqlParser();
         return ret;
     }
 
