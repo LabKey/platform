@@ -283,8 +283,9 @@ public class StudyScheduleTest extends StudyBaseTest
 
                 // add a single name field
                 datasetDesignerPage = new DatasetDesignerPage(getDriver());
-                datasetDesignerPage.getFieldsPanel().getField(0).setName("antigenName");
+                datasetDesignerPage.getFieldsPanel().manuallyDefineFields("antigenName");
                 datasetDesignerPage.clickSave();
+
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
@@ -368,8 +369,9 @@ public class StudyScheduleTest extends StudyBaseTest
 
                 // add a single name field
                 datasetDesignerPage = new DatasetDesignerPage(getDriver());
-                datasetDesignerPage.getFieldsPanel().getField(0).setName("antigenName");
+                datasetDesignerPage.getFieldsPanel().manuallyDefineFields("antigenName");
                 datasetDesignerPage.clickSave();
+
                 break;
             case importFromFile:
                 click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));

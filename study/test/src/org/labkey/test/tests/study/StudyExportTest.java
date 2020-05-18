@@ -470,7 +470,7 @@ public class StudyExportTest extends StudyManualTest
         clickButton("Submit");
         assertTextPresent("This field is required");
         setFormElement(Locator.name("quf_MouseId"), TEST_ADD_ENTRY);
-        //setFormElement(Locator.name("quf_SequenceNum"), "123");
+        setFormElement(Locator.name("quf_SequenceNum"), "123");
         setFormElement(Locator.name("quf_DEMdt"), "1/1/2018");
         setFormElement(Locator.name("quf_DEMbdt"), "1/1/1980");
         setFormElement(Locator.name("quf_DEMsex"), "Male");
