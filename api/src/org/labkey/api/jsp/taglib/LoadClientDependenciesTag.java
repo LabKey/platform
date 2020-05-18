@@ -1,6 +1,7 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -61,23 +62,23 @@ public class LoadClientDependenciesTag extends BodyTagSupport
         // OK if "files" is empty array -- requireScript will call the handler
         sb.append("LABKEY.requiresScript(").append(files).append(", function(){\n");
 
-        print(sb.toString());
+        print(HtmlString.unsafe(sb.toString()));
         return BodyTagSupport.EVAL_BODY_INCLUDE;
     }
 
     @Override
     public int doEndTag() throws JspException
     {
-        print("}, true);\n");
+        print(HtmlString.unsafe("}, true);\n"));
 
         return BodyTagSupport.EVAL_PAGE;
     }
 
-    private void print(CharSequence charSequence) throws JspException
+    private void print(HtmlString hs) throws JspException
     {
         try
         {
-            pageContext.getOut().print(charSequence);
+            pageContext.getOut().print(hs);
         }
         catch (IOException e)
         {

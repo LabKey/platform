@@ -303,7 +303,7 @@ public interface Module extends Comparable<Module>
     @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 
     @JsonIgnore
-    Resolver getModuleResolver();
+    ModuleResourceResolver getModuleResolver();
     Resource getModuleResource(String path);
     Resource getModuleResource(Path path);
     InputStream getResourceStream(String filename) throws IOException;
