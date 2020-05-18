@@ -92,6 +92,7 @@ import org.labkey.api.qc.AbstractManageQCStatesBean;
 import org.labkey.api.qc.AbstractManageQCStatesForm;
 import org.labkey.api.qc.DeleteQCStateForm;
 import org.labkey.api.qc.QCStateHandler;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -2437,6 +2438,7 @@ public class CoreController extends SpringActionController
         ManageQCStatesBean(String returnUrl)
         {
             super(returnUrl);
+            getContainer();
             _qcStateHandler = new CoreQCStateHandler();
             _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;
@@ -2542,6 +2544,8 @@ public class CoreController extends SpringActionController
         {
             super();
             _qcStateHandler = new CoreQCStateHandler();
+            getContainer();
+            QCStateManager.getInstance().getHandler(getContainer());
         }
 
         @Override
