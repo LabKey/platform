@@ -498,6 +498,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
+        // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
+        // been bootstrapped/upgraded to ensure that AppProps is ready
+        _log.info("Server installation GUID: " + AppProps.getInstance().getServerGUID() + ", server session GUID: " + AppProps.getInstance().getServerSessionGUID());
+
         synchronized (_modulesLock)
         {
             // use _modules here because this List<> needs to be modifiable
