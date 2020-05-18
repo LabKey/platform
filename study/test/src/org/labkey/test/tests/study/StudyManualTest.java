@@ -30,7 +30,6 @@ public abstract class StudyManualTest extends StudyTest
 {
     private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/datasets/schema.tsv");
     protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
-    protected static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
@@ -181,7 +180,7 @@ public abstract class StudyManualTest extends StudyTest
     protected void setDemographicsBit()
     {
         clickFolder(getFolderName());
-        setDemographicsBit(DEMOGRAPHICS_DATASET, true);
+        setDemographicsBit(DEMOGRAPHICS_TITLE, true);
     }
 
 

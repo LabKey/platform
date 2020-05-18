@@ -27,7 +27,6 @@ import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
-import org.labkey.test.pages.ManageDatasetsPage;
 import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -182,7 +181,7 @@ public class StudyExportTest extends StudyManualTest
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("manualCohortAssignment", "true"));
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(),"Groups").clickSubMenu(true, "Cohorts", GROUP_2);
         BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
         assertTextPresent(MODIFIED_PARTICIPANT);
@@ -342,7 +341,7 @@ public class StudyExportTest extends StudyManualTest
         // set the QC state 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
         new DataRegionTable("Dataset", this).checkAll();
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "Update state of selected rows");
@@ -457,7 +456,7 @@ public class StudyExportTest extends StudyManualTest
 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         DataRegionTable.DataRegion(getDriver()).find().clickEditRow(0);
         setFormElement(Locator.name("quf_DEMbdt"), "2001-11-11");
@@ -492,8 +491,7 @@ public class StudyExportTest extends StudyManualTest
         // Make sure that we can view its participant page immediately
         pushLocation();
         clickAndWait(Locator.linkWithText(TEST_ADD_ENTRY));
-        assertTextPresent("Mouse - " + TEST_ADD_ENTRY,
-                DEMOGRAPHICS_DATASET);
+        assertTextPresent("Mouse - " + TEST_ADD_ENTRY, DEMOGRAPHICS_TITLE);
         popLocation();
 
         log("Test deleting rows in a dataset");
