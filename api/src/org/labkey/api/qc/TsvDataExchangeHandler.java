@@ -505,7 +505,45 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return info;
     }
 
-    public void processWarningsOutput(DefaultTransformResult result, Map<String, String> transformedProps, RunInfo info, String errorFile, List<File> files) throws ValidationException
+    private void cleanFiles(RunInfo info, DefaultTransformResult result, List<File> files, @Nullable String errorFile, @Nullable File transformedFile)
+    {
+        // If the assay does not have the "save script files for debugging" option selected, then do file cleanup
+        if (!info.isSaveScriptFiles())
+        {
+            // If file was not already on the server, erase original files from working directory
+            if (info.getOriginalFileLocation() == null)
+            {
+                for (File file : result.getUploadedFiles())
+                {
+                    FileUtils.deleteQuietly(file);
+                }
+            }
+
+            // More file cleanup on error
+            for (File file : files)
+            {
+                FileUtils.deleteQuietly(file);
+            }
+
+            if (errorFile != null)
+            {
+                FileUtils.deleteQuietly(new File(errorFile));
+            }
+
+            if (transformedFile != null)
+            {
+                FileUtils.deleteQuietly(transformedFile);
+            }
+        }
+    }
+
+    private void processWarningsOutput(
+            DefaultTransformResult result,
+            @Nullable Map<String, String> transformedProps,
+            RunInfo info,
+            @Nullable String errorFile,
+            @Nullable File transformedFile,
+            List<File> files) throws ValidationException
     {
         String maxSeverity = null;
 
@@ -543,6 +581,16 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // Display warnings case
         if(null != info.getWarningSevLevel() && info.getWarningSevLevel().equals(errLevel.WARN.name()) && null != maxSeverity && maxSeverity.equals(errLevel.WARN.name()))
         {
+            // Running in background does not support warnings
+            if(info.isBackgroundUpload())
+            {
+                cleanFiles(info, result, files, errorFile, transformedFile);
+                ValidationException exception = new ValidationException();
+                exception.addFieldError("transform", "Background assay import does not support warnings.");
+                exception.addFieldError("Warning", warning);
+                throw exception;
+            }
+
             if(null != warning)
                 result.setWarnings(warning);
             else
@@ -554,12 +602,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // if error file exists
         else if(null != warning || (null != maxSeverity && maxSeverity.equals(errLevel.ERROR.name())))
         {
-            //Erase files from working directory
-            for (File file : result.getUploadedFiles())
-                FileUtils.deleteQuietly(file);
-            for(File file : files) {
-                FileUtils.deleteQuietly(file);
-            }
+            cleanFiles(info, result, files, errorFile, transformedFile);
+
             if(null != warning)
             {
                 ValidationException exception = new ValidationException();
@@ -788,6 +832,37 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     private class RunInfo {
         private File _errorFile;
         private String _warningSevLevel;
+        private File _originalFileLocation;
+        private ExpProtocol _protocol;
+
+        public void setProtocol(ExpProtocol protocol)
+        {
+            _protocol = protocol;
+        }
+
+        public boolean isSaveScriptFiles()
+        {
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            return provider.isSaveScriptFiles(_protocol);
+        }
+
+        public boolean isBackgroundUpload()
+        {
+            AssayProvider provider = AssayService.get().getProvider(_protocol);
+            return provider.isBackgroundUpload(_protocol);
+        }
+
+        // Original file location used to determine if file was already on the server or not. Used for cleanup when
+        // there is an error.
+        public File getOriginalFileLocation()
+        {
+            return _originalFileLocation;
+        }
+
+        public void setOriginalFileLocation(File originalFileLocation)
+        {
+            _originalFileLocation = originalFileLocation;
+        }
 
         public File getErrorFile()
         {
@@ -820,6 +895,12 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         // check to see if any errors were generated
         processValidationOutput(info, context.getLogger());
+
+        // Set original file location for file cleanup if necessary
+        info.setOriginalFileLocation(context.getOriginalFileLocation());
+
+        // Set protocol
+        info.setProtocol(context.getProtocol());
 
         // Find the output step for the run
         ExpProtocolApplication outputProtocolApplication = null;
@@ -864,6 +945,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 List<Map<String, Object>> maps = parseRunInfo(runInfo);
                 Map<String, File> transformedData = new HashMap<>();
                 File transformedRunProps = null;
+                File transformedFile = null;
                 List<File> runDataUploadedFiles = new ArrayList<>();
                 Map<String, String> transformedProps = null;
                 String transErrorFile = null;
@@ -873,7 +955,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                     Object data = row.get("transformedData");
                     if (data != null)
                     {
-                        File transformedFile = new File(data.toString());
+                        transformedFile = new File(data.toString());
                         if (transformedFile.exists())
                         {
                             transformedData.put(String.valueOf(row.get("type")), transformedFile);
@@ -1053,7 +1135,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                 // Don't offer up input or other files as "outputs" of the script
                 tempOutputFiles.removeAll(_filesToIgnore);
 
-                processWarningsOutput(result, transformedProps, info, transErrorFile, tempOutputFiles);
+                processWarningsOutput(result, transformedProps, info, transErrorFile, transformedFile, tempOutputFiles);
             }
             catch (ValidationException e)
             {

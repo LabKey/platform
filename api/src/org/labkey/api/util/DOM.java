@@ -75,6 +75,7 @@ public class DOM
         figcaption,
         figure,
         footer,
+        font,
         form,
         h1,
         h2,
@@ -1204,6 +1205,14 @@ public class DOM
     public static Renderable FOOTER(Object... body)
     {
         return (html) -> Element.footer.render(html, NOAT, body);
+    }
+    public static Renderable FONT(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
+    {
+        return (html) -> Element.font.render(html, attrs, body);
+    }
+    public static Renderable FONT(Object... body)
+    {
+        return (html) -> Element.font.render(html, NOAT, body);
     }
     public static Renderable FORM(Iterable<Map.Entry<Object, Object>> attrs, Object... body)
     {
