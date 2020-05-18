@@ -20,6 +20,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
@@ -43,7 +44,7 @@ import java.util.Map;
 public abstract class BaseWikiView extends JspView<Object>
 {
     public Wiki wiki;
-    public String html;
+    public HtmlString html;
     public boolean hasContent = true;
     public boolean hasAdminPermission;
     public boolean hasInsertPermission;
@@ -120,11 +121,11 @@ public abstract class BaseWikiView extends JspView<Object>
                 }
                 catch (Exception e)
                 {
-                    html = "<p class=\"labkey-error\">Error rendering page: " + e.getMessage() + "<p>";
+                    html.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
                 }
             }
             else
-                html = ""; //wiki.jsp will display appropriate message if user doesn't have read perms
+                html = HtmlString.EMPTY_STRING; //wiki.jsp will display appropriate message if user doesn't have read perms
 
             //set title if page has content and user has permission to see it
             if (html != null && perms.allowRead(wiki))

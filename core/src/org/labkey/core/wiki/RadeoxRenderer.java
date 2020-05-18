@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -123,7 +124,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         context.set(WIKI_DEPENDENCIES_KEY, dependencies);
         Set<String> anchors = new HashSet<>();
         context.set(ANCHORS_KEY, anchors);
-        String html = render(text, context);
+        HtmlString html = HtmlString.unsafe(render(text, context));
 
         return new FormattedHtml(html, false, dependencies, anchors);  // TODO: Are there wiki pages we don't want to cache?
     }

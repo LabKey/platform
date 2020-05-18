@@ -15,20 +15,21 @@
  */
 package org.labkey.api.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Objects;
 
-public final class HtmlString implements DOM.Renderable
+public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
 {
     // Helpful constants for convenience (and efficiency)
     public static HtmlString EMPTY_STRING = HtmlString.of("");
     public static HtmlString NBSP = HtmlString.unsafe("&nbsp;");
     public static HtmlString NDASH = HtmlString.unsafe("&ndash;");
 
-    private final String _s;
+    private final @NotNull String _s;
 
     /**
      * Returns an HtmlString that wraps an HTML encoded version of the passed in String.
@@ -64,10 +65,28 @@ public final class HtmlString implements DOM.Renderable
         return new HtmlString(null == s ? "" : s);
     }
 
+
+    public static boolean isBlank(HtmlString html)
+    {
+        return null == html || StringUtils.isBlank(html._s);
+    }
+
+    public static boolean isEmpty(HtmlString html)
+    {
+        return null == html || StringUtils.isEmpty(html._s);
+    }
+
+    /* null safe version of html.toString() */
+    public static String toString(HtmlString html)
+    {
+        return null==html ? "" : html.toString();
+    }
+
+
     // Callers use factory methods of() and unsafe() instead
     private HtmlString(String s)
     {
-        _s = s;
+        _s = null==s ? "" : s;
     }
 
     @Override
@@ -101,6 +120,12 @@ public final class HtmlString implements DOM.Renderable
     @Override
     public int hashCode()
     {
-        return Objects.hash(_s);
+        return _s.hashCode();
+    }
+
+    @Override
+    public int compareTo(@NotNull HtmlString o)
+    {
+        return this._s.compareTo(o._s);
     }
 }
