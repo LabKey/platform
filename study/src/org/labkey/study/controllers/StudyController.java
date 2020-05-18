@@ -421,19 +421,6 @@ public class StudyController extends BaseStudyController
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
         }
 
-        // TODO add validation checks in DatasetDomainKind for these in the createDomain case and remove from here
-//        public void validateCommand(ImportTypeForm form, Errors errors)
-//        {
-//            if (null == form.getDatasetId() && !form.isAutoDatasetId())
-//                errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
-//            if (null != form.getDatasetId())
-//            {
-//                Dataset dsd = StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDatasetId());
-//                if (null != dsd)
-//                    errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDatasetId());
-//            }
-//        }
-
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
