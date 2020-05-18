@@ -120,7 +120,6 @@ import org.labkey.issue.actions.ChangeSummary;
 import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
-import org.labkey.issue.actions.IssueServiceAction;
 import org.labkey.issue.actions.IssueValidation;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CommentAttachmentParent;
@@ -168,7 +167,6 @@ public class IssuesController extends SpringActionController
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         IssuesController.class,
-        IssueServiceAction.class,
         GetRelatedFolder.class,
         InsertIssueDefAction.class,
         ValidateIssueDefNameAction.class,
@@ -1986,6 +1984,8 @@ public class IssuesController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("adminIssues");
+
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
             new ListAction(getViewContext()).appendNavTrail(root);
@@ -2002,7 +2002,6 @@ public class IssuesController extends SpringActionController
         @Override
         public Object execute(Object form, BindException errors)
         {
-            //derived from IssueServiceAction.getProjectGroups()
             List<UserGroupForm> groups = new ArrayList<>();
 
             SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
@@ -2025,7 +2024,6 @@ public class IssuesController extends SpringActionController
         @Override
         public Object execute(UserGroupForm form, BindException errors)
         {
-            //derived from IssueServiceAction.getUsersForGroup()
             List<UserGroupForm> users = new ArrayList<>();
 
             if (null != form.getGroupId())
