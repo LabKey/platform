@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.security.permissions.Permission;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -102,14 +103,14 @@ public interface ContainerType extends Serializable
     boolean allowRowMutationFromContainer(Container primaryContainer, Container targetContainer);
 
     /**
-     * @return indication of whether a user needs to have admin permissions on this container to delete the container
+     * @return The permission class needed to delete this container type
      */
-    boolean requiresAdminToDelete();
+    Class<? extends Permission> getPermissionNeededToDelete();
 
     /**
-     * @return indication of whether a user needs admin permissions to be able create a container of this type
+     * @return The permission class needed to create this container type
      */
-    boolean requiresAdminToCreate();
+    public Class<? extends Permission> getPermissionNeededToCreate();
 
     /**
      *

@@ -28,15 +28,13 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Pair;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
 import static org.apache.commons.lang3.StringUtils.repeat;
 
 /**
@@ -52,7 +50,7 @@ public class Lsid
     private final String objectId;
     private final String version;
     private final boolean valid;
-    private final int hashCode;
+    private int hashCode;
 
 
     /**
@@ -67,7 +65,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = b.valid;
-        this.hashCode = this.toString().hashCode();
     }
 
 
@@ -87,7 +84,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
-        this.hashCode = this.toString().hashCode();
     }
 
     /**
@@ -107,7 +103,6 @@ public class Lsid
         this.objectId = StringUtils.defaultString(b.getObjectId(),"");
         this.version = b.getVersion();
         this.valid = true;
-        this.hashCode = this.toString().hashCode();
     }
 
 
@@ -119,11 +114,27 @@ public class Lsid
         this.objectId = StringUtils.defaultString(objectId,"");
         this.version = version;
         this.valid = valid;
-        this.hashCode = this.toString().hashCode();
     }
 
-    // Keep in sync with getSqlExpressionToExtractObjectId() (below)
-    private static final Pattern LSID_REGEX = Pattern.compile("(?i)^urn:lsid:([^:]+):([^:]+):([^:]+)(?::(.*))?");
+    /* Keep in sync with getSqlExpressionToExtractObjectId() (below)
+     * We spend a lot of time parsing lsid, so avoid pattern match
+     *
+     * To spend less time parsing, maybe cached parsed Lsid in ExpObjectImpl? (not that straightforward)
+     */
+
+    @Nullable
+    private static String[] parseLsid(String s)
+    {
+        String[] parts = StringUtils.split(s,':');
+        if (parts.length < 5 || parts.length > 6)
+            return null;
+        if (!equalsIgnoreCase("urn",parts[0]))
+            return null;
+        if (!equalsIgnoreCase("lsid",parts[1]))
+            return null;
+        return new String[] {parts[2], parts[3], parts[4], parts.length < 6 ? null : parts[5]};
+    }
+
 
     // Keep in sync with LSID_REGEX (above)
     public static Pair<String, String> getSqlExpressionToExtractObjectId(String lsidExpression, SqlDialect dialect)
@@ -216,6 +227,9 @@ public class Lsid
 
     public int hashCode()
     {
+        // this.toString() is expensive, don't use unless someone asks
+        if (0 == hashCode)
+            hashCode = toString().hashCode();
         return hashCode;
     }
 
@@ -276,7 +290,7 @@ public class Lsid
 
     public static boolean isLsid(String lsid)
     {
-        return LSID_REGEX.matcher(lsid).matches();
+        return null != parseLsid(lsid);
     }
 
     public static String canonical(String lsid)
@@ -345,16 +359,16 @@ public class Lsid
         public LsidBuilder(String lsid)
         {
             src = lsid;
-            Matcher m = LSID_REGEX.matcher(lsid);
-            if (!m.matches())
+            String[] parts = parseLsid(lsid);
+            if (null == parts)
             {
                 valid = false;
                 return;
             }
-            authority = decodePart(m.group(1).toLowerCase());
-            namespace = decodePart(m.group(2));
-            objectId = decodePart(m.group(3));
-            version = decodePart(m.group(4));
+            authority = decodePart(parts[0]).toLowerCase();
+            namespace = decodePart(parts[1]);
+            objectId = decodePart(parts[2]);
+            version = decodePart(parts[3]);
             valid = true;
             resetPrefix();
         }

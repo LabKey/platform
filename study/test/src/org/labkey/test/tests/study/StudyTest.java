@@ -336,7 +336,7 @@ public class StudyTest extends StudyBaseTest
         // test creating a participant group directly from a data grid
         clickFolder(STUDY_NAME);
         waitAndClickAndWait(Locator.linkWithText(datasetLink));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         // verify warn on no selection
         if(!isQuickTest())
@@ -1022,12 +1022,12 @@ public class StudyTest extends StudyBaseTest
 
         // Verify that "Demographics Data" is checked and description is set
         clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         assertTableCellTextEquals("details", 4, 1, "true");
         assertTableCellTextEquals("details", 4, 3, getDemographicsDescription());
 
         // "Demographics Data" bit needs to be false for the rest of the test
-        setDemographicsBit("DEM-1: Demographics", false)
+        setDemographicsBit(DEMOGRAPHICS_TITLE, false)
                 .clickViewData();
 
         log("verify ");

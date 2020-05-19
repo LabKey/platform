@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -183,28 +182,29 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
             return null;
 
         DefaultSchema schema = DefaultSchema.get(user, container);
-        return schema.get(schemaPath);
+        return resolve(schema, schemaPath);
     }
 
-    private QuerySchema get(SchemaKey schemaPath)
+    public static QuerySchema resolve(QuerySchema schema, SchemaKey schemaPath)
     {
+        DefaultSchema ds = schema.getDefaultSchema();
+        var cache = null==ds ? null : ds.cache;
         SchemaKey subPath = null;
         List<String> parts = schemaPath.getParts();
-        QuerySchema schema = this;
         for (String part : parts)
         {
             subPath = new SchemaKey(subPath, part);
-            QuerySchema child = cache.get(subPath);
+            QuerySchema child = null==cache ? null : cache.get(subPath);
             if (null == child)
             {
                 child = schema.getSchema(part);
                 if (null == child)
                     return null;
-                cache.put(subPath, child);
+                if (null != cache)
+                    cache.put(subPath, child);
             }
             schema = child;
         }
-
         return schema;
     }
 

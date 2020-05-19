@@ -823,16 +823,11 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             value: 'How would you like to define the dataset?'
         });
 
-        var importRadio = {
-            boxLabel: 'Import data from file',
-            name: 'dataset',
-            inputValue: 'importFromFile',
-            checked: 'true'
-        };
         var manualRadio = {
-            boxLabel: 'Define dataset manually',
+            boxLabel: 'Define dataset manually or from a file',
             name:'dataset',
-            inputValue:'defineManually'
+            inputValue:'defineManually',
+            checked: true
         };
         var placeHolderRadio = {
             boxLabel: "I don't know / I'll do this later",
@@ -851,7 +846,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             columns: 1,
             vertical: true,
             margin: '0 0 0 95',
-            items: [importRadio, manualRadio, placeHolderRadio],
+            items: [manualRadio, placeHolderRadio],
             listeners: {
                 scope: this,
                 change: function(radio, newVal){
@@ -942,16 +937,11 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             }
         });
 
-        var importRadio = {
-            boxLabel: 'Import data from file',
-            name: 'deftype',
-            inputValue: 'linkImport',
-            checked: 'true'
-        };
         var manualRadio = {
-            boxLabel: 'Define dataset manually',
+            boxLabel: 'Define dataset manually or from a file',
             name:'deftype',
-            inputValue:'linkManually'
+            inputValue:'linkManually',
+            checked: true
         };
 
         var existingRadio = {
@@ -970,7 +960,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             columns: 1,
             vertical: true,
             margin: '10 0 0 45',
-            items: [importRadio, manualRadio, existingRadio],
+            items: [manualRadio, existingRadio],
             listeners: {
                 scope: this,
                 change: function(rgroup, newValue){

@@ -17,6 +17,7 @@ package org.labkey.core.view.template.bootstrap;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Link;
 import org.labkey.api.util.PageFlowUtil;
@@ -477,7 +478,7 @@ public class ViewServiceImpl implements ViewService
                 nMenu.addChild(config._customize);
             }
 
-            if (config._webpart != null && context.getUser().hasSiteAdminPermission())
+            if (config._webpart != null && context.getContainer().hasPermission(context.getUser(), AdminPermission.class))
             {
                 Portal.WebPart webPart = config._webpart;
                 String permissionString = null;

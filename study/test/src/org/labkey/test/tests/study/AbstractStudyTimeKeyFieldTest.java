@@ -47,7 +47,6 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     protected static final File DIFFERENT_DATES_DIFFERENT_TIMES = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
     protected static final File HAS_TIMESTAMP = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
     protected static final File RCE_APPEND = TestFileUtils.getSampleData("study/commondata/RCE-1-2.tsv");
-    protected static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     protected static final String DATE_REGEX = "\\d{4}-\\d{2}\\d{2}";
     protected static final String DATETIME_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
     protected static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
@@ -194,7 +193,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     protected void testCannotSetAdditionalKeyForDemographics()
     {
         DatasetDesignerPage datasetDesignerPage =
-                goToDataset(getFolderName(), DEMOGRAPHICS_DATASET)
+                goToDataset(getFolderName(), DEMOGRAPHICS_TITLE)
                         .clickManageDataset()
                         .clickEditDefinition();
 

@@ -63,8 +63,9 @@ import java.util.stream.Stream;
  */
 public class FileUtil
 {
+    private static final Logger LOG = Logger.getLogger(FileUtil.class);
+
     private static File _tempDir = null;
-    private static Logger LOG = Logger.getLogger(FileUtil.class);
 
     public static boolean deleteDirectoryContents(File dir)
     {

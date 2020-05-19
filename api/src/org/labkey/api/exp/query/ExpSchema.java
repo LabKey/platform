@@ -275,7 +275,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(this);
         schema.setContainerFilter(_containerFilter);
         return schema;
     }

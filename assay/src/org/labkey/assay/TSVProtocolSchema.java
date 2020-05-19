@@ -122,9 +122,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(getProtocol());
             if (svc != null)
             {
-                var excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
-                var excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
-                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
+                var excludedByColumn = svc.createExcludedByColumn(this, getProvider());
+                var excludedAtColumn = svc.createExcludedAtColumn(this, getProvider());
+                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProvider());
 
                 addColumn(excludedByColumn);
                 addColumn(excludedAtColumn);

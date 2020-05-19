@@ -16,7 +16,6 @@
 
 package org.labkey.study.model;
 
-import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableInt;
@@ -72,7 +71,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.PropertyValidatorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleHtmlView;
@@ -134,7 +132,6 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
@@ -144,7 +141,6 @@ import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.StudyServiceImpl;
 import org.labkey.study.controllers.BaseStudyController;
-import org.labkey.study.controllers.DatasetServiceImpl;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.designer.StudyDesignManager;
@@ -191,7 +187,6 @@ public class StudyManager
 {
     public static final SearchService.SearchCategory datasetCategory = new SearchService.SearchCategory("dataset", "Study Dataset");
     public static final SearchService.SearchCategory subjectCategory = new SearchService.SearchCategory("subject", "Study Subject");
-    public static final String EXPERIMENTAL_DATASET_DESIGNER = "experimental-reactdesigner";
 
     private static final Logger _log = Logger.getLogger(StudyManager.class);
     private static final StudyManager _instance = new StudyManager();
@@ -5687,13 +5682,6 @@ public class StudyManager
 
             dd.setCategoryId(subCategory.getRowId());
             dd.save(user);
-
-            // roundtrip the definition through the domain editor
-            DatasetServiceImpl datasetService = new DatasetServiceImpl(ViewContext.getMockViewContext(user, c, null, false), _studyDateBased, _manager);
-
-            GWTDataset gwtDataset = datasetService.getDataset(datasetId);
-            GWTDomain gwtDomain = datasetService.getDomainDescriptor(dd.getTypeURI());
-            datasetService.updateDatasetDefinition(gwtDataset, gwtDomain, gwtDomain);
 
             DatasetDefinition ds = _studyDateBased.getDataset(datasetId);
             assertEquals((int) ds.getCategoryId(), subCategory.getRowId());

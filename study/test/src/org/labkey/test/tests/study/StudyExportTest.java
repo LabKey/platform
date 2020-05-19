@@ -28,6 +28,7 @@ import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
 import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -44,9 +45,7 @@ import static org.junit.Assert.assertTrue;
 @BaseWebDriverTest.ClassTimeout(minutes = 25)
 public class StudyExportTest extends StudyManualTest
 {
-    private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";
-
     private static final File DATASET_DATA_FILE = TestFileUtils.getSampleData("dataLoading/excel/dataset_data.xls");
     private static final String HIDDEN_DATASET = "URS-1: Screening Urinalysis";
     private static final String MODIFIED_DATASET = "Quality Control Report"; // Empty dataset.
@@ -182,7 +181,7 @@ public class StudyExportTest extends StudyManualTest
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("manualCohortAssignment", "true"));
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(),"Groups").clickSubMenu(true, "Cohorts", GROUP_2);
         BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
         assertTextPresent(MODIFIED_PARTICIPANT);
@@ -342,7 +341,7 @@ public class StudyExportTest extends StudyManualTest
         // set the QC state 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
         new DataRegionTable("Dataset", this).checkAll();
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "Update state of selected rows");
@@ -457,7 +456,7 @@ public class StudyExportTest extends StudyManualTest
 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         DataRegionTable.DataRegion(getDriver()).find().clickEditRow(0);
         setFormElement(Locator.name("quf_DEMbdt"), "2001-11-11");
@@ -492,8 +491,7 @@ public class StudyExportTest extends StudyManualTest
         // Make sure that we can view its participant page immediately
         pushLocation();
         clickAndWait(Locator.linkWithText(TEST_ADD_ENTRY));
-        assertTextPresent("Mouse - " + TEST_ADD_ENTRY,
-                "DEM-1: Demographics");
+        assertTextPresent("Mouse - " + TEST_ADD_ENTRY, DEMOGRAPHICS_TITLE);
         popLocation();
 
         log("Test deleting rows in a dataset");
@@ -510,30 +508,6 @@ public class StudyExportTest extends StudyManualTest
 
         // Test creating and importing a dataset from an excel file
         doTestDatasetImport();
-    }
-
-    protected boolean comparePaths(String path1, String path2)
-    {
-        String[] parseWith = { "/", "\\\\" };
-        for (String parser1 : parseWith)
-        {
-            String[] path1Split = path1.split(parser1);
-            for  (String parser2 : parseWith)
-            {
-                String[] path2Split = path2.split(parser2);
-                if (path1Split.length == path2Split.length)
-                {
-                    int index = 0;
-                    while (path1Split[index].compareTo(path2Split[index]) == 0)
-                    {
-                        index++;
-                        if (index > path2Split.length - 1)
-                            return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private void changeDatasetOrder(String value)
@@ -624,22 +598,18 @@ public class StudyExportTest extends StudyManualTest
     {
         navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), "fileImportDataset");
-        click(Locator.checkboxByName("fileImport"));
-        clickButton("Next");
+        DatasetDesignerPage datasetDesignerPage = new ManageStudyPage(getDriver())
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName("fileImportDataset");
+        datasetDesignerPage.getFieldsPanel()
+                .setInferFieldFile(DATASET_DATA_FILE);
+        datasetDesignerPage.setAutoImport(true)
+                .setPreviewMappedColumn("Mice", "name")
+                .setPreviewMappedColumn("Visits", "visit number")
+                .clickSave()
+                .clickViewData();
 
-        waitForElement(Locator.xpath("//input[@name='uploadFormElement']"), WAIT_FOR_JAVASCRIPT);
-
-        setFormElement(Locator.name("uploadFormElement"), DATASET_DATA_FILE);
-
-        waitForElement(Locator.xpath("//span[@id='button_Import']"), WAIT_FOR_JAVASCRIPT);
-
-        selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "name");
-        selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit number");
-
-        clickButton("Import", defaultWaitForPage);
         waitForElement(Locator.paginationText(9));
         assertTextPresent("kevin", "chimpanzee");
     }

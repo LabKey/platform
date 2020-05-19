@@ -724,12 +724,11 @@ public class CoreController extends SpringActionController
             if (type == null)
                 throw new ApiUsageException("Unknown container type: " + typeName);
 
-            if (type.requiresAdminToCreate())
+            Class<? extends Permission> permClass = type.getPermissionNeededToCreate();
+            if (!getContainer().hasPermission(getUser(), permClass))
             {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to create subfolders. " + perm.getName() + " permission required.");
             }
 
             if (name != null && getContainer().getChild(name) != null)
@@ -811,12 +810,11 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            if (target.requiresAdminToDelete())
+            Class<? extends Permission> permClass = getContainer().getPermissionNeededToDelete();
+            if (!target.hasPermission(getUser(), permClass))
             {
-                if (!target.hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to delete subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to delete folder. " + perm.getName() + " permission required.");
             }
 
             ContainerManager.deleteAll(target, getUser());
