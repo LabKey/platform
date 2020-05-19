@@ -60,7 +60,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
     public String getLabel()
     {
         if (getName() == null)
-            return "default";
+            return "Default";
         return getName();
     }
 
