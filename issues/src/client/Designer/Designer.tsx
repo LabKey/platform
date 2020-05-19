@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, getServerContext, Domain, Security } from "@labkey/api";
+import { ActionURL, getServerContext, Domain } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
-    PermissionTypes,
     IssuesListDefModel,
     BeforeUnload,
     IssuesListDefDesignerPanels,
-    fetchIssuesListDefDesign
+    fetchIssuesListDefDesign,
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -105,6 +104,22 @@ export class App extends React.Component<{}, State> {
         }
     };
 
+    renderContainerAlert() {
+        const { model } = this.state;
+        const domainContainer = model.domain.getDomainContainer();
+        const sourceUrl = ActionURL.buildURL('issues', 'list', domainContainer, {
+            issueDefName: model.issueDefName
+        });
+
+        return (
+            <Alert bsStyle={'info'}>
+                The fields definition for this issues list comes from a shared domain in another container and will
+                not be updatable from this page. To manage the fields definition for this shared issues list,
+                go to the <a href={sourceUrl}>source container</a>.
+            </Alert>
+        )
+    }
+
     render() {
         const { isLoadingModel, message, model } = this.state;
 
@@ -118,16 +133,15 @@ export class App extends React.Component<{}, State> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {
+                {model.domain.isSharedDomain() && this.renderContainerAlert()}
                 <IssuesListDefDesignerPanels
-                        initModel={model}
-                        onCancel={this.onCancel}
-                        onComplete={this.navigateOnComplete}
-                        onChange={this.onChange}
-                        useTheme={true}
-                        successBsStyle={'primary'}
+                    initModel={model}
+                    onCancel={this.onCancel}
+                    onComplete={this.navigateOnComplete}
+                    onChange={this.onChange}
+                    useTheme={true}
+                    successBsStyle={'primary'}
                 />
-                }
             </BeforeUnload>
         );
     }

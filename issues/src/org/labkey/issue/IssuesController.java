@@ -68,6 +68,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
+import org.labkey.api.issues.IssuesDomainKindProperties;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.module.ModuleHtmlView;
@@ -78,6 +80,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
@@ -1965,10 +1968,10 @@ public class IssuesController extends SpringActionController
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
     @RequiresPermission(AdminPermission.class)
-    public class AdminAction extends SimpleViewAction<AdminForm>
+    public class AdminAction extends FormViewAction<IssuesDomainKindProperties>
     {
         @Override
-        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors)
+        public ModelAndView getView(IssuesDomainKindProperties form, boolean reshow, BindException errors) throws Exception
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
@@ -1992,6 +1995,24 @@ public class IssuesController extends SpringActionController
             root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
 
             return root;
+        }
+
+        @Override
+        public void validateCommand(IssuesDomainKindProperties form, Errors errors)
+        {}
+
+        @Override
+        public boolean handlePost(IssuesDomainKindProperties form, BindException errors) throws Exception
+        {
+            // this allows for the shared domain case where we only want to update the issue list def options in this container
+            ValidationException exception = IssuesListDefService.get().updateIssueDefinition(getContainer(), getUser(), null, null, form);
+            return !exception.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(IssuesDomainKindProperties form)
+        {
+            return null;
         }
     }
 
@@ -2459,37 +2480,6 @@ public class IssuesController extends SpringActionController
             _message = message;
         }
     }
-
-    public static class AdminForm
-    {
-        private int type;
-        private String keyword;
-
-
-        public int getType()
-        {
-            return type;
-        }
-
-
-        public void setType(int type)
-        {
-            this.type = type;
-        }
-
-
-        public String getKeyword()
-        {
-            return keyword;
-        }
-
-
-        public void setKeyword(String keyword)
-        {
-            this.keyword = keyword;
-        }
-    }
-
 
     public static class IssuesForm extends BeanViewForm<Issue>
     {
