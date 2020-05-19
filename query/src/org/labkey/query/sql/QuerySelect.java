@@ -1212,12 +1212,12 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return null;
 
+        resolveFields();
+        if (!getParseErrors().isEmpty())
+            return null;
+
         // mark all top level columns selected, since we want to generate column info for all columns
         markAllSelected(_query);
-
-        final SQLFragment sql = getSql();
-        if (null == sql)
-            return null;
 
         QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
@@ -2146,7 +2146,8 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
-                    _colinfo = expr.createColumnInfo(_sti, _aliasManager.decideAlias(getAlias()), _query);
+                    // NOTE If we're here then this is not a top-level output column. The name doesn't matter.
+                    _colinfo = expr.createColumnInfo(_sti, "/*NOT AN OUTPUT COLUMN*/", _query);
                 }
                 to.copyAttributesFrom(_colinfo);
                 if (_selectStarColumn)
