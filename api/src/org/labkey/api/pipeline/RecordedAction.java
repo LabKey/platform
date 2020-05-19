@@ -70,12 +70,13 @@ public class RecordedAction
     // Set of lsids
     private Set<String> _materialInputs = new HashSet<>();
     private Set<String> _materialOutputs = new HashSet<>();
-    // Set of lsids
-    private Set<String> _dataInputs = new HashSet<>();
-    private Set<String> _dataOutputs = new HashSet<>();
+
     // set of lsids
     private Set<String> _objectInputs = new HashSet<>();
     private Set<String> _objectOutputs = new HashSet<>();
+
+    private boolean _isStart;
+    private boolean _isEnd;
 
     /** No-args constructor to support de-serialization in Java 7 and beyond */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -296,26 +297,6 @@ public class RecordedAction
         _materialOutputs = materialOutputs;
     }
 
-    public Set<String> getDataInputs()
-    {
-        return _dataInputs;
-    }
-
-    public void setDataInputs(Set<String> dataInputs)
-    {
-        _dataInputs = dataInputs;
-    }
-
-    public Set<String> getDataOutputs()
-    {
-        return _dataOutputs;
-    }
-
-    public void setDataOutputs(Set<String> dataOutputs)
-    {
-        _dataOutputs = dataOutputs;
-    }
-
     public Set<String> getObjectInputs()
     {
         return _objectInputs;
@@ -339,6 +320,26 @@ public class RecordedAction
     public void setProps(Map<PropertyDescriptor, Object> props)
     {
         _props = props;
+    }
+
+    public boolean isStart()
+    {
+        return _isStart;
+    }
+
+    public void setStart(boolean start)
+    {
+        _isStart = start;
+    }
+
+    public boolean isEnd()
+    {
+        return _isEnd;
+    }
+
+    public void setEnd(boolean end)
+    {
+        _isEnd = end;
     }
 
     public static class ParameterType implements Serializable

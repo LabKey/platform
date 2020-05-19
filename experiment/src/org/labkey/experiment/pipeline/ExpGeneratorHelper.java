@@ -55,6 +55,7 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -212,6 +213,9 @@ public class ExpGeneratorHelper
             Map<URI, String> runOutputsWithRoles = new LinkedHashMap<>();
             Map<URI, String> runInputsWithRoles = new HashMap<>(actionSet.getOtherInputs());
 
+            Set<String> runMaterialInputs = new HashSet<>();
+            Set<String> runMaterialOutputs = new HashSet<>();
+
             if (log != null)
                 log.info("Checking files referenced by experiment run");
             for (RecordedAction action : actions)
@@ -239,13 +243,28 @@ public class ExpGeneratorHelper
                     // the actions.
                     runInputsWithRoles.remove(dataFile.getURI());
                 }
+
+                if (protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
+                {
+                    // attach all material inputs passed in start recording to the run
+                    if (action.isStart())
+                    {
+                        runMaterialInputs = action.getMaterialInputs();
+                    }
+
+                    // attach all material outputs passed in end recording to the run
+                    if (action.isEnd())
+                    {
+                        runMaterialOutputs = action.getMaterialOutputs();
+                    }
+                }
             }
             if (log != null)
                 log.debug("File check complete");
 
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
-                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles);
+                run = _insertRun(container, user, runName, runJobId, protocol, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, runMaterialInputs, runMaterialOutputs);
 
                 if (null != xarWriter)
                     xarWriter.writeToDisk(run);
@@ -274,7 +293,9 @@ public class ExpGeneratorHelper
                                          Set<RecordedAction> actions,
                                          @Nullable XarSource source,
                                          Map<URI, String> runOutputsWithRoles,
-                                         Map<URI, String> runInputsWithRoles) throws ExperimentException, ValidationException, BatchValidationException
+                                         Map<URI, String> runInputsWithRoles,
+                                         Set<String> runMaterialInputs,
+                                         Set<String> runMaterialOutputs) throws ExperimentException, ValidationException, BatchValidationException
     {
         ExpRunImpl run = ExperimentServiceImpl.get().createExperimentRun(container, runName);
         ProvenanceService pvs = ProvenanceService.get();
@@ -303,6 +324,20 @@ public class ExpGeneratorHelper
             String role = runInput.getValue();
             ExpData data = addData(container, user, datas, uri, source);
             inputApp.addDataInput(user, data, role);
+        }
+
+        // Set up material inputs to the whole run
+        for (String materialLsid: runMaterialInputs)
+        {
+            inputApp.addMaterialInput(user, ExperimentService.get().getExpMaterial(materialLsid), null);
+        }
+
+        // material outputs to the whole run
+        for (String lsid : runMaterialOutputs)
+        {
+            ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+            material.setSourceApplication(inputApp);
+            material.save(user);
         }
 
         // Set up the inputs and outputs for the individual actions
@@ -352,20 +387,23 @@ public class ExpGeneratorHelper
             // material inputs
             for (String lsid : action.getMaterialInputs())
             {
+                if (action.isStart())
+                    continue;
+
                 ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
                 material.setRun(run);
-
                 app.addMaterialInput(user, material, null, null);
             }
 
             // material outputs
             for (String lsid : action.getMaterialOutputs())
             {
+                if (action.isEnd())
+                    continue;
+
                 ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-                material.setRun(run);
                 material.setSourceApplication(app);
                 material.save(user);
-
             }
 
             // Set up the outputs
