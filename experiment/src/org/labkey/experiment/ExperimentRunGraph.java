@@ -711,7 +711,7 @@ public class ExperimentRunGraph
         }
         catch (IOException e)
         {
-            throw new ExperimentException(DotRunner.getConfigurationErrorHtml(e));
+            throw new ExperimentException(DotRunner.getConfigurationError(e));
         }
 
         DotRunner.testDotPath(dir);
