@@ -99,7 +99,7 @@
     }
     catch (ExperimentException | InterruptedException e)
     {
-%><p><%=h(e.getMessage())%></p><%
+%><p><%=h(e.getMessage(), true)%></p><%
     }
     catch (IOException e)
     {
