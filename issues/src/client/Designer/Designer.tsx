@@ -70,8 +70,8 @@ export class App extends React.Component<{}, State> {
         this._dirty = true;
     };
 
-    getIssuesListUrl(model: IssuesListDefModel): string {
-        if (model.issueDefName) {
+    getIssuesListUrl(model?: IssuesListDefModel): string {
+        if (model && model.issueDefName) {
             return ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName});
         }
 
@@ -85,23 +85,8 @@ export class App extends React.Component<{}, State> {
         window.location.href = returnUrl || defaultUrl;
     };
 
-    navigateOnComplete = (model: IssuesListDefModel) => {
-        if (model.issueDefName) {
-            this.navigate(this.getIssuesListUrl(model));
-        }
-        else {
-            Domain.getDomainDetails({
-                containerPath: getServerContext().container.path,
-                domainId: model.domain.domainId,
-                success: (data) => {
-                    const newModel = IssuesListDefModel.create(data);
-                    this.navigate(this.getIssuesListUrl(newModel));
-                },
-                failure: (error) => {
-                    this.navigate(this.getIssuesListUrl(model));
-                }
-            });
-        }
+    onComplete = (model: IssuesListDefModel) => {
+        this.navigate(this.getIssuesListUrl(model));
     };
 
     renderContainerAlert() {
@@ -137,7 +122,7 @@ export class App extends React.Component<{}, State> {
                 <IssuesListDefDesignerPanels
                     initModel={model}
                     onCancel={this.onCancel}
-                    onComplete={this.navigateOnComplete}
+                    onComplete={this.onComplete}
                     onChange={this.onChange}
                     useTheme={true}
                     successBsStyle={'primary'}
