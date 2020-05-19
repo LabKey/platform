@@ -1937,7 +1937,6 @@ core/resources/credits/executables.txt -text
 core/resources/credits/jars.txt -text
 core/resources/credits/scripts.txt -text
 core/resources/credits/tomcat_jars.txt -text
-core/resources/module.xml -text
 core/resources/schemas/dbscripts/postgresql/core-18.20-18.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
@@ -2371,9 +2370,9 @@ experiment/src/org/labkey/experiment/XARExportOptions.jsp -text
 experiment/src/org/labkey/experiment/XarExportPipelineJob.java -text
 experiment/src/org/labkey/experiment/XarExportType.java -text
 experiment/src/org/labkey/experiment/XarReader.java -text
-experiment/webapp/Experiment/domainTemplate.js -text
-experiment/webapp/Experiment/QCFlagToggle.css -text
-experiment/webapp/Experiment/QCFlagToggleWindow.js -text
+experiment/webapp/experiment/domainTemplate.js -text
+experiment/webapp/experiment/QCFlagToggle.css -text
+experiment/webapp/experiment/QCFlagToggleWindow.js -text
 experiment/webapp/WEB-INF/experiment/experimentContext.xml -text
 filecontent/module.properties -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-14.20.sql -text
@@ -3221,10 +3220,6 @@ search/src/org/labkey/search/view/search.jsp -text
 search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/testJson.jsp -text
-study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetService.java -text
-study/gwtsrc/gwt/client/org/labkey/study/dataset/client/DatasetServiceAsync.java -text
-study/gwtsrc/gwt/client/org/labkey/study/dataset/client/Designer.java -text
-study/gwtsrc/gwt/client/org/labkey/study/dataset/client/model/GWTDataset.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/ActivatingLabel.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/AssayPanel.java -text
 study/gwtsrc/gwt/client/org/labkey/study/designer/client/DeprecatedMessagePanel.java -text
@@ -3542,10 +3537,8 @@ study/src/org/labkey/study/query/VisitUpdateService.java -text
 study/src/org/labkey/study/QueryHelper.java -text
 study/src/org/labkey/study/reports/AssayProgressReport.java -text
 study/src/org/labkey/study/reports/BaseStudyView.java -text
-study/src/org/labkey/study/reports/configureExportExcel.jsp -text
 study/src/org/labkey/study/reports/DatasetChartReport.java -text
 study/src/org/labkey/study/reports/DefaultAssayProgressSource.java -text
-study/src/org/labkey/study/reports/ExportExcelReport.java -text
 study/src/org/labkey/study/reports/ExternalReport.java -text
 study/src/org/labkey/study/reports/ParticipantReport.java -text
 study/src/org/labkey/study/reports/ParticipantReportDescriptor.java -text
@@ -3661,7 +3654,6 @@ study/src/org/labkey/study/view/demoMode.jsp -text
 study/src/org/labkey/study/view/editSnapshot.jsp -text
 study/src/org/labkey/study/view/editVisit.jsp -text
 study/src/org/labkey/study/view/externalReportDesigner.jsp -text
-study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
 study/src/org/labkey/study/view/importVisitMap.jsp -text

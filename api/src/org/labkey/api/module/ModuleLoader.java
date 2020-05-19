@@ -131,6 +131,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.equalsIgnoreCase;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Drives the process of initializing all of the modules at startup time and otherwise managing their life cycle.
@@ -497,6 +498,10 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
         boolean coreRequiredUpgrade = upgradeCoreModule();
 
+        // Issue 40422 - log server and session GUIDs during startup. Do it after the core module has
+        // been bootstrapped/upgraded to ensure that AppProps is ready
+        _log.info("Server installation GUID: " + AppProps.getInstance().getServerGUID() + ", server session GUID: " + AppProps.getInstance().getServerSessionGUID());
+
         synchronized (_modulesLock)
         {
             // use _modules here because this List<> needs to be modifiable
@@ -633,10 +638,37 @@ public class ModuleLoader implements Filter, MemTrackerListener
     /** Goes through all the modules, initializes them, and removes the ones that fail to start up */
     private void initializeAndPruneModules(List<Module> modules)
     {
-        ListIterator<Module> iterator = modules.listIterator();
         Module core = getCoreModule();
 
+        /*
+         * NOTE: Module.initialize() really should not ask for resources from _other_ modules,
+         * as they may have not initialized themselves yet.  However, we did not enforce that
+         * so this cross-module behavior may have crept in.
+         *
+         * To help mitigate this a little, we remove modules that do not support this DB type
+         * before calling initialize().
+         *
+         * NOTE: see FolderTypeManager.get().registerFolderType() for an example of enforcing this
+         */
+
+        ListIterator<Module> iterator = modules.listIterator();
+        Module.SupportedDatabase coreType = Module.SupportedDatabase.get(CoreSchema.getInstance().getSqlDialect());
+        while (iterator.hasNext())
+        {
+            Module module = iterator.next();
+            if (module == core)
+                continue;
+            if (!module.getSupportedDatabasesSet().contains(coreType))
+            {
+                var e = new DatabaseNotSupportedException("This module does not support " + CoreSchema.getInstance().getSqlDialect().getProductName());
+                // In production mode, treat these exceptions as a module initialization error
+                // In dev mode, make them warnings so devs can easily switch databases
+                removeModule(iterator, module, !AppProps.getInstance().isDevMode(), e);
+            }
+        }
+
         //initialize each module in turn
+        iterator = modules.listIterator();
         while (iterator.hasNext())
         {
             Module module = iterator.next();
@@ -944,11 +976,8 @@ public class ModuleLoader implements Filter, MemTrackerListener
         //get SourcePath property if there is one
         String srcPath = (String)props.get("SourcePath");
 
-        //Ensure property value isn't blank
         if (StringUtils.isNotBlank(srcPath))
             simpleModule.setSourcePath(srcPath);
-        else
-            simpleModule.setSourcePath(moduleDir.getAbsolutePath());
         BeanUtils.populate(simpleModule, props);
         simpleModule.setApplicationContext(parentContext);
 
@@ -2161,7 +2190,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
 
     public void registerResourcePrefix(String prefix, String name, String sourcePath, String buildPath)
     {
-        if (null == prefix)
+        if (null == prefix || isEmpty(sourcePath) || isEmpty(buildPath))
             return;
 
         if (!new File(sourcePath).isDirectory() || !new File(buildPath).isDirectory())

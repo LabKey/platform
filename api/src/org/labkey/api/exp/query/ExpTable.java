@@ -18,10 +18,10 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -33,13 +33,13 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 {
     Container getContainer();
 
-    BaseColumnInfo addColumn(C column);
-    BaseColumnInfo addColumn(String alias, C column);
+    MutableColumnInfo addColumn(C column);
+    MutableColumnInfo addColumn(String alias, C column);
     ColumnInfo getColumn(C column);
-    BaseColumnInfo createColumn(String alias, C column);
-    BaseColumnInfo addColumn(BaseColumnInfo column);
+    MutableColumnInfo createColumn(String alias, C column);
+    MutableColumnInfo addColumn(MutableColumnInfo column);
     // Adds a column so long as there is not already one of that name.
-    boolean safeAddColumn(BaseColumnInfo column);
+    boolean safeAddColumn(MutableColumnInfo column);
     void setTitleColumn(String titleColumn);
 
     /**
@@ -74,7 +74,7 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      * @return if a legacyName is specified, the ColumnInfo for the hidden node. Otherwise, null
      */
-    BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName);
+    MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName);
 
     void setDescription(String description);
 
@@ -88,16 +88,15 @@ public interface ExpTable<C extends Enum> extends ContainerFilterable, TableInfo
 
     void checkLocked();
 
-    /* returns null or BaseColumnInfo, will throw if column exists and is locked */
-    default BaseColumnInfo getMutableColumn(@NotNull C c)
+    /* returns null or MutableColumnInfo, will throw if column exists and is locked */
+    default MutableColumnInfo getMutableColumn(@NotNull C c)
     {
         checkLocked();
         ColumnInfo col = getColumn(c);
         if (null == col)
             return null;
-        // all columns extend BaseColumnInfo for now
-        ((BaseColumnInfo) col).checkLocked();
-        return (BaseColumnInfo) col;
+        ColumnInfo.checkIsMutable(col);
+        return (MutableColumnInfo) col;
     }
 
     default void setFilterPatterns(String columnName, String... patterns)

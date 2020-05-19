@@ -1,0 +1,1 @@
+SELECT core.executeJavaInitializationCode('addDbSequenceForMaterialsRowId');

@@ -16,8 +16,6 @@
 
 package org.labkey.study.controllers;
 
-import gwt.client.org.labkey.study.StudyApplication;
-import gwt.client.org.labkey.study.dataset.client.Designer;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.collections4.FactoryUtils;
 import org.apache.commons.collections4.MapUtils;
@@ -38,12 +36,12 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleErrorView;
@@ -67,15 +65,15 @@ import org.labkey.api.data.*;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.FolderTypeManager;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -124,7 +122,6 @@ import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchUrls;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
@@ -216,7 +213,6 @@ import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.specimen.settings.RepositorySettings;
-import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
@@ -415,88 +411,37 @@ public class StudyController extends BaseStudyController
 		}
 	}
 
-
     @RequiresPermission(AdminPermission.class)
-    public class DefineDatasetTypeAction extends FormViewAction<ImportTypeForm>
+    public class DefineDatasetTypeAction extends SimpleViewAction<Object>
     {
-        private Dataset _def;
         @Override
-        public ModelAndView getView(ImportTypeForm form, boolean reshow, BindException errors)
+        public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "importDataType.jsp", form, errors);
-        }
-
-        @Override
-        public void validateCommand(ImportTypeForm form, Errors errors)
-        {
-            if (null == form.getDatasetId() && !form.isAutoDatasetId())
-                errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
-            if (null != form.getDatasetId())
-            {
-                Dataset dsd = StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDatasetId());
-                if (null != dsd)
-                    errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDatasetId());
-            }
-            if (null == StringUtils.trimToNull(form.getTypeName()))
-                errors.reject("defineDatasetType", "Dataset must have a name.");
-            else
-            {
-                // Check if a dataset, query or table exists with the same name
-                StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-                StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                if (null != studySchema.getDatasetDefinitionByName(form.getTypeName())
-                        || studySchema.getTableNames().contains(form.getTypeName())
-                        || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
-                {
-                    errors.reject("defineDatasetType", "There is a dataset or query named \"" + form.getTypeName() + "\" already defined in this folder.");
-                }
-            }
-        }
-
-        @Override
-        public boolean handlePost(ImportTypeForm form, BindException derrors)
-        {
-            Integer datasetId = form.getDatasetId();
-
-            if (form.autoDatasetId)
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, null, false, null);
-            else
-                _def = AssayPublishManager.getInstance().createAssayDataset(getUser(), getStudyThrowIfNull(), form.getTypeName(), null, datasetId, false, null);
-
-
-            if (_def != null)
-            {
-                ((DatasetDefinition)_def).provisionTable();
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public ActionURL getSuccessURL(ImportTypeForm form)
-        {
-            if (_def == null)
-            {
-                throw new NotFoundException();
-            }
-            if (!form.isFileImport())
-            {
-                return new ActionURL(EditTypeAction.class, getContainer()).
-                    addParameter(DatasetDefinition.DATASETKEY, _def.getDatasetId());
-            }
-            else
-            {
-                return new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).
-                    addParameter(DatasetDefinition.DATASETKEY, _def.getDatasetId());
-            }
+            getStudyRedirectIfNull();
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("importDatasetFromFile");
+            setHelpTopic("createDataset");
             _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Define Dataset");
+            return root.addChild("Create Dataset Definition");
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetDatasetAction extends ReadOnlyApiAction<DatasetForm>
+    {
+        @Override
+        public Object execute(DatasetForm form, BindException errors) throws Exception
+        {
+            DatasetDomainKindProperties properties = DatasetManager.get().getDatasetDomainKindProperties(getContainer(), form.getDatasetId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("Dataset does not exist in this container for datasetId " + form.getDatasetIdStr() + ".");
         }
     }
 
@@ -510,17 +455,20 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetForm form, BindException errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
+            if (null == form.getDatasetId())
+                throw new NotFoundException("No datasetId parameter provided.");
+
             DatasetDefinition def = study.getDataset(form.getDatasetId());
             _def = def;
             if (null == def)
-            {
-                throw new NotFoundException();
-            }
+                throw new NotFoundException("No dataset found for datasetId " + form.getDatasetId() + ".");
+
             if (!def.canUpdateDefinition(getUser()))
             {
                 ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
+
             if (null == def.getTypeURI())
             {
                 def = def.createMutable();
@@ -528,29 +476,14 @@ public class StudyController extends BaseStudyController
                 OntologyManager.ensureDomainDescriptor(domainURI, def.getName(), study.getContainer());
                 def.setTypeURI(domainURI);
             }
-            Map<String,String> props = PageFlowUtil.map(
-                    "studyId", ""+study.getRowId(),
-                    "datasetId", ""+form.getDatasetId(),
-                    "typeURI", def.getTypeURI(),
-                    "timepointType", ""+study.getTimepointType(),
-                    ActionURL.Param.returnUrl.name(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", form.getDatasetId()).toString());
 
-            String cancelUrl = getViewContext().getActionURL().getParameter(ActionURL.Param.cancelUrl.name());
-            if (cancelUrl != null)
-                props.put(ActionURL.Param.cancelUrl.name(), cancelUrl);
-
-            HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-            HttpView view = new StudyGWTView(Designer.class, props);
-
-            // hack for 4404 : Lookup picker performance is terrible when there are many containers
-            ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-            return new VBox(text, view);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("study"), "datasetDesigner");
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("editDatasetProperties");
             _appendNavTrailDatasetAdmin(root);
             root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDatasetId()));
             return root.addChild("Edit Dataset Definition");
@@ -1937,7 +1870,7 @@ public class StudyController extends BaseStudyController
             String containerFilterName = form.getContainerFilter();
 
             if (null != containerFilterName)
-                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getUser()));
+                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getContainer(), getUser()));
             else
                 return Collections.singleton(getContainer());
         }
@@ -2576,6 +2509,8 @@ public class StudyController extends BaseStudyController
             }
 
             _def = StudyManager.getInstance().getDatasetDefinition(_study, form.getDatasetId());
+            if (null == _def && null != form.getName())
+                _def = StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName());
             if (null == _def)
                throw new NotFoundException("Dataset not found");
             if (null == _def.getTypeURI())
@@ -2618,9 +2553,8 @@ public class StudyController extends BaseStudyController
             return getDefaultImportView(form, errors);
         }
 
-
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors)
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType)
         {
             if (null == PipelineService.get().findPipelineRoot(getContainer()))
             {
@@ -2628,7 +2562,17 @@ public class StudyController extends BaseStudyController
                 return -1;
             }
 
+            // Allow for mapping of the ParticipantId and Sequence Num (i.e. timepoint column),
+            // these are passed in for the "create dataset from a file and import data" case
             Map<String,String> columnMap = new CaseInsensitiveHashMap<>();
+            if (null != _form.getParticipantId())
+                columnMap.put(_form.getParticipantId(),"ParticipantId");
+            if (null != _form.getSequenceNum())
+            {
+                String column = _def.getDomainKind().getKindName().equalsIgnoreCase(DateDatasetDomainKind.KIND_NAME) ? "Date" : "SequenceNum";
+                columnMap.put(_form.getSequenceNum(), column);
+            }
+
             Pair<List<String>, UploadLog> result;
             result = AssayPublishManager.getInstance().importDatasetTSV(getUser(), _study, _def, dl, _importLookupByAlternateKey, file, originalName, columnMap, errors);
 
@@ -3080,54 +3024,6 @@ public class StudyController extends BaseStudyController
         {
             return new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, form.getDatasetId());
-        }
-    }
-
-    public static class ImportTypeForm
-    {
-        private String typeName;
-        private Integer datasetId;
-        private boolean autoDatasetId;
-        private boolean fileImport;
-
-        public String getTypeName()
-        {
-            return typeName;
-        }
-
-        public void setTypeName(String typeName)
-        {
-            this.typeName = typeName;
-        }
-
-        public Integer getDatasetId()
-        {
-            return datasetId;
-        }
-
-        public void setDatasetId(Integer datasetId)
-        {
-            this.datasetId = datasetId;
-        }
-
-        public boolean isAutoDatasetId()
-        {
-            return autoDatasetId;
-        }
-
-        public void setAutoDatasetId(boolean autoDatasetId)
-        {
-            this.autoDatasetId = autoDatasetId;
-        }
-
-        public boolean isFileImport()
-        {
-            return fileImport;
-        }
-
-        public void setFileImport(boolean fileImport)
-        {
-            this.fileImport = fileImport;
         }
     }
 
@@ -3800,17 +3696,6 @@ public class StudyController extends BaseStudyController
         {
             root = _appendNavTrail(root, _datasetId, -1);
             return root.addChild("Change QC State");
-        }
-    }
-
-    // GWT Action
-    @RequiresPermission(AdminPermission.class)
-    public class DatasetServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService() throws IllegalStateException
-        {
-            return new DatasetServiceImpl(getViewContext(), getStudyThrowIfNull(), StudyManager.getInstance());
         }
     }
 
@@ -5081,32 +4966,7 @@ public class StudyController extends BaseStudyController
             }
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
-                StudyImpl study = getStudyRedirectIfNull();
-                Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
-                        replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
-                        replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
-
-                if (dsDef == null)
-                    throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                Map<String,String> props = PageFlowUtil.map(
-                        "studyId", String.valueOf(study.getRowId()),
-                        "datasetId", String.valueOf(dsDef.getDatasetId()),
-                        "typeURI", dsDef.getTypeURI(),
-                        "timepointType", String.valueOf(study.getTimepointType()),
-                        ActionURL.Param.returnUrl.name(), url.getLocalURIString(),
-                        ActionURL.Param.cancelUrl.name(), url.getLocalURIString(),
-                        "create", "false");
-
-                HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.");
-                HttpView view = new StudyGWTView(gwt.client.org.labkey.study.dataset.client.Designer.class, props);
-
-                // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                return new VBox(text, view);
+                throw new NotFoundException("Unable to edit the created dataset definition.");
             }
             return null;
         }
@@ -5127,7 +4987,7 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
+        private Dataset createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
             Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
@@ -5197,8 +5057,12 @@ public class StudyController extends BaseStudyController
                         DatasetSnapshotProvider.addAsDomainProperty(d, col);
                     }
                     d.save(getUser());
+
+                    return def;
                 }
             }
+
+            return dsDef;
         }
 
         @Override
@@ -5210,7 +5074,18 @@ public class StudyController extends BaseStudyController
             {
                 if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
                 {
-                    createDataset(form, errors);
+                    Dataset def = createDataset(form, errors);
+                    if (!errors.hasErrors() && def != null)
+                    {
+                        ActionURL returnUrl = getViewContext().cloneActionURL()
+                            .replaceParameter("ff_snapshotName", form.getSnapshotName())
+                            .replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay()))
+                            .replaceParameter("ff_snapshotDatasetId", String.valueOf(form.getSnapshotDatasetId()));
+
+                        _successURL = new ActionURL(StudyController.EditTypeAction.class, getContainer())
+                                .addParameter("datasetId", def.getDatasetId())
+                                .addReturnURL(returnUrl);
+                    }
                 }
                 else if (StudySnapshotForm.CREATE_SNAPSHOT.equals(form.getAction()))
                 {
@@ -5269,51 +5144,19 @@ public class StudyController extends BaseStudyController
                 form.init(QueryService.get().getSnapshotDef(getContainer(), form.getSchemaName(), form.getSnapshotName()), getUser());
 
             VBox box = new VBox();
-            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
 
+            QuerySnapshotService.Provider provider = QuerySnapshotService.get(form.getSchemaName());
             if (provider != null)
             {
-                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
-                boolean showDataset = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showDataset"));
-
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/editSnapshot.jsp", form));
                 box.addView(new JspView<QueryForm>("/org/labkey/study/view/createDatasetSnapshot.jsp", form, errors));
 
+                boolean showHistory = BooleanUtils.toBoolean(getViewContext().getActionURL().getParameter("showHistory"));
                 if (showHistory)
                 {
                     HttpView historyView = provider.createAuditView(form);
                     if (historyView != null)
                         box.addView(historyView);
-                }
-
-                if (showDataset)
-                {
-                    // create the GWT dataset designer
-                    StudyImpl study = getStudyRedirectIfNull();
-                    Dataset dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
-
-                    if (dsDef == null)
-                        throw new NotFoundException("Unable to edit the created DataSet Definition");
-
-                    ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
-                    Map<String,String> props = PageFlowUtil.map(
-                            "studyId", String.valueOf(study.getRowId()),
-                            "datasetId", String.valueOf(dsDef.getDatasetId()),
-                            "typeURI", dsDef.getTypeURI(),
-                            "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
-                            ActionURL.Param.returnUrl.name(), returnURL.toString(),
-                            ActionURL.Param.cancelUrl.name(), returnURL.toString(),
-                            "create", "false");
-
-                    HtmlView text = new HtmlView("Modify the properties and schema (form fields/properties) for this dataset.<br>Click the save button to " +
-                            "save any changes, else click the cancel button to complete the snapshot.");
-                    HttpView view = new StudyGWTView(new StudyApplication.DatasetDesigner(), props);
-
-                    // hack for 4404 : Lookup picker performance is terrible when there are many containers
-                    ContainerManager.getAllChildren(ContainerManager.getRoot());
-
-                    box.addView(text);
-                    box.addView(view);
                 }
             }
             return box;
@@ -6084,7 +5927,9 @@ public class StudyController extends BaseStudyController
         private String typeURI;
         private String tsv;
         private String keys;
-
+        private String _participantId;
+        private String _sequenceNum;
+        private String _name;
 
         public int getDatasetId()
         {
@@ -6125,13 +5970,43 @@ public class StudyController extends BaseStudyController
         {
             this.typeURI = typeURI;
         }
+
+        public String getParticipantId()
+        {
+            return _participantId;
+        }
+
+        public void setParticipantId(String participantId)
+        {
+            _participantId = participantId;
+        }
+
+        public String getSequenceNum()
+        {
+            return _sequenceNum;
+        }
+
+        public void setSequenceNum(String sequenceNum)
+        {
+            _sequenceNum = sequenceNum;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
     }
 
     public static class DatasetForm
     {
         private String _name;
         private String _label;
-        private int _datasetId;
+        private Integer _datasetId;
         private String _category;
         private boolean _showByDefault;
         private String _visitDatePropertyName;
@@ -6186,12 +6061,12 @@ public class StudyController extends BaseStudyController
             }
         }
 
-        public int getDatasetId()
+        public Integer getDatasetId()
         {
             return _datasetId;
         }
 
-        public void setDatasetId(int datasetId)
+        public void setDatasetId(Integer datasetId)
         {
             _datasetId = datasetId;
         }
@@ -7135,7 +7010,6 @@ public class StudyController extends BaseStudyController
                 {
                     case defineManually:
                     case placeHolder:
-                    case importFromFile:
                         if (StringUtils.isEmpty(form.getName()))
                             errors.reject(ERROR_MSG, "A Dataset name must be specified.");
                         else if (StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName()) != null)
@@ -7177,7 +7051,6 @@ public class StudyController extends BaseStudyController
 
                 switch (form.getType())
                 {
-                    case importFromFile:
                     case defineManually:
                         def = AssayPublishManager.getInstance().createAssayDataset(getUser(), _study, form.getName(),
                                 null, null, false, Dataset.TYPE_STANDARD, categoryId, null, false, KeyManagementType.None);
@@ -7187,12 +7060,7 @@ public class StudyController extends BaseStudyController
                             def.provisionTable();
                         }
 
-                        ActionURL redirect;
-                        if (form.getType() == DefineDatasetForm.Type.defineManually)
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-                        else
-                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
-
+                        ActionURL redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, def.getDatasetId());
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
                     case placeHolder:
@@ -7206,7 +7074,6 @@ public class StudyController extends BaseStudyController
                         break;
 
                     case linkManually:
-                    case linkImport:
                         def = StudyManager.getInstance().getDatasetDefinition(_study, form.getExpectationDataset());
                         if (def != null)
                         {
@@ -7218,11 +7085,7 @@ public class StudyController extends BaseStudyController
                             // add a cancel url to rollback either the manual link or import from file link
                             ActionURL cancelURL = new ActionURL(CancelDefineDatasetAction.class, getContainer()).addParameter("expectationDataset", form.getExpectationDataset());
 
-                            if (form.getType() == DefineDatasetForm.Type.linkManually)
-                                redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-                            else
-                                redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
-
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()).addParameter(DatasetDefinition.DATASETKEY, form.getExpectationDataset());
                             redirect.addParameter(ActionURL.Param.cancelUrl.name(), cancelURL.getLocalURIString());
                             response.put("redirectUrl", redirect.getLocalURIString());
                         }
@@ -7282,12 +7145,10 @@ public class StudyController extends BaseStudyController
     {
         enum Type
         {
-            importFromFile,
             defineManually,
             placeHolder,
             linkToTarget,
             linkManually,
-            linkImport,
         }
 
         private ViewContext _context;
@@ -7699,7 +7560,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             if (null == _study)
                 return 0;

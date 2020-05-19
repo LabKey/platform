@@ -85,7 +85,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     }
 
     /* set foreign key and display column */
-    static public ColumnInfo initColumn(QuerySchema sourceSchema, BaseColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(QuerySchema sourceSchema, MutableColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(sourceSchema, showAllUsers));
@@ -94,7 +94,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     }
 
     @Deprecated // TODO ContainerFilter
-    static public ColumnInfo initColumn(User user, Container container, BaseColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(User user, Container container, MutableColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));

@@ -40,6 +40,7 @@ import org.labkey.api.assay.AssayWellExclusionService;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.ExperimentAuditEvent;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
@@ -84,6 +85,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.SchemaKey;
@@ -157,6 +159,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -194,6 +197,7 @@ public class ExperimentServiceImpl implements ExperimentService
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
     protected Map<String, ExpProtocolInputCriteria.Factory> _protocolInputCriteriaFactories = new HashMap<>();
+    private Set<ExperimentProtocolHandler> _protocolHandlers = new HashSet<>();
 
     private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
@@ -258,7 +262,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public HttpView createFileExportView(Container container, String defaultFilenamePrefix)
     {
-        Set<String> roles = getDataInputRoles(container, ContainerFilter.CURRENT);
+        Set<String> roles = getDataInputRoles(container, ContainerFilter.current(container));
         // Remove case-only dupes
         Set<String> dedupedRoles = new CaseInsensitiveHashSet();
         roles.removeIf(role -> !dedupedRoles.add(role));
@@ -271,7 +275,7 @@ public class ExperimentServiceImpl implements ExperimentService
     public void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String comment)
     {
         Container c = run != null ? run.getContainer() : protocol.getContainer();
-        ExperimentAuditProvider.ExperimentAuditEvent event = new ExperimentAuditProvider.ExperimentAuditEvent(c.getId(), comment);
+        ExperimentAuditEvent event = new ExperimentAuditEvent(c.getId(), comment);
 
         event.setProjectId(c.getProject() == null ? null : c.getProject().getId());
         if (runGroup != null)
@@ -311,6 +315,28 @@ public class ExperimentServiceImpl implements ExperimentService
             result.add(getExpProtocol(protocolLSID));
         }
         return result;
+    }
+
+    @Override
+    public @Nullable ExperimentProtocolHandler getExperimentProtocolHandler(@NotNull ExpProtocol protocol)
+    {
+        if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
+        {
+            return getExperimentRunType(protocol);
+        }
+        else if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ProtocolApplication)
+        {
+            return Handler.Priority.findBestHandler(_protocolHandlers, protocol);
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public ExperimentRunType getExperimentRunType(@NotNull ExpProtocol protocol)
+    {
+        Set<ExperimentRunType> types = getExperimentRunTypes(protocol.getContainer());
+        return Handler.Priority.findBestHandler(types, protocol);
     }
 
     @Nullable
@@ -571,8 +597,8 @@ public class ExperimentServiceImpl implements ExperimentService
             filter.addCondition(FieldKey.fromParts("CpasType"), sampleSet.getLSID());
 
         // SampleSet may live in different container
-        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(user);
-        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"), container);
+        ContainerFilter.CurrentPlusProjectAndShared containerFilter = new ContainerFilter.CurrentPlusProjectAndShared(container, user);
+        SimpleFilter.FilterClause clause = containerFilter.createFilterClause(getSchema(), FieldKey.fromParts("Container"));
         filter.addClause(clause);
 
         Set<String> selectNames = new LinkedHashSet<>();
@@ -1613,7 +1639,7 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public Set<String> getMaterialInputRoles(Container container, ExpProtocol.ApplicationType... types)
     {
-        return getInputRoles(container, ContainerFilter.Type.Current.create(null), getTinfoMaterialInput(), types);
+        return getInputRoles(container, ContainerFilter.Type.Current.create(container, null), getTinfoMaterialInput(), types);
     }
 
     private Set<String> getInputRoles(Container container, ContainerFilter filter, TableInfo table, ExpProtocol.ApplicationType... types)
@@ -1953,7 +1979,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Pair<Set<ExpData>, Set<ExpMaterial>> getParentsOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return Pair.of(emptySet(), emptySet());
 
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         ExpRun parentRun = start.getRun();
@@ -2011,7 +2037,7 @@ public class ExperimentServiceImpl implements ExperimentService
     private Pair<Set<ExpData>, Set<ExpMaterial>> getChildrenOldAndBusted(ExpRunItem start)
     {
         if (isUnknownMaterial(start))
-            return Pair.of(Collections.emptySet(), Collections.emptySet());
+            return Pair.of(emptySet(), emptySet());
 
         List<ExpRun> runsToInvestigate = new ArrayList<>();
         if (start instanceof ExpData)
@@ -2231,7 +2257,10 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new RuntimeException("Lineage not available for unknown object: " + seed.getLSID());
 
             if (seed instanceof ExpRunItem && isUnknownMaterial((ExpRunItem) seed))
-                throw new RuntimeException("Lineage not available for unknown material: " + seed.getLSID());
+            {
+                LOG.warn("Lineage not available for unknown material: " + seed.getLSID());
+                continue;
+            }
 
             // ensure that the protocol output lineage is in the same container as the request
             if (c != null && !c.equals(seed.getContainer()))
@@ -2244,6 +2273,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 throw new RuntimeException("Requested lineage for duplicate objectId seed: " + objectId);
         }
 
+        if (seedObjectIds.isEmpty())
+            return new ExpLineage(seeds, emptySet(), emptySet(), emptySet(), emptySet(), emptySet());
+
         options.setUseObjectIds(true);
         SQLFragment sqlf = generateExperimentTreeSQLObjectIdsSeeds(seedObjectIds, options);
         Set<Integer> dataIds = new HashSet<>();
@@ -2255,7 +2287,7 @@ public class ExperimentServiceImpl implements ExperimentService
         for (Identifiable seed : seeds)
         {
             // create additional edges from the run for each ExpMaterial or ExpData seed
-            if (seed instanceof ExpRunItem)
+            if (seed instanceof ExpRunItem && !isUnknownMaterial((ExpRunItem)seed))
             {
                 Pair<Map<String, String>, Map<String, String>> pair = collectRunsAndRolesToInvestigate((ExpRunItem)seed, options);
 
@@ -2857,8 +2889,8 @@ public class ExperimentServiceImpl implements ExperimentService
                     toMaterialLsids.add(row);
             });
 
-            Set<Pair<Integer, Integer>> provenanceStartingInputs = Collections.emptySet();
-            Set<Pair<Integer, Integer>> provenanceFinalOutputs = Collections.emptySet();
+            Set<Pair<Integer, Integer>> provenanceStartingInputs = emptySet();
+            Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
 
             ProvenanceService pvs = ProvenanceService.get();
             if (pvs != null)
@@ -6235,7 +6267,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerDataType(DataType type)
     {
-        _dataTypes.put(type.getNamespacePrefix(), type);
+        DataType existing = _dataTypes.put(type.getNamespacePrefix(), type);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims namespace prefix '" + existing.getNamespacePrefix() + "'");
     }
 
     @Override
@@ -6264,11 +6298,19 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerProtocolImplementation(ProtocolImplementation impl)
     {
-        _protocolImplementations.put(impl.getName(), impl);
+        ProtocolImplementation existing = _protocolImplementations.put(impl.getName(), impl);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims name '" + existing.getName() + "'");
     }
 
     @Override
-    public ProtocolImplementation getProtocolImplementation(String name)
+    public void registerProtocolHandler(ExperimentProtocolHandler handler)
+    {
+        _protocolHandlers.add(handler);
+    }
+
+    @Override
+    public @Nullable ProtocolImplementation getProtocolImplementation(String name)
     {
         return _protocolImplementations.get(name);
     }
@@ -6289,7 +6331,9 @@ public class ExperimentServiceImpl implements ExperimentService
     @Override
     public void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory)
     {
-        _protocolInputCriteriaFactories.put(factory.getName(), factory);
+        ExpProtocolInputCriteria.Factory existing = _protocolInputCriteriaFactories.put(factory.getName(), factory);
+        if (existing != null)
+            throw new IllegalArgumentException(existing.getClass().getSimpleName() + " already claims name '" + existing.getName() + "'");
     }
 
     @NotNull

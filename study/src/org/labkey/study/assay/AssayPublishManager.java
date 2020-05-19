@@ -375,7 +375,7 @@ public class AssayPublishManager implements AssayPublishService
 
     private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
     {
-        if (lsids.isEmpty())
+        if (lsids.isEmpty() || null == protocol)
             return;
 
         // If provenance module is not present, do nothing
@@ -702,6 +702,15 @@ public class AssayPublishManager implements AssayPublishService
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
     {
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null, null);
+    }
+
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
+                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId,
+                                                @Nullable String tag, String visitDatePropertyName, @Nullable String dataSharing)
+    {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
             throw new IllegalStateException("UseTimeKeyField not compatible with iDemographic or other key field.");
@@ -710,19 +719,26 @@ public class AssayPublishManager implements AssayPublishService
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataset.setShowByDefault(true);
+            newDataset.setShowByDefault(showByDefault);
             newDataset.setType(type);
+            newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
+            newDataset.setKeyManagementType(managementType);
+            newDataset.setDescription(description);
+            newDataset.setCohortId(cohortId);
+            newDataset.setTag(tag);
+            newDataset.setVisitDatePropertyName(visitDatePropertyName);
 
+            if (label != null)
+                newDataset.setLabel(label);
             if (categoryId != null)
                 newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
                 newDataset.setKeyPropertyName(keyPropertyName);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
-
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
-            newDataset.setKeyManagementType(managementType);
+            if (dataSharing != null)
+                newDataset.setDataSharing(dataSharing);
 
             StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 

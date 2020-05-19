@@ -56,6 +56,7 @@ import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -86,7 +87,7 @@ public class AssayProgressReport extends AbstractReport
     public static final String SPECIMEN_UNUSABLE = "unusable";
     public static final String SPECIMEN_RESULTS_UNEXPECTED = "unexpected";
 
-    private SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
+    private final SetValuedMap<String, ParticipantVisit> _copiedToStudyData = new HashSetValuedHashMap<>();
 
     public enum SpecimenStatus
     {
@@ -99,10 +100,10 @@ public class AssayProgressReport extends AbstractReport
         UNUSABLE(SPECIMEN_UNUSABLE, "Unusable", "Unusable", "fa fa-trash-o"),
         UNEXPECTED(SPECIMEN_RESULTS_UNEXPECTED, "Unexpected results", "Needs QC Check", "fa fa-flag");
 
-        private String _name;
-        private String _lable;
-        private String _iconClass;
-        private String _description;
+        private final String _name;
+        private final String _lable;
+        private final String _iconClass;
+        private final String _description;
 
         SpecimenStatus(String name, String label, String description, String iconClass)
         {
@@ -234,7 +235,7 @@ public class AssayProgressReport extends AbstractReport
                     assayVisits.add(visitMap.get(visitId));
             }
 
-            assayVisits.sort((o1, o2) -> (int) (o1.getSequenceNumMinDouble() - o2.getSequenceNumMinDouble()));
+            assayVisits.sort(Comparator.comparing(Visit::getSequenceNumMin));
             assay.setExpectedVisits(assayVisits);
 
             if (assayConfigMap.containsKey(assay.getRowId()))

@@ -43,6 +43,7 @@ import org.labkey.api.dataiterator.ResultSetDataIterator;
 import org.labkey.api.dataiterator.SimpleTranslator;
 import org.labkey.api.dataiterator.StatementDataIterator;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.files.FileSystemWatcherImpl;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.jsp.LabKeyJspFactory;
 import org.labkey.api.markdown.MarkdownService;
@@ -232,12 +233,14 @@ public class ApiModule extends CodeOnlyModule
             DbSchema.TableSelectTestCase.class,
             DbSchema.TransactionTestCase.class,
             DbScope.GroupConcatTestCase.class,
+            DbScope.SchemaNameTestCase.class,
             DbScope.TransactionTestCase.class,
             DbSequenceManager.TestCase.class,
             DomTestCase.class,
             Encryption.TestCase.class,
             ExcelColumn.TestCase.class,
             ExceptionUtil.TestCase.class,
+            FileSystemWatcherImpl.TestCase.class,
             FolderTypeManager.TestCase.class,
             GroupManager.TestCase.class,
             JspTemplate.TestCase.class,

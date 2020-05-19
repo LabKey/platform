@@ -97,6 +97,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.WebPartView;
@@ -529,10 +530,12 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     return false;
                 }
 
+                boolean tooBig = isTooBig(fs, type);
+
                 if ("text/html".equals(type))
                 {
                     String html;
-                    if (isTooBig(fs, type))
+                    if (tooBig)
                         html = "<html><body></body></html>";
                     else
                         html = PageFlowUtil.getStreamContentsAsString(is);
@@ -544,7 +547,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                 }
                 else if (type.startsWith("text/") && !type.contains("xml") && !StringUtils.equals(type, "text/comma-separated-values"))
                 {
-                    if (isTooBig(fs, type))
+                    if (tooBig)
                         body = "";
                     else
                         body = PageFlowUtil.getStreamContentsAsString(is);
@@ -556,7 +559,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                     metadata.add(Metadata.CONTENT_TYPE, r.getContentType());
                     ContentHandler handler = new BodyContentHandler(-1);     // no write limit on the handler -- rely on file size check to limit content
 
-                    parse(r, fs, is, handler, metadata);
+                    parse(r, fs, is, handler, metadata, tooBig);
 
                     body = handler.toString();
 
@@ -932,7 +935,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
 
     // parse the document of the resource, not that parse() and accept() should agree on what is parsable
-    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata) throws IOException, SAXException, TikaException
+    private void parse(WebdavResource r, FileStream fs, InputStream is, ContentHandler handler, Metadata metadata, boolean tooBig) throws IOException, SAXException, TikaException
     {
         if (!is.markSupported())
             is = new BufferedInputStream(is);
@@ -941,12 +944,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         if (null != p)
         {
             metadata.add(Metadata.CONTENT_TYPE, p.getMediaType());
-            p.parse(is, handler);
+            if (!tooBig)  //Check filesize even if parser set. Issue #40253
+                p.parse(is, handler);
             return;
         }
 
         // Treat files over the size limit as empty files
-        if (isTooBig(fs, r.getContentType()))
+        if (tooBig)
         {
             logAsWarning(r, "The document is too large");
             return;
@@ -1261,6 +1265,34 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    @Override
+    protected void clearIndexedFileSystemFiles(Container container)
+    {
+        String davPrefix = "dav:";
+        try
+        {
+            BooleanQuery query = new BooleanQuery.Builder()
+                    // Add container filter
+                    .add(new TermQuery(new Term(FIELD_NAME.container.toString(), container.getId())), BooleanClause.Occur.MUST)
+                    // Add files filter
+                    .add(new TermQuery(new Term(FIELD_NAME.searchCategories.toString(), "file")), BooleanClause.Occur.MUST)
+                    //Limit to just dav files and not attachments or other files
+                    .add(new WildcardQuery(new Term(FIELD_NAME.uniqueId.toString(), davPrefix + "*")), BooleanClause.Occur.MUST)
+                    .build();
+
+            // Run the query before delete, but only if Log4J debug level is set
+            if (_log.isDebugEnabled())
+            {
+                _log.debug("Deleting " + getDocCount(query) + " docs from container " + container);
+            }
+
+            _indexManager.deleteQuery(query);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     protected void commitIndex()
@@ -1542,7 +1574,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             hit.identifiers = doc.get(FIELD_NAME.identifiersHi.toString());
             hit.score = scoreDoc.score;
 
-            // BUG patch see 10734 : Bad URLs for files in search results
+            // BUG patch see Issue 10734 : Bad URLs for files in search results
             // this is only a partial fix, need to rebuild index
             if (hit.url.contains("/%40files?renderAs=DEFAULT/"))
             {
@@ -1687,7 +1719,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             assertNotNull(sampledata);
             assertTrue(sampledata.isDirectory());
             SearchService ss = SearchService.get();
-            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl)ss;
+            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl) ss;
             Map<String, Pair<Integer, String[]>> expectations = getExpectations();
 
             for (File file : sampledata.listFiles(File::isFile))
@@ -1703,13 +1735,13 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
 
                     if (strict)
                     {
-                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                        lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
                     }
                     else
                     {
                         try
                         {
-                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata);
+                            lssi.parse(resource, new FileFileStream(file), is, handler, metadata, false);
                         }
                         catch (Throwable t)
                         {
@@ -1756,6 +1788,44 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
                         else
                             _log.info(file.getName() + ": " + message);
                     }
+                }
+            }
+        }
+
+        /**
+         * This test checks to see if the parsing method handles files it thinks are too big in the manner expected.
+         * (get a default body, and as much metadata as reasonable)
+         *
+         * @throws IOException
+         * @throws TikaException
+         * @throws SAXException
+         */
+        @Test
+        public void testOversizedFiles() throws IOException, TikaException, SAXException
+        {
+            //Instead of using oversized sample files we are just going to tell the parsing method they are too big, and trust we can detect it correctly.
+            boolean tooBig = true;
+
+            File sampledata = JunitUtil.getSampleData(null, "fileTypes");
+            assertNotNull(sampledata);
+            assertTrue(sampledata.isDirectory());
+            SearchService ss = SearchService.get();
+            LuceneSearchServiceImpl lssi = (LuceneSearchServiceImpl) ss;
+            Map<String, Pair<Integer, String[]>> expectations = getExpectations();
+
+            for (File file : sampledata.listFiles(File::isFile))
+            {
+                String docId = "testtika";
+                SimpleDocumentResource resource = new SimpleDocumentResource(new Path(file.getAbsolutePath()), docId, null, "text/plain", null, new URLHelper(false), null);
+                ContentHandler handler = new BodyContentHandler(-1);
+                Metadata metadata = new Metadata();
+
+                try (InputStream is = new FileInputStream(file))
+                {
+                    lssi.parse(resource, new FileFileStream(file), is, handler, metadata, tooBig);
+
+                    String body = handler.toString();
+                    assertTrue("Body for oversized file parsed unexpectedly: " + file.getName(), StringUtils.isBlank(body));
                 }
             }
         }

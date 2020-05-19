@@ -33,11 +33,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resolver;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
@@ -984,6 +981,11 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            log.info("Data source " + toString() +
+                    ". Max connections: " + _dsProps.getMaxTotal() +
+                    ", active: " + _dsProps.getNumActive() +
+                    ", idle: " + _dsProps.getNumIdle());
+
             if (_transaction.isEmpty())
             {
                 log.info("There are no threads holding connections for the data source '" + toString() + "'");
@@ -1089,10 +1091,9 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName)
     {
-        // First try the canonical schema name (which could differ in casing from the requested name)
-        Resource resource = schema.getSchemaResource();
+        TablesDocument tablesDoc = getSchemaXml(schema);
 
-        if (null == resource)
+        if (null == tablesDoc)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
             LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
@@ -1104,28 +1105,42 @@ public class DbScope
         }
         else
         {
-            String filename = resource.getName();
-
-            // I don't like this... should either improve Resolver (add getModule()?) or revise getResource() to take a Resource
-            Resolver resolver = resource.getResolver();
-            assert resolver instanceof ModuleResourceResolver;
-            Module module = ((ModuleResourceResolver) resolver).getModule();
-
-            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResourceMap(module).get(filename);
-
-            if (null != tablesDoc)
-                schema.setTablesDocument(tablesDoc);
+            schema.setTablesDocument(tablesDoc);
         }
     }
 
-
-    public static @NotNull List<String> getSchemaNames(Module module)
+    public static @Nullable TablesDocument getSchemaXml(DbSchema schema)
     {
-        return SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream()
-            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .collect(Collectors.toCollection(ArrayList::new));
+        String filename = schema.getResourcePrefix() + ".xml";
+        return SCHEMA_XML_CACHE.getResourceMap(schema.getModule()).get(filename);
     }
 
+    // Return an unmodifiable, sorted list of schema names in this module
+    public static @NotNull List<String> getSchemaNames(Module module)
+    {
+        // Don't use the cache until startup is complete. The cache registers file listeners with module references,
+        // and that ends up "leaking" modules if we haven't yet pruned them based on supported database, etc.
+        return getSchemaNames(module, ModuleLoader.getInstance().isStartupComplete());
+    }
+
+    private static List<String> getSchemaNames(Module module, boolean useCache)
+    {
+        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .sorted()
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    // Verify that the two ways for determining schema names yield identical results
+    public static class SchemaNameTestCase extends Assert
+    {
+        @Test
+        public void testSchemaNames()
+        {
+            ModuleLoader.getInstance().getModules()
+                .forEach(m->assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+        }
+    }
 
     @JsonIgnore
     public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)

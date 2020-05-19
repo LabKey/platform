@@ -522,11 +522,6 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         return null;
     }
 
-    protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
-    {
-        return importData(dl, file, originalName, errors, null);
-    }
-
     /* TODO change prototype to take DataIteratorBuilder, and DataIteratorContext */
     protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
     {

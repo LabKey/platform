@@ -114,6 +114,12 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
 
+    /** Log an audit event to capture a data change made to this table */
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+    }
+
     enum IndexType
     {
         Primary(org.labkey.data.xml.IndexType.Type.PRIMARY, true),
@@ -195,6 +201,11 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
 
     Set<String> getColumnNameSet();
 
+    default String getDbSequenceName(String columnName)
+    {
+        return (this.getSchema().getName() + ":" + this.getName() + ":" + columnName).toLowerCase();
+    }
+
     /**
      * Return a list of ColumnInfos that make up the extended set of
      * columns that could be considered a part of this table by default.
@@ -209,6 +220,7 @@ public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNo
      * @return All columns.
      */
     Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
+
 
     /**
      * @return the {@link org.labkey.api.query.FieldKey}s that should be part of the default view of the table,

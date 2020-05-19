@@ -275,7 +275,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(this);
         schema.setContainerFilter(_containerFilter);
         return schema;
     }
@@ -502,7 +502,7 @@ public class ExpSchema extends AbstractExpSchema
             public TableInfo getLookupTableInfo()
             {
                 ContainerFilter cf = getLookupContainerFilter();
-                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey(ExpSchema.this.getContainer());
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey();
                 // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
                 return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
             }
@@ -510,7 +510,7 @@ public class ExpSchema extends AbstractExpSchema
             @Override
             protected ContainerFilter getLookupContainerFilter()
             {
-                return Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser()));
+                return Objects.requireNonNullElse(cf, ContainerFilter.Type.CurrentPlusProjectAndShared.create(ExpSchema.this));
             }
 
             private TableInfo createLookupTableInfo()

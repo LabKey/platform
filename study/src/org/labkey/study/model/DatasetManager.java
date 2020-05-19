@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.study.Dataset;
 
 import java.util.List;
@@ -30,6 +31,8 @@ public class DatasetManager
     // Thread-safe list implementation that allows iteration and modifications without external synchronization
     private static final List<DatasetListener> _listeners = new CopyOnWriteArrayList<>();
 
+    private static final DatasetManager INSTANCE = new DatasetManager();
+
     public static void addDatasetListener(DatasetListener listener)
     {
         _listeners.add(listener);
@@ -38,6 +41,28 @@ public class DatasetManager
     public static List<DatasetListener> getListeners()
     {
         return _listeners;
+    }
+
+    public static DatasetManager get ()
+    {
+        return INSTANCE;
+    }
+
+    public DatasetDomainKindProperties getDatasetDomainKindProperties(Container container, Integer datasetId)
+    {
+        if (datasetId == null || datasetId == 0)
+        {
+            return new DatasetDomainKindProperties(container);
+        }
+        else
+        {
+            StudyImpl study = StudyManager.getInstance().getStudy(container);
+            Dataset ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
+            if (ds != null)
+                return new DatasetDomainKindProperties(ds);
+            else
+                return null;
+        }
     }
 
     public interface DatasetListener

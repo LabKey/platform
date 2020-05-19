@@ -23,6 +23,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NullColumnInfo;
@@ -287,7 +288,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                             {
                                 if (col.getScale() != pd.getScale())
                                     LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
-                                pd.copyTo(col);
+                                pd.copyTo( (ColumnRenderPropertiesImpl)col );
                                 if (!col.isHidden())
                                     defaultCols.add(FieldKey.fromParts(col.getName()));
                             }

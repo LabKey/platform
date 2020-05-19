@@ -19,13 +19,24 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
+import org.labkey.api.issues.IssuesDomainKindProperties;
 import org.labkey.api.issues.IssuesListDefProvider;
 import org.labkey.api.issues.IssuesListDefService;
+import org.labkey.api.issues.IssuesSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.issue.query.IssuesListDefTable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +54,94 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     private final List<IssueDetailHeaderLinkProvider> _headerLinkProviders = new ArrayList<>();
 
     private static final Comparator<IssuesListDefProvider> ISSUES_LIST_DEF_PROVIDER_COMPARATOR = Comparator.comparing(IssuesListDefProvider::getLabel, String.CASE_INSENSITIVE_ORDER);
+
+    @Override
+    public IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName)
+    {
+        IssueManager.EntryTypeNames typeNames = IssueManager.getEntryTypeNames(container, defName);
+        String sortDirection = IssueManager.getCommentSortDirection(container, defName).name();
+
+        Integer assignedToGroup = null;
+        Group group = IssueManager.getAssignedToGroup(container, defName);
+        if (group != null)
+            assignedToGroup = group.getUserId();
+
+        Integer assignedToUser = null;
+        User defaultUser = IssueManager.getDefaultAssignedToUser(container, defName);
+        if (defaultUser != null)
+            assignedToUser = defaultUser.getUserId();
+
+        return new IssuesDomainKindProperties(defName, typeNames.singularName, typeNames.pluralName, sortDirection, assignedToGroup, assignedToUser);
+    }
+
+    @Override
+    public ValidationException updateIssueDefinition(Container container, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties)
+    {
+        IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
+
+        try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
+        {
+            ValidationException exception = new ValidationException();
+
+            if (!original.getDomainURI().equals(update.getDomainURI()))
+                exception.addGlobalError("Cannot change domainId of an existing issue definition.");
+
+            if (properties != null && !exception.hasErrors())
+            {
+                names.singularName = properties.getSingularItemName();
+                names.pluralName = properties.getPluralItemName();
+                String issueDefName = properties.getIssueDefName();
+
+                IssueManager.saveEntryTypeNames(container, issueDefName, names);
+                saveIssueProperties(container, properties, issueDefName);
+            }
+
+            if (!exception.hasErrors())
+            {
+                exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
+            }
+
+            if (!exception.hasErrors())
+            {
+                transaction.commit();
+            }
+            return exception;
+        }
+    }
+
+    @Override
+    public void saveIssueProperties(Container container, IssuesDomainKindProperties properties, String name)
+    {
+        IssueManager.saveCommentSortDirection(container, name, Sort.SortDirection.fromString(properties.getCommentSortDirection()));
+
+        Group group = null;
+        if (properties.getAssignedToGroup() != null)
+        {
+            group = SecurityManager.getGroup(properties.getAssignedToGroup());
+            if (null == group)
+                throw new IllegalArgumentException("'" + properties.getAssignedToGroup().toString() +
+                        "' group not found. Please refer to core.Groups for a valid list of groups.");
+        }
+        IssueManager.saveAssignedToGroup(container, name, group);
+
+        User user = null;
+        if (properties.getAssignedToUser() != null)
+        {
+            user = UserManager.getUser(properties.getAssignedToUser());
+            if (null == user)
+                throw new IllegalArgumentException("'" + properties.getAssignedToUser().toString() +
+                        "' user not found. Please refer to core.Users for a valid list of users.");
+        }
+
+        IssueManager.saveDefaultAssignedToUser(container, name, user);
+    }
+
+    @Override
+    public String getNameFromDomain(GWTDomain domain)
+    {
+        return IssuesListDefTable.nameFromLabel(domain.getName());
+
+    }
 
     @Override
     public void registerIssuesListDefProvider(IssuesListDefProvider provider)

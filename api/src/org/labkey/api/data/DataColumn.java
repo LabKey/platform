@@ -49,6 +49,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -63,7 +64,7 @@ public class DataColumn extends DisplayColumn
 
     private ColumnInfo _boundColumn;
     private ColumnInfo _displayColumn;
-    private List<ColumnInfo> _sortColumns;
+    private List<FieldKey> _sortFieldKeys;
     private ColumnInfo _filterColumn;
 
     private String _inputType;
@@ -83,7 +84,9 @@ public class DataColumn extends DisplayColumn
         _boundColumn = col;
         _displayColumn = getDisplayField(col, withLookups);
         _nowrap = _displayColumn.isNoWrap();
-        _sortColumns = _displayColumn.getSortFields();
+        _sortFieldKeys = _displayColumn.getSortFieldKeys();
+        if (null == _sortFieldKeys && _displayColumn.isSortable())
+            _sortFieldKeys = Collections.singletonList(_displayColumn.getFieldKey());
         _filterColumn = _displayColumn.getFilterField();
 
         _width = _displayColumn.getWidth();
@@ -239,11 +242,8 @@ public class DataColumn extends DisplayColumn
             keys.add(_displayColumn.getFieldKey());
         if (_filterColumn != null)
             keys.add(_filterColumn.getFieldKey());
-        if (_sortColumns != null)
-        {
-            for (ColumnInfo col : _sortColumns)
-                keys.add(col.getFieldKey());
-        }
+        if (_sortFieldKeys != null)
+            keys.addAll(_sortFieldKeys);
         StringExpression effectiveURL = _boundColumn.getEffectiveURL();
         if (effectiveURL instanceof DetailsURL)
         {
@@ -259,13 +259,11 @@ public class DataColumn extends DisplayColumn
             columns.add(_displayColumn);
         if (_filterColumn != null)
             columns.add(_filterColumn);
-        if (_sortColumns != null)
-            columns.addAll(_sortColumns);
     }
 
     public boolean isSortable()
     {
-        return _sortColumns != null && _sortColumns.size() > 0;
+        return _sortFieldKeys != null && _sortFieldKeys.size() > 0;
     }
 
     public Object getValue(RenderContext ctx)
@@ -854,7 +852,7 @@ public class DataColumn extends DisplayColumn
     @Override
     public String getSortHandler(RenderContext ctx, Sort.SortDirection sort)
     {
-        if (_displayColumn == null || _sortColumns == null || _sortColumns.size() == 0)
+        if (_displayColumn == null || _sortFieldKeys == null || _sortFieldKeys.size() == 0)
             return "";
 
         String regionName = ctx.getCurrentRegion().getName();

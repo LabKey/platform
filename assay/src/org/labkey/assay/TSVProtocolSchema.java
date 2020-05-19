@@ -122,9 +122,9 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             AssayWellExclusionService svc = AssayWellExclusionService.getProvider(getProtocol());
             if (svc != null)
             {
-                var excludedByColumn = svc.createExcludedByColumn(this, getProtocol());
-                var excludedAtColumn = svc.createExcludedAtColumn(this, getProtocol());
-                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProtocol());
+                var excludedByColumn = svc.createExcludedByColumn(this, getProvider());
+                var excludedAtColumn = svc.createExcludedAtColumn(this, getProvider());
+                var excludedCommentColumn = svc.createExclusionCommentColumn(this, getProvider());
 
                 addColumn(excludedByColumn);
                 addColumn(excludedAtColumn);
@@ -218,7 +218,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
 
             for (ColumnInfo col : getRealTable().getColumns())
             {
-                BaseColumnInfo columnInfo = wrapColumn(col);
+                var columnInfo = wrapColumn(col);
                 if (col.getName().equals("Lsid"))
                 {
                     columnInfo.setHidden(true);

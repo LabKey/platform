@@ -21,14 +21,13 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.ext4.RadioButton;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.Ext4Helper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 import org.labkey.test.util.PortalHelper;
-import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
@@ -274,34 +273,33 @@ public class StudyScheduleTest extends StudyBaseTest
             setFormElement(Locator.xpath("//label[text() = 'Category:']/../..//input"), category);
         }
 
+        DatasetDesignerPage datasetDesignerPage;
+
         switch (type)
         {
             case defineManually:
-                click(Ext4Helper.Locators.ext4Radio("Define dataset manually"));
+                click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
-                EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
-
                 // add a single name field
-                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
-                datasetDesignerPage.save();
+                datasetDesignerPage = new DatasetDesignerPage(getDriver());
+                datasetDesignerPage.getFieldsPanel().manuallyDefineFields("antigenName");
+                datasetDesignerPage.clickSave();
+
                 break;
             case importFromFile:
-                click(Ext4Helper.Locators.ext4Radio("Import data from file"));
+                click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
                 File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
+                datasetDesignerPage = new DatasetDesignerPage(getDriver());
+                datasetDesignerPage.getFieldsPanel()
+                        .setInferFieldFile(file);
+                datasetDesignerPage.setAutoImport(true)
+                        .setPreviewMappedColumn("Mice", "ptid")
+                        .setPreviewMappedColumn("Visits", "visit")
+                        .clickSave();
 
-                Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
-                waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
-                setFormElement(fileUpload, file);
-
-                waitForElement(Locator.tagWithClass("div", "gwt-HTML").containing("Showing first 5 rows"), WAIT_FOR_JAVASCRIPT);
-
-                selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "ptid");
-                selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit");
-
-                clickButton("Import");
                 break;
             case placeholder:
                 click(Ext4Helper.Locators.ext4Radio("do this later"));
@@ -361,34 +359,33 @@ public class StudyScheduleTest extends StudyBaseTest
     @LogMethod
     private void linkDataset(@LoggedParam String name, DatasetType type, String targetDataset)
     {
+        DatasetDesignerPage datasetDesignerPage;
+
         switch (type)
         {
             case defineManually:
-                click(Ext4Helper.Locators.ext4Radio("Define dataset manually"));
+                click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
-                EditDatasetDefinitionPage datasetDesignerPage = new EditDatasetDefinitionPage(getDriver());
-
                 // add a single name field
-                datasetDesignerPage.getFieldsEditor().selectField(0).setName("antigenName");
-                datasetDesignerPage.save();
+                datasetDesignerPage = new DatasetDesignerPage(getDriver());
+                datasetDesignerPage.getFieldsPanel().manuallyDefineFields("antigenName");
+                datasetDesignerPage.clickSave();
+
                 break;
             case importFromFile:
-                click(Ext4Helper.Locators.ext4Radio("Import data from file"));
+                click(Ext4Helper.Locators.ext4Radio("Define dataset manually or from a file"));
                 clickButton("Next");
 
                 File file = TestFileUtils.getSampleData("study/datasets/plate002.tsv");
+                datasetDesignerPage = new DatasetDesignerPage(getDriver());
+                datasetDesignerPage.getFieldsPanel()
+                        .setInferFieldFile(file);
+                datasetDesignerPage.setAutoImport(true)
+                        .setPreviewMappedColumn("Mice", "ptid")
+                        .setPreviewMappedColumn("Visits", "visit")
+                        .clickSave();
 
-                Locator fileUpload = Locator.xpath("//input[@name = 'uploadFormElement']");
-                waitForElement(fileUpload, WAIT_FOR_JAVASCRIPT);
-                setFormElement(fileUpload, file);
-
-                waitForElement(Locator.tagWithClass("div", "gwt-HTML").containing("Showing first 5 rows"), WAIT_FOR_JAVASCRIPT);
-
-                selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "ptid");
-                selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit");
-
-                clickButton("Import");
                 break;
             case linkeToExisting:
                 RadioButton link_to_existing_dataset = new RadioButton.RadioButtonFinder().withLabel("Link to existing dataset").find(getDriver());

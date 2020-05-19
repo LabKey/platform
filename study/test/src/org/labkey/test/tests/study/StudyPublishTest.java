@@ -220,6 +220,9 @@ public class StudyPublishTest extends StudyPHIExportTest
 
         setUnshiftedDateField(DATE_SHIFT_DATASET, UNSHIFTED_DATE_FIELD.getKey());
 
+        scrollToTop();  // the prior operation leaves the test on the query metadata editor, scrolled down
+
+                            // which pins the project menu under a header
         navigateToFolder(getProjectName(), getFolderName());
 
         //webpart needed for republish test
@@ -1028,6 +1031,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         else if (location == PublishLocation.project)
         {
             Locator projectTreeNode = Locator.tagWithClass("a", "x-tree-node-anchor").withDescendant(Locator.tagWithText("span", getProjectName()));
+            scrollIntoView(projectTreeNode, true);
             doubleClick(projectTreeNode);
         }
         else
@@ -1070,11 +1074,11 @@ public class StudyPublishTest extends StudyPHIExportTest
     {
         goToQueryView("study", dataset, true);
         QueryMetadataEditorPage designerPage = new QueryMetadataEditorPage(getDriver());
-        designerPage.fieldsPanel()
+        designerPage.getFieldsPanel()
                 .getField(fieldName)
                 .setExcludeFromDateShifting(true);
 
-        designerPage.clickFinish();
+        designerPage.clickSave();
         waitForText("Save Successful");
     }
 

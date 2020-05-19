@@ -58,11 +58,13 @@ public class ContextListener implements ServletContextListener
     private static final List<NewInstallCompleteListener> _newInstallCompleteListeners = new CopyOnWriteArrayList<>();
     private static final List<ModuleChangeListener> _moduleChangeListeners = new CopyOnWriteArrayList<>();
 
+    @Override
     public void contextInitialized(ServletContextEvent servletContextEvent)
     {
         getSpringContextListener().contextInitialized(servletContextEvent);
     }
 
+    @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent)
     {
         ViewServlet.setShuttingDown(0);

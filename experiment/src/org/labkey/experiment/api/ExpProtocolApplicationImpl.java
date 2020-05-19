@@ -24,6 +24,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ExperimentProtocolHandler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -32,8 +33,13 @@ import org.labkey.api.exp.api.ExpMaterialProtocolInput;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.ProvenanceService;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
@@ -64,6 +70,20 @@ public class ExpProtocolApplicationImpl extends ExpIdentifiableBaseImpl<Protocol
     public ActionURL detailsURL()
     {
         return null;
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        ExpProtocolImpl protocol = getProtocol();
+        if (protocol != null)
+        {
+            QueryRowReference ref = protocol.getCustomQueryRowReference();
+            if (ref != null)
+                return ref;
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.ProtocolApplications.name(), FieldKey.fromParts(ExpProtocolApplicationTable.Column.RowId), getRowId());
     }
 
     public Date getCreated()

@@ -541,14 +541,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
         }];
 
         if (queryDetails.isUserDefined && queryDetails.moduleName) {
-            var _tip = '' +
-                    '<div>' +
-                        '<div><span>Module Defined Query</span></div>' +
-                        '<div>This query is defined in an external module. Externally defined queries are not editable.</div>' +
-                    '</div>';
             children.push({
                 tag: 'span',
-                'data-qtip': _tip,
                 style: 'cursor: default;',
                 html: 'Defined in ' + Ext4.htmlEncode(queryDetails.moduleName) + ' module'
             });
@@ -606,7 +600,8 @@ Ext4.define('LABKEY.query.browser.view.QueryDetails', {
             if (queryDetails.canEdit && !queryDetails.isInherited) {
                 children.push(this.formatQueryLink("sourceQuery", params, "edit source"));
                 children.push(this.formatQueryLink("propertiesQuery", params, "edit properties"));
-                children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
+                if (queryDetails.canDelete)
+                    children.push(this.formatQueryLink("deleteQuery", params, "delete query"));
                 children.push(this.formatQueryLink("metadataQuery", metadataParams, "edit metadata"));
             }
             else {

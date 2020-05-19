@@ -64,7 +64,7 @@ public class ShowSelectedRunsAction extends SimpleRedirectAction<ShowSelectedRun
 
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
-            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
+            containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getContainer(), getUser());
 
         ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), form.getProtocol(), containerFilter, selectedIds);
         if (form.getContainerFilterName() != null)

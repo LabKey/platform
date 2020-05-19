@@ -18,8 +18,8 @@ package org.labkey.test.tests.study;
 
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.StudyHelper;
@@ -30,7 +30,6 @@ public abstract class StudyManualTest extends StudyTest
 {
     private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/datasets/schema.tsv");
     protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
-
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
@@ -174,14 +173,14 @@ public abstract class StudyManualTest extends StudyTest
                 .selectDatasetByName("DEM-1")
                 .clickEditDefinition()
                 .setDescription(DEMOGRAPHICS_DESCRIPTION)
-                .save();
+                .clickSave();
     }
 
 
     protected void setDemographicsBit()
     {
         clickFolder(getFolderName());
-        setDemographicsBit("DEM-1: Demographics", true);
+        setDemographicsBit(DEMOGRAPHICS_TITLE, true);
     }
 
 
@@ -201,36 +200,25 @@ public abstract class StudyManualTest extends StudyTest
     protected void createCustomAssays()
     {
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName("verifyAssay")
-                .submit();
+                .setName("verifyAssay");
 
-        waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
+        DomainFormPanel formPanel = editDatasetPage.getFieldsPanel();
+        formPanel.manuallyDefineFields(new FieldDefinition("SampleId", FieldDefinition.ColumnType.String)
+            .setLabel("Sample Id"));
+        formPanel.addField(new FieldDefinition("DateField", FieldDefinition.ColumnType.DateAndTime)
+            .setLabel("DateField").setDescription("This is a date field"));
+        formPanel.addField(new FieldDefinition("NumberField", FieldDefinition.ColumnType.Decimal)
+                .setLabel("NumberField").setDescription("This is a number"));
+        formPanel.addField(new FieldDefinition("TextField", FieldDefinition.ColumnType.String)
+                .setLabel("TextField").setDescription("This is a text field"));
+        formPanel.addField("otherData").setLabel("Other Data")
+                .setType(FieldDefinition.ColumnType.String).setImportAliases("aliasedColumn");
 
-        checkRadioButton(Locator.radioButtonByName("additionalKey").index(1));
-
-        clickButton("Import Fields", 0);
-        waitForElement(Locator.xpath("//textarea[@id='schemaImportBox']"), WAIT_FOR_JAVASCRIPT);
-
-        setFormElement(Locator.id("schemaImportBox"), "Property\tLabel\tRangeURI\tNotNull\tDescription\n" +
-                "SampleId\tSample Id\txsd:string\ttrue\tstring\n" +
-                "DateField\tDateField\txsd:dateTime\tfalse\tThis is a date field\n" +
-                "NumberField\tNumberField\txsd:double\ttrue\tThis is a number\n" +
-                "TextField\tTextField\txsd:string\tfalse\tThis is a text field");
-
-        clickButton("Import", 0);
-        waitForElement(Locator.xpath("//input[@name='ff_label3']"), WAIT_FOR_JAVASCRIPT);
-
-        click(Locator.radioButtonById("button_dataField"));
-
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Dataset Fields").find();
-        PropertiesEditor.FieldRow row = editor.addField(new FieldDefinition("otherData").setLabel("Other Data").setType(FieldDefinition.ColumnType.String));
-        PropertiesEditor.FieldPropertyDock.AdvancedTabPane tabPane = row.properties().selectAdvancedTab();
-        tabPane.setImportAliases("aliasedColumn");
-
+        editDatasetPage.setAdditionalKeyColDataField("SampleId");
         editDatasetPage
-                .save()
+                .clickSave()
                 .clickViewData()
                 .getDataRegion()
                 .clickImportBulkData();

@@ -17,18 +17,22 @@
 import React from 'react'
 import {Button, Panel} from "react-bootstrap";
 import { ActionURL, getServerContext } from "@labkey/api";
-import {LoadingSpinner, Alert, ConfirmModal, DomainForm, DomainDesign, fetchDomain, saveDomain} from "@labkey/components"
+import {
+    LoadingSpinner,
+    Alert,
+    ConfirmModal,
+    DomainForm,
+    DomainDesign,
+    fetchDomain,
+    saveDomain,
+    BeforeUnload
+} from "@labkey/components"
 
 import "@labkey/components/dist/components.css"
 
 interface IAppState {
-    dirty: boolean
     domain: DomainDesign
-    domainId: number
     message?: string,
-    queryName: string
-    returnUrl: string
-    schemaName: string
     showConfirm: boolean
     submitting: boolean
     includeWarnings: boolean
@@ -38,31 +42,27 @@ interface IAppState {
 
 export class App extends React.PureComponent<any, Partial<IAppState>> {
 
+    private _dirty: boolean = false;
+
     constructor(props) {
         super(props);
 
-        const { domainId, schemaName, queryName, returnUrl } = ActionURL.getParameters();
-
+        const { domainId, schemaName, queryName } = ActionURL.getParameters();
         let message;
         if ((!schemaName || !queryName) && !domainId) {
             message = 'Missing required parameter: domainId or schemaName and queryName.';
         }
 
         this.state = {
-            schemaName,
-            queryName,
-            domainId,
-            returnUrl,
             message,
             submitting: false,
             showConfirm: false,
-            dirty: false,
             includeWarnings: true
         };
     }
 
     componentDidMount() {
-        const { schemaName, queryName, domainId } = this.state;
+        const { domainId, schemaName, queryName } = ActionURL.getParameters();
 
         if ((schemaName && queryName) || domainId) {
             fetchDomain(domainId, schemaName, queryName)
@@ -73,19 +73,13 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                     this.setState(() => ({message: error.exception}));
                 });
         }
-
-        window.addEventListener("beforeunload", this.handleWindowBeforeUnload);
     }
 
     handleWindowBeforeUnload = (event) => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             event.returnValue = 'Changes you made may not be saved.';
         }
     };
-
-    componentWillUnmount() {
-        window.removeEventListener("beforeunload", this.handleWindowBeforeUnload);
-    }
 
     submitHandler() {
         const { domain, submitting, includeWarnings } = this.state;
@@ -100,8 +94,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
             .then((savedDomain) => {
                 this.setState(() => ({
                     domain: savedDomain,
-                    submitting: false,
-                    dirty: false
+                    submitting: false
                 }));
 
                 this.navigate();
@@ -145,14 +138,12 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     onChangeHandler = (newDomain, dirty) => {
-        this.setState((state) => ({
-            domain: newDomain,
-            dirty: state.dirty || dirty // if the state is already dirty, leave it as such
-        }));
+        this._dirty = this._dirty || dirty; // if the state is already dirty, leave it as such
+        this.setState(() => ({ domain: newDomain }));
     };
 
     onCancelBtnHandler = () => {
-        if (this.state.dirty) {
+        if (this._dirty) {
             this.setState(() => ({showConfirm: true}));
         }
         else {
@@ -161,10 +152,10 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
     };
 
     navigate = () => {
-        const { returnUrl } = this.state;
-        this.setState(() => ({dirty: false}), () => {
-            window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
-        });
+        this._dirty = false;
+
+        const returnUrl = ActionURL.getParameter('returnUrl');
+        window.location.href = returnUrl || ActionURL.buildURL('project', 'begin', getServerContext().container.path);
     };
 
     renderNavigateConfirm() {
@@ -246,7 +237,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
         }
 
         return (
-            <>
+            <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
                 { showConfirm && this.renderNavigateConfirm() }
                 { showWarnings && this.renderWarningConfirm() }
                 { domain && domain.instructions && this.renderInstructionsPanel()}
@@ -261,7 +252,7 @@ export class App extends React.PureComponent<any, Partial<IAppState>> {
                 }
                 { message && <Alert bsStyle={'danger'}>{message}</Alert>}
                 { domain && this.renderButtons() }
-            </>
+            </BeforeUnload>
         )
     }
 }

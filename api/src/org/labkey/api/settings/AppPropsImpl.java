@@ -435,6 +435,17 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return isDevMode() && !Boolean.getBoolean("labkey.disableRecompileJsp");
     }
 
+    /**
+     * @inheritDoc
+     *
+     * Default Implementation.
+     */
+    @Override
+    public boolean isIgnoreModuleSource()
+    {
+        return Boolean.getBoolean("labkey.ignoreModuleSource");
+    }
+
     @Override
     public void setProjectRoot(String projectRoot)
     {

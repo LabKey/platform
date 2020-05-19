@@ -28,6 +28,8 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -69,6 +71,8 @@ import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
@@ -78,8 +82,11 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -90,6 +97,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
@@ -145,6 +153,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1968,21 +1977,32 @@ public class IssuesController extends SpringActionController
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+
+            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.EXPERIMENTAL_ISSUES_LIST_DEF);
+
             if (issueListDef == null)
             {
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
-            Domain domain = issueListDef.getDomain(getUser());
 
-            Map<String, String> props = new HashMap<>();
-            props.put("typeURI", domain.getTypeURI());
-            props.put("defName", issueDefName);
-            props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
-            props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
-            props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
-            props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
+            if(experimentalFlagEnabled)
+            {
+                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
+            }
+            else
+            {
+                Domain domain = issueListDef.getDomain(getUser());
 
-            return new GWTView("org.labkey.issues.Designer", props);
+                Map<String, String> props = new HashMap<>();
+                props.put("typeURI", domain.getTypeURI());
+                props.put("defName", issueDefName);
+                props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
+                props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
+                props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
+                props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
+
+                return new GWTView("org.labkey.issues.Designer", props);
+            }
         }
 
         @Override
@@ -1994,6 +2014,114 @@ public class IssuesController extends SpringActionController
             root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
 
             return root;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            //derived from IssueServiceAction.getProjectGroups()
+            List<UserGroupForm> groups = new ArrayList<>();
+
+            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
+                String displayText = (group.isProjectGroup() ? "" : "Site: ") + group.getName();
+
+                UserGroupForm userGroups = new UserGroupForm();
+                userGroups.setUserId(group.getUserId());
+                userGroups.setDisplayName(displayText);
+                groups.add(userGroups);
+            });
+
+            return groups;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class GetUsersForGroupAction extends ReadOnlyApiAction<UserGroupForm>
+    {
+        @Override
+        public Object execute(UserGroupForm form, BindException errors)
+        {
+            //derived from IssueServiceAction.getUsersForGroup()
+            List<UserGroupForm> users = new ArrayList<>();
+
+            if (null != form.getGroupId())
+            {
+                Group group = SecurityManager.getGroup(form.getGroupId());
+                if (group != null)
+                {
+                    for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
+                    {
+                        if (getContainer().hasPermission(user, UpdatePermission.class))
+                        {
+                            UserGroupForm usergrp = new UserGroupForm();
+                            usergrp.setGroupId(form.groupId);
+                            usergrp.setUserId(user.getUserId());
+                            usergrp.setDisplayName(user.getDisplayName(getUser()));
+                            users.add(usergrp);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // all project users
+                for (User user : SecurityManager.getProjectUsers(getContainer()))
+                {
+                    if (getContainer().hasPermission(user, UpdatePermission.class))
+                    {
+                        UserGroupForm projectUsers = new UserGroupForm();
+                        projectUsers.setUserId(user.getUserId());
+                        projectUsers.setDisplayName(user.getDisplayName(getUser()));
+                        users.add(projectUsers);
+                    }
+                }
+            }
+
+            users.sort(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER));
+            return users;
+        }
+    }
+
+    public static class UserGroupForm
+    {
+        Integer groupId;
+        Integer userId;
+        String displayName;
+
+        public Integer getGroupId()
+        {
+            return groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            this.groupId = groupId;
+        }
+
+        public String getDisplayName()
+        {
+            return displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            this.displayName = displayName;
+        }
+
+        public Integer getUserId()
+        {
+            return userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            this.userId = userId;
         }
     }
 

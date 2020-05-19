@@ -47,6 +47,13 @@
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
 
+    /* NOTE class ReportDescriptor implements SecurableResource, but not all subclasses actually implement this interface (e.g. module defined reports) */
+    if (null == bean.getDescriptor().getResourceId())
+    {
+        %><div class="labkey-error">Sorry, you can not set permission on this kind of report.</div><%
+        return;
+    }
+
     Study study = StudyManager.getInstance().getStudy(getContainer());
     Container c = study != null ? study.getContainer() : getContainer();
     SecurityPolicy containerPolicy = c.getPolicy();

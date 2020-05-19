@@ -23,8 +23,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +37,8 @@ public interface Study extends StudyEntity
 {
     List<? extends Visit> getVisits(Visit.Order order);
 
-    Map<String, Double> getVisitAliases();
+    @SuppressWarnings("unused")  // Used by cdisc_ODM StudyArchiveWriter.java
+    Map<String, BigDecimal> getVisitAliases();
 
     Dataset getDataset(int id);
 

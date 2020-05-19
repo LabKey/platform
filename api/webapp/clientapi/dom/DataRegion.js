@@ -677,17 +677,13 @@ if (!LABKEY.DataRegions) {
             ].join(' '));
         }
 
-        var userFilter = [];
-
-        $.each(this.getUserFilterArray(), function(i, filter) {
-            userFilter.push({
+        return this.getUserFilterArray().map(function(filter) {
+            return {
                 fieldKey: filter.getColumnName(),
                 op: filter.getFilterType().getURLSuffix(),
                 value: filter.getValue()
-            });
+            };
         });
-
-        return userFilter;
     };
 
     /**
@@ -697,8 +693,7 @@ if (!LABKEY.DataRegions) {
     LABKEY.DataRegion.prototype.getUserFilterArray = function() {
         var userFilter = [], me = this;
 
-        var pairs = _getParameters(this);
-        $.each(pairs, function(i, pair) {
+        _getParameters(this).forEach(function(pair) {
             if (pair[0].indexOf(me.name + '.') == 0 && pair[0].indexOf('~') > -1) {
                 var tilde = pair[0].indexOf('~');
                 var fieldKey = pair[0].substring(me.name.length + 1, tilde);
@@ -745,7 +740,7 @@ if (!LABKEY.DataRegions) {
             me = this;
 
         if (LABKEY.Utils.isArray(filters)) {
-            $.each(filters, function(i, filter) {
+            filters.forEach(function(filter) {
                 filterPrefixes.push(me.name + '.' + filter.getColumnName() + '~');
                 filterParams.push([filter.getURLParameterName(me.name), filter.getURLParameterValue()]);
             });
@@ -763,7 +758,7 @@ if (!LABKEY.DataRegions) {
         // support fieldKeys (e.g. ["ColumnA", "ColumnA/Sub1"])
         // A special case of fieldKey is "SUBJECT_PREFIX/", used by participant group facet
         if (fieldKeys.length > 0) {
-            $.each(_getParameters(this), function(i, param) {
+            _getParameters(this).forEach(function(param) {
                 var p = param[0];
                 if (p.indexOf(me.name + '.') === 0 && p.indexOf('~') > -1) {
                     $.each(fieldKeys, function(j, name) {
@@ -788,7 +783,7 @@ if (!LABKEY.DataRegions) {
         this.clearSelected({quiet: true});
         var skips = [], me = this;
 
-        $.each(_getParameters(this), function(i, param) {
+        _getParameters(this).forEach(function(param) {
             if (param[0].indexOf(me.name + '.') === 0 && param[0].indexOf(filterMatch) > -1) {
                 skips.push(param[0]);
             }
@@ -1212,7 +1207,7 @@ if (!LABKEY.DataRegions) {
             re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
             name;
 
-        $.each(_getParameters(this), function(i, pair) {
+        _getParameters(this).forEach(function(pair) {
             if (pair.length > 0 && pair[0].match(re)) {
                 name = pair[0].replace(re, '');
                 if (toLowercase === true) {
@@ -1258,7 +1253,7 @@ if (!LABKEY.DataRegions) {
             $.each(params, applyParameters);
         }
         else if (LABKEY.Utils.isArray(params)) {
-            $.each(params, function(i, pair) {
+            params.forEach(function(pair) {
                 if (LABKEY.Utils.isArray(pair) && pair.length > 1) {
                     applyParameters(pair[0], pair[1]);
                 }
@@ -2007,25 +2002,23 @@ if (!LABKEY.DataRegions) {
 
     LABKEY.DataRegion.prototype.getQueryDetails = function(success, failure, scope) {
 
-        var userFilter = [],
-            userSort = this.getUserSort(),
+        var userSort = this.getUserSort(),
             userColumns = this.getParameter(this.name + COLUMNS_PREFIX),
             fields = [],
             viewName = (this.view && this.view.name) || this.viewName || '';
 
-        $.each(this.getUserFilterArray(), function(i, filter) {
-            userFilter.push({
-                fieldKey: filter.getColumnName(),
+        var userFilter = this.getUserFilterArray().map(function(filter) {
+            var fieldKey = filter.getColumnName();
+            fields.push(fieldKey);
+
+            return {
+                fieldKey: fieldKey,
                 op: filter.getFilterType().getURLSuffix(),
                 value: filter.getValue()
-            });
+            };
         });
 
-        $.each(userFilter, function(i, filter) {
-            fields.push(filter.fieldKey);
-        });
-
-        $.each(userSort, function(i, sort) {
+        userSort.forEach(function(sort) {
             fields.push(sort.fieldKey);
         });
 
@@ -2300,7 +2293,7 @@ if (!LABKEY.DataRegions) {
         var callbacks = _paneCache[this.name];
         if (callbacks) {
             var me = this;
-            $.each(callbacks, function(i, config) {
+            callbacks.forEach(function(config) {
                 config.cb.call(config.scope || me, me);
             });
             delete _paneCache[this.name];
@@ -2832,8 +2825,7 @@ if (!LABKEY.DataRegions) {
             }
         });
 
-        if (indexToRemove != null)
-        {
+        if (indexToRemove != null) {
             view.analyticsProviders.splice(indexToRemove, 1);
             _updateSessionCustomView.call(this, view, isSummaryStatistic);
         }
@@ -2843,7 +2835,7 @@ if (!LABKEY.DataRegions) {
     // PRIVATE FUNCTIONS
     //
     var _applyOptionalParameters = function(region, params, optionalParams) {
-        $.each(optionalParams, function(i, p) {
+        optionalParams.forEach(function(p) {
             if (LABKEY.Utils.isObject(p)) {
                 if (region[p.name] !== undefined) {
                     if (p.check && !p.check.call(region, region[p.name])) {
@@ -2870,8 +2862,7 @@ if (!LABKEY.DataRegions) {
             newSorts = [];
 
         if (current != null) {
-            var sorts = current.split(',');
-            $.each(sorts, function(i, sort) {
+            current.split(',').forEach(function(sort) {
                 if (sort.length > 0 && (sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
                     newSorts.push(sort);
                 }
@@ -2896,7 +2887,7 @@ if (!LABKEY.DataRegions) {
 
         var queryParts = [], key, value;
 
-        $.each(pairs, function(i, pair) {
+        pairs.forEach(function(pair) {
             key = pair[0];
             value = pair.length > 1 ? pair[1] : undefined;
 
@@ -3174,7 +3165,7 @@ if (!LABKEY.DataRegions) {
         else {
             if (sortParam) {
                 var fieldKey, dir;
-                $.each(sortParam.split(','), function(i, sort) {
+                sortParam.split(',').forEach(function(sort) {
                     fieldKey = sort;
                     dir = SORT_ASC;
                     if (sort.charAt(0) === SORT_DESC) {
@@ -3338,11 +3329,10 @@ if (!LABKEY.DataRegions) {
     };
 
     var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
-
         // prepend region name
         // e.g. ['.hello', '.goodbye'] becomes ['aqwp19.hello', 'aqwp19.goodbye']
         if (LABKEY.Utils.isArray(skipPrefixes)) {
-            $.each(skipPrefixes, function(i, skip) {
+            skipPrefixes.forEach(function(skip, i) {
                 if (skip && skip.indexOf(region.name + '.') !== 0) {
                     skipPrefixes[i] = region.name + skip;
                 }
@@ -3353,7 +3343,7 @@ if (!LABKEY.DataRegions) {
             params = _getParameters(region, skipPrefixes);
 
         if (LABKEY.Utils.isArray(newParamValPairs)) {
-            $.each(newParamValPairs, function(i, newPair) {
+            newParamValPairs.forEach(function(newPair) {
                 if (!LABKEY.Utils.isArray(newPair)) {
                     throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
                 }
@@ -3372,7 +3362,7 @@ if (!LABKEY.DataRegions) {
         }
 
         if (region.async) {
-            _load(region, undefined, undefined, params);
+            _load(region, params, skipPrefixes);
         }
         else {
             region.setSearchString.call(region, region.name, _buildQueryString(region, params));
@@ -3422,9 +3412,18 @@ if (!LABKEY.DataRegions) {
         return ids;
     };
 
-    var _load = function(region, callback, scope, newParams) {
+    /**
+     * Asynchronous loader for a DataRegion
+     * @param region {DataRegion}
+     * @param [newParams] {string}
+     * @param [skipPrefixes] {string[]}
+     * @param [callback] {Function}
+     * @param [scope]
+     * @private
+     */
+    var _load = function(region, newParams, skipPrefixes, callback, scope) {
 
-        var params = _getAsyncParams(region, newParams ? newParams : _getParameters(region));
+        var params = _getAsyncParams(region, newParams ? newParams : _getParameters(region), skipPrefixes);
         var jsonData = _getAsyncBody(region, params);
 
         // TODO: This should be done in _getAsyncParams, but is not since _getAsyncBody relies on it. Refactor it.
@@ -3615,7 +3614,7 @@ if (!LABKEY.DataRegions) {
         return parameter && parameter.indexOf(region.name + '.') === 0 && parameter.indexOf('~') > 0;
     };
 
-    var _getAsyncParams = function(region, newParams) {
+    var _getAsyncParams = function(region, newParams, skipPrefixes) {
 
         var params = {};
         var name = region.name;
@@ -3718,8 +3717,10 @@ if (!LABKEY.DataRegions) {
         // apply all parameters
         //
 
+        var newParamPrefixes = {};
+
         if (newParams) {
-            $.each(newParams, function(i, pair) {
+            newParams.forEach(function(pair) {
                 //
                 // Filters may repeat themselves #25337
                 //
@@ -3734,6 +3735,20 @@ if (!LABKEY.DataRegions) {
                 }
                 else {
                     params[pair[0]] = pair[1];
+                }
+
+                newParamPrefixes[pair[0]] = true;
+            });
+        }
+
+        //
+        // 40226: Don't include parameters that are being logically excluded
+        //
+
+        if (skipPrefixes) {
+            skipPrefixes.forEach(function(skipKey) {
+                if (params.hasOwnProperty(skipKey) && !newParamPrefixes.hasOwnProperty(skipKey)) {
+                    delete params[skipKey];
                 }
             });
         }

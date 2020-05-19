@@ -21,12 +21,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpDataClass;
@@ -69,7 +69,7 @@ public class ExpDataClassTableImpl extends ExpTableImpl<ExpDataClassTable.Column
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
