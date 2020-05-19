@@ -171,11 +171,10 @@ public class ImportAction extends BaseAssayAction<ImportAction.ImportForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        NavTree result = super.appendNavTrail(root);
-        result.addChild(_form.getProviderName() + " Assay Import", new ActionURL(DesignerAction.class, getContainer()));
-        return result;
+        super.addNavTrail(root);
+        root.addChild(_form.getProviderName() + " Assay Import", new ActionURL(DesignerAction.class, getContainer()));
     }
 
     public ImportForm getForm()

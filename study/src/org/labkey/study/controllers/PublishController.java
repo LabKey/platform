@@ -116,12 +116,11 @@ public class PublishController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getBeginURL(getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy-to-Study History");
-            return root;
         }
     }
 

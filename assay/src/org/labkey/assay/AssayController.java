@@ -77,7 +77,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -213,11 +212,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -518,13 +516,11 @@ public class AssayController extends SpringActionController
             return new VBox(bbar, fileTree, bbar);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy Assay Design");
-
-            return root;
         }
     }
 
@@ -538,7 +534,7 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -562,9 +558,12 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _hasCustomView ? root.addChild(_protocol.getName() + " Overview") : new AssayRunsAction(getViewContext(), _protocol).appendNavTrail(root);
+            if (_hasCustomView)
+                root.addChild(_protocol.getName() + " Overview");
+            else
+                new AssayRunsAction(getViewContext(), _protocol).addNavTrail(root);
         }
     }
 
@@ -650,12 +649,11 @@ public class AssayController extends SpringActionController
             return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
             setHelpTopic(new HelpTopic("defineAssaySchema"));
-            return root;
         }
     }
 
@@ -890,9 +888,8 @@ public class AssayController extends SpringActionController
             return tempFolder;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1224,12 +1221,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree result = super.appendNavTrail(root);
-            result.addChild(_protocol.getName() + " Upload Jobs");
-
-            return result;
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Upload Jobs");
         }
     }
 
@@ -1496,9 +1491,9 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Change QC State");
+            root.addChild("Change QC State");
         }
     }
 
@@ -1564,16 +1559,14 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Container c = getContainer();
             ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            NavTree ret = super.appendNavTrail(root);
-            ret.addChild(_protocol.getName() + " Batches", batchListURL);
-            ret.addChild("Data Import");
-
-            return ret;
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Batches", batchListURL);
+            root.addChild("Data Import");
         }
     }
 

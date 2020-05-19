@@ -334,10 +334,9 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Start Page", getUrl());
-            return root;
         }
     }
 
@@ -598,15 +597,13 @@ public class WikiController extends SpringActionController
             return nextPage;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#manage");
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
-            new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root);
+            new PageAction(getViewContext(), _wiki, _wikiVersion).addNavTrail(root);
             root.addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -686,9 +683,9 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print all pages in " + getContainer().getPath());
+            root.addChild("Print all pages in " + getContainer().getPath());
         }
     }
 
@@ -718,9 +715,9 @@ public class WikiController extends SpringActionController
             return v;
         }
         
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
+            root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
         }
     }
 
@@ -760,9 +757,9 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print Page '" + _name + "'");
+            root.addChild("Print Page '" + _name + "'");
         }
     }
 
@@ -781,9 +778,9 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print All Pages");
+            root.addChild("Print All Pages");
         }
     }
 
@@ -1084,10 +1081,10 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#copy");
-            return root.addChild("Copy Wiki Location");
+            root.addChild("Copy Wiki Location");
         }
     }
 
@@ -1221,13 +1218,12 @@ public class WikiController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             appendWikiTrail(root, _wiki);
             if (isSource())
                 root.addChild("source");
-            return root;
         }
 
         public void appendWikiTrail(NavTree root, Wiki wiki)
@@ -1320,15 +1316,13 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String pageTitle = _wikiversion.getTitle();
             pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
-            new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            new VersionsAction(getViewContext(), _wiki, _wikiversion).addNavTrail(root);
             root.addChild(pageTitle, getUrl());
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -1430,15 +1424,13 @@ public class WikiController extends SpringActionController
             return new VBox(htmlView, textView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root);
+            new VersionAction(getViewContext(), _wiki, _wikiVersion1).addNavTrail(root);
             root.addChild(pageTitle);
-
-            return root;
         }
     }
 
@@ -1559,13 +1551,11 @@ public class WikiController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#history");
-            new PageAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            new PageAction(getViewContext(), _wiki, _wikiversion).addNavTrail(root);
             root.addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -1627,9 +1617,8 @@ public class WikiController extends SpringActionController
             return new VersionAction(getViewContext(), _wiki,_wikiversion).getUrl();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2049,7 +2038,7 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#edit");
             if (null != _wiki && null != _wikiVer)
@@ -2063,8 +2052,6 @@ public class WikiController extends SpringActionController
             {
                 root.addChild("New Page");
             }
-
-            return root;
         }
     }
 
@@ -2872,9 +2859,9 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Back Links");
+            root.addChild("Back Links");
         }
     }
 
