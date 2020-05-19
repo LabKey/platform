@@ -101,7 +101,7 @@ public class QCStateManager
         return QC_STATE_DB_CACHE.get(container).getQcStates();
     }
 
-    public void registerQCHandler(QCStateHandler handler) //TODO RP: should be public, or protected?
+    public void registerQCHandler(QCStateHandler handler)
     {
         String handlerType = handler.getHandlerType();
         if (!_QCStateHandlers.containsKey(handlerType))
@@ -113,11 +113,6 @@ public class QCStateManager
     public Map<String, QCStateHandler> getRegisteredQCHandlers()
     {
         return _QCStateHandlers;
-    }
-
-    public void getHandler(Container container)
-    {
-        int i = 1;
     }
 
     public boolean showQCStates(Container container)

@@ -24,10 +24,12 @@ import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateHandler;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
@@ -68,7 +70,7 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         public QCStateService(FilteredTable table) { super(table, table.getRealTable()); }
 
 
-        private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container) // RP TODO: change name
+        private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container)
         {
             Map<String, QCStateHandler> registeredHandlers = QCStateManager.getInstance().getRegisteredQCHandlers();
             QCState QCToDelete = QCStateManager.getInstance().getQCStateForRowId(container, (Integer) oldRowMap.get("rowid"));
@@ -83,10 +85,17 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         }
 
         @Override
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            QCStateManager.getInstance().clearCache(container);
+            return super.insertRow(user, container, row);
+        }
+
+        @Override
         protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             if (!validateQCStateNotInUse(oldRowMap, container))
-                throw new QueryUpdateServiceException("RP TODO Finalize Text: This QC state cannot be deleted as it is currently in use.");
+                throw new QueryUpdateServiceException("QC state '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
 
             QCStateManager.getInstance().clearCache(container);
             return super.deleteRow(user, container, oldRowMap);

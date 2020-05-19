@@ -15,19 +15,9 @@
  */
 package org.labkey.study.query;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.qc.QCStateHandler;
-import org.labkey.api.qc.QCStateManager;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
-
-import java.util.Map;
 
 /**
  * User: brittp
@@ -39,26 +29,5 @@ public class QCStateTable extends FilteredTable<StudyQuerySchema>
     {
         super(CoreSchema.getInstance().getTableInfoQCState(), schema, cf);
         wrapAllColumns(true);
-    }
-
-    @Override
-    public @Nullable QueryUpdateService getUpdateService()
-    {
-        return new QCStateService(this);
-    }
-
-    @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-    {
-
-
-
-        return true;
-//        return getContainer().hasPermission(user, perm);
-    }
-
-    private class QCStateService extends DefaultQueryUpdateService
-    {
-        public QCStateService(FilteredTable table) { super(table, table.getRealTable()); }
     }
 }

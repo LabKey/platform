@@ -2544,8 +2544,6 @@ public class CoreController extends SpringActionController
         {
             super();
             _qcStateHandler = new CoreQCStateHandler();
-            getContainer();
-            QCStateManager.getInstance().getHandler(getContainer());
         }
 
         @Override

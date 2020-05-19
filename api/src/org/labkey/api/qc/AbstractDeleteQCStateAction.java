@@ -26,7 +26,7 @@ import org.springframework.validation.Errors;
 public abstract class AbstractDeleteQCStateAction extends FormHandlerAction<DeleteQCStateForm>
 {
     protected static QCStateHandler _qcStateHandler;
-    public abstract QCStateHandler getQCStateHandler(); // change to take container
+    public abstract QCStateHandler getQCStateHandler();
     public abstract ActionURL getSuccessURL(DeleteQCStateForm form);
 
     @Override
