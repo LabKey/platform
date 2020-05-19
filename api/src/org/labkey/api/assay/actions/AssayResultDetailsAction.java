@@ -72,7 +72,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
         ExpRun run = _data.getRun();
@@ -85,7 +85,5 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         ret.addChild(_protocol.getName() + " Runs", runListURL);
         ret.addChild(run.getName() + " Results", resultsURL);
         ret.addChild(_dataRowId + " Details");
-
-        return ret;
     }
 }

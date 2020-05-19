@@ -48,13 +48,13 @@ public class FolderManagement
         FolderManagement
         {
             @Override
-            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 // In the root, view is rendered as a standalone page (no tab strip). Create an appropriate nav trail.
                 if (c.isRoot())
                 {
                     TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
-                    return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, provider.getText(), null);
+                    PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, provider.getText(), null);
                 }
 
                 if (c.isContainerTab())
@@ -62,8 +62,6 @@ public class FolderManagement
 
                 root.addChild(c.getName(), c.getStartURL(user));
                 root.addChild("Folder Management");
-
-                return root;
             }
 
             @Override
@@ -76,12 +74,10 @@ public class FolderManagement
         ProjectSettings // Used for project settings
         {
             @Override
-            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
                 root.addChild("Project Settings");
-
-                return root;
             }
 
             @Override
@@ -93,13 +89,11 @@ public class FolderManagement
         LookAndFeelSettings // Used for the admin console actions -- allows for troubleshooter permissions
         {
             @Override
-            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
                 action.setHelpTopic(new HelpTopic("customizeLook"));
                 root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
                 root.addChild("Look and Feel Settings");
-
-                return root;
             }
 
             @Override
@@ -109,7 +103,7 @@ public class FolderManagement
             }
         };
 
-        abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+        abstract void addNavTrail(BaseViewAction action, NavTree root, Container c, User user);
 
         abstract boolean shouldRenderTabStrip(Container container);
     }
@@ -216,9 +210,9 @@ public class FolderManagement
         protected abstract HttpView getTabView() throws Exception;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return getType().appendNavTrail(this, root, getContainer(), getUser());
+            getType().addNavTrail(this, root, getContainer(), getUser());
         }
     }
 
@@ -253,9 +247,9 @@ public class FolderManagement
         protected abstract HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return getType().appendNavTrail(this, root, getContainer(), getUser());
+            getType().addNavTrail(this, root, getContainer(), getUser());
         }
     }
 

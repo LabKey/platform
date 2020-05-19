@@ -88,7 +88,7 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         setHelpTopic("defineAssaySchema");
 
@@ -98,6 +98,5 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
             result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
         result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
-        return result;
     }
 }
