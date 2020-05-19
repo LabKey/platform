@@ -25,8 +25,10 @@ import org.labkey.api.util.Pair;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -67,38 +69,13 @@ public class RecordedAction
     private Set<Pair<String,String>> _provenanceMap = new HashSet<>();
     // Set of lsids
     private Set<String> _materialInputs = new HashSet<>();
+    private Set<String> _materialOutputs = new HashSet<>();
     // Set of lsids
     private Set<String> _dataInputs = new HashSet<>();
-
-    public Set<Pair<String, String>> getProvenanceMap()
-    {
-        return _provenanceMap;
-    }
-
-    public void setProvenanceMap(Set<Pair<String, String>> provenanceMap)
-    {
-        _provenanceMap = provenanceMap;
-    }
-
-    public Set<String> getMaterialInputs()
-    {
-        return _materialInputs;
-    }
-
-    public void setMaterialInputs(Set<String> materialInputs)
-    {
-        _materialInputs = materialInputs;
-    }
-
-    public Set<String> getDataInputs()
-    {
-        return _dataInputs;
-    }
-
-    public void setDataInputs(Set<String> dataInputs)
-    {
-        _dataInputs = dataInputs;
-    }
+    private Set<String> _dataOutputs = new HashSet<>();
+    // set of lsids
+    private Set<String> _objectInputs = new HashSet<>();
+    private Set<String> _objectOutputs = new HashSet<>();
 
     /** No-args constructor to support de-serialization in Java 7 and beyond */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -287,6 +264,81 @@ public class RecordedAction
     public Map<PropertyDescriptor, Object> getProps()
     {
         return Collections.unmodifiableMap(_props);
+    }
+
+    public Set<Pair<String, String>> getProvenanceMap()
+    {
+        return _provenanceMap;
+    }
+
+    public void setProvenanceMap(Set<Pair<String, String>> provenanceMap)
+    {
+        _provenanceMap = provenanceMap;
+    }
+
+    public Set<String> getMaterialInputs()
+    {
+        return _materialInputs;
+    }
+
+    public void setMaterialInputs(Set<String> materialInputs)
+    {
+        _materialInputs = materialInputs;
+    }
+
+    public Set<String> getMaterialOutputs()
+    {
+        return _materialOutputs;
+    }
+
+    public void setMaterialOutputs(Set<String> materialOutputs)
+    {
+        _materialOutputs = materialOutputs;
+    }
+
+    public Set<String> getDataInputs()
+    {
+        return _dataInputs;
+    }
+
+    public void setDataInputs(Set<String> dataInputs)
+    {
+        _dataInputs = dataInputs;
+    }
+
+    public Set<String> getDataOutputs()
+    {
+        return _dataOutputs;
+    }
+
+    public void setDataOutputs(Set<String> dataOutputs)
+    {
+        _dataOutputs = dataOutputs;
+    }
+
+    public Set<String> getObjectInputs()
+    {
+        return _objectInputs;
+    }
+
+    public void setObjectInputs(Set<String> objectInputs)
+    {
+        _objectInputs = objectInputs;
+    }
+
+    public Set<String> getObjectOutputs()
+    {
+        return _objectOutputs;
+    }
+
+    public void setObjectOutputs(Set<String> objectOutputs)
+    {
+        _objectOutputs = objectOutputs;
+    }
+
+    public void setProps(Map<PropertyDescriptor, Object> props)
+    {
+        _props = props;
     }
 
     public static class ParameterType implements Serializable

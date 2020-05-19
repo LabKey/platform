@@ -6,6 +6,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
@@ -48,6 +49,11 @@ public interface ProvenanceService
     static void setInstance(ProvenanceService impl)
     {
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
+    }
+
+    static Lsid getProvenanceProtocolLSID()
+    {
+        return new Lsid(PROVENANCE_PROTOCOL_LSID);
     }
 
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);

@@ -53,6 +53,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -357,6 +358,16 @@ public class ExpGeneratorHelper
                 app.addMaterialInput(user, material, null, null);
             }
 
+            // material outputs
+            for (String lsid : action.getMaterialOutputs())
+            {
+                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                material.setRun(run);
+                material.setSourceApplication(app);
+                material.save(user);
+
+            }
+
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
@@ -412,7 +423,7 @@ public class ExpGeneratorHelper
         return result;
     }
 
-    static private ExpProtocol ensureProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache,
+    static public ExpProtocol ensureProtocol(Container container, User user, Map<String, ExpProtocol> protocolCache,
                                               List<String> protocolSequence,
                                               Lsid lsidIn,
                                               String description,

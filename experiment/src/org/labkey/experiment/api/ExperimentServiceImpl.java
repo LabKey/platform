@@ -172,6 +172,7 @@ import static org.labkey.api.exp.OntologyManager.getTinfoObject;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRun;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ExperimentRunOutput;
 import static org.labkey.api.exp.api.ExpProtocol.ApplicationType.ProtocolApplication;
+import static org.labkey.api.exp.api.ProvenanceService.PROVENANCE_PROTOCOL_LSID;
 
 public class ExperimentServiceImpl implements ExperimentService
 {
@@ -440,8 +441,9 @@ public class ExperimentServiceImpl implements ExperimentService
                         protocolCache.put(stepName, stepProtocol);
                     }
                 }
-                Lsid provenanceLsid = new Lsid(ProvenanceService.PROVENANCE_PROTOCOL_LSID);
-                protocol = ExpGeneratorHelper.createProtocol(container, user, protocolCache, sequenceProtocols, provenanceLsid, runName);
+                Lsid provenanceLsid = new Lsid(PROVENANCE_PROTOCOL_LSID + container.getEntityId().toString());
+                protocol = ExpGeneratorHelper.ensureProtocol(container, user, protocolCache, sequenceProtocols, provenanceLsid, runName, LOG);
+
                 transaction.commit();
             }
             return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, null, null, null);

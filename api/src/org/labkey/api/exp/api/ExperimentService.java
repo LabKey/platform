@@ -428,6 +428,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpProtocol getExpProtocol(int rowid);
 
+    @Nullable
     ExpProtocol getExpProtocol(String lsid);
 
     ExpProtocol getExpProtocol(Container container, String name);
