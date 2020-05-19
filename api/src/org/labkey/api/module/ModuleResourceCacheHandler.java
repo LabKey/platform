@@ -45,10 +45,11 @@ public interface ModuleResourceCacheHandler<V>
 
     /**
      * If needed, returns a ModuleResourceCacheListener that implements resource-specific file change handling. The
-     * standard listener clears the module's resource map and then invokes the appropriate method of the chained listener,
-     * if present. Note that the listener will be called for every change in the resource roots and all their parent
-     * directories up to /resources. Methods will be invoked for changes to directories, resource files, and non-resource
-     * files, so listeners may need to filter entries carefully.
+     * standard listener clears the module's resource map and then invokes the appropriate method of the chained
+     * listener, if present. Note that the chained listener will be called for every change in the resource roots and
+     * all their parent directories, including directories that aren't resource roots (e.g., "/resources"). And methods
+     * will be invoked for changes to directories, resource files, and non-resource files, so listeners may need to
+     * filter entries carefully (both on "directory" and "entry").
      *
      * @param module Module for which to create the listener
      * @return A directory listener with implementation-specific handling.

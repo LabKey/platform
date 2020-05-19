@@ -34,7 +34,7 @@ import java.util.Map;
 */
 public enum DbSchemaType
 {
-    // TODO: Create Uncached type?  Might make sense for non-external schema usages of Bare
+    // TODO: Create Uncached type? Might make sense for non-external schema usages of Bare
     Module("module", CacheManager.YEAR, true)
     {
         @Override
@@ -45,9 +45,8 @@ public enum DbSchemaType
             return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
         }
 
-        @Nullable
         @Override
-        public org.labkey.api.module.Module getModule(DbScope scope, String schemaName)
+        public Module getModule(DbScope scope, String schemaName)
         {
             Module module = ModuleLoader.getInstance().getModule(scope, schemaName);
 
@@ -164,7 +163,7 @@ public enum DbSchemaType
 
     abstract DbSchema createDbSchema(DbScope scope, String metaDataName, Module module) throws SQLException;
 
-    public @Nullable org.labkey.api.module.Module getModule(DbScope scope, String schemaName)
+    public @Nullable Module getModule(DbScope scope, String schemaName)
     {
         return null;
     }

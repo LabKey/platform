@@ -269,7 +269,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public Resolver getModuleResolver()
+    public ModuleResourceResolver getModuleResolver()
     {
         return null;
     }

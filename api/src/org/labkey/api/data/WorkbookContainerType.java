@@ -30,6 +30,9 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
@@ -100,15 +103,15 @@ public class WorkbookContainerType implements ContainerType
     }
 
     @Override
-    public boolean requiresAdminToDelete()
+    public Class<? extends Permission> getPermissionNeededToDelete()
     {
-        return false;
+        return DeletePermission.class;
     }
 
     @Override
-    public boolean requiresAdminToCreate()
+    public Class<? extends Permission> getPermissionNeededToCreate()
     {
-        return false;
+        return InsertPermission.class;
     }
 
     @Override

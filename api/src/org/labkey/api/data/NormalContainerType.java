@@ -17,6 +17,8 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -76,15 +78,15 @@ public class NormalContainerType implements ContainerType
     }
 
     @Override
-    public boolean requiresAdminToDelete()
+    public Class<? extends Permission> getPermissionNeededToDelete()
     {
-        return true;
+        return AdminPermission.class;
     }
 
     @Override
-    public boolean requiresAdminToCreate()
+    public Class<? extends Permission> getPermissionNeededToCreate()
     {
-        return true;
+        return AdminPermission.class;
     }
 
     @Override
