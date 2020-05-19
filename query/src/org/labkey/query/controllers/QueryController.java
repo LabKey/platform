@@ -2549,11 +2549,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Details");
-            return root;
         }
     }
 
@@ -2633,11 +2632,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Insert " + _table.getName());
-            return root;
         }
     }
 
@@ -2661,11 +2659,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Edit " + _table.getName());
-            return root;
         }
     }
 
@@ -2696,10 +2693,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Edit Multiple " + _table.getName());
-            return root;
         }
     }
 

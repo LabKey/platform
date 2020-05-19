@@ -369,11 +369,10 @@ public class SearchController extends SpringActionController
             return success;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("searchAdmin"));
             PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
-            return root;
         }
     }
 
@@ -388,12 +387,10 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree admin = new AdminAction(getPageConfig()).appendNavTrail(root);
-            admin.addChild("Index Contents");
-
-            return admin;
+            new AdminAction(getPageConfig()).addNavTrail(root);
+            root.addChild("Index Contents");
         }
     }
 
@@ -438,28 +435,10 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
-
-
-    public static class SwapForm
-    {
-        boolean _ui = true;
-
-        public boolean isUi()
-        {
-            return _ui;
-        }
-
-        public void setUi(boolean ui)
-        {
-            _ui = ui;
-        }
-    }
-
 
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
@@ -662,9 +641,8 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/testJson.jsp", null, null);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
     
@@ -789,9 +767,9 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _form.getSearchResultTemplate().appendNavTrail(root, getViewContext(), _scope, _category);
+            _form.getSearchResultTemplate().addNavTrail(root, getViewContext(), _scope, _category);
         }
     }
 

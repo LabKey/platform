@@ -5837,11 +5837,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Edit " + _form.getQueryName());
-            return root;
         }
     }
 
@@ -5873,11 +5872,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Insert " + _form.getQueryName());
-            return root;
         }
     }
 

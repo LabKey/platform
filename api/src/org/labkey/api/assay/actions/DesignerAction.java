@@ -92,11 +92,11 @@ public class DesignerAction extends BaseAssayAction<DesignerAction.DesignerForm>
     {
         setHelpTopic("defineAssaySchema");
 
-        NavTree result = super.appendNavTrail(root);
+        super.addNavTrail(root);
         if (!_form.isCopy() && _protocol != null)
         {
-            result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+            root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         }
-        result.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
+        root.addChild(_form.getProviderName() + " Assay Designer", new ActionURL(DesignerAction.class, getContainer()));
     }
 }

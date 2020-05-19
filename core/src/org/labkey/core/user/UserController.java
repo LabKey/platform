@@ -1078,11 +1078,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _pkVal);
             root.addChild("Update");
-            return root.addChild(UserManager.getEmailForId(_pkVal));
+            root.addChild(UserManager.getEmailForId(_pkVal));
         }
     }
 
