@@ -858,7 +858,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
         private void test(String wiki, String html)
         {
-            assertEquals(html, _r.format(wiki).getHtml());
+            assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
             assertEquals(WikiRenderingService.WIKI_PREFIX + html + WikiRenderingService.WIKI_SUFFIX, _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 
