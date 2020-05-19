@@ -2438,7 +2438,6 @@ public class CoreController extends SpringActionController
         ManageQCStatesBean(String returnUrl)
         {
             super(returnUrl);
-            getContainer();
             _qcStateHandler = new CoreQCStateHandler();
             _manageAction = new ManageQCStatesAction();
             _deleteAction = DeleteQCStateAction.class;

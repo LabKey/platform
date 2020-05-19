@@ -62,13 +62,9 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         return getContainer().hasPermission(user, perm);
     }
 
-
-
-
     private class QCStateService extends DefaultQueryUpdateService
     {
         public QCStateService(FilteredTable table) { super(table, table.getRealTable()); }
-
 
         private boolean validateQCStateNotInUse(Map<String, Object> oldRowMap, Container container)
         {
@@ -80,7 +76,6 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
                 if (handler.isQCStateInUse(container, QCToDelete))
                     return false;
             }
-
             return true;
         }
 
