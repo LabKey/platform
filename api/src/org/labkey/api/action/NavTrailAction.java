@@ -34,5 +34,14 @@ public interface NavTrailAction
      *
      * @return Return the tree handed in for convenience
      */
-    NavTree appendNavTrail(NavTree root);
+    @Deprecated
+    default NavTree appendNavTrail(NavTree root)
+    {
+        throw new IllegalStateException();
+    }
+
+    default void addNavTrail(NavTree root)
+    {
+        appendNavTrail(root);
+    }
 }

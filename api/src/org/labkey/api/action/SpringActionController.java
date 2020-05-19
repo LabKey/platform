@@ -162,7 +162,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return new ArrayList<>(_classToDescriptor.values());
     }
 
-
     // I don't think there is an interface for this
     public interface ActionResolver
     {
@@ -288,7 +287,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return page;
     }
 
-
+    @Override
     public View resolveViewName(String viewName, Locale locale)
     {
         if (null != _applicationContext)
@@ -298,7 +297,6 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         return HttpView.viewFromString(viewName);
     }
-
 
     /** returns an uninitialized instance of the named action */
     public Controller resolveAction(String name)
@@ -316,8 +314,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             // WWSD (what would spring do)
         }
         return c;
-   }
-
+    }
 
     private ModelAndView handleBadRequestException(HttpServletRequest request, HttpServletResponse response, Controller controller, String message) throws Exception
     {
@@ -639,7 +636,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
     protected @Nullable HttpView<PageConfig> getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
     {
         NavTree root = new NavTree();
-        appendNavTrail(action, root);
+        addNavTrail(action, root);
 
         if (root.hasChildren())
         {
@@ -678,21 +675,17 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return view;
     }
 
-
-
-    protected void appendNavTrail(Controller action, NavTree root)
+    protected void addNavTrail(Controller action, NavTree root)
     {
         if (action instanceof NavTrailAction)
         {
-            ((NavTrailAction)action).appendNavTrail(root);
+            ((NavTrailAction)action).addNavTrail(root);
         }
     }
-
 
     protected void beforeAction(Controller action) throws ServletException
     {
     }
-
 
     protected void afterAction(Throwable t)
     {
@@ -705,6 +698,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         private long _maxTime = 0;
         private List<Exception> _exceptions = null;
 
+        @Override
         synchronized public void addTime(long time)
         {
             _count++;
@@ -723,6 +717,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _exceptions.add(ex);
         }
 
+        @Override
         synchronized public ActionStats getStats()
         {
             return new BaseActionStats(_count, _elapsedTime, _maxTime, _exceptions);
@@ -789,9 +784,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
     public static class HTMLFileActionResolver implements ActionResolver
     {
-        public static final String VIEWS_DIRECTORY = "views";
-
-        private Map<String, ActionDescriptor> _nameToDescriptor;
+        private final Map<String, ActionDescriptor> _nameToDescriptor;
         private final String _controllerName;
 
         public HTMLFileActionResolver(String controllerName)
@@ -800,11 +793,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
             _controllerName = controllerName;
         }
 
+        @Override
         public void addTime(Controller action, long elapsedTime)
         {
             /* Never called */
         }        
 
+        @Override
         public Controller resolveActionName(Controller actionController, String actionName)
         {
             if(_nameToDescriptor.get(actionName) != null)
@@ -847,26 +842,31 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _allNames = Collections.singletonList(_primaryName);
             }
 
+            @Override
             public String getControllerName()
             {
                 return _controllerName;
             }
 
+            @Override
             public String getPrimaryName()
             {
                 return _primaryName;
             }
 
+            @Override
             public List<String> getAllNames()
             {
                 return _allNames;
             }
 
+            @Override
             public Class<? extends Controller> getActionClass()
             {
                 return SimpleAction.class;
             }
 
+            @Override
             public Controller createController(Controller actionController)
             {
                 return new SimpleAction(_module, ModuleHtmlView.getStandardPath(getPrimaryName()));
@@ -874,6 +874,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
         // WARNING: This might not be thread safe.
+        @Override
         public Collection<ActionDescriptor> getActionDescriptors()
         {
             return _nameToDescriptor.values();
@@ -947,6 +948,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
 
+        @Override
         public Controller resolveActionName(Controller actionController, String name)
         {
             ActionDescriptor ad;
@@ -965,6 +967,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
 
+        @Override
         public void addTime(Controller action, long elapsedTime)
         {
             getActionDescriptor(action.getClass()).addTime(elapsedTime);
@@ -1023,11 +1026,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return list;
             }
 
+            @Override
             public Class<? extends Controller> getActionClass()
             {
                 return _actionClass;
             }
 
+            @Override
             public Controller createController(Controller actionController)
             {
                 try
@@ -1042,19 +1047,21 @@ public abstract class SpringActionController implements Controller, HasViewConte
                     _log.error("unexpected error", e);
                     throw new RuntimeException(e);
                 }
-
             }
 
+            @Override
             public String getControllerName()
             {
                 return _controllerName;
             }
 
+            @Override
             public String getPrimaryName()
             {
                 return _primaryName;
             }
 
+            @Override
             public List<String> getAllNames()
             {
                 return _allNames;
@@ -1102,6 +1109,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             return new HTMLFileActionResolver(_controllerName);
         }
         
+        @Override
         public Collection<ActionDescriptor> getActionDescriptors()
         {
             synchronized (_nameToDescriptor)
