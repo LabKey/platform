@@ -1537,7 +1537,7 @@ public class ProjectController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminPermission.class)
     public class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
     {
         @Override
@@ -1554,8 +1554,9 @@ public class ProjectController extends SpringActionController
                 {
                     permissionContainer = ContainerManager.getForPath(form.getContainerPath());
 
-                    // Only throw NotFoundException if the user actively set the container to something else.
-                    if(permissionContainer == null)
+                    // Only throw NotFoundException if the user actively set the container to something else, or if the
+                    // user is trying to reference a real container that they don't have permission to see
+                    if(permissionContainer == null || !permissionContainer.hasPermission(getUser(), ReadPermission.class))
                     {
                         throw new NotFoundException("Could not resolve the folder for path: \"" + form.getContainerPath() +
                                 "\". The path may be incorrect or the folder may no longer exist.");

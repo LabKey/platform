@@ -39,6 +39,7 @@ public class DatasetDomainKindProperties implements Cloneable
     private boolean _visitMapShared = false;
 
     public static final String TIME_KEY_FIELD_KEY = "_Special$Time_";
+    public static final String TIME_KEY_FIELD_DISPLAY = "Time (from Date/Time)";
 
     // default constructor needed for jackson
     public DatasetDomainKindProperties()

@@ -15,12 +15,16 @@
  */
 package org.labkey.test.tests.study;
 
+import org.junit.experimental.categories.Category;
+import org.labkey.test.categories.DailyC;
+
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by RyanS on 5/18/2017.
  */
+@Category({DailyC.class})
 public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
 {
     @Override

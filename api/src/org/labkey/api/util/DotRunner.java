@@ -111,12 +111,12 @@ public class DotRunner
                 sb.append("(Exit code: ");
                 sb.append(err);
                 sb.append(")");
-                throw new ExperimentException(getConfigurationErrorHtml(sb.toString()));
+                throw new ExperimentException(getConfigurationError(sb.toString()));
             }
         }
         catch (IOException e)
         {
-            throw new ExperimentException(getConfigurationErrorHtml(e));
+            throw new ExperimentException(getConfigurationError(e));
         }
         catch (InterruptedException e)
         {
@@ -124,37 +124,35 @@ public class DotRunner
         }
     }
 
-    public static String getConfigurationErrorHtml(IOException e)
+    public static String getConfigurationError(IOException e)
     {
         if (e.getMessage() != null)
         {
-            return getConfigurationErrorHtml(e.getMessage());
+            return getConfigurationError(e.getMessage());
         }
         else
         {
-            return getConfigurationErrorHtml(e.toString());
+            return getConfigurationError(e.toString());
         }
     }
 
-    public static String getConfigurationErrorHtml(String message)
+    public static String getConfigurationError(String message)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("<p>Unable to display graph view: cannot run ");
+        sb.append("Unable to display graph view: cannot run ");
         sb.append(dotExePath);
-        sb.append(" due to an error.\n</p><pre>");
-        sb.append(PageFlowUtil.filter(message));
-        sb.append("</pre>");
-        sb.append("<p>Regardless of the specific error message, please first verify that the program '" + dotExePath + "' is on your system PATH");
+        sb.append(" due to an error.\n\n");
+        sb.append(message);
+        sb.append("\n\n");
+        sb.append("Regardless of the specific error message, please first verify that the program '" + dotExePath + "' is on your system PATH");
         if (!StringUtils.isEmpty(System.getenv("PATH")))
         {
             sb.append(" (");
-            sb.append(PageFlowUtil.filter(System.getenv("PATH")));
+            sb.append(System.getenv("PATH"));
             sb.append(")");
         }
-        sb.append(".</p>");
-        sb.append("<p>For help on fixing your system configuration, please consult the Graphviz section of the ");
-        sb.append((new HelpTopic("thirdPartyCode")).getSimpleLinkHtml("LabKey Server documentation on third party components"));
-        sb.append(".</p>");
+        sb.append(".\n\n");
+        sb.append("For help on fixing your system configuration, please consult the Graphviz section of the LabKey Server documentation on third party components.");
 
         return sb.toString();
     }

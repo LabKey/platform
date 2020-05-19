@@ -205,6 +205,17 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
+    public List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared)
+    {
+        // Domain.getDomainKind() can be slow. Instead just ask the passed-in dk if the domain matches or not.
+        return getDomains(container, user, includeProjectAndShared)
+                .stream()
+                .filter(d -> dk.getPriority(d.getTypeURI()) != null)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, boolean includeProjectAndShared)
     {
         Stream<? extends Domain> stream = getDomains(container, user, includeProjectAndShared)
