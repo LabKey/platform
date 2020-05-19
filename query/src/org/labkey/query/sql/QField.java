@@ -172,12 +172,13 @@ public class QField extends QInternalExpr
     public BaseColumnInfo createColumnInfo(SQLTableInfo table, String alias, Query query)
     {
         final QueryRelation.RelationColumn rcol = getRelationColumn();
+        // Delay call to getValueSql() avoid unnecessary work during getTable().
         ExprColumn ret = new ExprColumn(table, alias, null, getRelationColumn().getJdbcType())
         {
             @Override
             public SQLFragment getValueSql(String tableAlias)
             {
-                return rcol.getValueSql();  // delay call in case this causes unnecessary
+                return rcol.getValueSql();
             }
         };
         getRelationColumn().copyColumnAttributesTo(ret);

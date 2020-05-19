@@ -62,7 +62,7 @@ import java.util.Set;
  */
 public class FilteredTable<SchemaType extends UserSchema> extends AbstractContainerFilterable implements ContainerFilterable
 {
-    final private static ButtonBarConfig BUTTONBAR_NOTSET = new ButtonBarConfig(new JSONObject());
+    final private static ButtonBarConfig BUTTON_BAR_NOT_SET = new ButtonBarConfig(new JSONObject());
 
     final private SimpleFilter _filter;
     @NotNull protected final TableInfo _rootTable;
@@ -90,7 +90,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         _description = _rootTable.getDescription();
         _importMsg = _rootTable.getImportMessage();
         _importTemplates = _rootTable.getRawImportTemplates();
-        _buttonBarConfig = BUTTONBAR_NOTSET;        // lazy copy button bar when asked
+        _buttonBarConfig = BUTTON_BAR_NOT_SET;        // lazy copy button bar when asked
         if (_rootTable.supportsAuditTracking())
             _auditBehaviorType = _rootTable.getAuditBehavior();
 
@@ -720,7 +720,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     @Override
     public ButtonBarConfig getButtonBarConfig()
     {
-        if (_buttonBarConfig == BUTTONBAR_NOTSET)
+        if (_buttonBarConfig == BUTTON_BAR_NOT_SET)
             _buttonBarConfig = _rootTable.getButtonBarConfig() == null ? null : new ButtonBarConfig(_rootTable.getButtonBarConfig());
         return _buttonBarConfig;
     }

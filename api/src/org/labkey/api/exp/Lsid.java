@@ -365,7 +365,7 @@ public class Lsid
                 valid = false;
                 return;
             }
-            authority = decodePart(parts[0]);
+            authority = decodePart(parts[0]).toLowerCase();
             namespace = decodePart(parts[1]);
             objectId = decodePart(parts[2]);
             version = decodePart(parts[3]);

@@ -2146,6 +2146,7 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
+                    // NOTE If we're here then this is not a top-level output column. The name doesn't matter.
                     _colinfo = expr.createColumnInfo(_sti, "/*NOT AN OUTPUT COLUMN*/", _query);
                 }
                 to.copyAttributesFrom(_colinfo);

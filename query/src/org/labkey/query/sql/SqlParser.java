@@ -1999,7 +1999,7 @@ public class SqlParser
                 }
             }
             long end = System.currentTimeMillis();
-//            System.out.println("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
+            _log.trace("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
         }
 
         @Test
