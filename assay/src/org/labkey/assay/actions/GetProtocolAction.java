@@ -22,7 +22,6 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -31,7 +30,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.assay.AssayServiceImpl;
+import org.labkey.assay.AssayDomainManager;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
@@ -82,8 +81,8 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
-                AssayService svc = new AssayServiceImpl(getViewContext());
-                GWTProtocol ret = svc.getAssayDefinition(form.getProtocolId(), form.isCopy());
+                AssayDomainManager manager = new AssayDomainManager(getViewContext());
+                GWTProtocol ret = manager.getAssayDefinition(form.getProtocolId(), form.isCopy());
                 if (ret == null)
                 {
                     throw new NotFoundException("Could not locate Assay Definition for id: " + form.getProtocolId().toString());
@@ -98,8 +97,8 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
         else if (form.getProviderName() != null)
         {
             // get the assay template
-            AssayService svc = new AssayServiceImpl(getViewContext());
-            GWTProtocol ret = svc.getAssayTemplate(form.getProviderName());
+            AssayDomainManager manager = new AssayDomainManager(getViewContext());
+            GWTProtocol ret = manager.getAssayTemplate(form.getProviderName());
             return success("Generated assay template for provider '" + form.getProviderName() + "'", ret);
         }
         else
