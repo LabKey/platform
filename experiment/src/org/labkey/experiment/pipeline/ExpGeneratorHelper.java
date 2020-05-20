@@ -317,7 +317,7 @@ public class ExpGeneratorHelper
         Map<URI, ExpData> datas = new LinkedHashMap<>();
 
         // Set up the inputs to the whole run
-        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
+        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Provenance Recording Run Protocol");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
@@ -346,7 +346,8 @@ public class ExpGeneratorHelper
             // Look up the step by its name
             ExpProtocolAction step = expActionMap.get(action.getName());
 
-            ExpProtocolApplication app = run.addProtocolApplication(user, step, step.getChildProtocol().getApplicationType(),
+            ExpProtocol.ApplicationType applicationType = action.isEnd() ? ExpProtocol.ApplicationType.ExperimentRunOutput : ExpProtocol.ApplicationType.ProtocolApplication;
+            ExpProtocolApplication app = run.addProtocolApplication(user, step, applicationType,
                     action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
 
             if (!action.getName().equals(action.getDescription()))
@@ -432,10 +433,16 @@ public class ExpGeneratorHelper
                 }
             }
 
-            // add in any provenance mappings
-            if (pvs != null && !action.getProvenanceMap().isEmpty())
+            // add in any provenance mappings and prov object inputs and outputs
+            if (pvs != null && protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
             {
-                pvs.addProvenance(container, app, action.getProvenanceMap());
+                if (!action.getProvenanceMap().isEmpty())
+                    pvs.addProvenance(container, app, action.getProvenanceMap());
+
+                // determine the right protocol app for object inputs and object outputs
+                ExpProtocolApplication protocolApp = action.isStart() || action.isEnd() ? inputApp : app;
+                pvs.addProvenanceInputs(container, protocolApp, action.getObjectInputs());
+                pvs.addProvenanceOutputs(container, protocolApp, action.getObjectOutputs());
             }
         }
 
