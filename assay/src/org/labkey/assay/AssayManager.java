@@ -16,7 +16,6 @@
 
 package org.labkey.assay;
 
-import gwt.client.org.labkey.assay.AssayApplication;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
@@ -86,9 +85,7 @@ import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.assay.ModuleAssayCache.ModuleAssayCollections;
 import org.labkey.assay.query.AssaySchemaImpl;
-import org.labkey.assay.view.AssayGWTView;
 import org.springframework.validation.BindException;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -421,12 +418,6 @@ public class AssayManager implements AssayService
         vbox.addView(new JspView("/org/labkey/assay/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;
-    }
-
-    @Override
-    public ModelAndView createAssayImportView(Map<String, String> properties)
-    {
-        return new AssayGWTView(new AssayApplication.AssayImporter(), properties);
     }
 
     @Override

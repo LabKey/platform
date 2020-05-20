@@ -26,7 +26,6 @@ import org.labkey.api.action.AbstractFileUploadAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabKeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -77,7 +76,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -88,7 +86,6 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.query.ExpRunTable;
-import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.qc.DataExchangeHandler;
@@ -174,8 +171,6 @@ public class AssayController extends SpringActionController
             PipelineDataCollectorRedirectAction.class,
             DeleteAction.class,
             DesignerAction.class,
-            ImportAction.class,
-            TsvImportAction.class,
             TemplateAction.class,
             AssayBatchesAction.class,
             AssayBatchDetailsAction.class,
@@ -656,16 +651,6 @@ public class AssayController extends SpringActionController
             root.addChild("New Assay Design");
             setHelpTopic(new HelpTopic("defineAssaySchema"));
             return root;
-        }
-    }
-
-    @RequiresPermission(DesignAssayPermission.class)
-    public class ServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new AssayServiceImpl(getViewContext());
         }
     }
 
@@ -1192,16 +1177,6 @@ public class AssayController extends SpringActionController
         public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider)
         {
             return provider.getPlateMetadataTemplateURL(container);
-        }
-    }
-
-    @RequiresPermission(DesignAssayPermission.class)
-    public class AssayImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new AssayImportServiceImpl(getViewContext());
         }
     }
 
