@@ -200,16 +200,16 @@ public class LocalDirectory implements Serializable
             File tempFile = new File(containerDir, tempFileName);
             if (!Files.exists(tempFile.toPath()))
             {
-                log.info("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
+                log.debug("Copying file to container's temp directory: "+ FileUtil.pathToString(remotePath));
                 Files.copy(remotePath, tempFile.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
-                log.info("Copied " + Files.size(tempFile.toPath()) + " bytes.");
+                log.debug("Copied " + Files.size(tempFile.toPath()) + " bytes.");
             }
             return tempFile;
         }
         catch (NoSuchFileException e)
         {
             // Avoid a separate round-trip just to determine if file is available, as it adds ~1 overhead per call
-            log.info("Could not find remote file: " + FileUtil.pathToString(remotePath) + ", unable to copy locally");
+            log.debug("Could not find remote file: " + FileUtil.pathToString(remotePath) + ", unable to copy locally");
             return null;
         }
         catch (IOException e)
