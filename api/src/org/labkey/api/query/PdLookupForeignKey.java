@@ -162,9 +162,8 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null != _tableInfo)
             return _tableInfo;
 
-        // Can we assert that _sourceSchema != null?
         QuerySchema schema;
-        if (null != _sourceSchema)
+        if (null != _sourceSchema && _sourceSchema.getContainer().equals(container))
             schema = DefaultSchema.resolve(_sourceSchema, SchemaKey.fromString(_lookupSchemaName));
         else
             schema = QueryService.get().getUserSchema(_user, container, SchemaKey.fromString(_lookupSchemaName));
