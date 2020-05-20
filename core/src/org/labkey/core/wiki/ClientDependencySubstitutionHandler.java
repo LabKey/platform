@@ -17,6 +17,7 @@ package org.labkey.core.wiki;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
 
@@ -42,6 +43,6 @@ public class ClientDependencySubstitutionHandler implements HtmlRenderer.Substit
 
         cds.add(cd);
 
-        return new FormattedHtml("", false, cds);
+        return new FormattedHtml(HtmlString.EMPTY_STRING, false, cds);
     }
 }

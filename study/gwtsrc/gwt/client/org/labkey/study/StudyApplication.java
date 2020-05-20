@@ -44,8 +44,6 @@ public class StudyApplication implements EntryPoint
 
         static
         {
-            MODULES.add(new DatasetImporter());
-            MODULES.add(new DatasetDesigner());
             MODULES.add(new StudyDesigner());
         }
 
@@ -67,41 +65,6 @@ public class StudyApplication implements EntryPoint
         public static Set<GWTModule> values()
         {
             return MODULES;
-        }
-    }
-
-
-    public static class DatasetImporter extends GWTModule
-    {
-        public DatasetImporter()
-        {
-            super("gwt.client.org.labkey.study.dataset.client.DatasetImporter");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.study.dataset.client.DatasetImporter().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.study.dataset.client.DatasetImporter();
-        }
-    }
-
-    public static class DatasetDesigner extends GWTModule
-    {
-        public DatasetDesigner()
-        {
-            super("gwt.client.org.labkey.study.dataset.client.Designer");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.study.dataset.client.Designer().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.study.dataset.client.Designer();
         }
     }
 
@@ -143,15 +106,7 @@ public class StudyApplication implements EntryPoint
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
         
-        if ("DatasetImporter".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new DatasetImporter());
-        }
-        else if ("DatasetDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new DatasetDesigner());
-        }
-        else if ("StudyDesigner".equalsIgnoreCase(moduleName))
+        if ("StudyDesigner".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new StudyDesigner());
         }
