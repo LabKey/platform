@@ -575,12 +575,11 @@ public class PublishConfirmAction extends FormViewAction<PublishConfirmAction.Pu
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
         root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
         root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
         root.addChild("Copy to " + (_targetStudyName == null ? "Study" : _targetStudyName) + ": Verify Results");
-        return root;
     }
 }

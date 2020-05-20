@@ -258,9 +258,9 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendBaseSpecimenNavTrail(root);
+            addBaseSpecimenNavTrail(root);
         }
     }
 
@@ -273,26 +273,23 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-    private NavTree appendBaseSpecimenNavTrail(NavTree root)
+    private void addBaseSpecimenNavTrail(NavTree root)
     {
-        root = _appendNavTrail(root);
+        _addNavTrail(root);
         ActionURL overviewURL = new ActionURL(OverviewAction.class,  getContainer());
         root.addChild("Specimen Overview", overviewURL);
-        return root;
     }
 
-    private NavTree appendSpecimenRequestsNavTrail(NavTree root)
+    private void addSpecimenRequestsNavTrail(NavTree root)
     {
-        root = appendBaseSpecimenNavTrail(root);
+        addBaseSpecimenNavTrail(root);
         root.addChild("Specimen Requests", new ActionURL(ViewRequestsAction.class, getContainer()));
-        return root;
     }
 
-    private NavTree appendSpecimenRequestNavTrail(NavTree root, int requestId)
+    private void addSpecimenRequestNavTrail(NavTree root, int requestId)
     {
-        root = appendSpecimenRequestsNavTrail(root);
+        addSpecimenRequestsNavTrail(root);
         root.addChild("Specimen Request " + requestId, getManageRequestURL(requestId));
-        return root;
     }
 
 
@@ -416,11 +413,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = _appendNavTrail(root);
+            _addNavTrail(root);
             root.addChild(_vialView ? "Selected Vials" : "Selected Specimens");
-            return root;
         }
     }
 
@@ -475,11 +471,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root);
+            addBaseSpecimenNavTrail(root);
             root.addChild(_vialView ? "Vials" : "Grouped Vials");
-            return root;
         }
     }
 
@@ -735,9 +730,8 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -802,16 +796,15 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root);
+            addBaseSpecimenNavTrail(root);
             if (_showingSelectedSamples)
             {
                 root.addChild("Selected Specimens", new ActionURL(SelectedSamplesAction.class,
                         getContainer()).addParameter(SampleViewTypeForm.PARAMS.showVials, "true"));
             }
             root.addChild("Vial History");
-            return root;
         }
     }
 
@@ -1188,9 +1181,9 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestNavTrail(root, _requestId);
+            addSpecimenRequestNavTrail(root, _requestId);
         }
     }
 
@@ -1249,9 +1242,9 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestsNavTrail(root);
+            addSpecimenRequestsNavTrail(root);
         }
     }
 
@@ -1469,10 +1462,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
-            return root.addChild("Update Request");
+            addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
+            root.addChild("Update Request");
         }
     }
 
@@ -1728,9 +1721,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestsNavTrail(root).addChild("New Specimen Request");
+            addSpecimenRequestsNavTrail(root);
+            root.addChild("New Specimen Request");
         }
 
         @Override
@@ -1965,10 +1959,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("specimenShopping");
-            return appendSpecimenRequestsNavTrail(root).addChild("New Specimen Request");
+            addSpecimenRequestsNavTrail(root);
+            root.addChild("New Specimen Request");
         }
     }
 
@@ -1982,9 +1977,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestsNavTrail(root).addChild("New Specimen Request");
+            addSpecimenRequestsNavTrail(root);
+            root.addChild("New Specimen Request");
         }
     }
 
@@ -2010,9 +2006,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestsNavTrail(root).addChild("Extended Specimen Request");
+            addSpecimenRequestsNavTrail(root);
+            root.addChild("Extended Specimen Request");
         }
     }
 
@@ -2321,9 +2318,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestNavTrail(root, _specimenRequest.getRowId()).addChild("Manage Requirement");
+            addSpecimenRequestNavTrail(root, _specimenRequest.getRowId());
+            root.addChild("Manage Requirement");
         }
     }
 
@@ -2344,9 +2342,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestNavTrail(root, _requestId).addChild("Request History");
+            addSpecimenRequestNavTrail(root, _requestId);
+            root.addChild("Request History");
         }
     }
 
@@ -2463,9 +2462,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _appendNavTrail(root).addChild("Unable to Request Specimens");
+            _addNavTrail(root);
+            root.addChild("Unable to Request Specimens");
         }
     }
 
@@ -2567,10 +2567,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("coordinateSpecimens#requirements");
-            return _appendManageStudy(root).addChild("Manage Default Requirements");
+            _addManageStudy(root);
+            root.addChild("Manage Default Requirements");
         }
     }
 
@@ -2961,7 +2962,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Not Yet Implemented");
         }
@@ -2998,9 +2999,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendSpecimenRequestNavTrail(root, _requestId).addChild(_type.getDisplay() + " Lab Vial Lists");
+            addSpecimenRequestNavTrail(root, _requestId);
+            root.addChild(_type.getDisplay() + " Lab Vial Lists");
         }
     }
 
@@ -3161,11 +3163,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root);
+            addBaseSpecimenNavTrail(root);
             root.addChild("Available Reports", new ActionURL(AutoReportListAction.class, getContainer()));
-            return root.addChild("Specimen Report: " + _form.getLabel());
+            root.addChild("Specimen Report: " + _form.getLabel());
         }
     }
 
@@ -3388,11 +3390,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("exploreSpecimens");
-            root = appendBaseSpecimenNavTrail(root);
-            return root.addChild("Specimen Reports");
+            addBaseSpecimenNavTrail(root);
+            root.addChild("Specimen Reports");
         }
     }
 
@@ -3819,10 +3821,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendBaseSpecimenNavTrail(root);
-            return root.addChild("Set vial comments");
+            addBaseSpecimenNavTrail(root);
+            root.addChild("Set vial comments");
         }
     }
 
@@ -3869,7 +3871,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String msg;
             if (_filePaths.length == 1)
@@ -3877,7 +3879,6 @@ public class SpecimenController extends BaseStudyController
             else
                 msg = _filePaths.length + " specimen archives";
             root.addChild("Import Study Batch - " + msg);
-            return root;
         }
     }
 
@@ -4102,13 +4103,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("specimenAdminTutorial");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Repository Settings");
-
-            return root;
         }
     }
 
@@ -4252,14 +4251,11 @@ public class SpecimenController extends BaseStudyController
         protected abstract JspView<StudyImpl> getJspView(StudyImpl study);
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic(_helpTopic));
-
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild(_title);
-
-            return root;
         }
     }
 
@@ -4749,13 +4745,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("coordinateSpecimens#form");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage New Request Form");
-
-            return root;
         }
     }
 
@@ -4903,13 +4897,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("coordinateSpecimens#notify");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Notifications");
-
-            return root;
         }
     }
     
@@ -4953,13 +4945,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("specimenRequest#display"));
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Specimen Display Settings");
-
-            return root;
         }
     }
 
@@ -4990,9 +4980,8 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -5175,11 +5164,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageComments");
-            _appendManageStudy(root);
-            return root.addChild("Manage Comments");
+            _addManageStudy(root);
+            root.addChild("Manage Comments");
         }
     }
 
@@ -5320,9 +5309,8 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         private String getExistingComment(QueryView queryView)
@@ -5427,12 +5415,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("coordinateSpecimens#requestability");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Configure Requestability Rules");
-            return root;
         }
     }
 
@@ -5652,11 +5639,10 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = appendSpecimenRequestNavTrail(root, _requestId);
+            addSpecimenRequestNavTrail(root, _requestId);
             root.addChild("Upload Specimen Identifiers");
-            return root;
         }
 
         @Override
@@ -5732,13 +5718,11 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageSpecimens#group");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Configure Specimen Web Part");
-
-            return root;
         }
     }
 
@@ -5896,9 +5880,8 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 

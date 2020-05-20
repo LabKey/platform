@@ -213,12 +213,11 @@ public class PropertyController extends SpringActionController
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("propertyFields");
             _domain.getDomainKind().appendNavTrail(root, getContainer(), getUser());
             root.addChild("Edit Fields in " + _domain.getLabel());
-            return root;
         }
     }
 
@@ -1269,9 +1268,8 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 

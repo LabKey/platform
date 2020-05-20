@@ -145,9 +145,9 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         return form.getReturnActionURL(new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()));
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        BaseStudyController._appendManageStudy(root, getContainer(), getUser());
+        BaseStudyController._addManageStudy(root, getContainer(), getUser());
 
         if (_location != null)
             root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()).addParameter("showMemberSites", _actor.getRowId()));
@@ -159,8 +159,6 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             title += ", " + _location.getLabel();
 
         root.addChild(title);
-
-        return root;
     }
 
     private SpecimenRequestActor getActor(UpdateGroupForm form)

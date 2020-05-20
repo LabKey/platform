@@ -117,10 +117,10 @@ public class StudyDefinitionController extends BaseStudyController
 
         protected abstract String getPluralName();
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild(getPluralName());
+            _addManageStudy(root);
+            root.addChild(getPluralName());
         }
 
         @Override

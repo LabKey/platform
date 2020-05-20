@@ -83,18 +83,14 @@ import java.util.TreeMap;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.B;
-import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.CODE;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.H2;
-import static org.labkey.api.util.DOM.LI;
-import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TBODY;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.THEAD;
 import static org.labkey.api.util.DOM.TR;
-import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
@@ -130,11 +126,10 @@ public class TypesController extends SpringActionController
             return jspView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getContainer()));
             root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -195,9 +190,8 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -257,11 +251,10 @@ public class TypesController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Import Vocabulary", new ActionURL(ImportVocabularyAction.class, getContainer()));
-            return root;
         }
     }
     
@@ -322,11 +315,10 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/types.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Defined Types", new ActionURL(TypesAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -383,11 +375,10 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new TypesAction(getViewContext())).appendNavTrail(root);
+            (new TypesAction(getViewContext())).addNavTrail(root);
             root.addChild("Type -- " + StringUtils.defaultIfEmpty(dd != null ? dd.getName() : typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -537,11 +528,10 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/findConcepts.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Find Concepts", new ActionURL(FindConceptsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -779,10 +769,8 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
-
 }

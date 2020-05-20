@@ -94,12 +94,12 @@ public class StudyDesignController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/studydesign/manageAssaySchedule.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageAssaySchedule");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-            return root.addChild("Manage Assay Schedule");
+            root.addChild("Manage Assay Schedule");
         }
     }
 
@@ -126,12 +126,12 @@ public class StudyDesignController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/studydesign/manageStudyProducts.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyProducts");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-            return root.addChild("Manage Study Products");
+            root.addChild("Manage Study Products");
         }
     }
 
@@ -162,12 +162,12 @@ public class StudyDesignController extends BaseStudyController
             return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageTreatments");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-            return root.addChild("Manage Treatments");
+            root.addChild("Manage Treatments");
         }
     }
 

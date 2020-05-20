@@ -54,7 +54,7 @@ public class FolderManagement
                 if (c.isRoot())
                 {
                     TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
-                    PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, provider.getText(), null);
+                    PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), null);
                 }
 
                 if (c.isContainerTab())

@@ -395,12 +395,12 @@ public class AdminController extends SpringActionController
         }
     }
 
-    private NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
+    private void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action)
     {
-        return appendAdminNavTrail(root, childTitle, action, getContainer());
+        addAdminNavTrail(root, childTitle, action, getContainer());
     }
 
-    private static NavTree appendAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
+    private static void addAdminNavTrail(NavTree root, String childTitle, Class<? extends Controller> action, Container container)
     {
         if (container.isRoot())
             root.addChild("Admin Console", getShowAdminURL());
@@ -409,8 +409,6 @@ public class AdminController extends SpringActionController
             root.addChild(childTitle);
         else
             root.addChild(childTitle, new ActionURL(action, container));
-
-        return root;
     }
 
 
@@ -430,14 +428,13 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             URLHelper returnUrl = getViewContext().getActionURL().getReturnURL();
             if (null != returnUrl)
                 root.addChild("Return to Project", returnUrl);
             root.addChild("Admin Console");
             getPageConfig().setHelpTopic(new HelpTopic("siteManagement"));
-            return root;
         }
     }
 
@@ -446,9 +443,9 @@ public class AdminController extends SpringActionController
     public class ShowModuleErrors extends SimpleViewAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Module Errors", this.getClass());
+            addAdminNavTrail(root, "Module Errors", this.getClass());
         }
 
         @Override
@@ -618,7 +615,7 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
+        public void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL)
         {
             root.addChild("Admin Console", getAdminConsoleURL().setFragment("links") );
 
@@ -626,8 +623,6 @@ public class AdminController extends SpringActionController
                 root.addChild(childTitle, childURL);
             else
                 root.addChild(childTitle);
-
-            return root;
         }
 
         @Override
@@ -775,9 +770,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_title);
+            root.addChild(_title);
         }
     }
 
@@ -960,9 +955,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Credits", this.getClass());
+            addAdminNavTrail(root, "Credits", this.getClass());
         }
     }
 
@@ -1248,9 +1243,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Customize Site", this.getClass());
+            addAdminNavTrail(root, "Customize Site", this.getClass());
         }
 
         @Override
@@ -1416,10 +1411,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("setRoots#map");
-            return appendAdminNavTrail(root, "Map Network Drive", this.getClass());
+            addAdminNavTrail(root, "Map Network Drive", this.getClass());
         }
     }
 
@@ -1457,10 +1452,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("siteValidation"));
-            return appendAdminNavTrail(root, "Site Validation", this.getClass());
+            addAdminNavTrail(root, "Site Validation", this.getClass());
         }
     }
 
@@ -2278,10 +2273,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("runningThreads"));
-            return appendAdminNavTrail(root, "Current Threads", this.getClass());
+            addAdminNavTrail(root, "Current Threads", this.getClass());
         }
     }
 
@@ -2296,11 +2291,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("dumpHeap"));
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Heap dump", null);
-            return root;
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Heap dump", null);
         }
     }
 
@@ -2391,9 +2385,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Test Mapping Network Drive");
+            root.addChild("Test Mapping Network Drive");
         }
     }
 
@@ -2486,10 +2480,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("actionsDiagnostics"));
-            return appendAdminNavTrail(root, "Actions", this.getClass());
+            addAdminNavTrail(root, "Actions", this.getClass());
         }
     }
 
@@ -2556,10 +2550,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("queryLogger"));
-            return appendAdminNavTrail(root, "Queries", this.getClass());
+            addAdminNavTrail(root, "Queries", this.getClass());
         }
     }
 
@@ -2598,11 +2592,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendAdminNavTrail(root, "Queries", QueriesAction.class);
+            addAdminNavTrail(root, "Queries", QueriesAction.class);
             root.addChild("Query Stack Traces");
-            return root;
         }
     }
 
@@ -2628,12 +2621,11 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendAdminNavTrail(root, "Queries", QueriesAction.class);
+            addAdminNavTrail(root, "Queries", QueriesAction.class);
             root.addChild("Query Stack Traces", getQueryStackTracesURL(_hashCode));
             root.addChild("Execution Plan");
-            return root;
         }
     }
 
@@ -2872,10 +2864,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("cachesDiagnostics"));
-            return appendAdminNavTrail(root, "Cache Statistics", this.getClass());
+            addAdminNavTrail(root, "Cache Statistics", this.getClass());
         }
     }
 
@@ -2889,9 +2881,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Environment Variables", this.getClass());
+            addAdminNavTrail(root, "Environment Variables", this.getClass());
         }
     }
 
@@ -2905,9 +2897,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "System Properties", this.getClass());
+            addAdminNavTrail(root, "System Properties", this.getClass());
         }
     }
 
@@ -2985,9 +2977,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Configure System Maintenance", this.getClass());
+            addAdminNavTrail(root, "Configure System Maintenance", this.getClass());
         }
     }
 
@@ -3077,9 +3069,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Attachments", getClass());
+            addAdminNavTrail(root, "Attachments", getClass());
         }
     }
 
@@ -3094,9 +3086,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Find Attachment Parents", getClass());
+            addAdminNavTrail(root, "Find Attachment Parents", getClass());
         }
     }
 
@@ -3204,10 +3196,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("memTracker"));
-            return appendAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
+            addAdminNavTrail(root, "Memory usage -- " + DateUtil.formatDateTime(getContainer()), this.getClass());
         }
     }
 
@@ -3618,9 +3610,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -3763,9 +3754,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -3785,9 +3775,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -3823,9 +3812,9 @@ public class AdminController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Database Check Tools", this.getClass());
+            addAdminNavTrail(root, "Database Check Tools", this.getClass());
         }
     }
 
@@ -3922,9 +3911,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Database Tools", this.getClass());
+            addAdminNavTrail(root, "Database Tools", this.getClass());
         }
     }
 
@@ -5118,9 +5107,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -6005,9 +5993,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath(), this.getClass());
+            addAdminNavTrail(root, "Folder Aliases: " + getContainer().getPath(), this.getClass());
         }
     }
 
@@ -6090,10 +6078,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("customEmail"));
-            return appendAdminNavTrail(root, "Customize " + (getContainer().isRoot() ? "Site-Wide" : StringUtils.capitalize(getContainer().getContainerNoun()) + "-Level") + " Email", this.getClass());
+            addAdminNavTrail(root, "Customize " + (getContainer().isRoot() ? "Site-Wide" : StringUtils.capitalize(getContainer().getContainerNoun()) + "-Level") + " Email", this.getClass());
         }
     }
 
@@ -6526,11 +6514,11 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
             String containerType = getContainer().isProject() ? "Project" : "Folder";
-            return appendAdminNavTrail(root, "Change " + containerType  + " Name Settings", this.getClass());
+            addAdminNavTrail(root, "Change " + containerType  + " Name Settings", this.getClass());
         }
     }
 
@@ -6638,12 +6626,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Folder Management", getManageFoldersURL());
             root.addChild("Move Folder");
-
-            return root;
         }
     }
 
@@ -6659,9 +6645,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm Project Move");
+            root.addChild("Confirm Project Move");
         }
     }
 
@@ -6823,9 +6809,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -6968,10 +6953,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
-            return null;
         }
     }
 
@@ -7091,11 +7075,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
             getPageConfig().setHelpTopic(new HelpTopic("createProject"));
-            return null;
         }
     }
 
@@ -7236,9 +7219,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm " + getContainer().getContainerNoun() + " deletion");
+            root.addChild("Confirm " + getContainer().getContainerNoun() + " deletion");
         }
     }
 
@@ -7273,10 +7256,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String title = "Reorder " + (getContainer().isRoot() || getContainer().getParent().isRoot() ? "Projects" : "Folders");
-            return appendAdminNavTrail(root, title, this.getClass());
+            addAdminNavTrail(root, title, this.getClass());
         }
     }
 
@@ -7553,10 +7536,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
-            return root.addChild("Test Email Configuration");
+            root.addChild("Test Email Configuration");
         }
     }
 
@@ -7733,9 +7716,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -7787,10 +7769,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Admin Console", new ActionURL(ShowAdminAction.class, getContainer()).getLocalURIString());
-            return root.addChild("View Event Log");
+            root.addChild("View Event Log");
         }
     }
 
@@ -8181,10 +8163,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("defaultModules"));
-            return appendAdminNavTrail(root, "Modules", getClass());
+            addAdminNavTrail(root, "Modules", getClass());
         }
     }
 
@@ -8320,9 +8302,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -8337,9 +8318,8 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -8429,10 +8409,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("experimental");
-            return root.addChild("Experimental Features");
+            root.addChild("Experimental Features");
         }
     }
 
@@ -8496,9 +8476,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Folder Types");
+            root.addChild("Folder Types");
         }
     }
 
@@ -9195,10 +9175,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("shortURL");
-            return root.addChild("Short URL Admin");
+            root.addChild("Short URL Admin");
         }
     }
 
@@ -9350,9 +9330,9 @@ public class AdminController extends SpringActionController
     public static class SpiderAction extends SimpleViewAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Spider Initialization");
+            root.addChild("Spider Initialization");
         }
 
         @Override
@@ -9555,9 +9535,9 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendAdminNavTrail(root, "Suspicious activity", SuspiciousAction.class);
+            addAdminNavTrail(root, "Suspicious activity", SuspiciousAction.class);
         }
     }
 
@@ -9710,10 +9690,10 @@ public class AdminController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("externalRedirectsURL");
-            return root.addChild("External Redirect Host Admin");
+            root.addChild("External Redirect Host Admin");
         }
     }
 

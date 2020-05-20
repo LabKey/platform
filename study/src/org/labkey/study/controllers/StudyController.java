@@ -354,9 +354,9 @@ public class StudyController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    protected NavTree _appendNavTrailVisitAdmin(NavTree root)
+    protected void _appendNavTrailVisitAdmin(NavTree root)
     {
-        _appendManageStudy(root);
+        _addManageStudy(root);
 
         StringBuilder sb = new StringBuilder("Manage ");
 
@@ -367,7 +367,6 @@ public class StudyController extends BaseStudyController
         sb.append(getVisitLabelPlural());
 
         root.addChild(sb.toString(), new ActionURL(ManageVisitsAction.class, getContainer()));
-        return root;
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -385,9 +384,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
+            root.addChild(_study == null ? "No Study In Folder" : _study.getLabel());
         }
     }
 
@@ -422,11 +421,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("createDataset");
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Create Dataset Definition");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Create Dataset Definition");
         }
     }
 
@@ -481,12 +480,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("editDatasetProperties");
-            _appendNavTrailDatasetAdmin(root);
+            _addNavTrailDatasetAdmin(root);
             root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDatasetId()));
-            return root.addChild("Edit Dataset Definition");
+            root.addChild("Edit Dataset Definition");
         }
     }
 
@@ -508,10 +507,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("datasetProperties");
-            return _appendNavTrailDatasetAdmin(root).addChild(_def.getLabel() + " Dataset Properties");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild(_def.getLabel() + " Dataset Properties");
         }
     }
 
@@ -605,10 +605,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyDashboard#navigator");
-            return root.addChild("Overview: " + _study.getLabel());
+            root.addChild("Overview: " + _study.getLabel());
         }
     }
 
@@ -660,11 +660,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_report != null)
-                return root.addChild(_report.getDescriptor().getReportName());
-            return root.addChild("Study Query Report");
+                root.addChild(_report.getDescriptor().getReportName());
+            else
+                root.addChild("Study Query Report");
         }
 
         protected Report getReport(QueryReportForm form)
@@ -752,9 +753,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -997,10 +997,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("gridBasics");
-            return _appendNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
+            _addNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
         }
     }
 
@@ -1029,9 +1029,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1144,11 +1143,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantViews");
-            return _appendNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState()).
-                    addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
+            _addNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState());
+            root.addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
     }
 
@@ -1238,9 +1237,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1296,11 +1294,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("importVisitMap");
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Import Visit Map");
+            root.addChild("Import Visit Map");
         }
     }
 
@@ -1376,9 +1374,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Study");
+            root.addChild("Create Study");
         }
     }
 
@@ -1441,10 +1439,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageStudy");
-            return _appendManageStudy(root);
+            _addManageStudy(root);
         }
     }
 
@@ -1478,9 +1476,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm Delete Study");
+            root.addChild("Confirm Delete Study");
         }
     }
 
@@ -1560,11 +1558,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageStudy");
-            _appendManageStudy(root);
-            return root.addChild("Study Properties");
+            _addManageStudy(root);
+            root.addChild("Study Properties");
         }
 
         @Override
@@ -1657,11 +1655,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageVisits");
             _appendNavTrailVisitAdmin(root);
-            return root;
         }
 
         private String _jspName(Study study)
@@ -1681,11 +1678,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageDatasets");
-            _appendManageStudy(root);
-            return root.addChild("Manage Datasets");
+            _addManageStudy(root);
+            root.addChild("Manage Datasets");
         }
     }
 
@@ -1699,11 +1696,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
-            _appendManageStudy(root);
-            return root.addChild("Manage File Watchers");
+            _addManageStudy(root);
+            root.addChild("Manage File Watchers");
         }
     }
 
@@ -1797,11 +1794,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");
-            _appendManageStudy(root);
-            return root.addChild("Manage Locations");
+            _addManageStudy(root);
+            root.addChild("Manage Locations");
         }
     }
 
@@ -2059,11 +2056,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
             root.addChild(_v.getDisplayString());
-            return root;
         }
     }
 
@@ -2092,11 +2088,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studySchedule");
-            _appendManageStudy(root);
-            return root.addChild("Study Schedule");
+            _addManageStudy(root);
+            root.addChild("Study Schedule");
         }
     }
 
@@ -2258,10 +2254,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
+            root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
         }
 
         @Override
@@ -2352,10 +2348,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String noun = _timepointType == TimepointType.DATE ? "Timepoint" : "Visit";
-            return root.addChild("Delete " + noun + " -- " + _visit.getDisplayString());
+            root.addChild("Delete " + noun + " -- " + _visit.getDisplayString());
         }
     }
 
@@ -2416,10 +2412,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Create New " + getVisitLabel());
+            root.addChild("Create New " + getVisitLabel());
         }
     }
 
@@ -2477,15 +2473,14 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
+            _addNavTrailDatasetAdmin(root);
             if (_def != null)
             {
                 VisitManager visitManager = StudyManager.getInstance().getVisitManager(getStudyThrowIfNull());
-                return root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
+                root.addChild("Edit " + _def.getLabel() + " " + visitManager.getPluralLabel());
             }
-            return root;
         }
     }
 
@@ -2598,14 +2593,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             ActionURL datasetURL = new ActionURL(DatasetAction.class, getContainer()).
                     addParameter(DatasetDefinition.DATASETKEY, _form.getDatasetId());
             root.addChild(_def.getName(), datasetURL);
             root.addChild("Import Data");
-            return root;
         }
     }
 
@@ -2655,11 +2649,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("DatasetBulkDefinition"));
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Bulk Import");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Bulk Import");
         }
     }
 
@@ -2746,9 +2740,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
+            root.addChild("Upload History" + (null != _datasetLabel ? " for " + _datasetLabel : ""));
         }
     }
 
@@ -2765,9 +2759,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2786,9 +2779,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2850,9 +2842,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Copy-to-Study History Details");
+            root.addChild("Copy-to-Study History Details");
         }
     }
 
@@ -3427,11 +3419,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            _appendManageStudy(root);
-            return root.addChild("Manage Dataset QC States");
+            _addManageStudy(root);
+            root.addChild("Manage Dataset QC States");
         }
 
         @Override
@@ -3692,10 +3684,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            root = _appendNavTrail(root, _datasetId, -1);
-            return root.addChild("Change QC State");
+            root = _addNavTrail(root, _datasetId, -1);
+            root.addChild("Change QC State");
         }
     }
 
@@ -3800,10 +3792,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Define Dataset Schemas");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Define Dataset Schemas");
         }
     }
 
@@ -3871,7 +3863,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("Set Default"));
 
@@ -3884,7 +3876,6 @@ public class StudyController extends BaseStudyController
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
             root.addChild(new NavTree("Preferences"));
-            return root;
         }
 
         @Override
@@ -3940,11 +3931,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getStudyRedirectIfNull().getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             root.addChild("Import Study Batch - " + path);
-            return root;
         }
     }
 
@@ -4035,9 +4025,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Type Not Found");
+            root.addChild("Type Not Found");
         }
     }
 
@@ -4080,10 +4070,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Recalculate Visit Dates");
+            root.addChild("Recalculate Visit Dates");
         }
     }
 
@@ -4100,10 +4090,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Visit Order");
+            root.addChild("Visit Order");
         }
 
         @Override
@@ -4201,10 +4191,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Properties");
+            root.addChild("Properties");
         }
 
         @Override
@@ -4307,12 +4297,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
             root.addChild("Properties");
-            return root;
         }
 
         @Override
@@ -4474,12 +4463,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Datasets", new ActionURL(ManageTypesAction.class, getContainer()));
             root.addChild("Display Order");
-            return root;
         }
 
         @Override
@@ -4723,11 +4711,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
-            return root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
+            root.addChild("Customize " + StudyService.get().getSubjectNounSingular(getContainer()) + " View");
         }
     }
 
@@ -5115,10 +5103,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("querySnapshot");
-            return root.addChild("Create Query Snapshot");
+            root.addChild("Create Query Snapshot");
         }
     }
 
@@ -5202,9 +5190,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Edit Query Snapshot");
+            root.addChild("Edit Query Snapshot");
         }
     }
 
@@ -6172,11 +6160,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrail(root);
+            _addNavTrail(root);
             root.addChild("Datasets");
-            return root;
         }
     }
 
@@ -6190,13 +6177,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Study study = getStudy();
             if (study != null)
                 root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Samples");
-            return root;
         }
     }
 
@@ -6213,9 +6199,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -6281,10 +6266,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild("Manage External Reloading");
+            _addManageStudy(root);
+            root.addChild("Manage External Reloading");
         }
     }
 
@@ -6420,11 +6405,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("demoMode");
-            _appendManageStudy(root);
-            return root.addChild("Demo Mode");
+            _addManageStudy(root);
+            root.addChild("Demo Mode");
         }
     }
 
@@ -6455,10 +6440,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Visit Import Mapping");
+            root.addChild("Visit Import Mapping");
         }
     }
 
@@ -6549,10 +6534,10 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Import Visit Aliases");
+            root.addChild("Import Visit Aliases");
         }
     }
 
@@ -6625,12 +6610,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantGroups");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups");
-            return root;
         }
     }
 
@@ -6714,13 +6698,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantGroups");
             String manageGroupsTitle = "Manage " + getStudyRedirectIfNull().getSubjectNounSingular() + " Groups";
             root.addChild(manageGroupsTitle, new ActionURL(ManageParticipantCategoriesAction.class, getContainer()));
             root.addChild("Send Participant Group");
-            return root;
         }
     }
 
@@ -6806,14 +6789,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("alternateIDs");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             String subjectNoun = getStudyRedirectIfNull().getSubjectNounSingular();
             root.addChild("Manage Alternate " + subjectNoun + " IDs and " + subjectNoun + " Aliases");
-
-            return root;
         }
     }
 
@@ -6827,13 +6808,12 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             String subjectColumnName = getStudyRedirectIfNull().getSubjectColumnName();
             root.addChild("Merge " + subjectColumnName + "s");
-            return root;
-        }
+          }
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -6846,9 +6826,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -7135,9 +7114,8 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -7388,7 +7366,7 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
         }
@@ -7441,12 +7419,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageLocations");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Location Types");
-            return root;
         }
     }
 
@@ -7568,10 +7545,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Upload " + _study.getSubjectNounSingular() + " Mapping");
-            return root;
         }
 
         @Override
@@ -7605,12 +7581,11 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("studyPubRefresh");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild((_study.getStudySnapshotType() != null ? _study.getStudySnapshotType().getTitle() : "") + " Study Settings");
-            return root;
         }
 
         @Override
@@ -7700,9 +7675,9 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Configure Master Patient Index");
+            root.addChild("Configure Master Patient Index");
         }
     }
 
@@ -7797,13 +7772,13 @@ public class StudyController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             MasterPatientIndexService svc = getService();
             if (svc != null)
-                return root.addChild("Manage " + svc.getName() + " Configuration");
+                root.addChild("Manage " + svc.getName() + " Configuration");
             else
-                return root.addChild("Manage Master Patient Index Configuration");
+                root.addChild("Manage Master Patient Index Configuration");
         }
 
         private MasterPatientIndexService getService()

@@ -379,9 +379,8 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -482,11 +481,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
             String title = _active ? "Reactivate Users" : "Deactivate Users";
-            return root.addChild(title);
+            root.addChild(title);
         }
     }
 
@@ -655,10 +654,10 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-            return root.addChild("Delete Users");
+            root.addChild("Delete Users");
         }
     }
 
@@ -774,17 +773,17 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
             {
                 setHelpTopic(new HelpTopic("manageUsers"));
-                return root.addChild("Site Users");
+                root.addChild("Site Users");
             }
             else
             {
                 setHelpTopic(new HelpTopic("manageProjectMembers"));
-                return root.addChild("Project Users");
+                root.addChild("Project Users");
             }
         }
     }
@@ -869,17 +868,17 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (getContainer().isRoot())
             {
                 root.addChild("Site Users", new UserUrlsImpl().getSiteUsersURL());
-                return root.addChild("Site Users History");
+                root.addChild("Site Users History");
             }
             else
             {
                 root.addChild("Project Users", new UserUrlsImpl().getProjectUsersURL(getContainer()));
-                return root.addChild("Project Users History");
+                root.addChild("Project Users History");
             }
         }
     }
@@ -1416,15 +1415,14 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_showNavTrail)
             {
                 addUserDetailsNavTrail(root, _userId);
                 root.addChild("Permissions");
-                return root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
+                root.addChild("Role Assignments for User: " + UserManager.getEmailForId(_userId));
             }
-            return null;
         }
     }
 
@@ -1649,9 +1647,9 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(UserManager.getEmailForId(_detailsUserId));
+            root.addChild(UserManager.getEmailForId(_detailsUserId));
         }
     }
 
@@ -2008,11 +2006,11 @@ public class UserController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             addUserDetailsNavTrail(root, _urlUserId);
             String email = UserManager.getEmailForId(_urlUserId);
-            return root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
+            root.addChild("Change Email Address" + (null != email ? ": " + email : ""));
         }
     }
 
