@@ -113,7 +113,6 @@
         <td>New datasets can be added to this study at any time.</td>
         <%
             ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
-            createURL.addParameter("autoDatasetId", "true");
         %>
         <td><%= link("Create New Dataset", createURL)%></td>
     </tr>
@@ -180,7 +179,7 @@
     }
 %></table>
 <br>
-<%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c).addParameter("autoDatasetId","true"))%>
+<%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c))%>
 <% if (!shadowed.isEmpty())
 {
     %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%

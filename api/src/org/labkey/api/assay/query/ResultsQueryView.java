@@ -203,8 +203,8 @@ public class ResultsQueryView extends AssayBaseQueryView
     public static class ResultsDataRegion extends DataRegion
     {
         private ColumnInfo _matchColumn;
-        private final AssayProvider _provider;
-        private final ExpProtocol _protocol;
+        protected final AssayProvider _provider;
+        protected final ExpProtocol _protocol;
 
         public ResultsDataRegion(AssayProvider provider, ExpProtocol protocol)
         {

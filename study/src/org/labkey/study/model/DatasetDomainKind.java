@@ -241,9 +241,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
     @Override
     public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user)
     {
-        ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, container);
-        createURL.addParameter("autoDatasetId", "true");
-        return createURL;
+        return new ActionURL(StudyController.DefineDatasetTypeAction.class, container);
     }
 
     @Override
@@ -527,7 +525,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Label related exceptions
 
-        if ((def != null && !def.getLabel().equals(label) || (def == null)) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
+        if ((def == null || !def.getLabel().equals(label)) && null != StudyManager.getInstance().getDatasetDefinitionByLabel(study, label))
             throw new IllegalArgumentException("A Dataset already exists with the label \"" + label +"\".");
 
         // Additional key related exceptions
@@ -559,7 +557,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
         // Other exception(s)
 
-        if (def != null &&  null != datasetId && def.getDatasetId() != datasetId && null != study.getDataset(datasetId))
+        if (null != datasetId && (null == def || def.getDatasetId() != datasetId) && null != study.getDataset(datasetId))
             throw new IllegalArgumentException("A Dataset already exists with the datasetId \"" + datasetId +"\".");
 
         if (!study.getShareVisitDefinitions() && null != datasetProperties.getDataSharing() && !datasetProperties.getDataSharing().equals("NONE"))
