@@ -66,18 +66,21 @@ public final class HtmlString implements DOM.Renderable, Comparable<HtmlString>
     }
 
 
-    public static boolean isBlank(HtmlString html)
+    /** null safe version of StringUtils.isBlank(html.toString()) */
+    public static boolean isBlank(@Nullable HtmlString html)
     {
         return null == html || StringUtils.isBlank(html._s);
     }
 
-    public static boolean isEmpty(HtmlString html)
+    /** null safe version of StringUtils.isEmpty(html.toString()) */
+    public static boolean isEmpty(@Nullable HtmlString html)
     {
         return null == html || StringUtils.isEmpty(html._s);
     }
 
-    /* null safe version of html.toString() */
-    public static String toString(HtmlString html)
+    /** null safe version of html.toString() */
+    @NotNull
+    public static String toString(@Nullable HtmlString html)
     {
         return null==html ? "" : html.toString();
     }
