@@ -65,4 +65,6 @@ public interface AdminUrls extends UrlProvider
     ActionURL getTrackedAllocationsViewerURL();
 
     void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+    @Deprecated // use addAdminNavTrail above
+    NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }
