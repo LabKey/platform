@@ -47,7 +47,7 @@
     "build-pages:dev": {
       "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
       "env": {
-        "LK_MODULE": "list",
+        "LK_MODULE": "core",
         "NODE_ENV": "development"
       }
     },
