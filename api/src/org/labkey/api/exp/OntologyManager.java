@@ -41,7 +41,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.gwt.client.ui.domain.CancellationException;
+import org.labkey.api.gwt.client.ui.CancellationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;

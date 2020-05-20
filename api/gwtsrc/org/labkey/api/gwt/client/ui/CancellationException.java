@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.labkey.api.gwt.client.ui.domain;
-
-import com.google.gwt.user.client.rpc.SerializableException;
-
-/**
- * User: jgarms
- * Date: Nov 4, 2008
+package org.labkey.api.gwt.client.ui;
+/*
+ * User: adam
+ * Date: Dec 31, 2009
+ * Time: 12:25:09 PM
  */
-public class GWTImportException extends SerializableException
+public class CancellationException extends RuntimeException
 {
-    public GWTImportException()
-    {
-        super();
-    }
-
-    public GWTImportException(String message)
-    {
-        super(message);
-    }
 }
