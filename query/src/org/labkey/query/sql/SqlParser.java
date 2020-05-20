@@ -50,6 +50,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -60,6 +61,7 @@ import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.ref.SoftReference;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -88,7 +90,7 @@ import static org.labkey.query.sql.antlr.SqlBaseParser.*;
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored","ThrowableInstanceNeverThrown"})
 public class SqlParser
 {
-	private static Logger _log = Logger.getLogger(SqlParser.class);
+    private static final Logger _log = Logger.getLogger(SqlParser.class);
 
     ArrayList<Exception> _parseErrors;
     List<QueryParseException> _parseWarnings;
@@ -96,6 +98,56 @@ public class SqlParser
     ArrayList<QParameter> _parameters;
     final SqlDialect _dialect;
     Container _container = null;
+
+    final static SoftPool<_SqlParser> _parserPool = new SoftPool<>();
+
+    static class SoftPool<T> implements MemTrackerListener
+    {
+        SoftPool()
+        {
+            MemTracker.get().register(this);
+            assert MemTracker.get().put(this);
+        }
+
+        @Override
+        public synchronized void beforeReport(Set<Object> set)
+        {
+            set.add(SqlParser._parserPool);
+            for (var r : _pool)
+                set.add(r.get());
+        }
+
+        final int maxPoolSize=3;
+        final ArrayList<SoftReference<T>> _pool = new ArrayList<>();
+        @Nullable
+        public synchronized T get()
+        {
+            while (!_pool.isEmpty())
+            {
+                SoftReference<T> r = _pool.remove(0);
+                T t = r.get();
+                if (null != t)
+                    return t;
+            }
+            return null;
+        }
+        public synchronized void put(T t)
+        {
+            if (_pool.size()<maxPoolSize)
+            {
+                _pool.add(new SoftReference<>(t));
+                return;
+            }
+            for (int i=0 ; i<_pool.size() ; i++)
+            {
+                if (null==_pool.get(i).get())
+                {
+                    _pool.set(i, new SoftReference<>(t));
+                    return;
+                }
+            }
+        }
+    }
 
     //
     // PUBLIC
@@ -116,49 +168,61 @@ public class SqlParser
         _container = c;
     }
 
+    /** see also _SqlParser.close() for AutoCloseable behavior */
+    private _SqlParser getAntlrParser()
+    {
+        _SqlParser ret = _parserPool.get();
+        if (null == ret)
+            ret = new _SqlParser();
+        return ret;
+    }
+
     // for testing only
     public Tree rawQuery(String str) throws Exception
     {
-        _parseErrors = new ArrayList<>();
-        _SqlParser parser = new _SqlParser(str, _parseErrors);
-        ParserRuleReturnScope selectScope = parser.statement();
-        if (!_parseErrors.isEmpty())
-            throw _parseErrors.get(0);
-        return (Tree)selectScope.getTree();
+        try (var parser = getAntlrParser())
+        {
+            _parseErrors = new ArrayList<>();
+            parser.reset(str, _parseErrors);
+            ParserRuleReturnScope selectScope = parser.statement();
+            if (!_parseErrors.isEmpty())
+                throw _parseErrors.get(0);
+            return (Tree) selectScope.getTree();
+        }
     }
 
 
-	public QNode parseQuery(@NotNull String str, @NotNull List<? super QueryParseException> errors, @Nullable List<QueryParseException> warnings)
-	{
-		_parseErrors = new ArrayList<>();
+    public QNode parseQuery(@NotNull String str, @NotNull List<? super QueryParseException> errors, @Nullable List<QueryParseException> warnings)
+    {
+        _parseErrors = new ArrayList<>();
         _parseWarnings = null==warnings ? new ArrayList<QueryParseException>() : warnings;
-		try
-		{
- 			_SqlParser parser = new _SqlParser(str, _parseErrors);
+        try (var parser = getAntlrParser())
+        {
+            parser.reset(str, _parseErrors);
             ParserRuleReturnScope selectScope = null;
-			try
-			{
-				selectScope = parser.statement();
+            try
+            {
+                selectScope = parser.parseSelect();
                 int last = parser.getTokenStream().LA(1);
-				if (EOF != last)
+                if (EOF != last)
                 {
                     CommonToken t = (CommonToken)parser.getTokenStream().LT(1);
-					//noinspection ThrowableInstanceNeverThrown
+                    //noinspection ThrowableInstanceNeverThrown
                     if (null != t)
                         _parseErrors.add(new QueryParseException("Unexpected token: " + t.getText(), null, t.getLine(), t.getCharPositionInLine()));
                     else
-					    _parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
+                        _parseErrors.add(new QueryParseException("EOF expected", null, 0, 0));
                 }
-			}
-			catch (Exception x)
-			{
-				_parseErrors.add(x);
-			}
+            }
+            catch (Exception x)
+            {
+                _parseErrors.add(x);
+            }
 
-			if (_parseErrors.size() == 0)
-			{
-				CommonTree parseRoot = (CommonTree) selectScope.getTree();
-				assert parseRoot != null;
+            if (_parseErrors.size() == 0)
+            {
+                CommonTree parseRoot = (CommonTree) selectScope.getTree();
+                assert parseRoot != null;
 //                assert dump(parseRoot);
                 assert parseRoot.getType() == STATEMENT;
                 assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2 || parseRoot.getChildCount() == 3;
@@ -214,7 +278,7 @@ public class SqlParser
                     return null;
                 }
 
-				QNode qnodeSelect = convertParseTree(selectStmt);
+                QNode qnodeSelect = convertParseTree(selectStmt);
                 QNode qnodeRoot;
                 if (null != qnodeWith)
                 {
@@ -226,28 +290,28 @@ public class SqlParser
                 {
                     qnodeRoot = qnodeSelect;
                 }
-				assert dump(qnodeRoot);
-				assert MemTracker.getInstance().put(qnodeRoot);
+                assert dump(qnodeRoot);
+                assert MemTracker.getInstance().put(qnodeRoot);
 
-				if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion || qnodeRoot instanceof QWithQuery)
-					_root = qnodeRoot;
-				else
-					errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
+                if (qnodeRoot instanceof QQuery || qnodeRoot instanceof QUnion || qnodeRoot instanceof QWithQuery)
+                    _root = qnodeRoot;
+                else
+                    errors.add(new QueryParseException("This does not look like a WITH, SELECT or UNION query", null, 0, 0));
             }
-			
-			for (Throwable e : _parseErrors)
-			{
-				errors.add(wrapParseException(e));
-			}
+            
+            for (Throwable e : _parseErrors)
+            {
+                errors.add(wrapParseException(e));
+            }
 
-			return _root;
-		}
-		catch (Exception e)
-		{
-			errors.add(wrapParseException(e));
-			return null;
-		}
-	}
+            return _root;
+        }
+        catch (Exception e)
+        {
+            errors.add(wrapParseException(e));
+            return null;
+        }
+    }
 
 
     private boolean isSetOperator(int type)
@@ -276,17 +340,17 @@ public class SqlParser
         return null==_parameters ? new ArrayList<QParameter>(0) : _parameters;
     }
 
-	
+    
     public QExpr parseExpr(String str, List<? super QueryParseException> errors)
     {
         _parseErrors = new ArrayList<>();
-        try
+        try (var parser = getAntlrParser())
         {
-            _SqlParser parser = new _SqlParser(str, _parseErrors);
+            parser.reset(str, _parseErrors);
             ParserRuleReturnScope exprScope = null;
             try
             {
-                exprScope = parser.expression();
+                exprScope = parser.parseExpression();
                 int last = parser.getTokenStream().LA(1);
                 if (EOF != last)
                     //noinspection ThrowableInstanceNeverThrown
@@ -412,19 +476,19 @@ public class SqlParser
     }
 
 
-	private boolean dump(QNode node)
-	{
-		if (null != node && _log.isDebugEnabled())
-		{
-			StringWriter sw = new StringWriter();
-			try (PrintWriter pw = new PrintWriter(sw))
+    private boolean dump(QNode node)
+    {
+        if (null != node && _log.isDebugEnabled())
+        {
+            StringWriter sw = new StringWriter();
+            try (PrintWriter pw = new PrintWriter(sw))
             {
                 node.dump(pw);
             }
-			_log.debug(sw.toString());
-		}
-		return true;
-	}
+            _log.debug(sw.toString());
+        }
+        return true;
+    }
 
     static public boolean isLegalIdentifierChar(char ch, boolean fFirst)
     {
@@ -716,31 +780,31 @@ public class SqlParser
     }
     
 
-	private QNode convertParseTree(CommonTree node)
-	{
-		LinkedList<QNode> l = new LinkedList<>();
-		for (int i=0 ; i<node.getChildCount() ; i++)
-		{
+    private QNode convertParseTree(CommonTree node)
+    {
+        LinkedList<QNode> l = new LinkedList<>();
+        for (int i=0 ; i<node.getChildCount() ; i++)
+        {
             CommonTree child = (CommonTree)node.getChild(i);
             if (child.getType() == COMMA)
             {
                 _parseWarnings.add(new QueryParseWarning("Trailing comma in select list", null, child.getLine(), child.getCharPositionInLine()));
                 continue;
             }
-			QNode q = convertParseTree(child);
-			if (q != null)
-				l.add(q);
-			else
-				assert _parseErrors.size() > 0;
-		}
-		return convertNode(node, l);
-	}
+            QNode q = convertParseTree(child);
+            if (q != null)
+                l.add(q);
+            else
+                assert _parseErrors.size() > 0;
+        }
+        return convertNode(node, l);
+    }
 
-	
-	private QNode convertNode(CommonTree node, LinkedList<QNode> children)
-	{
-		switch (node.getType())
-		{
+    
+    private QNode convertNode(CommonTree node, LinkedList<QNode> children)
+    {
+        switch (node.getType())
+        {
             case ALIAS:
             case AS:
             {
@@ -759,7 +823,7 @@ public class SqlParser
                 }
                 return first(children);
             }
-			case METHOD_CALL:
+            case METHOD_CALL:
             {
                 QNode id = first(children), exprList = second(children);
                 if (!(id instanceof QIdentifier))
@@ -830,7 +894,7 @@ public class SqlParser
                 {
                 }
                 
-				break;
+                break;
             }
             case AGGREGATE:
             {
@@ -910,14 +974,14 @@ public class SqlParser
                 }
                 return query;
             }
-			default:
-				break;
-		}
+            default:
+                break;
+        }
 
-		return qnode(node, children);
-	}
+        return qnode(node, children);
+    }
 
-	private QQuery makeTransformedAggregateQuery(QQuery query)
+    private QQuery makeTransformedAggregateQuery(QQuery query)
     {
         // Split Select into two selects:
         // -- inner will do percentile_cont to calculate median, but not aggregate other aggregates in select
@@ -1298,20 +1362,20 @@ public class SqlParser
     }
 
 
-	private static QNode first(LinkedList<QNode> children)
-	{
-		return children.size() > 0 ? children.get(0) : null;
-	}
+    private static QNode first(LinkedList<QNode> children)
+    {
+        return children.size() > 0 ? children.get(0) : null;
+    }
 
 
-	private static QNode second(LinkedList<QNode> children)
-	{
-		return children.size() > 1 ? children.get(1) : null;
-	}
-	
+    private static QNode second(LinkedList<QNode> children)
+    {
+        return children.size() > 1 ? children.get(1) : null;
+    }
+    
 
-	private QNode constantToStringNode(QNode node)
-	{
+    private QNode constantToStringNode(QNode node)
+    {
         if (node instanceof QString)
         {
             QString q = new QString();
@@ -1321,14 +1385,14 @@ public class SqlParser
         }
         else if (node instanceof QIdentifier)
         {
-		    String s =  ((QIdentifier)node).getIdentifier();
-		    QString q = new QString(s.toUpperCase());
-		    q.setLineAndColumn(node);
-		    return q;
+            String s =  ((QIdentifier)node).getIdentifier();
+            QString q = new QString(s.toUpperCase());
+            q.setLineAndColumn(node);
+            return q;
         }
         else
             return node;
-	}
+    }
 
 
     public static class CaseInsensitiveStringStream extends ANTLRStringStream
@@ -1347,16 +1411,28 @@ public class SqlParser
     }
 
 
-    private static class _SqlParser extends SqlBaseParser
-	{
-        final ArrayList<Exception> _errors;
-        
-		public _SqlParser(String str, ArrayList<Exception> errors)
-		{
-			super(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
+    private static class _SqlParser extends SqlBaseParser implements AutoCloseable
+    {
+        ArrayList<Exception> _errors;
+
+        public _SqlParser()
+        {
+            super(null);
             setTreeAdaptor(new LabKeyTreeAdaptor());
-            _errors = errors;
+            _errors = null;
             assert MemTracker.getInstance().put(this);
+        }
+
+        public _SqlParser(String str, ArrayList<Exception> errors)
+        {
+            this();
+            reset(str, errors);
+        }
+
+        public void reset(String str, ArrayList<Exception> errors)
+        {
+            _errors = errors;
+            setTokenStream(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
         }
 
         public boolean isSqlType(String type)
@@ -1375,37 +1451,45 @@ public class SqlParser
             }
         }
 
-		@Override
-		public void reportError(RecognitionException ex)
-		{
-			_errors.add(ex);
-		}
-	}
+        @Override
+        public void reportError(RecognitionException ex)
+        {
+            _errors.add(ex);
+        }
+
+        @Override
+        public void close() throws Exception
+        {
+            _errors = null;
+            setTokenStream(null);
+            _parserPool.put(this);
+        }
+    }
 
 
-	QNode qnode(CommonTree n, LinkedList<QNode> children)
-	{
-		QNode q = qnode(n);
+    QNode qnode(CommonTree n, LinkedList<QNode> children)
+    {
+        QNode q = qnode(n);
         if (null == q)
             return null;
         if (q instanceof QDot && children.size() == 0)
             return q;
         q._replaceChildren(children);
-		return q;
-	}
+        return q;
+    }
 
 
 
-	QNode qnode(CommonTree node)
+    QNode qnode(CommonTree node)
     {
-		int type = node.getType();
-		QNode q;
-		
+        int type = node.getType();
+        QNode q;
+        
         switch (type)
         {
             case AS:
                 q = new QAs();
-				break;
+                break;
             case IDENT:
             case QUOTED_IDENTIFIER:
                 return QIdentifier.create(node);
@@ -1420,7 +1504,7 @@ public class SqlParser
                     if (left.getType() == DOT || left.getType() == IDENT || left.getType() == QUOTED_IDENTIFIER)
                     {
                         q = new QDot();
-    				    break;
+                        break;
                     }
                     if (left.getType() == QUOTED_STRING)
                         _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "' after string literal", null, node.getLine(), node.getCharPositionInLine()));
@@ -1430,11 +1514,11 @@ public class SqlParser
                 }
             case QUOTED_STRING:
                 q = new QString();
-				break;
+                break;
             case TRUE:
             case FALSE:
                 q = new QBoolean();
-				break;
+                break;
             case NUM_DOUBLE:
             case NUM_FLOAT:
             case NUM_INT:
@@ -1442,82 +1526,82 @@ public class SqlParser
                 return new QNumber(node);
             case FROM:
                 q = new QFrom();
-				break;
+                break;
             case SELECT_FROM:
                 q = new QSelectFrom();
-				break;
+                break;
             case SELECT:
                 q = new QSelect();
-				break;
+                break;
             case PIVOT:
                 q = new QPivot();
                 break;
             case QUERY:
                 q = new QQuery();
-				break;
+                break;
             case WHERE:
                 q = new QWhere();
-				break;
+                break;
             case HAVING:
                 q = new QWhere(true);
                 break;
             case METHOD_CALL:
                 q = new QMethodCall();
-				break;
+                break;
             case AGGREGATE:
             case COUNT:
                 q = new QAggregate();
-				break;
+                break;
             case EXPR_LIST:
             case IN_LIST:
                 q = new QExprList();
-				break;
+                break;
             case ROW_STAR:
-				q = new QRowStar();
-				break;
+                q = new QRowStar();
+                break;
             case GROUP:
                 q = new QGroupBy();
-				break;
+                break;
             case ORDER:
                 q = new QOrder();
-				break;
+                break;
             case CASE:
             case CASE2:
                 q = new QCase(type==CASE2);
-				break;
+                break;
             case WHEN:
                 q = new QWhen();
-				break;
+                break;
             case ELSE:
                 q = new QElse();
-				break;
+                break;
             case NULL:
                 q = new QNull();
-				break;
+                break;
             case LIMIT:
                 q = new QLimit();
-				break;
+                break;
             case DISTINCT:
                 q = new QDistinct();
-				break;
+                break;
             case EXCEPT:
             case INTERSECT:
-			case UNION:
+            case UNION:
             case UNION_ALL:
-				return new QUnion(node);
+                return new QUnion(node);
 
-			case ON:
-			case INNER:
-			case LEFT:
-			case RIGHT:
-			case OUTER:
-			case JOIN:
-			case FULL:
+            case ON:
+            case INNER:
+            case LEFT:
+            case RIGHT:
+            case OUTER:
+            case JOIN:
+            case FULL:
             case CROSS:
-			case ASCENDING:
-			case DESCENDING:
-			case RANGE:
-				return new QUnknownNode(node);
+            case ASCENDING:
+            case DESCENDING:
+            case RANGE:
+                return new QUnknownNode(node);
 
             case EXISTS: case ANY: case SOME: case ALL:
             case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT:
@@ -1526,32 +1610,32 @@ public class SqlParser
             case NOT: case AND: case OR: case LIKE: case NOT_LIKE: case IN: case NOT_IN:
             case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);
-				assert op != null : "No Operation found for type " + type + ". If you are on a development system, you may need to rebuild";
+                assert op != null : "No Operation found for type " + type + ". If you are on a development system, you may need to rebuild";
                 if (op == null)
-				{
-					_parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
-			    	return null;
-				}
-				q = op.expr();
-				break;
-//			case ESCAPE:
-//				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
+                {
+                    _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
+                    return null;
+                }
+                q = op.expr();
+                break;
+//            case ESCAPE:
+//                _parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
 //              return null;
             case DECLARATION:
                 return new QUnknownNode();
             case WITH:
                 return new QWith(node);
-			default:
-	            _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
-				return null;
+            default:
+                _parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
+                return null;
         }
 
-		assert q != null || _parseErrors.size() > 0;
-		
-		// default behavior for nodes that don't have QNode(Node N) constructors
-		if (q != null)
-			q.from(node);
-		return q;
+        assert q != null || _parseErrors.size() > 0;
+        
+        // default behavior for nodes that don't have QNode(Node N) constructors
+        if (q != null)
+            q.from(node);
+        return q;
     }
 
 
@@ -1567,7 +1651,7 @@ public class SqlParser
         }
 
         QExpr ret = (QExpr) expr.clone();
-		for (QNode child : expr.children())
+        for (QNode child : expr.children())
         {
             //
             if (child == methodName)
@@ -1584,10 +1668,10 @@ public class SqlParser
     //
 
 
-	
+    
     /* UNDONE keywords
     class delete elements fetch indices insert into limit new set update versioned both empty leading member of trailing
- 	*/
+     */
     static String[] testSql = new String[]
     {
         "SELECT 'text',1,-2,1000000L,1.0f,3.1415926535897932384626433832795,6.02214179e23,TRUE,FALSE,0x0ab12,NULL FROM R",
@@ -1609,7 +1693,7 @@ public class SqlParser
 
         "SELECT \"R\".a, S.b FROM R FULL JOIN S ON R.x = S.x",
 
-		"SELECT \"R\".a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
+        "SELECT \"R\".a, S.b FROM R FULL OUTER JOIN S ON R.x = S.x",
 
         "SELECT \"R\".a, S.b FROM R, S WHERE R.x = S.x",
 
@@ -1625,7 +1709,7 @@ public class SqlParser
         "SELECT CASE R.a WHEN 1 THEN 'one' WHEN 2 THEN 'two' ELSE 'few' END FROM R",
 
         "SELECT R.a FROM R WHERE R.a LIKE 'a%'",
-//		"SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
+//        "SELECT R.a FROM R WHERE R.a LIKE 'a%' AND R.b LIKE 'a/%' ESCAPE '/'",
 
         "SELECT MS2SearchRuns.Flag,MS2SearchRuns.Links,MS2SearchRuns.Name,MS2SearchRuns.Created,MS2SearchRuns.RunGroups FROM MS2SearchRuns",
 
@@ -1636,25 +1720,25 @@ public class SqlParser
         "SELECT CAST(a AS VARCHAR), CAST(a+b AS INTEGER) FROM R",
         "SELECT TIMESTAMPDIFF(SQL_TSI_SECOND,a,b), TIMESTAMPDIFF(SECOND,a,b), TIMESTAMPDIFF('SQL_TSI_DAY',a,b), TIMESTAMPDIFF('DAY',a,b) FROM R",
         "SELECT TIMESTAMPDIFF('SQL_TSI_Second',a,b), TIMESTAMPDIFF('Second',a,b), TIMESTAMPDIFF('SQL_TSI_Day',a,b), TIMESTAMPDIFF('Day',a,b) FROM R",
-		"SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
+        "SELECT TIMESTAMPADD(SQL_TSI_SECOND,1,b), TIMESTAMPADD(SECOND,1,b), TIMESTAMPADD('SQL_TSI_DAY',1,b), TIMESTAMPADD('DAY',1,b) FROM R",
 
-		"SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
-		"SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
-		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T ON R.z=T.z",
+        "SELECT (SELECT value FROM S WHERE S.x=R.x) AS V FROM R",
+        "SELECT R.value AS V FROM R WHERE R.y > (SELECT MAX(S.y) FROM S WHERE S.x=R.x)",
+        "SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S) T ON R.z=T.z",
 
-//		"SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-//		"SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
-//		"SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
-//		"SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
-//		"SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
+//        "SELECT R.a FROM R WHERE EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+//        "SELECT R.a FROM R WHERE NOT EXISTS (SELECT S.b FROM S WHERE S.x=R.x)",
+//        "SELECT R.a FROM R WHERE R.value > ALL (SELECT value from S WHERE S.x=R.x)",
+//        "SELECT R.a FROM R WHERE R.value > ANY (SELECT value from S WHERE S.x=R.x)",
+//        "SELECT R.a FROM R WHERE R.value > SOME (SELECT value from S WHERE S.x=R.x)",
 
         "SELECT a FROM R WHERE a=b AND b<>c AND b!=c AND c>d AND d<e AND e<=f AND f>=g AND g IS NULL AND h IS NOT NULL " +
                 " AND i BETWEEN 1 AND 2 AND j+k-l=-1 AND m/n=o AND p||q=r AND (NOT s OR t) AND u LIKE '%x%' AND u NOT LIKE '%xx%' " +
                 " AND v IN (1,2) AND v NOT IN (3,4) AND x&y=1 AND x|y=1 AND x^y=1",
 
-		"SELECT a FROM R UNION SELECT b FROM S",
+        "SELECT a FROM R UNION SELECT b FROM S",
         "SELECT a FROM R UNION ALL SELECT b FROM S",
-		"(SELECT a FROM R) UNION ALL (SELECT b FROM S UNION (SELECT c FROM T)) ORDER BY a",
+        "(SELECT a FROM R) UNION ALL (SELECT b FROM S UNION (SELECT c FROM T)) ORDER BY a",
         "SELECT a, b FROM (SELECT a, b FROM R UNION SELECT a, b FROM S) U",
 
         // HAVING
@@ -1691,10 +1775,10 @@ public class SqlParser
 
     static String[] failSql = new String[]
     {
-		"",
+        "",
         "lutefisk",
         "SELECT R.a FROM R WHERE > 5", "SELECT R.a + AS A FROM R", "SELECT (R.a +) R.b AS A FROM R",
-		"SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
+        "SELECT R.value, T.a, T.b FROM R INNER JOIN (SELECT S.a, S.b FROM S)",
         "SELECT SUM(*) FROM R",
         "SELECT a, GROUP_CONCAT(b, '%$', 'STUPID') FROM R GROUP BY a",
         "SELECT a, GROUP_CONCAT() FROM R GROUP BY a",
@@ -1820,23 +1904,23 @@ public class SqlParser
         private void good(String sql)
         {
             List<QueryParseException> errors = new ArrayList<>();
-			QNode q = (new SqlParser()).parseQuery(sql,errors,null);
-			if (errors.size() > 0)
-				fail(errors.get(0).getMessage() + "\n" + sql);
-			else
-				assertNotNull(q);
+            QNode q = (new SqlParser()).parseQuery(sql,errors,null);
+            if (errors.size() > 0)
+                fail(errors.get(0).getMessage() + "\n" + sql);
+            else
+                assertNotNull(q);
         }
 
 
-		private void bad(String sql)
-		{
-			List<QueryParseException> errors = new ArrayList<>();
-			QNode q = (new SqlParser()).parseQuery(sql,errors,null);
-			if (errors.size() == 0)
-				fail("BAD: " + sql);
-		}
+        private void bad(String sql)
+        {
+            List<QueryParseException> errors = new ArrayList<>();
+            QNode q = (new SqlParser()).parseQuery(sql,errors,null);
+            if (errors.size() == 0)
+                fail("BAD: " + sql);
+        }
 
-		
+        
         @Test
         public void testExprs()
         {
@@ -1887,6 +1971,7 @@ public class SqlParser
         @Test
         public void testSql()
         {
+            long start = System.currentTimeMillis();
             for (String sql : testSql)
             {
                 try
@@ -1906,13 +1991,15 @@ public class SqlParser
                 {
                     if (sql.equals("BROKEN"))
                         break;
-					bad(sql);
+                    bad(sql);
                 }
                 catch (Throwable t)
                 {
                     fail(sql);
                 }
             }
+            long end = System.currentTimeMillis();
+            _log.trace("SqlParser.testSql(): " + DateUtil.formatDuration(end-start));
         }
 
         @Test
