@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
@@ -46,7 +47,7 @@ public interface WikiService
     WebPartView getView(Container c, String name, boolean renderContentOnly);
     WebPartView getHistoryView(Container c, String name);
 
-    String getHtml(Container c, String name);
+    HtmlString getHtml(Container c, String name);
 
     void insertWiki(User user, Container container, String name, String content, WikiRendererType renderType, String title);
 
