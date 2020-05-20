@@ -92,7 +92,6 @@ import org.labkey.api.qc.AbstractManageQCStatesBean;
 import org.labkey.api.qc.AbstractManageQCStatesForm;
 import org.labkey.api.qc.DeleteQCStateForm;
 import org.labkey.api.qc.QCStateHandler;
-import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;

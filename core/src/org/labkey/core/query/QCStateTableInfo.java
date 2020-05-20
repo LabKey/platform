@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateHandler;
 import org.labkey.api.qc.QCStateManager;
@@ -62,7 +63,7 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         return getContainer().hasPermission(user, perm);
     }
 
-    private class QCStateService extends DefaultQueryUpdateService
+    static class QCStateService extends DefaultQueryUpdateService
     {
         public QCStateService(FilteredTable table) { super(table, table.getRealTable()); }
 
@@ -82,8 +83,14 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
-            QCStateManager.getInstance().clearCache(container);
-            return super.insertRow(user, container, row);
+            Map<String, Object> rowToInsert;
+            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                rowToInsert = super.insertRow(user, container, row);
+                QCStateManager.getInstance().clearCache(container);
+                transaction.commit();
+            }
+            return rowToInsert;
         }
 
         @Override
@@ -92,8 +99,15 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
             if (!validateQCStateNotInUse(oldRowMap, container))
                 throw new QueryUpdateServiceException("QC state '" + oldRowMap.get("label") + "' cannot be deleted as it is currently in use.");
 
-            QCStateManager.getInstance().clearCache(container);
-            return super.deleteRow(user, container, oldRowMap);
+            Map<String, Object> rowToDelete;
+            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                rowToDelete = super.deleteRow(user, container, oldRowMap);
+                QCStateManager.getInstance().clearCache(container);
+                transaction.commit();
+            }
+
+            return rowToDelete;
         }
     }
 

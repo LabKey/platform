@@ -37,7 +37,7 @@ import java.util.Map;
 public class QCStateManager
 {
     private static final QCStateManager _instance = new QCStateManager();
-    private Map<String, QCStateHandler> _QCStateHandlers = new HashMap<>();
+    private static Map<String, QCStateHandler> _QCStateHandlers = new HashMap<>();
     private static final Cache<Container, QCStateCollections> QC_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "QCStates", new CacheLoader<Container, QCStateCollections>()
     {
         @Override
