@@ -3114,17 +3114,24 @@ public class QueryServiceImpl extends AuditHandler implements QueryService
         if (null == qdef)
         {
             if (errors.isEmpty())
-                throw new QueryException("Query not found: " + queryName);
+                throw new QueryException("Query not found: " + schema.getName() + "." + queryName);
             return null;
         }
 
-        Query query = qdef.getQuery(schema, errors, null, true);
+        try
+        {
+            Query query = qdef.getQuery(schema, errors, null, true);
 
-        warnings.addAll(query.getParseWarnings());
-        errors.addAll(query.getParseErrors());
-        dependencyGraph.putAll(query.getDependencies());
+            warnings.addAll(query.getParseWarnings());
+            errors.addAll(query.getParseErrors());
+            dependencyGraph.putAll(query.getDependencies());
 
-        return query.getTableInfo();
+            return query.getTableInfo();
+        }
+        catch (Exception x)
+        {
+            throw new QueryException("Could not analyze query " + schema.getName() + "." + queryName, x);
+        }
     }
 
     @Override
