@@ -40,6 +40,6 @@
                 </tr>
             </table>
             <hr>
-            <%=text(wiki.getLatestVersion().getHtml(c, wiki))%>
+            <%=wiki.getLatestVersion().getHtml(c, wiki)%>
         <%}%>
 </div>

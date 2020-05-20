@@ -57,7 +57,7 @@
     %>
         <hr size=1>
         <h3><a name="<%=h(wiki.getName())%>"></a><%=h(version.getTitle())%></h3><br>
-        <%=text(version.getHtml(c, wiki))%><br><br>
+        <%=version.getHtml(c, wiki)%><br><br>
     <%}
 %>
 </div>

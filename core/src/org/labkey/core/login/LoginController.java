@@ -988,7 +988,7 @@ public class LoginController extends SpringActionController
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             WikiTermsOfUseProvider.TermsOfUse tou = WikiTermsOfUseProvider.getTermsOfUse(getTermsOfUseProject(form));
-            response.put("termsOfUseContent", tou.getHtml());
+            response.put("termsOfUseContent", HtmlString.toString(tou.getHtml()));
             response.put("termsOfUseType", tou.getType());
             return response;
         }
@@ -1254,7 +1254,7 @@ public class LoginController extends SpringActionController
     public class AgreeToTermsBean
     {
         public final AgreeToTermsForm form;
-        public String termsOfUseHTML = null;
+        public HtmlString termsOfUseHTML = null;
 
         private AgreeToTermsBean(AgreeToTermsForm form)
         {

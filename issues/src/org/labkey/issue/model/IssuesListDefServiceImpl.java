@@ -77,16 +77,12 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
     @Override
     public ValidationException updateIssueDefinition(Container container, User user, GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, IssuesDomainKindProperties properties)
     {
+        ValidationException exception = new ValidationException();
         IssueManager.EntryTypeNames names = new IssueManager.EntryTypeNames();
 
         try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            ValidationException exception = new ValidationException();
-
-            if (!original.getDomainURI().equals(update.getDomainURI()))
-                exception.addGlobalError("Cannot change domainId of an existing issue definition.");
-
-            if (properties != null && !exception.hasErrors())
+            if (properties != null)
             {
                 names.singularName = properties.getSingularItemName();
                 names.pluralName = properties.getPluralItemName();
@@ -96,9 +92,13 @@ public class IssuesListDefServiceImpl implements IssuesListDefService
                 saveIssueProperties(container, properties, issueDefName);
             }
 
-            if (!exception.hasErrors())
+            // allow for the case of updating just the issues def properties but not the domain (i.e. shared domain case)
+            if (original != null && update != null)
             {
-                exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
+                if (!original.getDomainURI().equals(update.getDomainURI()))
+                    exception.addGlobalError("Cannot change domainId of an existing issue definition.");
+                else
+                    exception = DomainUtil.updateDomainDescriptor(original, update, container, user);
             }
 
             if (!exception.hasErrors())

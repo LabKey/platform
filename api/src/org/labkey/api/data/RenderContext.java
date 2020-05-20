@@ -835,7 +835,7 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (list == null || list.size() == 0)
             return HtmlString.EMPTY_STRING;
 
-        Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+        Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
         HtmlStringBuilder builder = HtmlStringBuilder.of("");
         HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
         for (Object m : list)
