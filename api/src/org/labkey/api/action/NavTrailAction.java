@@ -25,7 +25,7 @@ import org.labkey.api.view.NavTree;
  */
 public interface NavTrailAction
 {
-    @Deprecated(forRemoval = true)  // Implement addNavTrail() instead
+    @Deprecated()  // Implement addNavTrail() instead
     default NavTree appendNavTrail(NavTree root)
     {
         throw new IllegalStateException();
