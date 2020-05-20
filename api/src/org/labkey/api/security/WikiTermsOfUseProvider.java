@@ -23,6 +23,7 @@ import org.labkey.api.data.Project;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurityManager.TermsOfUseProvider;
 import org.labkey.api.util.EnumHasHtmlString;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.view.ActionURL;
@@ -123,7 +124,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
         if (null == service)
             return NO_TERMS;
 
-        String termsString;
+        HtmlString termsString;
         if (null != project) // find project-level terms of use, if any
         {
             termsString = service.getHtml(project.getContainer(), TERMS_OF_USE_WIKI_NAME);
@@ -173,15 +174,15 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
     public static class TermsOfUse
     {
         private final TermsOfUseType _type;
-        private final String _html;
+        private final HtmlString _html;
 
-        public TermsOfUse(@NotNull TermsOfUseType type, @Nullable String html)
+        public TermsOfUse(@NotNull TermsOfUseType type, @Nullable HtmlString html)
         {
             _type = type;
             _html = html;
         }
 
-        public String getHtml() { return _html; }
+        public HtmlString getHtml() { return _html; }
 
         public TermsOfUseType getType() { return _type; }
     }

@@ -59,6 +59,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ContainerTreeSelected;
 import org.labkey.api.util.DiffMatchPatch;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TextExtractor;
@@ -2563,7 +2564,7 @@ public class WikiController extends SpringActionController
                     {
                         containerProps.put("wikititle", version.getTitle());
                         containerProps.put("wikibody", version.getBody());
-                        containerProps.put("wikihtml", version.getHtml(getContainer(), wiki));
+                        containerProps.put("wikihtml", HtmlString.toString(version.getHtml(getContainer(), wiki)));
                     }
                 }
 

@@ -25,11 +25,11 @@
       }
     },
     "clean": {
-      "command": "rimraf resources/web/query/gen && rimraf resources/views/datasetDesigner*"
+      "command": "rimraf resources/web/study/gen && rimraf resources/views/datasetDesigner*"
     }
   },
   "dependencies": {
-    "@labkey/components": "0.58.0"
+    "@labkey/components": "0.60.0"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",

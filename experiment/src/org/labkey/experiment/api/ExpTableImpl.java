@@ -322,7 +322,7 @@ abstract public class ExpTableImpl<C extends Enum>
 
     protected void addVocabularyDomains()
     {
-        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), Set.of(VocabularyDomainKind.KIND_NAME), true);
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
         for (Domain domain : domains)
         {
             String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();

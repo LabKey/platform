@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 import React from 'react'
-import { ActionURL, getServerContext, Domain, Security } from "@labkey/api";
+import { ActionURL, getServerContext, Domain } from "@labkey/api";
 import {
     Alert,
     LoadingSpinner,
-    PermissionTypes,
     IssuesListDefModel,
     BeforeUnload,
     IssuesListDefDesignerPanels,
-    fetchIssuesListDefDesign
+    fetchIssuesListDefDesign,
 } from "@labkey/components";
 
 import "@labkey/components/dist/components.css"
@@ -71,8 +70,8 @@ export class App extends React.Component<{}, State> {
         this._dirty = true;
     };
 
-    getIssuesListUrl(model: IssuesListDefModel): string {
-        if (model.issueDefName) {
+    getIssuesListUrl(model?: IssuesListDefModel): string {
+        if (model && model.issueDefName) {
             return ActionURL.buildURL('issues', 'list', getServerContext().container.path, {issueDefName: model.issueDefName});
         }
 
@@ -86,24 +85,25 @@ export class App extends React.Component<{}, State> {
         window.location.href = returnUrl || defaultUrl;
     };
 
-    navigateOnComplete = (model: IssuesListDefModel) => {
-        if (model.issueDefName) {
-            this.navigate(this.getIssuesListUrl(model));
-        }
-        else {
-            Domain.getDomainDetails({
-                containerPath: getServerContext().container.path,
-                domainId: model.domain.domainId,
-                success: (data) => {
-                    const newModel = IssuesListDefModel.create(data);
-                    this.navigate(this.getIssuesListUrl(newModel));
-                },
-                failure: (error) => {
-                    this.navigate(this.getIssuesListUrl(model));
-                }
-            });
-        }
+    onComplete = (model: IssuesListDefModel) => {
+        this.navigate(this.getIssuesListUrl(model));
     };
+
+    renderContainerAlert() {
+        const { model } = this.state;
+        const domainContainer = model.domain.getDomainContainer();
+        const sourceUrl = ActionURL.buildURL('issues', 'list', domainContainer, {
+            issueDefName: model.issueDefName
+        });
+
+        return (
+            <Alert bsStyle={'info'}>
+                The fields definition for this issues list comes from a shared domain in another container and will
+                not be updatable from this page. To manage the fields definition for this shared issues list,
+                go to the <a href={sourceUrl}><b>source container</b></a>.
+            </Alert>
+        )
+    }
 
     render() {
         const { isLoadingModel, message, model } = this.state;
@@ -118,16 +118,15 @@ export class App extends React.Component<{}, State> {
 
         return (
             <BeforeUnload beforeunload={this.handleWindowBeforeUnload}>
-                {
+                {model.domain.isSharedDomain() && this.renderContainerAlert()}
                 <IssuesListDefDesignerPanels
-                        initModel={model}
-                        onCancel={this.onCancel}
-                        onComplete={this.navigateOnComplete}
-                        onChange={this.onChange}
-                        useTheme={true}
-                        successBsStyle={'primary'}
+                    initModel={model}
+                    onCancel={this.onCancel}
+                    onComplete={this.onComplete}
+                    onChange={this.onChange}
+                    useTheme={true}
+                    successBsStyle={'primary'}
                 />
-                }
             </BeforeUnload>
         );
     }

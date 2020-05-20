@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -52,14 +53,14 @@ if (!bean.hasReadPermission)
 <%}
 else
 {
-    String formattedHtml = (null != bean.wikiVersion ? bean.wikiVersion.getHtml(c, bean.wiki) : null);
-    if (null == formattedHtml)
+    HtmlString formattedHtml = (null != bean.wikiVersion ? bean.wikiVersion.getHtml(c, bean.wiki) : null);
+    if (HtmlString.isBlank(formattedHtml))
     {
         %>This page has no content.<%
     }
     else
     {
-        out.print(text(formattedHtml));
+        out.print(formattedHtml);
 
         %><br><br></td></tr> <%
 
