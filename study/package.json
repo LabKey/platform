@@ -25,11 +25,11 @@
       }
     },
     "clean": {
-      "command": "rimraf resources/web/query/gen && rimraf resources/views/datasetDesigner*"
+      "command": "rimraf resources/web/study/gen && rimraf resources/views/datasetDesigner*"
     }
   },
   "dependencies": {
-    "@labkey/components": "0.60.0-fb-biolgicsAssayImport.5"
+    "@labkey/components": "0.61.0-fb-biolgicsAssayImport.6"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",

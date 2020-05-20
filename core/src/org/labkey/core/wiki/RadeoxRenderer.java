@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -73,7 +74,7 @@ import java.util.Set;
 
 public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine, WikiRenderer
 {
-    private static MimeMap mimeMap = new MimeMap();
+    private static final MimeMap mimeMap = new MimeMap();
 
     private static final String LINK_CLASS_NAME = "link";
     private static final String RADEOX_IMG_CLASS = "radeox-image";
@@ -123,7 +124,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         context.set(WIKI_DEPENDENCIES_KEY, dependencies);
         Set<String> anchors = new HashSet<>();
         context.set(ANCHORS_KEY, anchors);
-        String html = render(text, context);
+        HtmlString html = HtmlString.unsafe(render(text, context));
 
         return new FormattedHtml(html, false, dependencies, anchors);  // TODO: Are there wiki pages we don't want to cache?
     }
@@ -190,6 +191,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private static class LabKeyMacro extends BaseMacro
     {
+        @Override
         public String getName()
         {
             return "labkey";
@@ -202,6 +204,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                                 "core.CurrentProject, core.projectAdmin, core.folderAdmin, core.SiteAdmin"
                 };
 
+        @Override
         public void execute(Writer writer, MacroParameter params) throws IllegalArgumentException, IOException
         {
             String macroName = params.get(0);
@@ -270,7 +273,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private static class StylableMacro extends BaseMacro
     {
-        private String _tagName;
+        private final String _tagName;
 
         public StylableMacro(String tagName)
         {
@@ -290,6 +293,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                         "style: the CSS style that should be applied to this tag."
                 };
 
+        @Override
         public String[] getParamDescription()
         {
             return PARAMS;
@@ -336,6 +340,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         {
         };
 
+        @Override
         public String[] getParamDescription()
         {
             return PARAMS;
@@ -356,6 +361,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private static class ImageMacro extends BaseMacro
     {
+        @Override
         public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
         {
             String img = macroParameter.get("img");
@@ -382,11 +388,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             }
         }
 
+        @Override
         public String getName()
         {
             return "image";
         }
 
+        @Override
         public String getDescription()
         {
             return "Displays an image file.";
@@ -399,6 +407,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
                         "align: alignment of the image (left, right, flow-left, flow-right) (optional)",
                 };
 
+        @Override
         public String[] getParamDescription()
         {
             return PARAMS;
@@ -408,6 +417,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     private static class AnchorMacro extends BaseMacro
     {
+        @Override
         public void execute(Writer writer, MacroParameter macroParameter) throws IllegalArgumentException, IOException
         {
             String name = macroParameter.get("name");
@@ -424,11 +434,13 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             }
         }
 
+        @Override
         public String getName()
         {
             return "anchor";
         }
 
+        @Override
         public String getDescription()
         {
             return "Anchor Tag";
@@ -439,6 +451,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             "name: anchor name."
         };
 
+        @Override
         public String[] getParamDescription()
         {
             return PARAMS;
@@ -474,6 +487,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     //
     // BaseRenderEngine
     //
+    @Override
     protected void init()
     {
         super.init();
@@ -488,6 +502,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     //
     // WikiRenderEngine
     //
+    @Override
     public boolean exists(String s)
     {
         if (attachmentExists(s))
@@ -498,24 +513,28 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
     }
 
 
+    @Override
     public boolean showCreate()
     {
         return null != _createPrefix;
     }
 
 
+    @Override
     public void appendLink(StringBuffer sb, String name, String view)
     {
         _appendLink(sb, name, view, null, LINK_CLASS_NAME);
     }
 
 
+    @Override
     public void appendLink(StringBuffer sb, String name, String view, String hash)
     {
         _appendLink(sb, name, view, hash, LINK_CLASS_NAME);
     }
 
 
+    @Override
     public void appendCreateLink(StringBuffer sb, String name, String wikiName)
     {
         String mime = mimeMap.getContentTypeFor(name.toLowerCase());
@@ -579,6 +598,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
 
     public static class UnderlineFilter extends LocaleRegexReplaceFilter implements CacheFilter
     {
+        @Override
         protected String getLocaleKey()
         {
             return "filter.underline";
@@ -593,6 +613,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             super("^(\\s+)(\\S[^\\r\\n]*)");
         }
 
+        @Override
         public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context)
         {
             int len = result.group(1).length();
@@ -609,6 +630,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
             super("^(\\s+)(\\S[^\\r\\n]*)");
         }
 
+        @Override
         public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context)
         {
             int len = result.group(1).length();
@@ -624,10 +646,11 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
      */
     public static class LinkTestFilter extends LocaleRegexTokenFilter
     {
-        private static Logger log = Logger.getLogger(org.radeox.filter.LinkTestFilter.class);
+        private static final Logger log = Logger.getLogger(org.radeox.filter.LinkTestFilter.class);
         private MessageFormat urlFormatter;
 
 
+        @Override
         public void setInitialContext(InitialRenderContext context)
         {
             super.setInitialContext(context);
@@ -647,6 +670,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         }
         
 
+        @Override
         public String[] replaces()
         {
             return new String[]{"org.radeox.filter.LinkTestFilter"};
@@ -662,16 +686,19 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
          * wikiPattern = "\\[(.*?)\\]";
          */
 
+        @Override
         protected String getLocaleKey()
         {
             return "filter.linktest";
         }
 
+        @Override
         protected void setUp(FilterContext context)
         {
             context.getRenderContext().setCacheable(true);
         }
 
+        @Override
         public void handleMatch(StringBuffer buffer, MatchResult result, FilterContext context)
         {
             RenderContext renderContext = context.getRenderContext();
@@ -857,7 +884,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         // Service should wrap rendered HTML in a <div> but renderer shouldn't. 
         private void test(String wiki, String html)
         {
-            assertEquals(html, _r.format(wiki).getHtml());
+            assertEquals(html, HtmlString.toString(_r.format(wiki).getHtml()));
             assertEquals(WikiRenderingService.WIKI_PREFIX + html + WikiRenderingService.WIKI_SUFFIX, _wrs.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 

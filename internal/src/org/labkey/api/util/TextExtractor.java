@@ -31,11 +31,11 @@ import java.io.IOException;
 public class TextExtractor extends HTMLEditorKit.ParserCallback
 {
     private StringBuffer _text;
-    private Reader _reader;
+    private final Reader _reader;
 
-    public TextExtractor(String html)
+    public TextExtractor(HtmlString html)
     {
-        _reader = new StringReader(html);
+        _reader = new StringReader(html.toString());
     }
 
     public TextExtractor(Reader reader)

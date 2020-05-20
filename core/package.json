@@ -91,7 +91,7 @@
   },
   "dependencies": {
     "@labkey/api": "0.2.8",
-    "@labkey/components": "0.60.0-fb-biolgicsAssayImport.5",
+    "@labkey/components": "0.61.0-fb-biolgicsAssayImport.6",
     "@labkey/eslint-config-react": "0.0.5",
     "react-toggle-button": "2.2.0"
   },

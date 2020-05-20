@@ -28,12 +28,6 @@ import java.util.Map;
  */
 public class StudyGWTView extends GWTView
 {
-    public StudyGWTView(StudyApplication.GWTModule module, Map<String, String> properties)
-    {
-        super("gwt.StudyApplication", properties);
-        getModelBean().getProperties().put("GWTModule", module.getClass().getSimpleName());
-    }
-
     public StudyGWTView(Class<? extends EntryPoint> clss, Map<String, String> properties)
     {
         this(clss.getName(), properties);

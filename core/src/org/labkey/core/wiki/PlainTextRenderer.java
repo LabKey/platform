@@ -16,6 +16,7 @@
 
 package org.labkey.core.wiki;
 
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.api.wiki.WikiRenderer;
@@ -41,7 +42,7 @@ public class PlainTextRenderer implements WikiRenderer
     public FormattedHtml format(String text)
     {
         if (text == null)
-            return new FormattedHtml("");
+            return new FormattedHtml(HtmlString.EMPTY_STRING);
 
         StringBuilder sb = new StringBuilder();
 
@@ -130,6 +131,6 @@ public class PlainTextRenderer implements WikiRenderer
             }
         }
 
-        return new FormattedHtml(sb.toString(), false);
+        return new FormattedHtml(HtmlString.unsafe(sb.toString()), false);
     }
 }
