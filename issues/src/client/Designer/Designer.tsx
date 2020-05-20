@@ -100,7 +100,7 @@ export class App extends React.Component<{}, State> {
             <Alert bsStyle={'info'}>
                 The fields definition for this issues list comes from a shared domain in another container and will
                 not be updatable from this page. To manage the fields definition for this shared issues list,
-                go to the <a href={sourceUrl}>source container</a>.
+                go to the <a href={sourceUrl}><b>source container</b></a>.
             </Alert>
         )
     }
