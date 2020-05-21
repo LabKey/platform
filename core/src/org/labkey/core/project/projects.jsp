@@ -70,12 +70,17 @@
     Map<String,String> properties = new HashMap<>(defaultProperties);
     properties.putAll(me.getModelBean().getPropertyMap());
 
-    Container target;
+    String containerTypes = properties.get("containerTypes");
+    String noun = !isBlank(containerTypes) && !"project".equals(containerTypes) ? "Subfolder" : "Project";
     String containerPath = properties.get("containerPath");
+
+    Container target;
     if (isBlank(containerPath))
     {
         hasPermission = true;
         target = getContainer();
+        if ("project".equals(containerTypes))
+            target = target.isRoot() ? ContainerManager.getHomeContainer() : target.getProject();
     }
     else
     {
@@ -84,9 +89,6 @@
             target = ContainerManager.getForId(containerPath);
         hasPermission = target != null && target.hasPermission(getUser(), ReadPermission.class);
     }
-
-    String containerTypes = properties.get("containerTypes");
-    String noun = !isBlank(containerTypes) && !"project".equals(containerTypes) ? "Subfolder" : "Project";
 
     if (target == null)
     {
