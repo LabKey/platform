@@ -87,7 +87,7 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 rowToInsert = super.insertRow(user, container, row);
-                QCStateManager.getInstance().clearCache(container);
+                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
             return rowToInsert;
@@ -103,10 +103,9 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
             try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 rowToDelete = super.deleteRow(user, container, oldRowMap);
-                QCStateManager.getInstance().clearCache(container);
+                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
-
             return rowToDelete;
         }
     }
