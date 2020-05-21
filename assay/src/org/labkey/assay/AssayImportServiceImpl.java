@@ -288,7 +288,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         if (protocol != null && !files.isEmpty())
         {
             ActionURL returnUrl = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, StringUtils.defaultString(directoryPath, ""), new File[]{files.get(0)});
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), protocol, false, returnUrl);
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(protocol.getContainer(), protocol, false, returnUrl);
 
             return url == null ? null : url.getLocalURIString();
         }
