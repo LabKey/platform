@@ -110,6 +110,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return _targetContainer;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         if (_lookupSchemaName == null || _tableName == null)
@@ -174,6 +175,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
@@ -225,6 +227,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return super.getSelectList(ctx);
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         TableInfo lookupTable = getLookupTableInfo();

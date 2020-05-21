@@ -49,11 +49,15 @@ import org.labkey.api.util.StringExpression;
  */
 public class LineageTableInfo extends VirtualTable
 {
-    private @NotNull SQLFragment _objectids;
-    private boolean _parents;
-    private @Nullable Integer _depth;
-    private @Nullable String _expType;
-    private @Nullable String _cpasType;
+    private @NotNull
+    final SQLFragment _objectids;
+    private final boolean _parents;
+    private @Nullable
+    final Integer _depth;
+    private @Nullable
+    final String _expType;
+    private @Nullable
+    final String _cpasType;
 
     public LineageTableInfo(String name, @NotNull UserSchema schema, @NotNull SQLFragment objectids, boolean parents, @Nullable Integer depth, @Nullable String expType, @Nullable String cpasType)
     {

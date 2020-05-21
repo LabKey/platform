@@ -224,7 +224,7 @@ public class WikiVersion
         _cache = cache;
     }
 
-    private static Pattern NON_VISUAL_RE = Pattern.compile("(<(script|form)[\\s>]|\\$\\{labkey\\.)");
+    private static final Pattern NON_VISUAL_RE = Pattern.compile("(<(script|form)[\\s>]|\\$\\{labkey\\.)");
 
     public boolean hasNonVisualElements()
     {
