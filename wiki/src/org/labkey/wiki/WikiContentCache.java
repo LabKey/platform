@@ -18,6 +18,7 @@ package org.labkey.wiki;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.wiki.FormattedHtml;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
@@ -29,15 +30,15 @@ import org.labkey.wiki.model.WikiVersion;
  */
 public class WikiContentCache
 {
-    private static final Cache<String, String> CONTENT_CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Content");
+    private static final Cache<String, HtmlString> CONTENT_CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Content");
 
-    public static String getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
+    public static HtmlString getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {
         if (!cache)
             return WikiManager.get().formatWiki(c, wiki, version).getHtml();
 
         String key = c.getId() + "/" + wiki.getName() + "/" + version.getVersion();
-        String html = CONTENT_CACHE.get(key);
+        HtmlString html = CONTENT_CACHE.get(key);
 
         if (null == html)
         {
