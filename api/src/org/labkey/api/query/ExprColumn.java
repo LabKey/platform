@@ -37,7 +37,7 @@ public class ExprColumn extends BaseColumnInfo
     public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
 
     protected SQLFragment _sql;
-    private ColumnInfo[] _dependentColumns;
+    private final ColumnInfo[] _dependentColumns;
 
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
     {
@@ -95,6 +95,7 @@ public class ExprColumn extends BaseColumnInfo
     }
 
 
+    @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         if (tableAlias.equals(STR_TABLE_ALIAS))

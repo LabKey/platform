@@ -121,7 +121,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 }
                 catch (Exception e)
                 {
-                    html.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
+                    HtmlString.unsafe("<p class=\"labkey-error\">Error rendering page: " + PageFlowUtil.filter(e.getMessage()) + "<p>");
                 }
             }
             else

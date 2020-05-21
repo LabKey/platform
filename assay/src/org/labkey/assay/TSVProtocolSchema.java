@@ -313,7 +313,7 @@ public class TSVProtocolSchema extends AssayProtocolSchema
             renderFlagScript(ctx, out);
             Integer id = ctx.get(rowId, Integer.class);
             Object comment = getValue(ctx);
-            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + String.valueOf(id);
+            String lsid = null==id ? null : "protocol" + protocol.getRowId() + "." + getBoundColumn().getLegalName() +  ":" + id;
             _renderFlag(ctx, out, lsid, null==comment?null:String.valueOf(comment));
         }
 

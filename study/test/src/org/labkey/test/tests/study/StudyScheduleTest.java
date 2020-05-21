@@ -71,7 +71,7 @@ public class StudyScheduleTest extends StudyBaseTest
         linkeToExisting,
     }
 
-    private String _folderName = getFolderName();
+    private final String _folderName = getFolderName();
 
     private final PortalHelper portalHelper = new PortalHelper(this);
 

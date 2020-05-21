@@ -43,11 +43,13 @@ public class StudyContinuousTest extends AbstractStudyTimeKeyFieldTest
     protected String getHeaderName()
     {return "4b$PAsian";}
 
+    @Override
     protected void doCreateSteps()
     {
         importStudy(CONTINUOUS_ARCHIVE,null);
     }
 
+    @Override
     protected void doVerifySteps()
     {
         Map<String,String> kvp = new HashMap<>();
