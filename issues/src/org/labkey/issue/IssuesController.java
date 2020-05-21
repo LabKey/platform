@@ -386,6 +386,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ExportTsvAction extends SimpleViewAction<QueryForm>
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -960,7 +961,7 @@ public class IssuesController extends SpringActionController
                         newIssueIds.add(issue.getIssueId());
 
                         // handle attachments, the attachment value is a | delimited array of file names
-                        String attachments = (String)issuesForm.get("attachment");
+                        String attachments = issuesForm.get("attachment");
                         if (!StringUtils.isBlank(attachments))
                         {
                             List<AttachmentFile> attachmentFiles = new ArrayList<>();
@@ -1013,7 +1014,7 @@ public class IssuesController extends SpringActionController
                 Map<Integer, Issue> relatedIssuesToSave = new HashMap<>();
                 for (IssuesForm issuesForm : form.getIssueForms())
                 {
-                    int related = NumberUtils.toInt((String)issuesForm.get("relatedIssue"), -1);
+                    int related = NumberUtils.toInt(issuesForm.get("relatedIssue"), -1);
                     if (related != -1)
                     {
                         // stash everything away so we only have to do one save
@@ -1064,6 +1065,7 @@ public class IssuesController extends SpringActionController
         private IssueListDef _issueListDef;
         private CustomColumnConfiguration _columnConfiguration;
 
+        @Override
         public boolean handlePost(IssuesForm form, BindException errors)
         {
             if (form.getSkipPost())
@@ -2132,6 +2134,7 @@ public class IssuesController extends SpringActionController
             super.checkPermissions();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);

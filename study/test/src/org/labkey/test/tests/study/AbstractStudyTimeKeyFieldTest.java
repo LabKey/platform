@@ -203,16 +203,16 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     }
 
     @Override
-    protected void verifyHiddenVisits(){};
+    protected void verifyHiddenVisits(){}
 
     @Override
-    protected void verifyVisitImportMapping(){};
+    protected void verifyVisitImportMapping(){}
 
     @Override
-    protected void verifyCohorts(){};
+    protected void verifyCohorts(){}
 
     @Override
-    protected void verifyStudyAndDatasets(){};
+    protected void verifyStudyAndDatasets(){}
 
     protected ViewDatasetDataPage goToDataset(String folder, String datasetName)
     {
@@ -236,6 +236,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         return m.matches();
     }
 
+    @Override
     protected void verifySpecimens()
     {
         verifySpecimens();
