@@ -78,6 +78,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public void releaseFieldRefs(Object refer)
     {
         if (0 == refCount.count())
@@ -106,6 +107,7 @@ public class QField extends QInternalExpr
     }
 
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         QueryRelation.RelationColumn col = getRelationColumn();

@@ -24,6 +24,7 @@ import org.json.JSONObject;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
@@ -507,7 +508,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(request, response, x);
+            handleException(x);
             throwable = x;
         }
         finally
@@ -523,8 +524,23 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(HttpServletRequest request, HttpServletResponse response, Throwable x)
+    protected void handleException(Throwable x)
     {
+        HttpServletRequest request = getViewContext().getRequest();
+        HttpServletResponse response = getViewContext().getResponse();
+
+        // IF we get here with a deadlock exception AND this is a get AND we haven't committed the response yet,
+        // THEN ask the caller to retry.
+        if (x instanceof Exception && SqlDialect.isTransactionException((Exception)x) && "GET".equals(request.getMethod()) && !response.isCommitted())
+        {
+            if (!StringUtils.equals("1",getViewContext().getActionURL().getParameter("_retry_")))
+            {
+                ActionURL url = getViewContext().cloneActionURL().addParameter("_retry_", "1");
+                ExceptionUtil.doErrorRedirect(response, url.getLocalURIString());
+                return;
+            }
+        }
+            
         ActionURL errorURL = ExceptionUtil.handleException(request, response, x, null, false);
         if (null != errorURL)
             ExceptionUtil.doErrorRedirect(response, errorURL.toString());
