@@ -66,8 +66,6 @@ export class App extends React.PureComponent<any, State> {
         // if the URL has a RowId param, look up the sample type info for the edit case
         // else we are in the create new sample type case
         const rowId = this.getRowIdParam();
-        const { name, nameReadOnly } = ActionURL.getParameters();
-
         if (rowId) {
             //Get SampleType from experiment service
             getSampleSet({rowId})
@@ -89,6 +87,8 @@ export class App extends React.PureComponent<any, State> {
                 });
         }
         else {
+            const { name, nameReadOnly } = ActionURL.getParameters();
+
             //Creating a new Sample Type
             getSampleTypeDetails()
                 .then((sampleType: DomainDetails) => {
