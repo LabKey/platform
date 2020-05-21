@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
@@ -104,7 +105,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 StringWriter sw = new StringWriter();
                 view.include(view, sw);
 
-                return new FormattedHtml(sw.toString(), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
+                return new FormattedHtml(HtmlString.unsafe(sw.toString()), true, dependencies);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search)
             }
             catch (Throwable e)
             {
