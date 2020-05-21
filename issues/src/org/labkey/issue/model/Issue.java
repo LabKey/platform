@@ -264,7 +264,7 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public Date getResolved()
     {
-        return (Date) JdbcType.DATE.convert(_properties.get("resolved"));
+        return (Date) JdbcType.TIMESTAMP.convert(_properties.get("resolved"));
     }
 
     public void setResolved(Date resolved)
