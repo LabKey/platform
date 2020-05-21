@@ -535,6 +535,8 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
             assertTrue(b.createNewFile());
             assertTrue(c.createNewFile());
 
+            waitForEvents(events, 3);
+
             try (PrintWriter pw = PrintWriters.getPrintWriter(a))
             {
                 pw.println("Hello World");
@@ -545,16 +547,18 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
                 pw.println("Hello World");
             }
 
+            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 7 : 5);
+
             assertTrue(a.delete());
             assertTrue(b.delete());
 
+            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 11 : 8);
+
             FileUtil.deleteDir(testFolder);
 
-            // On Windows, modified events are called on delete as well, but apparently not on Linux
-            int expectedEventCount = SystemUtils.IS_OS_WINDOWS ? 14 : 10;
-            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
+            waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 14 : 10);
 
-            waitForEvents(events, expectedEventCount);
+            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
 
             assertEquals(3, created.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
@@ -572,8 +576,9 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         private void waitForEvents(AtomicInteger events, int targetCount) throws InterruptedException
         {
+            int i = 2;
+            Thread.sleep(i * 1000);
             int maxSleepSeconds = 10;
-            int i = 0;
 
             while (events.get() < targetCount && i < maxSleepSeconds)
             {
