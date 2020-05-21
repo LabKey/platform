@@ -19,7 +19,6 @@ import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -56,7 +55,7 @@ public class SaveProtocolAction extends MutatingApiAction<GWTProtocol>
                 throw new UnauthorizedException("You do not have sufficient permissions to update this assay design.");
         }
 
-        AssayService svc = new AssayServiceImpl(getViewContext());
+        AssayServiceImpl svc = new AssayServiceImpl(getViewContext());
         GWTProtocol updated = svc.saveChanges(protocol, true);
         return success((isNew  ? "Created" : "Updated") + " assay protocol '" + updated.getName() + "'", updated);
     }
