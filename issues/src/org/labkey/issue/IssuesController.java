@@ -37,7 +37,6 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -69,6 +68,8 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
+import org.labkey.api.issues.IssuesDomainKindProperties;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.module.ModuleHtmlView;
@@ -79,6 +80,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
@@ -97,7 +99,6 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.GUID;
@@ -106,7 +107,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -123,7 +123,6 @@ import org.labkey.issue.actions.ChangeSummary;
 import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
-import org.labkey.issue.actions.IssueServiceAction;
 import org.labkey.issue.actions.IssueValidation;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CommentAttachmentParent;
@@ -171,7 +170,6 @@ public class IssuesController extends SpringActionController
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         IssuesController.class,
-        IssueServiceAction.class,
         GetRelatedFolder.class,
         InsertIssueDefAction.class,
         ValidateIssueDefNameAction.class,
@@ -1970,50 +1968,51 @@ public class IssuesController extends SpringActionController
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
     @RequiresPermission(AdminPermission.class)
-    public class AdminAction extends SimpleViewAction<AdminForm>
+    public class AdminAction extends FormViewAction<IssuesDomainKindProperties>
     {
         @Override
-        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors)
+        public ModelAndView getView(IssuesDomainKindProperties form, boolean reshow, BindException errors) throws Exception
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
-
-            boolean experimentalFlagEnabled = AppProps.getInstance().isExperimentalFeatureEnabled(IssueManager.EXPERIMENTAL_ISSUES_LIST_DEF);
 
             if (issueListDef == null)
             {
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
 
-            if(experimentalFlagEnabled)
-            {
-                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
-            }
-            else
-            {
-                Domain domain = issueListDef.getDomain(getUser());
-
-                Map<String, String> props = new HashMap<>();
-                props.put("typeURI", domain.getTypeURI());
-                props.put("defName", issueDefName);
-                props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
-                props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
-                props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
-                props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
-
-                return new GWTView("org.labkey.issues.Designer", props);
-            }
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
         }
 
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("adminIssues");
+
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
             new ListAction(getViewContext()).appendNavTrail(root);
             root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
 
             return root;
+        }
+
+        @Override
+        public void validateCommand(IssuesDomainKindProperties form, Errors errors)
+        {}
+
+        @Override
+        public boolean handlePost(IssuesDomainKindProperties form, BindException errors) throws Exception
+        {
+            // this allows for the shared domain case where we only want to update the issue list def options in this container
+            ValidationException exception = IssuesListDefService.get().updateIssueDefinition(getContainer(), getUser(), null, null, form);
+            return !exception.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(IssuesDomainKindProperties form)
+        {
+            return null;
         }
     }
 
@@ -2024,7 +2023,6 @@ public class IssuesController extends SpringActionController
         @Override
         public Object execute(Object form, BindException errors)
         {
-            //derived from IssueServiceAction.getProjectGroups()
             List<UserGroupForm> groups = new ArrayList<>();
 
             SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
@@ -2047,7 +2045,6 @@ public class IssuesController extends SpringActionController
         @Override
         public Object execute(UserGroupForm form, BindException errors)
         {
-            //derived from IssueServiceAction.getUsersForGroup()
             List<UserGroupForm> users = new ArrayList<>();
 
             if (null != form.getGroupId())
@@ -2483,37 +2480,6 @@ public class IssuesController extends SpringActionController
             _message = message;
         }
     }
-
-    public static class AdminForm
-    {
-        private int type;
-        private String keyword;
-
-
-        public int getType()
-        {
-            return type;
-        }
-
-
-        public void setType(int type)
-        {
-            this.type = type;
-        }
-
-
-        public String getKeyword()
-        {
-            return keyword;
-        }
-
-
-        public void setKeyword(String keyword)
-        {
-            this.keyword = keyword;
-        }
-    }
-
 
     public static class IssuesForm extends BeanViewForm<Issue>
     {

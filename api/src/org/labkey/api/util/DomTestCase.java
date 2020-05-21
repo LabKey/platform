@@ -61,4 +61,33 @@ public class DomTestCase extends Assert
         assertTrue(h.toString().contains("POST"));
         assertTrue(h.toString().contains(CSRFUtil.csrfName));
     }
+
+    /** Nulls will be ignored, and are a convenient value to pass when there are conditional elements in your HTML */
+    @Test
+    public void testNulls()
+    {
+        //noinspection ConstantConditions
+        HtmlString h = createHtml(
+                DIV(
+                        1 == 2 ? "1 equals 2" : null,
+                        DIV("I don't care if they equal"),
+                        1 != 2 ? "1 does not equal 2" : null));
+        assertEquals("<div><div>I don&#039;t care if they equal</div>1 does not equal 2</div>", h.toString());
+    }
+
+    /**
+     * You can use DOM.createHtmlFragment() to stitch together multiple children when you need to collapse to a single
+     * element to add, perhaps the return value from a method
+     */
+    @Test
+    public void testCreateHtmlFragment()
+    {
+        HtmlString h = createHtml(
+                DIV(
+                        // Not a typical usage, but demonstrates how to collapse an arbitrary number of child elements
+                        createHtmlFragment(
+                                SPAN("value1"),
+                                SPAN("value2"))));
+        assertEquals("<div><span>value1</span><span>value2</span></div>", h.toString());
+    }
 }

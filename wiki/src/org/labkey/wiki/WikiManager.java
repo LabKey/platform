@@ -49,6 +49,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -777,7 +778,7 @@ public class WikiManager implements WikiService
     //
 
     @Override
-    public String getHtml(Container c, String name)
+    public HtmlString getHtml(Container c, String name)
     {
         if (null == c || null == name)
             return null;
@@ -827,7 +828,7 @@ public class WikiManager implements WikiService
         {
             if (contentOnly)
             {
-                String html = getHtml(c, name);
+                HtmlString html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
             Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
