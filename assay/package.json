@@ -29,7 +29,7 @@
     }
   },
   "dependencies": {
-    "@labkey/components": "0.62.0-fb-biolgicsAssayImport.7"
+    "@labkey/components": "0.62.0-fb-biolgicsAssayImport.8"
   },
   "devDependencies": {
     "@hot-loader/react-dom": "16.13.0",
