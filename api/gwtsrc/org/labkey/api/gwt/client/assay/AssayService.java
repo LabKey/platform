@@ -16,22 +16,17 @@
 
 package org.labkey.api.gwt.client.assay;
 
+import com.google.gwt.user.client.rpc.RemoteService;
 import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
-import org.labkey.api.gwt.client.model.GWTContainer;
-import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.LookupService;
 import org.labkey.api.query.ValidationException;
-
-import java.util.List;
 
 /**
  * User: brittp
 * Date: June 20, 2007
 * Time: 2:37:12 PM
 */
-public interface AssayService extends LookupService
+public interface AssayService extends RemoteService
 {
     GWTProtocol getAssayDefinition(int rowId, boolean copy) throws SerializableException;
 
