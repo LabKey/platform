@@ -558,11 +558,10 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
             waitForEvents(events, SystemUtils.IS_OS_WINDOWS ? 14 : 10);
 
-            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
-
             assertEquals(3, created.size());
             assertTrue(created.containsAll(Set.of("a", "b", "c")));
-            // Note: Modified is called on delete as well
+            // Note: Modified events occur on delete on Windows, but not Linux
+            Set<String> expectedModified = SystemUtils.IS_OS_WINDOWS ? Set.of("a", "b", "c") : Set.of("a", "c");
             assertEquals(expectedModified.size(), modified.size());
             assertTrue(created.containsAll(expectedModified));
             assertEquals(3, deleted.size());
