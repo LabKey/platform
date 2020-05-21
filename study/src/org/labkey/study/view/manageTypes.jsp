@@ -113,7 +113,6 @@
         <td>New datasets can be added to this study at any time.</td>
         <%
             ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
-            createURL.addParameter("autoDatasetId", "true");
         %>
         <td><%= link("Create New Dataset", createURL)%></td>
     </tr>
@@ -167,7 +166,7 @@
         boolean isShared = def.isShared();
     %><tr class="<%=getShadeRowClass(i++)%>">
         <td align=right><a href="<%=h(details)%>"><%=def.getDatasetId()%></a></td>
-        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(!isShared?"":((DatasetDefinition)def).getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
+        <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(!isShared?"": def.getDataSharingEnum()== DatasetDefinition.DataSharing.PTID?" (shared data)":" (shared)")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
         <td><%=h(def.getType())%>&nbsp;</td>
@@ -180,7 +179,7 @@
     }
 %></table>
 <br>
-<%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c).addParameter("autoDatasetId","true"))%>
+<%= link("Create New Dataset", new ActionURL(DefineDatasetTypeAction.class, c))%>
 <% if (!shadowed.isEmpty())
 {
     %><p>WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.<br><ul><%

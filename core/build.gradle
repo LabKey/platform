@@ -3,6 +3,9 @@ import org.labkey.gradle.util.BuildUtils
 apply plugin: 'org.labkey.coreScripts'
 
 dependencies {
+   external "org.graalvm.sdk:graal-sdk:${graalVersion}"
+   external "org.graalvm.js:js:${graalVersion}"
+   external "org.graalvm.js:js-scriptengine:${graalVersion}"
    external 'radeox:radeox:1.0-b2'
    implementation "com.sun.mail:jakarta.mail:${javaMailVersion}"
    jspImplementation "com.sun.mail:jakarta.mail:${javaMailVersion}"

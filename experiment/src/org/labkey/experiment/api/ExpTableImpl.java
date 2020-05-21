@@ -60,7 +60,7 @@ abstract public class ExpTableImpl<C extends Enum>
         implements ExpTable<C>
 {
     private final ExpObjectImpl _objectType;
-    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
+    private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
     private ExpSchema _expSchema = null;
 
@@ -76,6 +76,7 @@ abstract public class ExpTableImpl<C extends Enum>
         _allowablePermissions.add(ReadPermission.class);
     }
 
+    @Override
     public void addAllowablePermission(Class<? extends Permission> permission)
     {
         _allowablePermissions.add(permission);
@@ -157,11 +158,13 @@ abstract public class ExpTableImpl<C extends Enum>
         return result;
     }
 
+    @Override
     final public MutableColumnInfo addColumn(C column)
     {
         return addColumn(column.toString(), column);
     }
 
+    @Override
     final public MutableColumnInfo addColumn(String alias, C column)
     {
         var ret = createColumn(alias, column);
@@ -170,6 +173,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return ret;
     }
 
+    @Override
     public ColumnInfo getColumn(C column)
     {
         for (ColumnInfo info : getColumns())
@@ -188,6 +192,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return column;
     }
 
+    @Override
     public MutableColumnInfo createPropertyColumn(String name)
     {
         return wrapColumn(name, getLSIDColumn());
@@ -244,6 +249,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return ret;
     }
 
+    @Override
     public void addRowIdCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("RowId ");
@@ -251,6 +257,7 @@ abstract public class ExpTableImpl<C extends Enum>
         addCondition(sqlCondition);
     }
 
+    @Override
     public void addLSIDCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("LSID ");
@@ -271,6 +278,7 @@ abstract public class ExpTableImpl<C extends Enum>
      * @param domain the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      */
+    @Override
     public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
     {
         MutableColumnInfo colProperty = null;
@@ -322,7 +330,7 @@ abstract public class ExpTableImpl<C extends Enum>
 
     protected void addVocabularyDomains()
     {
-        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), Set.of(VocabularyDomainKind.KIND_NAME), true);
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
         for (Domain domain : domains)
         {
             String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
@@ -339,6 +347,7 @@ abstract public class ExpTableImpl<C extends Enum>
         return _domain;
     }
 
+    @Override
     public void setDomain(Domain domain)
     {
         checkLocked();

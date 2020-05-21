@@ -266,6 +266,7 @@ public class ExpSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ExpSchema(schema.getUser(), schema.getContainer());
@@ -275,7 +276,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(this);
         schema.setContainerFilter(_containerFilter);
         return schema;
     }
@@ -285,11 +286,13 @@ public class ExpSchema extends AbstractExpSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return tableNames;
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         for (TableType tableType : TableType.values())
@@ -370,6 +373,7 @@ public class ExpSchema extends AbstractExpSchema
         return getSchema(schema.name());
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         if (_restricted)
@@ -410,6 +414,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.ProtocolApplications.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.ProtocolApplications, cf);
@@ -421,6 +426,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey(targetColumnName)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
@@ -432,6 +438,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.MaterialProtocolInputs, cf);
@@ -443,6 +450,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.DataProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.DataProtocolInputs, cf);
@@ -463,6 +471,7 @@ public class ExpSchema extends AbstractExpSchema
                 return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 return getURL(parent, true);
@@ -480,6 +489,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Runs, cf);
@@ -531,6 +541,7 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return getTable(TableType.Data, cf);
@@ -548,6 +559,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Materials.name(), "RowId", null)
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser()));

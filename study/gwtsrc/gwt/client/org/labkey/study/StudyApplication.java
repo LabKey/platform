@@ -44,8 +44,6 @@ public class StudyApplication implements EntryPoint
 
         static
         {
-            MODULES.add(new DatasetImporter());
-            MODULES.add(new DatasetDesigner());
             MODULES.add(new StudyDesigner());
         }
 
@@ -59,6 +57,7 @@ public class StudyApplication implements EntryPoint
         //
         // RunAsyncCallback
         //
+        @Override
         public void onFailure(Throwable caught)
         {
             ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + getClass());
@@ -70,41 +69,6 @@ public class StudyApplication implements EntryPoint
         }
     }
 
-
-    public static class DatasetImporter extends GWTModule
-    {
-        public DatasetImporter()
-        {
-            super("gwt.client.org.labkey.study.dataset.client.DatasetImporter");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.study.dataset.client.DatasetImporter().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.study.dataset.client.DatasetImporter();
-        }
-    }
-
-    public static class DatasetDesigner extends GWTModule
-    {
-        public DatasetDesigner()
-        {
-            super("gwt.client.org.labkey.study.dataset.client.Designer");
-        }
-
-        public void onSuccess()
-        {
-            new gwt.client.org.labkey.study.dataset.client.Designer().onModuleLoad();
-        }
-        EntryPoint getEntryPoint()
-        {
-            return new gwt.client.org.labkey.study.dataset.client.Designer();
-        }
-    }
-
     public static class StudyDesigner extends GWTModule
     {
         public StudyDesigner()
@@ -112,11 +76,13 @@ public class StudyApplication implements EntryPoint
             super("gwt.client.org.labkey.study.designer.client.Designer");
         }
 
+        @Override
         public void onSuccess()
         {
             new gwt.client.org.labkey.study.designer.client.Designer().onModuleLoad();
         }
         
+        @Override
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.study.designer.client.Designer();
@@ -133,6 +99,7 @@ public class StudyApplication implements EntryPoint
     }
 
 
+    @Override
     public void onModuleLoad()
     {
         RootPanel panel = getRootPanel();
@@ -143,15 +110,7 @@ public class StudyApplication implements EntryPoint
         
         final String moduleName = PropertyUtil.getServerProperty("GWTModule");
         
-        if ("DatasetImporter".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new DatasetImporter());
-        }
-        else if ("DatasetDesigner".equalsIgnoreCase(moduleName))
-        {
-            GWT.runAsync(new DatasetDesigner());
-        }
-        else if ("StudyDesigner".equalsIgnoreCase(moduleName))
+        if ("StudyDesigner".equalsIgnoreCase(moduleName))
         {
             GWT.runAsync(new StudyDesigner());
         }

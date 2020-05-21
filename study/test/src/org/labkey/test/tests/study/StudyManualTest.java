@@ -30,7 +30,6 @@ public abstract class StudyManualTest extends StudyTest
 {
     private final File CRF_SCHEMAS = TestFileUtils.getSampleData("study/datasets/schema.tsv");
     protected final File VISIT_MAP = TestFileUtils.getSampleData("study/v068_visit_map.xml");
-
     protected final StudyHelper _studyHelper = new StudyHelper(this);
 
     @Override
@@ -39,6 +38,7 @@ public abstract class StudyManualTest extends StudyTest
         return BrowserType.CHROME;
     }
 
+    @Override
     protected void doCreateSteps()
     {
         createStudyManually();
@@ -181,7 +181,7 @@ public abstract class StudyManualTest extends StudyTest
     protected void setDemographicsBit()
     {
         clickFolder(getFolderName());
-        setDemographicsBit("DEM-1: Demographics", true);
+        setDemographicsBit(DEMOGRAPHICS_TITLE, true);
     }
 
 
@@ -217,7 +217,7 @@ public abstract class StudyManualTest extends StudyTest
         formPanel.addField("otherData").setLabel("Other Data")
                 .setType(FieldDefinition.ColumnType.String).setImportAliases("aliasedColumn");
 
-        editDatasetPage.setAdditionalKeyColManagedField("SampleId");
+        editDatasetPage.setAdditionalKeyColDataField("SampleId");
         editDatasetPage
                 .clickSave()
                 .clickViewData()

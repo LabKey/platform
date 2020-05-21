@@ -726,6 +726,10 @@ public class StatementUtils
             if (done.contains(name))
                 continue;
             done.add(name);
+            ColumnInfo updatableColumn = updatable.getColumn(column.getName());
+            if (updatableColumn != null && updatableColumn.hasDbSequence())
+                _dontUpdateColumnNames.add(column.getName());
+
 
             SQLFragment valueSQL = new SQLFragment();
             if (column.getName().equalsIgnoreCase(objectIdColumnName))

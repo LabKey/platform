@@ -110,6 +110,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return _targetContainer;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         if (_lookupSchemaName == null || _tableName == null)
@@ -161,8 +162,12 @@ public class PdLookupForeignKey extends AbstractForeignKey
         if (null != _tableInfo)
             return _tableInfo;
 
-        UserSchema schema = QueryService.get().getUserSchema(_user, container, _lookupSchemaName);
-        if (schema == null)
+        QuerySchema schema;
+        if (null != _sourceSchema && _sourceSchema.getContainer().equals(container))
+            schema = DefaultSchema.resolve(_sourceSchema, SchemaKey.fromString(_lookupSchemaName));
+        else
+            schema = QueryService.get().getUserSchema(_user, container, SchemaKey.fromString(_lookupSchemaName));
+        if (!(schema instanceof UserSchema))
             return null;
 
         _tableInfo = schema.getTable(_tableName, _containerFilter);
@@ -170,6 +175,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
     }
 
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
@@ -221,6 +227,7 @@ public class PdLookupForeignKey extends AbstractForeignKey
         return super.getSelectList(ctx);
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         TableInfo lookupTable = getLookupTableInfo();

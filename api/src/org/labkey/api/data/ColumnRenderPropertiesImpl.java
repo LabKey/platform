@@ -85,16 +85,17 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
     protected CrosstabMember _crosstabColumnMember;
 
     abstract public void checkLocked();
-    private void _checkLocked()
+    private boolean _checkLocked()
     {
         checkLocked();
+        return true;
     }
 
     @Override
     // TODO MutableColumnRenderProperties
     public void copyTo(ColumnRenderPropertiesImpl to)
     {
-        to._checkLocked();
+        assert to._checkLocked();
         to._sortDirection = _sortDirection;
         to.setInputType(getInputType());
         to.setInputLength(getInputLength());
@@ -148,9 +149,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _sortDirection;
     }
 
+    @Override
     public void setSortDirection(SortDirection sortDirection)
     {
-        _checkLocked();
+        assert _checkLocked();
         _sortDirection = sortDirection;
     }
 
@@ -160,9 +162,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _inputType;
     }
 
+    @Override
     public void setInputType(String inputType)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputType = inputType;
     }
 
@@ -172,9 +175,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _inputLength;
     }
 
+    @Override
     public void setInputLength(int inputLength)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputLength = inputLength;
     }
 
@@ -184,9 +188,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _inputRows;
     }
 
+    @Override
     public void setInputRows(int inputRows)
     {
-        _checkLocked();
+        assert _checkLocked();
         _inputRows = inputRows;
     }
 
@@ -196,9 +201,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _displayWidth;
     }
 
+    @Override
     public void setDisplayWidth(String displayWidth)
     {
-        _checkLocked();
+        assert _checkLocked();
         _displayWidth = displayWidth;
     }
 
@@ -208,9 +214,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _format;
     }
 
+    @Override
     public void setFormat(String format)
     {
-        _checkLocked();
+        assert _checkLocked();
         _format = format;
     }
 
@@ -220,9 +227,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _excelFormatString;
     }
 
+    @Override
     public void setExcelFormatString(String excelFormatString)
     {
-        _checkLocked();
+        assert _checkLocked();
         _excelFormatString = excelFormatString;
     }
 
@@ -232,9 +240,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _tsvFormatString;
     }
 
+    @Override
     public void setTsvFormatString(String tsvFormatString)
     {
-        _checkLocked();
+        assert _checkLocked();
         _tsvFormatString = tsvFormatString;
     }
 
@@ -244,9 +253,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _textExpression;
     }
 
+    @Override
     public void setTextExpression(StringExpression expr)
     {
-        _checkLocked();
+        assert _checkLocked();
         _textExpression = expr;
     }
 
@@ -256,6 +266,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _label;
     }
 
+    @Override
     public void setLabel(String label)
     {
         _label = label;
@@ -267,9 +278,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _shortLabel == null ? getLabel() : _shortLabel;
     }
 
+    @Override
     public void setShortLabel(String shortLabel)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shortLabel = shortLabel;
     }
 
@@ -279,9 +291,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _description;
     }
 
+    @Override
     public void setDescription(String description)
     {
-        _checkLocked();
+        assert _checkLocked();
         _description = description;
     }
 
@@ -291,9 +304,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _hidden;
     }
 
+    @Override
     public void setHidden(boolean hidden)
     {
-        _checkLocked();
+        assert _checkLocked();
         _hidden = hidden;
     }
 
@@ -303,9 +317,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _shownInDetailsView;
     }
 
+    @Override
     public void setShownInDetailsView(boolean shownInDetailsView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInDetailsView = shownInDetailsView;
     }
 
@@ -315,9 +330,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _shownInInsertView;
     }
 
+    @Override
     public void setShownInInsertView(boolean shownInInsertView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInInsertView = shownInInsertView;
     }
 
@@ -327,9 +343,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _shownInUpdateView;
     }
 
+    @Override
     public void setShownInUpdateView(boolean shownInUpdateView)
     {
-        _checkLocked();
+        assert _checkLocked();
         _shownInUpdateView = shownInUpdateView;
     }
 
@@ -339,9 +356,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _url;
     }
 
+    @Override
     public void setURL(StringExpression url)
     {
-        _checkLocked();
+        assert _checkLocked();
         _url = url;
     }
 
@@ -351,9 +369,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _urlTargetWindow;
     }
 
+    @Override
     public void setURLTargetWindow(String urlTargetWindow)
     {
-        _checkLocked();
+        assert _checkLocked();
         _urlTargetWindow = urlTargetWindow;
     }
 
@@ -363,9 +382,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _urlCls;
     }
 
+    @Override
     public void setURLCls(String urlCls)
     {
-        _checkLocked();
+        assert _checkLocked();
         _urlCls = urlCls;
     }
 
@@ -375,9 +395,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _onClick;
     }
 
+    @Override
     public void setOnClick(String onClick)
     {
-        _checkLocked();
+        assert _checkLocked();
         _onClick = onClick;
     }
 
@@ -387,9 +408,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _recommendedVariable;
     }
 
+    @Override
     public void setRecommendedVariable(boolean recommendedVariable)
     {
-        _checkLocked();
+        assert _checkLocked();
         _recommendedVariable = recommendedVariable;
     }
 
@@ -399,21 +421,24 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _defaultScale;
     }
 
+    @Override
     public void setDefaultScale(DefaultScaleType defaultScale)
     {
-        _checkLocked();
+        assert _checkLocked();
         _defaultScale = defaultScale;
     }
 
+    @Override
     public void setMeasure(boolean measure)
     {
-        _checkLocked();
+        assert _checkLocked();
         _measure = measure;
     }
 
+    @Override
     public void setDimension(boolean dimension)
     {
-        _checkLocked();
+        assert _checkLocked();
         _dimension = dimension;
     }
 
@@ -489,9 +514,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _nullable;
     }
 
+    @Override
     public void setNullable(boolean nullable)
     {
-        _checkLocked();
+        assert _checkLocked();
         _nullable = nullable;
     }
 
@@ -510,9 +536,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _required;
     }
 
+    @Override
     public void setRequired(boolean required)
     {
-        _checkLocked();
+        assert _checkLocked();
         _required = required;
     }
 
@@ -523,9 +550,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _importAliases;
     }
 
+    @Override
     public void setImportAliasesSet(Set<String> importAliases)
     {
-        _checkLocked();
+        assert _checkLocked();
         assert importAliases != null;
         _importAliases = importAliases;
     }
@@ -568,9 +596,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _propertyType;
     }
 
+    @Override
     public void setPropertyType(PropertyType propertyType)
     {
-        _checkLocked();
+        assert _checkLocked();
         _propertyType = propertyType;
     }
 
@@ -592,7 +621,7 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _rangeURI;
     }
 
-    private static Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
+    private static final Pattern STRING_PATTERN = Pattern.compile("[^,; \\t\\n\\f\"]+|\"[^\"]*\"");
 
     public static Set<String> convertToSet(String s)
     {
@@ -672,9 +701,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return getJdbcType().getJavaClass(isNullable);
     }
 
+    @Override
     public void setFacetingBehaviorType(FacetingBehaviorType type)
     {
-        _checkLocked();
+        assert _checkLocked();
         _facetingBehaviorType = type;
     }
 
@@ -690,9 +720,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _crosstabColumnDimension;
     }
 
+    @Override
     public void setCrosstabColumnDimension(FieldKey crosstabColumnDimension)
     {
-        _checkLocked();
+        assert _checkLocked();
         _crosstabColumnDimension = crosstabColumnDimension;
     }
 
@@ -702,15 +733,17 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _crosstabColumnMember;
     }
 
+    @Override
     public void setCrosstabColumnMember(CrosstabMember member)
     {
-        _checkLocked();
+        assert _checkLocked();
         _crosstabColumnMember = member;
     }
 
+    @Override
     public void setPHI(PHI phi)
     {
-        _checkLocked();
+        assert _checkLocked();
         _phi = phi;
     }
 
@@ -726,9 +759,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _redactedText;
     }
 
+    @Override
     public void setRedactedText(String redactedText)
     {
-        _checkLocked();
+        assert _checkLocked();
         _redactedText = redactedText;
     }
 
@@ -738,9 +772,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _isExcludeFromShifting;
     }
 
+    @Override
     public void setExcludeFromShifting(boolean isExcludeFromShifting)
     {
-        _checkLocked();
+        assert _checkLocked();
         _isExcludeFromShifting = isExcludeFromShifting;
     }
 
@@ -750,9 +785,10 @@ public abstract class ColumnRenderPropertiesImpl implements MutableColumnRenderP
         return _scale;
     }
 
+    @Override
     public void setScale(int scale)
     {
-        _checkLocked();
+        assert _checkLocked();
         _scale = scale;
     }
 }

@@ -262,7 +262,7 @@ public class ListController extends SpringActionController
             if (!createList)
                 _list = form.getList();
 
-                return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
         }
 
         @Override
@@ -283,8 +283,8 @@ public class ListController extends SpringActionController
     @RequiresPermission(DesignListPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
-        private ArrayList<Integer> _listIDs = new ArrayList<>();
-        private ArrayList<Container> _containers = new ArrayList<>();
+        private final ArrayList<Integer> _listIDs = new ArrayList<>();
+        private final ArrayList<Container> _containers = new ArrayList<>();
 
         @Override
         public void validateCommand(ListDefinitionForm form, Errors errors)
@@ -624,7 +624,7 @@ public class ListController extends SpringActionController
     // Override to ensure that pk value type matches column type.  This is critical for PostgreSQL 8.3.
     public static class ListQueryUpdateForm extends QueryUpdateForm
     {
-        private ListDefinition _list;
+        private final ListDefinition _list;
 
         public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, BindException errors)
         {

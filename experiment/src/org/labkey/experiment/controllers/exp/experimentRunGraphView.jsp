@@ -34,8 +34,7 @@
     public void addClientDependencies(ClientDependencies dependencies)
     {
          // dependencies.add("http://localhost:3001/runGraph.js");
-         dependencies.add("experiment/gen/runGraph.js");
-         dependencies.add("experiment/gen/runGraph.css");
+         dependencies.add("experiment/gen/runGraph");
     }
 %>
 <%
@@ -99,7 +98,7 @@
     }
     catch (ExperimentException | InterruptedException e)
     {
-%><p><%=h(e.getMessage())%></p><%
+%><p><%=h(e.getMessage(), true)%></p><%
     }
     catch (IOException e)
     {

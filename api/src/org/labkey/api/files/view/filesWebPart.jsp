@@ -113,7 +113,7 @@
                 offsetY: 80,
                 overrideMinWidth: true
             },
-            runEditors: <%=bean.getRunEditors() != null ? new JSONObject(bean.getRunEditors()) : "undefined"%>
+            runEditors: <%=bean.getRunEditors() != null ? new JSONObject(bean.getRunEditors()) : h("undefined")%>
         };
 
         <% if (bean.isListing()) { %>

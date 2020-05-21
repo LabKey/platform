@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -74,11 +73,18 @@ public class SamplesSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                return new SamplesSchema(schema.getUser(), schema.getContainer());
+                return new SamplesSchema(schema);
             }
         });
+    }
+
+    public SamplesSchema(QuerySchema schema)
+    {
+        this(schema.getUser(), schema.getContainer());
+        setDefaultSchema(schema.getDefaultSchema());
     }
 
     public SamplesSchema(User user, Container container)
@@ -108,11 +114,13 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleSets().isEmpty();
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return getSampleSets().keySet();
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpSampleSet ss = getSampleSets().get(name);

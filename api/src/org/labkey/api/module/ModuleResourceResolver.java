@@ -28,6 +28,7 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -66,6 +67,12 @@ public class ModuleResourceResolver implements Resolver
 
         return r;
     };
+
+    static
+    {
+        // Need to clear resource caches when modules change. See #40250
+        ContextListener.addModuleChangeListener(m -> m.getModuleResolver().clear());
+    }
 
     ModuleResourceResolver(Module module, File dir)
     {
@@ -147,10 +154,10 @@ public class ModuleResourceResolver implements Resolver
     protected boolean filter(String p)
     {
         return //p.equalsIgnoreCase("META-INF") ||
-                p.equalsIgnoreCase("WEB-INF") ||
-                p.equals("web") ||
-                p.equals("webapp") ||
-                p.startsWith(".");
+            p.equalsIgnoreCase("WEB-INF") ||
+            p.equals("web") ||
+            p.equals("webapp") ||
+            p.startsWith(".");
     }
 
     public String toString()
@@ -180,7 +187,16 @@ public class ModuleResourceResolver implements Resolver
         {
             LOG.debug(entry + " deleted");
             java.nio.file.Path nioPath = directory.resolve(entry);
-            _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            if (Files.isDirectory(nioPath))
+                _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
+        }
+
+        @Override
+        public void directoryDeleted(java.nio.file.Path directory)
+        {
+            LOG.debug("Directory " + directory + " deleted");
+            _pathsWithListeners.remove(_root.getRelativePath(directory));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 

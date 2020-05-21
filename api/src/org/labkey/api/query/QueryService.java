@@ -64,12 +64,13 @@ import java.util.Set;
 
 public interface QueryService
 {
-    static final String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
+    String EXPERIMENTAL_LAST_MODIFIED = "queryMetadataLastModified";
 
     String MODULE_QUERIES_DIRECTORY = "queries";
     Path MODULE_QUERIES_PATH = Path.parse(MODULE_QUERIES_DIRECTORY);
 
-    Path MODULE_SCHEMAS_PATH = Path.parse("schemas");
+    String MODULE_SCHEMAS_DIRECTORY = "schemas";
+    Path MODULE_SCHEMAS_PATH = Path.parse(MODULE_SCHEMAS_DIRECTORY);
 
     String SCHEMA_TEMPLATE_EXTENSION = ".template.xml";
 

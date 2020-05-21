@@ -133,7 +133,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     protected AssayProtocolSchema _protocolSchema;
     protected ExpRun _run;
 
-    private Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
+    private final Map<String, StepHandler<FormType>> _stepHandlers = new HashMap<>();
 
     protected String _stepDescription;
 
@@ -1136,7 +1136,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 if (list == null || list.size() == 0)
                     return HtmlString.EMPTY_STRING;
 
-                Set<HtmlString> uniqueErrorStrs = new TreeSet<>(Comparator.comparing(HtmlString::toString));
+                Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
                 HtmlStringBuilder sb = HtmlStringBuilder.of("");
                 StringBuilder msgBox = new StringBuilder();
                 HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
@@ -1189,7 +1189,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     private static class PlateMetadataDisplayColumn extends SimpleDisplayColumn
     {
         private final AssayRunUploadForm<AbstractTsvAssayProvider> _form;
-        private ColumnInfo _col;
+        private final ColumnInfo _col;
 
         public PlateMetadataDisplayColumn(AssayRunUploadForm form)
         {
@@ -1206,16 +1206,19 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             out.write(" *");
         }
 
+        @Override
         public boolean isEditable()
         {
             return true;
         }
 
+        @Override
         public ColumnInfo getColumnInfo()
         {
             return _col;
         }
 
+        @Override
         public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
         {
             AssayDataCollector collector = _form.getProvider().getPlateMetadataDataCollector(_form);
@@ -1227,7 +1230,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 }
                 catch (Exception e)
                 {
-                    throw (IOException)new IOException().initCause(e);
+                    throw (IOException) new IOException(e);
                 }
             }
         }

@@ -223,8 +223,8 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
         AssayWellExclusionService svc = AssayWellExclusionService.getProvider(_protocol);
         if (svc != null)
         {
-            addColumn(svc.createExcludedColumn(this, _protocol));
-            addColumn(svc.createExclusionCommentColumn(this, _protocol));
+            addColumn(svc.createExcludedColumn(this, getUserSchema().getProvider()));
+            addColumn(svc.createExclusionCommentColumn(this, getUserSchema().getProvider()));
         }
 
         Domain runDomain = _provider.getRunDomain(_protocol);

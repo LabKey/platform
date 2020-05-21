@@ -36,7 +36,6 @@ import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -150,9 +149,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
             ss.addDocumentProvider(this);
             ss.addSearchResultTemplate(new IssuesController.IssueSearchResultTemplate());
         }
-
-        //TODO: Remove once automated test conversion of new issues list designer is complete
-        AdminConsole.addExperimentalFeatureFlag(IssueManager.EXPERIMENTAL_ISSUES_LIST_DEF, "Issues List Def Designer", "Uses React-based designer to update Issues List Definition.", false);
     }
 
     @NotNull

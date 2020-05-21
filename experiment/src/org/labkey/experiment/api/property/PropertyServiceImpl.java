@@ -83,6 +83,7 @@ public class PropertyServiceImpl implements PropertyService
     private final Map<String, ValidatorKind> _validatorTypes = new ConcurrentHashMap<>();
 
 
+    @Override
     public IPropertyType getType(Container container, String typeURI)
     {
         Domain domain = getDomain(container, typeURI);
@@ -93,6 +94,7 @@ public class PropertyServiceImpl implements PropertyService
         return new PrimitiveType(PropertyType.getFromURI(null, typeURI));
     }
 
+    @Override
     @Nullable
     public Domain getDomain(Container container, String domainURI)
     {
@@ -102,6 +104,7 @@ public class PropertyServiceImpl implements PropertyService
         return new DomainImpl(dd);
     }
 
+    @Override
     @Nullable
     public Domain getDomain(int domainId)
     {
@@ -111,18 +114,21 @@ public class PropertyServiceImpl implements PropertyService
         return new DomainImpl(dd);
     }
 
+    @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name)
     {
         return new DomainImpl(container, typeURI, name);
     }
 
+    @Override
     @NotNull
     public Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo)
     {
         return new DomainImpl(container, typeURI, name, templateInfo);
     }
 
+    @Override
     @Nullable
     public String getDomainURI(String schemaName, String queryName, Container container, User user)
     {
@@ -136,6 +142,7 @@ public class PropertyServiceImpl implements PropertyService
         return schema.getDomainURI(queryName);
     }
 
+    @Override
     public DomainKind getDomainKindByName(String name)
     {
         for (DomainKind type : _domainTypes)
@@ -146,17 +153,20 @@ public class PropertyServiceImpl implements PropertyService
         return null;
     }
 
+    @Override
     public DomainKind getDomainKind(String typeURI)
     {
         return Handler.Priority.findBestHandler(_domainTypes, typeURI);
     }
 
+    @Override
     public void registerDomainKind(DomainKind type)
     {
         _domainTypes.add(type);
     }
 
 
+    @Override
     public List<DomainKind> getDomainKinds()
     {
         ArrayList<DomainKind> l = new ArrayList<>(_domainTypes);
@@ -176,6 +186,7 @@ public class PropertyServiceImpl implements PropertyService
         return dks;
     }
 
+    @Override
     public List<? extends Domain> getDomains(Container container)
     {
         List<Domain> result = new ArrayList<>();
@@ -187,6 +198,7 @@ public class PropertyServiceImpl implements PropertyService
         return Collections.unmodifiableList(result);
     }
 
+    @Override
     public List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared)
     {
         List<Domain> result = new ArrayList<>();
@@ -205,6 +217,17 @@ public class PropertyServiceImpl implements PropertyService
     }
 
     @Override
+    public List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared)
+    {
+        // Domain.getDomainKind() can be slow. Instead just ask the passed-in dk if the domain matches or not.
+        return getDomains(container, user, includeProjectAndShared)
+                .stream()
+                .filter(d -> dk.getPriority(d.getTypeURI()) != null)
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
     public Stream<? extends Domain> getDomainsStream(Container container, User user, @Nullable Set<String> domainKinds, boolean includeProjectAndShared)
     {
         Stream<? extends Domain> stream = getDomains(container, user, includeProjectAndShared)
@@ -217,6 +240,7 @@ public class PropertyServiceImpl implements PropertyService
         return stream;
     }
 
+    @Override
     public void registerValidatorKind(ValidatorKind validatorKind)
     {
         if (_validatorTypes.containsKey(validatorKind.getTypeURI()))
@@ -225,11 +249,13 @@ public class PropertyServiceImpl implements PropertyService
         _validatorTypes.put(validatorKind.getTypeURI(), validatorKind);
     }
 
+    @Override
     public ValidatorKind getValidatorKind(String typeURI)
     {
         return _validatorTypes.get(typeURI);
     }
 
+    @Override
     public IPropertyValidator createValidator(String typeURI)
     {
         ValidatorKind kind = getValidatorKind(typeURI);
@@ -257,6 +283,7 @@ public class PropertyServiceImpl implements PropertyService
         DomainPropertyManager.get().deleteConditionalFormats(descriptorId);
     }
 
+    @Override
     public void deleteValidatorsAndFormats(Container c)
     {
         DomainPropertyManager.get().deleteAllValidatorsAndFormats(c);
