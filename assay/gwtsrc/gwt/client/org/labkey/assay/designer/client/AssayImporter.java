@@ -32,7 +32,6 @@ import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
 import gwt.client.org.labkey.assay.AssayApplication;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
-import org.labkey.api.gwt.client.ui.BoundCheckBox;
 import org.labkey.api.gwt.client.ui.BoundTextBox;
 import org.labkey.api.gwt.client.ui.HelpPopup;
 import org.labkey.api.gwt.client.ui.ImageButton;
@@ -142,10 +141,6 @@ public class AssayImporter implements EntryPoint
             public void onClick(ClickEvent event)
             {
                 onCancel();
-/*
-                if (_domainImporter != null)
-                    _domainImporter.handleCancel();
-*/
             }
         }));
 
@@ -171,13 +166,6 @@ public class AssayImporter implements EntryPoint
                 name.setRequired(true);
                 table.setWidget(row, 0, new InlineHTML("Name&nbsp;(Required)&nbsp;"));
                 table.setWidget(row++, 1, name);
-
-                BoundCheckBox showEditor = new BoundCheckBox("ShowAssayDesigner", _showEditor, null);
-                FlowPanel namePanel = new FlowPanel();
-                namePanel.add(new InlineHTML("Show Advanced Assay Designer&nbsp;"));
-                namePanel.add(new HelpPopup("Advanced Assay Designer", "This wizard allows you to quickly design an assay based on the columns in " +
-                        "a spreadsheet or text file. If you want to define other custom columns check this box and the advanced " +
-                        "assay designer will be displayed after the next button is clicked."));
 
                 AssayLocation defaultLocation = null;
                 SimpleComboBox<AssayLocation> combo = new SimpleComboBox<AssayLocation>(item -> item.getLabel());
@@ -372,7 +360,7 @@ public class AssayImporter implements EntryPoint
         $wnd.history.back();
     }-*/;
 
-    public static class AssayLocation //extends BaseModelData
+    public static class AssayLocation
     {
         private String _id;
         private String _label;

@@ -18,40 +18,20 @@ package org.labkey.api.gwt.client.ui.domain;
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.user.client.ui.Button;
-import com.google.gwt.user.client.ui.DialogBox;
-import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.ListBox;
-import com.google.gwt.user.client.ui.TabPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.sencha.gxt.widget.core.client.button.IconButton;
-import com.sencha.gxt.widget.core.client.button.ToolButton;
 import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
 import com.sencha.gxt.widget.core.client.form.FieldLabel;
 import com.sencha.gxt.widget.core.client.form.FormPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
-import org.labkey.api.gwt.client.ui.CachingLookupService;
-import org.labkey.api.gwt.client.ui.ConceptPicker;
 import org.labkey.api.gwt.client.ui.DomainProvider;
-import org.labkey.api.gwt.client.ui.LookupServiceAsync;
-import org.labkey.api.gwt.client.ui.PropertyPane;
-import org.labkey.api.gwt.client.ui.property.DefaultScaleItem;
-import org.labkey.api.gwt.client.ui.property.DescriptionItem;
-import org.labkey.api.gwt.client.ui.property.DimensionItem;
-import org.labkey.api.gwt.client.ui.property.FormatItem;
-import org.labkey.api.gwt.client.ui.property.ImportAliasesItem;
-import org.labkey.api.gwt.client.ui.property.MeasureItem;
-import org.labkey.api.gwt.client.ui.property.MvEnabledItem;
-import org.labkey.api.gwt.client.ui.property.RecommendedVariableItem;
-import org.labkey.api.gwt.client.ui.property.RequiredItem;
-import org.labkey.api.gwt.client.ui.property.URLItem;
-import org.labkey.api.gwt.client.ui.property.VisibilityItem;
+import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
 
@@ -72,11 +52,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
     List<FieldType> _columns = new ArrayList<FieldType>();
     Map<GWTPropertyDescriptor, BooleanProperty> _importColumnMap = new HashMap<GWTPropertyDescriptor, BooleanProperty>();
     Map<String, BoundCheckBox> _includeWidgetMap = new HashMap<String, BoundCheckBox>();
-    CachingLookupService _lookupService;
     DomainType _domain;
-    boolean _showPropertiesPanel;
-    DialogBox _propertiesPanel;
-    List<PropertyPane<DomainType, FieldType>> _properties;
 
     private Grid _grid;
     private ColumnMapper _mapper;
@@ -84,11 +60,9 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
     private Map<String, FieldType> _columnMap = new HashMap<String, FieldType>();
     private static final String NO_MAPPING_COLUMN = "No mapping";
 
-    public DomainImportGrid(LookupServiceAsync service, DomainType domain)
+    public DomainImportGrid(DomainType domain)
     {
-        _lookupService = new CachingLookupService(service);
         _domain = domain;
-        _showPropertiesPanel = true;
 
         _grid = new Grid(1, 0);
         _grid.setStyleName("labkey-data-region-legacy labkey-show-borders");
@@ -157,26 +131,16 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             
             namePanel.add(includeInImport);
             namePanel.add(new InlineHTML("&nbsp;<b>" + prop.getName() + "</b>&nbsp;"));
-            
-            if (_showPropertiesPanel)
-            {
-                ColumnPropButton btn = new ColumnPropButton(columnMapKey);
-                btn.setToolTip("Click to edit additional properties for this column");
-                namePanel.add(btn);
-            }
             _grid.setWidget(0, columnIndex, namePanel);
 
             // save in the import map
             _importColumnMap.put(prop, include);
             _columns.add((FieldType)prop);
 
-            // type picker
-            ConceptPicker picker = new ConceptPicker.Bound(_lookupService, "ff_type" + columnIndex, prop);
-            _grid.setWidget(1, columnIndex, picker);
-
-            // don't allow file and attachment properties for import (they don't really make sense here)
-            picker.setAllowAttachmentProperties(false);
-            picker.setAllowFileLinkProperties(false);
+            // type panel
+            HorizontalPanel typePanel = new HorizontalPanel();
+            typePanel.add(new InlineHTML(PropertyType.fromName(prop.getRangeURI()).getDisplay()));
+            _grid.setWidget(1, columnIndex, typePanel);
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
@@ -192,33 +156,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
                 _grid.setHTML(row+2, columnIndex, cellData);
             }
-        }
-
-        if (_showPropertiesPanel)
-        {
-            TabPanel tabPanel = new TabPanel();
-            tabPanel.addStyleName("extContainer");
-            tabPanel.getDeckPanel().setPixelSize(500, 250);
-            tabPanel.getDeckPanel().getElement().getStyle().setBackgroundColor("#eeeeee");
-
-            _properties = createPropertyPanes(null);
-
-            for (PropertyPane<DomainType, FieldType> propertiesPane : _properties)
-            {
-                VerticalLayoutContainer panel = new VerticalLayoutContainer();
-                panel.add(propertiesPane);
-                tabPanel.add(panel, propertiesPane.getName());
-            }
-            tabPanel.selectTab(0);
-            Button btn = new Button("OK");
-            btn.addClickHandler(event -> _propertiesPanel.hide());
-
-            VerticalLayoutContainer panel = new VerticalLayoutContainer();
-            panel.add(tabPanel);
-            panel.add(btn);
-            _propertiesPanel = new DialogBox();
-            _propertiesPanel.setModal(true);
-            _propertiesPanel.add(panel);
         }
     }
 
@@ -240,39 +177,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         if (null != _importColumnMap.get(prop))
             return _importColumnMap.get(prop).booleanValue();
         return false;
-    }
-
-    private List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
-    {
-        PropertyPane<DomainType, FieldType> displayPane = new PropertyPane<DomainType, FieldType>(this, "Display");
-        displayPane.addItem(new DescriptionItem<DomainType, FieldType>(displayPane));
-        displayPane.addItem(new URLItem<DomainType, FieldType>(displayPane));
-        displayPane.addItem(new VisibilityItem<DomainType, FieldType>(displayPane));
-
-        PropertyPane<DomainType, FieldType> formatPane = new PropertyPane<DomainType, FieldType>(this, "Format");
-        formatPane.addItem(new FormatItem<DomainType, FieldType>(formatPane));
-
-        PropertyPane<DomainType, FieldType> validatorPane = new PropertyPane<DomainType, FieldType>(this, "Validators");
-        validatorPane.addItem(new RequiredItem<DomainType, FieldType>(validatorPane));
-
-        PropertyPane<DomainType, FieldType> reportingPane = new PropertyPane<DomainType, FieldType>(this, "Reporting");
-        reportingPane.addItem(new MeasureItem<DomainType, FieldType>(reportingPane));
-        reportingPane.addItem(new DimensionItem<DomainType, FieldType>(reportingPane));
-        reportingPane.addItem(new RecommendedVariableItem<DomainType, FieldType>(reportingPane));
-        reportingPane.addItem(new DefaultScaleItem<DomainType, FieldType>(reportingPane));
-
-        PropertyPane<DomainType, FieldType> advancedPane = new PropertyPane<DomainType, FieldType>(this, "Advanced");
-        advancedPane.addItem(new MvEnabledItem<DomainType, FieldType>(advancedPane));
-        advancedPane.addItem(new ImportAliasesItem<DomainType, FieldType>(advancedPane));
-
-        List<PropertyPane<DomainType, FieldType>> result = new ArrayList<PropertyPane<DomainType, FieldType>>();
-        result.add(displayPane);
-        result.add(formatPane);
-        result.add(validatorPane);
-        result.add(reportingPane);
-        result.add(advancedPane);
-
-        return result;
     }
 
     public DomainType getCurrentDomain()
@@ -318,30 +222,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         }
     }
 
-    private class ColumnPropButton extends ToolButton
-    {
-        private String _key;
-
-        public ColumnPropButton(String key)
-        {
-            super(new IconButton.IconConfig("x-tbar-page-next"));
-            _key = key;
-
-            addSelectHandler(event -> {
-                if (_columnMap.containsKey(_key))
-                {
-                    FieldType field = _columnMap.get(_key);
-                    for (PropertyPane<DomainType, FieldType> prop : _properties)
-                        prop.showPropertyDescriptor(field, true);
-
-                    _propertiesPanel.show();
-                    _propertiesPanel.setText(field.getName() + " Column Properties");
-                    _propertiesPanel.center();
-                }
-            });
-        }
-    }
-
     public class ColumnMapper extends FormPanel
     {
         List<ListBox> _columnSelectors = new ArrayList<>();
@@ -361,7 +241,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             panel.add(new HTML("<b>Column Mapping:</b>"));
             panel.add(new InlineHTML("The list below are columns that already exist in the Domain and can be mapped with the " +
                     "inferred columns from the uploaded file.<br>Establish a mapping by selecting a column from the dropdown list to match " +
-                    "the exising Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
+                    "the existing Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
                     "mapped Domain column.<br/><br/>"));
 
             FieldLabel title = new FieldLabel(new HTML("Column from File"), "Server Column");
