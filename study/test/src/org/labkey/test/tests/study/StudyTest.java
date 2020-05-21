@@ -121,6 +121,7 @@ public class StudyTest extends StudyBaseTest
         isManualTest = true;
     }
 
+    @Override
     protected File[] getTestFiles()
     {
         return new File[]{TestFileUtils.getSampleData("api/study-api.xml")};
@@ -131,6 +132,7 @@ public class StudyTest extends StudyBaseTest
         return false;
     }
 
+    @Override
     protected void doCreateSteps()
     {
         if (!isQuickTest()) // StudyShortTest doesn't test alternate IDs
@@ -143,6 +145,7 @@ public class StudyTest extends StudyBaseTest
         waitForPipelineJobsToComplete(2, "study import", false);
     }
 
+    @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException //child class cleanup method throws Exception
     {
         super.doCleanup(afterTest);
@@ -161,6 +164,7 @@ public class StudyTest extends StudyBaseTest
         }
     }
 
+    @Override
     protected void doVerifySteps()
     {
         manageSubjectClassificationTest();
