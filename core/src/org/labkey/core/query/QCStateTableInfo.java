@@ -81,6 +81,21 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
         }
 
         @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow, boolean allowOwner, boolean retainCreation) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Map<String, Object> rowToUpdate;
+            try (DbScope.Transaction transaction = CoreSchema.getInstance().getSchema().getScope().ensureTransaction())
+            {
+                rowToUpdate = super.updateRow(user, container, row, oldRow, allowOwner, retainCreation);
+                transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
+                transaction.commit();
+            }
+
+            return rowToUpdate;
+
+        }
+
+        @Override
         protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             Map<String, Object> rowToInsert;
