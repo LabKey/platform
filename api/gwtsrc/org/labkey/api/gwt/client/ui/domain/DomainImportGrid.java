@@ -133,11 +133,9 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             _importColumnMap.put(prop, include);
             _columns.add((FieldType)prop);
 
-            // type panel
-            HorizontalPanel typePanel = new HorizontalPanel();
-            typePanel.add(new InlineHTML(PropertyType.fromName(prop.getRangeURI()).getDisplay()));
+            // type  info
             _grid.getRowFormatter().setStyleName(1, "labkey-row");
-            _grid.setWidget(1, columnIndex, typePanel);
+            _grid.setWidget(1, columnIndex, new InlineHTML(PropertyType.fromName(prop.getRangeURI()).getDisplay()));
 
             List<String> data = column.getData();
             for (int row=0; row<numDataRows; row++)
