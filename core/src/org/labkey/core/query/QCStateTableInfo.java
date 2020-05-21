@@ -90,9 +90,7 @@ public class QCStateTableInfo extends FilteredTable<CoreQuerySchema>
                 transaction.addCommitTask(() -> QCStateManager.getInstance().clearCache(container), DbScope.CommitTaskOption.IMMEDIATE, DbScope.CommitTaskOption.POSTCOMMIT);
                 transaction.commit();
             }
-
             return rowToUpdate;
-
         }
 
         @Override
