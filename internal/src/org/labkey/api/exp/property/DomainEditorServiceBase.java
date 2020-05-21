@@ -54,7 +54,6 @@ import java.util.Set;
  * <p/>
  * Base class for building GWT editors that edit domains
  *
- * @see org.labkey.api.gwt.client.ui.PropertiesEditor in InternalGWT
  * @see org.labkey.api.gwt.client.ui.LookupService
  */
 public class DomainEditorServiceBase extends BaseRemoteService

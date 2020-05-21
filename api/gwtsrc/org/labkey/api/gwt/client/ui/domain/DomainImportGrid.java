@@ -30,7 +30,6 @@ import com.sencha.gxt.widget.core.client.form.FormPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
-import org.labkey.api.gwt.client.ui.DomainProvider;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.StringUtils;
@@ -47,7 +46,7 @@ import java.util.Set;
  * User: jgarms
  * Date: Nov 5, 2008
  */
-public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends VerticalPanel implements DomainProvider
+public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType extends GWTPropertyDescriptor> extends VerticalPanel
 {
     List<FieldType> _columns = new ArrayList<FieldType>();
     Map<GWTPropertyDescriptor, BooleanProperty> _importColumnMap = new HashMap<GWTPropertyDescriptor, BooleanProperty>();
