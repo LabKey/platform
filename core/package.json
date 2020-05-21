@@ -3,17 +3,14 @@
   "version": "0.0.0",
   "scripts": {
     "setup": "npm ci",
-    "prebuild": "bnr clean",
-    "build": "bnr build-themes:dev && bnr build-pages:prod",
-    "prebuild-prod": "bnr clean",
-    "build-prod": "bnr build-themes:prod && bnr build-pages:prod",
+    "build": "bnr clean && bnr build-themes:dev && bnr build-pages:prod",
+    "build-dev": "bnr clean && bnr build-themes:dev && bnr build-pages:dev",
+    "build-prod": "bnr clean && bnr build-themes:prod && bnr build-pages:prod",
     "clean": "bnr clean",
     "start": "bnr build-pages:watch",
     "build-pages": "bnr build-pages:prod",
-    "prebuild-themes": "bnr clean",
-    "build-themes": "bnr build-themes:dev",
-    "prebuild-themes-prod": "bnr clean",
-    "build-themes-prod": "bnr build-themes:prod",
+    "build-themes": "bnr clean && bnr build-themes:dev",
+    "build-themes-prod": "bnr clean && bnr build-themes:prod",
     "test": "bnr build:jest-test",
     "teamcity": "bnr build:jest-teamcity",
     "lint": "eslint --ext '*.ts,*.tsx'",
@@ -42,6 +39,13 @@
         "NODE_ENV": "production"
       }
     },
+    "build-pages:dev": {
+      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
+      "env": {
+        "LK_MODULE": "core",
+        "NODE_ENV": "development"
+      }
+    },
     "build-pages:prod": {
       "command": "webpack --config ../webpack/prod.config.js --progress --profile --colors",
       "env": {
@@ -50,7 +54,7 @@
       }
     },
     "build-pages:watch": {
-      "command": "webpack-dev-server --config ../webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/watch.config.js",
       "env": {
         "LK_MODULE": "core",
         "NODE_ENV": "development"

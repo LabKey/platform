@@ -23,6 +23,6 @@ module.exports = {
         name: 'runGraph',
         title: 'Experiment Run Graph',
         path: './src/client/RunGraph',
-        generateViews: false // used by experimentRunGraphView.jsp
+        generateLib: true // used by experimentRunGraphView.jsp
     }]
 };

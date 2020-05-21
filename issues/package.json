@@ -4,14 +4,22 @@
   "private": true,
   "scripts": {
     "setup": "npm ci",
-    "build": "npm run clean && better-npm-run build:prod",
-    "start": "better-npm-run build:watch",
-    "build-prod": "npm run build",
-    "clean": "better-npm-run clean"
+    "build": "npm run build-prod",
+    "start": "bnr build:watch",
+    "build-dev": "npm run clean && bnr build:dev",
+    "build-prod": "npm run clean && bnr build:prod",
+    "clean": "bnr clean"
   },
   "betterScripts": {
     "build:watch": {
-      "command": "webpack-dev-server --config ../webpack/dev.config.js",
+      "command": "webpack-dev-server --config ../webpack/watch.config.js",
+      "env": {
+        "LK_MODULE": "issues",
+        "NODE_ENV": "development"
+      }
+    },
+    "build:dev": {
+      "command": "webpack --config ../webpack/dev.config.js --progress --profile --colors",
       "env": {
         "LK_MODULE": "issues",
         "NODE_ENV": "development"
