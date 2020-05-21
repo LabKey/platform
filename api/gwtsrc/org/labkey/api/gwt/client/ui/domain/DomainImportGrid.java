@@ -17,16 +17,13 @@ package org.labkey.api.gwt.client.ui.domain;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
+import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.InlineHTML;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.sencha.gxt.widget.core.client.container.VerticalLayoutContainer;
-import com.sencha.gxt.widget.core.client.form.FieldLabel;
-import com.sencha.gxt.widget.core.client.form.FormPanel;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.BoundCheckBox;
@@ -65,7 +62,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
         _grid = new Grid(1, 0);
         _grid.setStyleName("labkey-data-region-legacy labkey-show-borders");
-        _grid.getRowFormatter().setStyleName(0, "labkey-row-header");
 
         add(_grid);
     }
@@ -130,6 +126,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             
             namePanel.add(includeInImport);
             namePanel.add(new InlineHTML("&nbsp;<b>" + prop.getName() + "</b>&nbsp;"));
+            _grid.getRowFormatter().setStyleName(0, "labkey-column-header");
             _grid.setWidget(0, columnIndex, namePanel);
 
             // save in the import map
@@ -139,6 +136,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
             // type panel
             HorizontalPanel typePanel = new HorizontalPanel();
             typePanel.add(new InlineHTML(PropertyType.fromName(prop.getRangeURI()).getDisplay()));
+            _grid.getRowFormatter().setStyleName(1, "labkey-row");
             _grid.setWidget(1, columnIndex, typePanel);
 
             List<String> data = column.getData();
@@ -153,6 +151,7 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 else if (numDataRows > 3 && row == numDataRows - 1)
                     cellData = "<font color=\"666666\">" + cellData + "</font>";
 
+                _grid.getRowFormatter().setStyleName(row+2, "labkey-row");
                 _grid.setHTML(row+2, columnIndex, cellData);
             }
         }
@@ -178,11 +177,6 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         return false;
     }
 
-    public DomainType getCurrentDomain()
-    {
-        return _domain;
-    }
-
     private class ColumnMapperChangeHandler implements ChangeHandler
     {
         private String _lastValue;
@@ -206,22 +200,9 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
             _lastValue = value;
         }
-
-        public void onValueChange(ValueChangeEvent<String> event)
-        {
-            String value = event.getValue();
-            if (value != null)
-                selectMappedColumn(value, true);
-
-            // reset the previous value
-            if (_lastValue != null)
-                selectMappedColumn(_lastValue, false);
-
-            _lastValue = value;
-        }
     }
 
-    public class ColumnMapper extends FormPanel
+    public class ColumnMapper extends VerticalPanel
     {
         List<ListBox> _columnSelectors = new ArrayList<>();
         private List<String> _columnsToMap;
@@ -229,13 +210,9 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
         public ColumnMapper(List<InferencedColumn> inferredColumns, List<String> columnsToMap,
                             List<GWTPropertyDescriptor> columnsToMapInfo)
         {
-            //setFieldWidth(350);
-            setLabelWidth(150);
-            setBorders(false);
-
             _columnsToMap = columnsToMap;
 
-            VerticalLayoutContainer panel = new VerticalLayoutContainer();
+            VerticalPanel panel = new VerticalPanel();
             panel.add(new HTML("<br/>"));
             panel.add(new HTML("<b>Column Mapping:</b>"));
             panel.add(new InlineHTML("The list below are columns that already exist in the Domain and can be mapped with the " +
@@ -243,9 +220,13 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                     "the existing Domain column.<br>When the data is imported, the data from the inferred column will be added to the " +
                     "mapped Domain column.<br/><br/>"));
 
-            FieldLabel title = new FieldLabel(new HTML("Column from File"), "Server Column");
-            title.addStyleName("labkey-strong");
-            panel.add(title);
+            int row = 0;
+            FlexTable table = new FlexTable();
+            table.setStyleName("labkey-data-region-legacy");
+
+            table.getRowFormatter().setStyleName(row, "labkey-row");
+            table.setWidget(row, 0, new InlineHTML("Domain Column"));
+            table.setWidget(row++, 1, new InlineHTML("Column from File"));
 
             Map<String, GWTPropertyDescriptor> extraInfoMap = new HashMap<String, GWTPropertyDescriptor>();
             for (GWTPropertyDescriptor prop : columnsToMapInfo)
@@ -284,8 +265,12 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
                 }
                 _columnSelectors.add(selector);
 
-                panel.add(new FieldLabel(selector, selector.getName()));
+                table.getRowFormatter().setStyleName(row, "labkey-row");
+                table.setWidget(row, 0, new InlineHTML(selector.getName()));
+                table.setWidget(row++, 1, selector);
             }
+
+            panel.add(table);
             add(panel);
         }
 

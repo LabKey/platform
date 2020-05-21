@@ -17,6 +17,8 @@ package gwt.client.org.labkey.assay.designer.client;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
@@ -25,10 +27,9 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.InlineHTML;
+import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.sencha.gxt.cell.core.client.form.ComboBoxCell;
-import com.sencha.gxt.widget.core.client.form.SimpleComboBox;
 import gwt.client.org.labkey.assay.AssayApplication;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -162,42 +163,39 @@ public class AssayImporter implements EntryPoint
 
                 int row = 0;
                 FlexTable table = new FlexTable();
+                table.setStyleName("labkey-data-region-legacy");
+
                 BoundTextBox name = new BoundTextBox("Assay Name", "AssayDesignerName", _assayName);
                 name.setRequired(true);
+                table.getRowFormatter().setStyleName(row, "labkey-row");
                 table.setWidget(row, 0, new InlineHTML("Name&nbsp;(Required)&nbsp;"));
                 table.setWidget(row++, 1, name);
 
-                AssayLocation defaultLocation = null;
-                SimpleComboBox<AssayLocation> combo = new SimpleComboBox<AssayLocation>(item -> item.getLabel());
+                ListBox locSelector = new ListBox();
+                locSelector.setWidth("250px");
+                locSelector.addChangeHandler(new LocationChangeHandler(locSelector));
 
-                combo.setEditable(false);
-                combo.setEmptyText("No location");
-                combo.setWidth(250);
+                int selectedIndex = 0, index = 0;
                 for (Map<String, String> location : locations)
                 {
-                    AssayLocation aLoc = new AssayLocation(location.get("id"), location.get("label"));
-                    combo.add(aLoc);
-                    if (Boolean.parseBoolean(location.get("default")))
-                        defaultLocation = aLoc;
-                }
+                    locSelector.addItem(location.get("label"), location.get("id"));
 
-                if (defaultLocation != null)
-                {
-                    _containerId = defaultLocation.getId();
-                    combo.setValue(defaultLocation);
+                    if (Boolean.parseBoolean(location.get("default")))
+                    {
+                        _containerId = location.get("id");
+                        selectedIndex = index;
+                    }
+                    index++;
                 }
-                combo.setTriggerAction(ComboBoxCell.TriggerAction.ALL);
-                combo.addValueChangeHandler(event -> {
-                    AssayLocation value = event.getValue();
-                    if (value != null)
-                        _containerId = value.getId();
-                });
+                if (selectedIndex > -1)
+                    locSelector.setSelectedIndex(selectedIndex);
 
                 FlowPanel locationPanel = new FlowPanel();
                 locationPanel.add(new InlineHTML("Location&nbsp;"));
                 locationPanel.add(new HelpPopup("Assay Location", "Create the assay in a project or shared folder so it is visible in subfolders."));
+                table.getRowFormatter().setStyleName(row, "labkey-row");
                 table.setWidget(row, 0, locationPanel);
-                table.setWidget(row++, 1, combo);
+                table.setWidget(row++, 1, locSelector);
 
                 WebPartPanel infoPanel = new WebPartPanel("Assay Properties", panel);
                 root.add(infoPanel);
@@ -205,6 +203,24 @@ public class AssayImporter implements EntryPoint
                 panel.add(table);
             }
         });
+    }
+
+    private class LocationChangeHandler implements ChangeHandler
+    {
+        private ListBox _cmp;
+
+        public LocationChangeHandler(ListBox component)
+        {
+            _cmp = component;
+        }
+
+        @Override
+        public void onChange(ChangeEvent event)
+        {
+            String value = _cmp.getSelectedValue();
+            if (value != null)
+                _containerId = value;
+        }
     }
 
     private void addImporterWebPart(RootPanel root, List<GWTPropertyDescriptor> baseColumns)
@@ -359,37 +375,6 @@ public class AssayImporter implements EntryPoint
     public static native void back() /*-{
         $wnd.history.back();
     }-*/;
-
-    public static class AssayLocation
-    {
-        private String _id;
-        private String _label;
-        public AssayLocation(String id, String label)
-        {
-            setId(id);
-            setLabel(label);
-        }
-
-        public String getLabel()
-        {
-            return _label;
-        }
-
-        public void setLabel(String label)
-        {
-            _label = label;
-        }
-
-        public String getId()
-        {
-            return _id;
-        }
-
-        public void setId(String id)
-        {
-            _id = id;
-        }
-    }
 
     private class AssayDomainImporter extends DomainImporter
     {
