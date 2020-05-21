@@ -46,6 +46,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         _definitionFile = definitionFile;
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         // where should this go???

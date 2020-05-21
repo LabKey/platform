@@ -311,6 +311,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             return "test job";
         }
 
+        @Override
         public ActionURL getStatusHref()
         {
             return null;

@@ -137,6 +137,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         return PipelineJobService.get().getTaskPipeline(new TaskId(StudyImportJob.class));
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         return BaseStudyController.getStudyOverviewURL(getInfo().getContainer());

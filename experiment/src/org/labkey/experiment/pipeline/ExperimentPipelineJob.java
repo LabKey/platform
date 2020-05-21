@@ -104,6 +104,7 @@ public class ExperimentPipelineJob extends PipelineJob
         return _xarSource;
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         ExpRun run = getXarSource().getExperimentRun();

@@ -101,6 +101,7 @@ public class RReportJob extends PipelineJob implements Serializable
         return _jobIdentifier.get();
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         File statusFile = getLogFile();

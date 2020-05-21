@@ -2735,12 +2735,6 @@ internal/webapp/vis/vis.lib.xml -text
 internal/webapp/vis/visDependencies.lib.xml -text
 internal/webapp/WebPartPermissionsPanel.js -text
 issues/api-src/org/labkey/api/issues/IssuesUrls.java -text
-issues/gwtsrc/org/labkey/issues/client/GWTIssueDefinition.java -text
-issues/gwtsrc/org/labkey/issues/client/IssueDesigner.java -text
-issues/gwtsrc/org/labkey/issues/client/IssueDesignerLoader.java -text
-issues/gwtsrc/org/labkey/issues/client/IssueService.java -text
-issues/gwtsrc/org/labkey/issues/client/IssueServiceAsync.java -text
-issues/gwtsrc/org/labkey/issues/Designer.gwt.xml -text
 issues/module.properties -text
 issues/resources/data/priority.tsv -text
 issues/resources/data/resolution.tsv -text
@@ -2752,7 +2746,6 @@ issues/src/org/labkey/issue/actions/ChangeSummary.java -text
 issues/src/org/labkey/issue/actions/DeleteIssueListAction.java -text
 issues/src/org/labkey/issue/actions/GetRelatedFolder.java -text
 issues/src/org/labkey/issue/actions/InsertIssueDefAction.java -text
-issues/src/org/labkey/issue/actions/IssueServiceAction.java -text
 issues/src/org/labkey/issue/actions/IssueValidation.java -text
 issues/src/org/labkey/issue/actions/ValidateIssueDefNameAction.java -text
 issues/src/org/labkey/issue/CustomColumnConfiguration.java -text
@@ -3824,7 +3817,6 @@ study/test/src/org/labkey/test/tests/study/SpecimenReplaceTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCheckForReloadTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyCohortExportTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyContinuousTest.java -text
-study/test/src/org/labkey/test/tests/study/StudyDatasetImportFieldsTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDateBasedTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyDemoModeTest.java -text
 study/test/src/org/labkey/test/tests/study/StudyExportTest.java -text
