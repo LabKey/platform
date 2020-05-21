@@ -508,7 +508,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
         catch (Throwable x)
         {
-            handleException(request, response, x);
+            handleException(x);
             throwable = x;
         }
         finally
@@ -524,16 +524,19 @@ public abstract class SpringActionController implements Controller, HasViewConte
     }
 
 
-    protected void handleException(HttpServletRequest request, HttpServletResponse response, Throwable x)
+    protected void handleException(Throwable x)
     {
-        // OK, if we get here with a deadlock exception AND this is a get AND we haven't committed the response yet,^M
-        // ASK the caller to retry^M
+        HttpServletRequest request = getViewContext().getRequest();
+        HttpServletResponse response = getViewContext().getResponse();
+
+        // IF we get here with a deadlock exception AND this is a get AND we haven't committed the response yet,
+        // THEN ask the caller to retry.
         if (x instanceof Exception && SqlDialect.isTransactionException((Exception)x) && "GET".equals(request.getMethod()) && !response.isCommitted())
         {
-            if (!request.getQueryString().contains("_retry_=1"))
+            if (!StringUtils.equals("1",getViewContext().getActionURL().getParameter("_retry_")))
             {
-                String retry = request.getRequestURI() + "?_retry_=1&" + request.getQueryString();
-                ExceptionUtil.doErrorRedirect(response, retry);
+                ActionURL url = getViewContext().cloneActionURL().addParameter("_retry_", "1");
+                ExceptionUtil.doErrorRedirect(response, url.getLocalURIString());
                 return;
             }
         }
