@@ -587,6 +587,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (webPart.getPropertyMap().isEmpty())
                     {
                         // Configure to show subfolders if not previously configured
+                        webPart = new WebPart(webPart);
                         webPart.getPropertyMap().put("title", "Subfolders");
                         webPart.getPropertyMap().put("containerFilter", ContainerFilter.Type.CurrentAndFirstChildren.name());
                         webPart.getPropertyMap().put("containerTypes", "folder");

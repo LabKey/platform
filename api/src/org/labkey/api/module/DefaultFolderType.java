@@ -129,13 +129,13 @@ public class DefaultFolderType implements FolderType
         required = copyWebParts(required);
         defaultParts = copyWebParts(defaultParts);
 
-        //Just to be sure, make sure required web parts are set correctly
+        // Just to be sure, make sure required web parts are set correctly
         if (null != required)
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
 
         ArrayList<Portal.WebPart> all = new ArrayList<>();
-        List<Portal.WebPart> existingParts = Portal.getParts(c);
+        List<Portal.WebPart> existingParts = Portal.getEditableParts(c);
 
         if (existingParts.isEmpty())
         {
@@ -146,7 +146,7 @@ public class DefaultFolderType implements FolderType
         }
         else
         {
-            //Order will be required,preferred,optional
+            // Order will be required,preferred,optional
             all.addAll(existingParts);
             for (WebPart p : all)
                 p.setIndex(2);
@@ -173,7 +173,7 @@ public class DefaultFolderType implements FolderType
                     Portal.WebPart foundPart = findPart(all, part);
                     if (null == foundPart)
                     {
-                        part.setIndex(1); //Should put these right after required parts
+                        part.setIndex(1); // Should put these right after required parts
                         all.add(part);
                     }
                     else
@@ -187,7 +187,7 @@ public class DefaultFolderType implements FolderType
         if (null == active)
             active = new HashSet<>();
         else
-            active = new HashSet<>(active); //Need to copy since returned set is unmodifiable.
+            active = new HashSet<>(active); // Need to copy since returned set is unmodifiable.
 
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
