@@ -20,7 +20,6 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
-import org.labkey.api.gwt.client.ui.property.FormatItem;
 import org.labkey.api.view.NavTree;
 
 import java.util.Formatter;
@@ -33,6 +32,10 @@ import java.util.Map;
  */
 public class HelpTopic
 {
+    // @JavaRuntimeVersion
+    // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
+    public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/13/docs/api/java.base/";
+
     private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
     private static final String DOCUMENTATION_FOLDER_NAME = Constants.getDocumentationVersion();
     private static final String HELP_LINK_PREFIX = "https://www.labkey.org/Documentation/" + DOCUMENTATION_FOLDER_NAME + "/wiki-page.view?name=";
@@ -59,7 +62,7 @@ public class HelpTopic
 
     public static String getJdkJavaDocLinkPrefix()
     {
-        return FormatItem.JDK_JAVADOC_BASE_URL;
+        return JDK_JAVADOC_BASE_URL;
     }
 
     public String getHelpTopicHref()
@@ -95,7 +98,7 @@ public class HelpTopic
      */
     public static String getJDKJavaDocLink(Class c)
     {
-        return FormatItem.JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
+        return JDK_JAVADOC_BASE_URL + c.getName().replace(".", "/").replace("$", ".") + ".html";
     }
 
     public static class TestCase extends Assert
@@ -103,8 +106,8 @@ public class HelpTopic
         @Test
         public void testJavaDocLinkGeneration()
         {
-            assertEquals(FormatItem.JDK_JAVADOC_BASE_URL + "java/util/Formatter.html", getJDKJavaDocLink(Formatter.class));
-            assertEquals(FormatItem.JDK_JAVADOC_BASE_URL + "java/util/Map.Entry.html", getJDKJavaDocLink(Map.Entry.class));
+            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Formatter.html", getJDKJavaDocLink(Formatter.class));
+            assertEquals(JDK_JAVADOC_BASE_URL + "java/util/Map.Entry.html", getJDKJavaDocLink(Map.Entry.class));
         }
     }
 }
