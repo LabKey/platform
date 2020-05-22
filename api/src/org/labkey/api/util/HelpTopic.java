@@ -34,8 +34,6 @@ public class HelpTopic
 {
     // @JavaRuntimeVersion
     // Update the below constant whenever we add support for a new major Java version so we always point at the current docs.
-    // Why is this global constant defined in such an obscure class? Ideally, we would define it in HelpTopic, but that class
-    // is not available to GWT client code. Defining it here allows us to use it in both GWT and server code.
     public static final String JDK_JAVADOC_BASE_URL = "https://docs.oracle.com/en/java/javase/13/docs/api/java.base/";
 
     private static final String TARGET_NAME = "labkeyHelp"; // LabKey help should always appear in the same tab/window
