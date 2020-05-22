@@ -202,7 +202,7 @@ public class DatasetController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Study study = getStudyThrowIfNull();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
