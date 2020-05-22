@@ -276,9 +276,9 @@ public abstract class AbstractIssuesListDefDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public @Nullable IssuesDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public @Nullable IssuesDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        return IssuesListDefService.get().getIssueDomainKindProperties(container, domain.getName());
+        return IssuesListDefService.get().getIssueDomainKindProperties(container, domain != null ? domain.getName() : null);
     }
 
     @Override
