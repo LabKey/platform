@@ -77,7 +77,6 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -665,7 +664,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return new AssayServiceImpl(getViewContext());
+            return new AssayDomainServiceImpl(getViewContext());
         }
     }
 

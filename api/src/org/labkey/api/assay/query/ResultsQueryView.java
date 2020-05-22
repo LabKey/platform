@@ -85,6 +85,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         rgn.setShowRecordSelectors(true);
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -195,6 +196,7 @@ public class ResultsQueryView extends AssayBaseQueryView
         }
     }
 
+    @Override
     protected ColumnHeaderType getColumnHeaderType()
     {
         return ColumnHeaderType.Caption;

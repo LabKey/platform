@@ -14,7 +14,7 @@ import {
     PermissionTypes,
     User,
     fetchAllAssays,
-    importGeneralAssayRun,
+    importAssayRun,
     naturalSort,
     hasAllPermissions,
     AssayProtocolModel,
@@ -203,9 +203,14 @@ export class App extends React.Component<Props, State> {
             const name = runProperties ? runProperties[FORM_IDS.RUN_NAME] : undefined;
             const comment = runProperties ? runProperties[FORM_IDS.RUN_COMMENT] : undefined;
 
-            importGeneralAssayRun(assayId, file, name, comment)
+            importAssayRun({
+                assayId,
+                files: [file],
+                name,
+                comment,
+            })
                 .then((response) => {
-                    window.location = response.successurl;
+                    window.location.href = response.successurl;
                 })
                 .catch((reason) => {
                     this.setErrorMsg(reason);

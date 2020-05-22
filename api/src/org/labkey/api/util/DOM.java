@@ -32,6 +32,12 @@ import java.util.stream.Stream;
 import static org.labkey.api.util.HtmlString.unsafe;
 import static org.labkey.api.util.PageFlowUtil.filter;
 
+/**
+ * Builders to safely create properly encoded HTML.
+ * Many of the element classes take a var-arg Object array to represent their children,
+ * see {@link DOM#appendBody(Appendable, Object)} for details about what's supported, and {@link DomTestCase} for
+ * example usages.
+ */
 public class DOM
 {
     public interface Attributes extends Iterable<Map.Entry<Object,Object>> {}
@@ -766,7 +772,14 @@ public class DOM
         return html;
     }
 
-    // don't throw checked exception, because it makes using lambdas a big pain
+    /**
+     * @param body supported values include null (nothing is included in the generated HTML),
+     *             CharSequence (like String, StringBuilder, etc),
+     *             DOM.Renderable (like the DIV, SPAN, or TABLE methods return),
+     *             any kind of array containing the other supported elements,
+     *             or any kind of Stream containing the other supported elements
+     * This method doesn't throw checked exception, because it makes using lambdas a big pain
+     */
     private static Appendable appendBody(Appendable builder, Object body)
     {
         if (null == body)

@@ -113,6 +113,7 @@ public class StudyExportTest extends StudyManualTest
         waitForPipelineJobsToComplete(3, "study and specimen archive import", false);
     }
 
+    @Override
     protected int getVisitCount()
     {
         return 67;

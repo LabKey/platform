@@ -538,7 +538,7 @@ public class SqlParser
     // IMPL
     //
 
-    static private Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
+    static private final Set<String> keywords = new CaseInsensitiveHashSet(PageFlowUtil.set(
             "all","any","and","as","asc","avg",
             "between","both",
             "case","class","count",
@@ -1435,6 +1435,7 @@ public class SqlParser
             setTokenStream(new CommonTokenStream(new SqlBaseLexer(new CaseInsensitiveStringStream(str))));
         }
 
+        @Override
         public boolean isSqlType(String type)
         {
             type = type.toUpperCase();
@@ -2046,6 +2047,7 @@ public class SqlParser
 
     static class LabKeyTreeAdaptor extends CommonTreeAdaptor
     {
+        @Override
         public Object create(Token payload)
         {
             return new LabKeyTreeType(payload);

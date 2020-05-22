@@ -354,7 +354,7 @@ public class StudyManager
         // NOTE: We really don't want to have multiple instances of DatasetDefinitions in-memory, only return the
         // datasets that are cached under container.containerId/ds.entityId
 
-        private QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
+        private final QueryHelper<DatasetDefinition> helper = new QueryHelper<>(
                 () -> StudySchema.getInstance().getTableInfoDataset(),
                 DatasetDefinition.class)
         {
@@ -4762,7 +4762,7 @@ public class StudyManager
     
     public static class CategoryListener implements ViewCategoryListener
     {
-        private StudyManager _instance;
+        private final StudyManager _instance;
 
         private CategoryListener(StudyManager instance)
         {
