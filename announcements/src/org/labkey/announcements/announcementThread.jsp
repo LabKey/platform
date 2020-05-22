@@ -103,7 +103,7 @@ if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 if (settings.hasMemberList() && null != announcementModel.getMemberListIds())
 { %>
 <tr>
-    <td colspan="3">Members: <%=h(announcementModel.getMemberListDisplayString(c, user))%></td>
+    <td colspan="3">Notify: <%=h(announcementModel.getMemberListDisplayString(c, user))%></td>
 </tr><%
 }
 
@@ -189,7 +189,7 @@ if (!announcementModel.getResponses().isEmpty())
             if (settings.hasMemberList() && !Objects.equals(r.getMemberListIds(), prev.getMemberListIds()))
             { %>
             <tr>
-                <td colspan="2">Members: <%=h(r.getMemberListDisplayString(c, user))%></td>
+                <td colspan="2">Notify: <%=h(r.getMemberListDisplayString(c, user))%></td>
             </tr><%
             }
 

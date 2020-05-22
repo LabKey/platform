@@ -17,11 +17,11 @@ package org.labkey.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -52,8 +52,6 @@ import org.labkey.api.view.ViewContext;
 import javax.servlet.http.HttpSession;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -231,8 +229,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             if (location != null)
                 context.setContainer(location);
 
-            org.labkey.api.gwt.client.assay.AssayService svc = new AssayServiceImpl(context);
-
+            AssayDomainService svc = new AssayDomainServiceImpl(context);
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 
             gwtProtocol.setName(assayName);
@@ -292,91 +289,9 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
         if (protocol != null && !files.isEmpty())
         {
             ActionURL returnUrl = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), protocol, StringUtils.defaultString(directoryPath, ""), new File[]{files.get(0)});
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(getContainer(), protocol, false, returnUrl);
+            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(protocol.getContainer(), protocol, false, returnUrl);
 
             return url == null ? null : url.getLocalURIString();
-        }
-        return null;
-    }
-
-    public String getTypeURI(String providerName, String assayName) throws GWTImportException
-    {
-        ViewContext context = getViewContext();
-
-        try
-        {
-            org.labkey.api.gwt.client.assay.AssayService svc = new AssayServiceImpl(context);
-
-            GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
-
-            gwtProtocol.setName(assayName);
-            gwtProtocol = svc.saveChanges(gwtProtocol, true);
-
-            AssayProvider provider = AssayService.get().getProvider(providerName);
-            if (provider != null)
-            {
-                ExpProtocol protocol = ExperimentService.get().getExpProtocol(gwtProtocol.getProtocolId());
-                Domain domain = provider.getResultsDomain(protocol);
-
-                return domain.getTypeURI();
-            }
-            return null;
-        }
-        catch (Exception e)
-        {
-            throw new GWTImportException(e.getMessage());
-        }
-    }
-
-    private void setPropertyDomainURIs(ExpProtocol protocol, Set<String> uris)
-    {
-        if (getContainer() == null)
-        {
-            throw new IllegalStateException("Must set container before setting domain URIs");
-        }
-        if (protocol.getLSID() == null)
-        {
-            throw new IllegalStateException("Must set LSID before setting domain URIs");
-        }
-        Map<String, ObjectProperty> props = new HashMap<>(protocol.getObjectProperties());
-        // First prune out any domains of the same type that aren't in the new set
-        for (String uri : new HashSet<>(props.keySet()))
-        {
-            Lsid lsid = new Lsid(uri);
-            if (lsid.getNamespacePrefix() != null && lsid.getNamespacePrefix().startsWith(ExpProtocol.ASSAY_DOMAIN_PREFIX) && !uris.contains(uri))
-            {
-                props.remove(uri);
-            }
-        }
-
-        for (String uri : uris)
-        {
-            if (!props.containsKey(uri))
-            {
-                ObjectProperty prop = new ObjectProperty(protocol.getLSID(), protocol.getContainer(), uri, uri);
-                props.put(prop.getPropertyURI(), prop);
-            }
-        }
-        protocol.setObjectProperties(props);
-    }
-
-    public String getImportURL(String providerName, String directoryPath, String assayName)
-    {
-        List<ExpProtocol> assays = AssayService.get().getAssayProtocols(getContainer());
-        ExpProtocol assayProtocol = null;
-        for (ExpProtocol protocol : assays)
-        {
-            String name = protocol.getName();
-
-            if (name.equals(assayName))
-                assayProtocol = protocol;
-        }
-
-        if (assayProtocol != null)
-        {
-            ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getImportURL(getContainer(), assayProtocol, directoryPath, new File[]{_importFile});
-
-            return url.getLocalURIString();
         }
         return null;
     }
