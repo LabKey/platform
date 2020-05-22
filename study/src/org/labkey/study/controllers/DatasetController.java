@@ -109,6 +109,7 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {
+        @Override
         public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors)
         {
             int auditRowId = form.getAuditRowId();
@@ -200,7 +201,8 @@ public class DatasetController extends BaseStudyController
             }
         }
 
-        public void addNavTrail(NavTree root)
+        @Override
+        public NavTree appendNavTrail(NavTree root)
         {
             Study study = getStudyThrowIfNull();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
@@ -212,19 +214,23 @@ public class DatasetController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class BulkDatasetDeleteAction extends FormViewAction<DatasetDeleteForm>
     {
+        @Override
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             _addNavTrailDatasetAdmin(root);
             root.addChild("Delete Datasets");
         }
 
+        @Override
         public void validateCommand(DatasetDeleteForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(DatasetDeleteForm form, BindException errors)
         {
             int[] datasetIds = form.getDatasetIds();
@@ -259,6 +265,7 @@ public class DatasetController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DatasetDeleteForm datasetDeleteForm)
         {
             return new ActionURL(StudyController.ManageTypesAction.class, getContainer());

@@ -382,6 +382,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
+        @Override
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -414,6 +415,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     public class SuccessAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors)
         {
             PageConfig config = getPageConfig();
@@ -597,6 +599,7 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LoginAction extends SimpleViewAction<LoginForm>
     {
+        @Override
         public ModelAndView getView(LoginForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -612,6 +615,7 @@ public class LoginController extends SpringActionController
             return showLogin(form, errors, request, getPageConfig());
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2027,7 +2031,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return null != form.getMessage() ? form.getMessage() : null;
+            return form.getMessage();
         }
 
         @Override
@@ -2200,11 +2204,13 @@ public class LoginController extends SpringActionController
     {
         private HttpView _finishView = null;
 
+        @Override
         public void validateCommand(LoginForm form, Errors errors)
         {
             // All validation is handled in attemptReset()
         }
 
+        @Override
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -2227,6 +2233,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(LoginForm form, BindException errors)
         {
             Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
@@ -2239,11 +2246,13 @@ public class LoginController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(LoginForm loginForm)
         {
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Reset Password");
@@ -2255,6 +2264,7 @@ public class LoginController extends SpringActionController
     @RequiresLogin
     public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             URLHelper returnUrl = form.getValidReturnUrl();
@@ -2275,6 +2285,7 @@ public class LoginController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2287,6 +2298,7 @@ public class LoginController extends SpringActionController
     @CSRF(CSRF.Method.NONE)
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             String message = null;
@@ -2328,6 +2340,7 @@ public class LoginController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2340,6 +2353,7 @@ public class LoginController extends SpringActionController
     // where the caller has a secret (the authentication token).
     public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
+        @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())

@@ -62,7 +62,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private Map<String, Object> _row;
-    private Map<String, Object> _extra = new HashMap<>();
+    private final Map<String, Object> _extra = new HashMap<>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;

@@ -38,6 +38,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DOM;
 import static org.labkey.api.util.DOM.Attribute.*;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -47,6 +48,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -749,6 +751,25 @@ public class TestController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
+        }
+    }
+
+
+    @RequiresSiteAdmin
+    public class DeadlockAction extends SimpleViewAction<ExceptionForm>
+    {
+        @Override
+        public ModelAndView getView(ExceptionForm form, BindException errors)
+        {
+            if (getViewContext().getRequest().getParameterMap().containsKey("_retry_"))
+                return new HtmlView(HtmlString.of("Second time's a charm"));
+            throw new DeadlockLoserDataAccessException("Try again", null);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
         }
     }
 

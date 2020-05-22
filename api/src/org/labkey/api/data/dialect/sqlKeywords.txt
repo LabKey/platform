@@ -332,6 +332,7 @@ expansion
 expire
 explain
 export
+expression
 extend
 extended
 extension

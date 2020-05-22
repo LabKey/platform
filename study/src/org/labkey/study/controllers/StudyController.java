@@ -5375,8 +5375,8 @@ public class StudyController extends BaseStudyController
 
     public static class ViewPrefsBean
     {
-        private List<Pair<String, String>> _views;
-        private Dataset _def;
+        private final List<Pair<String, String>> _views;
+        private final Dataset _def;
 
         public ViewPrefsBean(List<Pair<String, String>> views, Dataset def)
         {
@@ -5790,7 +5790,7 @@ public class StudyController extends BaseStudyController
 
     public static class ReportHeader extends HttpView
     {
-        private Report _report;
+        private final Report _report;
 
         public ReportHeader(Report report)
         {
@@ -5831,11 +5831,11 @@ public class StudyController extends BaseStudyController
      */
     public static class ParticipantNavView extends HttpView
     {
-        private ActionURL _prevURL;
-        private ActionURL _nextURL;
-        private String _display;
-        private String _currentParticipantId;
-        private String _encodedQcState;
+        private final ActionURL _prevURL;
+        private final ActionURL _nextURL;
+        private final String _display;
+        private final String _currentParticipantId;
+        private final String _encodedQcState;
         private boolean _showCustomizeLink = true;
 
         public ParticipantNavView(ActionURL prevURL, ActionURL nextURL, String currentParticipantId, String encodedQCState, String display)
@@ -7850,7 +7850,7 @@ public class StudyController extends BaseStudyController
 
     public static class DeleteMPIForm implements CustomApiForm
     {
-        private List<Pair<String, String>> _params = new ArrayList<>();
+        private final List<Pair<String, String>> _params = new ArrayList<>();
 
         public List<Pair<String, String>> getParams()
         {

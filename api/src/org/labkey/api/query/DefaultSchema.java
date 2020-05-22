@@ -106,6 +106,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
     {
         registerProvider("Folder", new FolderSchemaProvider()
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new FolderSchema("Folder", schema.getUser(), schema.getContainer(), null);
@@ -113,6 +114,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         });
         registerProvider("Project", new FolderSchemaProvider()
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = schema.getContainer().getProject();
@@ -125,6 +127,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
             }
         });
         registerProvider("Shared", new FolderSchemaProvider(){
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getSharedContainer();
@@ -132,6 +135,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
             }
         });
         registerProvider("Site", new FolderSchemaProvider(){
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getRoot();
@@ -214,6 +218,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         MemTracker.getInstance().put(this);
     }
 
+    @Override
     public TableInfo getTable(String name, ContainerFilter cf)
     {
         return null;
@@ -309,6 +314,7 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         return null;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new TreeSet<>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
@@ -377,17 +383,20 @@ final public class DefaultSchema extends AbstractSchema implements QuerySchema.C
         return visitor.visitTop(getSchemas(includeHidden), null);
     }
 
+    @Override
     public @NotNull String getName()
     {
         return "default";
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
+    @Override
     @NotNull
     public String getSchemaName()
     {
