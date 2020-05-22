@@ -807,10 +807,10 @@ public abstract class SqlDialect
         Set<String> jdbcKeywords = getJdbcKeywords(executor);
 
         if (!KeywordCandidates.get().containsAll(jdbcKeywords, getProductName()))
-            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
 
         if (!KeywordCandidates.get().containsAll(_reservedWordSet, getProductName()))
-            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
     public int getIdentifierMaxLength()

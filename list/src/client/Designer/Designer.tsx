@@ -22,7 +22,6 @@ import {
     ListDesignerPanels,
     ListModel,
     fetchListDesign,
-    getListProperties,
     ConfirmModal,
     BeforeUnload
 } from "@labkey/components";
@@ -68,20 +67,6 @@ export class App extends React.Component<{}, State> {
             }
         });
 
-        if (listId) {
-            this.loadExistingList(listId);
-        } else {
-            this.createNewListTemplate();
-        }
-    }
-
-    handleWindowBeforeUnload = (event) => {
-        if (this._dirty) {
-            event.returnValue = 'Changes you made may not be saved.';
-        }
-    };
-
-    loadExistingList(listId: number) {
         fetchListDesign(listId)
             .then((model: ListModel) => {
                 this.setState(() => ({model, isLoadingModel: false}));
@@ -91,15 +76,11 @@ export class App extends React.Component<{}, State> {
             });
     }
 
-    createNewListTemplate() {
-        getListProperties()
-            .then((model: ListModel) => {
-                this.setState(() => ({model, isLoadingModel: false}))
-            })
-            .catch((error) => {
-                this.setState(() => ({message: error.exception, isLoadingModel: false}));
-            })
-    }
+    handleWindowBeforeUnload = (event) => {
+        if (this._dirty) {
+            event.returnValue = 'Changes you made may not be saved.';
+        }
+    };
 
     onCancel = () => {
         this.navigate(ActionURL.buildURL('list', 'begin', getServerContext().container.path));

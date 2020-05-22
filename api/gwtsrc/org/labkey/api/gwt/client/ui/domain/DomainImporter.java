@@ -388,7 +388,7 @@ public class DomainImporter
         if (grid == null)
         {
             needGridAndButtons = true;
-            grid = new DomainImportGrid(service, _domain);
+            grid = new DomainImportGrid(_domain);
             VerticalPanel gridPanel = new VerticalPanel();
             gridPanel.add(new HTML("Uncheck a column to ignore it during import.<br/>"
                     + "Showing first " + columns.get(0).getData().size() + " rows:<p>"));
@@ -419,13 +419,6 @@ public class DomainImporter
                         Window.alert("You must select all required Server Columns before importing.");
                     else
                         handleImport();
-/*
-                    importButton.setEnabled(false);
-                    progressBarText = new ProgressBarText("Creating columns...");
-                    progressBar = new ProgressBar(0, 100, 0, progressBarText);  // Placeholder to display the first couple messages
-                    mainPanel.add(progressBar);
-                    importData();
-*/
                 }
             });
             buttons.add(importButton);

@@ -20,9 +20,9 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTPropertyDescriptorMixin;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -31,7 +31,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.assay.AssayServiceImpl;
+import org.labkey.assay.AssayDomainServiceImpl;
 import org.springframework.validation.BindException;
 
 @Marshal(Marshaller.Jackson)
@@ -82,7 +82,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
             }
             else if (expProtocol.getContainer().hasPermission(getUser(), ReadPermission.class))
             {
-                AssayService svc = new AssayServiceImpl(getViewContext());
+                AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
                 GWTProtocol ret = svc.getAssayDefinition(form.getProtocolId(), form.isCopy());
                 if (ret == null)
                 {
@@ -98,7 +98,7 @@ public class GetProtocolAction extends ReadOnlyApiAction<GetProtocolAction.Desig
         else if (form.getProviderName() != null)
         {
             // get the assay template
-            AssayService svc = new AssayServiceImpl(getViewContext());
+            AssayDomainService svc = new AssayDomainServiceImpl(getViewContext());
             GWTProtocol ret = svc.getAssayTemplate(form.getProviderName());
             return success("Generated assay template for provider '" + form.getProviderName() + "'", ret);
         }
