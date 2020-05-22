@@ -3904,7 +3904,7 @@ public class QueryController extends SpringActionController
             if (svc != null && apiSaveRowsForm.getJsonObject().has("provenance"))
             {
                 JSONObject provenanceJSON = apiSaveRowsForm.getJsonObject().getJSONObject("provenance");
-                ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON);
+                ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
                 RecordedAction action = svc.createRecordedAction(getViewContext(), params);
                 if (action != null && params != null && params.getRecordingId() != null)
                 {

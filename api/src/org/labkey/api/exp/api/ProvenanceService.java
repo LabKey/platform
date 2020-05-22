@@ -41,6 +41,10 @@ public interface ProvenanceService
     String PROVENANCE_PROTOCOL = "ProvenanceProtocol";
     String PROVENANCE_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:ProvenanceProtocol";
 
+    String START_RECORDING = "StartRecording";
+    String ADD_RECORDING = "AddRecording";
+    String END_RECORDING = "EndRecording";
+
     static ProvenanceService get()
     {
         return ServiceRegistry.get().getService(ProvenanceService.class);
@@ -132,7 +136,7 @@ public interface ProvenanceService
      * Helper method to create recording params object
      */
     @Nullable
-    ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject) throws ValidationException;
+    ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject, String recordingType) throws ValidationException;
 
     /**
      * Helper method to construct a RecordedAction from a ProvenanceRecordingParams object.
