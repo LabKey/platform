@@ -31,7 +31,7 @@ import java.io.IOException;
 public class TextExtractor extends HTMLEditorKit.ParserCallback
 {
     private StringBuffer _text;
-    private Reader _reader;
+    private final Reader _reader;
 
     public TextExtractor(HtmlString html)
     {

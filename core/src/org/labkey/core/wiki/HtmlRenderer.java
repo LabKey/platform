@@ -48,7 +48,7 @@ public class HtmlRenderer implements WikiRenderer
     private final Map<String, String> _nameTitleMap;
     private final Map<String, Attachment> _attachments;
 
-    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
+    private static final Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
 
     static
     {

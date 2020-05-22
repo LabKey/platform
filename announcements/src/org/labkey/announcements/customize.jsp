@@ -80,7 +80,7 @@
                 </tr>
                 <tr>
                     <td valign="top"><input type="radio" name="secure" value="1"<%=checked(settings.isSecure())%>></td>
-                    <td><b>ON</b> - Only editors and those on the member list can view conversations, content can't be modified after posting, content is never sent via email</td>
+                    <td><b>ON</b> - Only editors and those on the notify list can view conversations, content can't be modified after posting, content is never sent via email</td>
                 </tr>
             </table>
         </td>
@@ -122,7 +122,7 @@
         <td><table><tr><td><input type="checkbox" name="titleEditable"<%=checked(settings.isTitleEditable())%>></td></tr></table></td>
     </tr>
     <tr>
-        <td class="labkey-form-label">Include Member List</td>
+        <td class="labkey-form-label">Include Notify List</td>
         <td><table><tr><td><input type="checkbox" name="memberList"<%=checked(settings.hasMemberList())%>></td></tr></table></td>
     </tr>
     <tr>

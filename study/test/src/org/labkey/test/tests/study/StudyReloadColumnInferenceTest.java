@@ -113,8 +113,8 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     private static final DataToVerify INSTRUMENTS = new DataToVerify(LIST_INSTRUMENTS, Arrays.asList(COL_KEY, COL_INSTRUMENTID), 6, COL_INSTRUMENTID, Arrays.asList("ABI-4700"));
 
     private static final String DATASET_DEMOGRAPHICS = "Demographics";
-    private static final String COL_MOUSID = "mouseid";
-    private static final String COL_DATE = "date";
+    private static final String COL_MOUSID = "Mouse Id";
+    private static final String COL_DATE = "Date";
     private static final String COL_QCSTATELABEL = "qcstatelabel";
     private static final String COL_STARTDATE = "startdate";
     private static final String COL_HEIGHT = "height";

@@ -21,8 +21,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.assay.DetectionMethodAssayProvider;
 import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.plate.PlateService;
@@ -49,7 +51,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.assay.AssayException;
-import org.labkey.api.gwt.client.assay.AssayService;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -59,8 +60,6 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.study.Study;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.SampleMetadataInputFormat;
 import org.labkey.api.util.PageFlowUtil;
@@ -80,16 +79,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * User: brittp
  * Date: Jun 22, 2007
  * Time: 10:01:10 AM
  */
-public class AssayServiceImpl extends DomainEditorServiceBase implements AssayService
+public class AssayDomainServiceImpl extends DomainEditorServiceBase implements AssayDomainService
 {
-    public AssayServiceImpl(ViewContext context)
+    public AssayDomainServiceImpl(ViewContext context)
     {
         super(context);
     }
@@ -102,7 +100,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         if (protocol != null)
         {
             Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> assayInfo;
-            AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(protocol);
+            AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider != null)
             {
                 if (copy)
@@ -119,7 +117,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     @Override
     public GWTProtocol getAssayTemplate(String providerName)
     {
-        AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(providerName);
+        AssayProvider provider = AssayService.get().getProvider(providerName);
         if (provider == null)
         {
             throw new NotFoundException("Could not find assay provider " + providerName);
@@ -128,7 +126,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return getAssayTemplate(provider, template, false);
     }
 
-    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
     {
         ExpProtocol protocol = template.getKey();
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
@@ -365,7 +363,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
-        synchronized (AssayServiceImpl.class)
+        synchronized (AssayDomainServiceImpl.class)
         {
             if (replaceIfExisting)
             {
@@ -397,7 +395,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                             }
                             else
                             {
-                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, org.labkey.api.assay.AssayService.get().getProvider(assay.getProviderName()));
+                                ValidationException domainErrors = updateDomainDescriptor(domain, protocol, AssayService.get().getProvider(assay.getProviderName()));
                                 if (domainErrors.hasErrors())
                                 {
                                     throw domainErrors;
@@ -443,7 +441,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     }
                     protocol.setProtocolParameters(newParams.values());
 
-                    AssayProvider provider = org.labkey.api.assay.AssayService.get().getProvider(protocol);
+                    AssayProvider provider = AssayService.get().getProvider(protocol);
                     if (provider instanceof PlateBasedAssayProvider && assay.getSelectedPlateTemplate() != null)
                     {
                         PlateBasedAssayProvider plateProvider = (PlateBasedAssayProvider)provider;
@@ -559,7 +557,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
     }
 
-    public boolean canUpdateProtocols()
+    private boolean canUpdateProtocols()
     {
         Container c = getContainer();
         User u = getUser();

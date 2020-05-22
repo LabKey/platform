@@ -109,8 +109,8 @@ public class WikiManager implements WikiService
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
     /* service/schema dependencies */
-    private CommSchema comm = CommSchema.getInstance();
-    private CoreSchema core = CoreSchema.getInstance();
+    private final CommSchema comm = CommSchema.getInstance();
+    private final CoreSchema core = CoreSchema.getInstance();
 
     private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
     private static List<WikiPartFactory> _wikiPartFactories;
@@ -831,7 +831,7 @@ public class WikiManager implements WikiService
                 HtmlString html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();

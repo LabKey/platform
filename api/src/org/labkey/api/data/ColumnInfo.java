@@ -73,7 +73,7 @@ public interface ColumnInfo extends ColumnRenderProperties
             if (col.getFk() instanceof PdLookupForeignKey)
             {
                 PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
-                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
+                if ("core".equalsIgnoreCase(lfk.getLookupSchemaName()) && ("siteusers".equalsIgnoreCase(lfk.getLookupTableName()) || "users".equalsIgnoreCase(lfk.getLookupTableName())))
                     return true;
             }
             return false;

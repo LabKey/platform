@@ -45,8 +45,7 @@ List apache = [
 
 List gwt = [
         "com.allen-sauer.gwt.dnd:gwt-dnd:${gwtDndVersion}",
-        "com.google.gwt:gwt-servlet:${gwtServletVersion}",
-        "com.sencha.gxt:gxt:${gxtVersion}"
+        "com.google.gwt:gwt-servlet:${gwtServletVersion}"
 ]
 
 List jackson = [

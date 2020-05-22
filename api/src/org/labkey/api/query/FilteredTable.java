@@ -419,6 +419,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
     }
     
 
+    @Override
     @NotNull
     public final SQLFragment getFromSQL()
     {
@@ -606,6 +607,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractContai
         return _userSchema.getContainer();
     }
 
+    @Override
     public boolean needsContainerClauseAdded()
     {
         return false;

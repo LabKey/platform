@@ -42,18 +42,14 @@ export class App extends React.Component<any, State> {
         // if URL has a name or rowId, look up the data class info for the edit case
         // else we are in the create new data class case
         const { rowId, name } = ActionURL.getParameters();
-        if (name || rowId) {
-            fetchDataClass(name, rowId)
-                .then((model: DataClassModel) => {
-                    this.setState(() => ({model, isLoading: false}));
-                })
-                .catch((error) => {
-                    this.setState(() => ({message: error.exception, isLoading: false}));
-                });
-        }
-        else {
-            this.setState(() => ({isLoading: false}));
-        }
+
+        fetchDataClass(name, rowId)
+            .then((model: DataClassModel) => {
+                this.setState(() => ({model, isLoading: false}));
+            })
+            .catch((error) => {
+                this.setState(() => ({message: error.exception, isLoading: false}));
+            });
     }
 
     handleWindowBeforeUnload = (event: any) => {

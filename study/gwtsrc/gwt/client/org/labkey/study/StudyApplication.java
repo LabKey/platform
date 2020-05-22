@@ -57,6 +57,7 @@ public class StudyApplication implements EntryPoint
         //
         // RunAsyncCallback
         //
+        @Override
         public void onFailure(Throwable caught)
         {
             ErrorDialogAsyncCallback.showDialog(caught, "Failed to load code for module: " + getClass());
@@ -75,11 +76,13 @@ public class StudyApplication implements EntryPoint
             super("gwt.client.org.labkey.study.designer.client.Designer");
         }
 
+        @Override
         public void onSuccess()
         {
             new gwt.client.org.labkey.study.designer.client.Designer().onModuleLoad();
         }
         
+        @Override
         EntryPoint getEntryPoint()
         {
             return new gwt.client.org.labkey.study.designer.client.Designer();
@@ -96,6 +99,7 @@ public class StudyApplication implements EntryPoint
     }
 
 
+    @Override
     public void onModuleLoad()
     {
         RootPanel panel = getRootPanel();
