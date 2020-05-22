@@ -21,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.assay.AssayQCService;
 import org.labkey.api.assay.AssayService;
@@ -84,13 +85,14 @@ import java.util.Set;
  * Date: Jun 22, 2007
  * Time: 10:01:10 AM
  */
-public class AssayServiceImpl extends DomainEditorServiceBase
+public class AssayDomainServiceImpl extends DomainEditorServiceBase implements AssayDomainService
 {
-    public AssayServiceImpl(ViewContext context)
+    public AssayDomainServiceImpl(ViewContext context)
     {
         super(context);
     }
 
+    @Override
     @Nullable
     public GWTProtocol getAssayDefinition(int rowId, boolean copy)
     {
@@ -112,6 +114,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase
         return null;
     }
 
+    @Override
     public GWTProtocol getAssayTemplate(String providerName)
     {
         AssayProvider provider = AssayService.get().getProvider(providerName);
@@ -123,7 +126,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase
         return getAssayTemplate(provider, template, false);
     }
 
-    public GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
+    private GWTProtocol getAssayTemplate(AssayProvider provider, Pair<ExpProtocol, List<Pair<Domain, Map<DomainProperty, Object>>>> template, boolean copy)
     {
         ExpProtocol protocol = template.getKey();
         List<GWTDomain<GWTPropertyDescriptor>> gwtDomains = new ArrayList<>();
@@ -355,11 +358,12 @@ public class AssayServiceImpl extends DomainEditorServiceBase
         protocol.setObjectProperties(props);
     }
 
+    @Override
     public GWTProtocol saveChanges(GWTProtocol assay, boolean replaceIfExisting) throws AssayException, ValidationException
     {
         // Synchronize the whole method to prevent saving of new two assay designs with the same name at the same
         // time, which will lead to a SQLException on the UNIQUE constraint on protocol LSIDs
-        synchronized (AssayServiceImpl.class)
+        synchronized (AssayDomainServiceImpl.class)
         {
             if (replaceIfExisting)
             {
@@ -553,7 +557,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase
         return DomainUtil.updateDomainDescriptor(previous, domain, getContainer(), getUser());
     }
 
-    public boolean canUpdateProtocols()
+    private boolean canUpdateProtocols()
     {
         Container c = getContainer();
         User u = getUser();

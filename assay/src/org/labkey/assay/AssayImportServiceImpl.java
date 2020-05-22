@@ -17,6 +17,7 @@ package org.labkey.assay;
 
 import gwt.client.org.labkey.assay.designer.client.AssayImporterService;
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.assay.AssayDomainService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -228,7 +229,7 @@ public class AssayImportServiceImpl extends DomainImporterServiceBase implements
             if (location != null)
                 context.setContainer(location);
 
-            AssayServiceImpl svc = new AssayServiceImpl(context);
+            AssayDomainService svc = new AssayDomainServiceImpl(context);
             GWTProtocol gwtProtocol = svc.getAssayTemplate(providerName);
 
             gwtProtocol.setName(assayName);
