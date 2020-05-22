@@ -186,6 +186,7 @@
         }%>
     </div>
 
+<% if (webPartId > 0) { %>
 <script type="text/javascript">
 
     function customizeProjectWebpart<%=webPartId%>(webpartId, pageId, index)
@@ -398,3 +399,4 @@
     }
 
 </script>
+<% } /* if webpart */ %>
