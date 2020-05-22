@@ -732,7 +732,7 @@ public class Portal implements ModuleChangeListener
         if (null != page)
             pageId = page.getPageId();
         
-        List<WebPart> parts = getParts(c, pageId);
+        List<WebPart> parts = getEditableParts(c, pageId);
 
         WebPart newPart = new Portal.WebPart();
         newPart.setContainer(c);
