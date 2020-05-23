@@ -375,9 +375,8 @@ public class SecurityController extends SpringActionController
             return permsView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -617,12 +616,11 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private NavTree addGroupNavTrail(NavTree root, Group group)
+    private void addGroupNavTrail(NavTree root, Group group)
     {
         root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
         root.addChild("Manage Group");
         root.addChild(group.getName() + " Group");
-        return root;
     }
 
     private ModelAndView renderGroup(Group group, BindException errors, List<String> messages)
@@ -681,10 +679,10 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("globalGroups");
-            return addGroupNavTrail(root, _group);
+            addGroupNavTrail(root, _group);
         }
 
         @Override
@@ -1053,12 +1051,11 @@ public class SecurityController extends SpringActionController
             return new SecurityAccessView(getContainer(), getUser(), _requestedGroup, form.getShowAll());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Group Permissions");
             root.addChild(_requestedGroup == null || _requestedGroup.isUsers() ? "Access Details: Site Users" : "Access Details: " + _requestedGroup.getName());
-            return root;
         }
     }
 
@@ -1285,12 +1282,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
             root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
             root.addChild("Add Users");
-            return root;
         }
 
         @Override
@@ -1499,9 +1495,8 @@ public class SecurityController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1855,11 +1850,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Folder Permissions");
-            return root.addChild("Folder Access Details");
+            root.addChild("Folder Access Details");
         }
     }
 
@@ -1914,10 +1909,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("API Keys");
-            return root;
         }
     }
 

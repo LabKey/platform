@@ -291,11 +291,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Create/Edit Remote Connection", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
-            return root;
         }
     }
 
@@ -327,11 +326,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Confirm Delete Connection", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
-            return root;
         }
     }
 
@@ -388,11 +386,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
-            return root;
         }
     }
 
@@ -663,10 +660,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).appendAdminNavTrail(root, "Data Source Administration ", null);
-            return root;
+            requireNonNull(PageFlowUtil.urlProvider(AdminUrls.class)).addAdminNavTrail(root, "Data Source Administration ", null);
         }
     }
 
@@ -681,9 +677,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Schema Browser");
+            root.addChild("Schema Browser");
         }
     }
 
@@ -709,10 +705,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Query Schema Browser", new QueryUrlsImpl().urlSchemaBrowser(getContainer()));
-            return root;
         }
     }
 
@@ -734,17 +729,15 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_form.getSchema() != null)
-                return _appendSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
-            else
-                return root;
+                addSchemaActionNavTrail(root, _form.getSchema().getSchemaPath(), _form.getQueryName());
         }
     }
 
 
-    NavTree _appendSchemaActionNavTrail(NavTree root, SchemaKey schemaKey, String queryName)
+    void addSchemaActionNavTrail(NavTree root, SchemaKey schemaKey, String queryName)
     {
         if (getContainer().hasOneOf(getUser(), AdminPermission.class, PlatformDeveloperPermission.class))
         {
@@ -756,16 +749,14 @@ public class QueryController extends SpringActionController
                 ActionURL url = new ActionURL(BeginAction.class, getContainer());
                 url.addParameter("schemaName", schemaKey.toString());
                 url.addParameter("queryName", queryName);
-                new BeginAction(getViewContext()).appendNavTrail(root)
-                        .addChild(schemaName + " Schema", url);
+                new BeginAction(getViewContext()).addNavTrail(root);
+                root.addChild(schemaName + " Schema", url);
             }
             catch (NullPointerException e)
             {
-                LOG.error("NullPointerException in appendNavTrail", e);
-                return root;
+                LOG.error("NullPointerException in addNavTrail", e);
             }
         }
-        return root;
     }
 
 
@@ -891,11 +882,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).appendNavTrail(root);
+            new SchemaAction(_form).addNavTrail(root);
             root.addChild("New Query", new QueryUrlsImpl().urlNewQuery(getContainer()));
-            return root;
         }
     }
 
@@ -982,14 +972,13 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("useSqlEditor"));
 
-            _appendSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
+            addSchemaActionNavTrail(root, _form.getSchemaKey(), _form.getQueryName());
 
             root.addChild("Edit " + _form.getQueryName());
-            return root;
         }
     }
 
@@ -1295,9 +1284,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).appendNavTrail(root);
+            new SchemaAction(_form).addNavTrail(root);
             TableInfo ti = null;
             try
             {
@@ -1310,7 +1299,6 @@ public class QueryController extends SpringActionController
             }
             String display = ti == null ? _form.getQueryName() : ti.getTitle();
             root.addChild(display);
-            return root;
         }
     }
 
@@ -1414,12 +1402,11 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new SchemaAction(_form)).appendNavTrail(root);
+            (new SchemaAction(_form)).addNavTrail(root);
             if (null != _dbTableName)
                 root.addChild("JDBC Meta Data For Table \"" + _dbSchemaName + "." + _dbTableName + "\"");
-            return root;
         }
     }
 
@@ -1471,10 +1458,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("JDBC Meta Data For Schema \"" + _schemaName + "\"");
-            return root;
         }
     }
 
@@ -1563,9 +1549,8 @@ public class QueryController extends SpringActionController
         abstract void _export(K form, QueryView view) throws Exception;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1601,9 +1586,8 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1912,9 +1896,8 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1952,15 +1935,14 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).appendNavTrail(root);
+            new SchemaAction(_form).addNavTrail(root);
             var metadataQuery = _form.getQueryDef().getName();
             if (null != metadataQuery)
                 root.addChild("Edit Metadata: " + _form.getQueryName(), metadataQuery);
             else
                 root.addChild("Edit Metadata: " + _form.getQueryName());
-            return root;
         }
     }
 
@@ -2306,11 +2288,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).appendNavTrail(root);
+            new SchemaAction(_form).addNavTrail(root);
             root.addChild("Edit query properties");
-            return root;
         }
     }
 
@@ -2549,11 +2530,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Details");
-            return root;
         }
     }
 
@@ -2595,7 +2575,7 @@ public class QueryController extends SpringActionController
         }
 
         /**
-         * NOTE: UserSchemaAction.appendNavTrail() uses this method getSuccessURL() for the nav trail link (form==null).
+         * NOTE: UserSchemaAction.addNavTrail() uses this method getSuccessURL() for the nav trail link (form==null).
          * It is used for where to go on success, and also as a "back" link in the nav trail
          * If there is a setSuccessUrl specified, we will use that for successful submit
          */
@@ -2633,11 +2613,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Insert " + _table.getName());
-            return root;
         }
     }
 
@@ -2661,11 +2640,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            super.appendNavTrail(root);
+            super.addNavTrail(root);
             root.addChild("Edit " + _table.getName());
-            return root;
         }
     }
 
@@ -2696,10 +2674,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Edit Multiple " + _table.getName());
-            return root;
         }
     }
 
@@ -3434,16 +3411,15 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new SchemaAction(_form).appendNavTrail(root);
+            new SchemaAction(_form).addNavTrail(root);
             var executeQuery = _form.urlFor(QueryAction.executeQuery);
             if (null == executeQuery)
                 root.addChild(_form.getQueryName());
             else
                 root.addChild(_form.getQueryName(), executeQuery);
             root.addChild("Import Data");
-            return root;
         }
     }
 
@@ -4071,9 +4047,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("API Test");
+            root.addChild("API Test");
         }
     }
 
@@ -4099,11 +4075,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Schema Administration", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
-            return root;
         }
     }
 
@@ -4165,11 +4140,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
-            return root;
         }
     }
 
@@ -4215,11 +4189,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new AdminAction(getViewContext()).appendNavTrail(root);
+            new AdminAction(getViewContext()).addNavTrail(root);
             root.addChild("Define Schema", new ActionURL(getClass(), getContainer()));
-            return root;
         }
     }
 
@@ -4387,11 +4360,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new AdminAction(getViewContext()).appendNavTrail(root);
+            new AdminAction(getViewContext()).addNavTrail(root);
             root.addChild("Edit Schema", new ActionURL(getClass(), getContainer()));
-            return root;
         }
     }
 
@@ -4863,9 +4835,8 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -5108,11 +5079,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             root.addChild("Manage Views", QueryController.this.getViewContext().getActionURL());
-            return root;
         }
     }
 
@@ -5188,11 +5158,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ManageViewsAction(getViewContext()).appendNavTrail(root);
+            new ManageViewsAction(getViewContext()).addNavTrail(root);
             root.addChild("Edit source of Grid View");
-            return root;
         }
     }
 
@@ -5279,11 +5248,10 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Create New Grid View");
-            return root;
-        }
+         }
     }
 
 
@@ -6055,9 +6023,8 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         abstract QNode _parse(String e, List<QueryParseException> errors);
@@ -6230,9 +6197,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Audit History");
+            root.addChild("Audit History");
         }
     }
 
@@ -6246,9 +6213,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Audit History");
+            root.addChild("Audit History");
         }
     }
 
@@ -6321,9 +6288,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Export Tables");
+            root.addChild("Export Tables");
         }
 
         @Override
@@ -6602,9 +6569,9 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Generate Schema");
+            root.addChild("Generate Schema");
         }
     }
 
@@ -6650,9 +6617,8 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 

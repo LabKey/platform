@@ -57,10 +57,9 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
-            return root;
         }
     }
 
@@ -154,11 +153,10 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
             root.addChild(".gitattributes File Check");
-            return root;
         }
     }
 
@@ -361,11 +359,10 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
             root.addChild("JSP Finder");
-            return root;
         }
     }
 }

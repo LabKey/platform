@@ -68,7 +68,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import javax.servlet.ServletException;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -85,7 +84,7 @@ import java.util.Objects;
 public abstract class InsertUpdateAction<Form extends DatasetController.EditDatasetRowForm> extends FormViewAction<Form>
 {
     protected abstract boolean isInsert();
-    protected abstract NavTree appendExtraNavTrail(NavTree root);
+    protected abstract void addExtraNavTrail(NavTree root);
     protected StudyImpl _study = null;
     private QueryUpdateForm _updateForm;
     protected DatasetDefinition _ds = null;
@@ -223,7 +222,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
         return view;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         Study study = getStudy();
         Container container = getContainer();
@@ -243,9 +242,8 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             grid.addParameter(DatasetDefinition.DATASETKEY, _ds.getDatasetId());
             grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             root.addChild(_ds.getLabel(), grid);
-            appendExtraNavTrail(root);
+            addExtraNavTrail(root);
         }
-        return root;
     }
 
     protected DataView createNewView(Form form, QueryUpdateForm updateForm, BindException errors)

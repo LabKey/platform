@@ -86,11 +86,10 @@ public class StudyPropertiesController extends BaseStudyController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Edit Study Properties");
-            return root;
         }
 
         public void validateCommand(StudyProperties target, Errors errors) {}

@@ -374,11 +374,10 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         setHelpTopic("manageAssayDesign");
         root.addChild("Edit Type", _returnUrl);
         root.addChild("Set Default Values");
-        return root;
     }
 }

@@ -79,14 +79,12 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         return url;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         setHelpTopic("specimenShopping");
         root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild(_title);
-
-        return root;
     }
 
     public static class SearchForm extends ShowSearchForm

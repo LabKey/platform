@@ -157,11 +157,10 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         if (_table != null)
             root.addChild(_table.getName(), getSuccessURL(null));
-        return root;
     }
 
     protected List<Map<String, Object>> doInsertUpdate(QueryUpdateForm form, BindException errors, boolean insert)

@@ -944,17 +944,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        public void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
-            NavTree tree = SearchResultTemplate.super.appendNavTrail(root, ctx, scope, category);
+            SearchResultTemplate.super.addNavTrail(root, ctx, scope, category);
 
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                String text = tree.getText();
-                tree.setText(text + " - " + dataclass);
+                String text = root.getText();
+                root.setText(text + " - " + dataclass);
             }
-            return tree;
         }
     }
 }

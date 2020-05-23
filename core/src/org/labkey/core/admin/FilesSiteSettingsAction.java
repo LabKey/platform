@@ -88,9 +88,9 @@ public class FilesSiteSettingsAction extends AbstractFileSiteSettingsAction<File
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Configure File System Access", null);
+        PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Configure File System Access", null);
     }
 
     public static class TestCase extends AbstractActionPermissionTest

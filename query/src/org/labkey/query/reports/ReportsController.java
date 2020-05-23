@@ -373,9 +373,8 @@ public class ReportsController extends SpringActionController
             return HttpView.redirect(forwardUrl);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -825,13 +824,11 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("jsViews");
             if (_report != null)
-                return root.addChild(_report.getTypeDescription() + " Builder");
-
-            return null;
+                root.addChild(_report.getTypeDescription() + " Builder");
         }
     }
 
@@ -1023,12 +1020,11 @@ public class ReportsController extends SpringActionController
             return vbox;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("reportsAndViews");
             if (_report != null)
-                return root.addChild(_report.getDescriptor().getReportName());
-            return null;
+                root.addChild(_report.getDescriptor().getReportName());
         }
     }
 
@@ -1092,9 +1088,9 @@ public class ReportsController extends SpringActionController
             return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Share Report");
+            root.addChild("Share Report");
         }
     }
 
@@ -1165,9 +1161,9 @@ public class ReportsController extends SpringActionController
                 return new HtmlView(HtmlString.of("Specified report not found"));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Report Details");
+            root.addChild("Report Details");
         }
     }
 
@@ -1179,9 +1175,9 @@ public class ReportsController extends SpringActionController
             return new ReportInfoView(form.getReport(getViewContext()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Report Debug Information");
+            root.addChild("Report Debug Information");
         }
     }
 
@@ -1486,9 +1482,8 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1529,9 +1524,8 @@ public class ReportsController extends SpringActionController
             return new HtmlView(HtmlString.of("Requested Resource not found"));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1893,9 +1887,9 @@ public class ReportsController extends SpringActionController
         }
 
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Attachment Report");
+            root.addChild("Create Attachment Report");
         }
     }
 
@@ -1971,9 +1965,9 @@ public class ReportsController extends SpringActionController
             super.afterReportSave(form, report);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Update Attachment Report");
+            root.addChild("Update Attachment Report");
         }
     }
 
@@ -1999,9 +1993,8 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2054,9 +2047,8 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2171,9 +2163,9 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class CreateLinkReportAction extends BaseLinkReportAction
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Link Report");
+            root.addChild("Create Link Report");
         }
     }
 
@@ -2191,9 +2183,9 @@ public class ReportsController extends SpringActionController
             form.setTargetNewWindow(null != report.getRunReportTarget());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Update Link Report");
+            root.addChild("Update Link Report");
         }
     }
 
@@ -2304,9 +2296,9 @@ public class ReportsController extends SpringActionController
             return ReportUtil.getReportQueryKey(report.getDescriptor());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Query Report");
+            root.addChild("Create Query Report");
         }
     }
 
@@ -2333,9 +2325,8 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2402,9 +2393,8 @@ public class ReportsController extends SpringActionController
             return new ActionURL(ManageViewsAction.class, getContainer());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2476,9 +2466,8 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2564,11 +2553,12 @@ public class ReportsController extends SpringActionController
             return new HtmlView(HtmlString.unsafe("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>"));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_reportName != null)
-                return root.addChild(_reportName);
-            return root.addChild("Query Report");
+                root.addChild(_reportName);
+            else
+                root.addChild("Query Report");
         }
     }
 
@@ -3701,10 +3691,10 @@ public class ReportsController extends SpringActionController
             return new JspView<>("/org/labkey/query/reports/view/manageNotifications.jsp", form, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageViews#notifications");
-            return root.addChild("Manage Report/Dataset Notifications");
+            root.addChild("Manage Report/Dataset Notifications");
         }
     }
 

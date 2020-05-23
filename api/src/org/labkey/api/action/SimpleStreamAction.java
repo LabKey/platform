@@ -86,11 +86,10 @@ public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
     }
 
     /**
-     * Override base class to do nothing for nave trail, since this action
+     * Override base class to do nothing for nav trail, since this action
      * type takes care of all of its own rendering.
      */
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return null;  // No nav trail.
     }
 }
