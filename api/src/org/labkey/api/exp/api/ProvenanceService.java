@@ -135,14 +135,12 @@ public interface ProvenanceService
     /**
      * Helper method to create recording params object
      */
-    @Nullable
     ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject, String recordingType) throws ValidationException;
 
     /**
      * Helper method to construct a RecordedAction from a ProvenanceRecordingParams object.
      */
-    @Nullable
-    RecordedAction createRecordedAction(ViewContext context, ProvenanceRecordingParams params);
+    RecordedAction createRecordedAction(ViewContext context, @NotNull ProvenanceRecordingParams params);
 
     /**
      * Extract the provenance map information from the data rows
