@@ -310,9 +310,9 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "SQL Scripts", getURL());
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "SQL Scripts", getURL());
         }
 
         public ActionURL getURL()
@@ -400,11 +400,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ScriptsAction().appendNavTrail(root);
+            new ScriptsAction().addNavTrail(root);
             root.addChild("Scripts With Errors");
-            return root;
         }
     }
 
@@ -549,21 +548,19 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendNavTrail(root, null);
+            addNavTrail(root, null);
         }
 
-        public NavTree appendNavTrail(NavTree root, @Nullable ActionURL consolidatedScriptsURL)
+        public void addNavTrail(NavTree root, @Nullable ActionURL consolidatedScriptsURL)
         {
-            new ScriptsAction().appendNavTrail(root);
+            new ScriptsAction().addNavTrail(root);
 
             if (null == consolidatedScriptsURL)
                 root.addChild("Consolidate Scripts");
             else
                 root.addChild("Consolidate Scripts", consolidatedScriptsURL);
-
-            return root;
         }
     }
 
@@ -835,11 +832,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ConsolidateScriptsAction().appendNavTrail(root, getConsolidateScriptsURL(_fromVersion, _toVersion, _includeSingleScripts));
+            new ConsolidateScriptsAction().addNavTrail(root, getConsolidateScriptsURL(_fromVersion, _toVersion, _includeSingleScripts));
             root.addChild("Consolidate Scripts for Schema " + _schemaName);
-            return root;
         }
 
         private ScriptConsolidator getConsolidator(ConsolidateForm form)
@@ -1019,11 +1015,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ScriptsAction().appendNavTrail(root);
+            new ScriptsAction().addNavTrail(root);
             root.addChild("Orphaned Scripts");
-            return root;
         }
     }
 
@@ -1054,11 +1049,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ScriptsAction().appendNavTrail(root);
+            new ScriptsAction().addNavTrail(root);
             root.addChild(getActionDescription());
-            return root;
         }
     }
 
@@ -1160,9 +1154,9 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Reorder all scripts");
+            root.addChild("Reorder all scripts");
         }
     }
 
@@ -1300,11 +1294,10 @@ public class SqlScriptController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ScriptsAction().appendNavTrail(root);
+            new ScriptsAction().addNavTrail(root);
             root.addChild("Unreachable Scripts");
-            return root;
         }
     }
 

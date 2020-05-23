@@ -586,8 +586,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
 
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return null;
     }
 }

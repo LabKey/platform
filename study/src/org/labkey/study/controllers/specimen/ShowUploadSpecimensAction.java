@@ -47,7 +47,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
-import java.sql.SQLException;
 import java.util.*;
 
 @RequiresPermission(AdminPermission.class)
@@ -278,7 +277,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             return new ActionURL(ImportCompleteAction.class, getContainer());
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
         Study s = StudyManager.getInstance().getStudy(c);
@@ -286,8 +285,6 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         root.addChild(s.getLabel(), new ActionURL(StudyController.OverviewAction.class, c));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, c));
         root.addChild("Upload Specimens");
-
-        return root;
     }
 
     @RequiresPermission(AdminPermission.class)
@@ -303,15 +300,13 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                     PageFlowUtil.textLink("specimens", samplesLink));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
 
             root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
             root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
             root.addChild("Sample Import Complete");
-
-            return root;
         }
     }
 

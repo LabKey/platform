@@ -142,9 +142,9 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         return files;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return root.addChild("Assay Upload Attempt");
+        root.addChild("Assay Upload Attempt");
     }
 
     public static class UploadRedirectForm

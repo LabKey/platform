@@ -94,7 +94,7 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
         }
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException();
     }

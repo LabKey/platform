@@ -405,9 +405,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -428,9 +427,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -618,9 +616,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1244,9 +1241,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1555,9 +1551,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public final NavTree appendNavTrail(NavTree root)
+        public final void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1659,9 +1654,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
@@ -2259,9 +2253,9 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Reset Password");
+            root.addChild("Reset Password");
         }
     }
 
@@ -2292,9 +2286,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2348,9 +2341,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2406,10 +2398,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            return getUrls().appendAuthenticationNavTrail(root);
+            getUrls().appendAuthenticationNavTrail(root);
         }
     }
 

@@ -133,10 +133,10 @@ public class AuditController extends SpringActionController
             return schema.createView(getViewContext(), settings, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("audits"));
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Audit Log", getURL());
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Audit Log", getURL());
         }
 
         public ActionURL getURL()
@@ -204,7 +204,7 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
 
@@ -212,8 +212,6 @@ public class AuditController extends SpringActionController
             urlLog.addParameter("view", SiteSettingsAuditProvider.AUDIT_EVENT_TYPE);
             root.addChild("Audit Log", urlLog);
             root.addChild("Site Settings Audit Event Details");
-
-            return root;
         }
     }
 
@@ -292,9 +290,9 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Audit Details");
+            root.addChild("Audit Details");
         }
     }
 

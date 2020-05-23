@@ -332,11 +332,11 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private NavTree appendRootNavTrail(NavTree root)
+    // Complete no-op, but leave in place in case we decide to adjust the base nav trail
+    private void addRootNavTrail(NavTree root)
     {
         // Intentionally don't add an "Experiment" node to the list because it's too overloaded. All content on the
         // default action can be added to a portal page if desired.
-        return root;
     }
 
     @Override
@@ -370,9 +370,10 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment");
+            addRootNavTrail(root);
+            root.addChild("Experiment");
         }
     }
 
@@ -385,9 +386,10 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Experiment Runs");
+            addRootNavTrail(root);
+            root.addChild("Experiment Runs");
         }
     }
 
@@ -423,10 +425,11 @@ public class ExperimentController extends SpringActionController
             return webPart;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Run Groups");
+            addRootNavTrail(root);
+            root.addChild("Run Groups");
         }
     }
 
@@ -565,14 +568,12 @@ public class ExperimentController extends SpringActionController
             return createViews(form, errors).first;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Run Groups", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer()));
             root.addChild(_experiment.getName());
-
-            return root;
         }
     }
 
@@ -588,13 +589,11 @@ public class ExperimentController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Sample Sets");
-
-            return root;
         }
     }
 
@@ -736,14 +735,13 @@ public class ExperimentController extends SpringActionController
             return new VBox(detailsView, queryView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
             ActionURL url = new ActionURL(ListMaterialSourcesAction.class, getContainer());
-            appendRootNavTrail(root).addChild("Sample Sets", url);
+            addRootNavTrail(root);
+            root.addChild("Sample Sets", url);
             root.addChild("Sample Set " + _source.getName());
-
-            return root;
         }
     }
 
@@ -766,13 +764,11 @@ public class ExperimentController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("All Materials");
-
-            return root;
         }
     }
 
@@ -873,10 +869,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            root = appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ExpSampleSet sampleSet = _material.getSampleSet();
             if (sampleSet != null)
@@ -884,7 +880,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
             }
             root.addChild("Sample " + _material.getName());
-            return root;
         }
     }
 
@@ -981,10 +976,11 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
-            return appendRootNavTrail(root).addChild("Data Classes");
+            addRootNavTrail(root);
+            root.addChild("Data Classes");
         }
     }
 
@@ -1076,14 +1072,12 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Data Classes", ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
             root.addChild(_dataClass.getName());
-
-            return root;
         }
     }
 
@@ -1091,10 +1085,10 @@ public class ExperimentController extends SpringActionController
     public class DeleteDataClassAction extends AbstractDeleteAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
 
         @Override
@@ -1203,7 +1197,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
 
@@ -1217,8 +1211,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_dataClass.getName(), ExperimentUrlsImpl.get().getShowDataClassURL(getContainer(), _dataClass.getRowId()));
                 root.addChild("Update Data Class");
             }
-
-            return root;
         }
     }
 
@@ -1292,10 +1284,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("dataClass");
-            return root.addChild("Create Data Class from Template");
+            root.addChild("Create Data Class from Template");
         }
     }
 
@@ -1473,7 +1465,7 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
         }
@@ -1574,9 +1566,9 @@ public class ExperimentController extends SpringActionController
 
         protected abstract VBox createLowerView(ExpRunImpl experimentRun, BindException errors);
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild(_experimentRun.getName());
+            root.addChild(_experimentRun.getName());
         }
     }
 
@@ -1801,9 +1793,10 @@ public class ExperimentController extends SpringActionController
 
         protected abstract ModelAndView getDataView(DataForm form, BindException errors) throws Exception;
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Data " + _data.getName());
+            addRootNavTrail(root);
+            root.addChild("Data " + _data.getName());
         }
     }
 
@@ -2484,9 +2477,8 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -2546,13 +2538,11 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), paramsView, outMGrid, outDGrid);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Experiment Run", ExperimentUrlsImpl.get().getRunGraphDetailURL(_run));
             root.addChild("Protocol Application " + _app.getName());
-
-            return root;
         }
     }
 
@@ -2564,9 +2554,10 @@ public class ExperimentController extends SpringActionController
             return new ProtocolWebPart(false, getViewContext());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Protocols");
+            addRootNavTrail(root);
+            root.addChild("Protocols");
         }
     }
 
@@ -2621,13 +2612,11 @@ public class ExperimentController extends SpringActionController
             return new VBox(new StandardAndCustomPropertiesView(detailsView, cpv), parametersView, protocolDetails, runView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
             root.addChild("Protocol: " + _protocol.getName());
-
-            return root;
         }
     }
 
@@ -2760,14 +2749,12 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Protocols", ExperimentUrlsImpl.get().getProtocolGridURL(getContainer()));
             root.addChild("Parent Protocol '" + _parentProtocol.getName() + "'", ExperimentUrlsImpl.get().getProtocolDetailsURL(_parentProtocol));
             root.addChild("Protocol Step: " + _actionStep.getName());
-
-            return root;
         }
     }
 
@@ -2880,11 +2867,11 @@ public class ExperimentController extends SpringActionController
     public class DeleteSelectedExpRunsAction extends AbstractDeleteAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             // UNDONE: Need help topic on Runs
             setHelpTopic("experiment");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
 
         @Override
@@ -3091,11 +3078,9 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            appendRootNavTrail(root).addChild("Confirm Deletion");
-
-            return root;
+            root.addChild("Confirm Deletion");
         }
 
         protected abstract void deleteObjects(DeleteForm form) throws Exception;
@@ -3134,11 +3119,11 @@ public class ExperimentController extends SpringActionController
     public class DeleteProtocolByRowIdsAction extends AbstractDeleteAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             // UNDONE: Need help topic on protocols
             setHelpTopic("experiment");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
 
         @Override
@@ -3268,11 +3253,11 @@ public class ExperimentController extends SpringActionController
     public class DeleteSelectedDataAction extends AbstractDeleteAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             // UNDONE: Need help topic on Datas
             setHelpTopic("experiment");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
 
         @Override
@@ -3411,10 +3396,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
     }
 
@@ -3422,10 +3407,10 @@ public class ExperimentController extends SpringActionController
     public class DeleteMaterialSourceAction extends AbstractDeleteAction
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            return super.appendNavTrail(root);
+            super.addNavTrail(root);
         }
 
         @Override
@@ -3598,7 +3583,7 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
 
@@ -3612,8 +3597,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(_sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(_sampleSet));
                 root.addChild("Update Sample Set");
             }
-
-            return root;
         }
     }
 
@@ -3696,14 +3679,13 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ActionURL url = _form.urlFor(QueryAction.executeQuery);
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
-            return root;
         }
     }
 
@@ -3779,14 +3761,13 @@ public class ExperimentController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Data Classes", ExperimentUrlsImpl.get().getDataClassListURL(getContainer()));
             ActionURL url = _form.urlFor(QueryAction.executeQuery);
             if (_form.getQueryName() != null && url != null)
                 root.addChild(_form.getQueryName(), url);
             root.addChild("Import Data");
-            return root;
         }
     }
 
@@ -3895,9 +3876,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Upload a .xar or .xar.xml file from your browser");
+            addRootNavTrail(root);
+            root.addChild("Upload a .xar or .xar.xml file from your browser");
         }
     }
 
@@ -3917,10 +3899,11 @@ public class ExperimentController extends SpringActionController
             return new ExperimentUpdateView(new DataRegion(), form, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return appendRootNavTrail(root).addChild("Update Run Group");
+            addRootNavTrail(root);
+            root.addChild("Update Run Group");
         }
     }
 
@@ -4278,9 +4261,8 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         public List<ExpRun> lookupRuns(ExportOptionsForm form)
@@ -4578,9 +4560,9 @@ public class ExperimentController extends SpringActionController
             return new HtmlView("Enter LSID", html);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Resolve LSID");
+            root.addChild("Resolve LSID");
         }
     }
 
@@ -4690,10 +4672,10 @@ public class ExperimentController extends SpringActionController
     {
         private List<ExpMaterial> _materials;
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            root = appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
             if (sampleSet != null)
@@ -4701,7 +4683,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
             }
             root.addChild("Derive Samples");
-            return root;
         }
 
         @Override
@@ -4893,10 +4874,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("sampleSets");
-            root = appendRootNavTrail(root);
+            addRootNavTrail(root);
             root.addChild("Sample Sets", ExperimentUrlsImpl.get().getShowSampleSetListURL(getContainer()));
             ExpSampleSet sampleSet = _materials != null && _materials.size() > 0 ? _materials.get(0).getSampleSet() : null;
             if (sampleSet != null)
@@ -4904,7 +4885,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(sampleSet.getName(), ExperimentUrlsImpl.get().getShowSampleSetURL(sampleSet));
             }
             root.addChild("Derive Samples");
-            return root;
         }
 
         @Override
@@ -5639,10 +5619,10 @@ public class ExperimentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("runGroups");
-            return root.addChild("Create Run Group");
+            root.addChild("Create Run Group");
         }
 
         @Override
@@ -5713,9 +5693,9 @@ public class ExperimentController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Move Runs");
+            root.addChild("Move Runs");
         }
     }
 
@@ -5818,9 +5798,8 @@ public class ExperimentController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -5850,7 +5829,7 @@ public class ExperimentController extends SpringActionController
             return new GraphMoreGrid(getContainer(), errors, getViewContext().getActionURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(new NavTree("Experiments", ExperimentUrlsImpl.get().getShowExperimentsURL(getContainer())));
             ExpRun run = ExperimentService.get().getExpRun(_form.getRowId());
@@ -5859,7 +5838,6 @@ public class ExperimentController extends SpringActionController
                 root.addChild(new NavTree("Experiment Run", ExperimentUrlsImpl.get().getRunGraphURL(_form.lookupRun())));
             }
             root.addChild(new NavTree("Selected Protocol Applications"));
-            return root;
         }
     }
 

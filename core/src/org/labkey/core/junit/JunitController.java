@@ -106,9 +106,9 @@ public class JunitController extends SpringActionController
                     errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Unit and integration tests");
+            root.addChild("Unit and integration tests");
         }
     }
 
@@ -198,11 +198,10 @@ public class JunitController extends SpringActionController
         }
 
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Tests", new ActionURL(BeginAction.class,getContainer()));
             root.addChild("Results");
-            return root;
         }
     }
 
@@ -281,9 +280,8 @@ public class JunitController extends SpringActionController
             return List.copyOf(allTestClasses);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -488,9 +486,8 @@ public class JunitController extends SpringActionController
             return list;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -613,9 +610,8 @@ public class JunitController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 

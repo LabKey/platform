@@ -43,9 +43,9 @@ public class FileListAction extends SimpleViewAction
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "File List", null);
+        PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "File List", null);
     }
 }
 
