@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.apache.xmlbeans.XmlException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.File;
@@ -51,7 +52,12 @@ public abstract class AbstractFileXarSource extends XarSource
 
     public AbstractFileXarSource(String description, Container container, User user)
     {
-        super(description, container, user);
+        this(description, container, user, null);
+    }
+
+    public AbstractFileXarSource(String description, Container container, User user, @Nullable PipelineJob job)
+    {
+        super(description, container, user, job);
     }
 
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException
