@@ -48,7 +48,7 @@ public interface IssuesListDefService
      * @param defName The unique name of the issue definition
      * @return IssuesDomainKindProperties
      */
-    IssuesDomainKindProperties getIssueDomainKindProperties(Container container, String defName);
+    IssuesDomainKindProperties getIssueDomainKindProperties(Container container, @Nullable String defName);
 
     /**
      * Updates an issue definition.

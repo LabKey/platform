@@ -663,7 +663,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return new AssayServiceImpl(getViewContext());
+            return new AssayDomainServiceImpl(getViewContext());
         }
     }
 

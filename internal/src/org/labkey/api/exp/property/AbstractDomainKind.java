@@ -17,7 +17,6 @@ package org.labkey.api.exp.property;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -111,7 +110,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
     }
 
     @Override
-    public @Nullable T getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public @Nullable T getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
         return null;
     }

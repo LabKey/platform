@@ -3865,7 +3865,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            setHelpTopic(new HelpTopic("Set Default"));
+            setHelpTopic(new HelpTopic("customViews"));
 
             root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
@@ -3875,7 +3875,7 @@ public class StudyController extends BaseStudyController
             String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
-            root.addChild(new NavTree("Preferences"));
+            root.addChild(new NavTree("View Preferences"));
         }
 
         @Override

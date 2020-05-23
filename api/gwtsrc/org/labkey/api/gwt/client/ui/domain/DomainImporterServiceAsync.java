@@ -17,13 +17,11 @@ package org.labkey.api.gwt.client.ui.domain;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
-import org.labkey.api.gwt.client.ui.LookupService;
-import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
 import java.util.List;
 import java.util.Map;
 
-public interface DomainImporterServiceAsync extends LookupServiceAsync
+public interface DomainImporterServiceAsync
 {
     void inferenceColumns(AsyncCallback<List<InferencedColumn>> async);
 
