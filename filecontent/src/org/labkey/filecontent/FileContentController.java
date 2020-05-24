@@ -397,13 +397,11 @@ public class FileContentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
-            NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
-            ret.addChild(name);
-
-            return ret;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(name);
         }
     }
 
@@ -433,9 +431,8 @@ public class FileContentController extends SpringActionController
            return new IFrameView(src);
        }
 
-       public NavTree appendNavTrail(NavTree root)
+       public void addNavTrail(NavTree root)
        {
-           return root;
        }
    }
 
@@ -494,10 +491,9 @@ public class FileContentController extends SpringActionController
             return part;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Manage Files", new ActionURL(BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -552,12 +548,10 @@ public class FileContentController extends SpringActionController
            return null;
        }
 
-       public NavTree appendNavTrail(NavTree root)
+       public void addNavTrail(NavTree root)
        {
-           NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
-           ret.addChild("Administer File System Access");
-
-           return ret;
+           new BeginAction(getViewContext()).addNavTrail(root);
+           root.addChild("Administer File System Access");
        }
    }
 
@@ -1299,9 +1293,9 @@ public class FileContentController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("File History");
+            root.addChild("File History");
         }
     }
 
@@ -1313,9 +1307,9 @@ public class FileContentController extends SpringActionController
             return new JspView("/org/labkey/filecontent/view/configureEmail.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Email Notification Preferences");
+            root.addChild("Email Notification Preferences");
         }
     }
 

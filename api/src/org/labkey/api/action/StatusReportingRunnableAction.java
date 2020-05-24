@@ -147,7 +147,7 @@ public abstract class StatusReportingRunnableAction<K extends StatusReportingRun
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new IllegalStateException("Shouldn't get here");
     }

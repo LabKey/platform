@@ -1828,13 +1828,11 @@ public class SecurityApiActions
             return new JspView<>("/org/labkey/core/security/renameGroup.jsp", group, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(SecurityController.PermissionsAction.class, getContainer()));
             root.addChild("Manage Group", new ActionURL(SecurityController.GroupAction.class, getContainer()).addParameter("id",group.getUserId()));
             root.addChild("Rename Group: " + group.getName());
-            return root;
-
         }
 
         public ApiResponse execute(RenameForm form, BindException errors)

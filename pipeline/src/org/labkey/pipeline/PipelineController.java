@@ -381,11 +381,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Data Processing Pipeline Setup");
-            return root;
         }
     }
 
@@ -407,10 +406,9 @@ public class PipelineController extends SpringActionController
             return wp;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Files");
-            return root;
         }
     }
 
@@ -1098,9 +1096,9 @@ public class PipelineController extends SpringActionController
                     new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Pipeline Status");
+            root.addChild("Pipeline Status");
         }
     }
 
@@ -1193,9 +1191,8 @@ public class PipelineController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1430,11 +1427,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_navTrail);
+            root.addChild(_navTrail);
         }
-
     }
 
     public static class StartFolderImportForm
@@ -1580,10 +1576,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
-            return root.addChild(_title);
+            root.addChild(_title);
         }
     }
 

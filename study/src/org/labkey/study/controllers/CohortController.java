@@ -160,12 +160,11 @@ public class CohortController extends BaseStudyController
             return vbox;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageCohorts");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Cohorts");
-            return root;
         }
 
         public void validateCommand(ManageCohortsForm target, Errors errors) {}
@@ -300,7 +299,7 @@ public class CohortController extends BaseStudyController
     private abstract class InsertUpdateAction extends FormViewAction<EditCohortForm>
     {
         protected abstract boolean isInsert();
-        protected abstract NavTree appendExtraNavTrail(NavTree root);
+        protected abstract NavTree addExtraNavTrail(NavTree root);
 
         protected String cohortLabel; // Will be null on insert
 
@@ -369,12 +368,11 @@ public class CohortController extends BaseStudyController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Cohorts", new ActionURL(ManageCohortsAction.class, getContainer()));
-            appendExtraNavTrail(root);
-            return root;
+            addExtraNavTrail(root);
         }
 
         public void validateCommand(EditCohortForm form, Errors errors) {}
@@ -490,7 +488,7 @@ public class CohortController extends BaseStudyController
             return true;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Insert New Cohort");
             return root;
@@ -505,7 +503,7 @@ public class CohortController extends BaseStudyController
             return false;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Update Cohort: " + cohortLabel);
             return root;

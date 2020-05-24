@@ -161,9 +161,9 @@ public class DesignerController extends SpringActionController
             return new StudyDesignsWebPart(getViewContext(), false);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Protocol Registration");
+            root.addChild("Study Protocol Registration");
         }
     }
 
@@ -205,9 +205,9 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Protocol Registration");
+            root.addChild("Study Protocol Registration");
         }
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
@@ -520,9 +520,9 @@ public class DesignerController extends SpringActionController
             return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Study Folder: " + _titleForNav);
+            root.addChild("Create Study Folder: " + _titleForNav);
         }
     }
 

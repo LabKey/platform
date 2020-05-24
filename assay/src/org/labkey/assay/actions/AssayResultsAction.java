@@ -54,12 +54,11 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
-        result.addChild(_protocol.getName() + " Runs", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild(_protocol.getName() + " Results");
-        return result;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
+        root.addChild(_protocol.getName() + " Runs", PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+        root.addChild(_protocol.getName() + " Results");
     }
 }

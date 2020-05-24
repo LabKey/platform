@@ -19,7 +19,6 @@ package org.labkey.api.admin;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
@@ -65,5 +64,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
 
+    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+    @Deprecated // use addAdminNavTrail above
     NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }

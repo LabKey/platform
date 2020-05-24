@@ -46,9 +46,8 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         return HttpView.redirect(url, url.isAllowableHost());
     }
 
-    public final NavTree appendNavTrail(NavTree root)
+    public final void addNavTrail(NavTree root)
     {
-        return null;
     }
 
     public abstract URLHelper getRedirectURL(FORM form) throws Exception;

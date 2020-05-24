@@ -586,9 +586,8 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -679,15 +678,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
-
-
-
-
 
     /**
      * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
@@ -1193,10 +1187,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("timeChart");
-            return root.addChild(_navTitle);
+            root.addChild(_navTitle);
         }
     }
 
@@ -1227,10 +1221,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("reportsAndViews");
-            return root.addChild(_navTitle);
+            root.addChild(_navTitle);
         }
     }
 

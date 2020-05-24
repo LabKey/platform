@@ -126,9 +126,9 @@ public class AnalysisController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_taskPipeline.getDescription());
+            root.addChild(_taskPipeline.getDescription());
         }
     }
 
@@ -458,9 +458,9 @@ public class AnalysisController extends SpringActionController
         private String _protocolName;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Protocol: " + _protocolName);
+            root.addChild("Protocol: " + _protocolName);
         }
 
         @Override
@@ -571,9 +571,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal List Tasks");
+            root.addChild("Internal List Tasks");
         }
     }
 
@@ -590,9 +590,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal List Pipelines");
+            root.addChild("Internal List Pipelines");
         }
     }
 
@@ -671,9 +671,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal Details");
+            root.addChild("Internal Details");
         }
     }
 
