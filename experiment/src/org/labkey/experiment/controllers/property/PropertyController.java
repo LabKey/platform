@@ -216,7 +216,7 @@ public class PropertyController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("propertyFields");
-            _domain.getDomainKind().appendNavTrail(root, getContainer(), getUser());
+            _domain.getDomainKind().addNavTrail(root, getContainer(), getUser());
             root.addChild("Edit Fields in " + _domain.getLabel());
         }
     }
