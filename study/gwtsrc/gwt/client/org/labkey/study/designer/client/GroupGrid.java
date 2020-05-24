@@ -49,7 +49,7 @@ public class GroupGrid extends EditableGrid
 
     public int getDataRowCount()
     {
-        return groups.size();  //To change body of implemented methods use File | Settings | File Templates.
+        return groups.size();
     }
 
     Widget[] columnNames = new Widget[] {new Label("Name"), new Label("Count") };

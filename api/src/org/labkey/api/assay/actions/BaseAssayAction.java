@@ -78,7 +78,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
     @Override
     public NavTree appendNavTrail(NavTree root)
     {
-        root.addChild("Assay List", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer()));
+        addNavTrail(root);
         return root;
     }
 

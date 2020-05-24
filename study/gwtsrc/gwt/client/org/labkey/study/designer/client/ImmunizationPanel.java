@@ -275,7 +275,6 @@ public class ImmunizationPanel extends Composite
 
             public void onKeyDown(Widget sender, char keyCode, int modifiers)
             {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
 
             public void onKeyPress(Widget sender, char keyCode, int modifiers)
@@ -286,7 +285,6 @@ public class ImmunizationPanel extends Composite
 
             public void onKeyUp(Widget sender, char keyCode, int modifiers)
             {
-                //To change body of implemented methods use File | Settings | File Templates.
             }
         }
     }

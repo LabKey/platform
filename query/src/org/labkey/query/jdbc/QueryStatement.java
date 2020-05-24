@@ -235,7 +235,7 @@ public class QueryStatement implements Statement
     @Override
     public Connection getConnection()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
