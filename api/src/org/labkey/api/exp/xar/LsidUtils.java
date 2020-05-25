@@ -211,7 +211,7 @@ public class LsidUtils
         @Before
         public void setUp()
         {
-            _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), "localhost");
+            _context = new XarContext("TestCase", ContainerManager.createMockContainer(), UserManager.getGuestUser(), null,"localhost");
             _context.addSubstitution("Value1", "One");
             _context.addSubstitution("Value2", "Two");
             _context.addSubstitution("Reference1", "${Value1}");

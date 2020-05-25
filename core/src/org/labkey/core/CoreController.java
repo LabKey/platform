@@ -360,9 +360,8 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -487,7 +486,7 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Not Yet Implemented");
         }
@@ -691,9 +690,8 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -959,9 +957,9 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create New Workbook");
+            root.addChild("Create New Workbook");
         }
     }
 
@@ -1038,9 +1036,9 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Move Workbooks");
+            root.addChild("Move Workbooks");
         }
     }
 
@@ -2081,9 +2079,8 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
 
         @Override
@@ -2154,9 +2151,9 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("LabKey Style Guide");
+            root.addChild("LabKey Style Guide");
         }
     }
 
@@ -2168,11 +2165,11 @@ public class CoreController extends SpringActionController
             return new JspView("/org/labkey/core/view/configReportsAndScripts.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("Views and Scripting Configuration");
+            root.addChild("Views and Scripting Configuration");
         }
     }
 
@@ -2520,10 +2517,10 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            return root.addChild("Manage Assay QC States");
+            root.addChild("Manage Assay QC States");
         }
 
         @Override

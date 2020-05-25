@@ -35,7 +35,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -110,9 +109,9 @@ public class SecurityController extends SpringActionController
             return new Overview(study);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Security");
+            root.addChild("Study Security");
         }
     }
 
@@ -244,14 +243,13 @@ public class SecurityController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Policy Import");
+            root.addChild("Study Policy Import");
         }
 
         public void validateCommand(ReturnUrlForm form, Errors errors)
         {
-
         }
 
         public boolean handlePost(ReturnUrlForm form, BindException errors)
@@ -537,7 +535,7 @@ public class SecurityController extends SpringActionController
             return form.getReturnActionURL();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             try
             {
@@ -549,9 +547,8 @@ public class SecurityController extends SpringActionController
             }
             catch (Exception e)
             {
-                return root.addChild("Report and View Permissions");
             }
-            return root.addChild("Report and View Permissions");
+            root.addChild("Report and View Permissions");
         }
     }
 

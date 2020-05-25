@@ -295,13 +295,12 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         getPageConfig().setHelpTopic(new HelpTopic("publishAssayData"));
-        NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
-        result.addChild("Copy to Study: Choose Target");
-        return result;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName(), PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol));
+        root.addChild("Copy to Study: Choose Target");
     }
 
     /**

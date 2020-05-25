@@ -78,17 +78,15 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
         return provider.createRunDetailsView(context, _protocol, _run);
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
         ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
 
-        NavTree ret = super.appendNavTrail(root);
-        ret.addChild(_protocol.getName() + " Batches", batchListURL);
-        ret.addChild(_protocol.getName() + " Runs", runListURL);
-        ret.addChild(_run.getName() + " Details");
-
-        return ret;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName() + " Batches", batchListURL);
+        root.addChild(_protocol.getName() + " Runs", runListURL);
+        root.addChild(_run.getName() + " Details");
     }
 }

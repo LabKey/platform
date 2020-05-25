@@ -245,10 +245,9 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getSettings().getBoardName(), getBeginURL(getContainer()));
-            return root;
         }
     }
 
@@ -274,10 +273,9 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild(getSettings().getBoardName() + " List", getListURL(getContainer()));
-            return root;
         }
     }
 
@@ -712,12 +710,10 @@ public class AnnouncementsController extends SpringActionController
         {
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild("Customize " + getSettings().getBoardName());
-
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("Customize " + getSettings().getBoardName());
         }
     }
 
@@ -883,10 +879,10 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root).addChild("New " + getSettings().getConversationName());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("New " + getSettings().getConversationName());
         }
     }
 
@@ -945,16 +941,15 @@ public class AnnouncementsController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree child = new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             if (_parent != null)
             {
-                child.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
+                root.addChild(_parent.getTitle(), "thread.view?rowId=" + _parent.getRowId())
                         .addChild("Respond to " + getSettings().getConversationName());
             }
-            return root;
-        }
+         }
     }
 
 
@@ -1315,12 +1310,11 @@ public class AnnouncementsController extends SpringActionController
             form.validate(errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                .addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId())
-                .addChild("Respond to " + getSettings().getConversationName());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(_ann.getTitle(), "thread.view?rowId=" + _ann.getRowId());
+            root.addChild("Respond to " + getSettings().getConversationName());
         }
     }
 
@@ -1367,10 +1361,10 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root).addChild(_title, getActionURL());
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(_title, getActionURL());
         }
     }
 
@@ -1389,9 +1383,8 @@ public class AnnouncementsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1438,9 +1431,8 @@ public class AnnouncementsController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         public ActionURL getURL()
@@ -1548,12 +1540,10 @@ public class AnnouncementsController extends SpringActionController
         {
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root)
-                             .addChild("Email Preferences");
-
-            return root;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild("Email Preferences");
         }
     }
 
@@ -2734,10 +2724,9 @@ public class AnnouncementsController extends SpringActionController
     public class ModeratorReviewAction extends FormViewAction<ModeratorReviewForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Moderator Review for " + getSettings().getBoardName(), getBeginURL(getContainer()));
-            return root;
         }
 
         @Override

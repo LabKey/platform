@@ -400,9 +400,9 @@ public class AuthenticationManager
         public abstract @NotNull AuthenticationResponse validateAuthentication(FORM form, BindException errors) throws Exception;
 
         @Override
-        public final NavTree appendNavTrail(NavTree root)
+        public final void addNavTrail(NavTree root)
         {
-            return root.addChild("Validate Authentication");
+            root.addChild("Validate Authentication");
         }
     }
 

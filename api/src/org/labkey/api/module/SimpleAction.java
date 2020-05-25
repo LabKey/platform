@@ -166,8 +166,8 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         verifyTermsOfUse(false);
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return root.addChild(_view.getTitle());
+        root.addChild(_view.getTitle());
     }
 }

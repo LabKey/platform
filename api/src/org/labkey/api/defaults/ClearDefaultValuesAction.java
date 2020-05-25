@@ -47,7 +47,7 @@ public class ClearDefaultValuesAction extends DefaultValuesAction<DomainIdForm>
         return true;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException("ClearDefaultValuesAction is a post handler only.");
     }

@@ -43,6 +43,7 @@ public class SimpleController extends SpringActionController implements SpringAc
         setActionResolver(new HTMLFileActionResolver(controllerName));
     }
 
+    @Override
     public Controller resolveActionName(Controller actionController, String actionName)
     {
         String controllerName = getViewContext().getActionURL().getController();
@@ -55,10 +56,12 @@ public class SimpleController extends SpringActionController implements SpringAc
         return null;
     }
 
+    @Override
     public void addTime(Controller action, long elapsedTime)
     {
     }
 
+    @Override
     public Collection<ActionDescriptor> getActionDescriptors()
     {
         return Collections.emptyList();

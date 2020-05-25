@@ -145,9 +145,9 @@ public class ListController extends SpringActionController
     }
 
 
-    private NavTree appendRootNavTrail(NavTree root)
+    private void appendRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer(), getUser());
+        appendRootNavTrail(root, getContainer(), getUser());
     }
 
     public static class ListUrlsImpl implements ListUrls
@@ -213,9 +213,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Available Lists");
+            root.addChild("Available Lists");
         }
     }
 
@@ -266,7 +266,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (null == _list)
             {
@@ -276,7 +276,6 @@ public class ListController extends SpringActionController
             {
                 appendListNavTrail(root, _list, listDesignerHeader);
             }
-            return root;
         }
     }
 
@@ -379,9 +378,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, _title);
+            appendListNavTrail(root, _list, _title);
         }
     }
 
@@ -427,9 +426,8 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -614,9 +612,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "View List Item");
+            appendListNavTrail(root, _list, "View List Item");
         }
     }
 
@@ -703,9 +701,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "Import Data");
+            appendListNavTrail(root, _list, "Import Data");
         }
     }
 
@@ -760,12 +758,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, _list.getName() + ":History");
+                appendListNavTrail(root, _list, _list.getName() + ":History");
             else
-                return root.addChild(":History");
+                root.addChild(":History");
         }
     }
 
@@ -828,12 +826,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, "List Item Details");
+                appendListNavTrail(root, _list, "List Item Details");
             else
-                return root.addChild("List Item Details"); 
+                root.addChild("List Item Details");
         }
     }
 
@@ -962,9 +960,10 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Import List Archive");
+            appendRootNavTrail(root);
+            root.addChild("Import List Archive");
         }
     }
 
