@@ -755,8 +755,7 @@ public class AssayController extends SpringActionController
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new UploadException("Pipeline root must be configured before uploading assay files", HttpServletResponse.SC_NOT_FOUND);
-            
-            AssayFileWriter writer = new AssayFileWriter();
+
             try
             {
                 File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
