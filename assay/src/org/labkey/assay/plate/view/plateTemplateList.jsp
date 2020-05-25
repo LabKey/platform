@@ -239,7 +239,7 @@
         }
 %>
         <br/>
-        <h4>Create New Plate Templates</h4>
+        <h4>Create New Plate Template</h4>
         <labkey:form method="POST" layout="inline" id="qc_form">
             <%= new Select.SelectBuilder().name("template").id("plate_template")
                     .layout(Input.Layout.HORIZONTAL)
