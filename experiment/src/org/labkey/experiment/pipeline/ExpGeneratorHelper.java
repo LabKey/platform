@@ -314,10 +314,10 @@ public class ExpGeneratorHelper
             ExpProtocolAction step = expActionMap.get(action.getName());
 
             ExpProtocol.ApplicationType applicationType = action.isEnd() ? ExpProtocol.ApplicationType.ExperimentRunOutput : ExpProtocol.ApplicationType.ProtocolApplication;
-            ExpProtocolApplication app = run.addProtocolApplication(user, step, applicationType,
+            ExpProtocolApplication app = action.isStart() ? inputApp : run.addProtocolApplication(user, step, applicationType,
                     action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
 
-            if (!action.getName().equals(action.getDescription()))
+            if (!action.isStart() && !action.getName().equals(action.getDescription()))
             {
                 app.setName(action.getDescription());
                 app.save(user);
@@ -355,11 +355,9 @@ public class ExpGeneratorHelper
             // material inputs
             for (String lsid : action.getMaterialInputs())
             {
-                // run-level inputs
-                if (action.isStart())
-                    inputApp.addMaterialInput(user, ExperimentService.get().getExpMaterial(lsid), null);
-                else
-                    addMaterialInput(run, app, lsid, user);
+                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                material.setRun(run);
+                app.addMaterialInput(user, material, null, null);
             }
 
             // material outputs
