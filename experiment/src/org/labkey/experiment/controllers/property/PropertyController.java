@@ -213,12 +213,11 @@ public class PropertyController extends SpringActionController
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("propertyFields");
             _domain.getDomainKind().appendNavTrail(root, getContainer(), getUser());
             root.addChild("Edit Fields in " + _domain.getLabel());
-            return root;
         }
     }
 
@@ -397,15 +396,30 @@ public class PropertyController extends SpringActionController
 
         public Object execute(DomainApiForm form, BindException errors)
         {
+            DomainKindDesign domainKindDesign = new DomainKindDesign();
             String queryName = form.getQueryName();
             String schemaName = form.getSchemaName();
             Integer domainId = form.getDomainId();
+
+            // allow for this action to be used to get a domain design template for a given domain kind
+            // this is for the specific domain designer create cases which need to know properties
+            // like getDomainKind().allowAttachmentProperties()
+            if (form.getDomainKind() != null)
+            {
+                DomainKind kind = PropertyService.get().getDomainKindByName(form.getDomainKind());
+                if (kind != null)
+                {
+                    domainKindDesign.setDomainDesign(DomainUtil.getTemplateDomainForDomainKind(kind));
+                    domainKindDesign.setDomainKindName(kind.getKindName());
+                    domainKindDesign.setOptions(kind.getDomainKindProperties(null, getContainer(), getUser()));
+                    return domainKindDesign;
+                }
+            }
 
             GWTDomain gwtDomain = getDomain(schemaName, queryName, domainId, getContainer(), getUser());
             Domain domain = PropertyService.get().getDomain(getContainer(), gwtDomain.getDomainURI());
             if (null != domain && null != domain.getDomainKind())
             {
-                DomainKindDesign domainKindDesign = new DomainKindDesign();
                 domainKindDesign.setDomainDesign(gwtDomain);
                 domainKindDesign.setDomainKindName(domain.getDomainKind().getKindName());
                 domainKindDesign.setOptions(domain.getDomainKind().getDomainKindProperties(gwtDomain, getContainer(), getUser()));
@@ -1269,9 +1283,8 @@ public class PropertyController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 

@@ -51,7 +51,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -267,9 +266,9 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(c.getStartURL(getUser()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(getContainer().getName());
+            root.addChild(getContainer().getName());
         }
     }
 
@@ -379,9 +378,10 @@ public class ProjectController extends SpringActionController
             return template;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return (root.hasChildren() ? root : root.addChild("Project Main Page"));
+            if (!root.hasChildren())
+                root.addChild("Project Main Page");
         }
     }
 
@@ -399,9 +399,8 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -597,9 +596,8 @@ public class ProjectController extends SpringActionController
                 return form.getReturnURLHelper();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -872,9 +870,8 @@ public class ProjectController extends SpringActionController
             return customizePortletForm.getReturnURLHelper(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1052,7 +1049,7 @@ public class ProjectController extends SpringActionController
             return null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             // Subclasses may have overridden the display name of this webpart for a given container:
             String name;
@@ -1064,7 +1061,7 @@ public class ProjectController extends SpringActionController
             else
                 name = "Web Part";
 
-            return root.addChild("Customize " + name);
+            root.addChild("Customize " + name);
         }
     }
 
@@ -1121,9 +1118,8 @@ public class ProjectController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1530,9 +1526,8 @@ public class ProjectController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 

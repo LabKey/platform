@@ -73,9 +73,9 @@ public class ToursController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Tours");
+            root.addChild("Tours");
         }
     }
 
@@ -110,9 +110,9 @@ public class ToursController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Tour Builder");
+            root.addChild("Tour Builder");
         }
     }
 

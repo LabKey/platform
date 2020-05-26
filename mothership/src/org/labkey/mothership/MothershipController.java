@@ -129,9 +129,8 @@ public class MothershipController extends SpringActionController
             throw new RedirectException(url);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -149,9 +148,9 @@ public class MothershipController extends SpringActionController
             return updateView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Update Release Info");
+            root.addChild("Update Release Info");
         }
     }
 
@@ -188,9 +187,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), queryView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Installations");
+            root.addChild("Installations");
         }
     }
 
@@ -238,9 +237,8 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -305,9 +303,8 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -369,9 +366,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), queryView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Exceptions");
+            root.addChild("Exceptions");
         }
     }
 
@@ -395,9 +392,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), gridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Installations");
+            root.addChild("Installations");
         }
     }
 
@@ -442,9 +439,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Upgrade Message");
+            root.addChild("Upgrade Message");
         }
     }
 
@@ -498,9 +495,9 @@ public class MothershipController extends SpringActionController
             return new VBox(detailView, exceptionGridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Server Session");
+            root.addChild("Server Session");
         }
     }
 
@@ -537,9 +534,9 @@ public class MothershipController extends SpringActionController
             return new VBox(updateView, sessionGridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Server Installation");
+            root.addChild("Server Installation");
         }
     }
 
@@ -636,9 +633,9 @@ public class MothershipController extends SpringActionController
             return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Exception Reports");
+            root.addChild("Exception Reports");
         }
     }
 
@@ -815,7 +812,7 @@ public class MothershipController extends SpringActionController
             throw new SQLException("Intentional exception for testing purposes", "400");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
         }
@@ -876,9 +873,9 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportsAction extends SimpleViewAction
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Mothership Reports");
+            root.addChild("Mothership Reports");
         }
 
         public ModelAndView getView(Object o, BindException errors) throws Exception

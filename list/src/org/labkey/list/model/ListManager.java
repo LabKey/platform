@@ -183,7 +183,7 @@ public class ListManager implements SearchService.DocumentProvider
         return list;
     }
 
-    public ListDomainKindProperties getListDomainKindProperties(Container container, Integer listId)
+    public ListDomainKindProperties getListDomainKindProperties(Container container, @Nullable Integer listId)
     {
         if (null == listId)
         {

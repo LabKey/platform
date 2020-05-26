@@ -59,9 +59,8 @@ public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
         return null;
     }
 
-    public final NavTree appendNavTrail(NavTree root)
+    public final void addNavTrail(NavTree root)
     {
-        return null;
     }
 
     /** Do the real work of streaming the file back to the browser */

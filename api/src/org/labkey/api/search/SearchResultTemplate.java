@@ -54,7 +54,7 @@ public interface SearchResultTemplate
 
     String reviseQuery(ViewContext ctx, String q);
 
-    default NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+    default void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
     {
         Container c = ctx.getContainer();
         String title = "Search";
@@ -82,6 +82,6 @@ public interface SearchResultTemplate
         if (null != category)
             title += " for " + category.replaceAll(" ", "s, ") + "s";
 
-        return root.addChild(title);
+        root.addChild(title);
     }
 }

@@ -34,9 +34,8 @@ public abstract class SimpleForwardAction<FORM> extends SimpleViewAction<FORM>
         return null;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
-        return null;
     }
 
     public abstract ActionURL getForwardURL(FORM form) throws Exception;

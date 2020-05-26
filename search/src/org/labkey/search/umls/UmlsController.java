@@ -110,9 +110,8 @@ public class UmlsController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -138,9 +137,8 @@ public class UmlsController extends SpringActionController
     @RequiresNoPermission
     public class ConceptAction extends SimpleViewAction<ConceptForm>
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
 
         @Override
@@ -203,9 +201,8 @@ public class UmlsController extends SpringActionController
             return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 

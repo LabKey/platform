@@ -64,7 +64,7 @@ public class SqlController extends SpringActionController
 
     public static class Parameters
     {
-        private Map<String,Object> map = new CaseInsensitiveHashMap<>();
+        private final Map<String,Object> map = new CaseInsensitiveHashMap<>();
 
         @JsonAnySetter
         public void set(String name, Object value)
@@ -464,9 +464,8 @@ public class SqlController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 }

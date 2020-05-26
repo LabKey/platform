@@ -460,11 +460,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Create Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -485,11 +484,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Update Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -944,9 +942,8 @@ public class OlapController extends SpringActionController
     public class XmlaAction extends SimpleViewAction<OlapForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         @Override
@@ -1016,9 +1013,8 @@ public class OlapController extends SpringActionController
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1042,9 +1038,8 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1068,9 +1063,8 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -1499,9 +1493,9 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Manage Application");
+            root.addChild("Manage Application");
         }
     }
 
@@ -1531,11 +1525,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()));
             root.addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
-            return root;
         }
     }
 

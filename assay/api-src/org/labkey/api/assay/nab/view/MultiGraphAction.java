@@ -76,7 +76,7 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         return config;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException();
     }

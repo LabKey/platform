@@ -89,6 +89,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -455,7 +457,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                             @Override
                             protected Object getJsonValue(ExpData data)
                             {
-                                return !(data == null || data.getFile() == null || !data.getFile().exists());
+                                if (data == null)
+                                {
+                                    return false;
+                                }
+                                Path path = data.getFilePath();
+                                return path != null && Files.exists(path);
                             }
                         };
                     }
