@@ -345,13 +345,6 @@ public class ExpGeneratorHelper
                 app.setProperty(user, pd, prop.getValue());
             }
 
-            // Set up the inputs
-            for (RecordedAction.DataFile dd : action.getInputs())
-            {
-                ExpData data = addData(container, user, datas, dd.getURI(), source);
-                app.addDataInput(user, data, dd.getRole());
-            }
-
             // material inputs
             for (String lsid : action.getMaterialInputs())
             {

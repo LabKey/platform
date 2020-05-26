@@ -37,7 +37,7 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
     @Override
     public DataType getDataType()
     {
-        return null;
+        return new DataType("Transform");
     }
 
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context)
