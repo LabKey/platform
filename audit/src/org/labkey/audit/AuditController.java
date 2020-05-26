@@ -133,6 +133,7 @@ public class AuditController extends SpringActionController
             return schema.createView(getViewContext(), settings, errors);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("audits"));

@@ -64,6 +64,7 @@ public class CommandTaskFactorySettings extends AbstractTaskFactorySettings
         _converter.setSwitchFormat(new UnixSwitchFormat());
     }
 
+    @Override
     public TaskId getCloneId()
     {
         return new TaskId(CommandTask.class, _cloneName);

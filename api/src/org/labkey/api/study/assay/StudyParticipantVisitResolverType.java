@@ -34,12 +34,14 @@ import java.util.Collection;
  */
 public class StudyParticipantVisitResolverType implements ParticipantVisitResolverType
 {
+    @Override
     public ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user)
     {
         return new StudyParticipantVisitResolver(run.getContainer(), targetStudyContainer, user);
     }
 
 
+    @Override
     public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
                                                    Collection<ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
@@ -50,30 +52,36 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
         return new StudyParticipantVisitResolver(runContainer, targetStudyContainer, user);
     }
 
+    @Override
     public String getName()
     {
         return "SampleInfo";
     }
 
+    @Override
     public String getDescription()
     {
         return "Sample information in the data file (may be blank).";
     }
 
+    @Override
     public void render(RenderContext ctx) throws Exception
     {
     }
 
+    @Override
     public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
     {
         // Don't need to add any form fields - the data's already all there
     }
 
+    @Override
     public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas)
     {
         // Don't need to do anything - the data's already all there
     }
 
+    @Override
     public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
     {
         return true;

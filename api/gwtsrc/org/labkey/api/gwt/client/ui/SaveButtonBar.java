@@ -41,6 +41,7 @@ public class SaveButtonBar extends HorizontalPanel
 
         finishButton = new ImageButton("Save & Close", new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 owner.finish();
@@ -51,6 +52,7 @@ public class SaveButtonBar extends HorizontalPanel
 
         saveButton = new ImageButton("Save", new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 owner.save();
@@ -61,6 +63,7 @@ public class SaveButtonBar extends HorizontalPanel
 
         cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 owner.cancel();

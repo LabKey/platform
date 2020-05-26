@@ -100,6 +100,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         return _factoryJms;
     }
 
+    @Override
     public boolean cancelJob(User user, Container c, PipelineStatusFile statusFile)
     {
         if (statusFile.getJobStore() != null)
@@ -209,6 +210,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         return false;
     }
 
+    @Override
     public List<PipelineJob> findJobs(String location)
     {
         Map endpoints = MuleManager.getInstance().getEndpoints();
@@ -250,6 +252,7 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         return result;
     }
 
+    @Override
     protected void enqueue(PipelineJob job)
     {
         if (RequestContext.getEvent() == null)
@@ -276,11 +279,13 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }
     }
 
+    @Override
     public boolean isLocal()
     {
         return _local;
     }
 
+    @Override
     public boolean isTransient()
     {
         return _transient;
@@ -307,21 +312,25 @@ public class EPipelineQueueImpl extends AbstractPipelineQueue
         }        
     }
 
+    @Override
     public PipelineJob findJobInMemory(Container c, String statusFile)
     {
         throw new UnsupportedOperationException("No useful information about jobs in memory.");
     }
 
+    @Override
     public PipelineJobData getJobDataInMemory(Container c)
     {
         throw new UnsupportedOperationException("No useful information about jobs in memory.");
     }
 
+    @Override
     public void starting(PipelineJob job, Thread thread)
     {
         throw new UnsupportedOperationException("Mini-pipeline maintenance notification not supported.");
     }
 
+    @Override
     public void done(PipelineJob job)
     {
         // No-op

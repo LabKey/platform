@@ -32,6 +32,7 @@ public class ParticipantSiteReport extends ParticipantVisitReport
         super(title, visits, filter, parameters);
     }
 
+    @Override
     protected SimpleFilter replaceFilterParameterName(SimpleFilter filter, String oldKey, String newKey)
     {
         // this report adds a strange filter to 'ptid' that we want to just drop when it comes

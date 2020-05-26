@@ -156,11 +156,13 @@ public class DesignerController extends SpringActionController
     public class BeginAction extends SimpleViewAction
     {
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new StudyDesignsWebPart(getViewContext(), false);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Study Protocol Registration");
@@ -171,8 +173,10 @@ public class DesignerController extends SpringActionController
     public class DeleteAction extends FormHandlerAction
     {
 
+        @Override
         public void validateCommand(Object target, Errors errors) {}
 
+        @Override
         public boolean handlePost(Object o, BindException errors)
         {
             Set<String> selectedRows = DataRegionSelection.getSelected(getViewContext(), true);
@@ -183,6 +187,7 @@ public class DesignerController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             return new ActionURL(BeginAction.class, getContainer());
@@ -192,6 +197,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CancelWizardAction extends SimpleRedirectAction<CreateRepositoryForm>
     {
+        @Override
         public ActionURL getRedirectURL(CreateRepositoryForm form)
         {
             setParticipants(null);
@@ -205,11 +211,13 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Study Protocol Registration");
         }
 
+        @Override
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
         {
             if (null == form.getPanel()) //Old code to handle deprecated case of designs not affiliated with studies
@@ -289,6 +297,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DefinitionServiceAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService()
         {
             return new StudyDefinitionServiceImpl(getViewContext());
@@ -298,6 +307,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class EditTemplateAction extends SimpleRedirectAction<StudyDesignForm>
     {
+        @Override
         public ActionURL getRedirectURL(StudyDesignForm studyDesignForm) throws Exception
         {
             StudyDesignInfo info = getTemplateInfo(getUser(), getContainer());
@@ -313,6 +323,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class GetParticipantExcelAction extends ExportAction<CreateRepositoryForm>
     {
+        @Override
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors)
         {
             List<Map<String,Object>> participantGroup = new ArrayList<>();
@@ -343,6 +354,7 @@ public class DesignerController extends SpringActionController
     public class GetStudyDesigns extends ReadOnlyApiAction<GetStudyDesignsForm>
     {
 
+        @Override
         public ApiResponse execute(GetStudyDesignsForm getStudyDesignsForm, BindException errors) throws Exception
         {
             JSONArray jsonDesigns = new JSONArray();
@@ -397,6 +409,7 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetSpecimenExcelAction extends ExportAction<CreateRepositoryForm>
     {
+        @Override
         public void export(CreateRepositoryForm form, HttpServletResponse response, BindException errors)
         {
             //Search for a template in all folders up to root.
@@ -520,6 +533,7 @@ public class DesignerController extends SpringActionController
             return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Create Study Folder: " + _titleForNav);

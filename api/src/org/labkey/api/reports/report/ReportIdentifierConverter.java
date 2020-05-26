@@ -25,6 +25,7 @@ import org.labkey.api.reports.ReportService;
 */
 public class ReportIdentifierConverter implements Converter
 {
+    @Override
     public Object convert(Class type, Object value)
     {
         if (null == value || value.equals("null") || !type.equals(ReportIdentifier.class))

@@ -28,11 +28,13 @@ import org.labkey.issue.model.IssueManager;
  */
 public class IssueContainerListener extends ContainerManager.AbstractContainerListener
 {
+    @Override
     public void containerDeleted(Container c, User user)
     {
         IssueManager.purgeContainer(c, user);
     }
 
+    @Override
     public void containerMoved(Container c, Container oldParent, User user)
     {
         IssueListDefCache.clearCache();

@@ -39,6 +39,7 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
 {
     private static final String FORM_ELEMENT_NAME = "TextAreaDataCollector.textArea";
 
+    @Override
     public HttpView getView(ContextType context)
     {
         return new HtmlView("<textarea id=\"" + FORM_ELEMENT_NAME + "\" name=\"" + FORM_ELEMENT_NAME + "\" rows=\"10\" cols=\"80\"></textarea>\n" +
@@ -49,16 +50,19 @@ public class TextAreaDataCollector<ContextType extends AssayRunUploadContext<? e
                 "</script>");
     }
 
+    @Override
     public String getShortName()
     {
         return "textAreaDataProvider";
     }
 
+    @Override
     public String getDescription(ContextType context)
     {
         return "Paste in a tab-separated set of values (including column headers)";
     }
 
+    @Override
     @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
     {

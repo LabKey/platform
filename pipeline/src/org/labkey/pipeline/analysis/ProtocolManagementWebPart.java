@@ -168,6 +168,7 @@ public class ProtocolManagementWebPart extends GridView
             setTextAlign("center");
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             if ((boolean)ctx.getRow().get("archived"))

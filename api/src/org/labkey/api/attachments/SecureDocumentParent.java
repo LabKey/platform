@@ -55,46 +55,54 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         _sourceModule = sourceModule.getName();
     }
 
+    @Override
     public String getEntityId()
     {
         return _entityId;
     }
 
+    @Override
     public String getContainerId()
     {
         return _containerId;
     }
 
+    @Override
     @NotNull
     public String getResourceId()
     {
         return getEntityId();
     }
 
+    @Override
     @NotNull
     public String getResourceName()
     {
         return NAME;
     }
 
+    @Override
     @NotNull
     public String getResourceDescription()
     {
         return "";
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(_sourceModule);
     }
 
+    @Override
     @Nullable
     public SecurableResource getParentResource()
     {
         return null;
     }
 
+    @Override
     @NotNull
     public Container getResourceContainer()
     {
@@ -104,12 +112,14 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         return container;
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public boolean mayInheritPolicy()
     {
         return false;
@@ -136,6 +146,7 @@ public class SecureDocumentParent implements AttachmentParent, SecurableResource
         SecurityPolicyManager.savePolicy(securityPolicy);
     }
 
+    @Override
     public SecurityPolicy getSecurityPolicy()
     {
         return SecurityPolicyManager.getPolicy(this);

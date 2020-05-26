@@ -34,6 +34,7 @@ public class QMethodCall extends QExpr
 
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         MethodInfo method = getMethod(builder.getDialect());
@@ -100,6 +101,7 @@ public class QMethodCall extends QExpr
         return getField().getMethod(d);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         getFirstChild().appendSource(builder);
@@ -142,6 +144,7 @@ public class QMethodCall extends QExpr
         return false;
     }
 
+    @Override
     public void addFieldRefs(Object referant)
     {
         // skip ref'ing the method name

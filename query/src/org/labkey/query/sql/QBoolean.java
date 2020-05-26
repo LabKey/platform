@@ -34,17 +34,20 @@ public class QBoolean extends QExpr implements IConstant
         setTokenText(value ? "true" : "false");
     }
 
+    @Override
     public Boolean getValue()
     {
         return "true".equalsIgnoreCase(getTokenText());
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         SqlDialect d = builder.getDialect();
         builder.append(getValue() ? d.getBooleanTRUE() : d.getBooleanFALSE());
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getValue().toString());

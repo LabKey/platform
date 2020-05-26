@@ -43,6 +43,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
 
     // These writers can be defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to write elements into folder.xml.
+    @Override
     public Collection<FolderWriter> getRegisteredFolderWriters()
     {
         // New up the writers every time since these classes can be stateful
@@ -57,6 +58,7 @@ public class FolderSerializationRegistryImpl implements FolderSerializationRegis
     // These importers can be defined and registered by other modules.  They have no knowledge of folder internals, other
     // than being able to read elements from folder.xml.
     //
+    @Override
     public Collection<FolderImporter> getRegisteredFolderImporters()
     {
         // New up the importers every time since these classes can be stateful

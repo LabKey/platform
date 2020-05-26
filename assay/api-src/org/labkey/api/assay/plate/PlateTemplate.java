@@ -31,6 +31,7 @@ import java.util.Map;
  */
 public interface PlateTemplate extends PropertySet, Identifiable
 {
+    @Override
     String getName();
 
     void setName(String name);
@@ -63,5 +64,6 @@ public interface PlateTemplate extends PropertySet, Identifiable
 
     String getType();
 
+    @Override
     @Nullable ActionURL detailsURL();
 }

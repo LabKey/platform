@@ -259,6 +259,7 @@ public class ScriptEngineManagerImpl extends ScriptEngineManager implements Labk
     }
 
     // Locates any specific engines scoped at either the container or project level for an engine context
+    @Override
     @Nullable
     public ExternalScriptEngineDefinition getScopedEngine(@NotNull Container container, @NotNull String extension, @NotNull EngineContext context, boolean includeProject)
     {

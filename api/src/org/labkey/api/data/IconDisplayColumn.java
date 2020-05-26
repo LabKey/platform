@@ -51,21 +51,25 @@ public class IconDisplayColumn extends DataColumn
         setWidth(Integer.toString(_width));
     }
 
+    @Override
     public void setCaption(String caption)
     {
         _imageTitle = caption;
     }
 
+    @Override
     public boolean isFilterable()
     {
         return false;
     }
 
+    @Override
     public boolean isSortable()
     {
         return false;
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         ActionURL linkURL = _linkURL.clone();

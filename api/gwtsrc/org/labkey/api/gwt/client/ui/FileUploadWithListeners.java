@@ -43,6 +43,7 @@ public class FileUploadWithListeners extends FileUpload implements SourcesClickE
         super(element);
     }
 
+    @Override
     public void addClickListener(ClickListener listener)
     {
         if (clickListeners == null)
@@ -53,6 +54,7 @@ public class FileUploadWithListeners extends FileUpload implements SourcesClickE
         clickListeners.add(listener);
     }
 
+    @Override
     public void removeClickListener(ClickListener listener)
     {
         if (clickListeners != null)
@@ -61,6 +63,7 @@ public class FileUploadWithListeners extends FileUpload implements SourcesClickE
         }
     }
 
+    @Override
     public void addChangeListener(ChangeListener listener)
     {
         if (changeListeners == null)
@@ -71,12 +74,14 @@ public class FileUploadWithListeners extends FileUpload implements SourcesClickE
         changeListeners.add(listener);
     }
 
+    @Override
     public void removeChangeListener(ChangeListener listener)
     {
         if (changeListeners != null)
                 changeListeners.remove(listener);
     }
 
+    @Override
     public void onBrowserEvent(Event event)
     {
         if (DOM.eventGetType(event) == Event.ONCLICK)

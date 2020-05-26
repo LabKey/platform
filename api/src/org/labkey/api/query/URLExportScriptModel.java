@@ -49,11 +49,13 @@ public class URLExportScriptModel extends ExportScriptModel
         return "";
     }
 
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "query." + FieldKey.fromString(name) + "~" + operator.getPreferredUrlKey() + "=" + value;
     }
 
+    @Override
     public String getColumns()
     {
         StringBuilder ret = new StringBuilder();

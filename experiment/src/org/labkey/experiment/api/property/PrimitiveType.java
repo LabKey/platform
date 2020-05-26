@@ -33,16 +33,19 @@ public class PrimitiveType implements IPropertyType
         return _type.getXmlName();
     }
 
+    @Override
     public String getTypeURI()
     {
         return _type.getTypeUri();
     }
 
+    @Override
     public String getLabel()
     {
         return getName();
     }
 
+    @Override
     public String getLabel(Container container)
     {
         return getLabel();

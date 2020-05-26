@@ -92,16 +92,19 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         return Collections.unmodifiableMap(parameters);
     }
 
+    @Override
     public TaskId getTaskPipelineId()
     {
         return _taskPipelineId;
     }
 
+    @Override
     public AbstractFileAnalysisJob createSingleFileJob(File file)
     {
         return new FileAnalysisJob(this, file);
     }
 
+    @Override
     public FileAnalysisTaskPipeline getTaskPipeline()
     {
         TaskPipeline tp = super.getTaskPipeline();
@@ -112,11 +115,13 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         return (FileAnalysisTaskPipeline) tp; 
     }
 
+    @Override
     public File findInputFile(String name)
     {
         return findFile(name);
     }
 
+    @Override
     public File findOutputFile(String name)
     {
         return findFile(name);

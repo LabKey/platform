@@ -230,47 +230,55 @@ class SecurityQuery extends Query
             _container = c;
         }
 
+        @Override
         @NotNull
         public String getResourceId()
         {
             return _id;
         }
 
+        @Override
         @NotNull
         public String getResourceName()
         {
             return _id;
         }
 
+        @Override
         @NotNull
         public String getResourceDescription()
         {
             return "";
         }
 
+        @Override
         @NotNull
         public Module getSourceModule()
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public SecurableResource getParentResource()
         {
             return null;
         }
 
+        @Override
         @NotNull
         public Container getResourceContainer()
         {
             return _container;
         }
 
+        @Override
         @NotNull
         public List<SecurableResource> getChildResources(User user)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public boolean mayInheritPolicy()
         {
             return false;

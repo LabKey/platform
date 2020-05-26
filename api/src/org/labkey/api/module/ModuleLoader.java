@@ -327,6 +327,7 @@ public class ModuleLoader implements Filter, MemTrackerListener
             methodNames.forEach(name -> { if (null == _methods.get(name)) throw new ConfigurationException("LabKeyBootstrapClassLoader seems to be mismatched to the labkey server deployment.  Could not find method: " + name); });
         }
 
+        @Override
         public Object invoke(Object proxy, Method m, Object[] args)
                 throws Throwable
         {

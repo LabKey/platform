@@ -136,11 +136,13 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
     }
 
+    @Override
     public Object getProperty(DomainProperty prop)
     {
         return getProperty(prop.getPropertyDescriptor());
     }
 
+    @Override
     public Object getProperty(PropertyDescriptor pd)
     {
         if (pd == null)
@@ -169,6 +171,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return getRowId() ^ getClass().hashCode();
     }
 
+    @Override
     public int compareTo(ExpObject o2)
     {
         if (getName() != null)

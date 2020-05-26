@@ -364,6 +364,7 @@ public class SecurityManager
     /** Move is handled by direct call from ContainerManager into SecurityManager */
     private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
     {
+        @Override
         public void containerDeleted(Container c, User user)
         {
             deleteGroups(c, null);
@@ -3030,13 +3031,16 @@ public class SecurityManager
             super(name);
 
             _replacements.add(new ReplacementParam<String>("verificationURL", String.class, "Link for a user to set a password"){
+                @Override
                 public String getValue(Container c) {return _verificationUrl;}
             });
             _replacements.add(new ReplacementParam<String>("emailAddress", String.class, "The email address of the user performing the operation"){
+                @Override
                 public String getValue(Container c) {return _originatingUser == null ? null : _originatingUser.getEmail();}
             });
             _replacements.add(new ReplacementParam<String>("recipient", String.class, "The email address on the 'to:' line")
             {
+                @Override
                 public String getValue(Container c)
                 {
                     return _recipient;
@@ -3049,8 +3053,10 @@ public class SecurityManager
         public void setOptionPrefix(String optionalPrefix){_optionalPrefix = optionalPrefix;}
         public void setVerificationUrl(String verificationUrl){_verificationUrl = verificationUrl;}
         public void setRecipient(String recipient){_recipient = recipient;}
+        @Override
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
+        @Override
         public boolean isValid(String[] error)
         {
             if (super.isValid(error))
@@ -3095,6 +3101,7 @@ public class SecurityManager
             setPriority(1);
 
             _replacements.add(new ReplacementParam<String>("optionalMessage", String.class, "An optional message to include with the new user email"){
+                @Override
                 public String getValue(Container c) {return _optionalPrefix;}
             });
         }

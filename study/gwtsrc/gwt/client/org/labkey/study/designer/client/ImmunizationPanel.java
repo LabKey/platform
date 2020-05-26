@@ -94,16 +94,19 @@ public class ImmunizationPanel extends Composite
             setReadOnly(designer.isReadOnly());
         }
 
+        @Override
         int getCategoryColumnCount()
         {
             return 2;
         }
 
+        @Override
         int getCategoryRowCount()
         {
             return studyDef.getGroups().size();
         }
 
+        @Override
         Widget getCategoryHeader(int col)
         {
             if (col == 0)
@@ -112,11 +115,13 @@ public class ImmunizationPanel extends Composite
                 return new Label("Count");
         }
 
+        @Override
         Widget getCategoryWidget(int categoryIndex, int col)
         {
             return getCategoryWidget(studyDef.getGroups().get(categoryIndex), col);
         }
 
+        @Override
         Object getCategoryValue(int categoryIndex, int col)
         {
             GWTCohort group = studyDef.getGroups().get(categoryIndex);
@@ -132,6 +137,7 @@ public class ImmunizationPanel extends Composite
         }
 
 
+        @Override
         Object getEventValue(int categoryIndex, GWTTimepoint tp)
         {
             GWTCohort cohort = studyDef.getGroups().get(categoryIndex);
@@ -142,6 +148,7 @@ public class ImmunizationPanel extends Composite
                 return immunization;
         }
 
+        @Override
         Widget getGhostCategoryWidget(int col)
         {
             if (col == 0)
@@ -157,6 +164,7 @@ public class ImmunizationPanel extends Composite
             {
                 tb.setText(StringUtils.trimToEmpty(group.getName()));
                 tb.addChangeListener(new ChangeListener() {
+                    @Override
                     public void onChange(Widget sender) {
                         // in the event of a group rename, add the old cohort name to the list of groups to be deleted (if they exist)
                         studyDef.addGroupToDelete(group.getName());
@@ -172,6 +180,7 @@ public class ImmunizationPanel extends Composite
                 if (group.getCount() > 0)
                     tb.setText(Integer.toString(group.getCount()));
                 tb.addChangeListener(new ChangeListener() {
+                    @Override
                     public void onChange(Widget sender) {
                         int count;
                         try
@@ -193,12 +202,14 @@ public class ImmunizationPanel extends Composite
             return tb;
         }
 
+        @Override
         void makeGhostCategoryReal()
         {
             // noop
         }
 
 
+        @Override
         void deleteCategory(final int index)
         {
             GWTCohort cohort = studyDef.getGroups().get(index);
@@ -208,6 +219,7 @@ public class ImmunizationPanel extends Composite
             designer.setDirty(true);
         }
 
+        @Override
         Widget getEventWidget(int categoryIndex, GWTTimepoint tp)
         {
             GWTCohort cohort = studyDef.getGroups().get(categoryIndex);
@@ -258,6 +270,7 @@ public class ImmunizationPanel extends Composite
             }
 
 
+            @Override
             public void onClick(Widget sender)
             {
                 showPopup();
@@ -273,16 +286,19 @@ public class ImmunizationPanel extends Composite
                 popup.show();
             }
 
+            @Override
             public void onKeyDown(Widget sender, char keyCode, int modifiers)
             {
             }
 
+            @Override
             public void onKeyPress(Widget sender, char keyCode, int modifiers)
             {
                 if (keyCode == ' ' || keyCode == 13 || keyCode == 10)
                     showPopup();
             }
 
+            @Override
             public void onKeyUp(Widget sender, char keyCode, int modifiers)
             {
             }
@@ -321,6 +337,7 @@ public class ImmunizationPanel extends Composite
             ft.insertRow(rowCount);
             ft.getFlexCellFormatter().setColSpan(rowCount, 0, 2);
             Button okButton = new Button("Done", new ClickListener() {
+                @Override
                 public void onClick(Widget sender)
                 {
                     DefineImmunizationPopup.this.hide();
@@ -348,6 +365,7 @@ public class ImmunizationPanel extends Composite
             }
 
 
+            @Override
             public void onClick(Widget sender)
             {
                 if (isChecked())

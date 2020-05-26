@@ -74,6 +74,7 @@ public class MultiValuedLookupColumn extends LookupColumn
     }
 
 
+    @Override
     protected void addLookupSql(SQLFragment strJoin, TableInfo lookupTable, String alias)
     {
         strJoin.append(getLookupSql(lookupTable, alias));

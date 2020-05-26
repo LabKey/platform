@@ -42,8 +42,10 @@ public interface WebdavResolver extends Resolver
     }
 
     boolean requiresLogin();
+    @Override
     Path getRootPath();
 
+    @Override
     default @Nullable WebdavResource lookup(Path path)
     {
         LookupResult r = lookupEx(path);

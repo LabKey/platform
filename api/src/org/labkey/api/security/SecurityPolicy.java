@@ -254,6 +254,7 @@ public class SecurityPolicy implements HasPermission
     }
 
 
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal principal, @NotNull Class<? extends Permission> permission)
     {
         return hasPermission(principal, permission, null);

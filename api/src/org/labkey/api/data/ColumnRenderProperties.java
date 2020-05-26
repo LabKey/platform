@@ -52,6 +52,7 @@ public interface ColumnRenderProperties extends ImportAliasable
 
     StringExpression getTextExpression();
 
+    @Override
     String getLabel();
 
     String getShortLabel();
@@ -91,10 +92,12 @@ public interface ColumnRenderProperties extends ImportAliasable
     /** Returns the 'raw' value of required which is useful for copying attributes.  see isRequired() */
     boolean isRequiredSet();
 
+    @Override
     @NotNull Set<String> getImportAliasSet();
 
     @Nullable PropertyType getPropertyType();
 
+    @Override
     String getPropertyURI();
 
     String getConceptURI();

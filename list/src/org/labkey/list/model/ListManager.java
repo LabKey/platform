@@ -1042,6 +1042,7 @@ public class ListManager implements SearchService.DocumentProvider
     }
 
 
+    @Override
     public void indexDeleted()
     {
         TableInfo listTable = getListMetadataTable();

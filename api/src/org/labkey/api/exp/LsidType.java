@@ -41,6 +41,7 @@ public enum LsidType
 {
     Experiment
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -49,6 +50,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getExperimentDetailsURL(exp.getContainer(), exp);
                 }
 
+                @Override
                 public ExpExperiment getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpExperiment(lsid.toString());
@@ -57,6 +59,7 @@ public enum LsidType
 
     Protocol
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -65,6 +68,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(protocol);
                 }
 
+                @Override
                 public ExpProtocol getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpProtocol(lsid.toString());
@@ -73,6 +77,7 @@ public enum LsidType
 
     ProtocolApplication
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -81,6 +86,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolApplicationDetailsURL(app);
                 }
 
+                @Override
                 public ExpProtocolApplication getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpProtocolApplication(lsid.toString());
@@ -89,6 +95,7 @@ public enum LsidType
 
     Material
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -97,6 +104,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getMaterialDetailsURL(m);
                 }
 
+                @Override
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());
@@ -105,6 +113,7 @@ public enum LsidType
 
     MaterialSource
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -113,6 +122,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getShowSampleSetURL(source);
                 }
 
+                @Override
                 public ExpSampleSet getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getSampleSet(lsid.toString());
@@ -121,6 +131,7 @@ public enum LsidType
 
     Data
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -129,6 +140,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getDataDetailsURL(data);
                 }
 
+                @Override
                 public ExpData getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpData(lsid.toString());
@@ -137,6 +149,7 @@ public enum LsidType
 
     DataClass
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -145,6 +158,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(source.getContainer(), source.getRowId());
                 }
 
+                @Override
                 public ExpDataClass getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getDataClass(lsid.toString());
@@ -153,6 +167,7 @@ public enum LsidType
 
     ExperimentRun
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -161,6 +176,7 @@ public enum LsidType
                             PageFlowUtil.urlProvider(ExperimentUrls.class).getShowRunGraphURL(run);
                 }
 
+                @Override
                 public ExpRun getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpRun(lsid.toString());
@@ -169,12 +185,14 @@ public enum LsidType
 
     Fraction
             {
+                @Override
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
                     return Material.getDisplayURL(lsid);
                 }
 
+                @Override
                 public ExpMaterial getObject(Lsid lsid)
                 {
                     return ExperimentService.get().getExpMaterial(lsid.toString());

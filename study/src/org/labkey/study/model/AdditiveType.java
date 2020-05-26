@@ -43,6 +43,7 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
         _externalId = (int) map.get(AdditiveTypeDomainKind.EXTERNALID);
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return _rowId;
@@ -68,11 +69,13 @@ public class AdditiveType extends AbstractStudyCachable<AdditiveType>
         _externalId = externalId;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         _container = container;

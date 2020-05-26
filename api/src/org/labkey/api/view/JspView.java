@@ -163,6 +163,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     }
 
 
+    @Override
     public void include(ModelAndView mv)
     {
         assert false : "jsp must use include(ModelAndView, Writer): " + _page.getClass().getName();

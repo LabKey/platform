@@ -384,26 +384,31 @@ public class QueryConnection implements Connection
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setSchema(String schema)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getSchema()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void abort(Executor executor)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public int getNetworkTimeout()
     {
         throw new UnsupportedOperationException();

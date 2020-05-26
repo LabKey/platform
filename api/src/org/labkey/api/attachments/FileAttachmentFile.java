@@ -47,11 +47,13 @@ public class FileAttachmentFile implements AttachmentFile
         _filename = null != originalName ? originalName : file.getName();
     }
 
+    @Override
     public String getContentType()
     {
         return PageFlowUtil.getContentTypeFor(getFilename());
     }
 
+    @Override
     public String getError()
     {
         if (!_file.exists())
@@ -60,23 +62,27 @@ public class FileAttachmentFile implements AttachmentFile
             return null;
     }
 
+    @Override
     public String getFilename()
     {
         return _filename;
     }
 
+    @Override
     public InputStream openInputStream() throws IOException
     {
         _in = new FileInputStream(_file);
         return _in;
     }
 
+    @Override
     public void closeInputStream() throws IOException
     {
         if (null != _in)
             _in.close();
     }
 
+    @Override
     public long getSize()
     {
         return _file.length();

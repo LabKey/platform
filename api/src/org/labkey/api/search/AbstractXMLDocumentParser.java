@@ -37,6 +37,7 @@ public abstract class AbstractXMLDocumentParser extends AbstractDocumentParser
 {
 
     /** Fires off a SAX parse that doesn't do schema validation */
+    @Override
     public void parseContent(InputStream stream, ContentHandler handler) throws IOException, SAXException
     {
         try

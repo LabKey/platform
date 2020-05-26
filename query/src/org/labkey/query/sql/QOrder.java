@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 
 public class QOrder extends QNode
 {
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("\nORDER BY ");

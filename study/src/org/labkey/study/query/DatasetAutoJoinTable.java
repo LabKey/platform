@@ -266,6 +266,7 @@ public class DatasetAutoJoinTable extends VirtualTable
             this.dsd = dsd;
         }
 
+        @Override
         public DatasetTableImpl getLookupTableInfo()
         {
             try

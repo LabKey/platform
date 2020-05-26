@@ -52,6 +52,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         _xarFile = xarFile;
     }
 
+    @Override
     public void init() throws ExperimentException
     {
         File outputDir = new File(_xarFile.getPath() + ".exploded");
@@ -92,6 +93,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         }
     }
 
+    @Override
     public File getLogFile() throws IOException
     {
         return getLogFileFor(_xarFile);

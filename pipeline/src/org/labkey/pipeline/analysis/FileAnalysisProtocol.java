@@ -41,12 +41,14 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         super(name, description, xml);
     }
 
+    @Override
     @NotNull
     public List<FileType> getInputTypes()
     {
         return _factory.getPipeline().getInitialFileTypes();
     }
 
+    @Override
     public AbstractFileAnalysisProtocolFactory getFactory()
     {
         return _factory;
@@ -57,6 +59,7 @@ public class FileAnalysisProtocol extends AbstractFileAnalysisProtocol<AbstractF
         _factory = factory;
     }
 
+    @Override
     public AbstractFileAnalysisJob createPipelineJob(ViewBackgroundInfo info, PipeRoot root, List<File> filesInput,
                                                      File fileParameters, @Nullable Map<String, String> variableMap
     ) throws IOException

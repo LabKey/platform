@@ -665,6 +665,7 @@ public class CohortTest extends BaseWebDriverTest
         assertEquals("Wrong ptids visible", Arrays.asList(ptids), actualPtids);
     }
 
+    @Override
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("study");

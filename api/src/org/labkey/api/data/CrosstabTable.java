@@ -114,6 +114,7 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      *
      * @param filter The set of aggregate filters.
      */
+    @Override
     public void setAggregateFilter(Filter filter)
     {
         _aggFilter = filter;

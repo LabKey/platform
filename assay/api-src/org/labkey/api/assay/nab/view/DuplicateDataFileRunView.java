@@ -48,6 +48,7 @@ public class DuplicateDataFileRunView extends RunListQueryView
         _run = run;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();

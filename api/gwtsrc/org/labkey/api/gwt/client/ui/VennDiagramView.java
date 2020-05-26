@@ -87,6 +87,7 @@ public abstract class VennDiagramView extends HorizontalPanel
         _vennDiagram.setVisible(false);
         _vennDiagram.addLoadHandler(new LoadHandler()
         {
+            @Override
             public void onLoad(LoadEvent e)
             {
                 _vennDiagram.setVisible(true);
@@ -96,6 +97,7 @@ public abstract class VennDiagramView extends HorizontalPanel
 
         ChangeHandler changeHandler = new ChangeHandler()
         {
+            @Override
             public void onChange(ChangeEvent e)
             {
                 refreshDiagram();
@@ -207,11 +209,13 @@ public abstract class VennDiagramView extends HorizontalPanel
         String comparisonGroup = PropertyUtil.getServerProperty("comparisonName");
         AsyncCallback<GWTComparisonResult> callbackHandler = new AsyncCallback<GWTComparisonResult>()
         {
+            @Override
             public void onFailure(Throwable caught)
             {
                 _warningLabel.setText("ERROR: " + caught.toString());
             }
 
+            @Override
             public void onSuccess(GWTComparisonResult result)
             {
                 setupTable(result);

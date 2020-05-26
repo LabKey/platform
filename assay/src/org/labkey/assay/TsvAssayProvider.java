@@ -161,6 +161,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
     }
 
+    @Override
     public String getName()
     {
         return NAME;
@@ -188,6 +189,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         );
     }
 
+    @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
@@ -218,11 +220,13 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new Pair<>(dataDomain, Collections.emptyMap());
     }
 
+    @Override
     public HttpView getDataDescriptionView(AssayRunUploadForm form)
     {
         return new JspView<>("/org/labkey/assay/view/tsvDataDescription.jsp", form);
     }
 
+    @Override
     public List<ParticipantVisitResolverType> getParticipantVisitResolverTypes()
     {
         return Arrays.asList(new StudyParticipantVisitResolverType(), new ThawListResolverType());
@@ -240,6 +244,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new TsvProviderSchema(user, container, this, targetStudy);
     }
 
+    @Override
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
         // intentionally do NOT require any columns exist for a TSV-based assay:
@@ -252,6 +257,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return false;
     }
 
+    @Override
     public String getDescription()
     {
         return "Imports data from simple Excel or TSV files.";
@@ -263,6 +269,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new TsvDataExchangeHandler();
     }
 
+    @Override
     public PipelineProvider getPipelineProvider()
     {
         return new AssayPipelineProvider(assayModuleClass,

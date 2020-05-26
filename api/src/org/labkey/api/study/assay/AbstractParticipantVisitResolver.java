@@ -53,6 +53,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         _user = user;
     }
 
+    @Override
     public Container getRunContainer()
     {
         return _runContainer;
@@ -68,6 +69,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
      * to do the actual resolution.
      * The target study is considered on a row by row basis. The target study from the result domain has the highest precedence followed by the run or batch domain.
      */
+    @Override
     @NotNull
     public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
     {

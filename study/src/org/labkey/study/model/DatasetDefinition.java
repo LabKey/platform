@@ -324,6 +324,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         super.savePolicy(policy, user);
     }
 
+    @Override
     public boolean isShared()
     {
         assert null != _isShared;
@@ -373,6 +374,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public Set<String> getDefaultFieldNames()
     {
         TimepointType timepointType = getStudy().getTimepointType();
@@ -385,6 +387,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public String getName()
     {
         return _name;
@@ -395,6 +398,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _name = name;
     }
 
+    @Override
     public String getFileName()
     {
         if (null == _fileName)
@@ -414,6 +418,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _fileName = fileName;
     }
 
+    @Override
     public String getCategory()
     {
         return _category;
@@ -455,6 +460,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return null;
     }
 
+    @Override
     public int getDatasetId()
     {
         return _datasetId;
@@ -541,6 +547,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _tag = tag;
     }
 
+    @Override
     public String getTypeURI()
     {
         return _typeURI;
@@ -563,6 +570,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public String getPropertyURI(String column)
     {
         PropertyDescriptor pd = DatasetDefinition.getStandardPropertiesMap().get(column);
@@ -607,6 +615,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return getDatasetId();
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
@@ -625,18 +634,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
      * the cache if the dataset type changes.
      * see StudyManager.importDatasetTSV()
      */
+    @Override
     public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
     {
         return getTableInfo(user, true, false);
     }
 
 
+    @Override
     public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission) throws UnauthorizedException
     {
         return getTableInfo(user, checkPermission, false);
     }
 
 
+    @Override
     public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
         //noinspection ConstantConditions
@@ -812,6 +824,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _demographicData = demographicData;
     }
 
+    @Override
     public String getType()
     {
         return _type;
@@ -836,6 +849,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _useTimeKeyField = useTimeKeyField;
     }
 
+    @Override
     public StudyImpl getStudy()
     {
         if (null == _study)
@@ -858,6 +872,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public Set<Class<? extends Permission>> getPermissions(UserPrincipal user)
     {
         Set<Class<? extends Permission>> result = new HashSet<>();
@@ -1156,6 +1171,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _keyManagementType;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -1182,6 +1198,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             _completionBase = SpecimenService.get().getCompletionURLBase(studyContainer, type);
         }
 
+        @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             return new DataColumn(colInfo)
@@ -1435,6 +1452,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             var datasetColumn = new ExprColumn(this, "Dataset", new SQLFragment("CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ")"), JdbcType.VARCHAR);
             LookupForeignKey datasetFk = new LookupForeignKey("entityid")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(_container), user, true);
@@ -1626,6 +1644,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
     Domain _domain = null;
 
+    @Override
     @Transient
     public Domain getDomain()
     {
@@ -2464,6 +2483,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public String updateDatasetRow(User u, String lsid, Map<String, Object> data, List<String> errors)
     {
         boolean allowAliasesInUpdate = false; // SEE https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=12592
@@ -2613,6 +2633,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         }
     }
 
+    @Override
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
         // Need to fetch the old item in order to log the deletion

@@ -40,6 +40,7 @@ public abstract class PipelineRootContainerTree extends ContainerTree
         return PipelineService.get().hasValidPipelineRoot(c);
     }
 
+    @Override
     protected final void renderCellContents(StringBuilder html, Container c, ActionURL url)
     {
         renderCellContents(html, c, url, hasPipelineRoot(c));

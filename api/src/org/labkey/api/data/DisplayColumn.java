@@ -272,6 +272,7 @@ public abstract class DisplayColumn extends RenderColumn
         return getValue(ctx);
     }
 
+    @Override
     public String getName()
     {
         if (null != getColumnInfo())
@@ -310,6 +311,7 @@ public abstract class DisplayColumn extends RenderColumn
 
     // Ideally, this would just set the string... and defer creation of the Format object until render time, when we would
     // have a Container and other context. That would avoid creating multiple Formats per DisplayColumn.
+    @Override
     public void setFormatString(String formatString)
     {
         super.setFormatString(formatString);
@@ -328,6 +330,7 @@ public abstract class DisplayColumn extends RenderColumn
         tsvFormatSymbols.setNaN(String.valueOf(Double.NaN));
     }
 
+    @Override
     public void setTsvFormatString(String formatString)
     {
         if (null == getTsvFormatString() && null == formatString)
@@ -1015,11 +1018,13 @@ public abstract class DisplayColumn extends RenderColumn
         return style;
     }
 
+    @Override
     public String getCaption()
     {
         return getCaption(null);
     }
 
+    @Override
     public String getCaption(RenderContext ctx)
     {
         return getCaption(ctx, true);

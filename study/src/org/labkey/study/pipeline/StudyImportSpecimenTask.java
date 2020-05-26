@@ -39,6 +39,7 @@ public class StudyImportSpecimenTask extends AbstractSpecimenTask<StudyImportSpe
             super(StudyImportSpecimenTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new StudyImportSpecimenTask(this, job);

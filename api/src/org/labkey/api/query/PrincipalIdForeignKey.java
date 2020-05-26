@@ -32,6 +32,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
         column.setFk(new PrincipalIdForeignKey(column.getParentTable().getUserSchema()));
         column.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new UserIdRenderer(colInfo);
@@ -47,6 +48,7 @@ public class PrincipalIdForeignKey extends LookupForeignKey
         _userSchema = userSchema;
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         TableInfo tinfoUsersData = CoreSchema.getInstance().getTableInfoPrincipals();

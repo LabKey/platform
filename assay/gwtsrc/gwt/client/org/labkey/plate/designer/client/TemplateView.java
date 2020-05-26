@@ -126,6 +126,7 @@ public class TemplateView extends HorizontalPanel
         _rootPanel.add(new Label("Loading..."));
         getService().getTemplateDefinition(_templateName, _plateId, _assayTypeName, _templateTypeName, _rowCount, _columnCount, _copyMode, new AsyncCallback<GWTPlate>()
         {
+            @Override
             public void onFailure(Throwable throwable)
             {
                 VerticalPanel mainPanel = new VerticalPanel();
@@ -133,6 +134,7 @@ public class TemplateView extends HorizontalPanel
                 _rootPanel.add(mainPanel);
             }
 
+            @Override
             public void onSuccess(GWTPlate plate)
             {
                 _plate = plate;
@@ -187,6 +189,7 @@ public class TemplateView extends HorizontalPanel
         _plate.setName(plateName);
         _nameBox.addKeyboardListener(new KeyboardListenerAdapter()
         {
+            @Override
             public void onKeyPress(Widget sender, char keyCode, int modifiers)
             {
                 setDirty(true);
@@ -195,6 +198,7 @@ public class TemplateView extends HorizontalPanel
 
         _nameBox.addChangeListener(new ChangeListener()
         {
+            @Override
             public void onChange(Widget sender)
             {
                 String newName = _nameBox.getText();
@@ -226,6 +230,7 @@ public class TemplateView extends HorizontalPanel
         FocusPanel focusPanel = new FocusPanel(_typePanel);
         focusPanel.addMouseDownHandler(new MouseDownHandler()
         {
+            @Override
             public void onMouseDown(MouseDownEvent event)
             {
                 _mouseDown = true;
@@ -233,6 +238,7 @@ public class TemplateView extends HorizontalPanel
         });
         focusPanel.addMouseUpHandler(new MouseUpHandler()
         {
+            @Override
             public void onMouseUp(MouseUpEvent event)
             {
                 _mouseDown = false;
@@ -273,6 +279,7 @@ public class TemplateView extends HorizontalPanel
         resize(Window.getClientWidth(), Window.getClientHeight());
         Window.addWindowResizeListener(new WindowResizeListener()
         {
+            @Override
             public void onWindowResized(int width, int height)
             {
                 resize(width, height);
@@ -281,10 +288,12 @@ public class TemplateView extends HorizontalPanel
         });
         Window.addWindowCloseListener(new WindowCloseListener()
         {
+            @Override
             public void onWindowClosed()
             {
             }
 
+            @Override
             public String onWindowClosing()
             {
                 if (_dirty)
@@ -351,6 +360,7 @@ public class TemplateView extends HorizontalPanel
         setStatus("Saving...");
         getService().saveChanges(_plate, !_copyMode, new AsyncCallback<Integer>()
         {
+            @Override
             public void onFailure(Throwable throwable)
             {
                 setStatus("Save failed: " + throwable.getMessage());
@@ -358,6 +368,7 @@ public class TemplateView extends HorizontalPanel
                 callback.onFailure(throwable);
             }
 
+            @Override
             public void onSuccess(Integer newPlateId)
             {
                 UrlBuilder urlBuilder = Window.Location.createUrlBuilder();

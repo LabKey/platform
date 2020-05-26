@@ -489,6 +489,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     public static class PropertyDescriptorComparator implements Comparator<PropertyDescriptor>
     {
+        @Override
         public int compare(PropertyDescriptor o1, PropertyDescriptor o2)
         {
             String o1Str = o1.getLabel();

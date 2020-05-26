@@ -40,21 +40,25 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
 {
     public static final String FAIL_ON_MATCH = "failOnMatch";
 
+    @Override
     public String getName()
     {
         return "Regular Expression Property Validator";
     }
 
+    @Override
     public String getTypeURI()
     {
         return createValidatorURI(PropertyValidatorType.RegEx).toString();
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
+    @Override
     public IPropertyValidator createInstance()
     {
         PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
@@ -63,6 +67,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         return validator;
     }
 
+    @Override
     public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         try
@@ -83,6 +88,7 @@ public class RegExValidator extends DefaultPropertyValidator implements Validato
         return false;
     }
 
+    @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache)
     {

@@ -42,6 +42,7 @@ import java.util.List;
 @ApiVersion(9.1)
 public class SaveAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
+    @Override
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors) throws Exception
     {
         JSONObject rootJsonObject = form.getJsonObject();

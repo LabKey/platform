@@ -95,11 +95,13 @@ public class AttachmentDisplayColumn extends AbstractFileDisplayColumn
             _c = c;
         }
 
+        @Override
         public String getEntityId()
         {
             return _entityId;
         }
 
+        @Override
         public String getContainerId()
         {
             return _c.getId();

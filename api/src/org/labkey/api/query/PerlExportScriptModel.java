@@ -37,6 +37,7 @@ public class PerlExportScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Override
     @Nullable
     public String getFilters()
     {
@@ -59,6 +60,7 @@ public class PerlExportScriptModel extends ExportScriptModel
     }
 
     // Our Perl clientapi expects filters with operators in the middle
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "[" + PageFlowUtil.jsString(name) + ", "

@@ -42,17 +42,20 @@ public class GroupGrid extends EditableGrid
         this.studyDef = studyDefinition;
         ghostCohort = new GWTCohort();
     }
+    @Override
     public int getDataColumnCount()
     {
         return 2;
     }
 
+    @Override
     public int getDataRowCount()
     {
         return groups.size();
     }
 
     Widget[] columnNames = new Widget[] {new Label("Name"), new Label("Count") };
+    @Override
     public Widget getColumnHeader(int row, int column)
     {
         if (column >= columnNames.length)
@@ -60,6 +63,7 @@ public class GroupGrid extends EditableGrid
         return columnNames[column];
     }
 
+    @Override
     public Widget getCellWidget(int row, int column)
     {
         if (row < 0 || row > groups.size())
@@ -68,6 +72,7 @@ public class GroupGrid extends EditableGrid
         return getWidget((GWTCohort) groups.get(row), column);
     }
 
+    @Override
     Object getCellValue(int row, int col)
     {
         GWTCohort group = (GWTCohort) groups.get(row);
@@ -80,6 +85,7 @@ public class GroupGrid extends EditableGrid
             return Integer.valueOf(group.getCount());
     }
 
+    @Override
     public Widget getGhostRowWidget(int col)
     {
         return getWidget(ghostCohort, col);
@@ -95,11 +101,13 @@ public class GroupGrid extends EditableGrid
         return new Label("No such column" + column);
     }
 
+    @Override
     public int getHeaderRows()
     {
         return 1;
     }
 
+    @Override
     public void makeGhostRowReal()
     {
         groups.add(ghostCohort);
@@ -107,6 +115,7 @@ public class GroupGrid extends EditableGrid
         studyDef.fireChangeEvents();
     }
 
+    @Override
     void deleteRow(int dataRow)
     {
         groups.remove(dataRow);
@@ -119,6 +128,7 @@ public class GroupGrid extends EditableGrid
         TextBox tb = new TextBox();
         tb.setText(StringUtils.trimToEmpty(cohort.getName()));
         tb.addChangeListener(new ChangeListener(){
+            @Override
             public void onChange(Widget sender)
             {
                 cohort.setName(((TextBox) sender).getText());
@@ -134,6 +144,7 @@ public class GroupGrid extends EditableGrid
         tb.setWidth("4em");
         tb.setText(String.valueOf(cohort.getCount()));
         tb.addChangeListener(new ChangeListener(){
+            @Override
             public void onChange(Widget sender)
             {
                 String countStr = tb.getText();

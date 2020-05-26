@@ -52,6 +52,7 @@ public class PdfOutput extends DownloadParamReplacement
         return getSubstitution(directory, ".pdf");
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         if (getReport() instanceof AttachmentParent)

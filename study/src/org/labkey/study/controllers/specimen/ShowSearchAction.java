@@ -37,10 +37,12 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
     private Study _study;
     private String _title;
 
+    @Override
     public void validateCommand(SearchForm target, Errors errors)
     {
     }
 
+    @Override
     public ModelAndView getView(SearchForm form, boolean reshow, BindException errors)
     {
         _study = StudyManager.getInstance().getStudy(getContainer());
@@ -58,11 +60,13 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         return new JspView<>("/org/labkey/study/view/specimen/search.jsp", bean);
     }
 
+    @Override
     public boolean handlePost(SearchForm form, BindException errors)
     {
         return true;
     }
 
+    @Override
     public ActionURL getSuccessURL(SearchForm form)
     {
         ActionURL url = SpecimenController.getSamplesURL(getContainer());
@@ -79,6 +83,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
         return url;
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         setHelpTopic("specimenShopping");

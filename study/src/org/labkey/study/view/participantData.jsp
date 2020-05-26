@@ -47,6 +47,7 @@
 
     QueryView queryView = new QueryView(form, null)
     {
+        @Override
         protected void setupDataView(DataView view)
         {
             view.getRenderContext().setBaseSort(new Sort("-Date"));
@@ -71,6 +72,7 @@
             return table;
         }
 
+        @Override
         protected ActionURL urlFor(QueryAction action)
         {
             ActionURL url = super.urlFor(action);

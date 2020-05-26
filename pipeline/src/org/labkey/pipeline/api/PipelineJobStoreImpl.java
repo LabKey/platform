@@ -56,23 +56,27 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         return obj;
     }
 
+    @Override
     @Nullable
     public PipelineJob getJob(String jobId)
     {
         return fromStatus(PipelineStatusManager.retrieveJob(jobId));
     }
 
+    @Override
     @Nullable
     public PipelineJob getJob(int rowId)
     {
         return fromStatus(PipelineStatusManager.retrieveJob(rowId));
     }
 
+    @Override
     public void retry(String jobId) throws IOException, NoSuchJobException
     {
         retry(PipelineStatusManager.getJobStatusFile(jobId));
     }
 
+    @Override
     public void retry(PipelineStatusFile sf) throws IOException, NoSuchJobException
     {
         try
@@ -116,6 +120,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         return job;
     }
 
+    @Override
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
         PipelineStatusManager.storeJob(job.getJobGUID(), PipelineJob.serializeJob(job, true));
@@ -135,6 +140,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     // synchronized to avoid SQL deadlocks.
     private ThreadLocal<SplitRecord> _splitRecord = new ThreadLocal<>();
 
+    @Override
     public void split(PipelineJob job) throws IOException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
@@ -176,6 +182,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
         }
     }
 
+    @Override
     public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();

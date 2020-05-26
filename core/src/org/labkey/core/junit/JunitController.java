@@ -98,6 +98,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -106,6 +107,7 @@ public class JunitController extends SpringActionController
                     errors);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Unit and integration tests");
@@ -138,6 +140,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public class RunAction extends SimpleViewAction<TestForm>
     {
+        @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
             List<Class> testClasses = getTestClasses(form);
@@ -198,6 +201,7 @@ public class JunitController extends SpringActionController
         }
 
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Tests", new ActionURL(BeginAction.class,getContainer()));
@@ -211,6 +215,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public class Run3Action extends SimpleViewAction<TestForm>
     {
+        @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
             HttpSession session = getViewContext().getRequest().getSession(true);
@@ -280,6 +285,7 @@ public class JunitController extends SpringActionController
             return List.copyOf(allTestClasses);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -376,6 +382,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public static class Testlist extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             Map<String, List<Class>> testCases = JunitManager.getTestCases();
@@ -417,6 +424,7 @@ public class JunitController extends SpringActionController
     @RequiresSiteAdmin
     public static class Go extends SimpleViewAction<TestForm>
     {
+        @Override
         public ModelAndView getView(TestForm form, BindException errors) throws Exception
         {
             TestContext.setTestContext(getViewContext().getRequest(), getUser());
@@ -486,6 +494,7 @@ public class JunitController extends SpringActionController
             return list;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -569,6 +578,7 @@ public class JunitController extends SpringActionController
     @RequiresNoPermission
     public class AliveAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             synchronized(AliveAction.class)
@@ -610,6 +620,7 @@ public class JunitController extends SpringActionController
             }
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -733,6 +744,7 @@ public class JunitController extends SpringActionController
     @RequiresNoPermission
     public class EchoFormAction extends PermissionCheckableAction
     {
+        @Override
         public ModelAndView handleRequest(HttpServletRequest req, HttpServletResponse res) throws Exception
         {
             PrintWriter out = res.getWriter();

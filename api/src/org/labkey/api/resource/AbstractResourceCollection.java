@@ -37,6 +37,7 @@ public abstract class AbstractResourceCollection extends AbstractResource
         super(parent, name, resolver);
     }
 
+    @Override
     public abstract Resource parent();
 
     @Override
@@ -45,16 +46,19 @@ public abstract class AbstractResourceCollection extends AbstractResource
         return true;
     }
 
+    @Override
     public boolean isCollection()
     {
         return exists();
     }
 
+    @Override
     public boolean isFile()
     {
         return false;
     }
 
+    @Override
     public InputStream getInputStream()
     {
         throw new IllegalStateException("Can't read from a collection");
@@ -65,6 +69,7 @@ public abstract class AbstractResourceCollection extends AbstractResource
         return 0;
     }
 
+    @Override
     public Collection<? extends Resource> list()
     {
         Collection<String> names = listNames();

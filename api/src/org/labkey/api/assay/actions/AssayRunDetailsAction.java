@@ -59,6 +59,7 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
     private ExpProtocol _protocol;
     private ExpRun _run;
 
+    @Override
     public ModelAndView getView(AssayRunDetailsForm form, BindException errors)
     {
         ViewContext context = getViewContext();
@@ -78,6 +79,7 @@ public class AssayRunDetailsAction extends BaseAssayAction<AssayRunDetailsAction
         return provider.createRunDetailsView(context, _protocol, _run);
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         Container c = getContainer();

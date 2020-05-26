@@ -73,6 +73,7 @@ public abstract class BaseStudyController extends SpringActionController
         return new SpecimenUtils(this);
     }
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         PageConfig page =  super.defaultPageConfig();

@@ -40,6 +40,7 @@ import java.util.Map;
  */
 public interface WebdavResource extends Resource
 {
+    @Override
     WebdavResource find(String name);
 
     // isCollection() only returns true when resource exists
@@ -54,6 +55,7 @@ public interface WebdavResource extends Resource
         return file != null ? file.toPath() : null;
     }
 
+    @Override
     Collection<? extends WebdavResource> list();
 
     long getCreated();

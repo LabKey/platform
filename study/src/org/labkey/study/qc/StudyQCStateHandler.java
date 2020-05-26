@@ -85,6 +85,7 @@ public class StudyQCStateHandler implements QCStateHandler<StudyController.Manag
         }
     }
 
+    @Override
     public boolean isBlankQCStatePublic(Container container)
     {
         StudyImpl study = StudyController.getStudyThrowIfNull(container);

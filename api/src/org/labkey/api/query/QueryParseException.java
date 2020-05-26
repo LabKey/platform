@@ -56,6 +56,7 @@ public class QueryParseException extends QueryException
     }
 
 
+    @Override
     public String getMessage()
     {
         String ret = super.getMessage();
@@ -91,6 +92,7 @@ public class QueryParseException extends QueryException
      *
      * @param sql - the sql that the parse exceptions originated from
      */
+    @Override
     public JSONObject toJSON(String sql)
     {
         String lines[] = null;

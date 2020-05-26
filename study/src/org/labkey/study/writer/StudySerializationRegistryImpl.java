@@ -69,6 +69,7 @@ public class StudySerializationRegistryImpl implements StudySerializationRegistr
         return importers;
     }
 
+    @Override
     public void addImportFactory(FolderImporterFactory importerFactory)
     {
         IMPORTER_FACTORIES.add(importerFactory);

@@ -322,11 +322,13 @@ public class QueryStatement implements Statement
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void closeOnCompletion()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isCloseOnCompletion()
     {
         throw new UnsupportedOperationException();

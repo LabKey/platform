@@ -36,6 +36,7 @@ public class JavaExportScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Override
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
@@ -52,6 +53,7 @@ public class JavaExportScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "cmd.addFilter(" + quote(name) + ", " + quote(value) + ", Filter.Operator." + operator.name() + ");\n";

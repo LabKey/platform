@@ -32,6 +32,7 @@ public class OORDisplayColumnFactory implements DisplayColumnFactory
     public static final String IN_RANGE_COLUMN_SUFFIX = "InRange";
     public static final String OOR_INDICATOR_COLUMN_SUFFIX = "OORIndicator";
 
+    @Override
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
         return new OutOfRangeDisplayColumn(colInfo);

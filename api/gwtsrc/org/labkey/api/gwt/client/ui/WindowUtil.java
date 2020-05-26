@@ -138,6 +138,7 @@ public class WindowUtil
     {
         return new PopupPanel.PositionCallback()
         {
+            @Override
             public void setPosition(int offsetWidth, int offsetHeight)
             {
                 WindowUtil.centerDialog(dialogBox);
@@ -158,6 +159,7 @@ public class WindowUtil
             this.loc = loc;
         }
 
+        @Override
         public void execute()
         {
             setLocation(loc);
@@ -180,6 +182,7 @@ public class WindowUtil
         {
             button.addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     confirmDialog.hide();
@@ -198,6 +201,7 @@ public class WindowUtil
         }
         ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 confirmDialog.hide();

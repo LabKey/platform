@@ -53,6 +53,7 @@ public class IssueUserListener implements UserListener
         IssueManager.uncache();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
     }

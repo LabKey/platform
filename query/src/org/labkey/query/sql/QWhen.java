@@ -21,6 +21,7 @@ import org.labkey.api.data.JdbcType;
 
 public class QWhen extends QExpr
 {
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("\nWHEN(");
@@ -30,6 +31,7 @@ public class QWhen extends QExpr
         builder.append(")");
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("\nWHEN(");

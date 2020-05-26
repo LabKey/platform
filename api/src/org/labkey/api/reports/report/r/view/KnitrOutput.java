@@ -60,6 +60,7 @@ public class KnitrOutput extends HtmlOutput
         return null;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         return new KnitrOutputView(this, getLabel());

@@ -69,12 +69,14 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         super.render(writer);
     }
 
+    @Override
     protected void writeInitialMetaData(ApiResponseWriter writer) throws IOException
     {
         writer.writeProperty("schemaName", _schemaPath);
         writer.writeProperty("queryName", _queryName);
     }
 
+    @Override
     protected void writeMetaData(ApiResponseWriter writer) throws Exception
     {
         // see Ext.data.JsonReader

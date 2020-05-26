@@ -181,16 +181,19 @@ public class EmailServiceImpl implements EmailService
             _subject = subject;
         }
 
+        @Override
         public String getFrom()
         {
             return _from;
         }
 
+        @Override
         public void setSenderName(String senderName)
         {
             _senderName = senderName;
         }
 
+        @Override
         public List<String> getTo()
         {
             if (_recipients.containsKey(Message.RecipientType.TO))
@@ -200,6 +203,7 @@ public class EmailServiceImpl implements EmailService
             return Collections.emptyList();
         }
 
+        @Override
         public String getSubject()
         {
             return _subject;
