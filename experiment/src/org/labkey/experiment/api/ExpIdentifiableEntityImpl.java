@@ -34,21 +34,25 @@ public abstract class ExpIdentifiableEntityImpl<Type extends IdentifiableEntity>
         super(object);
     }
 
+    @Override
     public Date getCreated()
     {
         return _object.getCreated();
     }
 
+    @Override
     public User getCreatedBy()
     {
         return UserManager.getUser(_object.getCreatedBy());
     }
 
+    @Override
     public Date getModified()
     {
         return _object.getModified();
     }
 
+    @Override
     public User getModifiedBy()
     {
         return UserManager.getUser(_object.getModifiedBy());

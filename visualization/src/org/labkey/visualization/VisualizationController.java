@@ -258,6 +258,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetMeasuresAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
+        @Override
         public ApiResponse execute(Form measureRequest, BindException errors)
         {
             VisualizationService vs = VisualizationService.get();
@@ -283,6 +284,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetMeasuresStaticAction<Form extends MeasureSetRequest> extends ReadOnlyApiAction<Form>
     {
+        @Override
         public ApiResponse execute(Form measureRequest, BindException errors)
         {
             String key = getContainer().getId() + ":" + measureRequest.getCacheKey();
@@ -313,6 +315,7 @@ public class VisualizationController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ClearMeasuresCacheAction extends MutatingApiAction<Object>
     {
+        @Override
         public ApiResponse execute(Object measureRequest, BindException errors)
         {
             _getMeasuresCache.clear();
@@ -337,6 +340,7 @@ public class VisualizationController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(MeasureSetRequest measureRequest, BindException errors)
         {
             VisualizationService vs = VisualizationService.get();
@@ -354,6 +358,7 @@ public class VisualizationController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class GetDimensionValues extends GetMeasuresAction<DimensionValuesForm>
     {
+        @Override
         public ApiResponse execute(DimensionValuesForm form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();

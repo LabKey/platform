@@ -46,6 +46,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addAllowablePermission(UpdatePermission.class);
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)

@@ -118,6 +118,7 @@ public class CountOfUniqueValueTableCustomizer implements TableCustomizer
         _counterDefinition = counterDefinition;
     }
 
+    @Override
     public void customize(TableInfo tableInfo)
     {
         if (null != _counterDefinition && tableInfo instanceof AbstractTableInfo)

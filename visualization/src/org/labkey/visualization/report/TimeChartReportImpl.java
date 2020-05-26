@@ -86,6 +86,7 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         }
     }
 
+    @Override
     public void setSvg(String svg)
     {
         _svg = svg;

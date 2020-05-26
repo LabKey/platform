@@ -228,6 +228,7 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
             super(source, job);
         }
 
+        @Override
         protected Container getContainer()
         {
             // XarReader.getContainer() returns job.getContainer().

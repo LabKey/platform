@@ -103,24 +103,28 @@ public abstract class URLRewriter
                         }
                     }
                     
+                    @Override
                     public void write(byte b[]) throws IOException
                     {
                         checkClosed();
                         out.write(b);
                     }
 
+                    @Override
                     public void write(byte b[], int off, int len) throws IOException
                     {
                         checkClosed();
                         out.write(b, off, len);
                     }
 
+                    @Override
                     public void write(int b) throws IOException
                     {
                         checkClosed();
                         out.write(b);
                     }
 
+                    @Override
                     public void close()
                     {
                         _closed = true;

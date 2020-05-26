@@ -37,10 +37,12 @@ public enum DataURLRelativizer
     /** Uses the URL that's stored in the exp.data table */
     ORIGINAL_FILE_LOCATION("Original file location")
     {
+        @Override
         public URLRewriter createURLRewriter()
         {
             return new URLRewriter()
             {
+                @Override
                 public String rewriteURL(Path path, ExpData data, String roleName, ExpRun experimentRun, User user)
                 {
                     if (path == null)
@@ -54,6 +56,7 @@ public enum DataURLRelativizer
     /** Writes a relative path that's points to the file within the zip */
     ARCHIVE("Experiment archive")
     {
+        @Override
         public URLRewriter createURLRewriter()
         {
             return new ArchiveURLRewriter(true, null);
@@ -64,10 +67,12 @@ public enum DataURLRelativizer
      */
     RUN_RELATIVE_LOCATION("Path relative to experiment run")
     {
+        @Override
         public URLRewriter createURLRewriter()
         {
             return new URLRewriter()
             {
+                @Override
                 public String rewriteURL(Path path, ExpData data, String roleName, ExpRun expRun, User user) throws ExperimentException
                 {
                     try
@@ -92,10 +97,12 @@ public enum DataURLRelativizer
     /** Gives out a URL for downloading the file directly from the web server */
     WEB_ADDRESSABLE("Web addressable")
     {
+        @Override
         public URLRewriter createURLRewriter()
         {
             return new URLRewriter()
             {
+                @Override
                 public String rewriteURL(Path f, ExpData data, String roleName, ExpRun experimentRun, User user)
                 {
                     if (data == null)

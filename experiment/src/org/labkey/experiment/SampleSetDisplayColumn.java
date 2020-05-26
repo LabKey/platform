@@ -41,6 +41,7 @@ public class SampleSetDisplayColumn extends SimpleDisplayColumn
         setCaption("Sample Set");
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         ExpSampleSet ss = _material.getSampleSet();

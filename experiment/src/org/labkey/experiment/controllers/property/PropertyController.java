@@ -142,6 +142,7 @@ public class PropertyController extends SpringActionController
     {
         private Domain _domain;
 
+        @Override
         public ModelAndView getView(DomainForm form, BindException errors)
         {
             // Try to get existing domain from form.
@@ -213,6 +214,7 @@ public class PropertyController extends SpringActionController
             return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("experiment"), "domainDesigner");
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("propertyFields");
@@ -247,6 +249,7 @@ public class PropertyController extends SpringActionController
             return this.createRequestObjectMapper();
         }
 
+        @Override
         public ApiResponse execute(DomainApiForm form, BindException errors) throws Exception
         {
             GWTDomain newDomain = form.getDomainDesign();
@@ -360,6 +363,7 @@ public class PropertyController extends SpringActionController
             return mapper;
         }
 
+        @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
             String queryName = form.getQueryName();
@@ -394,6 +398,7 @@ public class PropertyController extends SpringActionController
             return mapper;
         }
 
+        @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
             DomainKindDesign domainKindDesign = new DomainKindDesign();
@@ -462,6 +467,7 @@ public class PropertyController extends SpringActionController
             form.validate(getContainer(), getUser());
         }
 
+        @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
             GWTDomain newDomain = form.getDomainDesign();
@@ -498,6 +504,7 @@ public class PropertyController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DeleteDomainAction extends MutatingApiAction<DomainApiForm>
     {
+        @Override
         public Object execute(DomainApiForm form, BindException errors)
         {
             String queryName = form.getQueryName();

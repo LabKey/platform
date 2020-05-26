@@ -63,6 +63,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
         super(factory, job);
     }
 
+    @Override
     @NotNull
     public RecordedActionSet run()
     {
@@ -193,6 +194,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             _uploadTime = DateUtil.formatDateTime(job.getContainer());
         }
 
+        @Override
         public ExperimentArchiveDocument getDocument() throws XmlException
         {
             ExperimentArchiveDocument doc = ExperimentArchiveDocument.Factory.parse(_xml, XmlBeansUtil.getDefaultParseOptions());
@@ -207,6 +209,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             return doc;
         }
 
+        @Override
         public File getRoot()
         {
             if (FileUtil.hasCloudScheme(_root))
@@ -214,16 +217,19 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             return getRootPath().toFile();
         }
 
+        @Override
         public Path getRootPath()
         {
             return FileUtil.stringToPath(_sourceContainer, _root);
         }
 
+        @Override
         public boolean shouldIgnoreDataFiles()
         {
             return true;
         }
 
+        @Override
         public String canonicalizeDataFileURL(String dataFileURL)
         {
             URI uri = FileUtil.createUri(dataFileURL);
@@ -239,6 +245,7 @@ public class MoveRunsTask extends PipelineJob.Task<MoveRunsTaskFactory>
             return FileUtil.getAbsoluteCaseSensitivePathString(_sourceContainer, dataFilePath.toUri());
         }
 
+        @Override
         public File getLogFile()
         {
             return _logFile;

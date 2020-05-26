@@ -42,11 +42,13 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
         _input = input;
     }
 
+    @Override
     public ExpProtocolApplication getTargetApplication()
     {
         return ExperimentService.get().getExpProtocolApplication(_input.getTargetApplicationId());
     }
 
+    @Override
     public String getRole()
     {
         return _input.getRole();

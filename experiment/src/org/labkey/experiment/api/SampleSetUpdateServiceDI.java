@@ -277,6 +277,7 @@ public class SampleSetUpdateServiceDI extends DefaultQueryUpdateService
         return ret;
     }
 
+    @Override
     protected Domain getDomain()
     {
         return _sampleset.getDomain();
