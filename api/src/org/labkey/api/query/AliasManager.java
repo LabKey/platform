@@ -62,9 +62,7 @@ public class AliasManager
             return true;
         if (first)
             return false;
-        if (ch >= '0' && ch <= '9')
-            return true;
-        return false;
+        return ch >= '0' && ch <= '9';
     }
 
     public static boolean isLegalName(String str)
@@ -101,7 +99,7 @@ public class AliasManager
         }
         else
         {
-            sb.append(str.substring(0, i));
+            sb.append(str, 0, i);
         }
 
         for ( ; i < length ; i ++)
@@ -129,7 +127,7 @@ public class AliasManager
                 }
             }
         }
-        return null == sb ? str : sb.toString();
+        return sb.toString();
     }
 
 

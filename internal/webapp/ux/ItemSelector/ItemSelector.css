@@ -9,20 +9,20 @@
 }
 
 .x4-form-itemselector-top {
-    background-image: url(../../gxt/images/gxt/icons/top2.gif);
+    background-image: url(../../_images/top2.gif);
 }
 .x4-form-itemselector-up {
-    background-image: url(../../gxt/images/gxt/icons/up2.gif);
+    background-image: url(../../_images/up2.gif);
 }
 .x4-form-itemselector-add {
-    background-image: url(../../gxt/images/gxt/icons/right2.gif);
+    background-image: url(../../_images/right2.gif);
 }
 .x4-form-itemselector-remove {
-    background-image: url(../../gxt/images/gxt/icons/left2.gif);
+    background-image: url(../../_images/left2.gif);
 }
 .x4-form-itemselector-down {
-    background-image: url(../../gxt/images/gxt/icons/down2.gif);
+    background-image: url(../../_images/down2.gif);
 }
 .x4-form-itemselector-bottom {
-    background-image: url(../../gxt/images/gxt/icons/bottom2.gif);
+    background-image: url(../../_images/bottom2.gif);
 }
