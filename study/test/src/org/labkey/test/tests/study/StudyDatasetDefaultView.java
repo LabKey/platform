@@ -56,6 +56,7 @@ public class StudyDatasetDefaultView extends BaseWebDriverTest
         portalHelper.addWebPart("Datasets");
     }
 
+    //Test coverage added for https://www.labkey.org/home/Developer/issues/Secure/issues-details.view?issueId=38340
     @Test
     public void testSetDefaultGridView()
     {
@@ -63,6 +64,7 @@ public class StudyDatasetDefaultView extends BaseWebDriverTest
         String datasetName = "GenericAssay";
         String gridName = "GRID1";
 
+        log("Creating the custom grid view");
         clickAndWait(Locator.linkWithText(datasetName));
         DataRegionTable datasetTable = new DataRegionTable("Dataset", getDriver());
         CustomizeView datasetTableCustomizer = datasetTable.getCustomizeView();
@@ -74,12 +76,36 @@ public class StudyDatasetDefaultView extends BaseWebDriverTest
         datasetTableCustomizer.addColumn("Day");
         datasetTableCustomizer.saveCustomView(gridName, true);
 
+        log("Setting the default view");
         SetDefaultPageClass setDefaultPage = datasetTable.clicksetDefault();
         setDefaultPage.selectDefaultGrid(gridName);
 
+        log("Verifying default view for the dataset.");
         goToProjectHome();
         clickAndWait(Locator.linkWithText(datasetName));
-
         checker().verifyTrue("Not the correct default view", isElementPresent(Locator.tagWithText("span", gridName)));
+    }
+
+    //Test coverage added for https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=40502
+    @Test
+    public void testSetDefaultWithDatasetDesc()
+    {
+        goToProjectHome();
+        String datasetName = "MicroarrayAssay";
+
+        log("Creating the default custom view");
+        clickAndWait(Locator.linkWithText(datasetName));
+        DataRegionTable datasetTable = new DataRegionTable("Dataset", getDriver());
+        CustomizeView datasetTableCustomizer = datasetTable.getCustomizeView();
+        datasetTableCustomizer.openCustomizeViewPanel();
+        waitForText("Available Fields");
+        datasetTableCustomizer.addColumn("Day");
+        datasetTableCustomizer.saveDefaultView();
+
+        log("Verifying default view for the dataset.");
+        goToProjectHome();
+        clickAndWait(Locator.linkWithText(datasetName));
+        datasetTable = new DataRegionTable("Dataset",getDriver());
+        checker().verifyEquals("Not the correct default view", Arrays.asList("126","126"),datasetTable.getColumnDataAsText("Day"));
     }
 }
