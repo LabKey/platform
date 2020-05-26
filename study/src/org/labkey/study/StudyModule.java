@@ -36,7 +36,6 @@ import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExperimentService;
@@ -52,6 +51,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.qc.export.QCStateImportExportHelper;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
@@ -61,6 +61,7 @@ import org.labkey.api.reports.report.QueryReport;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -91,7 +92,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.assay.AssayPublishManager;
 import org.labkey.study.assay.ExperimentListenerImpl;
@@ -127,6 +128,7 @@ import org.labkey.study.pipeline.SampleMindedTransform;
 import org.labkey.study.pipeline.SampleMindedTransformTask;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.qc.StudyQCImportExportHelper;
+import org.labkey.study.qc.StudyQCStateHandler;
 import org.labkey.study.query.StudyPersonnelDomainKind;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudySchemaProvider;
@@ -136,7 +138,6 @@ import org.labkey.study.query.studydesign.StudyTreatmentDomainKind;
 import org.labkey.study.query.studydesign.StudyTreatmentProductDomainKind;
 import org.labkey.study.reports.AssayProgressReport;
 import org.labkey.study.reports.DatasetChartReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
@@ -216,9 +217,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     @Override
@@ -345,9 +346,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         SpecimenService.get().registerSpecimenTransform(new SampleMindedTransform());
 
         LsidManager.get().registerHandler("Study", new StudyLsidHandler());
-        WikiService wikiService = WikiService.get();
-        if(null != wikiService)
-            wikiService.registerMacroProvider("study", new StudyMacroProvider());
+        WikiRenderingService wikiService = WikiRenderingService.get();
+        wikiService.registerMacroProvider("study", new StudyMacroProvider());
         registerFolderTypes();
         SecurityManager.addViewFactory(new SecurityController.StudySecurityViewFactory());
         AuditLogService.get().registerAuditType(new AssayAuditProvider());
@@ -359,7 +359,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         ReportService.get().registerReport(new StudyQueryReport());
         ReportService.get().registerReport(new DatasetChartReport());
         ReportService.get().registerReport(new ExternalReport());
-        ReportService.get().registerReport(new ExportExcelReport());
         ReportService.get().registerReport(new StudyChartQueryReport());
         ReportService.get().registerReport(new CrosstabReport());
         ReportService.get().registerReport(new StudyCrosstabReport());
@@ -369,6 +368,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         ReportService.get().registerDescriptor(new CrosstabReportDescriptor());
         ReportService.get().registerDescriptor(new ParticipantReportDescriptor());
+
+        QCStateManager.getInstance().registerQCHandler(new StudyQCStateHandler());
 
         ReportService.get().addUIProvider(new StudyReportUIProvider());
         ReportService.get().addGlobalItemFilterType(QueryReport.TYPE);
@@ -472,7 +473,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             });
         }
 
-        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()));
+        AdminConsole.addLink(AdminConsole.SettingsLinkType.Premium, "Master Patient Index", new ActionURL(StudyController.MasterPatientProviderAction.class, ContainerManager.getRoot()), AdminPermission.class);
         QCStateImportExportHelper.registerProvider(new StudyQCImportExportHelper());
     }
 
@@ -714,39 +715,33 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SpecimenImporter.TestCase.class);
-        set.add(StudyManager.DatasetImportTestCase.class);
-        set.add(ParticipantGroupManager.ParticipantGroupTestCase.class);
-        set.add(StudyImpl.ProtocolDocumentTestCase.class);
-        set.add(DatasetDefinition.TestCleanupOrphanedDatasetDomains.class);
-        set.add(StudyManager.VisitCreationTestCase.class);
-        set.add(TreatmentManager.TreatmentDataTestCase.class);
-        set.add(StudyManager.AssayScheduleTestCase.class);
-        set.add(VisitImpl.TestCase.class);
-        set.add(StudyModule.TestCase.class);
-
-        return set;
+        return Set.of(
+            DatasetDefinition.TestCleanupOrphanedDatasetDomains.class,
+            ParticipantGroupManager.ParticipantGroupTestCase.class,
+            SpecimenImporter.TestCase.class,
+            StudyImpl.ProtocolDocumentTestCase.class,
+            StudyManager.AssayScheduleTestCase.class,
+            StudyManager.DatasetImportTestCase.class,
+            StudyManager.StudySnapshotTestCase.class,
+            StudyManager.VisitCreationTestCase.class,
+            StudyModule.TestCase.class,
+            TreatmentManager.TreatmentDataTestCase.class,
+            VisitImpl.TestCase.class
+        );
     }
 
     @Override
     @NotNull
     public Set<Class> getUnitTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(SampleMindedTransformTask.TestCase.class);
-        set.add(DatasetDataWriter.TestCase.class);
-        set.add(SpecimenWriter.TestCase.class);
-        set.add(SequenceNumImportHelper.SequenceNumTest.class);
-        set.add(ParticipantIdImportHelper.ParticipantIdTest.class);
-        set.add(DefaultStudyDesignWriter.TestCase.class);
-        return set;
-    }
-
-    @Override
-    public UpgradeCode getUpgradeCode()
-    {
-        return new StudyUpgradeCode();
+        return Set.of(
+            DatasetDataWriter.TestCase.class,
+            DefaultStudyDesignWriter.TestCase.class,
+            ParticipantIdImportHelper.ParticipantIdTest.class,
+            SampleMindedTransformTask.TestCase.class,
+            SequenceNumImportHelper.SequenceNumTest.class,
+            SpecimenWriter.TestCase.class
+        );
     }
 
     @Override
@@ -766,7 +761,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         Container c = context.getContainer();
         Map<String, String> moduleProperties = getDefaultPageContextJson(c);
-        Study study = StudyManager.getInstance().getStudy(c);
+        StudyImpl study = StudyManager.getInstance().getStudy(c);
         StudyService studyService = StudyService.get();
         JSONObject ret = new JSONObject(moduleProperties);
 

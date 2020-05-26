@@ -23,9 +23,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.DatasetDefinition" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -49,55 +49,69 @@
 
 <labkey:errors/>
 
-
-
 <labkey:form action="" method="post" onsubmit="validateForm();">
-    <table>
-        <tr><th colspan="10" class="labkey-header">Snapshot Name</th></tr>
-        <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
-
+    <table class="lk-fields-table">
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" maxlength="200" size="50" name="<%= text(bean.isEdit() ? "" : "snapshotName") %>" <%= text(bean.isEdit() ? "readonly" : "") %> value="<%=h(StringUtils.trimToEmpty(bean.getSnapshotName()))%>"></td></tr>
+        <tr>
+            <td class="labkey-form-label">Snapshot&nbsp;Name:</td>
+            <% if (bean.isEdit()) { %>
+                <td><%=h(StringUtils.trimToEmpty(bean.getSnapshotName()))%></td>
+            <% } else { %>
+                <td><input type="text" maxlength="200" size="50" name="snapshotName" value="<%=h(StringUtils.trimToEmpty(bean.getSnapshotName()))%>"></td>
+            <% } %>
+        </tr>
         <% if (!filter.isEmpty()) { %>
-            <tr><td>Filters:</td><td><%= h(filter.getFilterText()) %></td></tr>
+            <tr><td class="labkey-form-label">Filters:</td><td><%= h(filter.getFilterText()) %></td></tr>
         <% } %>
         <% if (getActionURL().getParameterMap().containsKey("query.viewName")) { %>
-            <tr><td>Custom View:</td><td><%= h(getActionURL().getParameter("query.viewName") == null ? "<default>" : getActionURL().getParameter("query.viewName")) %></td></tr>
+            <tr><td class="labkey-form-label">Custom View:</td><td><%= h(StringUtils.isEmpty(getActionURL().getParameter("query.viewName")) ? "<default>" : getActionURL().getParameter("query.viewName")) %></td></tr>
         <% } %>
-        <tr><td>&nbsp;</td></tr>
-
-        <tr><th colspan="10" class="labkey-header">Snapshot Refresh</th></tr>
-        <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
-        <tr><td colspan="2"><i>Snapshots can be configured to be manually updated or to automatically update<br/>within an amount of time after the
-            underlying data has changed.</i></td></tr>
-        <tr><td>&nbsp;</td></tr>
-
-        <tr><td>Manual&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();"></td></tr>
-        <tr><td>Automatic&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
-        <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:<%= text(bean.getUpdateDelay() == 0 ? "none" : "block") %>"><labkey:options value="<%=text(String.valueOf(bean.getUpdateDelay()))%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
-        <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
-        <tr><td colspan="10">
-                <%
+        <tr>
+            <td class="labkey-form-label">Snapshot Refresh</td>
+            <td>
+                <p>
+                    <i>Snapshots can be configured to be manually updated or to automatically update<br/>within an amount of time after the
+                        underlying data has changed.</i>
+                </p>
+                <table>
+                    <tr>
+                        <td style="padding-right: 10px">Manual&nbsp;Refresh</td>
+                        <td>
+                            <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-right: 10px">Automatic&nbsp;Refresh</td><td>
+                            <input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();">
+                            <select name="updateDelay" id="updateDelay" style="display:<%= HtmlString.unsafe(bean.getUpdateDelay() == 0 ? "none" : "block") %>">
+                                <labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <br/>
+        <%
             if (!bean.isEdit())
             {
                 out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
-                out.print(text("&nbsp;"));
             }
 
             out.println(button(bean.isEdit() ? "Save" : "Create Snapshot").submit(true));
-            out.print(text("&nbsp;"));
 
             out.println(button(bean.isEdit() ? "Done" : "Cancel").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
-
         %>
-    </table>
     <%  if (getActionURL().getParameter(DatasetDefinition.DATASETKEY) != null) { %>
     <input type="hidden" name="<%=h(DatasetDefinition.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(DatasetDefinition.DATASETKEY))%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=h(StudyController.StudySnapshotForm.CREATE_SNAPSHOT)%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">
 </labkey:form>
+
+<%--These line brakes are for th edit snapshot case where there can be a DataRegion below this section--%>
+<br/>
 
 <script type="text/javascript">
 

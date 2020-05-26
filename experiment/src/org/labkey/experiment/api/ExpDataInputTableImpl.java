@@ -15,10 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.query.ExpDataInputTable;
@@ -40,21 +40,22 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
         super(name, ExperimentServiceImpl.get().getTinfoDataInput(), schema, null, cf);
     }
 
-    public BaseColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
+    @Override
+    public MutableColumnInfo createColumn(String alias, ExpDataInputTable.Column column)
     {
         switch (column)
         {
             case Data:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("DataId"));
-                result.setFk(getExpSchema().getDataIdForeignKey());
+                result.setFk(getExpSchema().getDataIdForeignKey(getContainerFilter()));
                 return result;
             }
             case Role:
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
             case TargetProtocolApplication:
                 var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
-                result.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                result.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 return result;
 
             case LSID:
@@ -78,7 +79,7 @@ public class ExpDataInputTableImpl extends ExpInputTableImpl<ExpDataInputTable.C
             case ProtocolInput:
             {
                 var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
-                col.setFk(getExpSchema().getDataProtocolInputForeignKey());
+                col.setFk(getExpSchema().getDataProtocolInputForeignKey(getContainerFilter()));
                 col.setHidden(true);
                 return col;
             }

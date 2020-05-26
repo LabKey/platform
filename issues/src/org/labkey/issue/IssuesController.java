@@ -28,6 +28,8 @@ import org.json.JSONObject;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -35,7 +37,6 @@ import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -58,6 +59,7 @@ import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.PHI;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
@@ -66,19 +68,27 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.issues.IssueDetailHeaderLinkProvider;
+import org.labkey.api.issues.IssuesDomainKindProperties;
+import org.labkey.api.issues.IssuesListDefService;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.Group;
 import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.MemberType;
 import org.labkey.api.security.RequiresPermission;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -97,7 +107,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -114,7 +123,6 @@ import org.labkey.issue.actions.ChangeSummary;
 import org.labkey.issue.actions.DeleteIssueListAction;
 import org.labkey.issue.actions.GetRelatedFolder;
 import org.labkey.issue.actions.InsertIssueDefAction;
-import org.labkey.issue.actions.IssueServiceAction;
 import org.labkey.issue.actions.IssueValidation;
 import org.labkey.issue.actions.ValidateIssueDefNameAction;
 import org.labkey.issue.model.CommentAttachmentParent;
@@ -139,12 +147,12 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -162,7 +170,6 @@ public class IssuesController extends SpringActionController
     private static final String helpTopic = "issues";
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(
         IssuesController.class,
-        IssueServiceAction.class,
         GetRelatedFolder.class,
         InsertIssueDefAction.class,
         ValidateIssueDefNameAction.class,
@@ -282,10 +289,9 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Issues", getListURL(getContainer()));
-            return root;
         }
     }
 
@@ -357,7 +363,8 @@ public class IssuesController extends SpringActionController
             return issueDefName;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             if (issueDefName == null)
@@ -370,7 +377,6 @@ public class IssuesController extends SpringActionController
                     addParameter(DataRegion.LAST_FILTER_PARAM, "true");
 
             root.addChild(names.pluralName + " List", url);
-            return root;
         }
     }
 
@@ -378,6 +384,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ExportTsvAction extends SimpleViewAction<QueryForm>
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -399,9 +406,9 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -452,12 +459,12 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/detailView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            NavTree nav = new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             if (null != _issue)
-                nav.addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
-            return nav;
+                root.addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
         }
 
         public ActionURL getURL()
@@ -542,13 +549,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild(names.singularName + " Details");
-
-            return root;
         }
     }
 
@@ -616,13 +621,12 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild("Insert New " + names.singularName);
-
-            return root;
         }
 
         @Override
@@ -949,7 +953,7 @@ public class IssuesController extends SpringActionController
                         newIssueIds.add(issue.getIssueId());
 
                         // handle attachments, the attachment value is a | delimited array of file names
-                        String attachments = (String)issuesForm.get("attachment");
+                        String attachments = issuesForm.get("attachment");
                         if (!StringUtils.isBlank(attachments))
                         {
                             List<AttachmentFile> attachmentFiles = new ArrayList<>();
@@ -972,9 +976,7 @@ public class IssuesController extends SpringActionController
                         // update the duplicate issue
                         if (duplicateOf != null)
                         {
-                            StringBuilder sb = new StringBuilder();
-                            sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
-                            duplicateOf.addComment(getUser(), sb.toString());
+                            duplicateOf.addComment(getUser(), "<em>Issue " + issue.getIssueId() + " marked as duplicate of this issue.</em>");
                             IssueManager.saveIssue(getUser(), getContainer(), duplicateOf);
                         }
 
@@ -1004,7 +1006,7 @@ public class IssuesController extends SpringActionController
                 Map<Integer, Issue> relatedIssuesToSave = new HashMap<>();
                 for (IssuesForm issuesForm : form.getIssueForms())
                 {
-                    int related = NumberUtils.toInt((String)issuesForm.get("relatedIssue"), -1);
+                    int related = NumberUtils.toInt(issuesForm.get("relatedIssue"), -1);
                     if (related != -1)
                     {
                         // stash everything away so we only have to do one save
@@ -1055,6 +1057,7 @@ public class IssuesController extends SpringActionController
         private IssueListDef _issueListDef;
         private CustomColumnConfiguration _columnConfiguration;
 
+        @Override
         public boolean handlePost(IssuesForm form, BindException errors)
         {
             if (form.getSkipPost())
@@ -1167,21 +1170,20 @@ public class IssuesController extends SpringActionController
                 Set<Integer> newRelatedIds = issue.getRelatedIssues();
 
                 // this list represents all the ids which will need related handling for a creating a relatedIssue entry
-                Collection<Integer> newIssues = new ArrayList<>();
-                newIssues.addAll(newRelatedIds);
-                newIssues.removeAll(prevRelatedIds);
+                List<Integer> newAddedRelatedIssues = new ArrayList<>(newRelatedIds);
+                newAddedRelatedIssues.removeAll(prevRelatedIds);
 
-                for (int curIssueId : newIssues)
+                for (int curIssueId : newAddedRelatedIssues)
                 {
                     Issue relatedIssue = ChangeSummary.relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
-                    IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
+                    if (null != relatedIssue)
+                        IssueManager.saveIssue(getRelatedIssueUser(user, relatedIssue), getContainer(), relatedIssue);
                 }
 
                 // this list represents all the ids which will need related handling for dropping a relatedIssue entry
                 if (!prevRelatedIds.equals(newRelatedIds))
                 {
-                    Collection<Integer> prevIssues = new ArrayList<>();
-                    prevIssues.addAll(prevRelatedIds);
+                    List<Integer> prevIssues = new ArrayList<>(prevRelatedIds);
                     prevIssues.removeAll(newRelatedIds);
                     for (int curIssueId : prevIssues)
                     {
@@ -1259,6 +1261,7 @@ public class IssuesController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(IssuesController.IssuesForm form)
         {
             if (getIssue(form.getIssueId(), false).getStatus().equals("closed"))
@@ -1335,7 +1338,7 @@ public class IssuesController extends SpringActionController
             visible.add("attachments");
 
             // Add all the enabled custom fields
-            for (CustomColumn cc : ccc.getCustomColumns())
+            for (CustomColumn cc : ccc.getCustomColumns(getUser()))
             {
                 visible.add(cc.getName());
             }
@@ -1426,11 +1429,10 @@ public class IssuesController extends SpringActionController
 
     public static class CustomColumnConfigurationImpl implements CustomColumnConfiguration
     {
-        private Map<String, CustomColumn> _columnMap = new LinkedCaseInsensitiveMap<>();
-        private Map<String, String> _captionMap = new LinkedCaseInsensitiveMap<>();
-        private Set<String> _baseNames = new CaseInsensitiveHashSet();
-        private Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
-        private List<DomainProperty> _customProperties = new ArrayList<>();
+        private final Map<String, CustomColumn> _columnMap = new LinkedCaseInsensitiveMap<>();
+        private final Set<String> _baseNames = new CaseInsensitiveHashSet();
+        private final Map<String, DomainProperty> _propertyMap = new CaseInsensitiveHashMap<>();
+        private final List<DomainProperty> _customProperties = new ArrayList<>();
 
         public CustomColumnConfigurationImpl(Container c, User user, IssueListDef issueDef)
         {
@@ -1443,24 +1445,20 @@ public class IssuesController extends SpringActionController
                             "assignedto", "resolution"));
                 }
 
-                if (domain != null)
+                for (DomainProperty prop : domain.getProperties())
                 {
-                    for (DomainProperty prop : domain.getProperties())
+                    _propertyMap.put(prop.getName(), prop);
+                    if (!_baseNames.contains(prop.getName()))
                     {
-                        _propertyMap.put(prop.getName(), prop);
-                        if (!_baseNames.contains(prop.getName()))
-                        {
-                            _customProperties.add(prop);
-                            // treat anything higher than NotPHI as needing special permission
-                            CustomColumn col = new CustomColumn(c,
-                                    prop.getName().toLowerCase(),
-                                    prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
-                                    prop.getLookup() != null,
-                                    prop.getPHI().isExportLevelAllowed(PHI.NotPHI) ? ReadPermission.class : InsertPermission.class);
+                        _customProperties.add(prop);
+                        // treat anything higher than NotPHI as needing special permission
+                        CustomColumn col = new CustomColumn(c,
+                                prop.getName().toLowerCase(),
+                                prop.getLabel() != null ? prop.getLabel() : ColumnInfo.labelFromName(prop.getName()),
+                                prop.getLookup() != null,
+                                prop.getPHI().isExportLevelAllowed(PHI.NotPHI) ? ReadPermission.class : InsertPermission.class);
 
-                            _columnMap.put(col.getName(), col);
-                            _captionMap.put(col.getName(), col.getCaption());
-                        }
+                        _columnMap.put(col.getName(), col);
                     }
                 }
             }
@@ -1485,37 +1483,21 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public Collection<CustomColumn> getCustomColumns()
-        {
-            return _columnMap.values();
-        }
-
-        @Override
         public Collection<CustomColumn> getCustomColumns(User user)
         {
             return _columnMap.values();
         }
 
         @Override
-        public boolean shouldDisplay(String name)
-        {
-            return true;
-        }
-
-        @Override
         public boolean shouldDisplay(User user, String name)
         {
             CustomColumn col = _columnMap.get(name);
+            // short term hack
             if (col != null)
             {
                 return col.getContainer().hasPermission(user, col.getPermission());
             }
-            else if (_baseNames.contains(name))
-            {
-                // short term hack
-                return true;
-            }
-            return false;
+            else return _baseNames.contains(name);
         }
 
         @Nullable
@@ -1533,25 +1515,23 @@ public class IssuesController extends SpringActionController
         private GUID _entityId = null;
         private String _name = null;
 
-
         public GUID getEntityId()
         {
             return _entityId;
         }
 
-
+        @SuppressWarnings("unused")
         public void setEntityId(GUID entityId)
         {
             _entityId = entityId;
         }
-
 
         public String getName()
         {
             return _name;
         }
 
-
+        @SuppressWarnings("unused")
         public void setName(String name)
         {
             _name = name;
@@ -1582,7 +1562,7 @@ public class IssuesController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class)
-    public class DownloadAction extends BaseDownloadAction<IssueAttachmentForm>
+    public static class DownloadAction extends BaseDownloadAction<IssueAttachmentForm>
     {
         @Nullable
         @Override
@@ -1618,6 +1598,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class UpdateAction extends AbstractIssueAction
     {
+        @Override
         public ModelAndView getView(IssuesController.IssuesForm form, boolean reshow, BindException errors) throws Exception
         {
             int issueId = form.getIssueId();
@@ -1652,12 +1633,11 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Update " + getSingularEntityName() + ": " + StringUtils.trimToEmpty(_issue.getTitle()));
-
-            return root;
         }
     }
 
@@ -1684,7 +1664,7 @@ public class IssuesController extends SpringActionController
             {
                 if (form.get("resolution") != null)
                 {
-                    _issue.setResolution((String) form.get("resolution"));
+                    _issue.setResolution(form.get("resolution"));
                 }
             }
             beforeReshow(reshow, form, _issue, getIssueListDef());
@@ -1706,13 +1686,12 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Resolve " + names.singularName);
-
-            return root;
         }
     }
 
@@ -1753,13 +1732,12 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Close " + names.singularName);
-
-            return root;
         }
     }
 
@@ -1803,21 +1781,21 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/updateView.jsp", page);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Reopen " + names.singularName);
-
-            return root;
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class EmailPrefsAction extends FormViewAction<EmailPrefsForm>
     {
-        String _message = null;
+        private String _message = null;
 
+        @Override
         public ModelAndView getView(EmailPrefsForm form, boolean reshow, BindException errors)
         {
             if (getUser().isGuest())
@@ -1831,6 +1809,7 @@ public class IssuesController extends SpringActionController
             return new JspView<>("/org/labkey/issue/view/emailPreferences.jsp", form, errors);
         }
 
+        @Override
         public boolean handlePost(EmailPrefsForm form, BindException errors)
         {
             int emailPref = 0;
@@ -1844,19 +1823,19 @@ public class IssuesController extends SpringActionController
             return true;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild("Email preferences");
-
-            return root;
         }
 
-
+        @Override
         public void validateCommand(EmailPrefsForm emailPrefsForm, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(EmailPrefsForm emailPrefsForm)
         {
             return null;
@@ -1973,39 +1952,155 @@ public class IssuesController extends SpringActionController
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
 
     @RequiresPermission(AdminPermission.class)
-    public class AdminAction extends SimpleViewAction<AdminForm>
+    public class AdminAction extends FormViewAction<IssuesDomainKindProperties>
     {
         @Override
-        public ModelAndView getView(IssuesController.AdminForm adminForm, BindException errors)
+        public ModelAndView getView(IssuesDomainKindProperties form, boolean reshow, BindException errors) throws Exception
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueListDef issueListDef = IssueManager.getIssueListDef(getContainer(), issueDefName);
+
             if (issueListDef == null)
             {
                 return new HtmlView(getUndefinedIssueListMessage(getViewContext(), issueDefName));
             }
-            Domain domain = issueListDef.getDomain(getUser());
 
-            Map<String, String> props = new HashMap<>();
-            props.put("typeURI", domain.getTypeURI());
-            props.put("defName", issueDefName);
-            props.put("issueListUrl", new ActionURL(ListAction.class, getContainer()).addParameter(IssuesListView.ISSUE_LIST_DEF_NAME, issueDefName).getLocalURIString());
-            props.put("customizeEmailUrl", PageFlowUtil.urlProvider(AdminUrls.class).getCustomizeEmailURL(getContainer(), IssueUpdateEmailTemplate.class, getViewContext().getActionURL()).getLocalURIString());
-            props.put("instructions", domain.getDomainKind().getDomainEditorInstructions());
-            props.put("canEditDomain", String.valueOf(domain.getDomainKind().canEditDefinition(getUser(), domain)));
-
-            return new GWTView("org.labkey.issues.Designer", props);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("issues"), "designer");
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
+            setHelpTopic("adminIssues");
+
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
+        }
 
-            return root;
+        @Override
+        public void validateCommand(IssuesDomainKindProperties form, Errors errors)
+        {}
+
+        @Override
+        public boolean handlePost(IssuesDomainKindProperties form, BindException errors) throws Exception
+        {
+            // this allows for the shared domain case where we only want to update the issue list def options in this container
+            ValidationException exception = IssuesListDefService.get().updateIssueDefinition(getContainer(), getUser(), null, null, form);
+            return !exception.hasErrors();
+        }
+
+        @Override
+        public URLHelper getSuccessURL(IssuesDomainKindProperties form)
+        {
+            return null;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class GetProjectGroupsAction extends ReadOnlyApiAction<Object>
+    {
+        @Override
+        public Object execute(Object form, BindException errors)
+        {
+            List<UserGroupForm> groups = new ArrayList<>();
+
+            SecurityManager.getGroups(getContainer().getProject(), true).stream().filter(group -> !group.isGuests() && (!group.isUsers() || getUser().hasRootAdminPermission())).forEach(group -> {
+                String displayText = (group.isProjectGroup() ? "" : "Site: ") + group.getName();
+
+                UserGroupForm userGroups = new UserGroupForm();
+                userGroups.setUserId(group.getUserId());
+                userGroups.setDisplayName(displayText);
+                groups.add(userGroups);
+            });
+
+            return groups;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(AdminPermission.class)
+    public class GetUsersForGroupAction extends ReadOnlyApiAction<UserGroupForm>
+    {
+        @Override
+        public Object execute(UserGroupForm form, BindException errors)
+        {
+            List<UserGroupForm> users = new ArrayList<>();
+
+            if (null != form.getGroupId())
+            {
+                Group group = SecurityManager.getGroup(form.getGroupId());
+                if (group != null)
+                {
+                    for (User user : SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_USERS, group.isUsers()))
+                    {
+                        if (getContainer().hasPermission(user, UpdatePermission.class))
+                        {
+                            UserGroupForm usergrp = new UserGroupForm();
+                            usergrp.setGroupId(form.groupId);
+                            usergrp.setUserId(user.getUserId());
+                            usergrp.setDisplayName(user.getDisplayName(getUser()));
+                            users.add(usergrp);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // all project users
+                for (User user : SecurityManager.getProjectUsers(getContainer()))
+                {
+                    if (getContainer().hasPermission(user, UpdatePermission.class))
+                    {
+                        UserGroupForm projectUsers = new UserGroupForm();
+                        projectUsers.setUserId(user.getUserId());
+                        projectUsers.setDisplayName(user.getDisplayName(getUser()));
+                        users.add(projectUsers);
+                    }
+                }
+            }
+
+            users.sort(Comparator.comparing(UserGroupForm::getDisplayName, String.CASE_INSENSITIVE_ORDER));
+            return users;
+        }
+    }
+
+    public static class UserGroupForm
+    {
+        Integer groupId;
+        Integer userId;
+        String displayName;
+
+        public Integer getGroupId()
+        {
+            return groupId;
+        }
+
+        public void setGroupId(Integer groupId)
+        {
+            this.groupId = groupId;
+        }
+
+        public String getDisplayName()
+        {
+            return displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            this.displayName = displayName;
+        }
+
+        public Integer getUserId()
+        {
+            return userId;
+        }
+
+        public void setUserId(Integer userId)
+        {
+            this.userId = userId;
         }
     }
 
@@ -2019,6 +2114,7 @@ public class IssuesController extends SpringActionController
             super.checkPermissions();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -2027,10 +2123,10 @@ public class IssuesController extends SpringActionController
             List<ColumnInfo> cols = tinfo.getColumns("IssueId,Created,CreatedBy,Area,Type,Title,AssignedTo,Priority,Status,Milestone");
             r.addColumns(cols);
 
-            try (ResultSet rs = r.getResultSet(new RenderContext(getViewContext())))
+            try (Results results = r.getResults(new RenderContext(getViewContext())))
             {
                 ObjectFactory f = ObjectFactory.Registry.getFactory(Issue.class);
-                Issue[] issues = (Issue[]) f.handleArray(rs);
+                Issue[] issues = (Issue[]) f.handleArray(results);
 
                 ActionURL url = getDetailsURL(getContainer(), 1, isPrint());
                 String filteredURLString = PageFlowUtil.filter(url);
@@ -2047,9 +2143,9 @@ public class IssuesController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         private ActionURL getUrl()
@@ -2201,6 +2297,7 @@ public class IssuesController extends SpringActionController
             return null;
         }
 
+        @Override
         public String reviseQuery(ViewContext ctx, String q)
         {
             String status = ctx.getActionURL().getParameter("status");
@@ -2236,15 +2333,13 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        public void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
             String issueListDefName = IssueManager.getDefaultIssueListDefName(ctx.getContainer());
             String status = ctx.getActionURL().getParameter("status");
             String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer(), issueListDefName != null ? issueListDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName;
             root.addChild(pluralName + " List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
             root.addChild("Search " + (null != status ? status + " " : "") + pluralName);
-
-            return root;
         }
     }
 
@@ -2366,37 +2461,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public static class AdminForm
-    {
-        private int type;
-        private String keyword;
-
-
-        public int getType()
-        {
-            return type;
-        }
-
-
-        public void setType(int type)
-        {
-            this.type = type;
-        }
-
-
-        public String getKeyword()
-        {
-            return keyword;
-        }
-
-
-        public void setKeyword(String keyword)
-        {
-            this.keyword = keyword;
-        }
-    }
-
-
     public static class IssuesForm extends BeanViewForm<Issue>
     {
         public IssuesForm()
@@ -2488,7 +2552,9 @@ public class IssuesController extends SpringActionController
             return issueListDef;
         }
 
-        public void setTable(TableInfo table)
+        // Make this method public
+        @Override
+        public void setTable(@NotNull TableInfo table)
         {
             super.setTable(table);
         }
@@ -2529,7 +2595,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-
     public static class SummaryBean
     {
         public boolean hasPermission;
@@ -2538,7 +2603,7 @@ public class IssuesController extends SpringActionController
         public String issueDefName;
     }
 
-
+    @Override
     protected synchronized void afterAction(Throwable t)
     {
         super.afterAction(t);

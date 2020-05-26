@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -49,33 +48,64 @@ public class FolderManagement
         FolderManagement
         {
             @Override
-            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
             {
-                return folderManagementNavTrail(root, c, user);
-            }
-        },
-        ProjectSettings
-        {
-            @Override
-            NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user)
-            {
-                action.setHelpTopic(new HelpTopic("customizeLook"));
-
+                // In the root, view is rendered as a standalone page (no tab strip). Create an appropriate nav trail.
                 if (c.isRoot())
                 {
-                    root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-                    root.addChild("Look and Feel Settings");
-                }
-                else
-                {
-                    root.addChild("Project Settings");
+                    TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(this).get(action.getClass());
+                    PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, provider.getText(), null);
                 }
 
-                return root;
+                if (c.isContainerTab())
+                    root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
+
+                root.addChild(c.getName(), c.getStartURL(user));
+                root.addChild("Folder Management");
+            }
+
+            @Override
+            boolean shouldRenderTabStrip(Container container)
+            {
+                // In the root, render as standalone page (no tab strip)
+                return !container.isRoot();
+            }
+        },
+        ProjectSettings // Used for project settings
+        {
+            @Override
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            {
+                action.setHelpTopic(new HelpTopic("customizeLook"));
+                root.addChild("Project Settings");
+            }
+
+            @Override
+            boolean shouldRenderTabStrip(Container container)
+            {
+                return true;
+            }
+        },
+        LookAndFeelSettings // Used for the admin console actions -- allows for troubleshooter permissions
+        {
+            @Override
+            void addNavTrail(BaseViewAction action, NavTree root, Container c, User user)
+            {
+                action.setHelpTopic(new HelpTopic("customizeLook"));
+                root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
+                root.addChild("Look and Feel Settings");
+            }
+
+            @Override
+            boolean shouldRenderTabStrip(Container container)
+            {
+                return true;
             }
         };
 
-        abstract NavTree appendNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+        abstract void addNavTrail(BaseViewAction action, NavTree root, Container c, User user);
+
+        abstract boolean shouldRenderTabStrip(Container container);
     }
 
     // Using two data structures lets us maintain the list of tab providers in registration order AND look up container predicates quickly, with reasonable concurrency behavior
@@ -109,6 +139,7 @@ public class FolderManagement
     }
 
     public static final Predicate<Container> EVERY_CONTAINER = container -> true;
+    public static final Predicate<Container> ROOT = Container::isRoot;
     public static final Predicate<Container> NOT_ROOT = container -> !container.isRoot();
     public static final Predicate<Container> ROOT_AND_PROJECTS = container -> container.isRoot() || container.isProject();
     // Choosing "isInFolderNav" does not include Tabs, which is a slight change in functionality (previously excluded just workbooks), but that seems proper.
@@ -123,10 +154,7 @@ public class FolderManagement
         ManagementTabStrip(Container c, String tabId, BindException errors)
         {
             _container = c;
-
-            // Stay on same tab if there are errors
-            if (errors.hasErrors() && null != StringUtils.trimToNull(tabId))
-                setSelectedTabId(tabId);
+            setSelectedTabId(tabId);
         }
 
         @Override
@@ -167,37 +195,24 @@ public class FolderManagement
         @Override
         public ModelAndView handleRequest() throws Exception
         {
-            validateContainer(getType(), this.getClass(), getContainer());
+            validateContainer(getType(), getClass(), getContainer());
 
             return super.handleRequest();
         }
 
         @Override
-        public ModelAndView getView(Void form, BindException errors)
+        public ModelAndView getView(Void form, BindException errors) throws Exception
         {
-            return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return ManagementViewAction.this.getTabView();
-                }
-
-                @Override
-                protected List<TabProvider> getTabProviders()
-                {
-                    return TYPE_TAB_PROVIDER.get(getType());
-                }
-            };
+            return wrapViewInTabStrip(this, getType(), getTabView(), errors);
         }
 
         protected abstract TYPE getType();
         protected abstract HttpView getTabView() throws Exception;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return getType().appendNavTrail(this, root, getContainer(), getUser());
+            getType().addNavTrail(this, root, getContainer(), getUser());
         }
     }
 
@@ -210,26 +225,13 @@ public class FolderManagement
         @Override
         public ModelAndView getView(FORM form, boolean reshow, BindException errors) throws Exception
         {
-            return new ManagementTabStrip(getContainer(), (String)getViewContext().get("tabId"), errors)
-            {
-                @Override
-                public HttpView getTabView(String tabId) throws Exception
-                {
-                    return ManagementViewPostAction.this.getTabView(form, reshow, errors);
-                }
-
-                @Override
-                protected List<TabProvider> getTabProviders()
-                {
-                    return TYPE_TAB_PROVIDER.get(getType());
-                }
-            };
+            return wrapViewInTabStrip(this, getType(), getTabView(form, reshow, errors), errors);
         }
 
         @Override
         public ModelAndView handleRequest(FORM form, BindException errors) throws Exception
         {
-            validateContainer(getType(), this.getClass(), getContainer());
+            validateContainer(getType(), getClass(), getContainer());
 
             return super.handleRequest(form, errors);
         }
@@ -245,10 +247,41 @@ public class FolderManagement
         protected abstract HttpView getTabView(FORM form, boolean reshow, BindException errors) throws Exception;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return getType().appendNavTrail(this, root, getContainer(), getUser());
+            getType().addNavTrail(this, root, getContainer(), getUser());
         }
+    }
+
+
+    /** Wrap the provided view in a tab strip, if that's what the type desires **/
+    private static HttpView wrapViewInTabStrip(BaseViewAction action, TYPE type, HttpView view, BindException errors)
+    {
+        ViewContext ctx = action.getViewContext();
+        Container c = ctx.getContainer();
+
+        if (type.shouldRenderTabStrip(c))
+        {
+            TabProvider provider = TYPE_ACTION_TAB_PROVIDER.get(type).get(action.getClass());
+            String tabId = provider.getTabId();
+
+            return new ManagementTabStrip(c, tabId, errors)
+            {
+                @Override
+                public HttpView getTabView(String tabId)
+                {
+                    return view;
+                }
+
+                @Override
+                protected List<TabProvider> getTabProviders()
+                {
+                    return TYPE_TAB_PROVIDER.get(type);
+                }
+            };
+        }
+
+        return view;
     }
 
 
@@ -301,25 +334,10 @@ public class FolderManagement
     public static abstract class ProjectSettingsViewPostAction<FORM> extends ManagementViewPostAction<FORM>
     {
         @Override
-        final protected TYPE getType()
+        protected TYPE getType()
         {
             return TYPE.ProjectSettings;
         }
-    }
-
-
-    private static NavTree folderManagementNavTrail(NavTree root, Container c, User user)
-    {
-        if (c.isRoot())
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Admin Console", null);
-
-        if (c.isContainerTab())
-            root.addChild(c.getParent().getName(), c.getParent().getStartURL(user));
-
-        root.addChild(c.getName(), c.getStartURL(user));
-        root.addChild("Folder Management");
-
-        return root;
     }
 
 
@@ -338,12 +356,19 @@ public class FolderManagement
             _filter = filter;
         }
 
+        private String getText()
+        {
+            return _text;
+        }
+
+        private String getTabId()
+        {
+            return _id;
+        }
+
         private ActionURL getActionURL(Container c)
         {
-            ActionURL url = new ActionURL(_actionClass, c);
-            url.addParameter("tabId", _id);
-
-            return url;
+            return new ActionURL(_actionClass, c);
         }
 
         private boolean shouldRender(Container c)

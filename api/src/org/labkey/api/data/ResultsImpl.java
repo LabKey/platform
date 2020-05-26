@@ -147,6 +147,7 @@ public class ResultsImpl implements Results, DataIterator
     }
 
 
+    @Deprecated
     public ResultsImpl(RenderContext ctx)
     {
         this(ctx.getResults(), ctx.getFieldMap());
@@ -235,6 +236,7 @@ public class ResultsImpl implements Results, DataIterator
         return ((TableResultSet) _rs).getRowMap();
     }
 
+    @NotNull
     @Override
     public Iterator<Map<String, Object>> iterator()
     {

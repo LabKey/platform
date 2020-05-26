@@ -16,7 +16,6 @@
 
 package org.labkey.api.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -25,6 +24,7 @@ import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.ActionsHelper;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
@@ -37,6 +37,7 @@ import java.net.URISyntaxException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -95,7 +96,11 @@ public enum UsageReportingLevel
             Integer averageRecentDuration = UserManager.getAverageSessionDuration(startDate);
             metrics.put("recentAvgSessionDuration", null == averageRecentDuration ? -1 : averageRecentDuration);
             metrics.put("mostRecentLogin", DateUtil.formatDateISO8601(UserManager.getMostRecentLogin()));
-            putModulesMetrics(metrics);
+
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+            putModulesMetrics(modulesMap);
+            putModulesBuildInfo(modulesMap);
         }
     },
     /**
@@ -125,8 +130,11 @@ public enum UsageReportingLevel
             report.addParam("systemShortName", laf.getShortName());
             report.addParam("administratorEmail", AppProps.getInstance().getAdministratorContactEmail(true));
 
-            putModuleControllerHits(metrics);
-            putModulesMetrics(metrics);
+            @SuppressWarnings("unchecked")
+            Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>)metrics.computeIfAbsent("modules", s -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+
+            putModuleControllerHits(modulesMap);
+            putModulesMetrics(modulesMap);
             metrics.put("folderTypeCounts", ContainerManager.getFolderTypeNameContainerCounts(ContainerManager.getRoot()));
 
             report.addHostName();
@@ -202,7 +210,7 @@ public enum UsageReportingLevel
             report.addServerSessionParams();
             Map<String, Object> additionalMetrics = new LinkedHashMap<>();
             level.addExtraParams(report, additionalMetrics);
-            serializeMetrics(report, additionalMetrics);
+            report.setMetrics(additionalMetrics);
             return report;
         }
         else
@@ -239,26 +247,7 @@ public enum UsageReportingLevel
          }
     }
 
-    private static void serializeMetrics(MothershipReport report, Map<String, Object> metrics)
-    {
-        if (metrics.size() > 0)
-        {
-            String serializedMetrics;
-            ObjectMapper mapper = new ObjectMapper();
-            try
-            {
-                serializedMetrics = mapper.writeValueAsString(metrics);
-            }
-            catch (JsonProcessingException e)
-            {
-                // TODO: Where to report, what to do?
-                serializedMetrics = "Exception serializing json metrics. " + e.getMessage();
-            }
-            report.addParam("jsonMetrics", serializedMetrics);
-        }
-    }
-
-    protected void putModulesMetrics(Map<String, Object> runningMetrics)
+    protected void putModulesMetrics(Map<String, Map<String, Object>> modulesMap)
     {
         UsageMetricsService svc = UsageMetricsService.get();
         if (null != svc)
@@ -266,8 +255,6 @@ public enum UsageReportingLevel
             Map<String, Map<String, Object>> allRegisteredMetrics = svc.getModuleUsageMetrics(this);
             if (null != allRegisteredMetrics)
             {
-                @SuppressWarnings({"unchecked"})
-                Map<String, Map<String, Object>> modulesMap = (Map<String, Map<String, Object>>) runningMetrics.computeIfAbsent("modules", k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
                 allRegisteredMetrics.forEach((module, metrics) ->
                 {
                     Map<String, Object> moduleStats = modulesMap.computeIfAbsent(module, k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
@@ -277,10 +264,30 @@ public enum UsageReportingLevel
         }
     }
 
-    protected void putModuleControllerHits(Map<String, Object> runningMetrics)
+    public static void putModulesBuildInfo(Map<String, Map<String, Object>> allModulesStats)
     {
-        @SuppressWarnings({"unchecked"})
-        Map<String, Map<String, Object>> allModulesStats = (Map<String, Map<String, Object>>) runningMetrics.computeIfAbsent("modules", k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+        for (Module module : ModuleLoader.getInstance().getModules())
+        {
+            // Make sure this module has an object in the parent object
+            Map<String, Object> moduleStats = allModulesStats.computeIfAbsent(module.getName(), k -> new TreeMap<>(String.CASE_INSENSITIVE_ORDER));
+
+            // Build up info about the build of the module
+            Map<String, Object> moduleBuildInfo = new HashMap<>();
+            moduleBuildInfo.put("buildTime", module.getBuildTime());
+            moduleBuildInfo.put("buildNumber", module.getBuildNumber());
+            moduleBuildInfo.put("vcsUrl", module.getVcsUrl());
+            moduleBuildInfo.put("vcsBranch", module.getVcsBranch());
+            moduleBuildInfo.put("vcsRevision", module.getVcsRevision());
+            moduleBuildInfo.put("vcsTag", module.getVcsTag());
+            moduleBuildInfo.put("version", module.getFormattedSchemaVersion()); // TODO: call this "schemaVersion"? Also send "releaseVersion"?
+
+            // Add to the module's info to be included in the submission
+            moduleStats.put("buildInfo", moduleBuildInfo);
+        }
+    }
+
+    protected void putModuleControllerHits(Map<String, Map<String, Object>> allModulesStats)
+    {
         try
         {
             ActionsHelper.getActionStatistics().forEach((module, controllersMap) -> {

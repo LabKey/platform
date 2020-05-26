@@ -62,7 +62,6 @@ import org.labkey.api.assay.plate.PlateBasedAssayProvider;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -72,6 +71,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -109,7 +109,9 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.actions.TransformResultsAction;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.ContainerTree;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -124,24 +126,8 @@ import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.WebPartView;
-import org.labkey.assay.actions.AssayBatchDetailsAction;
-import org.labkey.assay.actions.AssayBatchesAction;
-import org.labkey.assay.actions.AssayResultsAction;
-import org.labkey.assay.actions.DeleteAction;
-import org.labkey.assay.actions.DeleteProtocolAction;
-import org.labkey.assay.actions.GetAssayBatchAction;
-import org.labkey.assay.actions.GetAssayBatchesAction;
-import org.labkey.assay.actions.GetProtocolAction;
-import org.labkey.assay.actions.ImportAction;
-import org.labkey.assay.actions.ImportRunApiAction;
-import org.labkey.assay.actions.PipelineDataCollectorRedirectAction;
-import org.labkey.assay.actions.SaveAssayBatchAction;
-import org.labkey.assay.actions.SaveProtocolAction;
-import org.labkey.assay.actions.SetDefaultValuesAssayAction;
-import org.labkey.assay.actions.ShowSelectedDataAction;
-import org.labkey.assay.actions.ShowSelectedRunsAction;
-import org.labkey.assay.actions.TemplateAction;
-import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.actions.*;
+import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -177,6 +163,9 @@ public class AssayController extends SpringActionController
             GetAssayBatchAction.class,
             GetAssayBatchesAction.class,
             SaveAssayBatchAction.class,
+            GetAssayRunAction.class,
+            GetAssayRunsAction.class,
+            SaveAssayRunsAction.class,
             ImportRunApiAction.class,
             UploadWizardAction.class,
             TransformResultsAction.class,
@@ -200,7 +189,8 @@ public class AssayController extends SpringActionController
             AssayDetailRedirectAction.class,
             SaveProtocolAction.class,
             GetProtocolAction.class,
-            DeleteProtocolAction.class
+            DeleteProtocolAction.class,
+            AssayPlateMetadataTemplateAction.class
         );
 
     public AssayController()
@@ -222,11 +212,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assays", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -419,7 +408,7 @@ public class AssayController extends SpringActionController
             {
                 Object defaultValue = defaults.get(column.getFieldKey());
                 if (defaultValue != null)
-                    ((BaseColumnInfo)column).setDefaultValue(defaultValue.toString());
+                    ((MutableColumnInfo)column).setDefaultValue(defaultValue.toString());
 
                 displayColumns.add(column.getDisplayColumnFactory().createRenderer(column));
             }
@@ -527,13 +516,11 @@ public class AssayController extends SpringActionController
             return new VBox(bbar, fileTree, bbar);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild(_protocol.getName(), new ActionURL(AssayRunsAction.class, getContainer()).addParameter("rowId", _protocol.getRowId()));
             root.addChild("Copy Assay Design");
-
-            return root;
         }
     }
 
@@ -547,7 +534,7 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Redirects should not show nav trails");
         }
@@ -571,9 +558,12 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _hasCustomView ? root.addChild(_protocol.getName() + " Overview") : new AssayRunsAction(getViewContext(), _protocol).appendNavTrail(root);
+            if (_hasCustomView)
+                root.addChild(_protocol.getName() + " Overview");
+            else
+                new AssayRunsAction(getViewContext(), _protocol).addNavTrail(root);
         }
     }
 
@@ -659,12 +649,11 @@ public class AssayController extends SpringActionController
             return new JspView<>("/org/labkey/assay/view/chooseAssayType.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Assay List", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("New Assay Design");
             setHelpTopic(new HelpTopic("defineAssaySchema"));
-            return root;
         }
     }
 
@@ -674,7 +663,7 @@ public class AssayController extends SpringActionController
         @Override
         protected BaseRemoteService createService()
         {
-            return new AssayServiceImpl(getViewContext());
+            return new AssayDomainServiceImpl(getViewContext());
         }
     }
 
@@ -787,7 +776,7 @@ public class AssayController extends SpringActionController
                 data.setName(originalName);
                 data.save(getUser());
 
-                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser());
+                JSONObject jsonData = ExperimentJSONConverter.serializeData(data, getUser(), ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                 if (files.size() == 1 && !form.isForceMultipleResults())
                 {
@@ -899,9 +888,8 @@ public class AssayController extends SpringActionController
             return tempFolder;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -942,7 +930,7 @@ public class AssayController extends SpringActionController
                 url.addParameter("copy", "true");
             url.addParameter("providerName", provider.getName());
             if (returnURL != null)
-                url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
+                url.addReturnURL(returnURL);
 
             return url;
         }
@@ -994,10 +982,14 @@ public class AssayController extends SpringActionController
 
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds)
         {
-            return getAssayResultsURL(container, protocol, null, runIds);
+            return getAssayResultsURL(container, protocol, (ContainerFilter.Type)null, runIds);
         }
 
         public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter, int... runIds)
+        {
+            return getAssayResultsURL(container, protocol, null==containerFilter?null:containerFilter.getType(), runIds);
+        }
+        public ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter.Type containerFilterType, int... runIds)
         {
             ActionURL result = getProtocolURL(container, protocol, AssayResultsAction.class);
             AssayProvider provider = AssayService.get().getProvider(protocol);
@@ -1040,9 +1032,17 @@ public class AssayController extends SpringActionController
                 result.addFilter(resultsTableName,
                         tableMetadata.getRunRowIdFieldKeyFromResults(), CompareType.EQUAL, runIds[0]);
             }
-            if (containerFilter != null && containerFilter.getType() != null)
-                result.addParameter("Data." + QueryParam.containerFilterName, containerFilter.getType().name());
+            if (containerFilterType != null)
+                result.addParameter("Data." + QueryParam.containerFilterName, containerFilterType.name());
             return result;
+        }
+
+        @Override
+        public @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId)
+        {
+            ActionURL resultsURL = getAssayResultsURL(container, protocol);
+            resultsURL.addFilter("Data", FieldKey.fromParts("rowId"), CompareType.EQUAL, rowId);
+            return resultsURL;
         }
 
         @Override
@@ -1184,6 +1184,12 @@ public class AssayController extends SpringActionController
             fakeURL.addFilter(AssayProtocolSchema.RUNS_TABLE_NAME, AbstractAssayProvider.BATCH_ROWID_FROM_RUN, CompareType.EQUAL, "${RowId}");
             return fakeURL.getParameters().get(0).getKey();
         }
+
+        @Override
+        public ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider)
+        {
+            return provider.getPlateMetadataTemplateURL(container);
+        }
     }
 
     @RequiresPermission(DesignAssayPermission.class)
@@ -1215,12 +1221,10 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree result = super.appendNavTrail(root);
-            result.addChild(_protocol.getName() + " Upload Jobs");
-
-            return result;
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Upload Jobs");
         }
     }
 
@@ -1487,9 +1491,9 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Change QC State");
+            root.addChild("Change QC State");
         }
     }
 
@@ -1555,16 +1559,42 @@ public class AssayController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Container c = getContainer();
             ActionURL batchListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(c, _protocol, null);
 
-            NavTree ret = super.appendNavTrail(root);
-            ret.addChild(_protocol.getName() + " Batches", batchListURL);
-            ret.addChild("Data Import");
+            super.addNavTrail(root);
+            root.addChild(_protocol.getName() + " Batches", batchListURL);
+            root.addChild("Data Import");
+        }
+    }
 
-            return ret;
+    @RequiresPermission(ReadPermission.class)
+    public class GetValidPublishTargetsAction extends ReadOnlyApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            List<Map<String, Object>> containersInfo = new ArrayList<>();
+
+            AssayPublishService service = AssayPublishService.get();
+            if (service != null)
+            {
+                for (Study study : AssayPublishService.get().getValidPublishTargets(getUser(), ReadPermission.class))
+                {
+                    Container container = study.getContainer();
+                    Map<String, Object> containerInfo = new HashMap<>();
+                    containerInfo.put("id", container.getId());
+                    containerInfo.put("name", container.getName());
+                    containerInfo.put("path", container.getPath());
+                    containersInfo.add(containerInfo);
+                }
+            }
+
+            response.put("containers", containersInfo);
+            return response;
         }
     }
 }

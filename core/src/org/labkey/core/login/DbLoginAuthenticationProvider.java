@@ -17,9 +17,13 @@ package org.labkey.core.login;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.security.SaveConfigurationForm;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.LoginFormAuthenticationProvider;
+import org.labkey.api.security.ConfigurationSettings;
 import org.labkey.api.security.LoginUrls;
 import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
@@ -38,30 +42,51 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EmptyStackException;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.labkey.core.login.DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY;
 
 /**
  * User: adam
  * Date: Oct 12, 2007
  * Time: 1:31:18 PM
  */
-public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider
+public class DbLoginAuthenticationProvider implements LoginFormAuthenticationProvider<DbLoginConfiguration>
 {
+    @Override
+    public List<DbLoginConfiguration> getAuthenticationConfigurations(@NotNull List<ConfigurationSettings> ignored)
+    {
+        Map<String, Object> properties = Map.of(
+            "RowId", 0,
+            "Enabled", true,
+            "Name", getName()
+        );
+
+        Map<String, String> stringProperties = PropertyManager.getProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
+
+        return Collections.singletonList(new DbLoginConfiguration(this, stringProperties, properties));
+    }
+
+    @Override
     public boolean isPermanent()
     {
         return true;
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return "Database";
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
-        return "Stores user names and passwords in the LabKey database";
+        return "Stores user names and password hashes in the LabKey database";
     }
 
     @Override
@@ -72,38 +97,50 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
 
     @Override
     // id and password will not be blank (not null, not empty, not whitespace only)
-    public @NotNull AuthenticationResponse authenticate(@NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
+    public @NotNull AuthenticationResponse authenticate(DbLoginConfiguration configuration, @NotNull String id, @NotNull String password, URLHelper returnURL) throws ValidEmail.InvalidEmailException
     {
         ValidEmail email = new ValidEmail(id);
         String hash = SecurityManager.getPasswordHash(email);
         User user = UserManager.getUser(email);
 
         if (null == hash || null == user)
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.userDoesNotExist);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.userDoesNotExist);
 
         if (!SecurityManager.matchPassword(password,hash))
-            return AuthenticationResponse.createFailureResponse(this, FailureReason.badPassword);
+            return AuthenticationResponse.createFailureResponse(configuration, FailureReason.badPassword);
 
         // Password is correct for this user; now check password rules and expiration.
 
-        PasswordRule rule = DbLoginManager.getPasswordRule();
+        PasswordRule rule = configuration.getPasswordRule();
         Collection<String> messages = new LinkedList<>();
 
         if (!rule.isValidForLogin(password, user, messages))
         {
-            return getChangePasswordResponse(user, returnURL, FailureReason.complexity);
+            return getChangePasswordResponse(configuration, user, returnURL, FailureReason.complexity);
         }
         else
         {
-            PasswordExpiration expiration = DbLoginManager.getPasswordExpiration();
+            PasswordExpiration expiration = configuration.getExpiration();
 
             if (expiration.hasExpired(() -> SecurityManager.getLastChanged(user)))
             {
-                return getChangePasswordResponse(user, returnURL, FailureReason.expired);
+                return getChangePasswordResponse(configuration, user, returnURL, FailureReason.expired);
             }
         }
 
-        return AuthenticationResponse.createSuccessResponse(this, email);
+        return AuthenticationResponse.createSuccessResponse(configuration, email);
+    }
+
+    @Override
+    public @Nullable SaveConfigurationForm getFormFromOldConfiguration(boolean active)
+    {
+        return null;  // We don't migrate the database login configuration
+    }
+
+    @Override
+    public void handleStartupProperties()
+    {
+        saveStartupProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY);
     }
 
     // A simple test validator that expires every authentication after 100 requests
@@ -124,7 +161,7 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
     }
 
     // If this appears to be a browser request then return an AuthenticationResponse that will result in redirect to the change password page.
-    private AuthenticationResponse getChangePasswordResponse(User user, URLHelper returnURL, FailureReason failureReason)
+    private AuthenticationResponse getChangePasswordResponse(DbLoginConfiguration configuration, User user, URLHelper returnURL, FailureReason failureReason)
     {
         ActionURL redirectURL = null;
 
@@ -154,17 +191,6 @@ public class DbLoginAuthenticationProvider implements LoginFormAuthenticationPro
             // Basic auth is checked in AuthFilter, so there won't be a ViewContext in that case. #11653
         }
 
-        return AuthenticationResponse.createFailureResponse(this, failureReason, redirectURL);
-    }
-
-    public ActionURL getConfigurationLink()
-    {
-        return PageFlowUtil.urlProvider(LoginUrls.class).getConfigureDbLoginURL();
-    }
-
-    @Override
-    public @NotNull Collection<String> getPropertyCategories()
-    {
-        return Collections.singleton(DbLoginManager.DATABASE_AUTHENTICATION_CATEGORY_KEY);
+        return AuthenticationResponse.createFailureResponse(configuration, failureReason, redirectURL);
     }
 }

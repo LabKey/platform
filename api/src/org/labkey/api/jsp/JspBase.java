@@ -34,6 +34,7 @@ import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.HasHtmlString;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.Link.LinkBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -211,7 +212,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public HtmlString h(String str, boolean encodeSpace)
     {
-        return HtmlString.unsafe(PageFlowUtil.filter(str, encodeSpace));
+        return HtmlString.of(str, encodeSpace);
     }
 
     public HtmlString h(URLHelper url)
@@ -742,5 +743,26 @@ public abstract class JspBase extends JspContext implements HasViewContext
     @SuppressWarnings("UnusedParameters")
     public void addClientDependencies(ClientDependencies dependencies)
     {
+    }
+
+    // Returns the standard Troubleshooter warning if the current user is not a site administrator
+    protected HtmlString getTroubleshooterWarning(boolean canUpdate)
+    {
+        return getTroubleshooterWarning(canUpdate, EMPTY_STRING, EMPTY_STRING);
+    }
+
+    // Returns the standard Troubleshooter warning plus the provided suffix if the current user is not a site administrator
+    protected HtmlString getTroubleshooterWarning(boolean canUpdate, HtmlString suffix)
+    {
+        return getTroubleshooterWarning(canUpdate, EMPTY_STRING, suffix);
+    }
+
+    // Returns the standard Troubleshooter warning plus the provided prefix & suffix if the current user is not a site or app administrator
+    protected HtmlString getTroubleshooterWarning(boolean canUpdate, HtmlString prefix, HtmlString suffix)
+    {
+        if (canUpdate)
+            return EMPTY_STRING;
+        else
+            return HtmlStringBuilder.of(prefix).append(HtmlString.unsafe("<strong>Note: You have permission to read these settings but not modify them. Changes will not be saved.</strong><br>")).append(suffix).getHtmlString();
     }
 }

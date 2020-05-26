@@ -41,7 +41,7 @@
                   type="text"
                   id="ff_newQueryName"
                   name="ff_newQueryName"
-                  value="<%=h(form.ff_newQueryName)%>" />
+                  value="<%=form.ff_newQueryName%>" />
     <labkey:select label="Which query/table do you want this new query to be based on?"
                    name="ff_baseTableName">
         <% for (Map.Entry<String, String> entry : namesAndLabels.entrySet())

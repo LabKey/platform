@@ -111,21 +111,25 @@ public class DomainImpl implements Domain
     public DomainImpl(DomainDescriptor dd)
     {
         _dd = dd;
-        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
-        _properties = new ArrayList<>(pds.size());
         List<DomainPropertyManager.ConditionalFormatWithPropertyId> allFormats = DomainPropertyManager.get().getConditionalFormats(getContainer());
-        for (PropertyDescriptor pd : pds)
+
+        List<PropertyDescriptor> pds = OntologyManager.getPropertiesForType(getTypeURI(), getContainer());
+        _properties = new ArrayList<>();
+        if (pds != null)
         {
-            List<ConditionalFormat> formats = new ArrayList<>();
-            for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
+            for (PropertyDescriptor pd : pds)
             {
-                if (format.getPropertyId() == pd.getPropertyId())
+                List<ConditionalFormat> formats = new ArrayList<>();
+                for (DomainPropertyManager.ConditionalFormatWithPropertyId format : allFormats)
                 {
-                    formats.add(format);
+                    if (format.getPropertyId() == pd.getPropertyId())
+                    {
+                        formats.add(format);
+                    }
                 }
+                DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
+                _properties.add(property);
             }
-            DomainPropertyImpl property = new DomainPropertyImpl(this, pd, formats);
-            _properties.add(property);
         }
     }
 
@@ -144,30 +148,31 @@ public class DomainImpl implements Domain
         _properties = new ArrayList<>();
     }
 
+    @Override
     public Object get_Ts()
     {
         return _dd.get_Ts();
     }
 
+    @Override
     public Container getContainer()
     {
         return _dd.getContainer();
     }
 
-    private DomainKind _kind = null;
-
-    public synchronized DomainKind getDomainKind()
+    @Override
+    public synchronized DomainKind<?> getDomainKind()
     {
-        if (null == _kind)
-            _kind = PropertyService.get().getDomainKind(getTypeURI());
-        return _kind;
+        return _dd.getDomainKind();
     }
 
+    @Override
     public String getName()
     {
         return _dd.getName();
     }
 
+    @Override
     public String getLabel()
     {
         DomainKind kind = getDomainKind();
@@ -181,6 +186,7 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public String getLabel(Container container)
     {
         String ret = getLabel();
@@ -192,6 +198,7 @@ public class DomainImpl implements Domain
     }
 
 
+    @Override
     @Nullable   // null if not provisioned
     public String getStorageTableName()
     {
@@ -208,6 +215,7 @@ public class DomainImpl implements Domain
      * @return all containers that contain at least one row of this domain's data.
      * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
      */
+    @Override
     public Set<Container> getInstanceContainers()
     {
         assert getStorageTableName() == null : "This method only works on domains persisted in exp.object";
@@ -228,6 +236,7 @@ public class DomainImpl implements Domain
      * @return all containers that contain at least one row of this domain's data, and where the user has the specified permission
      * Only works for domains that are persisted in exp.object, not those with their own provisioned hard tables
      */
+    @Override
     public Set<Container> getInstanceContainers(User user, Class<? extends Permission> perm)
     {
         Set<Container> ret = new HashSet<>();
@@ -241,27 +250,32 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public String getDescription()
     {
         return _dd.getDescription();
     }
 
+    @Override
     public int getTypeId()
     {
         return _dd.getDomainId();
     }
 
+    @Override
     public void setDescription(String description)
     {
         _dd = _dd.edit().setDescription(description).build();
     }
 
+    @Override
     @NotNull
     public List<? extends DomainPropertyImpl> getProperties()
     {
         return Collections.unmodifiableList(_properties);
     }
 
+    @Override
     public List<DomainProperty> getNonBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
@@ -277,6 +291,7 @@ public class DomainImpl implements Domain
         return nonBaseProperties;
     }
 
+    @Override
     public Set<DomainProperty> getBaseProperties()
     {
         Set<String> basePropertyNames = new HashSet<>();
@@ -292,6 +307,7 @@ public class DomainImpl implements Domain
         return baseProperties;
     }
 
+    @Override
     public void setPropertyIndex(DomainProperty prop, int index)
     {
         if (index < 0 || index >= _properties.size())
@@ -306,11 +322,13 @@ public class DomainImpl implements Domain
         _properties.add(index, (DomainPropertyImpl) prop);
     }
 
+    @Override
     public ActionURL urlShowData(ContainerUser context)
     {
         return getDomainKind().urlShowData(this, context);
     }
 
+    @Override
     public void delete(@Nullable User user) throws DomainNotFoundException
     {
         ExperimentService exp = ExperimentService.get();
@@ -330,11 +348,17 @@ public class DomainImpl implements Domain
         return _new;
     }
 
+    @Override
     public void save(User user) throws ChangePropertyDescriptorException
     {
         save(user, false);
     }
 
+    @Override
+    public Lock getDatabaseLock()
+    {
+        return getLock(_dd);
+    }
 
     static Lock getLock(DomainDescriptor dd)
     {
@@ -471,6 +495,7 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
         ExperimentService exp = ExperimentService.get();
@@ -494,32 +519,24 @@ public class DomainImpl implements Domain
             }
 
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
-            boolean isDomainNew = false;         // #32406 Need to capture because _new changes during the process
-            if (isNew())
-            {
-                // consider: optimistic concurrency check here?
-                Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
-                _dd = OntologyManager.getDomainDescriptor(_dd.getDomainURI(), _dd.getContainer());
-                // CONSIDER put back if we want automatic provisioning for several DomainKinds
-                // StorageProvisioner.create(this);
-                isDomainNew = true;
-            }
-            else
+            boolean isDomainNew = isNew();         // #32406 Need to capture because _new changes during the process
+            if (!isDomainNew)
             {
                 DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
                 if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
                     throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
-
-                // call OntologyManager.updateDomainDescriptor() to invalidate proper caches
-                _dd = OntologyManager.updateDomainDescriptor(_dd);
             }
+
+            // call OntologyManager method to invalidate proper caches
+            _dd = OntologyManager.ensureDomainDescriptor(_dd);
+
             boolean propChanged = false;
             int sortOrder = 0;
 
             List<DomainProperty> propsDropped = new ArrayList<>();
             List<DomainProperty> propsAdded = new ArrayList<>();
 
-            DomainKind kind = getDomainKind();
+            DomainKind<?> kind = getDomainKind();
             boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
 
             // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
@@ -610,7 +627,7 @@ public class DomainImpl implements Domain
 
                             // check if string size constraints have decreased
                             if (impl._pdOld.isStringType() && isSmallerSize(impl._pdOld.getScale(), impl._pd.getScale()))
-                                checkAndThrowSizeConstraints(kind, this, impl);
+                                checkAndThrowSizeConstraints(kind, impl);
                         }
 
                         if (impl.isDirty())
@@ -640,7 +657,7 @@ public class DomainImpl implements Domain
                         validatePropertyFormat(impl);
                     }
 
-                    if ( getDomainKind() != null && getDomainKind().ensurePropertyLookup())
+                    if (getDomainKind() != null && getDomainKind().ensurePropertyLookup())
                     {
                         validatePropertyLookup(user, impl);
                     }
@@ -726,14 +743,15 @@ public class DomainImpl implements Domain
             if (propChanged)
             {
                 final Integer domainEventId = addAuditEvent(user, String.format("The column(s) of domain %s were modified", _dd.getName()));
-                propertyAuditInfo.forEach(auditInfo -> {
-                    addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails());
-                });
+                propertyAuditInfo.forEach(auditInfo -> addPropertyAuditEvent(user, auditInfo.getProp(), auditInfo.getAction(), domainEventId, getName(), auditInfo.getDetails()));
             }
             else if (!isDomainNew)
             {
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
+
+            transaction.addCommitTask(OntologyManager::clearCaches, DbScope.CommitTaskOption.POSTCOMMIT, DbScope.CommitTaskOption.POSTROLLBACK);
+            QueryService.get().updateLastModified();
             transaction.commit();
         }
     }
@@ -750,7 +768,7 @@ public class DomainImpl implements Domain
         return oldSize > newSize;
     }
 
-    private void checkAndThrowSizeConstraints(DomainKind kind, Domain domain, DomainProperty prop)
+    private void checkAndThrowSizeConstraints(DomainKind kind, DomainProperty prop)
     {
         boolean tooLong = kind.exceedsMaxLength(this, prop);
         if (tooLong)
@@ -928,14 +946,14 @@ public class DomainImpl implements Domain
 
         private static String renderValidators(PropertyDescriptor prop)
         {
-             Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
-             if (validators.isEmpty())
-                 return "<none>";
-             List<String> strings = new ArrayList<>();
-             validators.forEach(validator -> strings.add(validator.getName() + " [" +
-                     StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
-             );
-             return StringUtils.join(strings, ", ");
+            Collection<PropertyValidator> validators = DomainPropertyManager.get().getValidators(prop);
+            if (validators.isEmpty())
+                return "<none>";
+            List<String> strings = new ArrayList<>();
+            validators.forEach(validator -> strings.add(validator.getName() + " [" +
+                StringUtils.replace(PropertyService.get().getValidatorKind(validator.getTypeURI()).getName(), " Property Validator", "") + "]")
+            );
+            return StringUtils.join(strings, ", ");
         }
 
         private static String renderConditionalFormats(PropertyDescriptor prop)
@@ -1028,12 +1046,14 @@ public class DomainImpl implements Domain
         }
     }
 
+    @Override
     public Map<String, DomainProperty> createImportMap(boolean includeMVIndicators)
     {
         List<DomainProperty> properties = new ArrayList<>(_properties);
         return ImportAliasable.Helper.createImportMap(properties, includeMVIndicators);
     }
 
+    @Override
     public DomainProperty addPropertyOfPropertyDescriptor(PropertyDescriptor pd)
     {
         assert pd.getPropertyId() == 0;
@@ -1045,6 +1065,7 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public DomainProperty addProperty()
     {
         PropertyDescriptor pd = new PropertyDescriptor();
@@ -1056,6 +1077,7 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public DomainProperty addProperty(PropertyStorageSpec spec)
     {
         PropertyDescriptor pd = new PropertyDescriptor();
@@ -1074,11 +1096,13 @@ public class DomainImpl implements Domain
         return ret;
     }
 
+    @Override
     public String getTypeURI()
     {
         return _dd.getDomainURI();
     }
 
+    @Override
     public DomainPropertyImpl getProperty(int id)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1089,6 +1113,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public DomainPropertyImpl getPropertyByURI(String uri)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1101,6 +1126,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public DomainPropertyImpl getPropertyByName(String name)
     {
         for (DomainPropertyImpl prop : getProperties())
@@ -1111,6 +1137,7 @@ public class DomainImpl implements Domain
         return null;
     }
 
+    @Override
     public List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user)
     {
         List<BaseColumnInfo> result = new ArrayList<>();
@@ -1150,11 +1177,13 @@ public class DomainImpl implements Domain
         return getTypeURI();
     }
 
+    @Override
     public Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys()
     {
         return _propertyForeignKeys;
     }
 
+    @Override
     public void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> propertyForeignKeys)
     {
         _propertyForeignKeys = propertyForeignKeys;
@@ -1167,6 +1196,7 @@ public class DomainImpl implements Domain
         return _propertyIndices;
     }
 
+    @Override
     public void setPropertyIndices(@NotNull Set<PropertyStorageSpec.Index> propertyIndices)
     {
         _propertyIndices = propertyIndices;
@@ -1182,20 +1212,15 @@ public class DomainImpl implements Domain
     public boolean isShouldDeleteAllData()
     {
         // Only certain domain kinds, Lists & Datasets, will return true
-        if (getDomainKind().isDeleteAllDataOnFieldImport() && _shouldDeleteAllData)
-        {
-            return true;
-        }
-        else return false;
+        return getDomainKind().isDeleteAllDataOnFieldImport() && _shouldDeleteAllData;
     }
-
 
     public void generateStorageColumnName(PropertyDescriptor pd)
     {
         if (null == _aliasManager)
         {
             _aliasManager = new AliasManager(ExperimentService.get().getSchema());
-            DomainKind k = getDomainKind();
+            DomainKind<?> k = getDomainKind();
             if (null != k)
             {
                 for (PropertyStorageSpec s : k.getBaseProperties(this))
@@ -1212,7 +1237,7 @@ public class DomainImpl implements Domain
 
         // Keep the names the same if short enough,
         // But always leave room for MV suffix in case it's changed to MV later
-        String storage = null;
+        final String storage;
         if (pd.getName().length() + OntologyManager.MV_INDICATOR_SUFFIX.length() + 1 < 60)
             storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
         else
@@ -1220,6 +1245,7 @@ public class DomainImpl implements Domain
         pd.setStorageColumnName(storage);
     }
 
+    @Override
     public boolean isProvisioned()
     {
         return getStorageTableName() != null && getDomainKind().getStorageSchemaName() != null;

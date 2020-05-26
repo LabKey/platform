@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.Constants" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.module.ModuleLoader" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     // Build links for what's new and the release notes
-    // We use most recent "major" version of the core module, so versions 11.20, 11.21, 11.29, etc will all go to the
-    // 11.2 docs.
-    double coreVersion = org.labkey.api.module.ModuleLoader.getInstance().getCoreModule().getVersion();
-    String versionSuffix = Double.toString(Math.floor(coreVersion * 10.0) / 10.0).replace(".", "");
-    boolean newInstall = org.labkey.api.module.ModuleLoader.getInstance().isNewInstall();
+    String versionSuffix = Constants.getDocumentationVersion().replace(".", "");
+    boolean newInstall = ModuleLoader.getInstance().isNewInstall();
 %>
-<p>Congratulations! Your LabKey Server installation <%=text(newInstall ? "is ready to use" : "has been successfully upgraded")%>.</p>
+<p>Congratulations! Your LabKey Server installation <%=h(newInstall ? "is ready to use" : "has been successfully upgraded")%>.</p>
 
 <ul>
     <li style="margin-bottom: 10px;">

@@ -133,7 +133,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             rgn.setAllowAsync(allowAsyncQuery);
             RenderContext ctx = dataView.getRenderContext();
 
-            if (null == rgn.getResultSet(ctx))
+            if (null == rgn.getResults(ctx))
                 return null;
             return new ResultsImpl(ctx);
         }

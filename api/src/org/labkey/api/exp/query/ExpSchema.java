@@ -18,20 +18,22 @@ package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.ActionButton;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.EnumTableInfo;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UnionContainerFilter;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
@@ -58,7 +60,11 @@ import java.util.TreeSet;
 public class ExpSchema extends AbstractExpSchema
 {
     public static final String EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME = "ExperimentsMembershipForRun";
+    public static final String DATA_CLASS_CATEGORY_TABLE = "DataClassCategoryType";
 
+    public static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
+    public static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
+    private static final Set<String> ADDITIONAL_SOURES_AUDIT_FIELDS = new CaseInsensitiveHashSet("Name");
 
     public enum NestedSchemas
     {
@@ -243,6 +249,7 @@ public class ExpSchema extends AbstractExpSchema
         {
             tableNames.add(type.toString());
         }
+        tableNames.add(DATA_CLASS_CATEGORY_TABLE);
         tableNames = Collections.unmodifiableSet(tableNames);
     }
 
@@ -259,6 +266,7 @@ public class ExpSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ExpSchema(schema.getUser(), schema.getContainer());
@@ -268,7 +276,7 @@ public class ExpSchema extends AbstractExpSchema
 
     public SamplesSchema getSamplesSchema()
     {
-        SamplesSchema schema = new SamplesSchema(getUser(), getContainer());
+        SamplesSchema schema = new SamplesSchema(this);
         schema.setContainerFilter(_containerFilter);
         return schema;
     }
@@ -278,11 +286,13 @@ public class ExpSchema extends AbstractExpSchema
         super(SCHEMA_NAME, SCHEMA_DESCR, user, container, ExperimentService.get().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return tableNames;
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         for (TableType tableType : TableType.values())
@@ -308,7 +318,41 @@ public class ExpSchema extends AbstractExpSchema
             return createExperimentsTableWithRunMemberships(null, cf);
         }
 
+        if (DATA_CLASS_CATEGORY_TABLE.equalsIgnoreCase(name))
+        {
+            return new EnumTableInfo<>(DataClassCategoryType.class, this, DataClassCategoryType::name, true, "Contains the list of available data class category types.");
+        }
+
         return null;
+    }
+
+    /**
+     * Exposed as EnumTableInfo
+     *
+     */
+    public enum DataClassCategoryType
+    {
+        registry(null, null),
+        media(null, null),
+        sources(AuditBehaviorType.DETAILED, ADDITIONAL_SOURES_AUDIT_FIELDS);
+
+        public AuditBehaviorType defaultBehavior;
+        public Set<String> additionalAuditFields;
+
+        DataClassCategoryType(@Nullable AuditBehaviorType defaultBehavior, @Nullable Set<String> addlAuditFields)
+        {
+            this.defaultBehavior = defaultBehavior;
+            this.additionalAuditFields = addlAuditFields;
+        }
+
+        public static DataClassCategoryType fromString(String typeVal) {
+            for (DataClassCategoryType type : DataClassCategoryType.values()) {
+                if (type.name().equalsIgnoreCase(typeVal)) {
+                    return type;
+                }
+            }
+            return null;
+        }
     }
 
     @Override
@@ -329,6 +373,7 @@ public class ExpSchema extends AbstractExpSchema
         return getSchema(schema.name());
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         if (_restricted)
@@ -365,13 +410,14 @@ public class ExpSchema extends AbstractExpSchema
     }
 
 
-    public ForeignKey getProtocolApplicationForeignKey()
+    public ForeignKey getProtocolApplicationForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.ProtocolApplications.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.ProtocolApplications);
+                return getTable(TableType.ProtocolApplications, cf);
             }
         };
     }
@@ -380,39 +426,32 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey(targetColumnName)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                ExpProtocolTable protocolTable = (ExpProtocolTable)TableType.Protocols.createTable(ExpSchema.this, TableType.Protocols.toString(), cf);
-                protocolTable.setContainerFilter(ContainerFilter.EVERYTHING);
-                return protocolTable;
+                return getTable(TableType.Protocols.toString(), ContainerFilter.EVERYTHING);
             }
         };
     }
 
-    public ForeignKey getMaterialProtocolInputForeignKey()
+    public ForeignKey getMaterialProtocolInputForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.MaterialProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.MaterialProtocolInputs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.MaterialProtocolInputs, cf);
             }
         };
     }
 
-    public ForeignKey getDataProtocolInputForeignKey()
+    public ForeignKey getDataProtocolInputForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.DataProtocolInputs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.DataProtocolInputs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.DataProtocolInputs, cf);
             }
@@ -423,11 +462,16 @@ public class ExpSchema extends AbstractExpSchema
     {
         return new LookupForeignKey("RowId", "RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return PipelineService.get().getJobsTable(getUser(), getContainer());
+                QuerySchema pipeline = getDefaultSchema().getSchema("pipeline");
+                if (null == pipeline)
+                    return null;
+                return pipeline.getTable("Job", getDefaultContainerFilter());
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 return getURL(parent, true);
@@ -435,34 +479,54 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
+    @Deprecated
     public ForeignKey getRunIdForeignKey()
+    {
+        return getRunIdForeignKey(null);
+    }
+
+    public ForeignKey getRunIdForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Runs.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
-            {
-                return getTable(TableType.Runs);
-            }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
             {
                 return getTable(TableType.Runs, cf);
             }
         };
     }
 
-    /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
+    @Deprecated
     public ForeignKey getRunGroupIdForeignKey(final boolean includeBatches)
+    {
+        return getRunGroupIdForeignKey(null, includeBatches);
+    }
+
+    /** @param includeBatches if false, then filter out run groups of type batch when doing the join */
+    public ForeignKey getRunGroupIdForeignKey(ContainerFilter cf, final boolean includeBatches)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.RunGroups.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return getLookupTableInfo(null);
+                ContainerFilter cf = getLookupContainerFilter();
+                String key = getClass().getName() + "/RunGroupIdForeignKey/" + includeBatches + "/" + cf.getCacheKey();
+                // since getTable(forWrite=true) does not cache, cache this tableinfo using getCachedLookupTableInfo()
+                return ExpSchema.this.getCachedLookupTableInfo(key, this::createLookupTableInfo);
             }
-            public TableInfo getLookupTableInfo(ContainerFilter cf)
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
             {
-                ExpExperimentTable result = (ExpExperimentTable)getTable(TableType.RunGroups.name(),
-                        Objects.requireNonNullElse(cf, new ContainerFilter.CurrentPlusProjectAndShared(getUser())), true, true);
+                return Objects.requireNonNullElse(cf, ContainerFilter.Type.CurrentPlusProjectAndShared.create(ExpSchema.this));
+            }
+
+            private TableInfo createLookupTableInfo()
+            {
+                // CONSIDER: I wonder if this shouldn't be using UnionContainerFilter(cf, CurrentPlusProjectAndShared)
+                ExpExperimentTable result = (ExpExperimentTable) getTable(TableType.RunGroups.name(), getLookupContainerFilter(), true, true);
                 if (!includeBatches)
                 {
                     result.setBatchProtocol(null);
@@ -473,13 +537,14 @@ public class ExpSchema extends AbstractExpSchema
         };
     }
 
-    public ForeignKey getDataIdForeignKey()
+    public ForeignKey getDataIdForeignKey(ContainerFilter cf)
     {
         return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Data.name(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
-                return getTable(TableType.Data);
+                return getTable(TableType.Data, cf);
             }
         };
     }
@@ -488,20 +553,18 @@ public class ExpSchema extends AbstractExpSchema
      * @param domainProperty the property on which the lookup is configured
      */
     @NotNull
-    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty)
+    public ForeignKey getMaterialIdForeignKey(@Nullable ExpSampleSet targetSampleSet, @Nullable DomainProperty domainProperty, ContainerFilter cfParent)
     {
         if (targetSampleSet == null)
         {
             return new ExperimentLookupForeignKey(null, null, ExpSchema.SCHEMA_NAME, TableType.Materials.name(), "RowId", null)
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
-                    // UNDONE ContainerFilter
-//                    ContainerFilterable t = (ContainerFilterable)table;
-//                    // Merge the special container filter set above with whatever else might have been requested in the parent table's
-//                    t.setContainerFilter(new UnionContainerFilter(t.getContainerFilter(), parent.getParentTable().getContainerFilter()));
-
                     ContainerFilter cf = new ContainerFilter.SimpleContainerFilter(getSearchContainers(getContainer(), targetSampleSet, domainProperty, getUser()));
+                    if (null != cfParent)
+                        cf = new UnionContainerFilter(cf, cfParent);
                     ExpTable result = getTable(TableType.Materials, cf);
                     return result;
                 }
@@ -598,25 +661,16 @@ public class ExpSchema extends AbstractExpSchema
             };
         }
 
+        QueryView queryView = super.createView(context, settings, errors);
+
         if (TableType.Materials.name().equalsIgnoreCase(settings.getQueryName()) ||
-            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()))
+            TableType.Data.name().equalsIgnoreCase(settings.getQueryName()) ||
+            TableType.Protocols.name().equalsIgnoreCase(settings.getQueryName()))
         {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
+            // Use default delete button, but without showing the confirmation text
+            queryView.setShowDeleteButtonConfirmationText(false);
         }
 
-        return super.createView(context, settings, errors);
+        return queryView;
     }
 }

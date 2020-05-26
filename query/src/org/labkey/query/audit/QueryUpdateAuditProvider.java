@@ -19,11 +19,12 @@ import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -120,7 +121,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_SCHEMA_NAME.equalsIgnoreCase(col.getName()))
                 {
@@ -134,7 +135,7 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         };
         appendValueMapColumns(table);
 
-        DetailsURL url = DetailsURL.fromString("query/queryAuditChanges.view?auditRowId=${rowId}");
+        DetailsURL url = DetailsURL.fromString("audit-detailedAuditChanges.view?auditRowId=${rowId}&auditEventType=" + QUERY_UPDATE_AUDIT_EVENT);
         url.setStrictContainerContextEval(true);
         table.setDetailsURL(url);
 
@@ -188,13 +189,11 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         return null;
     }
 
-    public static class QueryUpdateAuditEvent extends AuditTypeEvent
+    public static class QueryUpdateAuditEvent extends DetailedAuditTypeEvent
     {
         private String _rowPk;
         private String _schemaName;
         private String _queryName;
-        private String _oldRecordMap;
-        private String _newRecordMap;
 
         public QueryUpdateAuditEvent()
         {
@@ -234,26 +233,6 @@ public class QueryUpdateAuditProvider extends AbstractAuditTypeProvider implemen
         public void setQueryName(String queryName)
         {
             _queryName = queryName;
-        }
-
-        public String getOldRecordMap()
-        {
-            return _oldRecordMap;
-        }
-
-        public void setOldRecordMap(String oldRecordMap)
-        {
-            _oldRecordMap = oldRecordMap;
-        }
-
-        public String getNewRecordMap()
-        {
-            return _newRecordMap;
-        }
-
-        public void setNewRecordMap(String newRecordMap)
-        {
-            _newRecordMap = newRecordMap;
         }
 
         @Override

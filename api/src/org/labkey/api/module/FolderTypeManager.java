@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.ConfigProperty;
 import org.labkey.api.util.Path;
@@ -76,6 +75,7 @@ public class FolderTypeManager
         private static final String noneStr = FolderType.NONE.getName();
         private static final String collabStr = "Collaboration"; //Cheating
 
+        @Override
         public int compare(String s, String s1)
         {
             if (s.equals(s1))
@@ -102,6 +102,10 @@ public class FolderTypeManager
 
     public void registerFolderType(Module sourceModule, FolderType folderType)
     {
+        if (!ModuleLoader.getInstance().isStartupInProgress() && !ModuleLoader.getInstance().isStartupComplete())
+        {
+            throw new IllegalStateException("Don't call registerFolderType() this early; it can cause WebParts to get populated from modules that are about to be pruned.");
+        }
         if (_javaFolderTypes.containsKey(folderType.getName()))
         {
             String msg = "Unable to register folder type " + folderType.getName() + " from module " + sourceModule.getName() +
@@ -260,9 +264,9 @@ public class FolderTypeManager
 
         @Nullable
         @Override
-        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        public ModuleResourceCacheListener createChainedListener(Module module)
         {
-            return new FileSystemDirectoryListener()
+            return new ModuleResourceCacheListener()
             {
                 @Override
                 public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -284,6 +288,12 @@ public class FolderTypeManager
 
                 @Override
                 public void overflow()
+                {
+                    FolderTypeManager.get().clearAllFolderTypes();
+                }
+
+                @Override
+                public void moduleChanged(Module module)
                 {
                     FolderTypeManager.get().clearAllFolderTypes();
                 }

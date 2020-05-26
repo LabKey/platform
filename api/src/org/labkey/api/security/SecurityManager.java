@@ -48,6 +48,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.AuthenticationConfiguration.PrimaryAuthenticationConfiguration;
 import org.labkey.api.security.AuthenticationManager.AuthenticationValidator;
 import org.labkey.api.security.AuthenticationProvider.ResetPasswordProvider;
 import org.labkey.api.security.ValidEmail.InvalidEmailException;
@@ -82,6 +83,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionHelper;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.util.emailTemplate.UserOriginatedEmailTemplate;
@@ -121,7 +123,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static org.labkey.api.action.SpringActionController.ERROR_MSG;
-import static org.labkey.api.settings.ConfigProperty.modifier.bootstrap;
 
 /**
  * Responsible for user authentication, creating or modifying groups, and similar user/group operations.
@@ -152,6 +153,7 @@ public class SecurityManager
     private static final String IMPERSONATION_CONTEXT_FACTORY_KEY = User.class.getName() + "$ImpersonationContextFactoryKey";
     private static final String AUTHENTICATION_VALIDATORS_KEY = SecurityManager.class.getName() + "$AuthenticationValidators";
     private static final String AUTHENTICATION_METHOD = "SecurityManager.authenticationMethod";
+    public static final String PRIMARY_AUTHENTICATION_CONFIGURATION = PrimaryAuthenticationConfiguration.class.getName();
 
     static
     {
@@ -276,7 +278,16 @@ public class SecurityManager
 
     public static void addGroupListener(GroupListener listener)
     {
-        _listeners.add(listener);
+        addGroupListener(listener, false);
+    }
+
+    /** Adds a listener with option to specify that it needs to be executed before the other listeners */
+    public static void addGroupListener(GroupListener listener, boolean meFirst)
+    {
+        if (meFirst)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
     private static List<GroupListener> getListeners()
@@ -522,7 +533,7 @@ public class SecurityManager
                     }
 
                     // Now logout the session user
-                    logoutUser(request, sessionUser);
+                    logoutUser(request, sessionUser, null);
                     sessionUser = null;
                 }
             }
@@ -549,10 +560,11 @@ public class SecurityManager
             }
         }
 
-        if (null == u)
-        {
-            u = AuthenticationManager.attemptRequestAuthentication(request);
-        }
+//  We don't register any RequestAuthenticationProvider implementations, so don't bother
+//        if (null == u)
+//        {
+//            u = AuthenticationManager.attemptRequestAuthentication(request);
+//        }
 
         return null == u || u.isGuest() ? null : new Pair<>(u, request);
     }
@@ -623,7 +635,7 @@ public class SecurityManager
     }
 
 
-    public static HttpSession setAuthenticatedUser(HttpServletRequest request, User user, boolean invalidate)
+    public static HttpSession setAuthenticatedUser(HttpServletRequest request, @Nullable PrimaryAuthenticationConfiguration<?> configuration, User user, boolean invalidate)
     {
         SessionHelper.clearSession(request, invalidate, PageFlowUtil.set(WikiTermsOfUseProvider.TERMS_APPROVED_KEY));
         if (!user.isGuest() && request instanceof AuthenticatedRequest)
@@ -633,14 +645,18 @@ public class SecurityManager
         newSession.setAttribute(USER_ID_KEY, user.getUserId());
         newSession.setAttribute("LABKEY.username", user.getName());
 
+        if (null != configuration)
+            newSession.setAttribute(PRIMARY_AUTHENTICATION_CONFIGURATION, configuration.getRowId());
+
         return newSession;
     }
 
 
-    public static void logoutUser(HttpServletRequest request, User user)
+    public static URLHelper logoutUser(HttpServletRequest request, User user, @Nullable URLHelper returnURL)
     {
-        AuthenticationManager.logout(user, request);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
+        URLHelper ret = AuthenticationManager.logout(user, request, returnURL);   // Let AuthenticationProvider clean up auth-specific cookies, etc.
         SessionHelper.clearSession(request, true);
+        return ret;
     }
 
 
@@ -1654,7 +1670,7 @@ public class SecurityManager
     {
         Container proj = c.getProject();
 
-        if (null == proj)
+        if (null == proj || u == null)
             return "";
 
         int[] groupIds = u.getGroups();
@@ -2188,7 +2204,7 @@ public class SecurityManager
         return groupId;
     }
 
-    // CONSIDER: Support multiple LDAP domains?
+    // TODO: Update to iterate through all configurations
     public static boolean isLdapEmail(ValidEmail email)
     {
         String ldapDomain = AuthenticationManager.getLdapDomain();
@@ -3236,14 +3252,11 @@ public class SecurityManager
 
     public static void populateUserGroupsWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // assign users to groups using values read from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserGroups.{email};{modifier}=SiteAdministrators,Developers
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_GROUPS);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                     String[] groups = prop.getValue().split(",");
@@ -3292,14 +3305,11 @@ public class SecurityManager
 
     public static void populateGroupRolesWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // create groups with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: GroupRoles.{groupName};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_GROUP_ROLES);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     Group group = GroupManager.getGroup(rootContainer, prop.getName(), GroupEnumType.SITE);
                     if (null == group)
@@ -3337,14 +3347,11 @@ public class SecurityManager
 
     public static void populateUserRolesWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // create users with specified roles using values read from startup properties as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: UserRoles.{email};{modifier}=org.labkey.api.security.roles.ApplicationAdminRole, org.labkey.api.security.roles.SomeOtherStartupRole
         Container rootContainer = ContainerManager.getRoot();
         Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_USER_ROLES);
         startupProps.stream()
-                .filter(prop -> prop.getModifier() != bootstrap || isBootstrap)
                 .forEach(prop -> {
                     User user = getExistingOrCreateUser(prop.getName(), rootContainer);
                     String[] roles = prop.getValue().split(",");

@@ -33,14 +33,14 @@ public abstract class GWTServiceAction extends BaseViewAction<Object>
     protected GWTServiceAction()
     {
         super(Object.class);
-        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
+        setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
     }
 
     @Override
     public ModelAndView handleRequest(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
     {
         BaseRemoteService service = createService();
-        if (!"POST".equalsIgnoreCase(httpServletRequest.getMethod()))
+        if (!isPost())
         {
             // GWT service requests must be POSTs
             httpServletResponse.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);

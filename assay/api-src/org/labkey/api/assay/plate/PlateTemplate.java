@@ -16,7 +16,10 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
+import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +29,7 @@ import java.util.Map;
  * Date: Oct 20, 2006
  * Time: 1:02:47 PM
  */
-public interface PlateTemplate extends PropertySet
+public interface PlateTemplate extends PropertySet, Identifiable
 {
     String getName();
 
@@ -36,9 +39,13 @@ public interface PlateTemplate extends PropertySet
 
     int getColumns();
 
+    @Nullable WellGroupTemplate getWellGroup(int rowId);
+
     List<? extends WellGroupTemplate> getWellGroups();
 
     List<? extends WellGroupTemplate> getWellGroups(Position position);
+
+    List<? extends WellGroupTemplate> getWellGroups(WellGroup.Type type);
 
     Map<WellGroup.Type, Map<String, WellGroupTemplate>> getWellGroupTemplateMap();
 
@@ -55,4 +62,6 @@ public interface PlateTemplate extends PropertySet
     int getWellGroupCount(WellGroup.Type type);
 
     String getType();
+
+    @Nullable ActionURL detailsURL();
 }

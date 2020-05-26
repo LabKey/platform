@@ -17,8 +17,7 @@
 package org.labkey.api.exp.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpProtocol;
 
@@ -45,7 +44,8 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         RunCount,
         Folder,
         BatchProtocolId,
+        Properties
     }
 
-    BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);
+    MutableColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol);
 }

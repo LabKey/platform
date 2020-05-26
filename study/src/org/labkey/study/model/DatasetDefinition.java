@@ -47,11 +47,14 @@ import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -91,6 +94,7 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
+import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -121,6 +125,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toSet;
 
 
 /**
@@ -157,14 +164,6 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     private String _type = Dataset.TYPE_STANDARD;
     private DataSharing _datasharing = DataSharing.NONE;
     private boolean _useTimeKeyField = false;
-
-
-    public enum DataSharing
-    {
-        NONE,
-        ALL,
-        PTID
-    }
 
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
@@ -485,6 +484,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             throw new IllegalStateException();
     }
 
+    @Override
     public DataSharing getDataSharingEnum()
     {
         if (!isDemographicData())
@@ -530,6 +530,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         modifiedDates.remove(def.getEntityId());
     }
 
+    @Override
     public String getTag()
     {
         return _tag;
@@ -747,7 +748,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     /**
      * Deletes rows without auditing
      */
-    public int deleteRows(User user, @Nullable Date cutoff)
+    public int deleteRows(@Nullable Date cutoff)
     {
         int count;
 
@@ -776,7 +777,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
             SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
             count = executor.execute(studyDataFrag);
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
 
             transaction.commit();
 
@@ -787,7 +788,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return count;
     }
 
-
+    @Override
     public boolean isDemographicData()
     {
         return _demographicData;
@@ -822,11 +823,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _type = type;
     }
 
+    @Override
     public boolean getUseTimeKeyField()
     {
         return _useTimeKeyField;
     }
 
+    @Override
     public void setUseTimeKeyField(boolean useTimeKeyField)
     {
         verifyMutability();
@@ -896,16 +899,21 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 {
                     result.addAll(RoleManager.getRole(SiteAdminRole.class).getPermissions());
                 }
-                else if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                else
                 {
-                    result.add(UpdatePermission.class);
-                    result.add(DeletePermission.class);
-                    result.add(InsertPermission.class);
-                }
-                else if (studyPolicy.hasPermission(user, ReadSomePermission.class))
-                {
-                    // Advanced write grants dataset permissions based on the policy stored directly on the dataset
-                    result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    if (studyPolicy.hasPermission(user, UpdatePermission.class))
+                    {
+                        result.add(UpdatePermission.class);
+                        result.add(DeletePermission.class);
+                        result.add(InsertPermission.class);
+                    }
+                    // A user can be part of multiple groups, which are set to both Edit All and Per Dataset permissions
+                    // so check for a custom security policy even if they have UpdatePermission on the study's policy
+                    if (studyPolicy.hasPermission(user, ReadSomePermission.class))
+                    {
+                        // Advanced write grants dataset permissions based on the policy stored directly on the dataset
+                        result.addAll(SecurityPolicyManager.getPolicy(this).getPermissions(user));
+                    }
                 }
             }
         }
@@ -1074,7 +1082,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         try (Transaction transaction = scope.ensureTransaction())
         {
             Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
             transaction.commit();
         }
     }
@@ -1096,7 +1104,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _visitDatePropertyName;
     }
 
-
+    @Override
     public String getVisitDatePropertyName()
     {
         return _visitDatePropertyName;
@@ -1108,12 +1116,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         _visitDatePropertyName = visitDatePropertyName;
     }
 
-    
+    @Override
     public String getKeyPropertyName()
     {
         return _keyPropertyName;
     }
 
+    @Override
     public void setKeyPropertyName(String keyPropertyName)
     {
         verifyMutability();
@@ -1134,11 +1143,13 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
 
+    @Override
     public void setKeyManagementType(@NotNull KeyManagementType type)
     {
         _keyManagementType = type;
     }
 
+    @Override
     @NotNull
     public KeyManagementType getKeyManagementType()
     {
@@ -1211,7 +1222,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     public class DatasetSchemaTableInfo extends SchemaTableInfo
     {
         private Container _container;
-        boolean _multiContainer = false;
+        boolean _multiContainer;
         BaseColumnInfo _ptid;
 
         TableInfo _storage;
@@ -1365,7 +1376,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                     continue;
                 }
 
-                var wrapped = newDatasetColumnInfo(user, this, col, p.getPropertyDescriptor());
+                var wrapped = newDatasetColumnInfo(this, col, p.getPropertyDescriptor());
                 addColumn(wrapped);
 
                 // Set the FK if the property descriptor is configured as a lookup or a conceptURI.
@@ -1574,7 +1585,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     
-    static BaseColumnInfo newDatasetColumnInfo(User user, TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
+    static BaseColumnInfo newDatasetColumnInfo(TableInfo tinfo, ColumnInfo from, PropertyDescriptor p)
     {
         var ci = newDatasetColumnInfo(tinfo, from, p.getPropertyURI());
         // We are currently assuming the db column name is the same as the propertyname
@@ -1758,6 +1769,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return true;
     }
 
+    @Override
     public Integer getCohortId()
     {
         return _cohortId;
@@ -1769,6 +1781,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
     }
 
     @Nullable
+    @Override
     public CohortImpl getCohort()
     {
         if (_cohortId == null)
@@ -1781,6 +1794,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return _protocolId;
     }
 
+    @Override
     public ExpProtocol getAssayProtocol()
     {
         return _protocolId == null ? null : ExperimentService.get().getExpProtocol(_protocolId.intValue());
@@ -1799,7 +1813,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
 
     /** Do the actual delete from the underlying table, without auditing */
-    public void deleteRows(User user, Collection<String> allLSIDs)
+    public void deleteRows(Collection<String> allLSIDs)
     {
         List<Collection<String>> rowLSIDSlices = slice(allLSIDs);
 
@@ -1819,7 +1833,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 }
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
-                StudyManager.datasetModified(this, user, true);
+                StudyManager.datasetModified(this, true);
             }
             transaction.commit();
         }
@@ -1968,7 +1982,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
                 throw errors;
 
             _log.debug("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
-            StudyManager.datasetModified(this, user, true);
+            StudyManager.datasetModified(this, true);
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2495,7 +2509,7 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
             mergeData.remove("lsid");
             mergeData.remove("participantsequencenum");
 
-            deleteRows(u, Collections.singletonList(lsid));
+            deleteRows(Collections.singletonList(lsid));
 
             List<Map<String,Object>> dataMap = Collections.singletonList(mergeData);
 
@@ -2557,6 +2571,48 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
         return result;
     }
 
+    private void deleteProvenance(User u, Collection<String> lsids, ProvenanceService pvs)
+    {
+        // Get the ExpRuns referenced by the dataset row LSIDs
+        List<? extends ExpRun> runs = pvs.getRuns(new HashSet<>(lsids));
+
+        // delete the provenance rows and the exp.object that the provenance module created for the dataset LSID row
+        for (String lsid : lsids)
+        {
+            // NOTE: We need to get and delete the objects individually instead of deleting in bulk
+            // NOTE: because the objects live in a different container than the run.
+            // CONSIDER: This could be optimized by select from.exp object and performing bulk deletes partitioned by container
+            OntologyObject expObject = OntologyManager.getOntologyObject(null/*any container*/, lsid);
+            if (null != expObject)
+            {
+                pvs.deleteObjectProvenance(expObject.getObjectId());
+                OntologyManager.deleteOntologyObject(lsid, expObject.getContainer(), false);
+            }
+        }
+
+        // If all rows from the run are recalled, the “StudyPublish” run should be deleted.
+        // NOTE: Should we do this for other run types as well?  In the future, other runs might have a provenance reference to the dataset LSID
+        for (ExpRun run : runs)
+        {
+            boolean syncNeeded = true;
+            if (run.getProtocol().getLSID().equals(AssayPublishService.STUDY_PUBLISH_PROTOCOL_LSID))
+            {
+                // get all the input and output LSIDs that remain for the selected runs
+                Set<String> allRunLsids = new HashSet<>(pvs.getProvenanceObjectUriSet(run.getInputProtocolApplication().getObjectId()));
+                allRunLsids.addAll(pvs.getProvenanceObjectUriSet(run.getOutputProtocolApplication().getObjectId()));
+
+                if (allRunLsids.isEmpty())
+                {
+                    ExperimentService.get().deleteExperimentRunsByRowIds(getContainer(), u, run.getRowId());
+                    syncNeeded = false;
+                }
+            }
+
+            if (syncNeeded)
+                ExperimentService.get().syncRunEdges(run);
+        }
+    }
+
     public void deleteDatasetRows(User u, Collection<String> lsids)
     {
         // Need to fetch the old item in order to log the deletion
@@ -2564,7 +2620,12 @@ public class DatasetDefinition extends AbstractStudyEntity<DatasetDefinition> im
 
         try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            deleteRows(u, lsids);
+            ProvenanceService pvs = ProvenanceService.get();
+            if (null != pvs)
+            {
+                deleteProvenance(u, lsids, pvs);
+            }
+            deleteRows(lsids);
 
             for (Map<String, Object> oldData : oldDatas)
             {

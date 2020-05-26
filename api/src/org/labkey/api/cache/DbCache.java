@@ -35,25 +35,25 @@ import java.util.Map;
 @Deprecated
 public class DbCache
 {
-    private static final Map<Path, DatabaseCache<Object>> CACHES = new HashMap<>(100);
+    private static final Map<Path, DatabaseCache<String, Object>> CACHES = new HashMap<>(100);
 
-    public static int DEFAULT_CACHE_SIZE = 1000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
+    public static int DEFAULT_CACHE_SIZE = 5000;   // Each TableInfo can override this (see tableInfo.xsd <cacheSize> element)
 
 
-    public static <K> DatabaseCache<K> getCacheGeneric(TableInfo tinfo)
+    public static <K> DatabaseCache<String, K> getCacheGeneric(TableInfo tinfo)
     {
-        return (DatabaseCache<K>)getCache(tinfo, true);
+        return (DatabaseCache<String, K>)getCache(tinfo, true);
     }
 
 
-    private static DatabaseCache<Object> getCache(TableInfo tinfo, boolean create)
+    private static DatabaseCache<String, Object> getCache(TableInfo tinfo, boolean create)
     {
         Path cacheKey = tinfo.getNotificationKey();
         assert null != cacheKey : "DbCache not supported for " + tinfo.toString();
 
         synchronized(CACHES)
         {
-            DatabaseCache<Object> cache = CACHES.get(cacheKey);
+            DatabaseCache<String, Object> cache = CACHES.get(cacheKey);
 
             if (null == cache && create)
             {
@@ -68,28 +68,28 @@ public class DbCache
 
     public static void put(TableInfo tinfo, String name, Object obj)
     {
-        DatabaseCache<Object> cache = getCache(tinfo, true);
+        DatabaseCache<String, Object> cache = getCache(tinfo, true);
         cache.put(name, obj);
     }
 
 
     public static void put(TableInfo tinfo, String name, Object obj, long millisToLive)
     {
-        DatabaseCache<Object> cache = getCache(tinfo, true);
+        DatabaseCache<String, Object> cache = getCache(tinfo, true);
         cache.put(name, obj, millisToLive);
     }
 
 
     public static Object get(TableInfo tinfo, String name)
     {
-        DatabaseCache cache = getCache(tinfo, false);
+        DatabaseCache<String, Object> cache = getCache(tinfo, false);
         return null == cache ? null : cache.get(name);
     }
     
 
     public static void remove(TableInfo tinfo, String name)
     {
-        DatabaseCache cache = getCache(tinfo, false);
+        DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.remove(name);
     }
@@ -98,7 +98,7 @@ public class DbCache
     /** used by Table */
     public static void invalidateAll(TableInfo tinfo)
     {
-        DatabaseCache cache = CACHES.get(tinfo.getNotificationKey());
+        DatabaseCache<String, Object> cache = CACHES.get(tinfo.getNotificationKey());
         if (null != cache)
             cache.clear();
     }
@@ -106,7 +106,7 @@ public class DbCache
 
     public static void clear(TableInfo tinfo)
     {
-        DatabaseCache cache = getCache(tinfo, false);
+        DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
             cache.clear();
     }
@@ -114,8 +114,8 @@ public class DbCache
 
     public static void removeUsingPrefix(TableInfo tinfo, String name)
     {
-        DatabaseCache cache = getCache(tinfo, false);
+        DatabaseCache<String, Object> cache = getCache(tinfo, false);
         if (null != cache)
-            cache.removeUsingPrefix(name);
+            cache.removeUsingFilter(new Cache.StringPrefixFilter(name));
     }
 }

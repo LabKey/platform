@@ -58,15 +58,15 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HTMLContentExtractor;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.designer.StudyDesignInfo;
@@ -75,6 +75,7 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -179,6 +180,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return getContainer();
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
@@ -198,12 +200,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return "The study " + _label;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
     }
 
 
+    @Override
     public void setLabel(String label)
     {
         verifyMutability();
@@ -220,19 +224,21 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
+    @Override
     public List<VisitImpl> getVisits(Visit.Order order)
     {
         return StudyManager.getInstance().getVisits(this, order);
     }
 
     @Override
-    public Map<String, Double> getVisitAliases()
+    public Map<String, BigDecimal> getVisitAliases()
     {
         return StudyManager.getInstance().getCustomVisitImportMapping(this)
-                .stream()
-                .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
+            .stream()
+            .collect(Collectors.toMap(StudyManager.VisitAlias::getName, StudyManager.VisitAlias::getSequenceNum));
     }
 
+    @Override
     public DatasetDefinition getDataset(int id)
     {
         return StudyManager.getInstance().getDatasetDefinition(this, id);
@@ -250,6 +256,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getDatasetDefinitionByLabel(this, label);
     }
 
+    @Override
     public List<DatasetDefinition> getDatasets()
     {
         return StudyManager.getInstance().getDatasetDefinitions(this);
@@ -280,11 +287,13 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ids;
     }
 
+    @Override
     public List<LocationImpl> getLocations()
     {
-        return StudyManager.getInstance().getSites(getContainer());
+        return StudyManager.getInstance().getLocations(getContainer());
     }
 
+    @Override
     public List<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
@@ -366,6 +375,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return SpecimenManager.getInstance().getRepositorySettings(getContainer());
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getContainer();
@@ -396,6 +406,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return true;
     }
 
+    @Override
     public TimepointType getTimepointType()
     {
         return _timepointType;
@@ -699,16 +710,8 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         }
         else
         {
-            WikiService ws = WikiService.get();
-
-            if (null != ws)
-            {
-                return ws.getFormattedHtml(getDescriptionWikiRendererType(), description);
-            }
-            else
-            {
-                return PageFlowUtil.filter(description, true);
-            }
+            WikiRenderingService wrs = WikiRenderingService.get();
+            return wrs.getFormattedHtml(getDescriptionWikiRendererType(), description);
         }
     }
 
@@ -814,7 +817,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     {
         if (_studySnapshotType == null && getStudySnapshot() != null)
         {
-            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(getStudySnapshot());
+            StudySnapshot snapshot = StudyManager.getInstance().getStudySnapshot(getStudySnapshot());
             if (snapshot != null)
             {
                 _studySnapshotType = snapshot.getType();
@@ -978,18 +981,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public String getSearchKeywords()
     {
-        Results rs = null;
         StringBuilder sb = new StringBuilder();
 
-        try
+        StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
+        TableInfo sp = sqs.getTable("StudyProperties");
+        if (null != sp)
         {
-            StudyQuerySchema sqs = StudyQuerySchema.createSchema(this, User.getSearchUser(), false);
-            TableInfo sp = sqs.getTable("StudyProperties");
-            if (null != sp)
+            List<ColumnInfo> cols = sp.getColumns();
+            try (Results results = QueryService.get().select(sp, cols, null, null))
             {
-                List<ColumnInfo> cols = sp.getColumns();
-                rs = QueryService.get().select(sp, cols, null, null);
-                if (rs.next())
+                if (results.next())
                 {
                     for (ColumnInfo col : cols)
                     {
@@ -997,18 +998,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
                             continue;
                         if (col.getJdbcType() != JdbcType.VARCHAR)
                             continue;
-                        appendKeyword(sb, rs.getString(col.getFieldKey()));
+                        appendKeyword(sb, results.getString(col.getFieldKey()));
                     }
                 }
             }
-        }
-        catch (SQLException x)
-        {
-            //
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
+            catch (SQLException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
         }
 
         appendKeyword(sb, getLabel());

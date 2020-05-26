@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CoreSchema;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.QueryChangeListener;
@@ -177,6 +178,9 @@ class ReportQueryChangeListener implements QueryChangeListener, CustomViewChange
             }
             catch (Exception e)
             {
+                // This is meant to be a "best effort" method.  However, we shouldn't swallow exceptions while a transaction is active.
+                if (CoreSchema.getInstance().getScope().isTransactionActive())
+                    throw e;
                 logger.error("An error occurred upgrading report properties: ", e);
             }
         }

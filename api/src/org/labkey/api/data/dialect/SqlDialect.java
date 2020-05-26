@@ -79,8 +79,6 @@ public abstract class SqlDialect
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     protected static final int MAX_VARCHAR_SIZE = 4000;  //Any length over this will be set to nvarchar(max)/text
 
-    private int _databaseVersion = 0;
-    private String _productVersion = "0";
     private DialectStringHandler _stringHandler = null;
 
     private final Set<String> _reservedWordSet;
@@ -95,7 +93,7 @@ public abstract class SqlDialect
         initializeSqlTypeIntMap();
         initializeJdbcTableTypeMap(_tableTypeMap);
         Set<String> types = _tableTypeMap.keySet();
-        _tableTypes = types.toArray(new String[types.size()]);
+        _tableTypes = types.toArray(new String[0]);
 
         _reservedWordSet = getReservedWords();
 
@@ -304,19 +302,20 @@ public abstract class SqlDialect
     public abstract String getSqlTypeName(PropertyStorageSpec prop);
 
 
-    protected String getDatabaseMaintenanceSql()
+    protected @Nullable String getDatabaseMaintenanceSql()
     {
         return null;
+    }
+
+    public boolean isJdbcCachingEnabledByDefault()
+    {
+        return false;
     }
 
     public Closer configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
         return () -> {};
-    }
-
-    public void configureToDisableJdbcCaching(Statement stmt) throws SQLException
-    {
     }
 
     /**
@@ -434,34 +433,14 @@ public abstract class SqlDialect
         return keywordSet;
     }
 
-    // Internal version number
-    public int getDatabaseVersion()
+    // Human readable product version number. Pass through by default; dialects should override this if they can provide
+    // more useful product version information than what's returned from DatabaseMetaData.getDatabaseProductVersion().
+    public @Nullable String getProductVersion(String dbmdProductVersion)
     {
-        return _databaseVersion;
-    }
-
-    public void setDatabaseVersion(int databaseVersion)
-    {
-        _databaseVersion = databaseVersion;
-    }
-
-    // Human readable product version number
-    public String getProductVersion()
-    {
-        return _productVersion;
-    }
-
-    public void setProductVersion(String productVersion)
-    {
-        _productVersion = productVersion;
+        return dbmdProductVersion;
     }
 
     public abstract String getProductName();
-
-    public @Nullable String getProductEdition()
-    {
-        return null;
-    }
 
     public abstract String getSQLScriptPath();
 
@@ -549,6 +528,7 @@ public abstract class SqlDialect
 
     public abstract String getClobLengthFunction();
 
+    /** Literal string search, no wildcards supported */
     public abstract SQLFragment getStringIndexOfFunction(SQLFragment toFind, SQLFragment toSearch);
 
     public abstract String getSubstringFunction(String s, String start, String length);
@@ -827,10 +807,10 @@ public abstract class SqlDialect
         Set<String> jdbcKeywords = getJdbcKeywords(executor);
 
         if (!KeywordCandidates.get().containsAll(jdbcKeywords, getProductName()))
-            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException("JDBC keywords from " + getProductName() + " are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
 
         if (!KeywordCandidates.get().containsAll(_reservedWordSet, getProductName()))
-            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt)");
+            throw new IllegalStateException(getProductName() + " reserved words are not all in the keyword candidate list (sqlKeywords.txt). See log for details.");
     }
 
     public int getIdentifierMaxLength()
@@ -929,9 +909,9 @@ public abstract class SqlDialect
         return true;
     }
 
-    protected class SQLSyntaxException extends SQLException
+    protected static class SQLSyntaxException extends SQLException
     {
-        private Collection<String> _errors;
+        private final Collection<String> _errors;
 
         protected SQLSyntaxException(Collection<String> errors)
         {
@@ -1067,6 +1047,10 @@ public abstract class SqlDialect
 
     abstract public boolean allowSortOnSubqueryWithoutLimit();
 
+    public void appendSortOnSubqueryWithoutLimitQualifier(SQLFragment builder)
+    {
+    }
+
     // Substitute the parameter values into the SQL statement.
     public String substituteParameters(SQLFragment frag)
     {
@@ -1144,12 +1128,9 @@ public abstract class SqlDialect
 
         public Integer getMaxTotal()
         {
-            // Need to invoke a different method on Tomcat 7 vs. Tomcat 8/9
-            String methodName = ModuleLoader.getInstance().getTomcatVersion().getMaxTotalMethodName();
-
             try
             {
-                return callGetter(methodName);
+                return callGetter("getMaxTotal");
             }
             catch (ServletException e)
             {
@@ -1157,6 +1138,32 @@ public abstract class SqlDialect
                 return null;
             }
         }
+
+        public Integer getNumActive()
+        {
+            try
+            {
+                return callGetter("getNumActive");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num active from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+        public Integer getNumIdle()
+        {
+            try
+            {
+                return callGetter("getNumIdle");
+            }
+            catch (ServletException e)
+            {
+                LOG.error("Could not extract connection num idle from data source \"" + _dsName + "\"");
+                return null;
+            }
+        }
+
     }
 
 
@@ -1454,9 +1461,15 @@ public abstract class SqlDialect
         required
     }
 
-    public final class MetadataParameterInfo
+    // Simple check. Subclasses can override to provide better checks.
+    public boolean isRds(DbScope scope)
     {
-        private Map<ParamTraits, Integer> paramTraits = new HashMap<>();
+        return StringUtils.containsIgnoreCase(scope.getURL(), "rds.amazonaws.com");
+    }
+
+    public static final class MetadataParameterInfo
+    {
+        private final Map<ParamTraits, Integer> paramTraits;
         private Object value = new Object();
 
         public MetadataParameterInfo(Map<ParamTraits, Integer> paramTraits)

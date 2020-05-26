@@ -1,0 +1,5 @@
+<view xmlns="http://labkey.org/data/xml/view" frame="none">
+    <dependencies>
+        <dependency path="login.css"/>
+    </dependencies>
+</view>

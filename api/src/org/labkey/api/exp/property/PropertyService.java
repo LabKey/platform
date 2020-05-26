@@ -16,6 +16,8 @@
 
 package org.labkey.api.exp.property;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,6 +34,7 @@ import org.labkey.api.util.Pair;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 public interface PropertyService
 {
@@ -63,8 +66,13 @@ public interface PropertyService
     /** Get all the domains in the specified container and optionally project and shared. */
     List<? extends Domain> getDomains(Container container, User user, boolean includeProjectAndShared);
 
-    /** Get all the domains in the specified container and specified Domain Kinds. */
+    /** Get all the domains in the specified container and specified Domain Kinds. THIS IS SLOW, consider using getDomains(DomainKind) instead */
     List<? extends Domain> getDomains(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
+
+    /** Get all the domains in the specified container of the specified DomainKind. faster than getDomains(Set<String> domainKinds) */
+    List<? extends Domain> getDomains(Container container, User user, @NotNull DomainKind<?> dk, boolean includeProjectAndShared);
+
+    Stream<? extends Domain> getDomainsStream(Container container, User user, Set<String> domainKinds, boolean includeProjectAndShared);
 
     /** Creates an in-memory Domain. It is not automatically saved to the database */
     @NotNull
@@ -110,4 +118,6 @@ public interface PropertyService
     List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);
 
     void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats);
+
+    void configureObjectMapper(ObjectMapper om, @Nullable SimpleBeanPropertyFilter filter);
 }

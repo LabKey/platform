@@ -47,6 +47,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ListIterator" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.HtmlString" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -162,10 +163,7 @@
 
 <script type="text/javascript">
 
-    /**
-     * Callback to run the script report panel after all dependent scripts are loaded. Issue : 25130
-     */
-    function createScriptReportPanel() {
+    <labkey:loadClientDependencies>
 
         Ext4.onReady(function(){
 
@@ -182,16 +180,8 @@
                 externalEditSettings.externalUrl = <%=q(externalConfig.containsKey("externalUrl") ? externalConfig.get("externalUrl").toString(): "")%>;
                 externalEditSettings.isEditing = <%=externalConfig.containsKey("editing") && (boolean) externalConfig.get("editing")%>;
                 externalEditSettings.isDocker = <%=externalConfig.get("isDocker")%>;
-
-                <% if (externalConfig.containsKey("warningMsg")) { %>
-                    var externalEditWarning = <%=q((String) externalConfig.get("warningMsg"))%>;
-                    if (externalEditWarning)
-                    {
-                        document.getElementById('script-report-editor-msg').innerHTML = '<span class="script-report-editor-msg">' + externalEditWarning + '</span>';
-                    }
-                <% } %>
-
             <% } %>
+
             var panel = Ext4.create('LABKEY.ext4.ScriptReportPanel', {
                 renderTo        : <%=q(renderId)%>,
                 readOnly        : <%=readOnly%>,
@@ -223,11 +213,17 @@
                 }
             });
         });
-    }
+    </labkey:loadClientDependencies>
 </script>
 
-<labkey:scriptDependency callback="createScriptReportPanel" scope="this"/>
-<div id="script-report-editor-msg" class="text-warning"></div>
+<div id="script-report-editor-msg">
+<%
+    for (HtmlString msg : bean.getWarnings())
+    {
+        %><div class="labkey-warning-messages"><%=msg%></div><br><%
+    }
+%>
+</div>
 <div id="<%= h(renderId)%>" class="script-report-editor"></div>
 
 

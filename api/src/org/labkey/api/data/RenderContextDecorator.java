@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.Errors;
@@ -138,10 +139,10 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
+    public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async)
             throws SQLException, IOException
     {
-        return _ctx.getResultSet(fieldMap, displayColumns, tinfo, settings, parameters, maxRows, offset, name, async);
+        return _ctx.getResults(fieldMap, displayColumns, tinfo, settings, parameters, maxRows, offset, name, async);
     }
 
     @Override
@@ -316,13 +317,13 @@ public class RenderContextDecorator extends RenderContext
     }
 
     @Override
-    public String getErrors(String paramName)
+    public HtmlString getErrors(String paramName)
     {
         return _ctx.getErrors(paramName);
     }
 
     @Override
-    public String getErrors(ColumnInfo column)
+    public HtmlString getErrors(ColumnInfo column)
     {
         return _ctx.getErrors(column);
     }

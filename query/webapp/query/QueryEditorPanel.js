@@ -157,7 +157,7 @@ Ext4.define('LABKEY.query.SourceEditorPanel', {
                 handler : function(btn) {
                     var url = LABKEY.ActionURL.buildURL('query', 'metadataQuery', null, {
                         schemaName : this.query.schema,
-                        'query.queryName' : this.query.query
+                        queryName : this.query.query
                     });
                     window.location = url;
                 },
@@ -486,6 +486,8 @@ Ext4.define('LABKEY.query.QueryEditorPanel', {
 
         if (!Ext4.isDefined(this.query.canEdit))
             this.query.canEdit = true;
+        if (!Ext4.isDefined(this.query.canDelete))
+            this.query.canDelete = true;
         if (!Ext4.isDefined(this.query.canEditSql))
             this.query.canEditSql = this.query.canEdit;
         if (!Ext4.isDefined(this.query.canEditMetaData))

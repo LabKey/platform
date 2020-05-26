@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -24,6 +25,7 @@ import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.PdLookupForeignKey;
+import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.StringExpression;
 import org.labkey.data.xml.ColumnType;
@@ -71,7 +73,7 @@ public interface ColumnInfo extends ColumnRenderProperties
             if (col.getFk() instanceof PdLookupForeignKey)
             {
                 PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
-                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
+                if ("core".equalsIgnoreCase(lfk.getLookupSchemaName()) && ("siteusers".equalsIgnoreCase(lfk.getLookupTableName()) || "users".equalsIgnoreCase(lfk.getLookupTableName())))
                     return true;
             }
             return false;
@@ -156,10 +158,10 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     Object getDefaultValue();
 
+    // TODO return a FieldKey instead of a ColumnInfo
     @Nullable ColumnInfo getDisplayField();
 
-    @Nullable List<ColumnInfo> getSortFields();
-
+    // TODO return a FieldKey instead of a ColumnInfo
     ColumnInfo getFilterField();
 
     boolean isNoWrap();
@@ -167,6 +169,8 @@ public interface ColumnInfo extends ColumnRenderProperties
     @NotNull String getWidth();
 
     TableInfo getFkTableInfo();
+
+    TableDescription getFkTableDescription();
 
     boolean isUserEditable();
 
@@ -201,6 +205,25 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     StringExpression getEffectiveURL();
 
+    static StringExpression getEffectiveURL(ColumnInfo col)
+    {
+        StringExpression result = col.getURL();
+        if (result != null)
+            return result;
+        ForeignKey fk = col.getFk();
+        if (fk == null)
+            return null;
+
+        try
+        {
+            return fk.getURL(col);
+        }
+        catch (QueryParseException qpe)
+        {
+            return null;
+        }
+    }
+
     void copyToXml(ColumnType xmlCol, boolean full);
 
     // UNDONE: Do we still need DomainProperty for this?
@@ -211,6 +234,11 @@ public interface ColumnInfo extends ColumnRenderProperties
     String getSqlTypeName();
 
     List<FieldKey> getSortFieldKeys();
+
+    default boolean isSortable()
+    {
+        return null != getParentTable() && getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName());
+    }
 
     @NotNull JdbcType getJdbcType();
 
@@ -252,6 +280,15 @@ public interface ColumnInfo extends ColumnRenderProperties
     DefaultValueType getDefaultValueType();
 
     boolean isLookup();
+
+    boolean hasDbSequence();
+
+    boolean isRootDbSequence();
+
+    default Container getDbSequenceContainer(Container container)
+    {
+        return isRootDbSequence() ? ContainerManager.getRoot() : container;
+    }
 
     @NotNull List<ConditionalFormat> getConditionalFormats();
 
@@ -306,4 +343,55 @@ public interface ColumnInfo extends ColumnRenderProperties
     {
         return BaseColumnInfo.booleanFromObj(o);
     }
+
+    public static boolean checkIsMutable(ColumnInfo col)
+    {
+        assert col instanceof MutableColumnInfo && !((MutableColumnInfo)col).isLocked();
+        return col instanceof MutableColumnInfo && !((MutableColumnInfo)col).isLocked();
+    }
+
+    public static String toString(ColumnInfo col)
+    {
+        StringBuilder sb = new StringBuilder(64);
+
+        sb.append("  ");
+        sb.append(StringUtils.rightPad(col.getName(), 25));
+        sb.append(" ");
+
+        String typeName = col.getSqlTypeName();
+        sb.append(typeName);
+
+        //UNDONE: Not supporting fixed decimal
+        if ("VARCHAR".equalsIgnoreCase(typeName) || "CHAR".equalsIgnoreCase(typeName))
+        {
+            sb.append("(");
+            sb.append(col.getScale());
+            sb.append(") ");
+        }
+        else
+            sb.append(" ");
+
+        //SQL Server specific
+        if (col.isAutoIncrement())
+            sb.append("IDENTITY ");
+
+        sb.append(col.isNullable() ? "NULL" : "NOT NULL");
+
+        if (null != col.getDefaultValue())
+        {
+            sb.append(" DEFAULT ");
+            if ("CURRENT_TIMESTAMP".equals(col.getDefaultValue()))
+                sb.append(col.getDefaultValue());
+            else
+            {
+                sb.append("'");
+                sb.append(col.getDefaultValue());
+                sb.append("'");
+            }
+        }
+
+        return sb.toString();
+    }
 }
+
+

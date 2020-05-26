@@ -17,7 +17,6 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
@@ -71,20 +70,7 @@ import java.util.Set;
  */
 public class PipelineStatusManager
 {
-    public static class PipelineStatusTransactionKind implements DbScope.TransactionKind
-    {
-        @NotNull
-        public String getKind()
-        {
-            return "PIPELINESTATUS";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    }
+    public static final DbScope.TransactionKind TRANSACTION_KIND = () -> "PIPELINESTATUS";
 
     private static PipelineSchema _schema = PipelineSchema.getInstance();
     private static final Logger LOG = Logger.getLogger(PipelineStatusManager.class);
@@ -118,8 +104,7 @@ public class PipelineStatusManager
             ints.add(id);
 
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ints));
-        List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
-        return result;
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
     /**
@@ -163,8 +148,7 @@ public class PipelineStatusManager
      */
     private static PipelineStatusFileImpl getStatusFile(Filter filter)
     {
-        PipelineStatusFileImpl pipelineStatusFile = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
-        return pipelineStatusFile;
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
     }
 
     public static boolean setStatusFile(PipelineJob job, User user, PipelineJob.TaskStatus status, @Nullable String info, boolean allowInsert)
@@ -187,7 +171,7 @@ public class PipelineStatusManager
             if (allowInsert)
             {
                 sfSet.beforeInsert(user, job.getContainerId());
-                try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
+                try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
                 {
                     // Use separate transaction/connection for TableInfoStatusFiles
                     PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
@@ -271,7 +255,7 @@ public class PipelineStatusManager
     public static void updateStatusFile(PipelineStatusFileImpl sf)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             // Issue 19987 - If the job has been reparented on the web server and we're updating the status based
@@ -302,7 +286,7 @@ public class PipelineStatusManager
     public static void resetJobId(Container container, Path path, String jobId)
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
 
             PipelineStatusFileImpl sfExist = getStatusFile(container, path);
@@ -348,7 +332,7 @@ public class PipelineStatusManager
         if (sfExist == null)
             throw new NoSuchJobException("Status for the job " + jobId + " was not found.");
 
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
@@ -380,7 +364,7 @@ public class PipelineStatusManager
 
     private static String retrieveJob(PipelineStatusFileImpl sfExist)
     {
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             String sql = "UPDATE " + _schema.getTableInfoStatusFiles() +
@@ -414,9 +398,8 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
-        int result = new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
+        return new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
                 container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
-        return result;
     }
 
     public static List<PipelineStatusFileImpl> getStatusFilesForLocation(String location, boolean includeJobsOnQueue)
@@ -484,8 +467,7 @@ public class PipelineStatusManager
 
     private static List<PipelineStatusFileImpl> getStatusFiles(SimpleFilter filter)
     {
-        List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
-        return result;
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
     private static SimpleFilter createQueueFilter()
@@ -505,7 +487,7 @@ public class PipelineStatusManager
     public static void completeStatus(User user, Collection<Integer> rowIds)
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
-        try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             for (int rowId : rowIds)
             {
@@ -544,7 +526,7 @@ public class PipelineStatusManager
     public static void deleteStatus(Container c, User u, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
-        try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
+        try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(PipelineStatusManager.TRANSACTION_KIND))
         {
             Set<Integer> ids = new HashSet<>(rowIds);
             deleteStatus(c, u, deleteExpRuns, ids);
@@ -644,7 +626,7 @@ public class PipelineStatusManager
             if (!container.isRoot())
             {
                 // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
-                SQLFragment containerSQL = ContainerFilter.CURRENT.getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"), container);
+                SQLFragment containerSQL = ContainerFilter.current(container).getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"));
                 sql.append(" AND ");
                 sql.append(containerSQL);
                 expSql.append(" AND ");

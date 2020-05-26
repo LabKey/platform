@@ -39,14 +39,17 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.search.SearchService.IndexTask;
 import org.labkey.api.security.User;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -61,22 +64,16 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
-import org.labkey.api.wiki.MacroProvider;
 import org.labkey.api.wiki.WikiChangeListener;
 import org.labkey.api.wiki.WikiPartFactory;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
-import org.labkey.wiki.model.RadeoxMacroProxy;
 import org.labkey.wiki.model.Wiki;
 import org.labkey.wiki.model.WikiVersion;
 import org.labkey.wiki.model.WikiVersionsGrid;
 import org.labkey.wiki.model.WikiView;
-import org.labkey.wiki.renderer.HtmlRenderer;
-import org.labkey.wiki.renderer.MarkdownRenderer;
-import org.labkey.wiki.renderer.PlainTextRenderer;
-import org.labkey.wiki.renderer.RadeoxRenderer;
-import org.radeox.macro.MacroRepository;
+import org.labkey.wiki.query.WikiSchema;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -102,6 +99,8 @@ public class WikiManager implements WikiService
     private static final Logger LOG = Logger.getLogger(WikiManager.class);
     private static final WikiManager _instance = new WikiManager();
 
+    public static final WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
+
     public static WikiManager get()
     {
         return _instance;
@@ -110,8 +109,8 @@ public class WikiManager implements WikiService
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("wiki", "Wiki Pages");
 
     /* service/schema dependencies */
-    private CommSchema comm = CommSchema.getInstance();
-    private CoreSchema core = CoreSchema.getInstance();
+    private final CommSchema comm = CommSchema.getInstance();
+    private final CoreSchema core = CoreSchema.getInstance();
 
     private static final List<WikiChangeListener> listeners = new CopyOnWriteArrayList<>();
     private static List<WikiPartFactory> _wikiPartFactories;
@@ -121,6 +120,7 @@ public class WikiManager implements WikiService
         LOG.debug("WikiManager instantiated");
     }
 
+    @Override
     public void registerWikiPartFactory(WebPartFactory partFactory, WikiPartFactory.Privilege privilege, String activeModuleName)
     {
         if (null == _wikiPartFactories)
@@ -647,7 +647,7 @@ public class WikiManager implements WikiService
         LOG.debug("indexWikiContainerFast(" + wikiName + ")");
 
         SQLFragment f = new SQLFragment();
-        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified,")
+        f.append("SELECT P.entityid, P.container, P.name, P.owner, P.createdby, P.created, P.modifiedby, P.modified, P.shouldindex,")
             .append("V.title, V.body, V.renderertype\n");
         f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n");
         f.append("WHERE P.container = ?");
@@ -677,6 +677,12 @@ public class WikiManager implements WikiService
 
                 if (WikiTermsOfUseProvider.TERMS_OF_USE_WIKI_NAME.equals(wikiName))
                     continue;
+
+                if (!rs.getBoolean("shouldindex"))
+                {
+                    LOG.debug(String.format("Wiki [%1$s] set to not index, skipping.", wikiName));
+                    continue;
+                }
 
                 String entityId = rs.getString("entityid");
                 assert null != entityId;
@@ -771,12 +777,8 @@ public class WikiManager implements WikiService
     // WikiService
     //
 
-    public static WikiRendererType DEFAULT_WIKI_RENDERER_TYPE = WikiRendererType.HTML;
-    public static WikiRendererType DEFAULT_MESSAGE_RENDERER_TYPE = WikiRendererType.MARKDOWN;
-
-    private Map<String, MacroProvider> providers = new HashMap<>();
-
-    public String getHtml(Container c, String name)
+    @Override
+    public HtmlString getHtml(Container c, String name)
     {
         if (null == c || null == name)
             return null;
@@ -805,7 +807,7 @@ public class WikiManager implements WikiService
         wikiversion.setBody(body);
 
         if (renderType == null)
-            renderType = getDefaultWikiRendererType();
+            renderType = DEFAULT_WIKI_RENDERER_TYPE;
 
         wikiversion.setRendererTypeEnum(renderType);
 
@@ -819,30 +821,17 @@ public class WikiManager implements WikiService
         }
     }
 
-    public void registerMacroProvider(String name, MacroProvider provider)
-    {
-        providers.put(name, provider);
-        MacroRepository repository = MacroRepository.getInstance();
-        repository.put(name, new RadeoxMacroProxy(name, provider));
-
-    }
-
-    //Package
-    MacroProvider getMacroProvider(String name)
-    {
-        return providers.get(name);
-    }
-
+    @Override
     public WebPartView getView(Container c, String name, boolean contentOnly)
     {
         try
         {
             if (contentOnly)
             {
-                String html = getHtml(c, name);
+                HtmlString html = getHtml(c, name);
                 return null == html ? null : new HtmlView(html);
             }
-            Wiki wiki = WikiSelectManager.getWiki(c, new String(name));
+            Wiki wiki = WikiSelectManager.getWiki(c, name);
             if (null == wiki)
                 return null;
             WikiVersion version = wiki.getLatestVersion();
@@ -855,6 +844,7 @@ public class WikiManager implements WikiService
         }
     }
 
+    @Override
     public WebPartView getHistoryView(Container c, String name)
     {
         Wiki wiki = WikiSelectManager.getWiki(c, name);
@@ -866,57 +856,6 @@ public class WikiManager implements WikiService
     }
 
     @Override
-    public WikiRendererType getDefaultWikiRendererType()
-    {
-        return DEFAULT_WIKI_RENDERER_TYPE;
-    }
-
-    @Override
-    public WikiRendererType getDefaultMessageRendererType()
-    {
-        return DEFAULT_MESSAGE_RENDERER_TYPE;
-    }
-
-    @Override
-    public String getFormattedHtml(WikiRendererType rendererType, String source)
-    {
-        return getFormattedHtml(rendererType, source, null, null);
-    }
-
-    @Override
-    public String getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String attachPrefix, @Nullable Collection<? extends Attachment> attachments)
-    {
-        return WIKI_PREFIX + getRenderer(rendererType, null, attachPrefix, null, attachments).format(source).getHtml() + WIKI_SUFFIX;
-    }
-
-    public WikiRenderer getRenderer(WikiRendererType rendererType, String hrefPrefix,
-                                    String attachPrefix, Map<String, String> nameTitleMap,
-                                    Collection<? extends Attachment> attachments)
-    {
-        WikiRenderer renderer;
-
-        switch (rendererType)
-        {
-            case RADEOX:
-                renderer = new RadeoxRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
-                break;
-            case HTML:
-                renderer = new HtmlRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
-                break;
-            case TEXT_WITH_LINKS:
-                renderer = new PlainTextRenderer();
-                break;
-            case MARKDOWN:
-                renderer = new MarkdownRenderer(hrefPrefix, attachPrefix, nameTitleMap, attachments);
-                break;
-            default:
-                renderer = new RadeoxRenderer(null, attachPrefix, null, attachments);
-        }
-
-        return renderer;
-    }
-
-
     public List<String> getNames(Container c)
     {
         List<String> l = WikiSelectManager.getPageNames(c);
@@ -933,6 +872,12 @@ public class WikiManager implements WikiService
     public void removeWikiListener(WikiChangeListener listener)
     {
         listeners.remove(listener);
+    }
+
+    @Override
+    public TableInfo getRendererTypeTable(User user, Container container)
+    {
+        return QueryService.get().getUserSchema(user, container, WikiSchema.SCHEMA_NAME).getTable(WikiSchema.RENDERER_TYPE_TABLE_NAME, null);
     }
 
     private void fireWikiCreated(User user, Container c, String name)
@@ -1007,7 +952,7 @@ public class WikiManager implements WikiService
 
 
         @Test
-        public void testWiki() throws IOException, SQLException, DuplicateFilenameException
+        public void testWiki() throws IOException, SQLException
         {
             TestContext context = TestContext.get();
 

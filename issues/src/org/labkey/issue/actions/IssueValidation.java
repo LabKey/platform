@@ -29,16 +29,12 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.SecurityPolicy;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.security.roles.OwnerRole;
 import org.labkey.api.security.roles.Role;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.issue.CustomColumnConfiguration;
@@ -100,20 +96,20 @@ public class IssueValidation
             }
         }
         if (newFields.containsKey("comment"))
-            validateRequired("comment", newFields.get("comment"), requiredFields, customColumnConfiguration, requiredErrors);
+            validateRequired(user, "comment", newFields.get("comment"), requiredFields, customColumnConfiguration, requiredErrors);
 
         // When resolving Duplicate, the 'duplicate' field should be set.
         if ("Duplicate".equals(newFields.get("resolution")))
-            validateRequired("duplicate", newFields.get("duplicate"), "duplicate", customColumnConfiguration, requiredErrors);
+            validateRequired(user, "duplicate", newFields.get("duplicate"), "duplicate", customColumnConfiguration, requiredErrors);
 
         // when resolving, a resolution is always required
         if (newFields.containsKey("resolution"))
-            validateRequired("resolution", newFields.get("resolution"), "resolution", customColumnConfiguration, requiredErrors);
+            validateRequired(user, "resolution", newFields.get("resolution"), "resolution", customColumnConfiguration, requiredErrors);
 
         errors.addAllErrors(requiredErrors);
     }
 
-    private static void validateRequired(String columnName, String value, String requiredFields, @Nullable CustomColumnConfiguration ccc, Errors errors)
+    private static void validateRequired(User user, String columnName, String value, String requiredFields, @Nullable CustomColumnConfiguration ccc, Errors errors)
     {
         if (requiredFields != null)
         {
@@ -124,7 +120,7 @@ public class IssueValidation
                     String name = null;
 
                     // TODO: Not sure what to do here
-                    if (ccc != null && ccc.shouldDisplay(columnName))
+                    if (ccc != null && ccc.shouldDisplay(user, columnName))
                     {
                         name = ccc.getCaption(columnName);
                     }
@@ -176,7 +172,7 @@ public class IssueValidation
         }
     }
 
-    public static boolean relatedIssueHandler(Issue issue, User user, BindException errors)
+    public static void relatedIssueHandler(Issue issue, User user, BindException errors)
     {
         String textInput = issue.getRelated();
         Set<Integer> newRelatedIssues = new TreeSet<>();
@@ -191,12 +187,12 @@ public class IssueValidation
                 if (relatedId == 0)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Invalid issue id in related string.");
-                    return false;
+                    return;
                 }
                 if (issue.getIssueId() == relatedId)
                 {
-                    errors.reject(SpringActionController.ERROR_MSG, "As issue may not be related to itself");
-                    return false;
+                    errors.reject(SpringActionController.ERROR_MSG, "An issue may not be related to itself");
+                    return;
                 }
 
                 // only need to verify that the related issue exists without regard to folder permissions (issue:27483), so just query
@@ -205,7 +201,7 @@ public class IssueValidation
                 if (related == null)
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "Related issue '" + relatedId + "' not found");
-                    return false;
+                    return;
                 }
                 newRelatedIssues.add(relatedId);
             }
@@ -224,14 +220,13 @@ public class IssueValidation
                 if (related == null || !related.lookupContainer().hasPermission(user, ReadPermission.class))
                 {
                     errors.reject(SpringActionController.ERROR_MSG, "User does not have Read Permission for related issue '" + relatedId + "'");
-                    return false;
+                    return;
                 }
             }
         }
 
         // this sets the collection of integer ids for all related issues
         issue.setRelatedIssues(newRelatedIssues);
-        return true;
     }
 
     public static void validateComments(IssuesController.IssuesForm form, Errors errors)
@@ -276,8 +271,6 @@ public class IssueValidation
 
     private static Set<Role> getContextualRoles(User user, Issue issue, Container c)
     {
-        Set<Role> roles = new HashSet<>();
-
         // we can't support AuthorRoles until we address issue: 36942
 /*
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(c);
@@ -291,6 +284,6 @@ public class IssueValidation
         }
 */
 
-        return roles;
+        return new HashSet<>();
     }
 }

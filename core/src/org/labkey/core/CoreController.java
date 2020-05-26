@@ -154,6 +154,8 @@ import org.labkey.api.view.template.WarningService;
 import org.labkey.api.view.template.Warnings;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -189,11 +191,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.view.template.WarningService.SESSION_WARNINGS_BANNER_KEY;
 
@@ -356,9 +360,8 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -483,7 +486,7 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Not Yet Implemented");
         }
@@ -687,9 +690,8 @@ public class CoreController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -719,12 +721,11 @@ public class CoreController extends SpringActionController
             if (type == null)
                 throw new ApiUsageException("Unknown container type: " + typeName);
 
-            if (type.requiresAdminToCreate())
+            Class<? extends Permission> permClass = type.getPermissionNeededToCreate();
+            if (!getContainer().hasPermission(getUser(), permClass))
             {
-                if (!getContainer().hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to create subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to create subfolders. " + perm.getName() + " permission required.");
             }
 
             if (name != null && getContainer().getChild(name) != null)
@@ -751,10 +752,32 @@ public class CoreController extends SpringActionController
                     throw new UnauthorizedException("The folder type requires a restricted module for which you do not have permission.");
                 }
 
+                Set<Module> ensureModules = new HashSet<>();
+                if (json.has("ensureModules") && !json.isNull("ensureModules"))
+                {
+                    List<String> requestedModules = Arrays.stream(json.getJSONArray("ensureModules")
+                            .toArray()).map(Object::toString).collect(Collectors.toList());
+                    for (String moduleName : requestedModules)
+                    {
+                        Module module = ModuleLoader.getInstance().getModule(moduleName);
+                        if (module == null)
+                            throw new NotFoundException("'" + moduleName + "' was not found.");
+                        else if (module.getRequireSitePermission() && !getContainer().hasEnableRestrictedModules(getUser()))
+                            throw new UnauthorizedException("'" + moduleName + "' is a restricted module for which you do not have permission.");
+                        else
+                            ensureModules.add(module);
+                    }
+                }
+
                 Container newContainer = ContainerManager.createContainer(getContainer(), name, title, description, typeName, getUser());
                 if (folderType != null)
                 {
                     newContainer.setFolderType(folderType, getUser());
+                }
+                if (!ensureModules.isEmpty())
+                {
+                    ensureModules.addAll(newContainer.getActiveModules());
+                    newContainer.setActiveModules(ensureModules);
                 }
 
                 return new ApiSimpleResponse(newContainer.toJSON(getUser()));
@@ -784,12 +807,11 @@ public class CoreController extends SpringActionController
         @Override
         public ApiResponse execute(SimpleApiJsonForm form, BindException errors)
         {
-            if (target.requiresAdminToDelete())
+            Class<? extends Permission> permClass = getContainer().getPermissionNeededToDelete();
+            if (!target.hasPermission(getUser(), permClass))
             {
-                if (!target.hasPermission(getUser(), AdminPermission.class))
-                {
-                    throw new UnauthorizedException("You must have admin permissions to delete subfolders");
-                }
+                Permission perm = RoleManager.getPermission(permClass);
+                throw new UnauthorizedException("Insufficient permissions to delete folder. " + perm.getName() + " permission required.");
             }
 
             ContainerManager.deleteAll(target, getUser());
@@ -935,9 +957,9 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/createWorkbook.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create New Workbook");
+            root.addChild("Create New Workbook");
         }
     }
 
@@ -1014,9 +1036,9 @@ public class CoreController extends SpringActionController
             return new JspView<>("/org/labkey/core/workbook/moveWorkbooks.jsp", bean, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Move Workbooks");
+            root.addChild("Move Workbooks");
         }
     }
 
@@ -1986,7 +2008,7 @@ public class CoreController extends SpringActionController
                     ClientDependency cd = ClientDependency.fromPath(library);
 
                     // only allow libs
-                    if (ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
+                    if (cd != null && ClientDependency.TYPE.lib.equals(cd.getPrimaryType()))
                     {
                         Set<String> dependencies = cd.getCssPaths(getContainer());
                         dependencies.addAll(PageFlowUtil.getExtJSStylesheets(getContainer(), Collections.singleton(cd)));
@@ -2057,9 +2079,8 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
 
         @Override
@@ -2130,9 +2151,9 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("LabKey Style Guide");
+            root.addChild("LabKey Style Guide");
         }
     }
 
@@ -2144,11 +2165,11 @@ public class CoreController extends SpringActionController
             return new JspView("/org/labkey/core/view/configReportsAndScripts.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             getPageConfig().setHelpTopic(new HelpTopic("configureScripting"));
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
-            return root.addChild("Views and Scripting Configuration");
+            root.addChild("Views and Scripting Configuration");
         }
     }
 
@@ -2496,10 +2517,10 @@ public class CoreController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageQC");
-            return root.addChild("Manage Assay QC States");
+            root.addChild("Manage Assay QC States");
         }
 
         @Override
@@ -2524,12 +2545,77 @@ public class CoreController extends SpringActionController
             return _qcStateHandler;
         }
 
+        @Override
         public ActionURL getSuccessURL(DeleteQCStateForm form)
         {
             ActionURL returnUrl = new ActionURL(ManageQCStatesAction.class, getContainer());
             if (form.getManageReturnUrl() != null)
                 returnUrl.addParameter(ActionURL.Param.returnUrl, form.getManageReturnUrl());
             return returnUrl;
+        }
+    }
+
+    public static class TransformWikiForm
+    {
+        private String _body;
+        private String _fromFormat;
+        private String _toFormat;
+
+        public String getBody()
+        {
+            return _body;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setBody(String body)
+        {
+            _body = body;
+        }
+
+        public String getFromFormat()
+        {
+            return _fromFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setFromFormat(String fromFormat)
+        {
+            _fromFormat = fromFormat;
+        }
+
+        public String getToFormat()
+        {
+            return _toFormat;
+        }
+
+        @SuppressWarnings({"UnusedDeclaration"})
+        public void setToFormat(String toFormat)
+        {
+            _toFormat = toFormat;
+        }
+    }
+
+    @SuppressWarnings("unused") // Called from JavaScript: discuss.js, wikiEdit.js
+    @RequiresNoPermission
+    public class TransformWikiAction extends MutatingApiAction<TransformWikiForm>
+    {
+        @Override
+        public ApiResponse execute(TransformWikiForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            String newBody = form.getBody();
+
+            if (StringUtils.equals(WikiRendererType.HTML.name(), form.getToFormat()))
+            {
+                WikiRendererType fromType = WikiRendererType.valueOf(form.getFromFormat());
+                newBody = WikiRenderingService.get().getFormattedHtml(fromType, newBody);
+            }
+
+            response.put("toFormat", form.getToFormat());
+            response.put("fromFormat", form.getFromFormat());
+            response.put("body", newBody);
+
+            return response;
         }
     }
 }

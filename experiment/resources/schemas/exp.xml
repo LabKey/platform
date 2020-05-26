@@ -203,6 +203,7 @@
         <description>Contains the associated batch or empty if this run is not part of a batch.</description>
       </column>
       <column columnName="ObjectId"/>
+      <column columnName="LastIndexed"/>
     </columns>
     <description>Contains a row per experiment run in this folder.</description>
   </table>
@@ -404,6 +405,18 @@
       <column columnName="Description"/>
       <column columnName="MaterialSourceId"/>
       <column columnName="NameExpression"/>
+      <column columnName="Category">
+        <fk>
+            <fkDbSchema>exp</fkDbSchema>
+            <fkTable>DataClassCategory</fkTable>
+            <fkColumnName>category</fkColumnName>
+        </fk>
+      </column>
+        <column columnName="LastIndexed">
+            <description>Contains the time this data class was last updated in the search index</description>
+            <isUserEditable>false</isUserEditable>
+            <isHidden>true</isHidden>
+        </column>
     </columns>
   </table>
   <table tableName="PropertyDescriptor" tableDbType="TABLE">

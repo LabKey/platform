@@ -23,6 +23,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.query.ExpDataTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -30,6 +31,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.webdav.WebdavResource;
 
 import java.io.File;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
@@ -80,6 +82,8 @@ public interface FileContentService
     File getFileRoot(@NotNull Container c, @NotNull ContentType type);
     @Nullable
     java.nio.file.Path getFileRootPath(@NotNull Container c, @NotNull ContentType type);
+    @Nullable
+    URI getFileRootUri(@NotNull Container c, @NotNull ContentType type, @Nullable String filePath);
 
     void setFileRoot(@NotNull Container c, @Nullable File root);
     void setFileRootPath(@NotNull Container c, @Nullable String root);
@@ -283,12 +287,9 @@ public interface FileContentService
     String getDataFileRelativeFileRootPath(@NotNull String dataFileUrl, Container container);
 
     /**
-     * Ensure an entry in the exp.data table exists for all files.
-     * @param qus QueryUpdateService for exp.data
-     * @param user user
-     * @param container container
+     * Ensure an entry in the exp.data table exists for all files in the container's file root.
      */
-    void ensureFileData(QueryUpdateService qus, @NotNull User user, @NotNull Container container);
+    void ensureFileData(@NotNull ExpDataTable table);
 
     /**
      * Allows a module to register a directory pattern to be checked in the files webpart in order to zip the matching directory before uploading.

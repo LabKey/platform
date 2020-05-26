@@ -23,19 +23,17 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.Tuple3;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * User: kevink
@@ -43,6 +41,8 @@ import java.util.Set;
  */
 public final class TableSorter
 {
+    private static final Logger LOG = Logger.getLogger(TableSorter.class);
+
     /**
      * Get a topologically sorted list of TableInfos within this schema.
      *
@@ -109,7 +109,7 @@ public final class TableSorter
                     // ignore and try to continue
                     String msg = String.format("Failed to traverse fk (%s, %s, %s) from (%s, %s)",
                             fk.getLookupSchemaName(), fk.getLookupTableName(), fk.getLookupColumnName(), tableName, column.getName());
-                    Logger.getLogger(TableSorter.class).warn(msg, qpe);
+                    LOG.warn(msg, qpe);
                 }
 
                 // Skip lookups to other schemas
@@ -131,7 +131,14 @@ public final class TableSorter
         }
 
         if (startTables.isEmpty())
-            throw new IllegalArgumentException("No tables without incoming FKs found");
+        {
+            String msg = "No tables without incoming FKs found in schema '" + schemaName + "'";
+            if (anyHaveContainerColumn(tables.values().stream()))
+                throw new IllegalStateException(msg);
+
+            LOG.warn(msg);
+            return Collections.emptyList();
+        }
 
         // Depth-first topological sort of the tables starting with the startTables
         Set<TableInfo> visited = new HashSet<>(tables.size());
@@ -144,11 +151,15 @@ public final class TableSorter
 
     private static void depthFirstWalk(String schemaName, Map<String, TableInfo> tables, TableInfo table, Set<TableInfo> visited, LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> visitingPath, List<TableInfo> sorted)
     {
-        // NOTE: loops exist in current schemas
-        //   core.Containers has a self join to parent Container
-        //   mothership.ServerSession.ServerInstallationId -> mothership.ServerInstallations.MostRecentSession -> mothership.ServerSession
         if (hasLoop(visitingPath, table))
-            throw new IllegalStateException("Loop detected: " + formatPath(visitingPath));
+        {
+            String msg = "Loop detected in schema '" + schemaName + "':\n" + formatPath(visitingPath);
+            if (anyHaveContainerColumn(visitingPath))
+                throw new IllegalStateException(msg);
+
+            LOG.warn(msg);
+            return;
+        }
 
         if (visited.contains(table))
             return;
@@ -210,6 +221,28 @@ public final class TableSorter
         return path.stream().anyMatch(tuple -> table.equals(tuple.first));
     }
 
+    // returns true if any table has a container column
+    private static boolean anyHaveContainerColumn(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
+    {
+        return anyHaveContainerColumn(path.stream().map(Tuple3::getKey));
+    }
+
+    // returns true if any table has a container column
+    private static boolean anyHaveContainerColumn(Stream<TableInfo> tables)
+    {
+        return tables.anyMatch(TableSorter::hasContainerColumn);
+    }
+
+    private static boolean hasContainerColumn(TableInfo table)
+    {
+        return table.getColumns().stream().anyMatch(TableSorter::isContainerColumn);
+    }
+
+    private static boolean isContainerColumn(ColumnInfo c)
+    {
+        return "folder".equalsIgnoreCase(c.getName()) || "container".equalsIgnoreCase(c.getName());
+    }
+
     private static String formatPath(LinkedList<Tuple3<TableInfo, ColumnInfo, TableInfo>> path)
     {
         StringBuilder sb = new StringBuilder();
@@ -220,12 +253,11 @@ public final class TableSorter
             TableInfo table = tuple.first;
             ColumnInfo col = tuple.second;
             TableInfo lookupTable = tuple.third;
-            //sb.append(String.format("%s.%s.%s -> %s.%s", table.getPublicSchemaName(), table.getPublicName(), col.getName(), lookupTable.getPublicSchemaName(), lookupTable.getPublicName()));
-            sb.append(String.format("%s.%s -> %s", table.getPublicName(), col.getName(), lookupTable.getPublicName()));
+            sb.append(String.format("%s.%s -> %s", table.getName(), col.getName(), lookupTable.getName()));
             if (iter.hasNext())
                 sb.append("\n");
         }
+
         return sb.toString();
     }
-
 }

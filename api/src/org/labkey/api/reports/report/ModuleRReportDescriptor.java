@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.module.Module;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.query.xml.ReportDescriptorType;
 
@@ -57,6 +58,18 @@ public class ModuleRReportDescriptor extends RReportDescriptor implements Module
         loadMetaData();
         _resource.loadScript();
     }
+
+    /***
+     * TODO This is for compatibility with RStudio editing.  It would be nicer for the RStudio to convert to using ReportIdentifier
+     *
+     * this hack is matched in ReportServiceImpl.getReportByEntityId()
+     */
+    @Override
+    public @Nullable String getEntityId()
+    {
+        return PageFlowUtil.encode(getReportId().toString());
+    }
+
 
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
     {

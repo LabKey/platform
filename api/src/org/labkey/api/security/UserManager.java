@@ -126,7 +126,16 @@ public class UserManager
     /** Adds a listener to be notified when user account actions happen */
     public static void addUserListener(UserListener listener)
     {
-        _listeners.add(listener);
+        addUserListener(listener, false);
+    }
+
+    /** Adds a listener with option to specify that it needs to be executed before the other listeners */
+    public static void addUserListener(UserListener listener, boolean meFirst)
+    {
+        if (meFirst)
+            _listeners.add(0, listener);
+        else
+            _listeners.add(listener);
     }
 
     private static List<UserListener> getListeners()
@@ -608,6 +617,13 @@ public class UserManager
     {
         SQLFragment sql = new SQLFragment("UPDATE " + CORE.getTableInfoUsersData() + " SET LastLogin = ? WHERE UserId = ?", new Date(), user.getUserId());
         new SqlExecutor(CORE.getSchema()).execute(sql);
+    }
+
+    /** Clear the ExpirationDate field for the given user */
+    public static void clearExpirationDate(User adminUser, User expiringUser)
+    {
+        Table.update(adminUser, CORE.getTableInfoUsersData(), new HashMap<>(){{put("ExpirationDate", null);}}, expiringUser.getUserId());
+        clearUserList();
     }
 
     /**
@@ -1129,11 +1145,24 @@ public class UserManager
      */
     public static String getUserDetailsHTMLLink(Container container, User currentUser, int displayedUserId)
     {
-        String displayName = getUser(displayedUserId).getDisplayName(currentUser);
+        User displayUser = getUser(displayedUserId);
 
-        return "<a class=\"labkey-link\" href=\"" +
-                getUserDetailsURL(container, currentUser, displayedUserId) +
-                "\">" + PageFlowUtil.filter(displayName) + "</a>";
+        boolean isDeletedUser = displayUser == null;
+
+        if (isDeletedUser)
+            return PageFlowUtil.filter("<" + displayedUserId + ">");
+
+        String displayName = displayUser.getDisplayName(currentUser);
+        ActionURL url = getUserDetailsURL(container, currentUser, displayedUserId);
+
+        // currentUser has permissions to see user details of the displayed user
+        if (url != null)
+        {
+            return "<a class=\"labkey-link\" href=\"" + url +
+                    "\">" + PageFlowUtil.filter(displayName) + "</a>";
+        }
+
+        return PageFlowUtil.filter(displayName);
     }
 
     /**

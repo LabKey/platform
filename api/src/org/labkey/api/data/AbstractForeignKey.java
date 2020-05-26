@@ -119,8 +119,8 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
         if (null != _sourceSchema && _sourceSchema.getContainer().isWorkbook())
         {
-            if (null == cf || cf == ContainerFilter.CURRENT)
-                cf = new ContainerFilter.CurrentOrParentAndWorkbooks(_sourceSchema.getUser());
+            if (null == cf || cf.getType() == ContainerFilter.Type.Current)
+                cf = ContainerFilter.Type.CurrentOrParentAndWorkbooks.create(_sourceSchema);
         }
         return cf;
     }
@@ -235,7 +235,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
                                    (DataRegion.MODE_UPDATE == ctx.getMode() && filterMap.containsKey(FilterOperation.update)) ? filterMap.get(FilterOperation.update) :
                                     Collections.emptyList();
 
-        return lookupTable.getSelectList(getLookupColumnName(), filters, null);
+        return lookupTable.getSelectList(getLookupColumnName(), filters, null, _displayColumnName);
     }
 
 

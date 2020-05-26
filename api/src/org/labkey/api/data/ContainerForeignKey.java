@@ -29,12 +29,12 @@ import org.labkey.api.view.ActionURL;
  */
 public class ContainerForeignKey extends QueryForeignKey
 {
-    static public BaseColumnInfo initColumn(BaseColumnInfo column, UserSchema schema)
+    static public <COL extends MutableColumnInfo> COL initColumn(COL column, UserSchema schema)
     {
         return initColumn(column, schema, null);
     }
 
-    static public BaseColumnInfo initColumn(@NotNull BaseColumnInfo column, UserSchema schema, final ActionURL url)
+    static public <COL extends MutableColumnInfo> COL initColumn(@NotNull COL column, UserSchema schema, final ActionURL url)
     {
         column.setFk(new ContainerForeignKey(schema));
         column.setUserEditable(false);
@@ -49,7 +49,7 @@ public class ContainerForeignKey extends QueryForeignKey
 
     public ContainerForeignKey(UserSchema schema)
     {
-        super(schema, new ContainerFilter.InternalNoContainerFilter(schema.getUser()), "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
+        super(schema, new ContainerFilter.InternalNoContainerFilter(), "core", schema.getContainer(), null, schema.getUser(), "Containers", "EntityId", "DisplayName");
     }
 
     public ContainerForeignKey(UserSchema schema, ContainerFilter cf)

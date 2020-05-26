@@ -96,7 +96,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         DetailsURL detailsURL = new DetailsURL(url);
         setDetailsURL(detailsURL);
 
-        var col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
+        MutableColumnInfo col = this.wrapColumn("ID", getRealTable().getColumn("RowId"));
         col.setReadOnly(true);
         col.setURL(detailsURL);
         this.addColumn(col);
@@ -238,14 +238,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
         if (StringUtils.equalsIgnoreCase("iconurl",name))
         {
             var iconCol = new WrappedColumn(getColumn("entityid"), "iconurl");
-            iconCol.setDisplayColumnFactory(new DisplayColumnFactory()
-            {
-                @Override
-                public DisplayColumn createRenderer(ColumnInfo colInfo)
-                {
-                    return new IconDisplayColumn(colInfo);
-                }
-            });
+            iconCol.setDisplayColumnFactory(IconDisplayColumn::new);
             return iconCol;
         }
         return super.resolveColumn(name);

@@ -15,9 +15,10 @@
  */
 package org.labkey.api.security.roles;
 
+import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.SecurityManager;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 
 /**
  * User: adam
@@ -28,7 +29,8 @@ public class TroubleshooterRole extends AbstractRootContainerRole
     public TroubleshooterRole()
     {
         super("Troubleshooter", "Troubleshooters may view administration settings but may not change them.",
-                AdminReadPermission.class);
+                TroubleShooterPermission.class,
+                CanSeeAuditLogPermission.class);
 
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupGuests));
         addExcludedPrincipal(SecurityManager.getGroup(Group.groupUsers));

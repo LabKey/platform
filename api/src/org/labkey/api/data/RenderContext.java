@@ -21,18 +21,19 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabKeyError;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.util.HtmlString;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.Errors;
+import org.springframework.validation.ObjectError;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -41,12 +42,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 public class RenderContext implements Map<String, Object>, Serializable
 {
@@ -59,7 +62,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private DataRegion _currentRegion;
     private Filter _baseFilter;
     private Map<String, Object> _row;
-    private Map<String, Object> _extra = new HashMap<>();
+    private final Map<String, Object> _extra = new HashMap<>();
     private Sort _baseSort;
     private int _mode = DataRegion.MODE_NONE;
     private boolean _cache = true;
@@ -72,7 +75,7 @@ public class RenderContext implements Map<String, Object>, Serializable
     private List<AnalyticsProviderItem> _analyticsProviders;
     private Map<FieldKey, List<String>> _analyticsProviderNamesByFieldKey;
 
-    private Results _rs;
+    private Results _results;
 
     public RenderContext(ViewContext context)
     {
@@ -212,12 +215,12 @@ public class RenderContext implements Map<String, Object>, Serializable
 
     public Results getResults()
     {
-        return _rs;
+        return _results;
     }
 
     public void setResults(Results rs)
     {
-        _rs = rs;
+        _results = rs;
     }
 
     public static List<ColumnInfo> getSelectColumns(List<DisplayColumn> displayColumns, TableInfo tinfo)
@@ -281,28 +284,28 @@ public class RenderContext implements Map<String, Object>, Serializable
     }
 
     /**
-     * valid after call to getResultSet()
+     * valid after call to getResults()
      */
     public Map<FieldKey, ColumnInfo> getFieldMap()
     {
-        return null == _rs ? null : _rs.getFieldMap();
+        return null == _results ? null : _results.getFieldMap();
     }
 
-    private List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
+    public List<ColumnInfo> getColumnInfos(List<DisplayColumn> displayColumns)
     {
         // collect the ColumnInfo for each DisplayColumn
         List<ColumnInfo> columnInfos = new ArrayList<>();
         if (null != displayColumns && !displayColumns.isEmpty())
         {
             displayColumns
-                    .stream()
-                    .filter(dc -> dc.getColumnInfo() != null)
-                    .forEach(dc -> columnInfos.add(dc.getColumnInfo()));
+                .stream()
+                .filter(dc -> dc.getColumnInfo() != null)
+                .forEach(dc -> columnInfos.add(dc.getColumnInfo()));
         }
         return columnInfos;
     }
 
-    public Results getResultSet(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
+    public Results getResults(Map<FieldKey, ColumnInfo> fieldMap, List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, Map<String, Object> parameters, int maxRows, long offset, String name, boolean async) throws SQLException, IOException
     {
         ActionURL url;
         if (null != settings)
@@ -317,8 +320,8 @@ public class RenderContext implements Map<String, Object>, Serializable
         if (null != QueryService.get())
             cols = QueryService.get().ensureRequiredColumns(tinfo, cols, filter, sort, _ignoredColumnFilters);
 
-        _rs = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
-        return _rs;
+        _results = selectForDisplay(tinfo, cols, parameters, filter, sort, maxRows, offset, async);
+        return _results;
     }
 
     public Map<String, List<Aggregate.Result>> getAggregates(List<DisplayColumn> displayColumns, TableInfo tinfo, QuerySettings settings, String dataRegionName, List<Aggregate> aggregatesIn, Map<String, Object> parameters, boolean async) throws IOException
@@ -490,10 +493,11 @@ public class RenderContext implements Map<String, Object>, Serializable
     protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         TableSelector selector = new TableSelector(table, columns, filter, sort)
-                .setNamedParameters(parameters)
-                .setMaxRows(maxRows)
-                .setOffset(offset)
-                .setForDisplay(true);
+            .setJdbcCaching(getCache())  // #39888
+            .setNamedParameters(parameters)
+            .setMaxRows(maxRows)
+            .setOffset(offset)
+            .setForDisplay(true);
 
         if (async)
         {
@@ -505,12 +509,22 @@ public class RenderContext implements Map<String, Object>, Serializable
         }
     }
 
-
+    /**
+     * If false, callers should anticipate very large ResultSets. They should ensure that they don't cache the ResultSet
+     * in memory, e.g., don't use CachedResultSet and call setJdbcCaching(getCache()).
+     * @return The current setting
+     */
     public boolean getCache()
     {
         return _cache;
     }
 
+    /**
+     * Calling with cache=false ensures that the produced ResultSet will not be cached in the JVM heap. Specifically,
+     * false means that LabKey will simply wrap the underlying ResultSet (without using a CachedResultSet) and will
+     * configure the Connection to ensure the JDBC driver doesn't cache the ResultSet either. If true, ResultSets may
+     * be cached in both places.
+     */
     public void setCache(boolean cache)
     {
         _cache = cache;
@@ -554,9 +568,9 @@ public class RenderContext implements Map<String, Object>, Serializable
     {
         if (key instanceof FieldKey)
         {
-            if (null != _rs)
+            if (null != _results)
             {
-                if (_rs.hasColumn((FieldKey) key))
+                if (_results.hasColumn((FieldKey) key))
                     return true;
             }
             // <UNDONE>
@@ -640,11 +654,11 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         if (key instanceof FieldKey)
         {
-            if (null != _rs && _rs.hasColumn((FieldKey) key))
+            if (null != _results && _results.hasColumn((FieldKey) key))
             {
                 try
                 {
-                    ColumnInfo col = _rs.findColumnInfo((FieldKey) key);
+                    ColumnInfo col = _results.findColumnInfo((FieldKey) key);
 
                     if (null == col)
                         return null;
@@ -808,54 +822,54 @@ public class RenderContext implements Map<String, Object>, Serializable
      * Moved getErrors() from TableViewForm
      * 4927 : DataRegion needs to support Spring errors collection
      */
-    public String getErrors(String paramName)
+    public HtmlString getErrors(String paramName)
     {
         Errors errors = getErrors();
         if (null == errors)
-            return "";
-        List list;
+            return HtmlString.EMPTY_STRING;
+        List<? extends ObjectError> list;
         if ("main".equals(paramName))
             list = errors.getGlobalErrors();
         else
             list = errors.getFieldErrors(paramName);
         if (list == null || list.size() == 0)
-            return "";
+            return HtmlString.EMPTY_STRING;
 
-        Set<String> uniqueErrorStrs = new CaseInsensitiveHashSet();
-        StringBuilder sb = new StringBuilder();
-        String br = "<font class=\"labkey-error\">";
+        Set<HtmlString> uniqueErrorStrs = new TreeSet<>();
+        HtmlStringBuilder builder = HtmlStringBuilder.of("");
+        HtmlString br = HtmlString.unsafe("<font class=\"labkey-error\">");
         for (Object m : list)
         {
-            String errStr = null;
+            HtmlString errStr;
             if (m instanceof LabKeyError)
             {
                 errStr = ((LabKeyError) m).renderToHTML(getViewContext());
             }
             else
             {
-                errStr = PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true);
+                errStr = HtmlString.of(getViewContext().getMessage((MessageSourceResolvable) m), true);
             }
 
             if (!uniqueErrorStrs.contains(errStr))
             {
-                sb.append(br);
-                sb.append(errStr);
-                br = "<br>";
+                builder.append(br);
+                builder.append(errStr);
+                br = HtmlString.unsafe("<br>");
             }
             uniqueErrorStrs.add(errStr);
         }
-        if (sb.length() > 0)
-            sb.append("</font>");
-        return sb.toString();
+        if (builder.toString().length() > 0)
+            builder.append(HtmlString.unsafe("</font>"));
+        return builder.getHtmlString();
     }
 
-    public String getErrors(ColumnInfo column)
+    public HtmlString getErrors(ColumnInfo column)
     {
-        String errors = getErrors(getForm().getFormFieldName(column));
-        if ("".equals(errors))
+        HtmlString errors = getErrors(getForm().getFormFieldName(column));
+        if ("".equals(errors.toString()))
         {
             errors = getErrors(column.getName());
-            if ("".equals(errors))
+            if ("".equals(errors.toString()))
                 errors = getErrors(column.getName().toLowerCase());  // error may be mapped from lowercase name because of provisioning
         }
         return errors;

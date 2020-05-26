@@ -18,8 +18,8 @@ package org.labkey.study.query;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.PropertyManager;
@@ -188,7 +188,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         _typeNameIdMapWrapper = new PropertyMapWrapper(getContainer());
     }
 
-    protected BaseColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
+    protected MutableColumnInfo wrapPivotColumn(ColumnInfo col, String descriptionFormat, NameLabelPair ...parts)
     {
         // The parts._name should already be "Normal Legal Name" parts
         StringBuilder name = new StringBuilder();
@@ -312,7 +312,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
     {
         Map<Integer, NameLabelPair> siteMap = new HashMap<>();
         LegalCaseInsensitiveMap legalMap = new LegalCaseInsensitiveMap();
-        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container, null, new Sort(FieldKey.fromParts("Label")));
+        List<LocationImpl> locations = StudyManager.getInstance().getLocations(container);
 
         for (LocationImpl location : locations)
         {

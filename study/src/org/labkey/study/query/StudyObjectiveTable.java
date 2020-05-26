@@ -15,16 +15,12 @@
  */
 package org.labkey.study.query;
 
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.UserPrincipal;
@@ -53,23 +49,23 @@ public class StudyObjectiveTable extends BaseStudyTable
 
         var descriptionColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
         final var descriptionRendererTypeColumn = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("DescriptionRendererType")));
-        descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
+
+        WikiService ws = WikiService.get();
+
+        if (null != ws)
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return ws.getRendererTypeTable(_userSchema.getUser(), _userSchema.getContainer());
+                }
+            });
+        }
+
         descriptionRendererTypeColumn.setHidden(true);
-        descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS);
-            }
-        });
+        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
 
         // setup lookups for the standard fields
         var container = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container")));

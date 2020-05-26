@@ -71,7 +71,7 @@ public interface AssayService
     AssayProvider getProvider(String providerName);
 
     @Nullable
-    AssayProvider getProvider(ExpProtocol protocol);
+    AssayProvider getProvider(@Nullable ExpProtocol protocol);
 
     @Nullable
     AssayProvider getProvider(ExpRun run);
@@ -79,8 +79,6 @@ public interface AssayService
     @NotNull Collection<AssayProvider> getAssayProviders();
 
     WebPartView createAssayListView(ViewContext context, boolean portalView, BindException errors);
-
-    ModelAndView createAssayDesignerView(Map<String, String> properties);
 
     ModelAndView createAssayImportView(Map<String, String> properties);
 
@@ -133,7 +131,10 @@ public interface AssayService
     @Nullable
     ExpExperiment findBatch(ExpRun run);
 
+    void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol);
     void indexAssays(SearchService.IndexTask task, Container c);
+
+    void unindexAssays(@NotNull Collection<? extends ExpProtocol> expProtocols);
 
     /**
      * Creates a run, but does not persist it to the database. Creates the run only, no protocol applications, etc.

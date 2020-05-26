@@ -33,13 +33,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpSampleSet;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.api.SampleSetService;
@@ -52,6 +50,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.search.SearchService;
@@ -64,11 +63,11 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.webdav.SimpleDocumentResource;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -101,11 +100,23 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
-        ActionURL ret = new ActionURL(ExperimentController.ShowMaterialSourceAction.class, getContainer());
-        ret.addParameter("rowId", Integer.toString(getRowId()));
+        return _object.detailsURL();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(ContainerUser cu)
+    {
+        ActionURL ret = new ActionURL(ExperimentController.EditSampleSetAction.class, getContainer());
+        ret.addParameter("RowId", getRowId());
         return ret;
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        return _object.getQueryRowReference();
     }
 
     @Override
@@ -145,7 +156,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             return null;
         }
 
-        return getType().getPropertyByURI(uri);
+        return getDomain().getPropertyByURI(uri);
     }
 
     @Override
@@ -236,7 +247,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            List<? extends DomainProperty> props = getType().getProperties();
+            List<? extends DomainProperty> props = getDomain().getProperties();
             if (!props.isEmpty())
             {
                 result = props.get(0);
@@ -257,6 +268,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return getDomainProperty(_object.getIdCol3());
     }
 
+    //TODO remove
     @Override
     public DomainProperty getParentCol()
     {
@@ -415,25 +427,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     }
 
     @Override
-    public List<ExpMaterialImpl> getSamples()
-    {
-        return getSamples(getContainer());
-    }
-
-    @Override
     public List<ExpMaterialImpl> getSamples(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
         filter.addCondition(FieldKey.fromParts("CpasType"), getLSID());
         Sort sort = new Sort("Name");
         return ExpMaterialImpl.fromMaterials(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), filter, sort).getArrayList(Material.class));
-    }
-
-    @Override
-    @Deprecated
-    public ExpMaterialImpl getSample(String name)
-    {
-        return getSample(getContainer(), name);
     }
 
     @Override
@@ -447,13 +446,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (material == null)
             return null;
         return new ExpMaterialImpl(material);
-    }
-
-    @Override
-    @NotNull
-    public Domain getType()
-    {
-        return getDomain();
     }
 
     @Override
@@ -486,8 +478,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         ColumnInfo colSampleLSID = new PropertyColumn(ExperimentProperty.SampleSetLSID.getPropertyDescriptor(), colLSID, getContainer(), user, false);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(colSampleLSID, getLSID());
-        List<ColumnInfo> selectColumns = new ArrayList<>();
-        selectColumns.addAll(tinfoProtocol.getColumns());
+        List<ColumnInfo> selectColumns = new ArrayList<>(tinfoProtocol.getColumns());
         selectColumns.add(colSampleLSID);
         Protocol[] protocols = new TableSelector(tinfoProtocol, selectColumns, filter, null).getArray(Protocol.class);
         ExpProtocol[] ret = new ExpProtocol[protocols.length];
@@ -508,9 +499,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         if (materials != null)
         {
             expMaterials = new ArrayList<>(materials.size());
-            for (int i = 0; i < expMaterials.size(); i ++)
+            for (Material material : materials)
             {
-                expMaterials.add(new ExpMaterialImpl(materials.get(i)));
+                expMaterials.add(new ExpMaterialImpl(material));
             }
         }
         for (ExpProtocol protocol : protocols)
@@ -533,7 +524,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public void save(User user)
     {
-        if (ExperimentService.get().getDefaultSampleSetLsid().equals(getLSID()))
+        if (SampleSetService.get().getDefaultSampleSetLsid().equals(getLSID()))
             throw new IllegalStateException("Can't create or update the default SampleSet");
 
         boolean isNew = _object.getRowId() == 0;
@@ -640,7 +631,9 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         props.put(SearchService.PROPERTY.categories.toString(), searchCategory.toString());
         props.put(SearchService.PROPERTY.title.toString(), "Sample Set - " + getName());
         props.put(SearchService.PROPERTY.summary.toString(), getDescription());
-        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set");      // Treat the words "Sample Set" as a low priority keyword
+
+        //TODO: Remove 'Set' after completion of naming convention change https://www.labkey.org/home/Developer/issues/issues-details.view?issueId=39257
+        props.put(SearchService.PROPERTY.keywordsLo.toString(), "Sample Set Type");      // Treat the words "Sample Set" as a low priority keyword
         props.put(SearchService.PROPERTY.identifiersHi.toString(), StringUtils.join(identifiersHi, " "));
 
         String body = StringUtils.isNotBlank(getDescription()) ? getDescription() : "";
@@ -693,12 +686,12 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
     @Override
     public @NotNull Map<String, String> getImportAliasMap() throws IOException
     {
-            return Collections.unmodifiableMap(getImportAliases(_object));
+        return Collections.unmodifiableMap(getImportAliases(_object));
     }
 
     @Override
     public void setImportAliasMap(Map<String, String> aliasMap)
     {
-        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap));
+        _object.setMaterialParentImportAliasMap(SampleSetServiceImpl.get().getAliasJson(aliasMap, _object.getName()));
     }
 }

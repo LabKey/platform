@@ -313,23 +313,28 @@ public class QueryPivot extends QueryRelation
         // get the context they need before trying to run it
         QueryProfiler.getInstance().ensureListenerEnvironment();
 
-        try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
+        try
         {
-            JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
-            int columnCount = rs.getMetaData().getColumnCount();
-            while (rs.next())
+            for (Object p : sqlPivotValues.getParams())
+                if (p instanceof QueryService.ParameterDecl)
+                    throw new QueryService.NamedParameterNotProvided(((QueryService.ParameterDecl) p).getName());
+            try (ResultSet rs = new SqlSelector(getSchema().getDbSchema(), sqlPivotValues).getResultSet())
             {
-                Object value = rs.getObject(1);
-                IConstant wrap = wrapConstant(value, type, rs.wasNull());
-                String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
-                // CONSIDER: error on name collision
-                _pivotValues.put(name, wrap);
+                JdbcType type = JdbcType.valueOf(rs.getMetaData().getColumnType(1));
+                int columnCount = rs.getMetaData().getColumnCount();
+                while (rs.next())
+                {
+                    Object value = rs.getObject(1);
+                    IConstant wrap = wrapConstant(value, type, rs.wasNull());
+                    String name = columnCount > 1 ? toName(rs.getString(2)) : toName(wrap);
+                    // CONSIDER: error on name collision
+                    _pivotValues.put(name, wrap);
+                }
             }
         }
         catch (QueryService.NamedParameterNotProvided npnp)
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
-            parseError(npnp.getMessage(), null);
         }
         catch (UnauthorizedException e)
         {
@@ -854,7 +859,7 @@ public class QueryPivot extends QueryRelation
                 {
                     if (!getParseErrors().isEmpty())
                         throw getParseErrors().get(0);
-                    QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._name ? ": " + _query._name : ""), null, 0, 0);
+                    QueryParseException qpe = new QueryParseException("Error compiling query" + (null != _query._debugName ? ": " + _query._debugName : ""), null, 0, 0);
                     _query.decorateException(qpe);
                     throw qpe;
                 }

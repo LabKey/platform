@@ -17,9 +17,9 @@ package org.labkey.api.data;
 
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCacheListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ExceptionUtil;
@@ -29,8 +29,11 @@ import org.labkey.data.xml.TablesDocument;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -54,6 +57,18 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
             });
 
         return unmodifiable(map);
+    }
+
+    // Return an unmodifiable list of schema.xml filenames in this module, bypassing the cache and file listeners. Handy
+    // at startup, so we don't register listeners and leak modules before pruning occurs.
+    public static List<String> getFilenames(Module module)
+    {
+        Resource schemas = module.getModuleResource(QueryService.MODULE_SCHEMAS_PATH);
+
+        return null == schemas ? Collections.emptyList() : schemas.list().stream()
+            .map(Resource::getName)
+            .filter(SchemaXmlCacheHandler::isSchemaXmlFile)
+            .collect(Collectors.toUnmodifiableList());
     }
 
     private static boolean isSchemaXmlFile(String filename)
@@ -83,31 +98,31 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
 
     @Nullable
     @Override
-    public FileSystemDirectoryListener createChainedDirectoryListener(final Module module)
+    public ModuleResourceCacheListener createChainedListener(final Module module)
     {
         return CHAINED_LISTENER;
     }
 
 
     // No need to distinguish by module, since DbSchemas are a single global list
-    private static final FileSystemDirectoryListener CHAINED_LISTENER = new FileSystemDirectoryListener()
+    private static final ModuleResourceCacheListener CHAINED_LISTENER = new ModuleResourceCacheListener()
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
         public void entryDeleted(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
         public void entryModified(java.nio.file.Path directory, java.nio.file.Path entry)
         {
-            uncacheDbSchema(entry);
+            uncacheDbSchema(directory, entry);
         }
 
         @Override
@@ -115,25 +130,38 @@ public class SchemaXmlCacheHandler implements ModuleResourceCacheHandler<Map<Str
         {
         }
 
-        private void uncacheDbSchema(java.nio.file.Path entry)
+        @Override
+        public void moduleChanged(Module module)
         {
-            String filename = entry.toString();
+            module.getSchemaNames().stream()
+                .map(DbSchema::getDbScopeAndSchemaName)
+                .forEach(pair->invalidateSchema(pair.getKey(), pair.getValue()));
+        }
 
-            if (isSchemaXmlFile(filename))
+        private void uncacheDbSchema(java.nio.file.Path directory, java.nio.file.Path entry)
+        {
+            // Makes sure we're in /resources/schemas, not /resources. For example, module.xml lives in /resources and
+            // it's definitely not a schema xml file.
+            if (directory.endsWith(QueryService.MODULE_SCHEMAS_DIRECTORY))
             {
-                String fullyQualified = FileUtil.getBaseName(filename);
+                String filename = entry.toString();
 
-                // Special case "labkey" schema, which gets added to all module data sources
-                if ("labkey".equalsIgnoreCase(fullyQualified))
+                if (isSchemaXmlFile(filename))
                 {
-                    // Invalidate "labkey" in every scope if its meta data changes
-                    for (DbScope scope : DbScope.getDbScopes())
-                        invalidateSchema(scope, "labkey");
-                }
-                else
-                {
-                    Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
-                    invalidateSchema(pair.getKey(), pair.getValue());
+                    String fullyQualified = FileUtil.getBaseName(filename);
+
+                    // Special case "labkey" schema, which gets added to all module data sources
+                    if ("labkey".equalsIgnoreCase(fullyQualified))
+                    {
+                        // Invalidate "labkey" in every scope if its meta data changes
+                        for (DbScope scope : DbScope.getDbScopes())
+                            invalidateSchema(scope, "labkey");
+                    }
+                    else
+                    {
+                        Pair<DbScope, String> pair = DbSchema.getDbScopeAndSchemaName(fullyQualified);
+                        invalidateSchema(pair.getKey(), pair.getValue());
+                    }
                 }
             }
         }

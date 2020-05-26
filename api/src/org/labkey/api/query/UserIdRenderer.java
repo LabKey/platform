@@ -75,8 +75,11 @@ public class UserIdRenderer extends DataColumn
     {
         var loggedInUser = ctx.getViewContext().getUser();
         Integer displayedUserId = (Integer)getBoundColumn().getValue(ctx);
+        if (null == displayedUserId)
+            return null;
+        boolean isDeletedUser = UserManager.getUser(displayedUserId) == null;
 
-        if (displayedUserId != null)
+        if (!isDeletedUser && displayedUserId != null)
         {
                ActionURL url = UserManager.getUserDetailsURL(ctx.getContainer(), loggedInUser, displayedUserId);
                if (url != null)

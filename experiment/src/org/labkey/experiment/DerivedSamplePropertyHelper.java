@@ -16,10 +16,13 @@
 
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.actions.UploadWizardAction;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.NameGenerator;
 import org.labkey.api.exp.DuplicateMaterialException;
-import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.SamplePropertyHelper;
 import org.labkey.api.exp.XarContext;
@@ -30,7 +33,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.UploadWizardAction;
+import org.labkey.experiment.api.ExpSampleSetImpl;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 
@@ -48,21 +51,28 @@ import java.util.Set;
  * User: jeckels
  * Date: Oct 3, 2007
  */
-public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
+public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
 {
     private final List<String> _names;
-    private final Map<Integer, String> _lsids = new HashMap<>();
-    private final ExpSampleSet _sampleSet;
+    private final Map<Integer, Lsid> _lsids = new HashMap<>();
+    private final ExpSampleSetImpl _sampleSet;
     private final Container _container;
     private final User _user;
 
     private final DomainProperty _nameProperty;
+    private final NameGenerator _nameGenerator;
+    private NameGenerator.State _state;
 
-    public DerivedSamplePropertyHelper(ExpSampleSet sampleSet, int sampleCount, Container c, User user)
+    public DerivedSamplePropertyHelper(ExpSampleSetImpl sampleSet, int sampleCount, Container c, User user)
     {
         super(Collections.emptyList());
 
         _sampleSet = sampleSet;
+        if (_sampleSet != null)
+            _nameGenerator = _sampleSet.getNameGenerator();
+        else
+            _nameGenerator = null;
+
         _container = c;
         _user = user;
         _names = new ArrayList<>();
@@ -72,7 +82,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         }
 
         PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
-        namePropertyDescriptor.setRequired(true);
+        namePropertyDescriptor.setRequired(!_sampleSet.hasNameExpression());
         _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
 
         List<DomainProperty> dps = new ArrayList<>();
@@ -82,10 +92,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             {
                 dps.add(_nameProperty);
             }
-            for (DomainProperty property : sampleSet.getType().getProperties())
-            {
-                dps.add(property);
-            }
+            dps.addAll(sampleSet.getDomain().getProperties());
         }
         else
         {
@@ -104,18 +111,19 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return _names;
     }
 
-    protected String getObject(int index, Map<DomainProperty, String> sampleProperties) throws DuplicateMaterialException
+    protected Lsid getObject(int index, @NotNull Map<DomainProperty, String> sampleProperties, @NotNull Set<ExpMaterial> parentMaterials) throws DuplicateMaterialException
     {
-        String lsid = _lsids.get(index);
+        Lsid lsid = _lsids.get(index);
         if (lsid == null)
         {
-            String name = determineMaterialName(sampleProperties);
+            String name = determineMaterialName(sampleProperties, parentMaterials);
             if (_sampleSet == null)
             {
                 XarContext context = new XarContext("DeriveSamples", _container, _user);
                 try
                 {
-                    lsid = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
+                    String lsidStr = LsidUtils.resolveLsidFromTemplate("${FolderLSIDBase}:" + name, context, ExpMaterial.DEFAULT_CPAS_TYPE);
+                    lsid = Lsid.parse(lsidStr);
                 }
                 catch (XarFormatException e)
                 {
@@ -125,10 +133,10 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             }
             else
             {
-                lsid = _sampleSet.generateSampleLSID().setObjectId(name).build().toString();
+                lsid = _sampleSet.generateSampleLSID().setObjectId(name).build();
             }
 
-            if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid) != null)
+            if (_lsids.containsValue(lsid) || ExperimentService.get().getExpMaterial(lsid.toString()) != null)
             {
                 // Default to not showing on a particular column
                 String colName = "main";
@@ -143,10 +151,15 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
         return lsid;
     }
 
-    public String determineMaterialName(Map<DomainProperty, String> sampleProperties)
+    public String determineMaterialName(Map<DomainProperty, String> sampleProperties, Set<ExpMaterial> parentSamples)
     {
         if (_sampleSet != null)
         {
+            if (_state == null)
+            {
+                _state = _nameGenerator.createState(true);
+            }
+
             Map<String, Object> context = new CaseInsensitiveHashMap<>();
             for (Map.Entry<DomainProperty, String> entry : sampleProperties.entrySet())
             {
@@ -154,9 +167,9 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             }
             try
             {
-                return _sampleSet.createSampleName(context);
+                return _nameGenerator.generateName(_state, context, null, parentSamples);
             }
-            catch (ExperimentException e)
+            catch (NameGenerator.NameGenerationException e)
             {
                 throw new RuntimeException(e);
             }
@@ -186,7 +199,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<String>
             for (DomainProperty pd : _sampleSet.getIdCols())
                 idColNames.add(pd.getName());
             List<DomainProperty> properties = new ArrayList<>();
-            for (DomainProperty dp : _sampleSet.getType().getProperties())
+            for (DomainProperty dp : _sampleSet.getDomain().getProperties())
             {
                 if (idColNames.contains(dp.getName()))
                     properties.add(dp);

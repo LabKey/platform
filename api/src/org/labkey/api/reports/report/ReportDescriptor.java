@@ -67,6 +67,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: Karl Lum
@@ -128,8 +129,8 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
         // set the report version to the one that is stored in the query module
         Module queryModule = ModuleLoader.getInstance().getModule("Query");
-        if (queryModule != null)
-            setProperty(Prop.version, String.valueOf(queryModule.getVersion()));
+        if (queryModule != null && queryModule.getSchemaVersion() != null)
+            setProperty(Prop.version, String.valueOf(queryModule.getSchemaVersion()));
     }
 
     @Override
@@ -476,20 +477,22 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
 
     private ReportDescriptorDocument getDescriptorDocument(Container c)
     {
-        return getDescriptorDocument(c, null, false);
+        return getDescriptorDocument(c, null, false, null);
     }
 
-    private ReportDescriptorDocument getDescriptorDocument(ImportContext context)
+    public ReportDescriptorDocument getDescriptorDocument(ImportContext context)
     {
-        return getDescriptorDocument(context.getContainer(), context, true);
+        return getDescriptorDocument(context.getContainer(), context, true, null);
     }
 
     /**
      * Builds an XML representation of this descriptor
      * @return
      */
-    private ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context, boolean savePermissions)
+    protected final ReportDescriptorDocument getDescriptorDocument(Container c, @Nullable ImportContext context, boolean savePermissions, Set<String> propsToSkip)
     {
+        if (null == propsToSkip)
+            propsToSkip = Collections.emptySet();
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
         ReportDescriptorType descriptor = doc.addNewReportDescriptor();
         descriptor.setDescriptorType(getDescriptorType());
@@ -515,7 +518,7 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         ReportPropertyList props = descriptor.addNewProperties();
         for (Map.Entry<String, Object> entry : _props.entrySet())
         {
-            if (!shouldSerialize(entry.getKey()))
+            if (propsToSkip.contains(entry.getKey()) || !shouldSerialize(entry.getKey()))
                 continue;
 
             final Object value = entry.getValue();

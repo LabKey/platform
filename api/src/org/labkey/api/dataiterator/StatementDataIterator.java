@@ -81,6 +81,7 @@ public class StatementDataIterator extends AbstractDataIterator
     ArrayList<Object> _keyValues;
     Integer _rowIdIndex = null;
     Integer _objectIdIndex = null;
+    Integer _objectUriIndex = null;
     protected int _batchSize = -1;
     int _currentBatchSize = 0;
     int _currentTxSize = 0;
@@ -119,7 +120,7 @@ public class StatementDataIterator extends AbstractDataIterator
 
     void setUseAsynchronousExecute(boolean useAsynchronousExecute)
     {
-        _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex;
+        _useAsynchronousExecute = useAsynchronousExecute && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex;
     }
 
 
@@ -168,6 +169,19 @@ public class StatementDataIterator extends AbstractDataIterator
         _useAsynchronousExecute = false;
     }
 
+    public void setObjectUriColumn(int index, ColumnInfo col)
+    {
+        if (-1 == index)
+        {
+            _keyColumnInfo.add(null);
+            _keyValues.add(null);
+            index = _keyColumnInfo.size()-1;
+        }
+        _keyColumnInfo.set(index,col);
+        _objectUriIndex = index;
+        _useAsynchronousExecute = false;
+    }
+
 
     void init()
     {
@@ -199,7 +213,7 @@ public class StatementDataIterator extends AbstractDataIterator
         _currentStmt = _stmts[0];
         _currentBinding = _bindings[0];
 
-        if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
+        if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex && null == _objectUriIndex)
             _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
 
         Integer contextTxSize = null;
@@ -218,7 +232,7 @@ public class StatementDataIterator extends AbstractDataIterator
         }
     }
 
-    protected void setBatchSize(int batchSize)
+    public void setBatchSize(int batchSize)
     {
         this._batchSize = batchSize;
     }
@@ -382,6 +396,8 @@ public class StatementDataIterator extends AbstractDataIterator
                 _keyValues.set(_rowIdIndex, _currentStmt.getRowId());
             if (null != _objectIdIndex)
                 _keyValues.set(_objectIdIndex, _currentStmt.getObjectId());
+            if (null != _objectUriIndex)
+                _keyValues.set(_objectUriIndex, _currentStmt.getObjectURI());
 
             checkBackgroundException();
             return hasNextRow;
@@ -567,7 +583,6 @@ public class StatementDataIterator extends AbstractDataIterator
                     // NOTE some constraint exceptions are recoverable (especially on sql server), but treat all sql exceptions as fatal
                     //noinspection ThrowableResultOfMethodCallIgnored
                     getRowError().addGlobalError(x);
-                    m.close();
                     throw _context.getErrors();
                 }
             }
@@ -579,7 +594,7 @@ public class StatementDataIterator extends AbstractDataIterator
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName()).append("\n");
+        super.debugLogInfo(sb);
         if (null != _data)
             _data.debugLogInfo(sb);
     }

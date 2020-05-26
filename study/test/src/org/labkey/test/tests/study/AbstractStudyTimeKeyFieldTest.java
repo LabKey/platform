@@ -20,10 +20,10 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.pages.DatasetInsertPage;
 import org.labkey.test.pages.DatasetPropertiesPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
 import org.labkey.test.pages.ImportDataPage;
 import org.labkey.test.pages.ViewDatasetDataPage;
 import org.labkey.test.pages.core.admin.LookAndFeelSettingsPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 
 import java.io.File;
 import java.util.HashMap;
@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Created by RyanS on 5/17/2017.
@@ -45,7 +47,6 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     protected static final File DIFFERENT_DATES_DIFFERENT_TIMES = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
     protected static final File HAS_TIMESTAMP = TestFileUtils.getSampleData("study/commondata/RCB-1.tsv");
     protected static final File RCE_APPEND = TestFileUtils.getSampleData("study/commondata/RCE-1-2.tsv");
-    protected static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     protected static final String DATE_REGEX = "\\d{4}-\\d{2}\\d{2}";
     protected static final String DATETIME_REGEX = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}";
     protected static final String DEFAULT_DATE_FORMAT = "yyyy-MM-dd";
@@ -62,9 +63,9 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setDataRowUniquenessType(DatasetDesignerPage.DataRowUniquenessType.PTID_TIMEPOINT);
+        propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
@@ -75,12 +76,15 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        //editDatasetDefinitionPage = editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys");
-        editDatasetDefinitionPage.save();
-        dataPage = propertiesPage.clickViewData();
-        DatasetInsertPage insertPage = dataPage.insertDatasetRow();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setDataRowUniquenessType(DatasetDesignerPage.DataRowUniquenessType.PTID_ONLY);
+        datasetDesignerPage = datasetDesignerPage.saveExpectFail("This dataset currently contains more than one row of data per Mouse. Demographic data includes one row of data per Mouse.");
+        datasetDesignerPage.clickCancel();
+
+        DatasetInsertPage insertPage =goToDataset(folder, dataset)
+                .clickManageDataset()
+                .clickViewData()
+                .insertDatasetRow();
         insertPage.insert(kvp,false,"Duplicates were found in the database or imported data");
     }
 
@@ -89,10 +93,9 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
-        editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setAdditionalKeyColDataField("Time (from Date/Time)");
+        propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
@@ -103,10 +106,9 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
-        editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setAdditionalKeyColDataField("Time (from Date/Time)");
+        propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
@@ -118,10 +120,9 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder, dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
-        editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setAdditionalKeyColDataField("Time (from Date/Time)");
+        propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
@@ -133,19 +134,19 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
-        editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setAdditionalKeyColDataField("Time (from Date/Time)");
+        propertiesPage = datasetDesignerPage.clickSave();
         dataPage = propertiesPage.clickViewData();
         ImportDataPage importPage = dataPage.importBulkData();
         importPage.setFile(toUpload);
         importPage.submit();
+
         dataPage = goToDataset(folder,dataset);
         propertiesPage = dataPage.clickManageDataset();
-        editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        
+        datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setDataRowUniquenessType(DatasetDesignerPage.DataRowUniquenessType.PTID_TIMEPOINT);
+        datasetDesignerPage.clickSave();
     }
 
     //Date field should display the time as well if time is specified as an additional key
@@ -159,24 +160,23 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         //should be default, just date for now
         ViewDatasetDataPage dataPage = goToDataset(getFolderName(),"AE-1:(VTN) AE Log");
         List<String> dates = dataPage.getColumnData("Date");
-        dates.forEach((d) -> Assert.assertTrue("date was in wrong format", !isDate(d) && isDateTime(d)));
+        dates.forEach((d) -> assertTrue("date was in wrong format", !isDate(d) && isDateTime(d)));
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage definitionPage = propertiesPage.clickEditDefinition();
-        definitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
+        DatasetDesignerPage definitionPage = propertiesPage.clickEditDefinition();
         definitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = definitionPage.save();
+        propertiesPage = definitionPage.clickSave();
         dataPage = propertiesPage.clickViewData();
-        dates.forEach((d) -> Assert.assertTrue("date was in wrong format", isDateTime(d)));
+        dates.forEach((d) -> assertTrue("date was in wrong format", isDateTime(d)));
     }
 
     protected void testCannotTurnOffExtraTimeKeyIfViolatesUnique(String folder, String dataset)
     {
         ViewDatasetDataPage dataPage = goToDataset(folder,dataset);
         DatasetPropertiesPage propertiesPage = dataPage.clickManageDataset();
-        EditDatasetDefinitionPage editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.DATAFIELD);
-        editDatasetDefinitionPage.setAdditionalKeyColDataField("Time (from Date/Time)");
-        propertiesPage = editDatasetDefinitionPage.save();
+        DatasetDesignerPage datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setAdditionalKeyColDataField("Time (from Date/Time)");
+        propertiesPage = datasetDesignerPage.clickSave();
+
         dataPage = propertiesPage.clickViewData();
         DatasetInsertPage insertPage = dataPage.insertDatasetRow();
         Map<String,String> kvp = new HashMap<>();
@@ -185,34 +185,34 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         insertPage.insert(kvp,true,"Duplicates were found in the database or imported data");
         dataPage = goToDataset(folder,dataset);
         propertiesPage = dataPage.clickManageDataset();
-        editDatasetDefinitionPage = propertiesPage.clickEditDefinition();
-        editDatasetDefinitionPage.setAdditionalKeyColumnType(EditDatasetDefinitionPage.LookupAdditionalKeyColType.NONE);
-        editDatasetDefinitionPage.saveExpectFail("Changing the dataset key would result in duplicate keys");
+        datasetDesignerPage = propertiesPage.clickEditDefinition();
+        datasetDesignerPage.setDataRowUniquenessType(DatasetDesignerPage.DataRowUniquenessType.PTID_TIMEPOINT);
+        datasetDesignerPage.saveExpectFail("Changing the dataset key would result in duplicate keys for dataset " + dataset);
     }
 
     protected void testCannotSetAdditionalKeyForDemographics()
     {
-        EditDatasetDefinitionPage editDatasetDefinitionPage =
-                goToDataset(getFolderName(), DEMOGRAPHICS_DATASET)
+        DatasetDesignerPage datasetDesignerPage =
+                goToDataset(getFolderName(), DEMOGRAPHICS_TITLE)
                         .clickManageDataset()
                         .clickEditDefinition();
-        Assert.assertFalse("Additional Key None should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalFieldNoneEnabled());
-        Assert.assertFalse("Additional Key Data Field should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalKeyDataFieldEnabled());
-        Assert.assertFalse("Additional Key Managed Field should not be enabled for a demographics dataset", editDatasetDefinitionPage.isAdditionalKeyManagedEnabled());
+
+        Assert.assertFalse("Additional Key Data Field should not be enabled for a demographics dataset", datasetDesignerPage.isAdditionalKeyDataFieldEnabled());
+        Assert.assertFalse("Additional Key Managed Field should not be enabled for a demographics dataset", datasetDesignerPage.isAdditionalKeyManagedEnabled());
         dismissAllAlerts();
     }
 
     @Override
-    protected void verifyHiddenVisits(){};
+    protected void verifyHiddenVisits(){}
 
     @Override
-    protected void verifyVisitImportMapping(){};
+    protected void verifyVisitImportMapping(){}
 
     @Override
-    protected void verifyCohorts(){};
+    protected void verifyCohorts(){}
 
     @Override
-    protected void verifyStudyAndDatasets(){};
+    protected void verifyStudyAndDatasets(){}
 
     protected ViewDatasetDataPage goToDataset(String folder, String datasetName)
     {
@@ -236,6 +236,7 @@ public abstract class AbstractStudyTimeKeyFieldTest extends StudyTest
         return m.matches();
     }
 
+    @Override
     protected void verifySpecimens()
     {
         verifySpecimens();

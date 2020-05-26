@@ -27,11 +27,17 @@ public interface ExpProtocolApplicationTable extends ExpTable<ExpProtocolApplica
     {
         RowId,
         Name,
+        Comments,
         LSID,
         Protocol,
         Run,
         ActionSequence,
-        Type
+        Type,
+        ActivityDate,
+        StartTime,
+        EndTime,
+        RecordCount,
+        Properties
     }
 
     BaseColumnInfo createMaterialInputColumn(String alias, SamplesSchema schema, ExpSampleSet sampleSet, String... roleNames);

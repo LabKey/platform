@@ -1,3 +1,5 @@
+import org.labkey.gradle.util.BuildUtils
+
 // TODO move resources files into resources directory to avoid this overlap
 sourceSets {
    main {
@@ -8,3 +10,11 @@ sourceSets {
       }
    }
 }
+
+dependencies{
+   BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "pipeline"), depProjectConfig: "published", depExtension: "module")
+   BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "query"), depProjectConfig: "published", depExtension: "module")
+}
+
+project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))
+project.tasks.npmInstall.dependsOn(project.project(BuildUtils.getPlatformProjectPath(project.gradle)).tasks.npmInstall)

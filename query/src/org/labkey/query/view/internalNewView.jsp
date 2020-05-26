@@ -34,5 +34,5 @@
     <p>View Name:<br><input type="text" name="ff_viewName" value="<%=h(form.ff_viewName)%>"></p>
     <p><input type="checkbox" name="ff_share" value="true"<%=checked(form.ff_share)%>> Share with other users</p>
     <p><input type="checkbox" name="ff_inherit" value="true"<%=checked(form.ff_share)%>> Inherit view in sub-projects</p>
-    <labkey:button text="Create" /> <labkey:button text="Cancel" href="<%=h(urlCancel)%>" />
+    <labkey:button text="Create" /> <labkey:button text="Cancel" href="<%=urlCancel%>" />
 </labkey:form>

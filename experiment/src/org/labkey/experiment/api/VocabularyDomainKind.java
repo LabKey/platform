@@ -1,6 +1,7 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.SQLFragment;
@@ -8,7 +9,8 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
@@ -16,6 +18,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.writer.ContainerUser;
@@ -29,7 +32,7 @@ import java.util.Set;
 /**
 * VocabularyDomainKind can be used to hold ad hoc properties.
 * */
-public class VocabularyDomainKind extends AbstractDomainKind
+public class VocabularyDomainKind extends BaseAbstractDomainKind
 {
     public static final String KIND_NAME = "Vocabulary";
 
@@ -60,7 +63,10 @@ public class VocabularyDomainKind extends AbstractDomainKind
     @Override
     public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
-        return null;
+        if (!containerUser.getContainer().isContainerFor(ContainerType.DataType.domainDefinitions))
+            return null;
+
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
     }
 
     @Override
@@ -81,6 +87,7 @@ public class VocabularyDomainKind extends AbstractDomainKind
         return reservedProperties;
     }
 
+    @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignVocabularyPermission.class);
@@ -115,6 +122,8 @@ public class VocabularyDomainKind extends AbstractDomainKind
     @Override
     public Priority getPriority(String domainURI)
     {
+        if (!domainURI.contains(getKindName()))
+            return null;
         Lsid lsid = new Lsid(domainURI);
         return getKindName().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
@@ -125,7 +134,7 @@ public class VocabularyDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
         if (name == null)
@@ -133,9 +142,9 @@ public class VocabularyDomainKind extends AbstractDomainKind
 
         if (!container.isContainerFor(ContainerType.DataType.domainDefinitions))
         {
-            throw new IllegalArgumentException("Vocabulary  can not be created in this Container type.");
+            throw new IllegalArgumentException("Vocabulary can not be created in this Container type.");
         }
-        String domainURI = generateDomainURI( name, container);
+        String domainURI = generateDomainURI(name, container);
 
         List<GWTPropertyDescriptor> properties = domain.getFields();
         Domain vocabularyDomain = PropertyService.get().createDomain(container, domainURI, domain.getName(), templateInfo);

@@ -16,14 +16,22 @@
 package org.labkey.list.model;
 
 import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.attachments.AttachmentService;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.Lsid;
@@ -40,10 +48,13 @@ import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
@@ -51,11 +62,13 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.ContainerUser;
-import org.labkey.list.client.ListEditorService;
 import org.labkey.data.xml.domainTemplate.DomainTemplateType;
 import org.labkey.data.xml.domainTemplate.ListOptionsType;
 import org.labkey.data.xml.domainTemplate.ListTemplateType;
+import org.labkey.list.view.ListItemAttachmentParent;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -73,13 +86,14 @@ import static org.labkey.api.exp.property.DomainTemplate.findProperty;
  * Date: 5/8/13
  * Time: 4:12 PM
  */
-public abstract class ListDomainKind extends AbstractDomainKind
+public abstract class ListDomainKind extends AbstractDomainKind<ListDomainKindProperties>
 {
     /*
      * the columns common to all lists
      */
     private final static Set<PropertyStorageSpec> BASE_PROPERTIES;
     private ListDefinitionImpl _list;
+    private final static int MAX_NAME_LENGTH = 64;
 
     static
     {
@@ -126,6 +140,18 @@ public abstract class ListDomainKind extends AbstractDomainKind
         if (null == listDef)
             return null;
         return listDef.urlShowDefinition();
+    }
+
+    @Override
+    public boolean allowAttachmentProperties()
+    {
+        return true;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 
     @Override
@@ -318,39 +344,45 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user,
-        @Nullable TemplateInfo templateInfo)
+    public Class<? extends ListDomainKindProperties> getTypeClass()
+    {
+        return ListDomainKindProperties.class;
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, ListDomainKindProperties listProperties, Container container, User user, @Nullable TemplateInfo templateInfo)
     {
         String name = domain.getName();
-        String keyName = arguments.containsKey("keyName") ? (String)arguments.get("keyName") : null;
+        String keyName = listProperties.getKeyName();
 
-        if (name == null)
-            throw new IllegalArgumentException("List name must not be null");
-        if (name.length() > ListEditorService.MAX_NAME_LENGTH)
-            throw new IllegalArgumentException("List name cannot be longer than " + ListEditorService.MAX_NAME_LENGTH + " characters");
-
-        if (keyName == null)
-            throw new IllegalArgumentException("List keyName must not be null");
+        if (StringUtils.isEmpty(name))
+            throw new ApiUsageException("List name must not be null");
+        if (name.length() > MAX_NAME_LENGTH)
+            throw new ApiUsageException("List name cannot be longer than " + MAX_NAME_LENGTH + " characters");
+        if (ListService.get().getList(container, name) != null)
+            throw new ApiUsageException("The name '" + name + "' is already in use.");
+        if (StringUtils.isEmpty(keyName))
+            throw new ApiUsageException("List keyName must not be null");
 
         KeyType keyType = getDefaultKeyType();
 
-        if (arguments.containsKey("keyType"))
+        if (null != listProperties.getKeyType())
         {
-            String rawKeyType = (String)arguments.get("keyType");
+            String rawKeyType = listProperties.getKeyType();
             if (EnumUtils.isValidEnum(KeyType.class, rawKeyType))
                 keyType = KeyType.valueOf(rawKeyType);
             else
-                throw new IllegalArgumentException("List keyType provided does not exist.");
+                throw new ApiUsageException("List keyType provided does not exist.");
         }
 
         if (!getSupportedKeyTypes().contains(keyType))
-            throw new IllegalArgumentException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
+            throw new ApiUsageException("List keyType provided is not supported for list domain kind (" + getKindName() + ").");
 
         ListDefinition list = ListService.get().createList(container, name, keyType, templateInfo);
         list.setKeyName(keyName);
-        list.setDescription(domain.getDescription());
 
-        // TODO: lots of optional stuff we could set: discussionSetting, allowDelete, allowUpload, ...
+        String description = listProperties.getDescription() != null ? listProperties.getDescription() : domain.getDescription();
+        list.setDescription(description);
 
         List<GWTPropertyDescriptor> properties = (List<GWTPropertyDescriptor>)domain.getFields();
         List<GWTIndex> indices = (List<GWTIndex>)domain.getIndices();
@@ -374,7 +406,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
                     pd.setName("_" + pd.getName());
                 }
 
-                DomainProperty dp = DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
+                DomainUtil.addProperty(d, pd, defaultValues, propertyUris, null);
             }
 
             Set<PropertyStorageSpec.Index> propertyIndices = new HashSet<>();
@@ -386,6 +418,8 @@ public abstract class ListDomainKind extends AbstractDomainKind
             d.setPropertyIndices(propertyIndices);
 
             list.save(user);
+            updateListProperties(container, user, list.getListId(), listProperties);
+
             DefaultValueService.get().setDefaultValues(container, defaultValues);
 
             tx.commit();
@@ -396,6 +430,214 @@ public abstract class ListDomainKind extends AbstractDomainKind
         }
 
         return list.getDomain();
+    }
+
+    @Override
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                            ListDomainKindProperties listProperties, Container container, User user, boolean includeWarnings)
+    {
+        ValidationException exception;
+
+        try (DbScope.Transaction transaction = ListManager.get().getListMetadataSchema().getScope().ensureTransaction())
+        {
+            exception = new ValidationException();
+
+            Domain domain = PropertyService.get().getDomain(container, original.getDomainURI());
+            if (null == domain)
+                return exception.addGlobalError("Expected domain for list: " + original.getName());
+
+            ListDefinition listDefinition = ListService.get().getList(domain);
+            TableInfo table = listDefinition.getTable(user);
+
+            if (null == table)
+                return exception.addGlobalError("Expected table for list: " + listDefinition.getName());
+
+            // Handle cases when existing key field is null or is not provided in the updated domainDesign
+            GWTPropertyDescriptor key = findField(listDefinition.getKeyName(), original.getFields());
+            if (null != key)
+            {
+                int id = key.getPropertyId();
+                GWTPropertyDescriptor newKey = findField(id, update.getFields());
+                if (null == newKey)
+                {
+                    return exception.addGlobalError("Key field not provided, expecting key field '" + key.getName() + "'");
+                }
+                else if (!key.getName().equalsIgnoreCase(newKey.getName()))
+                {
+                    return exception.addGlobalError("Cannot change key field name");
+                }
+            }
+            else
+            {
+                return exception.addGlobalError("Key field not found for list '" + listDefinition.getName() + "'");
+            }
+
+            //handle name change
+            if (!original.getName().equals(update.getName()))
+            {
+                if (update.getName().length() > MAX_NAME_LENGTH)
+                {
+                    return exception.addGlobalError("List name cannot be longer than " + MAX_NAME_LENGTH + " characters.");
+                }
+                else if (ListService.get().getList(container, update.getName()) != null)
+                {
+                    return exception.addGlobalError("The name '" + update.getName() + "' is already in use.");
+                }
+            }
+
+            //return if there are errors before moving forward with the save
+            if (exception.hasErrors())
+            {
+                return exception;
+            }
+
+            //update list properties
+            if (null != listProperties)
+            {
+                if (listProperties.getDomainId() != original.getDomainId() || listProperties.getDomainId() != update.getDomainId())
+                    return exception.addGlobalError("domainId for the list does not match old or the new domain");
+                if (!original.getDomainURI().equals(update.getDomainURI()))
+                    return exception.addGlobalError("domainURI mismatch between old and new domain");
+
+                updateListProperties(container, user, listDefinition.getListId(), listProperties);
+            }
+
+            //update domain design properties
+            try
+            {
+                //handle attachment cols
+                Map<String, ColumnInfo> modifiedAttachmentColumns = new CaseInsensitiveHashMap<>();
+
+                for (DomainProperty oldProp : domain.getProperties())
+                {
+                    if (PropertyType.ATTACHMENT.equals(oldProp.getPropertyDescriptor().getPropertyType()))
+                    {
+                        GWTPropertyDescriptor newGWTProp = findField(oldProp.getPropertyId(), update.getFields());
+                        if (null == newGWTProp || !PropertyType.ATTACHMENT.equals(PropertyType.getFromURI(newGWTProp.getConceptURI(), newGWTProp.getRangeURI(), null)))
+                        {
+                            ColumnInfo column = table.getColumn(oldProp.getPropertyDescriptor().getName());
+                            if (null != column)
+                                modifiedAttachmentColumns.put(oldProp.getPropertyDescriptor().getName(), column);
+                        }
+                    }
+                }
+
+                Collection<Map<String, Object>> attachmentMapCollection = null;
+                if (!modifiedAttachmentColumns.isEmpty())
+                {
+                    List<ColumnInfo> columns = new ArrayList<>(modifiedAttachmentColumns.values());
+                    columns.add(table.getColumn("entityId"));
+                    attachmentMapCollection = new TableSelector(table, columns, null, null).getMapCollection();
+                }
+
+                // Remove attachments from any attachment columns that are removed or no longer attachment columns
+                if (null != attachmentMapCollection)
+                {
+                    for (Map<String, Object> map : attachmentMapCollection)
+                    {
+                        String entityId = (String) map.get("entityId");
+                        ListItemAttachmentParent parent = new ListItemAttachmentParent(entityId, container);
+                        for (Map.Entry<String, Object> entry : map.entrySet())
+                            if (null != entry.getValue() && modifiedAttachmentColumns.containsKey(entry.getKey()))
+                                AttachmentService.get().deleteAttachment(parent, entry.getValue().toString(), user);
+                    }
+                }
+
+                //update domain properties
+                exception.addErrors(DomainUtil.updateDomainDescriptor(original, update, container, user));
+            }
+            catch (RuntimeSQLException x)
+            {
+                // issue 19202 - check for null value exceptions in case provided file data not contain the column
+                // and return a better error message
+                String message = x.getMessage();
+                if (x.isNullValueException())
+                {
+                    message = "The provided data does not contain the specified '" + listDefinition.getKeyName() + "' field or contains null key values.";
+                }
+                return exception.addGlobalError(message);
+            }
+            catch (DataIntegrityViolationException x)
+            {
+                return exception.addGlobalError("A data error occurred: " + x.getMessage());
+            }
+
+            if (!exception.hasErrors())
+            {
+                transaction.commit();
+            }
+            return exception;
+        }
+    }
+
+    private void updateListProperties(Container container, User user, int listId, ListDomainKindProperties listProperties)
+    {
+        SimpleFilter filter = SimpleFilter.createContainerFilter(container);
+        filter.addCondition(FieldKey.fromParts("ListId"), listId);
+        ListDomainKindProperties existingListProps = new TableSelector(ListManager.get().getListMetadataTable(), filter, null).getObject(ListDomainKindProperties.class);
+
+        //merge existing and new properties
+        ListDomainKindProperties updatedListProps = updateListProperties(existingListProps, listProperties);
+
+        ListManager.get().update(user, container, updatedListProps);
+    }
+
+    //updates list properties except listId, domainId, keyName, keyType, and lastIndexed
+    private ListDomainKindProperties updateListProperties(ListDomainKindProperties existingListProps, ListDomainKindProperties newListProps)
+    {
+        ListDomainKindProperties updatedListProps = new ListDomainKindProperties(existingListProps);
+
+        if (null != newListProps.getName())
+            updatedListProps.setName(newListProps.getName());
+
+        updatedListProps.setTitleColumn(newListProps.getTitleColumn());
+        updatedListProps.setDescription(newListProps.getDescription());
+        updatedListProps.setAllowDelete(newListProps.isAllowDelete());
+        updatedListProps.setAllowUpload(newListProps.isAllowUpload());
+        updatedListProps.setAllowExport(newListProps.isAllowExport());
+        updatedListProps.setDiscussionSetting(newListProps.getDiscussionSetting());
+        updatedListProps.setEntireListTitleTemplate(newListProps.getEntireListTitleTemplate());
+        updatedListProps.setEntireListIndexSetting(newListProps.getEntireListIndexSetting());
+        updatedListProps.setEntireListBodySetting(newListProps.getEntireListBodySetting());
+        updatedListProps.setEachItemTitleTemplate(newListProps.getEachItemTitleTemplate());
+        updatedListProps.setEachItemBodySetting(newListProps.getEachItemBodySetting());
+        updatedListProps.setEntireListIndex(newListProps.isEntireListIndex());
+        updatedListProps.setEntireListBodyTemplate(newListProps.getEntireListBodyTemplate());
+        updatedListProps.setEachItemIndex(newListProps.isEachItemIndex());
+        updatedListProps.setEachItemBodyTemplate(newListProps.getEachItemBodyTemplate());
+        updatedListProps.setFileAttachmentIndex(newListProps.isFileAttachmentIndex());
+
+        return updatedListProps;
+    }
+
+    private GWTPropertyDescriptor findField(String name, List<? extends GWTPropertyDescriptor> fields)
+    {
+        for (GWTPropertyDescriptor f : fields)
+        {
+            if (name.equalsIgnoreCase(f.getName()))
+                return f;
+        }
+        return null;
+    }
+
+    private GWTPropertyDescriptor findField(int id, List<? extends GWTPropertyDescriptor> fields)
+    {
+        if (id > 0)
+        {
+            for (GWTPropertyDescriptor f : fields)
+            {
+                if (id == f.getPropertyId())
+                    return f;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable ListDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
+    {
+        ListDefinition list = domain != null ? ListService.get().getList(PropertyService.get().getDomain(domain.getDomainId())) : null;
+        return ListManager.get().getListDomainKindProperties(container, list != null ? list.getListId() : null);
     }
 
     @Override

@@ -46,7 +46,6 @@ import org.labkey.search.umls.UmlsController;
 import org.labkey.search.view.SearchWebPartFactory;
 
 import javax.servlet.ServletContext;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -64,9 +63,9 @@ public class SearchModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.20;
+        return 20.001;
     }
 
     @Override
@@ -97,7 +96,7 @@ public class SearchModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Collections.singletonList(new SearchWebPartFactory()));
+        return Collections.singletonList(new SearchWebPartFactory());
     }
 
     
@@ -191,10 +190,10 @@ public class SearchModule extends DefaultModule
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return PageFlowUtil.set
+        return Set.of
         (
-            LuceneSearchServiceImpl.TikaTestCase.class,
-            LuceneSearchServiceImpl.TestCase.class
+            LuceneSearchServiceImpl.TestCase.class,
+            LuceneSearchServiceImpl.TikaTestCase.class
         );
     }
 }

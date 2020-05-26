@@ -18,6 +18,7 @@ package org.labkey.api.settings;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.module.DefaultModule;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.UsageReportingLevel;
@@ -39,6 +40,7 @@ public interface AppProps
     AppProps _instance = new AppPropsImpl();
 
     String EXPERIMENTAL_FEATURE = "experimentalFeature";
+    String EXPERIMENTAL_JAVASCRIPT_API = "javascriptApi";
     String EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP = "javascriptMothership";
     String EXPERIMENTAL_JAVASCRIPT_SERVER = "javascriptErrorServerLogging";
     String EXPERIMENTAL_USER_FOLDERS = "userFolders";
@@ -46,6 +48,9 @@ public interface AppProps
     String EXPERIMENTAL_BLOCKER = "blockMaliciousClients";
     String EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS = "resolve-property-uri-columns";
     String EXPERIMENTAL_STRICT_RETURN_URL = "strictReturnUrl";
+    String EXPERIMENTAL_NO_QUESTION_MARK_URL = "noQuestionMarkUrl";
+
+    String UNKNOWN_VERSION = "Unknown Release Version";
 
     static AppProps getInstance()
     {
@@ -72,6 +77,21 @@ public interface AppProps
 
     boolean isRecompileJspEnabled();
 
+    /**
+     * Indicates whether modules' "sourcePath" and "buildPath" values be ignored. This allows a server to run in devMode
+     * without the risk of loading unwanted resources from a source tree that may not match the deployed server.
+     *
+     * <strong>WARNING</strong>: Setting this flag will interfere with the population of module beans, resulting in a
+     * mismatch between deployed modules and their properties on the server.
+     *
+     * @return value of the 'labkey.ignoreModuleSource' system property. Defaults to <code>false</code>
+     *
+     * @see org.labkey.api.module.DefaultModule#setSourcePath(String)
+     * @see org.labkey.api.module.DefaultModule#setBuildPath(String)
+     * @see DefaultModule#computeResourceDirectory()
+     */
+    boolean isIgnoreModuleSource();
+
     void setProjectRoot(String projectRoot);
 
     /**
@@ -95,7 +115,17 @@ public interface AppProps
     @NotNull
     UsageReportingLevel getUsageReportingLevel();
 
-    String getLabKeyVersionString();
+    /**
+     * Returns the core module's release version, a string such as "20.3-SNAPSHOT", "20.1.0", or "20.3.7".
+     * Or "Unknown Release Version".
+     */
+    @NotNull
+    String getReleaseVersion();
+
+    /**
+     * Convenience method for getting the core schema version, returning 0.0 instead of null
+     */
+    double getSchemaVersion();
 
     String getContextPath();
 
@@ -168,6 +198,7 @@ public interface AppProps
 
     String getBLASTServerBaseURL();
 
+    /** @return the name of the Tomcat XML deployment descriptor based on the context path for this install - typically ROOT.xml or labkey.xml */
     String getWebappConfigurationFilename();
 
     /**
@@ -218,5 +249,4 @@ public interface AppProps
      */
     @NotNull
     List<String> getExternalRedirectHosts();
-
 }

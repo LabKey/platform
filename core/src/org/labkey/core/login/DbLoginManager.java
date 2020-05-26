@@ -16,8 +16,14 @@
 package org.labkey.core.login;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyManager.PropertyMap;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider.AuthSettingsAuditEvent;
 import org.labkey.api.security.PasswordExpiration;
+import org.labkey.api.security.User;
+import org.labkey.api.util.StringUtilsLabKey;
+import org.labkey.core.login.LoginController.SaveDbLoginPropertiesForm;
 
 import java.util.Map;
 
@@ -39,13 +45,13 @@ public class DbLoginManager
 
     public static PasswordExpiration getPasswordExpiration()
     {
-        String strength = getProperty(Key.Expiration, PasswordExpiration.Never);
+        String expiration = getProperty(Key.Expiration, PasswordExpiration.Never);
 
         PasswordExpiration pe;
 
         try
         {
-            pe = PasswordExpiration.valueOf(strength);
+            pe = PasswordExpiration.valueOf(expiration);
         }
         catch (IllegalArgumentException e)
         {
@@ -58,15 +64,26 @@ public class DbLoginManager
 
     static final String DATABASE_AUTHENTICATION_CATEGORY_KEY = "DatabaseAuthentication";
 
-    private enum Key { Strength, Expiration }
+    public enum Key { Strength, Expiration }
 
-    public static void saveProperties(LoginController.Config config)
+    public static void saveProperties(User user, SaveDbLoginPropertiesForm form)
     {
-        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
+        Map<String, String> oldProperties = getProperties();
+
+        PropertyMap map = PropertyManager.getWritableProperties(DATABASE_AUTHENTICATION_CATEGORY_KEY, true);
         map.clear();
-        map.put(Key.Strength.toString(), config.getStrength());
-        map.put(Key.Expiration.toString(), config.getExpiration());
+        map.put(Key.Strength.toString(), form.getStrength());
+        map.put(Key.Expiration.toString(), form.getExpiration());
         map.save();
+
+        String changes = StringUtilsLabKey.getMapDifference(oldProperties, map);
+
+        if (!changes.isEmpty())
+        {
+            AuthSettingsAuditEvent event = new AuthSettingsAuditEvent("Database authentication settings were changed");
+            event.setChanges(String.join(", ", changes));
+            AuditLogService.get().addEvent(user, event);
+        }
     }
 
     private static @NotNull Map<String, String> getProperties()

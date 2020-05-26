@@ -42,10 +42,13 @@ import org.labkey.api.view.WebPartFactory;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.PathMatcher;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 
 /*
 * User: Dave
@@ -67,6 +70,12 @@ public class SimpleModule extends SpringModule
     public static String PROPERTY_NAMESPACE_PREFIX_TEMPLATE = NAMESPACE_PREFIX + "-${SchemaName}-${TableName}";
     public static String PROPERTY_LSID_TEMPLATE = "${FolderLSIDBase}:${GUID}";
 
+    private String _folderPathPattern = null;
+    private PathMatcher _pathMatcher = null;
+
+    // remember listener so we can unregister it
+    SimpleModuleContainerListener _containerListener = null;
+
     public SimpleModule()
     {
     }
@@ -84,6 +93,36 @@ public class SimpleModule extends SpringModule
             throw new ConfigurationException("Simple module must have a name");
 
         addController(getName().toLowerCase(), SimpleController.class);
+    }
+
+    @Override
+    public boolean canBeEnabled(Container c)
+    {
+        if (null == _pathMatcher)
+            return true;
+        return _pathMatcher.matches(Paths.get(c.getPath()));
+    }
+
+    public void setFolderPathPattern(String pattern)
+    {
+        checkLocked();
+        pattern = StringUtils.trimToNull(pattern);
+        if (null == pattern)
+        {
+            _folderPathPattern = null;
+            _pathMatcher = null;
+            return;
+        }
+        if (!pattern.startsWith("glob:") && !pattern.startsWith("regex:"))
+            throw new IllegalArgumentException("Pattern must start with either 'glob:' or 'regex:' folderPathPattern='" + pattern +"'");
+        FileSystem fs = FileSystems.getDefault();
+        _folderPathPattern = pattern;
+        _pathMatcher = fs.getPathMatcher(pattern);
+    }
+
+    public String getFolderPathPattern()
+    {
+        return _folderPathPattern;
     }
 
     @Override
@@ -117,10 +156,7 @@ public class SimpleModule extends SpringModule
     @NotNull
     public Collection<String> getSchemaNames()
     {
-        List<String> schemaNames = DbScope.getSchemaNames(this);
-        Collections.sort(schemaNames);  // Alphabetical is better than random
-
-        return Collections.unmodifiableList(schemaNames);
+        return DbScope.getSchemaNames(this);
     }
 
     @Override
@@ -132,7 +168,8 @@ public class SimpleModule extends SpringModule
 
     protected void registerContainerListeners()
     {
-        ContainerManager.addContainerListener(new SimpleModuleContainerListener(this));
+        _containerListener = new SimpleModuleContainerListener(this);
+        ContainerManager.addContainerListener(_containerListener);
     }
 
     protected void registerSchemas()
@@ -207,5 +244,24 @@ public class SimpleModule extends SpringModule
         }
 
         return summary;
+    }
+
+    @Override
+    public void copyPropertiesFrom(DefaultModule from)
+    {
+        super.copyPropertiesFrom(from);
+        if (from instanceof SimpleModule)
+            this._pathMatcher = ((SimpleModule)from)._pathMatcher;
+    }
+
+    @Override
+    public void unregister()
+    {
+        super.unregister();
+        if (null != _containerListener)
+        {
+            ContainerManager.removeContainerListener(_containerListener);
+            _containerListener = null;
+        }
     }
 }

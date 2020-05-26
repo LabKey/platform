@@ -23,14 +23,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.*;
 import org.labkey.api.data.DbScope.Transaction;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -50,6 +52,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.CPUTimer;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -75,7 +78,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+import static java.util.Collections.unmodifiableCollection;
+import static java.util.Collections.unmodifiableList;
+import static java.util.Collections.unmodifiableMap;
 import static org.labkey.api.search.SearchService.PROPERTY;
 
 /**
@@ -90,12 +97,124 @@ import static org.labkey.api.search.SearchService.PROPERTY;
 public class OntologyManager
 {
     private static final Logger _log = Logger.getLogger(OntologyManager.class);
-    private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
-    private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
-    private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property descriptors");
-    private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
-    private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
-    private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
+    private static final Cache<String, Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property maps");
+    private static final Cache<String, Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "ObjectIds");
+    private static final Cache<Pair<String, GUID>, PropertyDescriptor> propDescCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 40000, CacheManager.UNLIMITED, "Property descriptors"), new CacheLoader<>()
+    {
+        @Override
+        public PropertyDescriptor load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        {
+            String propertyURI = key.first;
+            Container c = ContainerManager.getForId(key.second);
+            Container proj = c.getProject();
+            if (null == proj)
+                proj = c;
+
+            String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
+            List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
+                    proj,
+                    _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
+            if (!pdArray.isEmpty())
+            {
+                PropertyDescriptor pd = pdArray.get(0);
+
+                // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
+                // and one of the two is in the shared project, use the project-level descriptor.
+                if (pdArray.size() > 1)
+                {
+                    _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
+                    if (pd.getProject().equals(_sharedContainer))
+                        pd = pdArray.get(1);
+                }
+                return pd;
+            }
+            return null;
+        }
+    });
+    /** DomainURI, ContainerEntityId -> DomainDescriptor */
+    private static final Cache<Pair<String, GUID>, DomainDescriptor> domainDescByURICache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 2000, CacheManager.UNLIMITED, "Domain descriptors by URI"), (key, argument) -> {
+        String domainURI = key.first;
+        Container c = ContainerManager.getForId(key.second);
+
+        if (c == null)
+        {
+            return null;
+        }
+
+        return fetchDomainDescriptorFromDB(domainURI, c);
+    });
+
+    /** Goes against the DB, bypassing the cache */
+    @Nullable
+    private static DomainDescriptor fetchDomainDescriptorFromDB(String domainURI, Container c)
+    {
+        Container proj = c.getProject();
+        if (null == proj)
+            proj = c;
+
+        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
+        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
+                proj,
+                ContainerManager.getSharedContainer().getId()).getArrayList(DomainDescriptor.class);
+        DomainDescriptor dd = null;
+        if (!ddArray.isEmpty())
+        {
+            dd = ddArray.get(0);
+
+            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
+            // and one of the two is in the shared project, use the project-level descriptor.
+            if (ddArray.size() > 1)
+            {
+                _log.debug("Multiple DomainDescriptors found for " + domainURI);
+                if (dd.getProject().equals(ContainerManager.getSharedContainer()))
+                    dd = ddArray.get(0);
+            }
+        }
+        return dd;
+    }
+
+    private static final BlockingCache<Integer, DomainDescriptor> domainDescByIDCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(),2000, CacheManager.UNLIMITED,"Domain descriptors by ID"), new DomainDescriptorLoader());
+    private static final BlockingCache<Pair<String, GUID>, List<Pair<String, Boolean>>> domainPropertiesCache = new BlockingCache<>(new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.UNLIMITED, "Domain properties"), new CacheLoader<>()
+    {
+        @Override
+        public List<Pair<String, Boolean>> load(@NotNull Pair<String, GUID> key, @Nullable Object argument)
+        {
+            String typeURI = key.first;
+            Container c = ContainerManager.getForId(key.second);
+            if (null == c)
+                return Collections.emptyList();
+            SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
+                    " FROM " + getTinfoPropertyDescriptor() + " PD " +
+                    "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
+                    "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
+                    "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
+
+            sql.addAll(
+                    typeURI,
+                    // protect against null project, just double-up shared project
+                    c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
+                    _sharedContainer.getProject().getId()
+            );
+            List<PropertyDescriptor> pds = unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
+            //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
+            //Descriptors returned from this method come direct from DB and have correct values.
+            List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(pds.size());
+            for (PropertyDescriptor pd : pds)
+            {
+                // Be sure to stash the property in the cache in case it hadn't already been loaded
+                // Note that this can skew the cache stats, because it will count as a remove, a miss, and a get
+                propDescCache.put(getCacheKey(pd), pd);
+                if (!pd.getContainer().equals(c))
+                {
+                    // Also cache the property in its home container
+                    propDescCache.put(getCacheKey(pd.getPropertyURI(), c), pd);
+                }
+                propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
+            }
+            return Collections.unmodifiableList(propertyURIs);
+        }
+    });
+    private static final Cache<String, Map<String, DomainDescriptor>> domainDescByContainerCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by Container");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
 
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -167,7 +286,8 @@ public class OntologyManager
         {
             OntologyObject objInsert = new OntologyObject();
             objInsert.setContainer(c);
-            objInsert.setOwnerObjectId(ownerObjectId);
+            if (ownerObjectId != null && ownerObjectId > 0)
+                objInsert.setOwnerObjectId(ownerObjectId);
 
             List<ValidationError> errors = new ArrayList<>();
             Map<Integer, List<? extends IPropertyValidator>> validatorMap = new HashMap<>();
@@ -293,7 +413,7 @@ public class OntologyManager
      * <p>
      * Name->Value is preferred, we are using TableInfo after all.
      */
-    public static List<String> insertTabDelimited(TableInfo tableInsert, Container c, User user,
+    public static List<Map<String, Object>> insertTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
                                                   Logger logger)
@@ -302,7 +422,7 @@ public class OntologyManager
         return saveTabDelimited(tableInsert, c, user, helper, rows, logger, true);
     }
 
-    public static List<String> updateTabDelimited(TableInfo tableInsert, Container c, User user,
+    public static List<Map<String, Object>> updateTabDelimited(TableInfo tableInsert, Container c, User user,
                                                   UpdateableTableImportHelper helper,
                                                   List<Map<String, Object>> rows,
                                                   Logger logger)
@@ -311,7 +431,7 @@ public class OntologyManager
         return saveTabDelimited(tableInsert, c, user, helper, rows, logger, false);
     }
 
-    private static List<String> saveTabDelimited(TableInfo table, Container c, User user,
+    private static List<Map<String, Object>> saveTabDelimited(TableInfo table, Container c, User user,
                                                  UpdateableTableImportHelper helper,
                                                  List<Map<String, Object>> rows,
                                                  Logger logger,
@@ -329,7 +449,7 @@ public class OntologyManager
         DbScope scope = table.getSchema().getScope();
 
         assert scope.isTransactionActive();
-        List<String> resultingLsids = new ArrayList<>(rows.size());
+        List<Map<String, Object>> results = new ArrayList<>(rows.size());
 
         Domain d = table.getDomain();
         List<? extends DomainProperty> properties = null == d ? Collections.emptyList() : d.getProperties();
@@ -346,11 +466,11 @@ public class OntologyManager
             conn = scope.getConnection();
             if (insert)
             {
-                parameterMap = ((UpdateableTableInfo) table).insertStatement(conn, user);
+                parameterMap = StatementUtils.insertStatement(conn, table, c, user, true, true);
             }
             else
             {
-                parameterMap = ((UpdateableTableInfo) table).updateStatement(conn, user, null);
+                parameterMap = StatementUtils.updateStatement(conn, table, c, user, false, true);
             }
             List<ValidationError> errors = new ArrayList<>();
 
@@ -390,7 +510,7 @@ public class OntologyManager
                 parameterMap.clearParameters();
 
                 String lsid = helper.beforeImportObject(currentRow);
-                resultingLsids.add(lsid);
+                currentRow.put("lsid", lsid);
 
                 //
                 // NOTE we validate based on columninfo/propertydescriptor
@@ -484,7 +604,13 @@ public class OntologyManager
 
                 helper.bindAdditionalParameters(currentRow, parameterMap);
                 parameterMap.execute();
+                if (insert)
+                {
+                    int rowId = parameterMap.getRowId();
+                    currentRow.put("rowId", rowId);
+                }
                 helper.afterImportObject(currentRow);
+                results.add(currentRow);
                 rowCount++;
             }
 
@@ -513,7 +639,7 @@ public class OntologyManager
                 scope.releaseConnection(conn);
         }
 
-        return resultingLsids;
+        return results;
     }
 
     // TODO: Consolidate with ColumnValidator
@@ -616,7 +742,7 @@ public class OntologyManager
             m.put(value.getPropertyURI(), value);
         }
 
-        m = Collections.unmodifiableMap(m);
+        m = unmodifiableMap(m);
         mapCache.put(objectLSID, m);
         return m;
     }
@@ -647,7 +773,8 @@ public class OntologyManager
             o = new OntologyObject();
             o.setContainer(container);
             o.setObjectURI(objectURI);
-            o.setOwnerObjectId(ownerId);
+            if (ownerId != null && ownerId > 0)
+                o.setOwnerObjectId(ownerId);
             o = Table.insert(null, getTinfoObject(), o);
         }
 
@@ -1134,9 +1261,7 @@ public class OntologyManager
                     DomainDescriptor dd = getDomainDescriptor(domUri, c);
                     if (dd.getContainer().getId().equals(c.getId()))
                     {
-                        domainDescByURICache.remove(getURICacheKey(dd));
-                        domainDescByIDCache.remove(getIDCacheKey(dd));
-                        domainPropertiesCache.clear();
+                        uncache(dd);
                         dd = dd.edit()
                                 .setContainer(project)
                                 .setProject(project)
@@ -1157,6 +1282,14 @@ public class OntologyManager
                 insertProperties(op.getContainer(), op.getObjectURI(), op);
             }
         }
+    }
+
+    private static void uncache(DomainDescriptor dd)
+    {
+        domainDescByURICache.remove(getURICacheKey(dd));
+        domainDescByIDCache.remove(dd.getDomainId());
+        domainPropertiesCache.remove(getURICacheKey(dd));
+        domainDescByContainerCache.remove(dd.getContainer().getId());
     }
 
 
@@ -1602,17 +1735,36 @@ public class OntologyManager
         return ensureDomainDescriptor(dd);
     }
 
+    /** Inserts or updates the domain as appropriate */
     @NotNull
-    private static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
+    public static DomainDescriptor ensureDomainDescriptor(DomainDescriptor ddIn)
     {
-        DomainDescriptor dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
-        String ddInContainerId = ddIn.getContainer().getId();
+        DomainDescriptor dd = null;
+        // Try to find the previous version of the domain
+        if (ddIn.getDomainId() > 0)
+        {
+            // Try checking the cache first for a value to compare against
+            dd = getDomainDescriptor(ddIn.getDomainId());
+
+            // Since we cache mutable objects, get a fresh copy from the DB if the cache returned the same object that
+            // was passed in so we can do a diff against what's currently in the DB to see if we need to update
+            if (dd == ddIn)
+            {
+                dd = new TableSelector(getTinfoDomainDescriptor()).getObject(ddIn.getDomainId(), DomainDescriptor.class);
+            }
+        }
+        if (dd == null)
+        {
+            dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
+        }
 
         if (null == dd)
         {
             try
             {
-                Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
+                // We may have a cached miss that we need to clear
+                uncache(dd);
                 return getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
             }
             catch (RuntimeSQLException x)
@@ -1624,60 +1776,17 @@ public class OntologyManager
             }
         }
 
-        List<String> colDiffs = compareDomainDescriptors(ddIn, dd);
-
-        if (colDiffs.size() == 0)
+        if (!dd.deepEquals(ddIn))
         {
-            // if the descriptor differs by container only and the requested descriptor is in the project fldr
-            if (!ddInContainerId.equals(dd.getContainer().getId()) && ddInContainerId.equals(ddIn.getProject().getId()))
-            {
-                dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            }
-            return dd;
+            DomainDescriptor ddToSave = ddIn.edit().setDomainId(dd.getDomainId()).build();
+            dd = Table.update(null, getTinfoDomainDescriptor(), ddToSave, ddToSave.getDomainId());
+            domainDescByURICache.remove(getURICacheKey(ddIn));
+            domainDescByURICache.remove(getURICacheKey(dd));
+            domainDescByIDCache.remove(dd.getDomainId());
+            domainPropertiesCache.remove(getURICacheKey(ddIn));
+            domainDescByContainerCache.clear();
         }
-
-        // you are allowed to update if you are coming from the project root, or if  you are in the container
-        // in which the descriptor was created
-        boolean fUpdateIfExists = false;
-        if (ddInContainerId.equals(dd.getContainer().getId()) || ddInContainerId.equals(ddIn.getProject().getId()))
-            fUpdateIfExists = true;
-
-        boolean fMajorDifference = false;
-        if (colDiffs.toString().contains("RangeURI") || colDiffs.toString().contains("PropertyType"))
-            fMajorDifference = true;
-
-        String errmsg = "ensureDomainDescriptor:  descriptor In different from Found for " + colDiffs.toString() +
-                "\n\t Descriptor In: " + ddIn +
-                "\n\t Descriptor Found: " + dd;
-
-        if (fUpdateIfExists)
-        {
-            dd = updateDomainDescriptor(ddIn.edit().setDomainId(dd.getDomainId()).build());
-            if (fMajorDifference)
-                _log.debug(errmsg);
-        }
-        else
-        {
-            if (fMajorDifference)
-                _log.error(errmsg);
-            else
-                _log.debug(errmsg);
-        }
-
         return dd;
-    }
-
-    private static List<String> compareDomainDescriptors(DomainDescriptor ddIn, DomainDescriptor dd)
-    {
-        List<String> colDiffs = new ArrayList<>();
-
-        if (ddIn.getDomainId() != 0 && !(dd.getDomainId() == ddIn.getDomainId()))
-            colDiffs.add("DomainId");
-
-        if (ddIn.getName() != null && !dd.getName().equals(ddIn.getName()))
-            colDiffs.add("Name");
-
-        return colDiffs;
     }
 
     private static void ensurePropertyDomain(PropertyDescriptor pd, DomainDescriptor dd)
@@ -1929,7 +2038,7 @@ public class OntologyManager
     public static void deletePropertyDescriptor(PropertyDescriptor pd)
     {
         int propId = pd.getPropertyId();
-        String key = getCacheKey(pd);
+        Pair<String, GUID> key = getCacheKey(pd);
 
         SQLFragment deleteObjPropSql = new SQLFragment("DELETE FROM " + getTinfoObjectProperty() + " WHERE PropertyId = ?", propId);
         SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", propId);
@@ -1982,99 +2091,49 @@ public class OntologyManager
     public static PropertyDescriptor getPropertyDescriptor(String propertyURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        String key = getCacheKey(propertyURI, c);
+        Pair<String, GUID> key = getCacheKey(propertyURI, c);
         PropertyDescriptor pd = propDescCache.get(key);
         if (null != pd)
             return pd;
 
         key = getCacheKey(propertyURI, _sharedContainer);
-        pd = propDescCache.get(key);
-        if (null != pd)
-            return pd;
-
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-
-        //TODO: Currently no way to edit these descriptors. But once there is, need to invalidate the cache.
-        String sql = " SELECT * FROM " + getTinfoPropertyDescriptor() + " WHERE PropertyURI = ? AND Project IN (?,?)";
-        List<PropertyDescriptor> pdArray = new SqlSelector(getExpSchema(), sql, propertyURI,
-                proj,
-                _sharedContainer.getId()).getArrayList(PropertyDescriptor.class);
-        if (!pdArray.isEmpty())
-        {
-            pd = pdArray.get(0);
-
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriiptor.
-            if (pdArray.size() > 1)
-            {
-                _log.debug("Multiple PropertyDescriptors found for " + propertyURI);
-                if (pd.getProject().equals(_sharedContainer))
-                    pd = pdArray.get(1);
-            }
-
-            key = getCacheKey(pd);
-            propDescCache.put(key, pd);
-        }
-
-        return pd;
+        return propDescCache.get(key);
     }
 
-    private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
+    public static List<Domain> getDomainsForPropertyDescriptor(Container container, PropertyDescriptor pd)
+    {
+        List<? extends Domain> domainsInContainer = PropertyService.get().getDomains(container);
+        return domainsInContainer
+                .stream()
+                .filter(d -> null != d.getPropertyByURI(pd.getPropertyURI()))
+                .collect(Collectors.toList());
+    }
+
+    private static class DomainDescriptorLoader implements CacheLoader<Integer, DomainDescriptor>
     {
         @Override
-        public DomainDescriptor load(String key, @Nullable Object argument)
+        public DomainDescriptor load(Integer key, @Nullable Object argument)
         {
-            int id = Integer.valueOf(key);
-            return new TableSelector(getTinfoDomainDescriptor()).getObject(id, DomainDescriptor.class);
+            return new TableSelector(getTinfoDomainDescriptor()).getObject(key, DomainDescriptor.class);
         }
     }
 
 
     public static DomainDescriptor getDomainDescriptor(int id)
     {
-        return domainDescByIDCache.get(String.valueOf(id));
+        return domainDescByIDCache.get(id);
     }
 
+    @Nullable
     public static DomainDescriptor getDomainDescriptor(String domainURI, Container c)
     {
         // cache lookup by project. if not found at project level, check to see if global
-        String key = getCacheKey(domainURI, c);
-        DomainDescriptor dd = domainDescByURICache.get(key);
+        DomainDescriptor dd = domainDescByURICache.get(getCacheKey(domainURI, c));
         if (null != dd)
             return dd;
 
-        key = getCacheKey(domainURI, _sharedContainer);
-        dd = domainDescByURICache.get(key);
-        if (null != dd)
-            return dd;
-
-        Container proj = c.getProject();
-        if (null == proj)
-            proj = c;
-
-        String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
-        List<DomainDescriptor> ddArray = new SqlSelector(getExpSchema(), sql, domainURI,
-                proj,
-                _sharedContainer.getId()).getArrayList(DomainDescriptor.class);
-        if (!ddArray.isEmpty())
-        {
-            dd = ddArray.get(0);
-
-            // if someone has explicitly inserted a descriptor with the same URI as an existing one ,
-            // and one of the two is in the shared project, use the project-level descriptor.
-            if (ddArray.size() > 1)
-            {
-                _log.debug("Multiple DomainDescriptors found for " + domainURI);
-                if (dd.getProject().equals(_sharedContainer))
-                    dd = ddArray.get(0);
-            }
-            key = getURICacheKey(dd);
-            domainDescByURICache.put(key, dd);
-        }
-        _log.debug("getDomainDescriptor for " + domainURI + " container= " + c.getPath());
-        return dd;
+        // Try in the /Shared container too
+        return domainDescByURICache.get(getCacheKey(domainURI, _sharedContainer));
     }
 
     /**
@@ -2093,106 +2152,83 @@ public class OntologyManager
         if (includeProjectAndShared && user == null)
             throw new IllegalArgumentException("Can't include data from other containers without a user to check permissions on");
 
-        Map<String, DomainDescriptor> ret = new LinkedHashMap<>();
-        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
-
-        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, container).getArrayList(DomainDescriptor.class))
-        {
-            ret.put(dd.getDomainURI(), dd);
-        }
+        Map<String, DomainDescriptor> dds = getCachedDomainDescriptors(container, user);
 
         if (includeProjectAndShared)
         {
+            dds = new LinkedHashMap<>(dds);
             Container project = container.getProject();
-            if (project != null && project.hasPermission(user, ReadPermission.class))
+            if (project != null)
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, project).getArrayList(DomainDescriptor.class))
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(project, user).entrySet())
                 {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
 
             if (_sharedContainer.hasPermission(user, ReadPermission.class))
             {
-                for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, _sharedContainer).getArrayList(DomainDescriptor.class))
+                for (Map.Entry<String, DomainDescriptor> entry : getCachedDomainDescriptors(_sharedContainer, user).entrySet())
                 {
-                    if (!ret.containsKey(dd.getDomainURI()))
-                        ret.put(dd.getDomainURI(), dd);
+                    dds.putIfAbsent(entry.getKey(), entry.getValue());
                 }
             }
         }
 
-        return Collections.unmodifiableCollection(ret.values());
+        return unmodifiableCollection(dds.values());
     }
 
-    public static String getURICacheKey(DomainDescriptor dd)
+    @NotNull
+    private static Map<String, DomainDescriptor> getCachedDomainDescriptors(@NotNull Container c, @Nullable User user)
+    {
+        if (user != null && !c.hasPermission(user, ReadPermission.class))
+            return Collections.emptyMap();
+
+        String key = c.getId();
+        Map<String, DomainDescriptor> dds = domainDescByContainerCache.get(key);
+        if (dds != null)
+            return dds;
+
+        String sql = "SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE Container = ?";
+
+        dds = new LinkedHashMap<>();
+        for (DomainDescriptor dd : new SqlSelector(getExpSchema(), sql, c).getArrayList(DomainDescriptor.class))
+        {
+            dds.putIfAbsent(dd.getDomainURI(), dd);
+        }
+
+        dds = unmodifiableMap(dds);
+        domainDescByContainerCache.put(key, dds);
+        return dds;
+    }
+
+    public static Pair<String, GUID> getURICacheKey(DomainDescriptor dd)
     {
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
 
-    public static String getIDCacheKey(DomainDescriptor dd)
-    {
-        return String.valueOf(dd.getDomainId());
-    }
-
-
-    public static String getCacheKey(PropertyDescriptor pd)
+    public static Pair<String, GUID> getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
 
 
-    public static String getCacheKey(String uri, Container c)
+    public static Pair<String, GUID> getCacheKey(String uri, Container c)
     {
         Container proj = c.getProject();
-        String projId;
+        GUID projId;
 
         if (null == proj)
-            projId = c.getId();
+            projId = c.getEntityId();
         else
-            projId = proj.getId();
+            projId = proj.getEntityId();
 
-        return uri + "|" + projId;
+        return Pair.of(uri, projId);
     }
 
     //TODO: DbCache semantics. This loads the cache but does not fetch cause need to get them all together
     public static List<PropertyDescriptor> getPropertiesForType(String typeURI, Container c)
-    {
-        List<PropertyDescriptor> result = getCachedPropertyDescriptorsForDomain(typeURI, c);
-        if (result != null)
-        {
-            return result;
-        }
-
-        SQLFragment sql = new SQLFragment(" SELECT PD.*,Required " +
-                " FROM " + getTinfoPropertyDescriptor() + " PD " +
-                "   INNER JOIN " + getTinfoPropertyDomain() + " PDM ON (PD.PropertyId = PDM.PropertyId) " +
-                "   INNER JOIN " + getTinfoDomainDescriptor() + " DD ON (DD.DomainId = PDM.DomainId) " +
-                "  WHERE DD.DomainURI = ?  AND DD.Project IN (?,?) ORDER BY PDM.SortOrder, PD.PropertyId");
-
-        sql.addAll(
-                typeURI,
-                // protect against null project, just double-up shared project
-                c.isRoot() ? c.getId() : (c.getProject() == null ? _sharedContainer.getProject().getId() : c.getProject().getId()),
-                _sharedContainer.getProject().getId()
-        );
-        result = Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(PropertyDescriptor.class));
-        //NOTE: cached descriptors may have differing values of isRequired() as that is a per-domain setting
-        //Descriptors returned from this method come direct from DB and have correct values.
-        List<Pair<String, Boolean>> propertyURIs = new ArrayList<>(result.size());
-        for (PropertyDescriptor pd : result)
-        {
-            propDescCache.put(getCacheKey(pd), pd);
-            propertyURIs.add(new Pair<>(pd.getPropertyURI(), pd.isRequired()));
-        }
-        domainPropertiesCache.put(getCacheKey(typeURI, c), propertyURIs);
-
-        return result;
-    }
-
-    private static List<PropertyDescriptor> getCachedPropertyDescriptorsForDomain(String typeURI, Container c)
     {
         List<Pair<String, Boolean>> propertyURIs = domainPropertiesCache.get(getCacheKey(typeURI, c));
         if (propertyURIs != null)
@@ -2213,7 +2249,7 @@ public class OntologyManager
                 pd.setRequired(propertyURI.getValue().booleanValue());
                 result.add(pd);
             }
-            return Collections.unmodifiableList(result);
+            return unmodifiableList(result);
         }
         return null;
     }
@@ -2383,14 +2419,30 @@ public class OntologyManager
     }
 
 
-    public static DomainDescriptor updateDomainDescriptor(DomainDescriptor dd)
+    public static ObjectProperty updateObjectProperty(User user, Container container, PropertyDescriptor pd, String lsid, Object value, @Nullable ExpObject expObject) throws ValidationException
     {
-        assert dd.getDomainId() != 0;
-        dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescByURICache.remove(getURICacheKey(dd));
-        domainDescByIDCache.remove(getIDCacheKey(dd));
-        domainPropertiesCache.remove(getURICacheKey(dd));
-        return dd;
+        ObjectProperty oprop;
+        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        {
+            OntologyManager.deleteProperty(lsid, pd.getPropertyURI(), container, pd.getContainer());
+
+            oprop = new ObjectProperty(lsid, container, pd, value);
+            if (value != null)
+            {
+                oprop.setPropertyId(pd.getPropertyId());
+                OntologyManager.insertProperties(container, expObject == null ? lsid : expObject.getLSID(), oprop);
+            }
+            else
+            {
+                // We still need to validate blanks
+                List<ValidationError> errors = new ArrayList<>();
+                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, oprop, errors, new ValidatorContext(pd.getContainer(), user));
+                if (!errors.isEmpty())
+                    throw new ValidationException(errors);
+            }
+            transaction.commit();
+        }
+        return oprop;
     }
 
     public static void clearCaches()
@@ -2402,8 +2454,8 @@ public class OntologyManager
         propDescCache.clear();
         mapCache.clear();
         objectIdCache.clear();
+        domainDescByContainerCache.clear();
     }
-
 
     public static void clearPropertyCache(String parentObjectURI)
     {

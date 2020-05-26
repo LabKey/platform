@@ -28,7 +28,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Descriptor for how to sort a query to a database. May include multiple columns, with separate ascending/descending
@@ -239,8 +241,11 @@ public class Sort
             for (int i = sortKeys.length - 1; i >= 0; i--)
             {
                 String k = StringUtils.trimToNull(sortKeys[i]);
-                if (null != k)
-                    insertSortColumn(k, true);
+                if (null == k)
+                    continue;
+                if (k.length() == 1 && (k.charAt(0)==SortDirection.ASC.dir || k.charAt(0)==SortDirection.DESC.dir))
+                    continue;
+                insertSortColumn(k, true);
             }
         }
     }
@@ -409,7 +414,7 @@ public class Sort
     public SortField getSortColumn(FieldKey fieldKey)
     {
         for (SortField sf : _sortList)
-            if (sf._fieldKey.equals(fieldKey))
+            if (fieldKey.equals(sf._fieldKey))
                 return sf;
         return null;
     }
@@ -454,6 +459,8 @@ public class Sort
         Set<FieldKey> requiredFieldKeys = new HashSet<>();
         for (SortField sf : _sortList)
         {
+            if (null == sf.getFieldKey())
+                continue;
             requiredFieldKeys.add(sf.getFieldKey());
 
             String columnName = sf.getColumnName();
@@ -486,6 +493,8 @@ public class Sort
         for (SortField sf : _sortList)
         {
             FieldKey fieldKey = sf.getFieldKey();
+            if (null == fieldKey)
+                continue;
             ColumnInfo colinfo = columns.get(fieldKey);
             if (colinfo == null)
             {
@@ -493,7 +502,19 @@ public class Sort
             }
             else
             {
-                List<ColumnInfo> sortFields = colinfo.getSortFields();
+                List<ColumnInfo> sortFields = null;
+                List<FieldKey> sortFieldKeys = colinfo.getSortFieldKeys();
+                if (null != sortFieldKeys)
+                {
+                    if (sortFieldKeys.stream().allMatch(sk -> null != columns.get(sk)))
+                        sortFields = sortFieldKeys.stream().map(columns::get).collect(Collectors.toList());
+                }
+                if (null == sortFields || sortFields.isEmpty())
+                {
+                    if (colinfo.isSortable())
+                        sortFields = Collections.singletonList(colinfo);
+                }
+
                 if (sortFields != null)
                 {
                     for (ColumnInfo sortCol : sortFields)

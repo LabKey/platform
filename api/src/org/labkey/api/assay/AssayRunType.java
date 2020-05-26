@@ -48,7 +48,7 @@ public class AssayRunType extends ExperimentRunType
 
     public AssayRunType(ExpProtocol protocol, Container c)
     {
-        super(protocol.getName(), SchemaKey.fromParts(AssaySchema.NAME, AssayService.get().getProvider(protocol).getResourceName(), protocol.getName()).toString(), AssayProtocolSchema.RUNS_TABLE_NAME);
+        super(protocol.getName(), AssayProtocolSchema.schemaName(AssayService.get().getProvider(protocol), protocol), AssayProtocolSchema.RUNS_TABLE_NAME);
         _protocol = protocol;
     }
 
@@ -101,7 +101,7 @@ public class AssayRunType extends ExperimentRunType
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         if (provider != null)
         {
-            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.CURRENT);
+            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.current(_protocol.getContainer()));
             header.render(request, response);
             response.getWriter().write("<p/>\n");
         }

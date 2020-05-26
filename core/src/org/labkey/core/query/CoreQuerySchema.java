@@ -446,7 +446,7 @@ public class CoreQuerySchema extends UserSchema
 
     private void addGroupsColumn(UsersTable users)
     {
-        BaseColumnInfo groupsCol;
+        MutableColumnInfo groupsCol;
         if (users.isCanSeeDetails())
         {
             groupsCol = users.wrapColumn("Groups", users.getRealTable().getColumn("userid"));
@@ -483,7 +483,7 @@ public class CoreQuerySchema extends UserSchema
     private void addAvatarColumn(FilteredTable users)
     {
         var avatarCol = users.wrapColumn(UserAvatarDisplayColumnFactory.FIELD_KEY, users.getRealTable().getColumn("userid"));
-        avatarCol.setDescription("Thumbnail icon associated with this use account.");
+        avatarCol.setDescription("Thumbnail icon associated with this user account.");
         avatarCol.setDisplayColumnFactory(new UserAvatarDisplayColumnFactory());
         avatarCol.setInputType("file");
         avatarCol.setHidden(true);

@@ -22,7 +22,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRunInput;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
 
@@ -89,7 +89,7 @@ public abstract class ExpRunInputImpl<InputType extends AbstractRunInput> extend
     }
 
     @Override
-    public @Nullable URLHelper detailsURL()
+    public @Nullable ActionURL detailsURL()
     {
         return null;
     }

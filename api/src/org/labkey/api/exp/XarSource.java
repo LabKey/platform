@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
+ * Something that knows how to a produce a XAR (experiment archive), whether it's a from an existing file or
+ * being dynamically generated on demand.
  * User: jeckels
  * Date: Oct 14, 2005
  */
@@ -59,9 +61,9 @@ public abstract class XarSource implements Serializable
     @NotNull
     private final XarContext _xarContext;
 
-    public XarSource(String description, Container container, User user)
+    public XarSource(String description, Container container, User user, @Nullable PipelineJob job)
     {
-        _xarContext = new XarContext(description, container, user);
+        _xarContext = new XarContext(description, container, user, job);
     }
 
     public XarSource(PipelineJob job)
@@ -138,12 +140,7 @@ public abstract class XarSource implements Serializable
 
     public void addData(String experimentRunLSID, ExpData data)
     {
-        Map<String, ExpData> existingMap = _data.get(experimentRunLSID);
-        if (existingMap == null)
-        {
-            existingMap = new HashMap<>();
-            _data.put(experimentRunLSID, existingMap);
-        }
+        Map<String, ExpData> existingMap = _data.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
         existingMap.put(data.getLSID(), data);
     }
 
@@ -160,12 +157,7 @@ public abstract class XarSource implements Serializable
     public ExpData getData(ExpRun experimentRun, ExpProtocolApplication protApp, String dataLSID) throws XarFormatException
     {
         String experimentRunLSID = experimentRun == null ? null : experimentRun.getLSID();
-        Map<String, ExpData> map = _data.get(experimentRunLSID);
-        if (map == null)
-        {
-            map = new HashMap<>();
-            _data.put(experimentRunLSID, map);
-        }
+        Map<String, ExpData> map = _data.computeIfAbsent(experimentRunLSID, k -> new HashMap<>());
         ExpData result = map.get(dataLSID);
         if (result == null)
         {
@@ -243,11 +235,6 @@ public abstract class XarSource implements Serializable
             throw new XarFormatException("Could not find " + errorDescription + " protocol with LSID " + lsid);
         }
         return result;
-    }
-
-    public boolean allowImport(PipeRoot pr, Container container, File file)
-    {
-        return allowImport(pr, container, file.toPath());
     }
 
     public boolean allowImport(PipeRoot pr, Container container, Path path)

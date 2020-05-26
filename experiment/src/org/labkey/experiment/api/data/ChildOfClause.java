@@ -30,20 +30,13 @@ public class ChildOfClause extends LineageClause
         super(fieldKey, value);
     }
 
+    @Override
     protected ExpLineageOptions createOptions()
     {
-        ExpLineageOptions options = new ExpLineageOptions();
-        options.setForLookup(true);
-        options.setParents(false);
-        options.setChildren(true);
-        return options;
+        return LineageHelper.createChildOfOptions(0);
     }
 
-    protected String getLsidColumn()
-    {
-        return "lsid";
-    }
-
+    @Override
     protected String filterTextType()
     {
         return "child of";

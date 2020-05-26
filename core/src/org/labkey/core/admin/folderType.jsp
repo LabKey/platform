@@ -236,7 +236,6 @@ function validate()
 }
 </script>
 <labkey:form name="folderModules" id="folderModules" method="POST" action="<%=h(buildURL(FolderTypeAction.class))%>" onsubmit="return validate();">
-    <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
             <td valign="top"><%
@@ -309,6 +308,8 @@ for (Module module : allModules)
 
     if (active || enabled)
     {
+        if (!module.canBeEnabled(c))
+            continue;
         %>
         <input type="checkbox" id="activeModules[<%= i %>]" name="activeModules"
                title="<%= h(module.getTabName(context))%>"

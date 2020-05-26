@@ -36,6 +36,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.PlatformDeveloperPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,10 +62,8 @@ import org.labkey.list.view.ListsWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -79,9 +78,9 @@ public class ListModule extends SpringModule
 
     // Note: ExperimentModule handles the list schema
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     // Note: ExperimentModule handles the list schema
@@ -203,9 +202,9 @@ public class ListModule extends SpringModule
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
             ListManager.TestCase.class,
             ListWriter.TestCase.class
-        ));
+        );
     }
 }

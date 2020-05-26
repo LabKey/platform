@@ -136,6 +136,17 @@ Ext4.define('LABKEY.query.browser.Browser', {
             scope: this
         }];
 
+        if (this.hasQueryAnalysisService && LABKEY.Security.currentUser.isSystemAdmin){
+            tbar.push({
+                xtype: 'querybutton',
+                text: 'Cross Folder Dependencies',
+                fontCls: 'fa-check-circle',
+                tooltip: 'Opens the cross folder tab where you can initiate a dependency check of queries across all folders on this server.',
+                handler: function() { this.showPanel('lk-cfd-panel'); },
+                scope: this
+            });
+        }
+
         if (LABKEY.Security.currentUser.isAdmin) {
             tbar.push({
                 xtype: 'querybutton',
@@ -511,10 +522,20 @@ Ext4.define('LABKEY.query.browser.SchemaBrowserTabFactory', {
                 }
             });
         }
+        else if (tabId === 'lk-cfd-panel'){
+            panel = Ext4.create('LABKEY.query.browser.view.Dependencies', {
+                itemId: tabId,
+                closable: true,
+                parent: browser,
+                title: 'Cross Folder Dependencies',
+                cls: 'qbrowser-crossfolder' // tests
+            });
+        }
         else if (browser.qdpPrefix === tabId.substring(0, browser.qdpPrefix.length)) {
             var idMap = browser.parseQueryPanelId.call(browser, tabId);
             panel = Ext4.create('LABKEY.query.browser.view.QueryDetails', {
                 itemId: tabId,
+                parent : browser,
                 schemaName: idMap.schemaName,
                 queryName: idMap.queryName,
                 title: Ext4.htmlEncode(idMap.schemaName.toDisplayString()) + '.' + Ext4.htmlEncode(idMap.queryName),

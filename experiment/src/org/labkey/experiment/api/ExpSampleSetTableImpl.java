@@ -17,10 +17,10 @@
 package org.labkey.experiment.api;
 
 import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.query.DetailsURL;
@@ -46,7 +46,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addAllowablePermission(UpdatePermission.class);
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -78,6 +78,8 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
                 sampleCountColumnInfo.setDescription("Contains the number of samples currently stored in this sample set");
                 return sampleCountColumnInfo;
             }
+            case Properties:
+                return createPropertiesColumn(alias);
             default:
                 throw new IllegalArgumentException("Unknown column " + column);
         }
@@ -98,6 +100,7 @@ public class ExpSampleSetTableImpl extends ExpTableImpl<ExpSampleSetTable.Column
         addColumn(ExpSampleSetTable.Column.ModifiedBy);
         addContainerColumn(ExpSampleSetTable.Column.Folder, new ActionURL(ExperimentController.ListMaterialSourcesAction.class, getContainer()));
         addColumn(ExpSampleSetTable.Column.SampleCount);
+        addColumn(Column.Properties);
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.ShowMaterialSourceAction.class, _userSchema.getContainer()),
                 Collections.singletonMap("rowId", "RowId"));

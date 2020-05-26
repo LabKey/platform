@@ -37,6 +37,8 @@ public interface AdminUrls extends UrlProvider
     ActionURL getCustomizeSiteURL(boolean upgradeInProgress);
     ActionURL getExperimentalFeaturesURL();
     ActionURL getMaintenanceURL(URLHelper returnURL);
+    ActionURL getModulesDetailsURL();
+    ActionURL getDeleteModuleURL(String moduleName);
 
     // URLs to key Folder Management tabs
     ActionURL getManageFoldersURL(Container c);
@@ -48,9 +50,12 @@ public interface AdminUrls extends UrlProvider
     ActionURL getFolderSettingsURL(Container c);
     ActionURL getFileRootsURL(Container c);
 
+    ActionURL getSiteLookAndFeelSettingsURL();
+
     ActionURL getCreateProjectURL(@Nullable ActionURL returnURL);
     ActionURL getCreateFolderURL(Container c, @Nullable ActionURL returnURL);
     ActionURL getMemTrackerURL();
+    ActionURL getLookAndFeelSettingsURL();
     ActionURL getProjectSettingsURL(Container c);
     ActionURL getProjectSettingsMenuURL(Container c);
     ActionURL getProjectSettingsFileURL(Container c);
@@ -59,5 +64,7 @@ public interface AdminUrls extends UrlProvider
     ActionURL getSessionLoggingURL();
     ActionURL getTrackedAllocationsViewerURL();
 
+    void addAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
+    @Deprecated // use addAdminNavTrail above
     NavTree appendAdminNavTrail(NavTree root, String childTitle, @Nullable ActionURL childURL);
 }

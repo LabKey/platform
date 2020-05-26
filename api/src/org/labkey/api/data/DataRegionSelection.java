@@ -24,9 +24,10 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
@@ -242,18 +243,103 @@ public class DataRegionSelection
         clearAll(context, null);
     }
 
-
-    public static int selectAll(QueryForm form) throws IOException
+    /**
+     * Gets the ids of the selected items for all items in the given query form's view.  That is,
+     * not just the items on the current page, but all selected items corresponding to the view's filters.
+     */
+    public static List<String> getSelected(QueryForm form) throws IOException
     {
         UserSchema schema = form.getSchema();
         if (schema == null)
             throw new NotFoundException();
 
         QueryView view = schema.createView(form, null);
-        return selectAll(view, form.getQuerySettings().getSelectionKey());
+        return getSelected(view, form.getQuerySettings().getSelectionKey());
     }
 
-    public static int selectAll(QueryView view, String key) throws IOException
+    public static List<String> getSelected(QueryView view, String key) throws IOException
+    {
+        // Turn off features of QueryView
+        view.setPrintView(true);
+        view.setShowConfiguredButtons(false);
+        view.setShowPagination(false);
+        view.setShowPaginationCount(false);
+        view.setShowDetailsColumn(false);
+        view.setShowUpdateColumn(false);
+
+        ViewContext context = view.getViewContext();
+
+        TableInfo table = view.getTable();
+
+        DataView v = view.createDataView();
+        DataRegion rgn = v.getDataRegion();
+
+        // Include all rows. If only selected rows are included, it does not
+        // respect filters.
+        view.getSettings().setShowRows(ShowRows.ALL);
+        view.getSettings().setOffset(Table.NO_OFFSET);
+
+        RenderContext rc = v.getRenderContext();
+        rc.setCache(false);
+
+        setDataRegionColumnsForSelection(rgn, rc, view, table );
+
+        try (Timing ignored = MiniProfiler.step("getSelected"); Results results = rgn.getResults(rc))
+        {
+            return getSelectedItems(context, key, rc, rgn, results);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    /**
+     * Sets the selection for all items in the given query form's view
+     * @param form
+     * @param checked
+     * @return
+     * @throws IOException
+     */
+    public static int setSelectionForAll(QueryForm form, boolean checked) throws IOException
+    {
+        UserSchema schema = form.getSchema();
+        if (schema == null)
+            throw new NotFoundException();
+
+        QueryView view = schema.createView(form, null);
+        return setSelectionForAll(view, form.getQuerySettings().getSelectionKey(), checked);
+    }
+
+    private static List<String> setDataRegionColumnsForSelection(DataRegion rgn, RenderContext rc, QueryView view, TableInfo table)
+    {
+        // force the pk column(s) into the default list of columns
+        List<String> selectorColNames = rgn.getRecordSelectorValueColumns();
+        if (selectorColNames == null)
+            selectorColNames = table.getPkColumnNames();
+        List<ColumnInfo> selectorColumns = new ArrayList<>();
+        for (String colName : selectorColNames)
+        {
+            if (null == rgn.getDisplayColumn(colName)) {
+                selectorColumns.add(table.getColumn(colName));
+            }
+        }
+        ActionURL url = view.getSettings().getSortFilterURL();
+
+        Sort sort = rc.buildSort(table, url, rgn.getName());
+        SimpleFilter filter = rc.buildFilter(table, rc.getColumnInfos(rgn.getDisplayColumns()), url, rgn.getName(), Table.ALL_ROWS, 0, sort);
+
+        // Issue 36600: remove unnecessary columns for performance purposes
+        rgn.clearColumns();
+        // Issue 39011: then add back the columns needed by the filters, if any
+        Collection<ColumnInfo> filterColumns = QueryService.get().ensureRequiredColumns(table, selectorColumns, filter, sort, null);
+        rgn.addColumns(selectorColumns);
+        rgn.addColumns(filterColumns);
+        return selectorColNames;
+    }
+
+    public static int setSelectionForAll(QueryView view, String key, boolean checked) throws IOException
     {
         // Turn off features of QueryView
         view.setPrintView(true);
@@ -274,30 +360,49 @@ public class DataRegionSelection
         view.getSettings().setShowRows(ShowRows.ALL);
         view.getSettings().setOffset(Table.NO_OFFSET);
 
-        // remove unnecessary columns and force the pk column(s) into the default list of columns
-        rgn.clearColumns();
-        List<String> colNames = rgn.getRecordSelectorValueColumns();
-        if (colNames == null)
-            colNames = table.getPkColumnNames();
-        for (String colName : colNames)
-        {
-            if (null == rgn.getDisplayColumn(colName))
-                rgn.addColumns(table, colName);
-        }
-
         RenderContext rc = v.getRenderContext();
         rc.setCache(false);
 
-        try (Timing t = MiniProfiler.step("selectAll");
-             ResultSet rs = rgn.getResultSet(rc))
+        List<String> colNames = setDataRegionColumnsForSelection(rgn, rc, view, table );
+
+        try (Timing ignored = MiniProfiler.step("selectAll"); ResultSet rs = rgn.getResults(rc))
         {
             List<String> selection = createSelectionList(rc, rgn, rs, colNames);
-            return setSelected(context, key, selection, true);
+            return setSelected(context, key, selection, checked);
         }
         catch (SQLException e)
         {
             throw new RuntimeSQLException(e);
         }
+    }
+
+    /**
+     * Returns all items in the given result set that are selected and selectable
+     * @param context the view context from which to retrieve the session variable
+     * @param key session variable key
+     * @param ctx the render context
+     * @param rgn the data region
+     * @param rs the result set to be filtered
+     * @return list of items from the result set that are in the selectee session, or an empty list if none.
+     * @throws SQLException
+     */
+    private static List<String> getSelectedItems(ViewContext context, String key, RenderContext ctx, DataRegion rgn, ResultSet rs) throws SQLException
+    {
+        List<String> selected = new LinkedList<>();
+        Set<String> selectedValues = getSet(context, key, true);
+        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+        while (rs.next())
+        {
+            ctx.setRow(factory.getRowMap(rs));
+            if (rgn.isRecordSelectorEnabled(ctx))             // Don't select unselectables (#35513)
+            {
+                String value = rgn.getRecordSelectorValue(ctx);
+                if (selectedValues.contains(value))
+                    selected.add(value);
+            }
+        }
+
+        return selected;
     }
 
     private static List<String> createSelectionList(RenderContext ctx, DataRegion rgn, ResultSet rs, List<String> colNames) throws SQLException

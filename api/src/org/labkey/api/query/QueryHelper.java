@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -28,7 +29,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 
 import java.net.URISyntaxException;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -175,24 +175,12 @@ public class QueryHelper
         return viewFilter;
     }
 
-    private ContainerFilter getViewContainerFilter()
-    {
-        if (_viewName == null)
-            return null;
-
-        CustomView view = getCustomView();
-        if (view == null)
-            throw new IllegalStateException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
-
-        return ContainerFilter.getContainerFilterByName(view.getContainerFilterName(), _user);
-    }
-
-    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter)
+    public @NotNull Results select(List<FieldKey> columns, @Nullable SimpleFilter filter)
     {
         return select(columns, filter, null);
     }
 
-    public Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort)
+    public @NotNull Results select(List<FieldKey> columns, @Nullable SimpleFilter filter, @Nullable Sort sort)
     {
         QueryService qs = QueryService.get();
         TableInfo ti = getTableInfo(null);

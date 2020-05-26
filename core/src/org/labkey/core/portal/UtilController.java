@@ -70,7 +70,7 @@ public class UtilController extends SpringActionController
         public ModelAndView getView(DotForm form, BindException errors) throws Exception
         {
             // Don't allow GET to avoid security holes as this may inject script
-            if (!"POST".equals(getViewContext().getRequest().getMethod()))
+            if (!isPost())
                 throw new UnauthorizedException("use POST");
 
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -99,9 +99,8 @@ public class UtilController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 }

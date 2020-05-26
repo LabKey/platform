@@ -23,12 +23,12 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.categories.FileBrowser;
-import org.labkey.test.components.PropertiesEditor;
+import org.labkey.test.components.domain.DomainFieldRow;
 import org.labkey.test.components.html.BootstrapMenu;
 import org.labkey.test.components.html.Checkbox;
 import org.labkey.test.components.html.Table;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
@@ -41,15 +41,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({DailyC.class, FileBrowser.class})
+@Category({DailyC.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 25)
 public class StudyExportTest extends StudyManualTest
 {
-    private static final String SPECIMEN_ARCHIVE_B = "/sampledata/study/specimens/sample_b.specimens";
-    private static final String DEMOGRAPHICS_DATASET = "DEM-1: Demographics";
     private static final String TEST_ADD_ENTRY = "999000000";
-
-    private final String DATASET_DATA_FILE = TestFileUtils.getLabKeyRoot() + "/sampledata/dataLoading/excel/dataset_data.xls";
+    private static final File DATASET_DATA_FILE = TestFileUtils.getSampleData("dataLoading/excel/dataset_data.xls");
     private static final String HIDDEN_DATASET = "URS-1: Screening Urinalysis";
     private static final String MODIFIED_DATASET = "Quality Control Report"; // Empty dataset.
     private static final String REORDERED_DATASET1 = "LLS-1: Screening Local Lab Results (Page 1)";
@@ -76,7 +73,7 @@ public class StudyExportTest extends StudyManualTest
         createStudyManually();
 
         // import the specimens and wait for both datasets & specimens to load
-        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_A), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 2);
+        SpecimenImporter specimenImporter = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_A, ARCHIVE_TEMP_DIR, getFolderName(), 2);
         specimenImporter.importAndWaitForComplete();
 
         // TODO: Call afterManualCreate()?
@@ -116,6 +113,7 @@ public class StudyExportTest extends StudyManualTest
         waitForPipelineJobsToComplete(3, "study and specimen archive import", false);
     }
 
+    @Override
     protected int getVisitCount()
     {
         return 67;
@@ -184,7 +182,7 @@ public class StudyExportTest extends StudyManualTest
         assertRadioButtonSelected(Locator.radioButtonByNameAndValue("manualCohortAssignment", "true"));
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(),"Groups").clickSubMenu(true, "Cohorts", GROUP_2);
         BootstrapMenu.find(getDriver(),"QC State").clickSubMenu(true, "All data");
         assertTextPresent(MODIFIED_PARTICIPANT);
@@ -344,7 +342,7 @@ public class StudyExportTest extends StudyManualTest
         // set the QC state 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_DATASET));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "All data");
         new DataRegionTable("Dataset", this).checkAll();
         BootstrapMenu.find(getDriver(), "QC State").clickSubMenu(true, "Update state of selected rows");
@@ -380,7 +378,7 @@ public class StudyExportTest extends StudyManualTest
         BootstrapMenu.find(getDriver(), "Comments and QC").clickSubMenu(true, "Exit Comments and QC mode");
 
         // import second archive, verify that that data is merged:
-        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), new File(TestFileUtils.getLabKeyRoot(), SPECIMEN_ARCHIVE_B), new File(TestFileUtils.getLabKeyRoot(), ARCHIVE_TEMP_DIR), getFolderName(), 4);
+        SpecimenImporter importer = new SpecimenImporter(new File(StudyHelper.getPipelinePath()), StudyHelper.SPECIMEN_ARCHIVE_B, ARCHIVE_TEMP_DIR, getFolderName(), 4);
         importer.importAndWaitForComplete();
 
         // verify that comments remain after second specimen load
@@ -459,7 +457,7 @@ public class StudyExportTest extends StudyManualTest
 
         clickFolder(getFolderName());
         clickAndWait(Locator.linkWithText("47 datasets"));
-        clickAndWait(Locator.linkWithText("DEM-1: Demographics"));
+        clickAndWait(Locator.linkWithText(DEMOGRAPHICS_TITLE));
 
         DataRegionTable.DataRegion(getDriver()).find().clickEditRow(0);
         setFormElement(Locator.name("quf_DEMbdt"), "2001-11-11");
@@ -494,8 +492,7 @@ public class StudyExportTest extends StudyManualTest
         // Make sure that we can view its participant page immediately
         pushLocation();
         clickAndWait(Locator.linkWithText(TEST_ADD_ENTRY));
-        assertTextPresent("Mouse - " + TEST_ADD_ENTRY,
-                "DEM-1: Demographics");
+        assertTextPresent("Mouse - " + TEST_ADD_ENTRY, DEMOGRAPHICS_TITLE);
         popLocation();
 
         log("Test deleting rows in a dataset");
@@ -512,30 +509,6 @@ public class StudyExportTest extends StudyManualTest
 
         // Test creating and importing a dataset from an excel file
         doTestDatasetImport();
-    }
-
-    protected boolean comparePaths(String path1, String path2)
-    {
-        String[] parseWith = { "/", "\\\\" };
-        for (String parser1 : parseWith)
-        {
-            String[] path1Split = path1.split(parser1);
-            for  (String parser2 : parseWith)
-            {
-                String[] path2Split = path2.split(parser2);
-                if (path1Split.length == path2Split.length)
-                {
-                    int index = 0;
-                    while (path1Split[index].compareTo(path2Split[index]) == 0)
-                    {
-                        index++;
-                        if (index > path2Split.length - 1)
-                            return true;
-                    }
-                }
-            }
-        }
-        return false;
     }
 
     private void changeDatasetOrder(String value)
@@ -562,7 +535,7 @@ public class StudyExportTest extends StudyManualTest
                 .selectDatasetByLabel(dataset)
                 .clickEditDefinition()
                 .setCategory(category)
-                .save();
+                .clickSave();
     }
 
     private void modifyVisits()
@@ -584,15 +557,15 @@ public class StudyExportTest extends StudyManualTest
 
     private void modifyDatasetColumn(String dataset)
     {
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper.goToManageDatasets()
+        DatasetDesignerPage editDatasetPage = _studyHelper.goToManageDatasets()
                 .selectDatasetByLabel(dataset)
                 .clickEditDefinition();
 
-        PropertiesEditor.FieldRow fieldRow = editDatasetPage.getFieldsEditor().selectField(0);
-        fieldRow.properties().selectDisplayTab().setDescription(COLUMN_DESC);
-        fieldRow.properties().selectAdvancedTab().setMvEnabled(true);
+        DomainFieldRow fieldRow = editDatasetPage.getFieldsPanel().getField(0);
+        fieldRow.setDescription(COLUMN_DESC);
+        fieldRow.setMissingValuesEnabled(true);
 
-        editDatasetPage.save();
+        editDatasetPage.clickSave();
         // TODO: add lookups for current & other folders
     }
 
@@ -626,23 +599,18 @@ public class StudyExportTest extends StudyManualTest
     {
         navigateToFolder(getProjectName(), getFolderName());
         clickTab("Manage");
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
-        setFormElement(Locator.name("typeName"), "fileImportDataset");
-        click(Locator.checkboxByName("fileImport"));
-        clickButton("Next");
+        DatasetDesignerPage datasetDesignerPage = new ManageStudyPage(getDriver())
+                .manageDatasets()
+                .clickCreateNewDataset()
+                .setName("fileImportDataset");
+        datasetDesignerPage.getFieldsPanel()
+                .setInferFieldFile(DATASET_DATA_FILE);
+        datasetDesignerPage.setAutoImport(true)
+                .setPreviewMappedColumn("Mice", "name")
+                .setPreviewMappedColumn("Visits", "visit number")
+                .clickSave()
+                .clickViewData();
 
-        waitForElement(Locator.xpath("//input[@name='uploadFormElement']"), WAIT_FOR_JAVASCRIPT);
-
-        File datasetFile = new File(DATASET_DATA_FILE);
-        setFormElement(Locator.name("uploadFormElement"), datasetFile);
-
-        waitForElement(Locator.xpath("//span[@id='button_Import']"), WAIT_FOR_JAVASCRIPT);
-
-        selectOptionByValue(Locator.gwtListBoxByLabel("MouseId:"), "name");
-        selectOptionByValue(Locator.gwtListBoxByLabel("Sequence Num:"), "visit number");
-
-        clickButton("Import", defaultWaitForPage);
         waitForElement(Locator.paginationText(9));
         assertTextPresent("kevin", "chimpanzee");
     }

@@ -118,6 +118,7 @@
             <column columnName="Description"/>
             <column columnName="LastLogin"/>
             <column columnName="Active"/>
+            <column columnName="HasPassword"/>
             <column columnName="ExpirationDate"/>
         </columns>
     </table>

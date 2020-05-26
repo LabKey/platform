@@ -16,13 +16,14 @@
 package org.labkey.api.security;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.security.UserManager.UserListener;
 
 import java.beans.PropertyChangeEvent;
 import java.util.Arrays;
@@ -42,11 +43,12 @@ public class GroupMembershipCache
     private static final String IMMEDIATE_GROUP_MEMBERSHIPS_PREFIX = "ImmMemShip=";
     private static final String GROUP_MEMBERS_PREFIX = "Members=";
     private static final CoreSchema CORE = CoreSchema.getInstance();
-    private static final StringKeyCache<int[]> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group Memberships");
+    private static final Cache<String, int[]> CACHE = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Group Memberships");
 
     static
     {
-        UserManager.addUserListener(new GroupMembershipUserListener());
+        // Need to clear the cache before any other listener is called
+        UserManager.addUserListener(new GroupMembershipUserListener(), true);
     }
 
 
@@ -106,7 +108,7 @@ public class GroupMembershipCache
 
         // invalidate all computed group lists (getAllGroups())
         if (principal instanceof Group)
-            CACHE.removeUsingPrefix(ALL_GROUP_MEMBERSHIPS_PREFIX);
+            CACHE.removeUsingFilter(new Cache.StringPrefixFilter(ALL_GROUP_MEMBERSHIPS_PREFIX));
     }
 
 
@@ -183,12 +185,14 @@ public class GroupMembershipCache
     }
 
 
-    public static class GroupMembershipUserListener implements UserManager.UserListener
+    public static class GroupMembershipUserListener implements UserListener
     {
+        @Override
         public void userAddedToSite(User user)
         {
         }
 
+        @Override
         public void userDeletedFromSite(User user)
         {
             // Blow away groups immediately after user is deleted, otherwise this user's groups, and therefore permissions, will remain active
@@ -196,12 +200,14 @@ public class GroupMembershipCache
             uncache(user);
         }
 
+        @Override
         public void userAccountDisabled(User user)
         {
             uncache(user);
 
         }
 
+        @Override
         public void userAccountEnabled(User user)
         {
             uncache(user);

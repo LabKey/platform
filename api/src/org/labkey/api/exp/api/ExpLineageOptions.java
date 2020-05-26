@@ -15,21 +15,30 @@
  */
 package org.labkey.api.exp.api;
 
-import org.labkey.api.settings.AppProps;
-
 /**
+ * Captures options for doing an lineage search
  * Created by Nick Arnold on 2/12/2016.
  */
-public class ExpLineageOptions
+public class ExpLineageOptions extends ResolveLsidsForm
 {
-    private int _rowId;
-    private String _lsid;
     private int _depth;
     private boolean _parents = true;
     private boolean _children = true;
     private String _expType;
     private String _cpasType;
     private boolean _forLookup = false;
+    private boolean _useObjectIds = false;
+
+    public ExpLineageOptions()
+    {
+    }
+
+    public ExpLineageOptions(boolean parents, boolean children, int depth)
+    {
+        _parents = parents;
+        _children = children;
+        _depth = depth;
+    }
 
     public int getDepth()
     {
@@ -39,36 +48,6 @@ public class ExpLineageOptions
     public void setDepth(int depth)
     {
         _depth = depth;
-    }
-
-    public String getLsid()
-    {
-        return _lsid;
-    }
-
-    public void setLsid(String lsid)
-    {
-        _lsid = lsid;
-    }
-
-    public String getLSID()
-    {
-        return getLsid();
-    }
-
-    public void setLSID(String lsid)
-    {
-        setLsid(lsid);
-    }
-
-    public int getRowId()
-    {
-        return _rowId;
-    }
-
-    public void setRowId(int rowId)
-    {
-        _rowId = rowId;
     }
 
     public boolean isParents()
@@ -120,4 +99,18 @@ public class ExpLineageOptions
     {
         _forLookup = b;
     }
+
+    public boolean isUseObjectIds()
+    {
+        return _useObjectIds;
+    }
+
+    /** user provides SQLFragment that selects objectids rather than lsids
+     * TODO switch all usages to objectids
+     */
+    public void setUseObjectIds(boolean useObjectIds)
+    {
+        _useObjectIds = useObjectIds;
+    }
+
 }

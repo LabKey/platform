@@ -22,14 +22,15 @@ import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.PipelineStatusTable;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
-
-import java.io.File;
 
 @Category({DailyC.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 6)
@@ -112,8 +113,8 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     private static final DataToVerify INSTRUMENTS = new DataToVerify(LIST_INSTRUMENTS, Arrays.asList(COL_KEY, COL_INSTRUMENTID), 6, COL_INSTRUMENTID, Arrays.asList("ABI-4700"));
 
     private static final String DATASET_DEMOGRAPHICS = "Demographics";
-    private static final String COL_MOUSID = "mouseid";
-    private static final String COL_DATE = "date";
+    private static final String COL_MOUSID = "Mouse Id";
+    private static final String COL_DATE = "Date";
     private static final String COL_QCSTATELABEL = "qcstatelabel";
     private static final String COL_STARTDATE = "startdate";
     private static final String COL_HEIGHT = "height";
@@ -233,6 +234,29 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
 
     private void verifyColumnTypes(boolean isList)
     {
+        if (!isList)
+        {
+            verifyDatasetColumnTypes();
+            return;
+        }
+        DomainFormPanel designer = new DomainFormPanel.DomainFormPanelFinder(getDriver()).withTitle("Fields").waitFor();
+        designer.expand();
+        checker().setErrorMark();
+        checker().verifyEquals("Wrong type for 'booleancol'",
+                FieldDefinition.ColumnType.Boolean, designer.getField("booleancol").getType());
+        checker().verifyEquals("Wrong type for 'intcol'",
+                FieldDefinition.ColumnType.Integer, designer.getField("intcol").getType());
+        checker().verifyEquals("Wrong type for 'numcol'",
+                FieldDefinition.ColumnType.Decimal, designer.getField("numcol").getType());
+        checker().verifyEquals("Wrong type for 'stringcol'",
+                FieldDefinition.ColumnType.String, designer.getField("stringcol").getType());
+        checker().screenShotIfNewError("Inferred_column_types");
+    }
+
+    // TODO: Remove once datasets use new domain designer
+    private void verifyDatasetColumnTypes()
+    {
+        boolean isList = false;
         waitForElement(getLoc("booleancol", isList ? "Boolean" : "True/False (Boolean)", isList), WAIT_FOR_JAVASCRIPT);
         assertElementPresent(getLoc("intcol", "Integer", isList));
         assertElementPresent(getLoc("numcol", "Number (Double)", isList));

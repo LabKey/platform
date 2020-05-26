@@ -472,7 +472,7 @@ public class DatasetQueryView extends StudyQueryView
                 ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(
                         c,
                         protocol,
-                        new ContainerFilter.CurrentAndSubfolders(getUser()));
+                        ContainerFilter.Type.CurrentAndSubfolders.create(getSchema()));
                 ActionButton viewAssayButton = new ActionButton("View Source Assay", url);
                 bar.add(viewAssayButton);
             }
@@ -673,7 +673,7 @@ public class DatasetQueryView extends StudyQueryView
             if (dcf.isSubsetOfStudies())
             {
                 // DISPLAY the current subset
-                Collection<GUID> ids = dcf.getIds(dqs.getContainer(), ReadPermission.class, null);
+                Collection<GUID> ids = dcf.generateIds(dqs.getContainer(), ReadPermission.class, null);
                 ArrayList<String> labels = new ArrayList<>(ids.size());
                 for (GUID id : ids)
                 {
@@ -710,7 +710,7 @@ public class DatasetQueryView extends StudyQueryView
             Container project = ctx.getContainer().getProject();
             if (immport != null && project != null && project.getActiveModules().contains(immport))
             {
-                ActionURL finderURL = new ActionURL("immport", "dataFinder.view", project);
+                ActionURL finderURL = new ActionURL("immport", "dataFinderRedirect.view", project);
                 msg.append("&nbsp;&nbsp;").append(PageFlowUtil.button("Edit").href(finderURL.toString()));
             }
             msg.append("</div>");

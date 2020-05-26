@@ -25,11 +25,13 @@ import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.query.olap.BitSetQueryImpl;
 import org.labkey.query.olap.OlapSchemaDescriptor;
@@ -39,6 +41,7 @@ import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.Cell;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
+import org.olap4j.OlapStatement;
 import org.olap4j.Position;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
@@ -58,12 +61,12 @@ import java.util.Map;
  */
 public class RolapTestCase extends Assert
 {
-    User getUser()
+    private User getUser()
     {
         return TestContext.get().getUser();
     }
 
-    static Container getContainer()
+    private static Container getContainer()
     {
         return JunitUtil.getTestContainer();
     }
@@ -93,21 +96,21 @@ public class RolapTestCase extends Assert
         UserSchema schema = new RolapTestSchema(getUser(), getContainer());
         ArrayList<Map> result;
 
-        TableInfo p = schema.getTable("Participant");
+        TableInfo p = schema.getTable("Participant", null);
         assertNotNull(p);
         assertNotNull(p.getColumn("ptid"));
         assertNotNull(p.getColumn("gender"));
         result = new TableSelector(p).getArrayList(Map.class);
         assertEquals(8 * 6, result.size());
 
-        TableInfo v = schema.getTable("Visit");
+        TableInfo v = schema.getTable("Visit", null);
         assertNotNull(v);
         assertNotNull(v.getColumn("visitid"));
         assertNotNull(v.getColumn("label"));
         result = new TableSelector(v).getArrayList(Map.class);
         assertEquals(4, result.size());
 
-        TableInfo s = schema.getTable("Study");
+        TableInfo s = schema.getTable("Study", null);
         assertNotNull(s);
         assertNotNull(s.getColumn("studyid"));
         assertNotNull(s.getColumn("type"));
@@ -117,7 +120,7 @@ public class RolapTestCase extends Assert
     }
 
 
-    CachedCube getCachedCube() throws SQLException, IOException
+    private CachedCube getCachedCube() throws SQLException, IOException
     {
         UserSchema schema = new RolapTestSchema(getUser(), getContainer());
         OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), "query:/junit");
@@ -167,14 +170,14 @@ public class RolapTestCase extends Assert
     }
 
 
-    Map<String,Integer> oneAxisQuery(String json) throws Exception
+    private Map<String,Integer> oneAxisQuery(String json) throws Exception
     {
         JSONObject query = new JSONObject(json);
         return oneAxisQuery(query);
     }
 
 
-    Map<String,Integer> oneAxisQuery(JSONObject query) throws Exception
+    private Map<String,Integer> oneAxisQuery(JSONObject query) throws Exception
     {
         Cube cube = getCachedCube();
         OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), "query:/junit");
@@ -185,29 +188,32 @@ public class RolapTestCase extends Assert
         qquery.fromJson(query, errors);
         assertFalse(errors.hasErrors());
 
-        Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
-        OlapConnection conn = null;
-        if (sd.usesMondrian())
-            sd.getConnection(getContainer(), getUser());
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery, errors);
-        assertFalse(errors.hasErrors());
+        OlapConnection conn = sd.getConnection(getContainer(), getUser());
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery);
         try (CellSet cs = bitsetquery.executeQuery())
         {
-            for (Position p : cs.getAxes().get(1).getPositions())
-            {
-                Member m = p.getMembers().get(0);
-                Cell cell = cs.getCell(p);
-                Object v = cell.getValue();
-                Integer i = null==v ? null : ((Number)v).intValue();
-                assertFalse(ret.containsKey(m.getUniqueName()));
-                ret.put(m.getUniqueName(), i);
-            }
+            return oneColumnResult(cs);
+        }
+    }
+
+    private Map<String,Integer> oneColumnResult(CellSet cs)
+    {
+        Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
+        Position colPosition = cs.getAxes().get(0).getPositions().get(0);
+        for (Position rowPosition : cs.getAxes().get(1).getPositions())
+        {
+            Member m = rowPosition.getMembers().get(0);
+            Cell cell = cs.getCell(colPosition, rowPosition);
+            Object v = cell.getValue();
+            Integer i = null==v ? null : ((Number)v).intValue();
+            assertFalse(ret.containsKey(m.getUniqueName()));
+            ret.put(m.getUniqueName(), i);
         }
         return ret;
     }
 
 
-    void validateOneAxisQueryCounts(String json, Integer... counts) throws Exception
+    private void validateOneAxisQueryCounts(String json, Integer... counts) throws Exception
     {
         Map<String,Integer> result = oneAxisQuery(json);
         assertEquals(counts.length, result.size());
@@ -775,7 +781,7 @@ public class RolapTestCase extends Assert
                 "    {\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Female]\"]}\n" +
                 "}"
         );
-        assertEquals(16,cs.size());
+        assertEquals(16, cs.size());
         for (Integer I : cs.values())
             assertEquals((Integer)1, I);
     }
@@ -784,9 +790,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testDataFilter() throws Exception
     {
-        Map<String,Integer> cs;
-
-
         // no filter
         validateOneAxisQueryCounts(
             "{\n" +
@@ -902,5 +905,83 @@ public class RolapTestCase extends Assert
                 "}"
         );
         assertEquals(0, cs.size());
+    }
+
+
+    private Map<String,Integer> mdxQuery(String mdx)
+    {
+        OlapStatement stmt = null;
+        CellSet cs = null;
+        OlapConnection conn = null;
+
+        try
+        {
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), "query:/junit");
+            assertNotNull(sd);
+            conn = sd.getConnection(getContainer(), getUser());
+            assertNotNull(conn);
+            stmt = conn.createStatement();
+            assertNotNull(stmt);
+            QueryProfiler.getInstance().ensureListenerEnvironment();
+            //long ms = System.currentTimeMillis();
+            cs = stmt.executeOlapQuery(mdx);
+            //long d = System.currentTimeMillis() - ms;
+            return oneColumnResult(cs);
+        }
+        catch (RuntimeException x)
+        {
+            throw x;
+        }
+        catch (Exception x)
+        {
+            throw new RuntimeException(x);
+        }
+        finally
+        {
+            ResultSetUtil.close(cs);
+            ResultSetUtil.close(stmt);
+            if (null != conn)
+            {
+                try
+                {
+                    conn.close();
+                }
+                catch (Exception x)
+                {
+                    fail(x.getMessage());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void mdxQueries()
+    {
+        var cs = mdxQuery("SELECT\n" +
+                "   [MeasuresLevel].[ParticipantCount] ON COLUMNS,\n" +
+                "   [Assay].[Name].members ON ROWS\n" +
+                "FROM junitcube"
+                );
+        //{[Assay].[Flow Cytometry]=40, [Assay].[Gene Expression]=8, [Assay].[Neutralizing Antibody]=8, [Assay].[PDQ]=null, [Assay].[Polymerase Chain Reaction]=8}
+        assertEquals( 5, cs.size());
+        assertEquals(40, (int)cs.get("[Assay].[Flow Cytometry]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Neutralizing Antibody]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Polymerase Chain Reaction]"));
+        assertNull( cs.get("[Assay].[PDQ]") );
+        assertTrue( cs.containsKey("[Assay].[PDQ]") );
+
+        cs = mdxQuery("SELECT\n" +
+                "   [MeasuresLevel].[RowCount] ON COLUMNS,\n" +
+                "    NON EMPTY [Assay].[Name].members ON ROWS\n" +
+                "FROM junitcube"
+        );
+        assertEquals( 4, cs.size());
+        assertEquals(48, (int)cs.get("[Assay].[Flow Cytometry]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Gene Expression]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Neutralizing Antibody]"));
+        assertEquals( 8, (int)cs.get("[Assay].[Polymerase Chain Reaction]"));
+        assertNull( cs.get("[Assay].[PDQ]") );
+        assertFalse( cs.containsKey("[Assay].[PDQ]") );
     }
 }

@@ -51,13 +51,11 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.NetworkDrive;
@@ -268,9 +266,9 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(c.getStartURL(getUser()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(getContainer().getName());
+            root.addChild(getContainer().getName());
         }
     }
 
@@ -380,9 +378,10 @@ public class ProjectController extends SpringActionController
             return template;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
+            if (!root.hasChildren())
+                root.addChild("Project Main Page");
         }
     }
 
@@ -400,9 +399,8 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -468,13 +466,6 @@ public class ProjectController extends SpringActionController
             headers.put("Cache-Control", "max-age=" + TimeUnit.DAYS.toSeconds(1));
             headers.put("ETag", iconPath);
             PageFlowUtil.streamFile(response, headers, iconFile, false);
-        }
-
-        @Override
-        public void checkPermissions() throws UnauthorizedException
-        {
-            setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
-            super.checkPermissions();
         }
     }
 
@@ -605,9 +596,8 @@ public class ProjectController extends SpringActionController
                 return form.getReturnURLHelper();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -880,9 +870,8 @@ public class ProjectController extends SpringActionController
             return customizePortletForm.getReturnURLHelper(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1060,7 +1049,7 @@ public class ProjectController extends SpringActionController
             return null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             // Subclasses may have overridden the display name of this webpart for a given container:
             String name;
@@ -1072,10 +1061,7 @@ public class ProjectController extends SpringActionController
             else
                 name = "Web Part";
 
-            NavTree ret = (new BeginAction()).appendNavTrail(root);
-            ret.addChild("Customize " + name);
-
-            return ret;
+            root.addChild("Customize " + name);
         }
     }
 
@@ -1132,9 +1118,8 @@ public class ProjectController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1263,35 +1248,11 @@ public class ProjectController extends SpringActionController
         }
     }
 
-    public static class GetContainersForm
+    public static class BasicGetContainersForm
     {
         private Container[] _container;
-        private boolean _multipleContainers = false;
         private boolean _includeSubfolders = false;
-        private boolean _includeEffectivePermissions = true;
         private int _depth = Integer.MAX_VALUE;
-        private String[] _moduleProperties;
-        private ContainerFilter.Type _containerFilter = null;
-
-        public Container[] getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(Container[] container)
-        {
-            _container = container;
-        }
-
-        public boolean isMultipleContainers()
-        {
-            return _multipleContainers;
-        }
-
-        public void setMultipleContainers(boolean multipleContainers)
-        {
-            _multipleContainers = multipleContainers;
-        }
 
         public boolean isIncludeSubfolders()
         {
@@ -1311,6 +1272,35 @@ public class ProjectController extends SpringActionController
         public void setDepth(int depth)
         {
             _depth = depth;
+        }
+
+        public Container[] getContainer()
+        {
+            return _container;
+        }
+
+        public void setContainer(Container[] container)
+        {
+            _container = container;
+        }
+
+    }
+
+    public static class GetContainersForm extends BasicGetContainersForm
+    {
+        private boolean _multipleContainers = false;
+        private boolean _includeEffectivePermissions = true;
+        private String[] _moduleProperties;
+        private ContainerFilter.Type _containerFilter = null;
+
+        public boolean isMultipleContainers()
+        {
+            return _multipleContainers;
+        }
+
+        public void setMultipleContainers(boolean multipleContainers)
+        {
+            _multipleContainers = multipleContainers;
         }
 
         public String[] getModuleProperties()
@@ -1400,8 +1390,8 @@ public class ProjectController extends SpringActionController
                 _requestedDepth = 0;
                 form.setIncludeSubfolders(false);
                 form.setMultipleContainers(true);
-                ContainerFilter cf = form.getContainerFilter().create(getUser());
-                Collection<GUID> ids = cf.getIds(getContainer());
+                ContainerFilter cf = form.getContainerFilter().create(getContainer(), getUser());
+                Collection<GUID> ids = cf.getIds();
                 List<Container> list;
                 if (null == ids)
                 {
@@ -1536,14 +1526,13 @@ public class ProjectController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermission(AdminPermission.class)
     public class SetWebPartPermissionsAction extends MutatingApiAction<WebPartPermissionsForm>
     {
         @Override
@@ -1560,8 +1549,9 @@ public class ProjectController extends SpringActionController
                 {
                     permissionContainer = ContainerManager.getForPath(form.getContainerPath());
 
-                    // Only throw NotFoundException if the user actively set the container to something else.
-                    if(permissionContainer == null)
+                    // Only throw NotFoundException if the user actively set the container to something else, or if the
+                    // user is trying to reference a real container that they don't have permission to see
+                    if(permissionContainer == null || !permissionContainer.hasPermission(getUser(), ReadPermission.class))
                     {
                         throw new NotFoundException("Could not resolve the folder for path: \"" + form.getContainerPath() +
                                 "\". The path may be incorrect or the folder may no longer exist.");
@@ -1588,6 +1578,48 @@ public class ProjectController extends SpringActionController
             }
             else
                 throw new NotFoundException("WebPart not found. Unable to set WebPart permissions.");
+        }
+    }
+
+    /**
+     * Just get the paths the user has read permission for
+     */
+    @RequiresNoPermission
+    public class GetReadableContainersAction extends ReadOnlyApiAction<BasicGetContainersForm>
+    {
+        @Override
+        public ApiResponse execute(BasicGetContainersForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            int requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
+
+            Container c = getContainer();
+            if (form.getContainer() != null && form.getContainer().length > 0)
+                c = form.getContainer()[0];
+
+            List<String> containerPaths = c == null ? Collections.emptyList() : getVisibleChildren(c, 0, requestedDepth);
+            response.put("containers", containerPaths);
+
+            return response;
+        }
+
+        protected List<String> getVisibleChildren(Container parent, int currentDepth, int requestedDepth)
+        {
+            List<String> result = new ArrayList<>();
+            if (requestedDepth >= 0 && currentDepth > requestedDepth)
+                return result;
+
+            if (parent.hasPermission(getUser(), ReadPermission.class))
+            {
+                result.add(parent.getPath());
+            }
+
+            for (Container child : parent.getChildren())
+            {
+                result.addAll(getVisibleChildren(child, currentDepth + 1, requestedDepth));
+            }
+
+            return result;
         }
     }
 

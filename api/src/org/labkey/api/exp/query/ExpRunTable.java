@@ -16,8 +16,7 @@
 
 package org.labkey.api.exp.query;
 
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.exp.api.*;
 
 import java.util.List;
@@ -50,7 +49,8 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         Replaced,
         ReplacedByRun,
         ReplacesRun,
-        Batch
+        Batch,
+        Properties
     }
 
     /**
@@ -75,10 +75,10 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
     /**
      * Returns a column which links to a data input of the specified type.
      */
-    BaseColumnInfo addDataInputColumn(String alias, String roleName);
+    MutableColumnInfo addDataInputColumn(String alias, String roleName);
 
     /**
      * Returns a column which displays the number of data inputs of the specified role.
      */
-    BaseColumnInfo addDataCountColumn(String alias, String roleName);
+    MutableColumnInfo addDataCountColumn(String alias, String roleName);
 }

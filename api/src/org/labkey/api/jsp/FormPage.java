@@ -16,35 +16,14 @@
 
 package org.labkey.api.jsp;
 
-import org.labkey.api.annotations.RemoveIn20_1;
-import org.labkey.api.view.JspView;
 import org.labkey.api.action.HasViewContext;
+import org.labkey.api.view.JspView;
 import org.springframework.validation.BindException;
 
 abstract public class FormPage<FORM extends HasViewContext> extends JspBase
 {
     public FORM __form;
     
-    private static <F extends HasViewContext> FormPage<F> get(FormPage<F> formPage, F form)
-    {
-        formPage.setForm(form);
-        return formPage;
-    }
-
-    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
-    @RemoveIn20_1
-    public static <F extends HasViewContext> FormPage<F> get(Class clazzPackage, F form, String name)
-    {
-        return get((FormPage<F>) JspLoader.createPage(clazzPackage, name), form);
-    }
-
-    @Deprecated // This bypasses JspView() standard handling (addClientDependencies(), mem tracking). Instead, use getView().
-    @RemoveIn20_1
-    public static <F extends HasViewContext> FormPage<F> get(String jspPath, F form)
-    {
-        return get((FormPage<F>) JspLoader.createPage((String)null, jspPath), form);
-    }
-
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form, BindException errors)
     {
         JspView<F> view = new JspView<>(jspPath, form, errors);
@@ -55,23 +34,6 @@ abstract public class FormPage<FORM extends HasViewContext> extends JspBase
     public static <F extends HasViewContext> JspView<F> getView(String jspPath, F form)
     {
         return getView(jspPath, form, null);
-    }
-
-    @Deprecated // Do not use. Use the string factory methods instead -- they work much better with IntelliJ navigation & refactors, and with our tools
-    @RemoveIn20_1
-    public static <F extends HasViewContext> JspView<F> getView(Class clazzPackage, F form, String name)
-    {
-        return get(clazzPackage, form, name).createView();
-    }
-
-    public JspView<FORM> createView(BindException errors)
-    {
-        return new JspView<>(this, null, errors);
-    }
-
-    public JspView<FORM> createView()
-    {
-        return new JspView<>(this);
     }
 
     public void setForm(FORM form)

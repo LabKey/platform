@@ -87,12 +87,12 @@ public class QuerySelect extends QueryRelation implements Cloneable
     private Map<FieldKey, QueryRelation> _tables;
     private Map<FieldKey, QueryRelation> _qualifiedTables;
     // Don't forget to recurse passing container filter into subqueries.
-    private List<QueryRelation> _subqueries = new ArrayList<>();
-    private Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
+    private final List<QueryRelation> _subqueries = new ArrayList<>();
+    private final Map<FieldKey, RelationColumn> _declaredFields = new HashMap<>();
 
     // shim tableinfo used for creating expression columninfo
-    private SQLTableInfo _sti;
-    private AliasManager _aliasManager;
+    private final SQLTableInfo _sti;
+    private final AliasManager _aliasManager;
 //    private List<SelectColumn> _medianColumns = new ArrayList<>();                  // Possible way to support SQL Server Median
 
     /**
@@ -101,7 +101,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
      */
     private Boolean _generateSelectSQL = true;
 
-    private Set<FieldKey> parametersInScope = new HashSet<>();
+    private final Set<FieldKey> parametersInScope = new HashSet<>();
 
 
     private QuerySelect(@NotNull Query query, @NotNull QuerySchema schema, String alias)
@@ -121,7 +121,7 @@ public class QuerySelect extends QueryRelation implements Cloneable
 
         _aliasManager = new AliasManager(schema.getDbSchema());
         _queryText = query._querySource;
-        _savedName = query._name;
+        _savedName = query._debugName;
 
         for (QParameter p : query._parameters)
             parametersInScope.add(new FieldKey(null, p.getName()));
@@ -320,6 +320,9 @@ groupByLoop:
                             }
                         }
                     }
+                    // wrap this 'global' relation to capture the FROM alias (setAlias() is called below)
+                    relation = new QueryWithWrapper(queryTableWith);
+                    relation.setAlias(alias);       // legal alias is created below with makeRelationName()
                 }
             }
 
@@ -503,6 +506,7 @@ groupByLoop:
     }
 
 
+    @Override
     public String getQueryText()
     {
         if (!getParseErrors().isEmpty() && _columns == null)
@@ -999,6 +1003,7 @@ groupByLoop:
 
     private boolean _declareCalled = false;
 
+    @Override
     void declareFields()
     {
         if (_declareCalled)
@@ -1201,6 +1206,7 @@ groupByLoop:
      * Construct a table info which represents this query.
      *
      */
+    @Override
     public QueryTableInfo getTableInfo()
     {
         Set<RelationColumn> set = new LinkedHashSet<>(_columns.values());
@@ -1209,12 +1215,12 @@ groupByLoop:
         if (!getParseErrors().isEmpty())
             return null;
 
+        resolveFields();
+        if (!getParseErrors().isEmpty())
+            return null;
+
         // mark all top level columns selected, since we want to generate column info for all columns
         markAllSelected(_query);
-
-        final SQLFragment sql = getSql();
-        if (null == sql)
-            return null;
 
         QueryTableInfo ret = new QueryTableInfo(this, getAlias())
         {
@@ -1307,6 +1313,7 @@ groupByLoop:
 
     boolean _resolved = false;
 
+    @Override
     public void resolveFields()
     {
         if (_resolved)
@@ -1415,6 +1422,7 @@ groupByLoop:
     }
 
 
+    @Override
     public SQLFragment getSql()
     {
         return _getSql(false);
@@ -1601,7 +1609,7 @@ groupByLoop:
         }
         if (_orderBy != null)
         {
-            if (_limit == null & !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
+            if (_limit == null && !_forceAllowOrderBy && !getSqlDialect().allowSortOnSubqueryWithoutLimit())
             {
                 reportWarning("The underlying database does not supported nested ORDER BY unless LIMIT is also specified. Ignoring ORDER BY.", _orderBy);
             }
@@ -1627,6 +1635,8 @@ groupByLoop:
                     sql.nextPrefix(",");
                 }
                 sql.popPrefix();
+                if (null == _limit)
+                    getSqlDialect().appendSortOnSubqueryWithoutLimitQualifier(sql);
             }
         }
         if (_limit != null)
@@ -1706,12 +1716,14 @@ groupByLoop:
     }
 
 
+    @Override
     int getSelectedColumnCount()
     {
         return _columns.size();
     }
 
 
+    @Override
     SelectColumn getColumn(@NotNull String name)
     {
         FieldKey key = new FieldKey(null,name);
@@ -1722,6 +1734,7 @@ groupByLoop:
     }
 
 
+    @Override
     protected Map<String,RelationColumn> getAllColumns()
     {
         LinkedHashMap<String,RelationColumn> ret = new LinkedHashMap<>(_columns.size()*2);
@@ -1791,6 +1804,7 @@ groupByLoop:
     }
 
 
+    @Override
     SelectColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
@@ -1903,6 +1917,7 @@ groupByLoop:
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof SelectColumn;
@@ -2028,6 +2043,7 @@ groupByLoop:
             }
         }
 
+        @Override
         SQLFragment getInternalSql()
         {
             SqlBuilder b = new SqlBuilder(getDbSchema());
@@ -2075,16 +2091,19 @@ groupByLoop:
             return new FieldKey(null, getName());    
         }
 
+        @Override
         public String getAlias()
         {
             return _alias;
         }
 
+        @Override
         QueryRelation getTable()
         {
             return QuerySelect.this;
         }
 
+        @Override
         @NotNull
         public JdbcType getJdbcType()
         {
@@ -2141,7 +2160,8 @@ groupByLoop:
             {
                 if (_colinfo == null)
                 {
-                    _colinfo = expr.createColumnInfo(_sti, _aliasManager.decideAlias(getAlias()), _query);
+                    // NOTE If we're here then this is not a top-level output column. The name doesn't matter.
+                    _colinfo = expr.createColumnInfo(_sti, "/*NOT AN OUTPUT COLUMN*/", _query);
                 }
                 to.copyAttributesFrom(_colinfo);
                 if (_selectStarColumn)
@@ -2409,5 +2429,21 @@ groupByLoop:
     {
         QuerySelect clone = this.clone();
         return clone;
+    }
+
+    // A CTE can be used more than once in FROM, but we can't have two FROM entries point to same QueryRelation, because
+    // unlike TableInfo we expect the QueryRelation to know it's own Alias (mistake?)
+    private static class QueryWithWrapper extends QueryRelationWrapper<QueryWith.QueryTableWith>
+    {
+        QueryWithWrapper(QueryWith.QueryTableWith wrapped)
+        {
+            super(wrapped);
+        }
+
+        @Override
+        public SQLFragment getFromSql()
+        {
+            return _wrapped.getFromSql(getAlias());
+        }
     }
 }

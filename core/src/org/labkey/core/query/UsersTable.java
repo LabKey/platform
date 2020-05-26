@@ -18,9 +18,14 @@ package org.labkey.core.query;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ColumnRenderPropertiesImpl;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -34,15 +39,20 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.CacheClearingQueryUpdateService;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.SimpleQueryUpdateService;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AvatarThumbnailProvider;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -51,16 +61,27 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UserManagementPermission;
 import org.labkey.api.security.roles.SeeUserAndGroupDetailsRole;
+import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.core.security.SecurityController;
 import org.labkey.core.user.UserController;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -76,6 +97,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     private Set<String> _illegalColumns;
     private boolean _mustCheckPermissions = true;
     private boolean _canSeeDetails;
+    private static final String EXPIRATION_DATE_KEY = "ExpirationDate";
     private static final Set<FieldKey> ALWAYS_AVAILABLE_FIELDS;
 
     static
@@ -108,6 +130,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             setDeleteURL(LINK_DISABLER);
             setInsertURL(LINK_DISABLER);
+            setUpdateURL(LINK_DISABLER);
         }
 
         _canSeeDetails = SecurityManager.canSeeUserDetails(getContainer(), getUser()) || getUser().isSearchUser();
@@ -140,6 +163,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         defaultColumns.add(FieldKey.fromParts("DisplayName"));
         defaultColumns.add(FieldKey.fromParts("Email"));
         defaultColumns.add(FieldKey.fromParts("Active"));
+        defaultColumns.add(FieldKey.fromParts("HasPassword"));
         defaultColumns.add(FieldKey.fromParts("LastLogin"));
         defaultColumns.add(FieldKey.fromParts("Created"));
 
@@ -191,10 +215,14 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         {
             // display a column with blank results
             var nullColumn = addColumn(new NullColumnInfo(this, col.getName(), col.getJdbcType()));
-            nullColumn.setReadOnly(true);
             nullColumn.setHidden(col.isHidden());
             nullColumn.setNullable(col.isNullable());
             nullColumn.setRequired(col.isRequired());
+
+            // add these for the app ProfilePage usage
+            nullColumn.setUserEditable(col.isUserEditable());
+            nullColumn.setInputType(col.getInputType());
+            nullColumn.setRangeURI(col.getRangeURI());
         }
     }
 
@@ -221,11 +249,11 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     {
         if (_illegalColumns == null)
         {
-            _illegalColumns = new HashSet<>();
+            _illegalColumns = Sets.newCaseInsensitiveHashSet();
             if (!getUser().hasRootPermission(UserManagementPermission.class) && !getContainer().hasPermission(getUser(), AdminPermission.class))
             {
                 _illegalColumns.add("Active");
-                _illegalColumns.add("LastLogin");
+                _illegalColumns.add("HasPassword");
             }
         }
         return !_illegalColumns.contains(col.getName());
@@ -260,7 +288,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                             {
                                 if (col.getScale() != pd.getScale())
                                     LOG.warn("Scale doesn't match for column " + col.getName() + ": " + col.getScale() + " vs " + pd.getScale());
-                                pd.copyTo(col);
+                                pd.copyTo( (ColumnRenderPropertiesImpl)col );
                                 if (!col.isHidden())
                                     defaultCols.add(FieldKey.fromParts(col.getName()));
                             }
@@ -312,6 +340,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return UsersDomainKind.getDomainURI(getUserSchema().getName(), getName(), UsersDomainKind.getDomainContainer(), getUserSchema().getUser());
     }
 
+    @Override
     public QueryUpdateService getUpdateService()
     {
         // UNDONE: add an 'isUserEditable' bit to the schema and table?
@@ -332,8 +361,8 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     return UsersDomainKind.getDomainContainer();
                 }
             };
-            QueryUpdateService updateService = new SimpleQueryUpdateService(this, table, helper);
-            return new CacheClearingQueryUpdateService(updateService)
+
+            return new CacheClearingQueryUpdateService(new UsersTableQueryUpdateService(this, table, helper))
             {
                 @Override
                 protected void clearCache()
@@ -399,7 +428,6 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         return filter;
     }
 
-
     @Override
     public void fireRowTrigger(Container c, User user, TriggerType type, boolean before, int rowNumber, @Nullable Map<String, Object> newRow, @Nullable Map<String, Object> oldRow, Map<String, Object> extraContext) throws ValidationException
     {
@@ -415,5 +443,194 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
         Map<String, Pair<IndexType, List<ColumnInfo>>> unique = new HashMap<>(super.getUniqueIndices());
         unique.put("uq_users_email", Pair.of(IndexType.Unique, getColumns("Email")));
         return unique;
+    }
+
+    private static class UsersTableQueryUpdateService extends SimpleQueryUpdateService
+    {
+        public UsersTableQueryUpdateService(SimpleUserSchema.SimpleTable queryTable, TableInfo dbTable, DomainUpdateHelper helper)
+        {
+            super(queryTable, dbTable, helper);
+        }
+
+        @Override
+        protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row) throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            throw new UnsupportedOperationException("Insert not supported.");
+        }
+
+        @Override
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
+        {
+            throw new UnsupportedOperationException("Delete not supported.");
+        }
+
+        @Override
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        {
+            Integer pkVal = (Integer)oldRow.get("UserId");
+            User userToUpdate = pkVal != null ? UserManager.getUser(pkVal) : null;
+            if (userToUpdate == null)
+                throw new NotFoundException("Unable to find user for " + pkVal + ".");
+            if (userToUpdate.isGuest())
+                throw new ValidationException("Action not valid for Guest user.");
+
+            validatePermissions(user, userToUpdate);
+            validateUpdatedUser(userToUpdate, row);
+            validateExpirationDate(userToUpdate, user, container, row);
+
+            SpringAttachmentFile avatarFile = (SpringAttachmentFile)row.get(UserAvatarDisplayColumnFactory.FIELD_KEY);
+            validateAvatarFile(avatarFile);
+
+            Map<String, Object> ret = super.updateRow(user, container, row, oldRow);
+            updateAvatarFile(userToUpdate, avatarFile, row);
+
+            if (row.containsKey(EXPIRATION_DATE_KEY))
+                auditExpirationDateChange(userToUpdate, user, ContainerManager.getRoot(), userToUpdate.getExpirationDate(), (Date)ret.get(EXPIRATION_DATE_KEY));
+
+            return ret;
+        }
+
+        private void validateExpirationDate(User userToUpdate, User editingUser, Container container, Map<String, Object> row) throws ValidationException
+        {
+            if (row.containsKey(EXPIRATION_DATE_KEY))
+            {
+                if (!AuthenticationManager.canSetUserExpirationDate(editingUser, container))
+                    throw new UnauthorizedException("User does not have permission to edit the Expiration Date field.");
+
+                try
+                {
+                    Timestamp expirationDate = (Timestamp)row.get(EXPIRATION_DATE_KEY);
+                    if (expirationDate != null)
+                    {
+                        if ((new Date()).compareTo(new Date(expirationDate.getTime())) > 0)
+                            throw new ValidationException("Expiration Date cannot be in the past.");
+
+                        boolean isOwnRecord = editingUser.equals(userToUpdate);
+                        if (isOwnRecord)
+                            throw new ValidationException("Cannot set your own Expiration Date.");
+                    }
+                }
+                catch (ClassCastException e)
+                {
+                    throw new ValidationException("Invalid value for Expiration Date.");
+                }
+            }
+        }
+
+        private void validatePermissions(User editingUser, User userToUpdate)
+        {
+            // only allow update to your own record or if you are a site level user manager
+            boolean isOwnRecord = editingUser.equals(userToUpdate);
+            if (!editingUser.hasRootPermission(UserManagementPermission.class) && !isOwnRecord)
+                throw new UnauthorizedException();
+
+            // don't let non-site admin edit details of site admin account
+            if (userToUpdate.hasSiteAdminPermission() && !editingUser.hasSiteAdminPermission())
+                throw new UnauthorizedException("Cannot edit details for a Site Admin user.");
+        }
+
+        private void validateUpdatedUser(User userToUpdate, Map<String, Object> row) throws ValidationException
+        {
+            String userEmailAddress = userToUpdate.getEmail();
+            String displayName = (String)row.get("DisplayName");
+
+            if (displayName != null)
+            {
+                if (displayName.contains("@") && !displayName.equalsIgnoreCase(userEmailAddress))
+                    throw new ValidationException("User display name should not contain '@'. Please enter a different value.");
+
+                //ensure that display name is unique
+                //error if there's a user with this display name and it's not the user currently being edited
+                User existingUser = UserManager.getUserByDisplayName(displayName);
+                if (existingUser != null && !existingUser.equals(userToUpdate))
+                    throw new ValidationException("The specified display name is already in use. Please enter a different value.");
+            }
+        }
+
+        private void validateAvatarFile(SpringAttachmentFile file) throws ValidationException
+        {
+            // validate the original size of the avatar image
+            if (file != null)
+            {
+                try (InputStream is = file.openInputStream())
+                {
+                    BufferedImage image = ImageIO.read(is);
+                    float desiredSize = ThumbnailService.ImageType.Large.getHeight();
+
+                    if (image == null)
+                    {
+                        throw new ValidationException("Avatar file must be an image file.");
+                    }
+                    else if (image.getHeight() < desiredSize || image.getWidth() < desiredSize)
+                    {
+                        throw new ValidationException("Avatar file must have a height and width of at least " + desiredSize + "px.");
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new ValidationException("Unable to open avatar file.");
+                }
+            }
+        }
+
+        private void updateAvatarFile(User user, SpringAttachmentFile file, Map<String, Object> row) throws ValidationException
+        {
+            ThumbnailService.ImageType imageType = ThumbnailService.ImageType.Large;
+            ThumbnailService svc = ThumbnailService.get();
+
+            if (svc != null)
+            {
+                // add any new avatars, or replace existing, by using the ThumbnailService to generate and attach to the User's entityid
+                if (file != null)
+                {
+                    try (InputStream is = file.openInputStream())
+                    {
+                        ImageStreamThumbnailProvider wrapper = new ImageStreamThumbnailProvider(new AvatarThumbnailProvider(user), is, file.getContentType(), imageType, true);
+                        svc.replaceThumbnail(wrapper, imageType, null, null);
+                    }
+                    catch (IOException e)
+                    {
+                        throw new ValidationException("Unable to open avatar file.");
+                    }
+                }
+                // call delete thumbnail in case there was an existing one which is being removed
+                else if (row.containsKey(UserAvatarDisplayColumnFactory.FIELD_KEY))
+                {
+                    svc.deleteThumbnail(new AvatarThumbnailProvider(user), imageType);
+                }
+            }
+            else
+                throw new ValidationException("Unable to update avatar file.");
+        }
+
+        private void auditExpirationDateChange(User userToUpdate, User editingUser, Container c, Date oldExpirationDate, Date newExpirationDate)
+        {
+            String targetUserEmail = userToUpdate.getEmail();
+            String currentUserEmail = editingUser.getEmail();
+            String message;
+
+            if (oldExpirationDate == null && newExpirationDate == null)
+                return;
+            else if (oldExpirationDate == null)
+            {
+                message = String.format("%1$s set expiration date for %2$s to %3$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else if (newExpirationDate == null)
+            {
+                message = String.format("%1$s removed expiration date for %2$s. Previous value was %3$s",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate));
+            }
+            else if (oldExpirationDate.compareTo(newExpirationDate) != 0)
+            {
+                message = String.format("%1$s changed expiration date for %2$s from %3$s to %4$s.",
+                        currentUserEmail, targetUserEmail, DateUtil.formatDateTime(c, oldExpirationDate), DateUtil.formatDateTime(c, newExpirationDate));
+            }
+            else
+                return;
+
+            UserManager.UserAuditEvent event = new UserManager.UserAuditEvent(c.getId(), message, userToUpdate);
+            AuditLogService.get().addEvent(editingUser, event);
+        }
     }
 }

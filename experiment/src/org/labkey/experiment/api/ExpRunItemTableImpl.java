@@ -18,9 +18,10 @@ package org.labkey.experiment.api;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.Parameter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.dataiterator.DataIteratorBuilder;
@@ -50,7 +51,7 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
      * Create a column with a lookup to MaterialInput that is joined by materialId
      * and a targetProtocolApplication provided by the <code>protocolApplication</code> column.
      */
-    protected BaseColumnInfo createEdgeColumn(String alias, C protocolAppColumn, ExpSchema.TableType lookupTable)
+    protected MutableColumnInfo createEdgeColumn(String alias, C protocolAppColumn, ExpSchema.TableType lookupTable)
     {
         var col = wrapColumn(alias, _rootTable.getColumn("rowId"));
         LookupForeignKey fk = new LookupForeignKey()
@@ -74,10 +75,13 @@ public abstract class ExpRunItemTableImpl<C extends Enum> extends ExpTableImpl<C
     }
 
 
-    protected BaseColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
+    protected MutableColumnInfo createLineageColumn(ExpTableImpl table, String alias, boolean inputs)
     {
-        var ret = table.wrapColumn(alias, table.getRealTable().getColumn("LSID"));
-        ret.setFk(new LineageForeignKey(table.getUserSchema(), table, inputs));
+        var ret = table.wrapColumn(alias, table.getRealTable().getColumn("objectid"));
+        if (1==1) // use LineageDisplayColumn
+            ret.setFk(LineageForeignKey.createWithDisplayColumn(table.getUserSchema(), table, inputs));
+        else    // use MultiValueForeignKey
+            ret.setFk(LineageForeignKey.createWithMultiValuedColumn(table.getUserSchema(),new SQLFragment("SELECT objectid FROM ").append(table.getFromSQL("qq")), inputs));
         ret.setCalculated(true);
         ret.setUserEditable(false);
         ret.setReadOnly(true);

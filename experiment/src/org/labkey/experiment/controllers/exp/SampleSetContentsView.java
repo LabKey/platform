@@ -6,13 +6,17 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.PanelButton;
+import org.labkey.api.exp.api.ExpRunEditor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.JspView;
@@ -46,6 +50,40 @@ public class SampleSetContentsView extends QueryView
         deriveButton.setDisplayPermission(InsertPermission.class);
         deriveButton.setRequiresSelection(true);
         return deriveButton;
+    }
+
+    private String getSelectedScript(ActionURL url, boolean isOuput)
+    {
+        return "function(data) {" +
+                "   var selected = data.selected.join(';');" +
+                    DataRegion.getJavaScriptObjectReference(getDataRegionName()) + ".clearSelected({quiet: true});" +
+                "   if (selected.length === 0) {" +
+                "       window.location = '" + url.getLocalURIString() + "';" +
+                "   }" +
+                "   else {" +
+                "       window.location = '" + url.getLocalURIString() +
+                (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL) ? "?" : "") +
+                        (isOuput ? "materialOutputs" : "materialInputs") + "=' + selected" +
+                "   }" +
+                "}";
+    }
+
+    private String getCreateRunScript(ActionURL url, boolean isOutput)
+    {
+        // Need to figure out selection key
+        return DataRegion.getJavaScriptObjectReference(getDataRegionName()) +
+            ".getSelected({success: " + getSelectedScript(url, isOutput) + "});";
+    }
+
+    public void addCreateRunOptions(@NotNull MenuButton button, @NotNull DataView view, @NotNull ExpRunEditor editor)
+    {
+        NavTree inputItem = new NavTree("Input  " + editor.getDisplayName() + " samples");
+        inputItem.setScript(getCreateRunScript(editor.getEditUrl(view.getViewContext().getContainer()), false));
+        button.addMenuItem(inputItem);
+
+        NavTree outputItem = new NavTree("Output " + editor.getDisplayName() + " samples");
+        outputItem.setScript(getCreateRunScript(editor.getEditUrl(view.getViewContext().getContainer()), true));
+        button.addMenuItem(outputItem);
     }
 
     @Override
@@ -90,6 +128,21 @@ public class SampleSetContentsView extends QueryView
         super.populateButtonBar(view, bar);
 
         bar.add(getDeriveSamplesButton(getContainer(), _source.getRowId()));
+
+        // Add run editors
+        List<ExpRunEditor> editors = ExperimentService.get().getRunEditors();
+        if (!editors.isEmpty())
+        {
+            MenuButton addRunsButton = new MenuButton("Create Run");
+            addRunsButton.setDisplayPermission(InsertPermission.class);
+
+            for (ExpRunEditor editor : editors)
+            {
+                addCreateRunOptions(addRunsButton, view, editor);
+            }
+
+            bar.add(addRunsButton);
+        }
     }
 
     @Override

@@ -72,7 +72,7 @@ public class VisitForm extends ViewForm
         {
             try
             {
-                _visit = (VisitImpl) PageFlowUtil.decodeObject(oldValues);
+                _visit = PageFlowUtil.decodeObject(VisitImpl.class, oldValues);
             }
             catch (IOException x)
             {
@@ -100,7 +100,7 @@ public class VisitForm extends ViewForm
             setProtocolDay(VisitImpl.calcDefaultDateBasedProtocolDay(getSequenceNumMin(), getSequenceNumMax()));
 
         VisitImpl visit = getBean();
-        if (visit.getSequenceNumMinDouble() > visit.getSequenceNumMaxDouble())
+        if (visit.getSequenceNumMin().compareTo(visit.getSequenceNumMax()) > 0)
         {
             errors.reject(null, "The minimum value cannot be greater than the maximum value for the visit range.");
 /*

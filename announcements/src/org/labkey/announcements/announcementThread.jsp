@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.announcements.AnnouncementsController.RespondAction" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.ThreadViewBean" %>
+<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.model.AnnouncementModel" %>
 <%@ page import="org.labkey.announcements.model.DiscussionServiceImpl" %>
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
@@ -32,8 +33,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.springframework.web.servlet.mvc.Controller" %>
 <%@ page import="java.util.Objects" %>
-<%@ page import="org.labkey.api.security.UserManager" %>
-<%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!--ANNOUNCEMENTS-->
 <%
@@ -104,7 +103,7 @@ if (bean.perm.allowUpdate(announcementModel) && !bean.print)
 if (settings.hasMemberList() && null != announcementModel.getMemberListIds())
 { %>
 <tr>
-    <td colspan="3">Members: <%=h(announcementModel.getMemberListDisplayString(c, user))%></td>
+    <td colspan="3">Notify: <%=h(announcementModel.getMemberListDisplayString(c, user))%></td>
 </tr><%
 }
 
@@ -190,7 +189,7 @@ if (!announcementModel.getResponses().isEmpty())
             if (settings.hasMemberList() && !Objects.equals(r.getMemberListIds(), prev.getMemberListIds()))
             { %>
             <tr>
-                <td colspan="2">Members: <%=h(r.getMemberListDisplayString(c, user))%></td>
+                <td colspan="2">Notify: <%=h(r.getMemberListDisplayString(c, user))%></td>
             </tr><%
             }
 

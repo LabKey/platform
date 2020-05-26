@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Filter;
@@ -25,6 +26,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentProtocolHandler;
+import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.ProtocolParameter;
 import org.labkey.api.exp.api.ExpDataProtocolInput;
@@ -33,12 +36,17 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAction;
 import org.labkey.api.exp.api.ExpProtocolInput;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.property.ExperimentProperty;
+import org.labkey.api.exp.query.ExpProtocolTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -58,8 +66,42 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         super(protocol);
     }
 
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getProtocolDetailsURL(this);
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        QueryRowReference ref = getCustomQueryRowReference();
+        if (ref != null)
+            return ref;
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Protocols.name(), FieldKey.fromParts(ExpProtocolTable.Column.RowId.name()), getRowId());
+    }
+
+    /**
+     * Return a protocol specific query row reference or null if the default should be used.
+     */
+    /*package*/ @Nullable QueryRowReference getCustomQueryRowReference()
+    {
+        ProtocolImplementation impl = getImplementation();
+        if (impl != null)
+        {
+            QueryRowReference ref = impl.getQueryRowReference(this);
+            if (ref != null)
+                return ref;
+        }
+
+        ExperimentProtocolHandler handler = ExperimentService.get().getExperimentProtocolHandler(this);
+        if (handler != null)
+        {
+            QueryRowReference ref = handler.getQueryRowReference(this);
+            if (ref != null)
+                return ref;
+        }
+
         return null;
     }
 
@@ -79,10 +121,14 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
         }
     }
 
-    public ProtocolImplementation getImplementation()
+    public @Nullable String getImplementationName()
     {
-        String implName = (String) getProperty(ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor());
-        return ExperimentService.get().getProtocolImplementation(implName);
+        return (String) getProperty(ExperimentProperty.PROTOCOLIMPLEMENTATION.getPropertyDescriptor());
+    }
+
+    public @Nullable ProtocolImplementation getImplementation()
+    {
+        return ExperimentService.get().getProtocolImplementation(getImplementationName());
     }
 
     public int getRowId()
@@ -235,6 +281,17 @@ public class ExpProtocolImpl extends ExpIdentifiableEntityImpl<Protocol> impleme
     {
         Filter filter = new SimpleFilter(FieldKey.fromParts("BatchProtocolId"), getRowId());
         return ExpExperimentImpl.fromExperiments(new TableSelector(ExperimentServiceImpl.get().getTinfoExperiment(), filter, null).getArray(Experiment.class));
+    }
+
+
+    public void setEntityId(String entityId)
+    {
+        _object.setEntityId(entityId);
+    }
+
+    public String getEntityId()
+    {
+        return _object.entityId;
     }
 
     public static List<ExpProtocolImpl> fromProtocols(List<Protocol> protocols)

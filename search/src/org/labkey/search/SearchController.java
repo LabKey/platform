@@ -50,6 +50,7 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
+import org.labkey.api.util.HtmlStringBuilder;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResponseHelper;
@@ -278,9 +279,9 @@ public class SearchController extends SpringActionController
 
             if (null != t)
             {
-                String html = "<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>";
-                html += ExceptionUtil.renderException(t);
-                WebPartView configErrorView = new HtmlView(html);
+                HtmlStringBuilder builder = HtmlStringBuilder.of("<span class=\"labkey-error\">Your search index is misconfigured. Search is disabled and documents are not being indexed, pending resolution of this issue. See below for details about the cause of the problem.</span></br></br>");
+                builder.append(ExceptionUtil.renderException(t));
+                WebPartView configErrorView = new HtmlView(builder);
                 configErrorView.setTitle("Search Configuration Error");
                 configErrorView.setFrame(WebPartView.FrameType.PORTAL);
                 vbox.addView(configErrorView);
@@ -368,11 +369,10 @@ public class SearchController extends SpringActionController
             return success;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("searchAdmin"));
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
-            return root;
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
         }
     }
 
@@ -387,12 +387,10 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree admin = new AdminAction(getPageConfig()).appendNavTrail(root);
-            admin.addChild("Index Contents");
-
-            return admin;
+            new AdminAction(getPageConfig()).addNavTrail(root);
+            root.addChild("Index Contents");
         }
     }
 
@@ -437,28 +435,10 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
-
-
-    public static class SwapForm
-    {
-        boolean _ui = true;
-
-        public boolean isUi()
-        {
-            return _ui;
-        }
-
-        public void setUi(boolean ui)
-        {
-            _ui = ui;
-        }
-    }
-
 
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
@@ -598,7 +578,7 @@ public class SearchController extends SpringActionController
                     //UNDONE: paging, rowlimit etc
                     int limit = form.getLimit() < 0 ? 1000 : form.getLimit();
                     result = ss.search(query, ss.getCategories(form.getCategory()), getUser(), getContainer(), form.getSearchScope(),
-                        form.getSortField(), form.getOffset(), limit);
+                        form.getSortField(), form.getOffset(), limit, form.isInvertSort());
                 }
                 catch (Exception x)
                 {
@@ -622,6 +602,9 @@ public class SearchController extends SpringActionController
                     o.put("container", hit.container);
                     o.put("url", form.isNormalizeUrls() ? hit.normalizeHref(contextPath) : hit.url);
                     o.put("summary", StringUtils.trimToEmpty(hit.summary));
+                    o.put("score", hit.score);
+                    o.put("identifiers", hit.identifiers);
+                    o.put("category", StringUtils.trimToEmpty(hit.category));
 
                     if (form.isExperimentalCustomJson())
                     {
@@ -658,9 +641,8 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/testJson.jsp", null, null);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
     
@@ -701,7 +683,7 @@ public class SearchController extends SpringActionController
     {
         ActionURL getPostURL(Container c);    // Search does not actually post
         String getDescription(Container c);
-        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+        SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertSort) throws IOException;
         boolean includeAdvancedUI();
         boolean includeNavigationLinks();
     }
@@ -728,9 +710,9 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit) throws IOException
+        public SearchResult getSearchResult(String queryString, @Nullable String category, User user, Container currentContainer, SearchScope scope, String sortField, int offset, int limit, boolean invertSort) throws IOException
         {
-            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit);
+            return _ss.search(queryString, _ss.getCategories(category), user, currentContainer, scope, sortField, offset, limit, invertSort);
         }
 
         @Override
@@ -785,9 +767,9 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _form.getSearchResultTemplate().appendNavTrail(root, getViewContext(), _scope, _category);
+            _form.getSearchResultTemplate().addNavTrail(root, getViewContext(), _scope, _category);
         }
     }
 
@@ -860,6 +842,7 @@ public class SearchController extends SpringActionController
         private boolean _includeHelpLink = true;
         private boolean _webpart = false;
         private boolean _showAdvanced = false;
+        private boolean _invertSort = false;
         private SearchConfiguration _config = new InternalSearchConfiguration();    // Assume internal search (for webparts, etc.)
         private String _template = null;
         private SearchScope _scope = SearchScope.All;
@@ -1014,6 +997,16 @@ public class SearchController extends SpringActionController
         public void setShowAdvanced(boolean showAdvanced)
         {
             _showAdvanced = showAdvanced;
+        }
+
+        public boolean isInvertSort()
+        {
+            return _invertSort;
+        }
+
+        public void setInvertSort(boolean invertSort)
+        {
+            _invertSort = invertSort;
         }
 
         public String getTemplate()

@@ -607,7 +607,9 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parents, CompareType.IN);
         SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
-        filter.addClause(since);
+
+        if (!since.toSQLFragment(null, null).isEmpty())
+            filter.addClause(since);
 
         final ArrayList<Pair<String,String>> ret = new ArrayList<>();
 
@@ -1117,21 +1119,25 @@ public class AttachmentServiceImpl implements AttachmentService, ContainerManage
             _response = response;
         }
 
+        @Override
         public void setContentType(String contentType)
         {
             _response.setContentType(contentType);
         }
 
+        @Override
         public void setContentDisposition(String value)
         {
             _response.setHeader("Content-Disposition", value);
         }
 
+        @Override
         public void setContentLength(int size)
         {
             _response.setContentLength(size);
         }
 
+        @Override
         public OutputStream getOutputStream() throws IOException
         {
             return _response.getOutputStream();

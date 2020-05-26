@@ -16,6 +16,10 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+
 import java.util.List;
 import java.util.Set;
 
@@ -33,20 +37,15 @@ public interface WellGroup extends WellData, WellGroupTemplate
         REPLICATE,
         ANTIGEN,
         OTHER,
-        VIRUS
+        VIRUS,
+        SAMPLE
     }
 
     List<? extends WellData> getWellData(boolean combineReplicates);
 
-    Type getType();
-
-    boolean contains(Position position);
-
     Set<WellGroup> getOverlappingGroups();
 
     Set<WellGroup> getOverlappingGroups(Type type);
-
-    List<Position> getPositions();
 
     Double getMinDilution();
 

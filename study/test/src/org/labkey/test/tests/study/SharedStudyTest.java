@@ -33,7 +33,8 @@ import org.labkey.test.categories.DailyA;
 import org.labkey.test.components.ParticipantListWebPart;
 import org.labkey.test.components.studydesigner.ManageAssaySchedulePage;
 import org.labkey.test.pages.DatasetInsertPage;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.ManageDatasetsPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageVisitPage;
 import org.labkey.test.util.Crawler;
 import org.labkey.test.util.DataRegionTable;
@@ -47,6 +48,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.junit.Assert.assertEquals;
 
 @Category({DailyA.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 9)
@@ -104,11 +107,14 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         createDataspaceProject(getProjectName(), PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL, "PandaId","VISIT", true, true);
 
-        EditDatasetDefinitionPage datasetDomainEditor = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
-        datasetDomainEditor.setIsDemographicData(true);
-        datasetDomainEditor.shareDemographics(EditDatasetDefinitionPage.ShareDemographicsBy.PTID);
-        datasetDomainEditor.inferFieldsFromFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
-        datasetDomainEditor.save();
+        DatasetDesignerPage datasetDesignerPage = _studyHelper.defineDataset(SHARED_DEMOGRAPHICS, getProjectName());
+        datasetDesignerPage.setIsDemographicData(true);
+        datasetDesignerPage.shareDemographics("Share by PandaId");
+        datasetDesignerPage.getFieldsPanel().setInferFieldFile(new File(STUDY_DIR, "study/datasets/dataset5001.tsv"));
+        // leave the 'visits' column unmapped, make sure it doesn't have a value/only has a placeholder
+        // (this dataset doesn't have a meaningful visit field)
+        assertEquals("Select...", datasetDesignerPage.getPreviewMappedColumnValue("Visits"));
+        datasetDesignerPage.clickSave();
 
         setPipelineRoot(STUDY_DIR.getAbsolutePath());
         _containerHelper.createSubfolder(getProjectName(), STUDY1, "Study");
@@ -145,12 +151,12 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         log("Verify visit folder is project");
         DataRegionTable table = new DataRegionTable("query", this);
-        Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
+        assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
 
         log("Verify visit folder is project");
         beginAt("/query/" + getProjectName() + "/" + STUDY1 + "/executeQuery.view?schemaName=study&query.queryName=Visit&query.viewName=" + viewName);
         table = new DataRegionTable("query", this);
-        Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
+        assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
 
     @Test
@@ -165,7 +171,7 @@ public class SharedStudyTest extends BaseWebDriverTest
 
         log("Verify visit folder is project");
         DataRegionTable table = new DataRegionTable("query", this);
-        Assert.assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
+        assertEquals(getProjectName(), table.getDataAsText(0, "Folder"));
     }
 
     @Test
@@ -173,10 +179,10 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         log("Verify sub-folder study PV_One dataset has 2 participants at 'Visit 1'");
         beginAt("/study/" + getProjectName() + "/" + STUDY1 + "/overview.view?");
-        Assert.assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 6, 0));
+        assertEquals("PV_One?", getTableCellText(Locator.id("studyOverview"), 6, 0));
         String visitLabel = getTableCellText(Locator.id("studyOverview"), 0, 4);
         Assert.assertTrue("Expected 'Visit 1', got: " + visitLabel, visitLabel.contains("Visit 1"));
-        Assert.assertEquals("2", getTableCellText(Locator.id("studyOverview"), 6, 4));
+        assertEquals("2", getTableCellText(Locator.id("studyOverview"), 6, 4));
     }
 
     @Test
@@ -295,7 +301,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         // verify dataset has correct participants
         DataRegionTable dataset = new DataRegionTable("Dataset", this);
         List actualPtids = dataset.getColumnDataAsText("PandaId");
-        Assert.assertEquals("Published study does not have the expected participants", allPtids, actualPtids);
+        assertEquals("Published study does not have the expected participants", allPtids, actualPtids);
 
         _containerHelper.deleteProject(nonDataspaceProject);
     }
@@ -311,7 +317,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickButton("Save");
 
         String description = getText(Locator.xpath("//td[text() = 'Visit 1']/../td[7]"));
-        Assert.assertEquals("This is the first visit", description);
+        assertEquals("This is the first visit", description);
     }
 
     @Test
@@ -350,7 +356,7 @@ public class SharedStudyTest extends BaseWebDriverTest
     {
         beginAt(WebTestHelper.buildURL("dataset", getProjectName(), "insert", Maps.of("datasetId", SHARED_DEMOGRAPHICS_ID)));
 
-        Assert.assertEquals("403: Error Page -- User does not have permission to edit this dataset", getDriver().getTitle());
+        assertEquals("403: Error Page -- User does not have permission to edit this dataset", getDriver().getTitle());
         assertElementNotPresent(Locator.css("table.labkey-data-region"));
     }
 
@@ -388,18 +394,17 @@ public class SharedStudyTest extends BaseWebDriverTest
         _containerHelper.createSubfolder(getProjectName(), datasetName, "Study");
         createDefaultStudy();
 
-        goToManageStudy();
-        clickAndWait(Locator.linkWithText("Manage Datasets"));
+        ManageDatasetsPage datasetsPage = goToManageStudy()
+            .goToManageStudy()
+            .manageDatasets();
         assertElementPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
-        clickAndWait(Locator.linkWithText("Create New Dataset"));
+        datasetsPage.clickCreateNewDataset()
+            .setName(datasetName)
+            .clickSave();
 
-        setFormElement(Locator.name("typeName"), datasetName);
         // Default dataset ID will overlap shared demographics (5001)
-        clickButton("Next");
-        waitAndClick(Locator.id("partdelete_0"));
-        clickButton("Save");
 
-        assertTextPresent(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
+        waitForText(String.format("A shared dataset is shadowed by this local dataset definition: %s.", SHARED_DEMOGRAPHICS));
         clickAndWait(Locator.linkWithText("Manage Datasets"));
         assertTextPresent("WARNING: One or more datasets in parent study are shadowed by datasets defined in this folder.");
         assertElementNotPresent(Locator.linkContainingText(SHARED_DEMOGRAPHICS));
@@ -421,8 +426,8 @@ public class SharedStudyTest extends BaseWebDriverTest
         clickAndWait(Locator.linkWithText("Change Properties"));
 
         // verify the shared dataset label is readonly while the local dataset is not
-        Assert.assertEquals(null, getAttribute(Locator.xpath("//input[@type='text' and @value='" + STUDY2_DATASET + "']"), "readonly"));
-        Assert.assertEquals("true", getAttribute(Locator.xpath("//input[@type='text' and @value='" + SHARED_DEMOGRAPHICS + "']"), "readonly"));
+        assertEquals(null, getAttribute(Locator.xpath("//input[@type='text' and @value='" + STUDY2_DATASET + "']"), "readonly"));
+        assertEquals("true", getAttribute(Locator.xpath("//input[@type='text' and @value='" + SHARED_DEMOGRAPHICS + "']"), "readonly"));
 
         // hide the demographics dataset in STUDY2
         click(Locator.checkboxById("dataset[" + SHARED_DEMOGRAPHICS_ID + "].visible"));
@@ -487,7 +492,7 @@ public class SharedStudyTest extends BaseWebDriverTest
         Set<String> expectedPtids = new HashSet<>(Arrays.asList(ptids));
         Set<String> actualPtids = new HashSet<>(dataset.getColumnDataAsText("PandaId"));
 
-        Assert.assertEquals("Wrong ptids for multi-study participant group", expectedPtids, actualPtids);
+        assertEquals("Wrong ptids for multi-study participant group", expectedPtids, actualPtids);
     }
 
     @Test
@@ -508,7 +513,7 @@ public class SharedStudyTest extends BaseWebDriverTest
             clickAndWait(Locator.linkWithText(SHARED_DEMOGRAPHICS));
 
             DataRegionTable dataset = new DataRegionTable("Dataset", this);
-            Assert.assertEquals("User can see participants from studies without read permission", Collections.emptyList(), dataset.getColumnDataAsText("PandaId"));
+            assertEquals("User can see participants from studies without read permission", Collections.emptyList(), dataset.getColumnDataAsText("PandaId"));
         }
         stopImpersonating();
 
@@ -531,7 +536,7 @@ public class SharedStudyTest extends BaseWebDriverTest
             ParticipantListWebPart pandaWebPart = new ParticipantListWebPart(this, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL);
             List<String> actualPtids = pandaWebPart.getParticipants();
             List<String> expectedPtids = Arrays.asList(STUDY1_PTIDS);
-            Assert.assertEquals("Missing ptids in participant webpart with limited permissions", expectedPtids, actualPtids);
+            assertEquals("Missing ptids in participant webpart with limited permissions", expectedPtids, actualPtids);
 
             clickTab("Overview");
 
@@ -541,7 +546,7 @@ public class SharedStudyTest extends BaseWebDriverTest
             DataRegionTable dataset = new DataRegionTable("Dataset", this);
             expectedPtids = Arrays.asList(STUDY1_PTIDS);
             actualPtids = dataset.getColumnDataAsText("PandaId");
-            Assert.assertEquals("User can see participants from studies without read permission", expectedPtids, actualPtids);
+            assertEquals("User can see participants from studies without read permission", expectedPtids, actualPtids);
         }
         stopImpersonating();
     }
@@ -556,14 +561,14 @@ public class SharedStudyTest extends BaseWebDriverTest
         List<String> ptids = pandaWebPart.getParticipants();
         List<String> missingPtids = new ArrayList<>(Arrays.asList(ArrayUtils.addAll(STUDY1_PTIDS, STUDY2_PTIDS)));
         missingPtids.removeAll(ptids);
-        Assert.assertEquals("Missing ptids in project participant webpart", Collections.emptyList(), missingPtids);
+        assertEquals("Missing ptids in project participant webpart", Collections.emptyList(), missingPtids);
 
         clickFolder(STUDY1);
         clickTab(PARTICIPANT_NOUN_PLURAL);
 
         pandaWebPart = new ParticipantListWebPart(this, PARTICIPANT_NOUN_SINGULAR, PARTICIPANT_NOUN_PLURAL);
         ptids = pandaWebPart.getParticipants();
-        Assert.assertEquals("Wrong ptids in subfolder participant webpart", Arrays.asList(STUDY1_PTIDS), ptids);
+        assertEquals("Wrong ptids in subfolder participant webpart", Arrays.asList(STUDY1_PTIDS), ptids);
     }
 
     private void createDataspaceProject(String projectName, String subjectNounSingular, String subjectNounPlural, String subjectColumnName,

@@ -20,6 +20,10 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
+import org.labkey.api.assay.plate.PlateMetadataDataHandler;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -30,6 +34,7 @@ import org.labkey.api.data.validator.ColumnValidator;
 import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -42,10 +47,12 @@ import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.ValidatorContext;
@@ -63,8 +70,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.pipeline.AssayUploadPipelineJob;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.FileUtil;
@@ -78,14 +83,18 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.unmodifiableCollection;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * User: jeckels
@@ -139,6 +148,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             run.setComments(context.getComments());
 
             exp = saveExperimentRun(context, exp, run, false);
+
+            // re-fetch the run after is has been fully constructed
+            run = ExperimentService.get().getExpRun(run.getRowId());
+
             context.uploadComplete(run);
         }
         else
@@ -185,19 +198,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             // Don't queue the job until the transaction is committed, since otherwise the thread
             // that's running the job might start before it can access the job's row in the database.
-            ExperimentService.get().getSchema().getScope().addCommitTask(new Runnable()
-            {
-                @Override
-                public void run()
+            ExperimentService.get().getSchema().getScope().addCommitTask(() -> {
+                try
                 {
-                    try
-                    {
-                        PipelineService.get().queueJob(pipelineJob);
-                    }
-                    catch (PipelineValidationException e)
-                    {
-                        throw new UnexpectedException(e);
-                    }
+                    PipelineService.get().queueJob(pipelineJob);
+                }
+                catch (PipelineValidationException e)
+                {
+                    throw new UnexpectedException(e);
                 }
             }, DbScope.CommitTaskOption.POSTCOMMIT);
         }
@@ -217,6 +225,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     @Override
     public ExpExperiment saveExperimentRun(final AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, @NotNull ExpRun run, boolean forceSaveBatchProps) throws ExperimentException, ValidationException
     {
+        final Container container = context.getContainer();
+
         Map<ExpMaterial, String> inputMaterials = new HashMap<>();
         Map<ExpData, String> inputDatas = new HashMap<>();
         Map<ExpMaterial, String> outputMaterials = new HashMap<>();
@@ -224,6 +234,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         Map<ExpData, String> transformedDatas = new HashMap<>();
 
         Map<DomainProperty, String> runProperties = context.getRunProperties();
+        Map<String, Object> unresolvedRunProperties = context.getUnresolvedRunProperties();
         Map<DomainProperty, String> batchProperties = context.getBatchProperties();
 
         Map<DomainProperty, String> allProperties = new HashMap<>();
@@ -309,10 +320,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     List<ValidationError> errors = validateProperties(context, props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
-                    savePropertyObject(batch, context.getContainer(), props, context.getUser());
+                    savePropertyObject(batch, container, props, context.getUser());
                 }
                 else
-                    savePropertyObject(batch, context.getContainer(), batchProperties, context.getUser());
+                    savePropertyObject(batch, container, batchProperties, context.getUser());
             }
 
             if (null != transformResult.getAssayId())
@@ -325,10 +336,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 List<ValidationError> errors = validateProperties(context, props);
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
-                savePropertyObject(run, context.getContainer(), props, context.getUser());
+                savePropertyObject(run, container, props, context.getUser());
             }
             else
-                savePropertyObject(run, context.getContainer(), runProperties, context.getUser());
+                savePropertyObject(run, container, runProperties, context.getUser());
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
@@ -346,14 +357,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                     ExperimentService.get().auditRunEvent(context.getUser(), context.getProtocol(), replacedRun, null, "Run id " + replacedRun.getRowId() + " was replaced by run id " + run.getRowId());
 
-                    transaction.addCommitTask( new Runnable()
-                    {
-                        @Override
-                        public void run()
-                        {
-                            replacedRun.archiveDataFiles(context.getUser());
-                        }
-                    }, DbScope.CommitTaskOption.POSTCOMMIT);
+                    transaction.addCommitTask(() -> replacedRun.archiveDataFiles(context.getUser()), DbScope.CommitTaskOption.POSTCOMMIT);
                 }
                 else
                 {
@@ -363,11 +367,44 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             AssayService.get().ensureUniqueBatchName(batch, context.getProtocol(), context.getUser());
 
-            ExperimentService.get().onRunDataCreated(context.getProtocol(), run, context.getContainer(), context.getUser());
+            ExperimentService.get().onRunDataCreated(context.getProtocol(), run, container, context.getUser());
+
+            transaction.commit();
+
+            // Inspect the run properties for a “prov:objectInputs” property that is a list of LSID strings.
+            // Attach run's starting protocol application with starting input LSIDs.
+            Object provInputsProperty = unresolvedRunProperties.get(ProvenanceService.PROVENANCE_INPUT_PROPERTY);
+            if (provInputsProperty != null)
+            {
+                ProvenanceService pvs = ProvenanceService.get();
+                if (pvs == null)
+                    throw new ExperimentException("Provenance service not available");
+
+                Set<String> runInputLSIDs = null;
+                if (provInputsProperty instanceof String)
+                {
+                    // parse as a JSONArray of values or a comma-separated list of values
+                    String provInputs = (String)provInputsProperty;
+                    if (provInputs.startsWith("[") && provInputs.endsWith("]"))
+                        provInputsProperty = new JSONArray(provInputs);
+                    else
+                        runInputLSIDs = Set.of(provInputs.split(","));
+                }
+
+                if (provInputsProperty instanceof JSONArray)
+                {
+                    runInputLSIDs = Arrays.stream(((JSONArray)provInputsProperty).toArray()).map(String::valueOf).collect(Collectors.toSet());
+                }
+
+                if (runInputLSIDs != null && !runInputLSIDs.isEmpty())
+                {
+                    ExpProtocolApplication inputProtocolApp = run.getInputProtocolApplication();
+                    pvs.addProvenanceInputs(container, inputProtocolApp, runInputLSIDs);
+                }
+            }
 
             ExperimentService.get().queueSyncRunEdges(run);
 
-            transaction.commit();
             return batch;
         }
         catch (BatchValidationException e)
@@ -436,6 +473,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             {
                 TsvDataHandler dataHandler = new TsvDataHandler();
                 dataHandler.setAllowEmptyData(true);
+                dataHandler.setRawPlateMetadata(context.getRawPlateMetadata());
                 dataHandler.importRows(primaryData, context.getUser(), run, context.getProtocol(), getProvider(), rawData, null);
             }
         }
@@ -749,9 +787,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         Map<String, File> files = context.getUploadedData();
 
-        AssayDataType dataType = context.getProvider().getDataType();
+        AssayDataType dataType;
         for (Map.Entry<String, File> entry : files.entrySet())
         {
+            if (entry.getKey().equals(AssayDataCollector.PLATE_METADATA_FILE))
+                dataType = PlateMetadataDataHandler.DATA_TYPE;
+            else
+                dataType = context.getProvider().getDataType();
+
             ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(entry.getValue()))

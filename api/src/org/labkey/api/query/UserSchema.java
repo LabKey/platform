@@ -29,6 +29,7 @@ import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserSchemaCustomizer;
+import org.labkey.api.dataiterator.DataIteratorUtil;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
@@ -47,6 +48,7 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.writer.ContainerUser;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -152,7 +154,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     public @NotNull ContainerFilter getDefaultContainerFilter()
     {
-        return ContainerFilter.CURRENT;
+        return ContainerFilter.current(getContainer());
     }
 
     @Nullable
@@ -239,7 +241,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     // may know which ContainerFilter is _actually_ going to be returned for a given requested ContainerFilter
     protected String cacheKey(String name, ContainerFilter cf)
     {
-        String cfKey = null == cf ? "~defaultCF~" : cf.getCacheKey(getContainer());
+        String cfKey = null == cf ? "~defaultCF~" : cf.getCacheKey();
         if (cfKey == null)
             return null;
         return getClass().getSimpleName() + "/" + name.toUpperCase() + "/" + cfKey;
@@ -308,7 +310,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
     @Override
     @Nullable
-    @Deprecated
     public final TableInfo getTable(String name)
     {
         return getTable(name, null, true, false);
@@ -760,7 +761,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      * If a value is supplied but cannot be resolved to a valid container then null is returned.
      */
     @Nullable
-    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz)
+    public static Container translateRowSuppliedContainer(Object rowContainerVal, Container c, User u, TableInfo ti, Class<? extends Permission> clazz, @Nullable String dataSource)
     {
         Container ret;
         if (rowContainerVal == null)
@@ -778,9 +779,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
 
         if (ret != null && !ret.equals(c))
         {
+            // Issue 39413: If incoming container is not a workbook container or a sub-container of the current container
+            // then ignore the incoming container. This was an issue when queries for ETLs contained a different container
+            // than the current container, verify permissions was looking for destination target in incoming container.
+            // This function is used a little differently for ETLs vs QUS usage so scope this behavior only to ETLs.
+            if ((dataSource != null && dataSource.equals(DataIteratorUtil.ETL_DATA_SOURCE)) && (!ret.isWorkbook() || !ret.hasAncestor(c)))
+            {
+                return null;
+            }
+
             verifyPermissionsForContainer(ret, c, u, ti, clazz);
         }
-
         return ret;
     }
 

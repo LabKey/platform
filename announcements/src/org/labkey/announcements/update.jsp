@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.api.wiki.WikiRendererType" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -82,7 +83,7 @@ if (settings.hasAssignedTo())
 if (settings.hasMemberList())
 {
     %><tr>
-        <td class="labkey-form-label">Members</td>
+        <td class="labkey-form-label">Notify</td>
         <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="30" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
         <td><i><%
     if (settings.isSecure())
@@ -91,14 +92,14 @@ if (settings.hasMemberList())
     }
     else
     {
-        %> The users on the member list<%
+        %> The users on the notify list<%
     }
     %> receive email notifications of new posts to this <%=h(settings.getConversationName().toLowerCase())%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
 }
 
 if (settings.hasExpires())
 {
-    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input name="expires" size="23" value="<%=formatDate(ann.getExpires())%>"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
+    %><tr><td class="labkey-form-label">Expires</td><td><labkey:input name="expires" size="23" value="<%=DateUtil.formatDate(getContainer(), ann.getExpires())%>"/></td><td><i>Expired messages are not deleted, they are just no longer shown on the Portal page.</i></td></tr><%
 }
 
 %>

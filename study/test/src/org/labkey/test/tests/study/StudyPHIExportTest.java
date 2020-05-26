@@ -18,12 +18,13 @@ package org.labkey.test.tests.study;
 import org.junit.Assert;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
-import org.labkey.test.components.PropertiesEditor.PhiSelectType;
 import org.labkey.test.Locator;
 import org.labkey.test.SortDirection;
 import org.labkey.test.categories.DailyC;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
+import org.labkey.test.util.StudyHelper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,7 +52,7 @@ public class StudyPHIExportTest extends StudyExportTest
         _originalFirstMouseStats = getFirstMouseStats();
         setParticipantIdPreface(idPreface, idLength);
 
-        exportStudy(true, false, PhiSelectType.NotPHI, true, true, false, null);
+        exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, false, null);
     }
 
     protected void setParticipantIdPreface(String idPreface, int idLength)
@@ -166,9 +167,9 @@ public class StudyPHIExportTest extends StudyExportTest
 
         log("Verify second export and clinic masking");
 
-        startSpecimenImport(4, SPECIMEN_ARCHIVE_A);
+        startSpecimenImport(4, StudyHelper.SPECIMEN_ARCHIVE_A);
         waitForPipelineJobsToComplete(4, "Specimen import", false);
-        exportStudy(true, false, PhiSelectType.NotPHI, true, true, true, null);
+        exportStudy(true, false, FieldDefinition.PhiSelectType.NotPHI, true, true, true, null);
 
         clickFolder(getFolderName());
         deleteStudy();

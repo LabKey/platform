@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
@@ -76,9 +77,10 @@ public class PropertyColumn extends LookupColumn
     }
 
     // We must have a DomainProperty in order to retrieve the default values. TODO: Transition more callers to pass in DomainProperty
-    public static void copyAttributes(User user, BaseColumnInfo to, DomainProperty dp, Container container, FieldKey lsidColumnFieldKey)
+    // TODO handle pd.copyTo(MutableColumnInfo)
+    public static void copyAttributes(User user, MutableColumnInfo to, DomainProperty dp, Container container, FieldKey lsidColumnFieldKey)
     {
-        copyAttributes(user, to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey);
+        copyAttributes(user, (BaseColumnInfo)to, dp.getPropertyDescriptor(), container, null, null, null, lsidColumnFieldKey);
         Map<DomainProperty, Object> map = DefaultValueService.get().getDefaultValues(container, dp.getDomain(), user);
 
         Object value = map.get(dp);
@@ -87,16 +89,17 @@ public class PropertyColumn extends LookupColumn
             to.setDefaultValue(value);
     }
 
-    public static void copyAttributes(User user, BaseColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, FieldKey lsidColumnFieldKey)
     {
-        copyAttributes(user, to, pd, container, null, null, null, lsidColumnFieldKey);
+        copyAttributes(user, (BaseColumnInfo)to, pd, container, null, null, null, lsidColumnFieldKey);
     }
 
-    public static void copyAttributes(User user, BaseColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey)
+    public static void copyAttributes(User user, MutableColumnInfo to, PropertyDescriptor pd, Container container, SchemaKey schemaKey, String queryName, FieldKey pkFieldKey)
     {
-        copyAttributes(user, to, pd, container, schemaKey, queryName, pkFieldKey, null);
+        copyAttributes(user, (BaseColumnInfo)to, pd, container, schemaKey, queryName, pkFieldKey, null);
     }
 
+    // TODO handle pd.copyTo(MutableColumnInfo)
     private static void copyAttributes(User user, BaseColumnInfo to, final PropertyDescriptor pd, final Container container, final SchemaKey schemaKey, final String queryName, final FieldKey pkFieldKey, final FieldKey lsidColumnFieldKey)
     {
         // ColumnRenderProperties
@@ -313,4 +316,10 @@ public class PropertyColumn extends LookupColumn
     {
         return PropertyService.get().getPropertyValidators(_pd);
     }
+
+    public boolean isVocabulary()
+    {
+        return _pd.isVocabulary();
+    }
+
 }

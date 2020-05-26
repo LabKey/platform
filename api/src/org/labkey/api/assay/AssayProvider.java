@@ -19,10 +19,13 @@ package org.labkey.api.assay;
 import org.fhcrc.cpas.exp.xml.ExperimentRunType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
+import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Handler;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -37,8 +40,6 @@ import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.pipeline.AssayRunAsyncContext;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.Pair;
@@ -96,12 +97,25 @@ public interface AssayProvider extends Handler<ExpProtocol>
 
     Domain getResultsDomain(ExpProtocol protocol);
 
-    void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update);
+    void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update);
 
     AssayRunCreator getRunCreator();
 
     /** @return all of the legal data collectors that the user can choose from for the current import attempt */
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
+
+    /**
+     * Providers that support plate metadata can provide a data collector for plate specific data
+     */
+    @Nullable
+    AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context);
+
+    /**
+     * Return the ActionURL to download (or render) an example of the plate metadata format necessary
+     * to support importing of plate metadata. This will be rendered in the import wizard.
+     */
+    @Nullable
+    ActionURL getPlateMetadataTemplateURL(Container container);
 
     /**
      * @return the name of the assay provider.
@@ -251,6 +265,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
     void setQCEnabled(ExpProtocol protocol, boolean qcEnabled);
     boolean isQCEnabled(ExpProtocol protocol);
 
+    /** Does the provider support integration of plate template metadata */
+    boolean supportsPlateMetadata();
+    void setPlateMetadataEnabled(ExpProtocol protocol, boolean metadataEnabled);
+    boolean isPlateMetadataEnabled(ExpProtocol protocol);
+
     /**
      * @return the data type that this run creates for its analyzed results
      */
@@ -283,9 +302,30 @@ public interface AssayProvider extends Handler<ExpProtocol>
     String getRunLSIDPrefix();
 
     /**
+     * @return LSID Namespace prefix for assay result rows
+     */
+    @Nullable String getResultRowLSIDPrefix();
+
+    /**
+     * @return Provider specific sql expression
+     */
+    @Nullable String getResultRowLSIDExpression();
+
+    /**
+     * Extract the ExpProtocol and rowId from an assay result row LSID.
+     */
+    @Nullable
+    Pair<ExpProtocol, Integer> getAssayResultRowIdFromLsid(Container container, Lsid assayResultRowLsid);
+
+    /**
+     * Get the URL for an assay result row's LSID.
+     */
+    @Nullable ActionURL getResultRowURL(Container container, Lsid lsid);
+
+    /**
      * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.
      * The pattern must match a protocol's LSID in the same manner as
-     * {@link #getPriority(org.labkey.api.exp.api.ExpProtocol)}.
+     * {@link Handler#getPriority(Object)}.
      */
     @Nullable String getProtocolPattern();
 
@@ -330,4 +370,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     {
         return new XarCallbacks(){};
     }
+
+    /**
+     * @return the number of result rows loaded for the given designs, or null if not implemented
+     * @param protocols all protocols for this assay provider
+     */
+    default Long getResultRowCount(List<? extends ExpProtocol> protocols) { return null; }
 }

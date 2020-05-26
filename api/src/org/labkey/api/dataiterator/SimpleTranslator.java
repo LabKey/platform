@@ -460,7 +460,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
                     return rowContainerVal;
                 }
 
-                Container rowContainer = UserSchema.translateRowSuppliedContainer(rowContainerVal, us.getContainer(), us.getUser(), tableInfo, UpdatePermission.class);
+                Container rowContainer = UserSchema.translateRowSuppliedContainer(rowContainerVal, us.getContainer(), us.getUser(), tableInfo, UpdatePermission.class, getDataSource());
                 if (rowContainer != null)
                 {
                     if (!this.us.getContainer().allowRowMutationForContainer(rowContainer))
@@ -1115,6 +1115,7 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
             t.selectAll();
         }
         t.addBuiltInColumns(context, c, user, target, false);
+        t.addDbSequenceColumns(c, target);
         return t;
     }
 
@@ -1146,6 +1147,15 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    public void addDbSequenceColumns(@Nullable Container c, @NotNull TableInfo target)
+    {
+        target.getColumns().forEach(columnInfo -> {
+            if (columnInfo.hasDbSequence())
+            {
+                addSequenceColumn(columnInfo, columnInfo.getDbSequenceContainer(c), target.getDbSequenceName(columnInfo.getName()), null, 100);
+            }
+        });
+    }
 
     /**
      * Provide values for common built-in columns.  Usually we do not allow the user to specify values for these columns,

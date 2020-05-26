@@ -1,0 +1,11 @@
+name	IntField	materialinputs/UpdateLineage_By_File
+SU-1	1
+SU-2	2
+SU-3	3
+SU-4	4
+SU-5	5
+SU-6	6	SU-1
+SU-7	7	SU-2
+SU-8	8	SU-3
+SU-9	9	SU-4
+SU-10	10	SU-5

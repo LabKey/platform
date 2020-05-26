@@ -24,10 +24,25 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.assay.AbstractTsvAssayProvider;
+import org.labkey.api.assay.AssayDataCollector;
+import org.labkey.api.assay.AssayDataType;
+import org.labkey.api.assay.AssayPipelineProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProviderSchema;
+import org.labkey.api.assay.AssayResultDomainKind;
+import org.labkey.api.assay.AssayRunDomainKind;
+import org.labkey.api.assay.AssaySaveHandler;
+import org.labkey.api.assay.AssaySchema;
+import org.labkey.api.assay.AssayTableMetadata;
+import org.labkey.api.assay.FileUploadDataCollector;
+import org.labkey.api.assay.PipelineDataCollector;
+import org.labkey.api.assay.PreviouslyUploadedDataCollector;
+import org.labkey.api.assay.TsvDataHandler;
+import org.labkey.api.assay.actions.AssayRunUploadForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -36,6 +51,8 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -44,31 +61,23 @@ import org.labkey.api.qc.DataExchangeHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.actions.AssayRunUploadForm;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayDataCollector;
-import org.labkey.api.assay.AssayDataType;
-import org.labkey.api.assay.AssayPipelineProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssaySaveHandler;
-import org.labkey.api.assay.AssayTableMetadata;
-import org.labkey.api.assay.FileUploadDataCollector;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
-import org.labkey.api.assay.PipelineDataCollector;
-import org.labkey.api.assay.PreviouslyUploadedDataCollector;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
-import org.labkey.api.assay.TsvDataHandler;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.assay.actions.TsvImportAction;
+import org.labkey.assay.plate.view.AssayPlateMetadataTemplateAction;
+import org.labkey.assay.view.PlateMetadataDataCollector;
 import org.springframework.web.servlet.mvc.Controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -84,6 +93,10 @@ import java.util.Set;
  */
 public class TsvAssayProvider extends AbstractTsvAssayProvider
 {
+    public static final String NAME = "General";
+    public static final String PLATE_TEMPLATE_PROPERTY_NAME = "PlateTemplate";
+    public static final String PLATE_TEMPLATE_PROPERTY_CAPTION = "Plate Template";
+
     private static final Set<String> participantImportAliases;
     private static final Set<String> specimenImportAliases;
     private static final Set<String> visitImportAliases;
@@ -112,12 +125,12 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     public TsvAssayProvider()
     {
-        this("GeneralAssayProtocol", "GeneralAssayRun", ModuleLoader.getInstance().getModule(assayModuleClass));
+        this("GeneralAssayProtocol", "GeneralAssayRun", "General" + RESULT_LSID_PREFIX_PART, ModuleLoader.getInstance().getModule(assayModuleClass));
     }
 
-    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, Module declaringModule)
+    protected TsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLSIDPrefix, (AssayDataType) ExperimentService.get().getDataType(TsvDataHandler.NAMESPACE), declaringModule);
         setMaxFileInputs(100);  // no specific requirement for this, can be changed easily
     }
 
@@ -132,9 +145,25 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return result;
     }
 
+    @Override
+    public @Nullable AssayDataCollector getPlateMetadataDataCollector(AssayRunUploadForm context)
+    {
+        if (context.getProvider().isPlateMetadataEnabled(context.getProtocol()))
+        {
+            return new PlateMetadataDataCollector(1, context);
+        }
+        return null;
+    }
+
+    @Override
+    public @Nullable ActionURL getPlateMetadataTemplateURL(Container container)
+    {
+        return new ActionURL(AssayPlateMetadataTemplateAction.class, container);
+    }
+
     public String getName()
     {
-        return "General";
+        return NAME;
     }
 
     @Override
@@ -153,7 +182,10 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
                 protocol,
                 null,
                 FieldKey.fromParts("Run"),
-                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME));
+                FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME),
+                AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME,
+                FieldKey.fromParts("LSID")
+        );
     }
 
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
@@ -168,8 +200,8 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
 
     protected Pair<Domain,Map<DomainProperty,Object>> createResultDomain(Container c, User user)
     {
-        Domain dataDomain = PropertyService.get().createDomain(c, "urn:lsid:" + XarContext.LSID_AUTHORITY_SUBSTITUTION + ":" + ExpProtocol.ASSAY_DOMAIN_DATA + ".Folder-" + XarContext.CONTAINER_ID_SUBSTITUTION + ":" + ASSAY_NAME_SUBSTITUTION, "Data Fields");
-        dataDomain.setDescription("The user is prompted to enter data values for row of data associated with a run, typically done as uploading a file.  This is part of the second step of the upload process.");
+        Domain dataDomain = PropertyService.get().createDomain(c, getPresubstitutionLsid(ExpProtocol.ASSAY_DOMAIN_DATA), "Data Fields");
+        dataDomain.setDescription("Define the results fields for this assay design. The user is prompted for these fields for individual rows within the imported run, typically done as a file upload.");
         DomainProperty specimenID = addProperty(dataDomain, SPECIMENID_PROPERTY_NAME,  SPECIMENID_PROPERTY_CAPTION, PropertyType.STRING, "When a matching specimen exists in a study, can be used to identify subject and timepoint for assay. Alternately, supply " + PARTICIPANTID_PROPERTY_NAME + " and either " + VISITID_PROPERTY_NAME + " or " + DATE_PROPERTY_NAME + ".");
         specimenID.setImportAliasSet(specimenImportAliases);
 
@@ -202,7 +234,11 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return new TSVProtocolSchema(user, container, this, protocol, targetStudy);
     }
 
-
+    @Override
+    public AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy)
+    {
+        return new TsvProviderSchema(user, container, this, targetStudy);
+    }
 
     protected Map<String, Set<String>> getRequiredDomainProperties()
     {
@@ -274,6 +310,57 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     public boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type)
     {
         return type== ExpProtocol.AssayDomainTypes.Result;
+    }
+
+    @Override
+    public boolean supportsPlateMetadata()
+    {
+        return true;
+    }
+
+    @Override
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<GWTPropertyDescriptor> orig, GWTDomain<GWTPropertyDescriptor> update)
+    {
+        super.changeDomain(user, protocol, orig, update);
+
+        if (isPlateMetadataEnabled(protocol))
+        {
+            // for plate metadata support we need to ensure specific fields on both the run and result domains
+            Domain runDomain = getRunDomain(protocol);
+            if (runDomain != null && runDomain.getTypeURI().equals(update.getDomainURI()))
+            {
+                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME)))
+                {
+                    GWTPropertyDescriptor plateTemplate = new GWTPropertyDescriptor(AssayRunDomainKind.PLATE_TEMPLATE_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    plateTemplate.setLookupSchema(AssaySchema.NAME + "." + getResourceName());
+                    plateTemplate.setLookupQuery(TsvProviderSchema.PLATE_TEMPLATE_TABLE);
+                    plateTemplate.setRequired(true);
+                    plateTemplate.setShownInUpdateView(false);
+
+                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
+                    newFields.add(plateTemplate);
+                    newFields.addAll(update.getFields());
+
+                    update.setFields(newFields);
+                }
+            }
+
+            Domain resultsDomain = getResultsDomain(protocol);
+            if (resultsDomain != null && resultsDomain.getTypeURI().equals(update.getDomainURI()))
+            {
+                if (update.getFields().stream().noneMatch(field -> field.getName().equals(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME)))
+                {
+                    GWTPropertyDescriptor wellLocation = new GWTPropertyDescriptor(AssayResultDomainKind.WELL_LOCATION_COLUMN_NAME, PropertyType.STRING.getTypeUri());
+                    wellLocation.setShownInUpdateView(false);
+
+                    ArrayList<GWTPropertyDescriptor> newFields = new ArrayList<>();
+                    newFields.add(wellLocation);
+                    newFields.addAll(update.getFields());
+
+                    update.setFields(newFields);
+                }
+            }
+        }
     }
 
     public static class TestCase extends Assert

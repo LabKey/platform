@@ -174,15 +174,6 @@
         </attribute>
     </tag>
     <tag>
-        <name>helpPopup</name>
-        <tag-class>org.labkey.api.jsp.taglib.HelpPopupTag</tag-class>
-        <body-content>JSP</body-content>
-        <attribute>
-            <name>title</name>
-            <rtexprvalue>true</rtexprvalue>
-        </attribute>
-    </tag>
-    <tag>
         <name>csrf</name>
         <tag-class>org.labkey.api.jsp.taglib.CsrfInputTag</tag-class>
         <body-content>empty</body-content>
@@ -528,20 +519,8 @@
         </attribute>
     </tag>
     <tag>
-        <name>scriptDependency</name>
-        <tag-class>org.labkey.api.jsp.taglib.ScriptDependenciesTag</tag-class>
-        <body-content>empty</body-content>
-        <attribute>
-            <name>ajaxOnly</name>
-            <required>false</required>
-        </attribute>
-        <attribute>
-            <name>callback</name>
-            <required>false</required>
-        </attribute>
-        <attribute>
-            <name>scope</name>
-            <required>false</required>
-        </attribute>
+        <name>loadClientDependencies</name>
+        <tag-class>org.labkey.api.jsp.taglib.LoadClientDependenciesTag</tag-class>
+        <body-content>JSP</body-content>
     </tag>
 </taglib>

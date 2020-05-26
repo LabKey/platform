@@ -28,7 +28,6 @@ import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.flow.api.FlowService;
 import org.labkey.api.resource.AbstractResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.search.SearchService;
@@ -283,6 +282,7 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
         return ret;
     }
 
+    @Override
     public Map<String, Object> getMutableProperties()
     {
         if (null == _properties)
@@ -649,18 +649,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
             if (null != path)
             {
-                FlowService fs = FlowService.get();
-                if (null != fs)
+                for (WebdavResourceExpDataProvider provider : WebdavService.get().getExpDataProviders())
                 {
-                    List<ExpData> f = fs.getExpDataByURL(FileUtil.pathToString(path), container);
-                    list.addAll(f);
-                }
-                ExperimentService es = ExperimentService.get();
-                if (null != es)
-                {
-                    ExpData d = es.getExpDataByURL(path, null);
-                    if (null != d)
-                        list.add(d);
+                    list.addAll(provider.getExpDataByPath(path, container));
                 }
             }
             _data = list;

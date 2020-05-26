@@ -19,6 +19,11 @@ package org.labkey.study.query;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.BaseColumnInfo;
@@ -41,6 +46,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.qc.QCState;
 import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -67,10 +73,6 @@ import org.labkey.api.study.DatasetTable;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.study.assay.SpecimenForeignKey;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DemoMode;
@@ -83,7 +85,6 @@ import org.labkey.study.controllers.DatasetController;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.model.DatasetDefinition;
 import org.labkey.study.model.ParticipantGroup;
-import org.labkey.api.qc.QCState;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -100,6 +101,13 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
 {
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
+
+    /**
+     * The assay result LSID column is added to the dataset for assays that support it.
+     * @see AssayTableMetadata#getResultLsidFieldKey()
+     */
+    public static final String ASSAY_RESULT_LSID = "AssayResultLsid";
+
     private static final Logger LOG = Logger.getLogger(DatasetTableImpl.class);
 
     private final @NotNull DatasetDefinition _dsd;
@@ -406,11 +414,23 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             TableInfo assayResultTable = getAssayResultTable();
             if (assayResultTable != null)
             {
+                ExpProtocol protocol = _dsd.getAssayProtocol();
+                AssayProvider provider = AssayService.get().getProvider(protocol);
+                AssayTableMetadata tableMeta = provider.getTableMetadata(protocol);
+                FieldKey assayResultLsid = tableMeta.getResultLsidFieldKey();
+
                 for (final ColumnInfo columnInfo : assayResultTable.getColumns())
                 {
-                    if (!getColumnNameSet().contains(columnInfo.getName()))
+                    String name = columnInfo.getName();
+                    if (assayResultLsid != null && columnInfo.getFieldKey().equals(assayResultLsid))
                     {
-                        ExprColumn wrappedColumn = wrapAssayColumn(columnInfo);
+                        // add the assay result lsid column as "AssayResultLsid" so it won't collide with the dataset's LSID column
+                        name = ASSAY_RESULT_LSID;
+                    }
+
+                    if (!getColumnNameSet().contains(name))
+                    {
+                        ExprColumn wrappedColumn = wrapAssayColumn(columnInfo, name);
                         addColumn(wrappedColumn);
                     }
                 }
@@ -530,9 +550,9 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
     }
 
     /** Wrap a column in our underlying assay data table with one that puts it in the dataset table */
-    private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo)
+    private ExprColumn wrapAssayColumn(final ColumnInfo columnInfo, final String name)
     {
-        ExprColumn wrappedColumn = new ExprColumn(this, columnInfo.getName(), columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
+        ExprColumn wrappedColumn = new ExprColumn(this, name, columnInfo.getValueSql(ExprColumn.STR_TABLE_ALIAS + "_AR"), columnInfo.getJdbcType())
         {
             @Override
             public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
@@ -613,7 +633,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
                 result = getAssayResultTable().getColumn(name);
                 if (result != null)
                 {
-                    return wrapAssayColumn(result);
+                    return wrapAssayColumn(result, result.getName());
                 }
             }
 
@@ -768,7 +788,7 @@ public class DatasetTableImpl extends BaseStudyTable implements DatasetTable
             {
                 ContainerFilter cf = getContainerFilter();
 
-                if (null != cf.getIds(getContainer()))
+                if (null != cf.getIds())
                 {
                     TableInfo tiParticipant = _userSchema.getDbSchema().getTable("Participant");
                     var ciContainer = tiParticipant.getColumn("Container");

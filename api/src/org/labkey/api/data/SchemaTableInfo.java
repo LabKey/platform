@@ -108,6 +108,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
     private AuditBehaviorType _auditBehaviorType = AuditBehaviorType.NONE;
+    private AuditBehaviorType _xmlAuditBehaviorType = null;
     private FieldKey _auditRowPk;
 
     protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
@@ -167,6 +168,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _xmlTable;
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -178,11 +180,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         _title = title;
     }
 
+    @Override
     public String getTitle()
     {
         return _title == null ? _name : _title;
     }
 
+    @Override
     public String getTitleField()
     {
         return _title;
@@ -210,6 +214,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
 
     @NotNull
+    @Override
     public SQLFragment getFromSQL(String alias)
     {
         if (null != getSelectName())
@@ -224,11 +229,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return getFromSQL(alias);
     }
 
-     public DbSchema getSchema()
+    @Override
+    public DbSchema getSchema()
     {
         return _parentSchema;
     }
 
+    @Override
     public AggregateRowConfig getAggregateRowConfig()
     {
         return _aggregateRowConfig;
@@ -241,6 +248,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     /** getSchema().getSqlDialect() */
+    @Override
     public SqlDialect getSqlDialect()
     {
         return _parentSchema.getSqlDialect();
@@ -321,6 +329,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _tableType;
     }
 
+    @Override
     public int getCacheSize()
     {
         return _cacheSize;
@@ -333,7 +342,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
 
     @Override
-    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows)
+    public @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn)
     {
         if (columnName == null)
             return getSelectList(getPkColumnNames());
@@ -431,6 +440,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         }
     }
 
+
     protected SchemaColumnMetaData createSchemaColumnMetaData() throws SQLException
     {
         return new SchemaColumnMetaData(this, _autoLoadMetaData);
@@ -448,24 +458,29 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
 
 
     @NotNull
+    @Override
     public List<ColumnInfo> getColumns()
     {
         return Collections.unmodifiableList(getColumnMetaData().getColumns());
     }
 
 
+    @Override
     public List<ColumnInfo> getUserEditableColumns()
     {
         return getColumnMetaData().getUserEditableColumns();
     }
 
 
+    @Override
     public List<ColumnInfo> getColumns(String colNames)
     {
         String[] colNameArray = colNames.split(",");
         return getColumns(colNameArray);
     }
 
+
+    @Override
     public List<ColumnInfo> getColumns(String... colNameArray)
     {
         List<ColumnInfo> ret = new ArrayList<>(colNameArray.length);
@@ -481,6 +496,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
 
+    @Override
     public Set<String> getColumnNameSet()
     {
         return getColumnMetaData().getColumnNameSet();
@@ -493,34 +509,41 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Override
-     public void setAuditBehavior(AuditBehaviorType type)
+    public void setAuditBehavior(AuditBehaviorType type)
      {
          _auditBehaviorType = type;
+         _xmlAuditBehaviorType = type;
      }
 
-     @Override
-     public AuditBehaviorType getAuditBehavior()
+    @Override
+    public AuditBehaviorType getAuditBehavior()
      {
          return _auditBehaviorType;
      }
 
-     @Override
-     public FieldKey getAuditRowPk()
-     {
-         if (_auditRowPk == null)
-         {
-             List<String> pks = getPkColumnNames();
-             if (pks.size() == 1)
-                 _auditRowPk = FieldKey.fromParts(pks.get(0));
-             else if (getColumn(FieldKey.fromParts("EntityId")) != null)
-                 _auditRowPk = FieldKey.fromParts("EntityId");
-             else if (getColumn(FieldKey.fromParts("RowId")) != null)
-                 _auditRowPk = FieldKey.fromParts("RowId");
-         }
-         return _auditRowPk;
-     }
+    @Override
+    public AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return _xmlAuditBehaviorType;
+    }
 
-     public void copyToXml(TableType xmlTable, boolean bFull)
+    @Override
+    public FieldKey getAuditRowPk()
+    {
+        if (_auditRowPk == null)
+        {
+            List<String> pks = getPkColumnNames();
+            if (pks.size() == 1)
+                _auditRowPk = FieldKey.fromParts(pks.get(0));
+            else if (getColumn(FieldKey.fromParts("EntityId")) != null)
+                _auditRowPk = FieldKey.fromParts("EntityId");
+            else if (getColumn(FieldKey.fromParts("RowId")) != null)
+                _auditRowPk = FieldKey.fromParts("RowId");
+        }
+        return _auditRowPk;
+    }
+
+    public void copyToXml(TableType xmlTable, boolean bFull)
     {
         xmlTable.setTableName(_name);
         xmlTable.setTableDbType(_tableType.name());
@@ -596,6 +619,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
 
+    @Override
     public ActionURL getGridURL(Container container)
     {
         if (_gridURL != null)
@@ -603,6 +627,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return null;
     }
 
+    @Override
     public ActionURL getInsertURL(Container container)
     {
         if (_insertURL == null)
@@ -622,6 +647,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _importURL.copy(container).getActionURL();
     }
 
+    @Override
     public ActionURL getDeleteURL(Container container)
     {
         if (_deleteURL == null)
@@ -631,6 +657,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _deleteURL.copy(container).getActionURL();
     }
 
+    @Override
     public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_updateURL == null)
@@ -648,6 +675,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return null;
     }
 
+    @Override
     public StringExpression getDetailsURL(Set<FieldKey> columns, Container container)
     {
         // First null check is critical for server startup... can't initialize LINK_DISABLER until first request
@@ -672,16 +700,19 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _detailsURL != null;
     }
 
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return false;
     }
 
+    @Override
     public MethodInfo getMethod(String name)
     {
         return null;
     }
 
+    @Override
     public List<FieldKey> getDefaultVisibleColumns()
     {
         if (_defaultVisibleColumns != null)
@@ -689,6 +720,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
     }
 
+    @Override
     public void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> keys)
     {
         checkLocked();
@@ -728,32 +760,38 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return _hidden;
     }
 
+    @Override
     public boolean isPublic()
     {
         //schema table infos are not public (i.e., not accessible from Query)
         return false;
     }
 
+    @Override
     public String getPublicName()
     {
         return null;
     }
 
+    @Override
     public String getPublicSchemaName()
     {
         return null;
     }
 
+    @Override
     public boolean needsContainerClauseAdded()
     {
         return true;
     }
 
+    @Override
     public ContainerFilter getContainerFilter()
     {
         return null;
     }
 
+    @Override
     public boolean isMetadataOverrideable()
     {
         return false;
@@ -773,11 +811,13 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         // no-op, we don't support metadata overrides
     }
 
+    @Override
     public ButtonBarConfig getButtonBarConfig()
     {
         return _buttonBarConfig;
     }
 
+    @Override
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
     {
         ForeignKey fk = parent.getFk();
@@ -786,6 +826,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return fk.createLookupColumn(parent, name);
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -798,18 +839,21 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     }
 
     @Nullable
+    @Override
     public Domain getDomain()
     {
         return null;
     }
 
     @Nullable
+    @Override
     public DomainKind getDomainKind()
     {
         return null;
     }
 
     @Nullable
+    @Override
     public QueryUpdateService getUpdateService()
     {
         return null;
@@ -940,7 +984,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
     // TODO: Eliminate these setters/modifiers, making SchemaTableInfo effectively immutable... which would improve
     // concurrency, caching, performance, and maintainability
 
-    protected void addColumn(BaseColumnInfo c)
+    protected void addColumn(MutableColumnInfo c)
     {
         checkLocked();
         getColumnMetaData().addColumn(c);
@@ -1073,6 +1117,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo, AuditCon
         return null;
     }
 
+    @Override
     public FieldKey getContainerFieldKey()
     {
         ColumnInfo col = getColumn("container");

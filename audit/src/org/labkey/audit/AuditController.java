@@ -15,30 +15,38 @@
  */
 package org.labkey.audit;
 
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.QueryViewAction;
+import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.DetailedAuditTypeEvent;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
 import org.labkey.api.audit.provider.SiteSettingsAuditProvider;
+import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.ActionNames;
-import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
+import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.settings.AdminConsole;
+import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -46,7 +54,10 @@ import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * User: adam
@@ -80,9 +91,8 @@ public class AuditController extends SpringActionController
         }
     }
 
-    @ActionNames("showAuditLog")
-    @AdminConsoleAction
-    @RequiresPermission(AdminPermission.class)
+    // An admin console action, but we want Troubleshooters to be able to POST (for export)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class ShowAuditLogAction extends QueryViewAction<ShowAuditLogForm, QueryView>
     {
         public ShowAuditLogAction()
@@ -90,6 +100,7 @@ public class AuditController extends SpringActionController
             super(ShowAuditLogForm.class);
         }
 
+        @Override
         protected ModelAndView getHtmlView(ShowAuditLogForm form, BindException errors) throws Exception
         {
             VBox view = new VBox();
@@ -102,8 +113,14 @@ public class AuditController extends SpringActionController
             return view;
         }
 
+        @Override
         protected QueryView createQueryView(ShowAuditLogForm form, BindException errors, boolean forExport, String dataRegion)
         {
+            // Troubleshooters don't have read permission, so add Reader as a contextual role to placate DataRegion's
+            // and ButtonBar's render-time permissions check. See #39638
+            if (!getContainer().hasPermission(getUser(), ReadPermission.class))
+                getViewContext().addContextualRole(ReaderRole.class);
+
             String selected = form.getView();
 
             if (selected == null)
@@ -116,10 +133,10 @@ public class AuditController extends SpringActionController
             return schema.createView(getViewContext(), settings, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("audits"));
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Audit Log", getURL());
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Audit Log", getURL());
         }
 
         public ActionURL getURL()
@@ -187,7 +204,7 @@ public class AuditController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Admin Console", PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL());
 
@@ -195,8 +212,108 @@ public class AuditController extends SpringActionController
             urlLog.addParameter("view", SiteSettingsAuditProvider.AUDIT_EVENT_TYPE);
             root.addChild("Audit Log", urlLog);
             root.addChild("Site Settings Audit Event Details");
+        }
+    }
 
-            return root;
+    @SuppressWarnings({"unused"})
+    @RequiresPermission(ReadPermission.class)
+    public static class GetDetailedAuditChangesAction extends ReadOnlyApiAction<AuditChangesForm>
+    {
+        @Override
+        public Object execute(AuditChangesForm form, BindException errors)
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            DetailedAuditTypeEvent event = AuditLogService.get().getAuditEvent(getUser(), form.getAuditEventType(), form.getAuditRowId());
+
+            if (event != null)
+            {
+                response.put("comment", event.getComment());
+                response.put("eventUserId", event.getCreatedBy().getUserId());
+                response.put("eventDateFormatted", new SimpleDateFormat(LookAndFeelProperties.getInstance(getContainer()).getDefaultDateTimeFormat()).format(event.getCreated()));
+
+                String oldRecord = event.getOldRecordMap();
+                String newRecord = event.getNewRecordMap();
+
+                if (oldRecord != null || newRecord != null)
+                {
+                    response.put("oldData", AbstractAuditTypeProvider.decodeFromDataMap(oldRecord));
+                    response.put("newData", AbstractAuditTypeProvider.decodeFromDataMap(newRecord));
+                }
+
+                response.put("success", true);
+                return response;
+            }
+
+            response.put("success", false);
+            return response;
+        }
+    }
+
+    @SuppressWarnings({"unused"})
+    @RequiresPermission(ReadPermission.class)
+    public static class DetailedAuditChangesAction extends SimpleViewAction<AuditChangesForm>
+    {
+        @Override
+        public ModelAndView getView(AuditChangesForm form, BindException errors)
+        {
+            int auditRowId = form.getAuditRowId();
+            String comment = null;
+            String oldRecord = null;
+            String newRecord = null;
+
+            DetailedAuditTypeEvent event = AuditLogService.get().getAuditEvent(getUser(), form.getAuditEventType(), auditRowId);
+
+            if (event != null)
+            {
+                comment = event.getComment();
+                oldRecord = event.getOldRecordMap();
+                newRecord = event.getNewRecordMap();
+            }
+
+            if (oldRecord != null || newRecord != null)
+            {
+                Map<String,String> oldData = AbstractAuditTypeProvider.decodeFromDataMap(oldRecord);
+                Map<String,String> newData = AbstractAuditTypeProvider.decodeFromDataMap(newRecord);
+
+                return new AuditChangesView(comment, oldData, newData);
+            }
+            return new NoRecordView();
+        }
+
+        private static class NoRecordView extends HttpView
+        {
+            @Override
+            protected void renderInternal(Object model, PrintWriter out)
+            {
+                out.write("<p>No current record found</p>");
+            }
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
+            root.addChild("Audit Details");
+        }
+    }
+
+    @SuppressWarnings({"unused", "WeakerAccess"})
+    public static class AuditChangesForm
+    {
+        private int auditRowId;
+        private String auditEventType;
+
+        public int getAuditRowId() {return auditRowId;}
+
+        public void setAuditRowId(int auditRowId) {this.auditRowId = auditRowId;}
+
+        public String getAuditEventType()
+        {
+            return auditEventType;
+        }
+
+        public void setAuditEventType(String auditEventType)
+        {
+            this.auditEventType = auditEventType;
         }
     }
 }

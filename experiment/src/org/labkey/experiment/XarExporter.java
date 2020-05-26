@@ -23,6 +23,8 @@ import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlOptions;
 import org.fhcrc.cpas.exp.xml.*;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -50,17 +52,17 @@ import org.labkey.api.exp.api.ExpProtocolInputCriteria;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.experiment.api.Data;
 import org.labkey.experiment.api.DataInput;
 import org.labkey.experiment.api.ExpDataImpl;
@@ -434,9 +436,10 @@ public class XarExporter
             for (ExpData data : outputData)
             {
                 // Issue 31727: When data is imported via the API, no file is created for the data.  We want to
-                // include a file path in the export, though.  We use the name of the data object as the file name.
+                // include a file path in the export, though.  We use "Data" + rowId of the data object as the file name
+                // to ensure that the path won't collide with other output data from exported runs in the xar archive.
                 if (data.getDataFileUrl() == null && data.isFinalRunOutput())
-                    data.setDataFileURI(run.getFilePathRootPath().resolve(data.getName()).toUri());
+                    data.setDataFileURI(run.getFilePathRootPath().resolve("Data" + data.getRowId()).toUri());
                 DataBaseType xData = outputDataObjects.addNewData();
                 populateData(xData, data, null, run);
             }
@@ -447,6 +450,32 @@ public class XarExporter
         {
             MaterialBaseType xMaterial = outputMaterialObjects.addNewMaterial();
             populateMaterial(xMaterial, material);
+        }
+
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs != null)
+        {
+            var provURIs = pvs.getProvenanceObjectUris(application.getRowId());
+            if (!provURIs.isEmpty())
+            {
+                ProtocolApplicationBaseType.ProvenanceMap xProvMap = xApplication.addNewProvenanceMap();
+                for (Pair<String, String> pair : provURIs)
+                {
+                    if (StringUtils.isEmpty(pair.first) && StringUtils.isEmpty(pair.second))
+                        continue;
+
+                    var objectRefs = xProvMap.addNewObjectRefs();
+                    if (!StringUtils.isEmpty(pair.first))
+                    {
+                        objectRefs.setFrom(_relativizedLSIDs.relativize(pair.first));
+                    }
+
+                    if (!StringUtils.isEmpty(pair.second))
+                    {
+                        objectRefs.setTo(_relativizedLSIDs.relativize(pair.second));
+                    }
+                }
+            }
         }
 
         PropertyCollectionType appProperties = getProperties(application.getLSID(), run.getContainer());
@@ -556,7 +585,7 @@ public class XarExporter
             xSampleSet.setNameExpression(sampleSet.getNameExpression());
         }
 
-        Domain domain = sampleSet.getType();
+        Domain domain = sampleSet.getDomain();
         queueDomain(domain);
     }
 

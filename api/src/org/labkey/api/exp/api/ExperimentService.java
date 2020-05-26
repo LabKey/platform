@@ -23,9 +23,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.RemapCache;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentProtocolHandler;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -52,6 +55,7 @@ import org.labkey.api.exp.query.ExpRunGroupMapTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpSampleSetTable;
 import org.labkey.api.exp.query.ExpSchema;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTIndex;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
@@ -67,7 +71,6 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.writer.ContainerUser;
 
 import java.io.File;
 import java.io.IOException;
@@ -110,6 +113,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpRun getExpRun(int rowid);
 
+    List<? extends ExpRun> getExpRuns(Collection<Integer> rowIds);
+
     ExpRun getExpRun(String lsid);
 
     List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
@@ -134,10 +139,13 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     ExpData getExpData(String lsid);
 
+    @NotNull
     List<? extends ExpData> getExpDatas(int... rowid);
 
+    @NotNull
     List<? extends ExpData> getExpDatasByLSID(Collection<String> lsids);
 
+    @NotNull
     List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
 
     List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
@@ -168,12 +176,28 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
     /**
-     * Create a new DataClass with the provided properties.
+     * Create a new DataClass with the provided domain properties and top level options.
      */
-    ExpDataClass createDataClass(Container c, User u, String name, String description,
+    @Deprecated
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, String description,
                                  List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, Integer sampleSetId, String nameExpression,
-                                 @Nullable TemplateInfo templateInfo)
-            throws ExperimentException, SQLException;
+                                 @Nullable TemplateInfo templateInfo, @Nullable String category)
+            throws ExperimentException;
+
+    /**
+     * Create a new DataClass with the provided domain properties and top level options.
+     */
+    ExpDataClass createDataClass(@NotNull Container c, @NotNull User u, @NotNull String name, @Nullable DataClassDomainKindProperties options,
+                                 List<GWTPropertyDescriptor> properties, List<GWTIndex> indices, @Nullable TemplateInfo templateInfo)
+            throws ExperimentException;
+
+    /**
+     * Update a DataClass with the provided domain properties and top level options.
+     */
+    ValidationException updateDataClass(@NotNull Container c, @NotNull User u, @NotNull ExpDataClass dataClass,
+                                        @Nullable DataClassDomainKindProperties options,
+                                        GWTDomain<? extends GWTPropertyDescriptor> original,
+                                        GWTDomain<? extends GWTPropertyDescriptor> update);
 
     /**
      * Get all DataClass definitions in the container.  If <code>includeOtherContainers</code> is true,
@@ -202,6 +226,18 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Requires a user to check for container read permission.
      */
     ExpDataClass getDataClass(@NotNull Container scope, @NotNull User user, int rowId);
+
+    /**
+     * Get a DataClass by LSID.
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     */
+    ExpDataClass getDataClass(@NotNull String lsid);
+
+    /**
+     * Get a DataClass by RowId
+     * NOTE: Prefer using one of the getDataClass methods that accept a Container and User for permission checking.
+     */
+    ExpDataClass getDataClass(int rowId);
 
     /**
      * Get materials with the given names, optionally within the provided sample set.
@@ -236,6 +272,16 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * Looks in all the sample sets visible from the given container for a single match with the specified name
      */
     @NotNull List<? extends ExpMaterial> getExpMaterialsByName(String name, Container container, User user);
+
+    @Nullable ExpData findExpData(Container c, User user,
+                                  @NotNull String dataClassName, String dataName,
+                                  RemapCache cache, Map<Integer, ExpData> dataCache)
+            throws ValidationException;
+
+    @Nullable ExpMaterial findExpMaterial(Container c, User user,
+                                          String sampleSetName, String sampleName,
+                                          RemapCache cache, Map<Integer, ExpMaterial> materialCache)
+            throws ValidationException;
 
     /**
      * Use {@link SampleSetService} instead.
@@ -427,31 +473,28 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     @Nullable ExpMaterialRunInput getMaterialInput(Lsid lsid);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getParents(Container c, User user, ExpRunItem start);
 
-    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(ExpRunItem start);
+    Pair<Set<ExpData>, Set<ExpMaterial>> getChildren(Container c, User user, ExpRunItem start);
 
     /**
      * Find all child and grandchild samples Samples that are direct descendants of <code>start</code> ExpData,
      * ignoring any sample children derived from ExpData children.
      */
-    Set<ExpMaterial> getRelatedChildSamples(ExpData start);
+    Set<ExpMaterial> getRelatedChildSamples(Container c, User user, ExpData start);
 
     /**
      * Find all parent ExpData that are parents of the <code>start</code> ExpMaterial,
      * stopping at the first parent generation (no grandparents.)
      */
-    Set<ExpData> getNearestParentDatas(ExpMaterial start);
+    Set<ExpData> getNearestParentDatas(Container c, User user, ExpMaterial start);
 
     /**
-     * @deprecated : use the variant which takes a ContainerUser parameter
+     * Get the lineage for the seed Identifiable object.  Typically, the seed object is a ExpMaterial,
+     * a ExpData (in a DataClass), or an ExpRun.
      */
     @NotNull
-    @Deprecated
-    ExpLineage getLineage(@NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
-
-    @NotNull
-    ExpLineage getLineage(@Nullable ContainerUser context, @NotNull ExpRunItem start, @NotNull ExpLineageOptions options);
+    ExpLineage getLineage(Container c, User user, @NotNull Identifiable start, @NotNull ExpLineageOptions options);
 
     /**
      * The following methods return TableInfo's suitable for using in queries.
@@ -562,6 +605,8 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     TableInfo getTinfoMaterialAliasMap();
 
+    TableInfo getTinfoEdge();
+
     @Deprecated
     default String getDefaultSampleSetLsid()
     {
@@ -669,10 +714,25 @@ public interface ExperimentService extends ExperimentRunTypeSource
      * @param inputDatas      map from input role name to input data
      * @param outputMaterials map from output role name to output material
      * @param outputDatas     map from output role name to output data
+     * @param transformedDatas map of output rolw name to transformed output data
      * @param info            context information, including the user
      * @param log             output log target
+     * @param loadDataFiles   When true, the files associated with <code>inputDatas</code> and <code>transformedDatas</code> will be loaded by their associated data handler.
      */
     ExpRun saveSimpleExperimentRun(ExpRun run, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<ExpData, String> transformedDatas, ViewBackgroundInfo info, Logger log, boolean loadDataFiles) throws ExperimentException;
+
+    ExpRun saveSimpleExperimentRun(ExpRun run,
+                                   Map<ExpMaterial, String> inputMaterials,
+                                   Map<ExpData, String> inputDatas,
+                                   Map<ExpMaterial, String> outputMaterials,
+                                   Map<ExpData, String> outputDatas,
+                                   Map<ExpData, String> transformedDatas,
+                                   ViewBackgroundInfo info,
+                                   Logger log,
+                                   boolean loadDataFiles,
+                                   @Nullable Set<String> runInputLsids,
+                                   @Nullable Set<Pair<String, String>> finalOutputLsids)
+            throws ExperimentException;
 
     /**
      * Adds an extra protocol application to a run created by saveSimpleExperimentRun() to track more complex
@@ -701,9 +761,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     void registerProtocolImplementation(ProtocolImplementation impl);
 
+    void registerProtocolHandler(ExperimentProtocolHandler handler);
+
     void registerProtocolInputCriteria(ExpProtocolInputCriteria.Factory factory);
 
-    ProtocolImplementation getProtocolImplementation(String name);
+    @Nullable ProtocolImplementation getProtocolImplementation(String name);
 
     ExpProtocolApplication getExpProtocolApplication(int rowId);
 
@@ -714,6 +776,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpProtocol> getAllExpProtocols();
 
     List<? extends ExpProtocol> getExpProtocolsWithParameterValue(@NotNull String parameterURI, @NotNull String parameterValue, @Nullable Container c);
+
+    void registerRunEditor(ExpRunEditor editor);
+
+    @NotNull
+    List<ExpRunEditor> getRunEditors();
 
     /**
      * Kicks off a pipeline job to asynchronously load the XAR from disk
@@ -764,6 +831,12 @@ public interface ExperimentService extends ExperimentRunTypeSource
     List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
 
     @Nullable
+    ExperimentProtocolHandler getExperimentProtocolHandler(@NotNull ExpProtocol protocol);
+
+    @Nullable
+    ExperimentRunType getExperimentRunType(@NotNull ExpProtocol protocol);
+
+    @Nullable
     ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
 
     void onBeforeRunSaved(ExpProtocol protocol, ExpRun run, Container container, User user) throws BatchValidationException;
@@ -776,9 +849,9 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException;
 
     // see org.labkey.experiment.LSIDRelativizer
-    public static final String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
-    public static final String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
-    public static final String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
+    String LSID_OPTION_ABSOLUTE = "ABSOLUTE";
+    String LSID_OPTION_FOLDER_RELATIVE = "FOLDER_RELATIVE";
+    String LSID_OPTION_PARTIAL_FOLDER_RELATIVE = "PARTIAL_FOLDER_RELATIVE";
 
     /**
      * Get the set of runs that can be deleted based on the materials supplied.
@@ -790,7 +863,11 @@ public interface ExperimentService extends ExperimentRunTypeSource
 
     boolean useUXDomainDesigner();
 
-    public static class XarExportOptions
+    List<String> collectRunsToInvestigate(ExpRunItem start, ExpLineageOptions options);
+
+    SQLFragment generateExperimentTreeSQLLsidSeeds(List<String> lsids, ExpLineageOptions options);
+
+    class XarExportOptions
     {
         String _lsidRelativizer = LSID_OPTION_FOLDER_RELATIVE;
         String _xarXmlFileName = "experiment.xar";
@@ -867,7 +944,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
         }
     }
 
-    public static class XarImportOptions
+    class XarImportOptions
     {
         boolean _replaceExistingRuns = false;
         boolean _useOriginalDataFileUrl = false;

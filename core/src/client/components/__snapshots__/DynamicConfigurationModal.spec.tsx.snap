@@ -1,0 +1,863 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<DynamicConfigurationModal/> CAS Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure CAS Configuration1
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      name="description"
+      onChange={[Function]}
+      required={true}
+      requiredFieldEmpty={false}
+      type="text"
+      value="CAS Configuration1"
+    />
+    <DynamicFields
+      canEdit={true}
+      checkCheckBox={[Function]}
+      emptyRequiredFields={Array []}
+      fieldValues={
+        Object {
+          "auth_header_logo": "",
+          "auth_login_page_logo": "",
+          "autoRedirect": false,
+          "changedFiles": Array [],
+          "deletedLogos": Array [],
+          "description": "CAS Configuration1",
+          "enabled": true,
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
+      fields={
+        Array [
+          Object {
+            "caption": "CAS Server URL",
+            "defaultValue": "",
+            "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+            "name": "serverUrl",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "Default to CAS Login",
+            "defaultValue": false,
+            "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+            "name": "autoRedirect",
+            "required": false,
+            "type": "checkbox",
+          },
+        ]
+      }
+      modalType={
+        Object {
+          "description": "Central Authentication Service (CAS)",
+          "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
+          "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
+          "settingsFields": Array [
+            Object {
+              "caption": "CAS Server URL",
+              "defaultValue": "",
+              "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+              "name": "serverUrl",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "Default to CAS Login",
+              "defaultValue": false,
+              "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+              "name": "autoRedirect",
+              "required": false,
+              "type": "checkbox",
+            },
+          ],
+          "sso": true,
+        }
+      }
+      onChange={[Function]}
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+    />
+    <SSOFields
+      canEdit={true}
+      handleDeleteLogo={[Function]}
+      headerLogoUrl={null}
+      loginLogoUrl={null}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          target="_blank"
+        >
+          More about CAS authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> CAS Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure CAS Configuration1
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={true}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      name="description"
+      onChange={[Function]}
+      required={true}
+      requiredFieldEmpty={false}
+      type="text"
+      value="CAS Configuration1"
+    />
+    <DynamicFields
+      canEdit={false}
+      checkCheckBox={[Function]}
+      emptyRequiredFields={Array []}
+      fieldValues={
+        Object {
+          "auth_header_logo": "",
+          "auth_login_page_logo": "",
+          "autoRedirect": false,
+          "changedFiles": Array [],
+          "deletedLogos": Array [],
+          "description": "CAS Configuration1",
+          "enabled": true,
+          "serverUrl": "https://www.labkey.org/cas",
+        }
+      }
+      fields={
+        Array [
+          Object {
+            "caption": "CAS Server URL",
+            "defaultValue": "",
+            "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+            "name": "serverUrl",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "Default to CAS Login",
+            "defaultValue": false,
+            "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+            "name": "autoRedirect",
+            "required": false,
+            "type": "checkbox",
+          },
+        ]
+      }
+      modalType={
+        Object {
+          "description": "Central Authentication Service (CAS)",
+          "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas",
+          "saveLink": "/labkey/casclient-casSaveConfiguration.view?",
+          "settingsFields": Array [
+            Object {
+              "caption": "CAS Server URL",
+              "defaultValue": "",
+              "description": "Enter a valid HTTPS URL to your CAS server. The URL should start with https:// and end with /cas, for example: https://test.org/cas.",
+              "name": "serverUrl",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "Default to CAS Login",
+              "defaultValue": false,
+              "description": "Redirects the login page directly to the CAS login instead of requiring the user click the CAS option.",
+              "name": "autoRedirect",
+              "required": false,
+              "type": "checkbox",
+            },
+          ],
+          "sso": true,
+        }
+      }
+      onChange={[Function]}
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+    />
+    <SSOFields
+      canEdit={false}
+      handleDeleteLogo={[Function]}
+      headerLogoUrl={null}
+      loginLogoUrl={null}
+      onFileChange={[Function]}
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureCas"
+          target="_blank"
+        >
+          More about CAS authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> Duo Modal 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure Duo 2 Factor Configuration
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={false}
+        className="modal__enable-toggle"
+        disabled={false}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={true}
+      caption="Description"
+      name="description"
+      onChange={[Function]}
+      required={true}
+      requiredFieldEmpty={false}
+      type="text"
+      value="Duo 2 Factor Configuration"
+    />
+    <DynamicFields
+      canEdit={true}
+      checkCheckBox={[Function]}
+      emptyRequiredFields={Array []}
+      fieldValues={
+        Object {
+          "apiHostname": "Api HostName",
+          "description": "Duo 2 Factor Configuration",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "secretKey": "",
+          "userIdentifier": "UserID",
+        }
+      }
+      fields={
+        Array [
+          Object {
+            "caption": "Integration Key",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+            "name": "integrationKey",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "Secret Key",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+            "name": "secretKey",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "API Hostname",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
+            "name": "apiHostname",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "User Identifier",
+            "defaultValue": "UserID",
+            "description": "Choose the way LabKey will match with Duo accounts.",
+            "name": "userIdentifier",
+            "options": Object {
+              "FullEmailAddress": "Full Email Address",
+              "UserID": "User ID",
+              "UserName": "User Name",
+            },
+            "required": true,
+            "type": "options",
+          },
+        ]
+      }
+      modalType={
+        Object {
+          "description": "Require two-factor authentication via Duo",
+          "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
+          "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
+          "settingsFields": Array [
+            Object {
+              "caption": "Integration Key",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+              "name": "integrationKey",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "Secret Key",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+              "name": "secretKey",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "API Hostname",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
+              "name": "apiHostname",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "User Identifier",
+              "defaultValue": "UserID",
+              "description": "Choose the way LabKey will match with Duo accounts.",
+              "name": "userIdentifier",
+              "options": Object {
+                "FullEmailAddress": "Full Email Address",
+                "UserID": "User ID",
+                "UserName": "User Name",
+              },
+              "required": true,
+              "type": "options",
+            },
+          ],
+        }
+      }
+      onChange={[Function]}
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          target="_blank"
+        >
+          More about Duo 2 Factor authentication
+        </a>
+        <Button
+          active={false}
+          block={false}
+          bsClass="btn"
+          bsStyle="default"
+          className="labkey-button primary"
+          disabled={false}
+          onClick={[Function]}
+        >
+          Apply
+        </Button>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Cancel
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;
+
+exports[`<DynamicConfigurationModal/> Duo Modal View-only 1`] = `
+<Modal
+  animation={true}
+  autoFocus={true}
+  backdrop={true}
+  bsClass="modal"
+  dialogComponentClass={[Function]}
+  enforceFocus={true}
+  keyboard={true}
+  manager={
+    ModalManager {
+      "add": [Function],
+      "containers": Array [],
+      "data": Array [],
+      "handleContainerOverflow": true,
+      "hideSiblingNodes": true,
+      "isTopModal": [Function],
+      "modals": Array [],
+      "remove": [Function],
+    }
+  }
+  onHide={[Function]}
+  renderBackdrop={[Function]}
+  restoreFocus={true}
+  show={true}
+>
+  <ModalHeader
+    bsClass="modal-header"
+    closeButton={true}
+    closeLabel="Close"
+  >
+    <ModalTitle
+      bsClass="modal-title"
+      componentClass="h4"
+    >
+      Configure Duo 2 Factor Configuration
+    </ModalTitle>
+  </ModalHeader>
+  <ModalBody
+    bsClass="modal-body"
+    componentClass="div"
+  >
+    <div
+      className="modal__top"
+    >
+      <span
+        className="bold-text"
+      >
+         Configuration Status 
+      </span>
+      <ReactBootstrapToggle
+        active={false}
+        className="modal__enable-toggle"
+        disabled={true}
+        handleClassName=""
+        handlestyle="default"
+        height=""
+        off="Disabled"
+        offClassName=""
+        offstyle="default"
+        on="Enabled"
+        onClassName=""
+        onClick={[Function]}
+        onstyle="primary"
+        recalculateOnResize={false}
+        size="normal"
+        style={Object {}}
+        width=""
+      />
+    </div>
+    <div
+      className="bold-text modal__settings-text"
+    >
+       Settings 
+    </div>
+    <TextInput
+      canEdit={false}
+      caption="Description"
+      name="description"
+      onChange={[Function]}
+      required={true}
+      requiredFieldEmpty={false}
+      type="text"
+      value="Duo 2 Factor Configuration"
+    />
+    <DynamicFields
+      canEdit={false}
+      checkCheckBox={[Function]}
+      emptyRequiredFields={Array []}
+      fieldValues={
+        Object {
+          "apiHostname": "Api HostName",
+          "description": "Duo 2 Factor Configuration",
+          "enabled": false,
+          "integrationKey": "Key1",
+          "secretKey": "",
+          "userIdentifier": "UserID",
+        }
+      }
+      fields={
+        Array [
+          Object {
+            "caption": "Integration Key",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+            "name": "integrationKey",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "Secret Key",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+            "name": "secretKey",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "API Hostname",
+            "defaultValue": "",
+            "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
+            "name": "apiHostname",
+            "required": true,
+            "type": "input",
+          },
+          Object {
+            "caption": "User Identifier",
+            "defaultValue": "UserID",
+            "description": "Choose the way LabKey will match with Duo accounts.",
+            "name": "userIdentifier",
+            "options": Object {
+              "FullEmailAddress": "Full Email Address",
+              "UserID": "User ID",
+              "UserName": "User Name",
+            },
+            "required": true,
+            "type": "options",
+          },
+        ]
+      }
+      modalType={
+        Object {
+          "description": "Require two-factor authentication via Duo",
+          "helpLink": "https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor",
+          "saveLink": "/labkey/duo-duoSaveConfiguration.view?",
+          "settingsFields": Array [
+            Object {
+              "caption": "Integration Key",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+              "name": "integrationKey",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "Secret Key",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have generated this key.",
+              "name": "secretKey",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "API Hostname",
+              "defaultValue": "",
+              "description": "Your Labkey Admin with a Duo administrative account should have the hostname along with Integration and Secret Key.",
+              "name": "apiHostname",
+              "required": true,
+              "type": "input",
+            },
+            Object {
+              "caption": "User Identifier",
+              "defaultValue": "UserID",
+              "description": "Choose the way LabKey will match with Duo accounts.",
+              "name": "userIdentifier",
+              "options": Object {
+                "FullEmailAddress": "Full Email Address",
+                "UserID": "User ID",
+                "UserName": "User Name",
+              },
+              "required": true,
+              "type": "options",
+            },
+          ],
+        }
+      }
+      onChange={[Function]}
+      onFileChange={[Function]}
+      onFileRemoval={[Function]}
+    />
+    <div
+      className="modal__error-message"
+    >
+       
+       
+    </div>
+    <div
+      className="modal__bottom"
+    >
+      <div
+        className="modal__bottom-buttons"
+      >
+        <a
+          className="modal__help-link"
+          href="https://www.labkey.org/Documentation/19.3/wiki-page.view?name=configureDuoTwoFactor"
+          target="_blank"
+        >
+          More about Duo 2 Factor authentication
+        </a>
+      </div>
+      <Button
+        active={false}
+        block={false}
+        bsClass="btn"
+        bsStyle="default"
+        className="labkey-button modal__save-button"
+        disabled={false}
+        onClick={[Function]}
+      >
+        Close
+      </Button>
+    </div>
+  </ModalBody>
+</Modal>
+`;

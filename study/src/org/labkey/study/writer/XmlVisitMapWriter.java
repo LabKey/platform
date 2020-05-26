@@ -34,7 +34,6 @@ import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases.Alias;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -49,11 +48,13 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 {
     public static final String FILENAME = "visit_map.xml";
 
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
@@ -87,13 +88,13 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (!visit.isShowByDefault())
                     visitXml.setShowByDefault(visit.isShowByDefault());
 
-                visitXml.setSequenceNum(visit.getSequenceNumMinDouble());
+                visitXml.setSequenceNum(visit.getSequenceNumMin());
 
-                if (visit.getSequenceNumMinDouble() != visit.getSequenceNumMaxDouble())
-                    visitXml.setMaxSequenceNum(visit.getSequenceNumMaxDouble());
+                if (!visit.getSequenceNumMin().equals(visit.getSequenceNumMax()))
+                    visitXml.setMaxSequenceNum(visit.getSequenceNumMax());
 
-                if (null != visit.getProtocolDayDouble())
-                    visitXml.setProtocolDay(visit.getProtocolDayDouble());
+                if (null != visit.getProtocolDay())
+                    visitXml.setProtocolDay(visit.getProtocolDay());
 
                 if (null != visit.getCohort())
                     visitXml.setCohort(visit.getCohort().getLabel());

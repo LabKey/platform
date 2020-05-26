@@ -110,8 +110,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
 
     private transient WeakReference<Container> _parent;
 
-    public static final String DEFAULT_SUPPORT_PROJECT_PATH = ContainerManager.HOME_PROJECT_PATH + "/support";
-
     private ContainerType _containerType;
 
     // include in results from searches outside this container?
@@ -128,7 +126,8 @@ public class Container implements Serializable, Comparable<Container>, Securable
         _searchable = searchable;
     }
 
-    protected Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
+    /* public only for unit testing */
+    public Container(Container dirParent, String name, String id, int rowId, int sortOrder, Date created, int createdBy, boolean searchable)
     {
         _path = null == dirParent && StringUtils.isEmpty(name) ? Path.rootPath : ContainerManager.makePath(dirParent, name);
         _id = new GUID(id);
@@ -201,9 +200,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return targetContainer != null && targetContainer.getContainerType().allowRowMutationFromContainer(this, targetContainer);
     }
 
-    public boolean requiresAdminToDelete()
+    public Class<? extends Permission> getPermissionNeededToDelete()
     {
-        return _containerType.requiresAdminToDelete();
+        return _containerType.getPermissionNeededToDelete();
     }
 
     public boolean isDuplicatedInContainerFilter()
@@ -1014,9 +1013,9 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getActiveModules(init, true);
     }
 
-    public Set<Module> getActiveModules(boolean init, boolean includeDepencendies)
+    public Set<Module> getActiveModules(boolean init, boolean includeDependencies)
     {
-        return getActiveModules(init, includeDepencendies, null);
+        return getActiveModules(init, includeDependencies, null);
     }
 
     /** @return all modules that are active in the container, ordered based on module dependencies as implemented in {@link ModuleLoader#orderModules(Collection)} */
@@ -1030,7 +1029,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
     {
         if(isWorkbook())
         {
-            if(init)
+            if (init)
                 appendWorkbookModulesToParent(new HashSet<>(), user);
 
             return getParent().getActiveModules(init, includeDependencies, user);
@@ -1109,7 +1108,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
             }
             else
             {
-                //if this is a subfolder, set active modules to inherit from parent
+                // if this is a subfolder, set active modules to inherit from parent
                 Set<Module> parentModules = getParent().getActiveModules(false, false, user);
                 for (Module module : parentModules)
                 {
@@ -1137,7 +1136,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         for (String moduleName : props.keySet())
         {
             Module module = ModuleLoader.getInstance().getModule(moduleName);
-            if (module != null)
+            if (module != null && module.canBeEnabled(this))
                 modules.add(module);
         }
 
@@ -1149,7 +1148,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 // check for null, since there's no guarantee that a third-party folder type has all its
                 // active modules installed on this system (so nulls may end up in the list- bug 6757):
                 // Don't restrict based on userHasEnableRestrictedModules, since user is already accessing folder
-                if (module != null)
+                if (module != null && module.canBeEnabled(this))
                     modules.add(module);
             }
         }
@@ -1161,7 +1160,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 modules.remove(module);
         }
 
-        Set<Module> activeModules;
         if (includeDependencies)
         {
             // Invoke the ModuleDependencyProviders first, so the code below will resolve dependencies
@@ -1179,14 +1177,10 @@ public class Container implements Serializable, Comparable<Container>, Securable
                         withDependencies.add(dependent);
             }
 
-            activeModules = withDependencies;
-        }
-        else
-        {
-            activeModules = modules;
+            modules = withDependencies;
         }
 
-        return Collections.unmodifiableSet(new LinkedHashSet<>(ModuleLoader.getInstance().orderModules(activeModules)));
+        return Collections.unmodifiableSet(new LinkedHashSet<>(ModuleLoader.getInstance().orderModules(modules)));
     }
 
     public boolean isDescendant(Container container)

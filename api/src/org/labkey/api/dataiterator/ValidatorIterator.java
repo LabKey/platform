@@ -247,7 +247,7 @@ public class ValidatorIterator extends AbstractDataIterator implements DataItera
     @Override
     public void debugLogInfo(StringBuilder sb)
     {
-        sb.append(this.getClass().getName() + "\n");
+        super.debugLogInfo(sb);
         if (null != _data)
             _data.debugLogInfo(sb);
     }

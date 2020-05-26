@@ -57,10 +57,9 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
-            return root;
         }
     }
 
@@ -154,11 +153,10 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
             root.addChild(".gitattributes File Check");
-            return root;
         }
     }
 
@@ -220,7 +218,7 @@ public class ToolsController extends SpringActionController
                 if (!jspFiles.isEmpty())
                 {
                     out.println();
-                    out.println("The following " + StringUtilsLabKey.pluralize(jspFiles.size(), "JSP file is a", "JSP files are") + " strong candidates for removal:");
+                    out.println("The following " + (jspFiles.size() == 1 ? "JSP file is a strong candidate" : jspFiles.size() + " JSP files are strong candidates") + " for removal:");
                     out.println();
                     jspFiles.forEach(path->out.println(filter(path)));
                 }
@@ -361,11 +359,10 @@ public class ToolsController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             appendBeginNavTrail(root);
             root.addChild("JSP Finder");
-            return root;
         }
     }
 }

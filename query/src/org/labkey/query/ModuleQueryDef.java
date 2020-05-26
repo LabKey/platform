@@ -98,6 +98,11 @@ public class ModuleQueryDef
         return _sql;
     }
 
+    ModuleQueryMetadataDef getMetadataDef()
+    {
+        return _metadataDef;
+    }
+
     public String getQueryMetaData()
     {
         return _metadataDef == null ? null : _metadataDef.getQueryMetaData();
@@ -118,7 +123,7 @@ public class ModuleQueryDef
         QueryDef ret;
         if (_metadataDef != null)
         {
-            ret = _metadataDef.toQueryDef(container);
+            ret = _metadataDef.toQueryDef(container, schemaKey);
         }
         else
         {

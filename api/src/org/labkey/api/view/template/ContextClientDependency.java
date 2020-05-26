@@ -20,7 +20,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.clientLibrary.xml.ModeTypeEnum;
 
+import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Handles a module context reference
@@ -42,7 +44,7 @@ public class ContextClientDependency extends ClientDependency
 
     @NotNull
     @Override
-    protected Set<ClientDependency> getUniqueDependencySet(Container c)
+    protected List<Supplier<ClientDependency>> getDependencySuppliers(Container c)
     {
         return _module.getClientDependencies(c);
     }
@@ -60,7 +62,7 @@ public class ContextClientDependency extends ClientDependency
     @Override
     protected String getUniqueKey()
     {
-        return getCacheKey("moduleContext|" + _module.toString(), _mode);
+        return getUniqueKey("moduleContext|" + _module.toString(), _mode);
     }
 
     @Override

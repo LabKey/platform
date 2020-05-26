@@ -24,7 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.data.ConnectionWrapper.Closer;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.DataSourceProperties;
@@ -33,11 +33,8 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
-import org.labkey.api.module.ModuleResourceResolver;
 import org.labkey.api.module.ResourceRootProvider;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.resource.Resolver;
-import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.test.TestWhen;
@@ -45,6 +42,7 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.data.xml.TablesDocument;
 import org.springframework.dao.DeadlockLoserDataAccessException;
 
@@ -139,6 +137,7 @@ public class DbScope
     private final Map<Thread, ConnectionHolder> _threadConnections = new WeakHashMap<>();
     private final LabKeyDataSourceProperties _labkeyProps;
     private final DataSourceProperties _dsProps;
+    private final boolean _rds;
 
     /**
      * Only useful for integration testing purposes to simulate a problem setting autoCommit on a connection and ensuring we
@@ -159,7 +158,7 @@ public class DbScope
          * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
          * outer-most layer of the transaction has completed (either by committing or closing the connection).
          */
-        boolean isReleaseLocksOnFinalCommit();
+        default boolean isReleaseLocksOnFinalCommit() { return false; }
     }
 
 
@@ -212,21 +211,7 @@ public class DbScope
     }
 
 
-    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
-    {
-        @NotNull
-        public String getKind()
-        {
-            return "NORMAL";
-        }
-
-        @Override
-        public boolean isReleaseLocksOnFinalCommit()
-        {
-            return false;
-        }
-    };
-
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = () -> "NORMAL";
 
     private static IllegalStateException createIllegalStateException(String message, @Nullable DbScope scope, @Nullable ConnectionWrapper conn)
     {
@@ -247,6 +232,7 @@ public class DbScope
 
     public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
     {
+        @Override
         @NotNull
         public String getKind()
         {
@@ -276,6 +262,7 @@ public class DbScope
         _tableCache = null;
         _labkeyProps = null;
         _dsProps = null;
+        _rds = false;
     }
 
 
@@ -332,6 +319,7 @@ public class DbScope
             DatabaseMetaData dbmd = conn.getMetaData();
             _dsProps = new DataSourceProperties(dsName, dataSource);
             Integer maxTotal = _dsProps.getMaxTotal();
+            _databaseProductVersion = dbmd.getDatabaseProductVersion();
 
             try
             {
@@ -345,7 +333,7 @@ public class DbScope
                         "\n    DataSource Name:          " + dsName +
                         "\n    Server URL:               " + dbmd.getURL() +
                         "\n    Database Product Name:    " + dbmd.getDatabaseProductName() +
-                        "\n    Database Product Version: " + dbmd.getDatabaseProductVersion() +
+                        "\n    Database Product Version: " + (null != _dialect ? _dialect.getProductVersion(_databaseProductVersion) : _databaseProductVersion) +
                         "\n    JDBC Driver Name:         " + dbmd.getDriverName() +
                         "\n    JDBC Driver Version:      " + dbmd.getDriverVersion() +
     (null != _dialect ? "\n    SQL Dialect:              " + _dialect.getClass().getSimpleName() : "") +
@@ -358,12 +346,12 @@ public class DbScope
             _databaseName = _dialect.getDatabaseName(_dsProps);
             _URL = dbmd.getURL();
             _databaseProductName = dbmd.getDatabaseProductName();
-            _databaseProductVersion = dbmd.getDatabaseProductVersion();
             _driverName = dbmd.getDriverName();
             _driverVersion = dbmd.getDriverVersion();
             _labkeyProps = props;
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
+            _rds = _dialect.isRds(this);
         }
     }
 
@@ -415,7 +403,8 @@ public class DbScope
 
     public String getDatabaseProductVersion()
     {
-        return _databaseProductVersion;
+        // Dialect may be able to provide more useful version information
+        return _dialect.getProductVersion(_databaseProductVersion);
     }
 
     public String getDriverName()
@@ -562,6 +551,7 @@ public class DbScope
                 throw new SQLException("For testing purposes - simulated autocommit setting failure");
             }
 
+            LOG.debug("setAutoCommit(false)");
             conn.setAutoCommit(false);
             connectionSetupSuccessful = true;
         }
@@ -596,7 +586,21 @@ public class DbScope
                         transactions.add(result);
                         stackDepth = transactions.size();
                     }
-                    serverLocks.forEach(Lock::lock);
+                    boolean serverLockSuccess = false;
+                    try
+                    {
+                        serverLocks.forEach(Lock::lock);
+                        serverLockSuccess = true;
+                    }
+                    finally
+                    {
+                        if (!serverLockSuccess)
+                        {
+                            // We're throwing an exception so the caller will never get the transaction object to
+                            // be able to close it, so do it now
+                            result.close();
+                        }
+                    }
                     if (stackDepth > 2)
                         LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
                 }
@@ -611,6 +615,77 @@ public class DbScope
 
         return result;
     }
+
+
+    public interface RetryFn<ReturnType>
+    {
+        ReturnType exec(DbScope.Transaction tx) throws DeadlockLoserDataAccessException, RuntimeSQLException;
+    }
+
+    /** Can be used to conveniently throw a typed exception out of executeWithRetry */
+    public static class RetryPassthroughException extends RuntimeException
+    {
+        public RetryPassthroughException(@NotNull Exception x)
+        {
+            super(x);
+        }
+
+        public <T extends Throwable> void rethrow(Class<T> clazz) throws T
+        {
+            if (clazz.isAssignableFrom(getCause().getClass()))
+                throw (T)getCause();
+        }
+
+        public <T extends Throwable> void throwRuntimeException() throws RuntimeException
+        {
+            throw UnexpectedException.wrap(getCause());
+        }
+    }
+
+    /**
+     * If there's a deadlock exception, retry two more times after a delay. Won't retry if we're already in a transaction
+     * fn() should throw DeadlockLoserDataAccessException or RuntimeSQLException to get the retry behavior
+     */
+    public <ReturnType> ReturnType executeWithRetry(RetryFn<ReturnType> fn, Lock... extraLocks)
+    {
+        // don't retry if we're already in a transaction, it won't help
+        ReturnType ret = null;
+        int tries = isTransactionActive() ? 1 : 3;
+        long delay = 100;
+        RuntimeException lastException = null;
+        for (var tri=0 ; tri < tries ; tri++ )
+        {
+            lastException = null;
+            try (DbScope.Transaction transaction = ensureTransaction(extraLocks))
+            {
+                ret = fn.exec(transaction);
+                transaction.commit();
+                break;
+            }
+            catch (DeadlockLoserDataAccessException dldae)
+            {
+                lastException = dldae;
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+            catch (RuntimeSQLException e)
+            {
+                lastException = e;
+                if (!SqlDialect.isTransactionException(e))
+                {
+                    break;
+                }
+                try { Thread.sleep((tri+1)*delay); } catch (InterruptedException ignored) {}
+                LOG.info("Retrying operation after deadlock", new Throwable());
+            }
+        }
+
+        if (null != lastException)
+            throw lastException;
+
+        return ret;
+    }
+
 
     private static Thread getEffectiveThread()
     {
@@ -782,7 +857,8 @@ public class DbScope
     {
         try
         {
-            return DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            Connection raw = DriverManager.getConnection(_URL, _dsProps.getUsername(), _dsProps.getPassword());
+            return new SimpleConnectionWrapper(raw, this);
         }
         catch (ServletException e)
         {
@@ -905,6 +981,11 @@ public class DbScope
     {
         synchronized (_transaction)
         {
+            log.info("Data source " + toString() +
+                    ". Max connections: " + _dsProps.getMaxTotal() +
+                    ", active: " + _dsProps.getNumActive() +
+                    ", idle: " + _dsProps.getNumIdle());
+
             if (_transaction.isEmpty())
             {
                 log.info("There are no threads holding connections for the data source '" + toString() + "'");
@@ -1010,10 +1091,9 @@ public class DbScope
 
     private void applyMetaDataXML(DbSchema schema, String schemaName)
     {
-        // First try the canonical schema name (which could differ in casing from the requested name)
-        Resource resource = schema.getSchemaResource();
+        TablesDocument tablesDoc = getSchemaXml(schema);
 
-        if (null == resource)
+        if (null == tablesDoc)
         {
             String displayName = DbSchema.getDisplayName(schema.getScope(), schemaName);
             LOG.info("no schema metadata xml file found for schema \"" + displayName + "\"");
@@ -1025,28 +1105,42 @@ public class DbScope
         }
         else
         {
-            String filename = resource.getName();
-
-            // I don't like this... should either improve Resolver (add getModule()?) or revise getResource() to take a Resource
-            Resolver resolver = resource.getResolver();
-            assert resolver instanceof ModuleResourceResolver;
-            Module module = ((ModuleResourceResolver) resolver).getModule();
-
-            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResourceMap(module).get(filename);
-
-            if (null != tablesDoc)
-                schema.setTablesDocument(tablesDoc);
+            schema.setTablesDocument(tablesDoc);
         }
     }
 
-
-    public static @NotNull List<String> getSchemaNames(Module module)
+    public static @Nullable TablesDocument getSchemaXml(DbSchema schema)
     {
-        return SCHEMA_XML_CACHE.getResourceMap(module).keySet().stream()
-            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
-            .collect(Collectors.toCollection(ArrayList::new));
+        String filename = schema.getResourcePrefix() + ".xml";
+        return SCHEMA_XML_CACHE.getResourceMap(schema.getModule()).get(filename);
     }
 
+    // Return an unmodifiable, sorted list of schema names in this module
+    public static @NotNull List<String> getSchemaNames(Module module)
+    {
+        // Don't use the cache until startup is complete. The cache registers file listeners with module references,
+        // and that ends up "leaking" modules if we haven't yet pruned them based on supported database, etc.
+        return getSchemaNames(module, ModuleLoader.getInstance().isStartupComplete());
+    }
+
+    private static List<String> getSchemaNames(Module module, boolean useCache)
+    {
+        return (useCache ? SCHEMA_XML_CACHE.getResourceMap(module).keySet() : SchemaXmlCacheHandler.getFilenames(module)).stream()
+            .map(filename -> filename.substring(0, filename.length() - ".xml".length()))
+            .sorted()
+            .collect(Collectors.toUnmodifiableList());
+    }
+
+    // Verify that the two ways for determining schema names yield identical results
+    public static class SchemaNameTestCase extends Assert
+    {
+        @Test
+        public void testSchemaNames()
+        {
+            ModuleLoader.getInstance().getModules()
+                .forEach(m->assertEquals(getSchemaNames(m, true), getSchemaNames(m, false)));
+        }
+    }
 
     @JsonIgnore
     public @NotNull DbSchema getSchema(String schemaName, DbSchemaType type)
@@ -1087,6 +1181,7 @@ public class DbScope
     /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
+        QueryService.get().updateLastModified();
         _schemaCache.remove(schemaName, type);
         invalidateAllTables(schemaName, type);
     }
@@ -1104,6 +1199,7 @@ public class DbScope
     // from the DbSchema.
     public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
     {
+        QueryService.get().updateLastModified();
         _tableCache.remove(schemaName, tableName, type);
         _schemaCache.remove(schemaName, type);
     }
@@ -1236,6 +1332,11 @@ public class DbScope
     public static boolean isPrimaryDataSource(String dsName)
     {
         return ModuleLoader.LABKEY_DATA_SOURCE.equalsIgnoreCase(dsName) || ModuleLoader.CPAS_DATA_SOURCE.equalsIgnoreCase(dsName);
+    }
+
+    public boolean isRds()
+    {
+        return _rds;
     }
 
     // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
@@ -1624,8 +1725,8 @@ public class DbScope
 
         public void run(TransactionImpl transaction)
         {
-            // Copy to avoid ConcurrentModificationExceptions
-            Set<Runnable> tasks = new HashSet<>(getRunnables(transaction));
+            // Copy to avoid ConcurrentModificationExceptions, need to retain original order from LinkedHashSet
+            List<Runnable> tasks = new ArrayList<>(getRunnables(transaction));
 
             for (Runnable task : tasks)
             {
@@ -1766,7 +1867,7 @@ public class DbScope
         private final String id = GUID.makeGUID();
         @NotNull
         private final ConnectionWrapper _conn;
-        private final Map<DatabaseCache<?>, StringKeyCache<?>> _caches = new HashMap<>(20);
+        private final Map<DatabaseCache<?, ?>, Cache<?, ?>> _caches = new HashMap<>(20);
 
         // Sets so that we can coalesce identical tasks and avoid duplicating the effort
         private final Set<Runnable> _preCommitTasks = new LinkedHashSet<>();
@@ -1791,12 +1892,12 @@ public class DbScope
             increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
         }
 
-        <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
+        <K, V> Cache<K, V> getCache(DatabaseCache<K, V> cache)
         {
-            return (StringKeyCache<ValueType>)_caches.get(cache);
+            return (Cache<K, V>)_caches.get(cache);
         }
 
-        <ValueType> void addCache(DatabaseCache<ValueType> cache, StringKeyCache<ValueType> map)
+        <K, V> void addCache(DatabaseCache<K, V> cache, Cache<K, V> map)
         {
             _caches.put(cache, map);
         }
@@ -1905,6 +2006,7 @@ public class DbScope
                             CommitTaskOption.PRECOMMIT.run(this);
                             conn.commit();
                             conn.setAutoCommit(true);
+                            LOG.debug("setAutoCommit(true)");
                         }
                         finally
                         {
@@ -1952,7 +2054,7 @@ public class DbScope
 
         private void closeCaches()
         {
-            for (StringKeyCache<?> cache : _caches.values())
+            for (Cache<?, ?> cache : _caches.values())
                 cache.close();
             _caches.clear();
         }
@@ -2508,7 +2610,7 @@ public class DbScope
 
             final Object notifier = new Object();
 
-            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsers(), user.getUserId());
+            Lock lockUser = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoUsersData(), user.getUserId());
             Lock lockHome = new ServerPrimaryKeyLock(true, CoreSchema.getInstance().getTableInfoContainers(), ContainerManager.getHomeContainer().getId());
 
             // let's try to intentionally cause a deadlock
@@ -2546,7 +2648,11 @@ public class DbScope
                 lockHome.lock();
                 txFg.commit();
             }
-            catch (Throwable x)
+            catch (InterruptedException x)
+            {
+                throw new RuntimeException(x);
+            }
+            catch (DeadlockLoserDataAccessException x)
             {
                 fgException = x;
             }
@@ -2562,8 +2668,90 @@ public class DbScope
                 }
             }
 
-            assert bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException;
+            assertTrue( bkgException[0] instanceof DeadlockLoserDataAccessException || fgException instanceof DeadlockLoserDataAccessException );
         }
+
+
+        // TODO this test generates "ERROR ConnectionWrapper ... Probable connection leak"
+        // @Test
+        public void testLockException()
+        {
+            // test ServerLock failures
+
+            Lock failServerLock = new ServerLock()
+            {
+                @Override public void lock() { throw new DeadlockLoserDataAccessException("test",null); }
+            };
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failServerLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof DeadlockLoserDataAccessException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+            // test _non_ ServerLock failures
+
+            Lock failLock = new Lock()
+            {
+                @Override public void lock() { throw new NullPointerException(); }
+                @Override public void lockInterruptibly() throws InterruptedException { }
+                @Override public boolean tryLock() { return false; }
+                @Override public boolean tryLock(long time, @NotNull TimeUnit unit) throws InterruptedException { return false; }
+                @Override public void unlock() { }
+                @NotNull @Override public Condition newCondition() { return null; }
+            };
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+            {
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+
+
+            try (Transaction txFg = CoreSchema.getInstance().getScope().ensureTransaction())
+            {
+                try (Transaction txInner = CoreSchema.getInstance().getScope().ensureTransaction(failLock))
+                {
+                    fail("shouldn't get here");
+                    txFg.commit();
+                }
+                fail("shouldn't get here");
+                txFg.commit();
+            }
+            catch (Exception x)
+            {
+                assertTrue(x instanceof NullPointerException);
+            }
+            new TableSelector(CoreSchema.getInstance().getTableInfoUsers(), TableSelector.ALL_COLUMNS).getRowCount();
+        }
+
 
         @Test
         public void testTryWithResources() throws SQLException
@@ -2588,5 +2776,21 @@ public class DbScope
                 assertTrue(c.isClosed());
             }
         }
+
+        @Test
+        public void testRetryException()
+        {
+            var r = new RetryPassthroughException(new IllegalArgumentException());
+            try
+            {
+                r.rethrow(IllegalArgumentException.class);
+                fail("should have thrown");
+            }
+            catch (IllegalArgumentException x)
+            {
+                // expected!
+            }
+        }
     }
 }
+

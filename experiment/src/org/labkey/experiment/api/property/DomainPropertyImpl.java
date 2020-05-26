@@ -81,76 +81,91 @@ public class DomainPropertyImpl implements DomainProperty
         _formats = formats;
     }
 
+    @Override
     public int getPropertyId()
     {
         return _pd.getPropertyId();
     }
 
+    @Override
     public Container getContainer()
     {
         return _pd.getContainer();
     }
 
+    @Override
     public String getPropertyURI()
     {
         return _pd.getPropertyURI();
     }
 
+    @Override
     public String getName()
     {
         return _pd.getName();
     }
 
+    @Override
     public String getDescription()
     {
         return _pd.getDescription();
     }
 
+    @Override
     public String getFormat()
     {
         return _pd.getFormat();
     }
 
+    @Override
     public String getLabel()
     {
         return _pd.getLabel();
     }
 
+    @Override
     public String getConceptURI()
     {
         return _pd.getConceptURI();
     }
 
+    @Override
     public Domain getDomain()
     {
         return _domain;
     }
 
+    @Override
     public IPropertyType getType()
     {
         return PropertyService.get().getType(getContainer(), _pd.getRangeURI());
     }
 
+    @Override
     public boolean isRequired()
     {
         return _pd.isRequired();
     }
 
+    @Override
     public boolean isHidden()
     {
         return _pd.isHidden();
     }
 
+    @Override
     public boolean isShownInInsertView()
     {
         return _pd.isShownInInsertView();
     }
 
+    @Override
     public boolean isShownInDetailsView()
     {
         return _pd.isShownInDetailsView();
     }
 
+    @Override
     public boolean isShownInUpdateView()
     {
         return _pd.isShownInUpdateView();
@@ -195,6 +210,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isExcludeFromShifting();
     }
 
+    @Override
     public boolean isMvEnabled()
     {
         return _pd.isMvEnabled();
@@ -208,6 +224,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isMvEnabled();
     }
 
+    @Override
     public void delete()
     {
         _deleted = true;
@@ -220,11 +237,15 @@ public class DomainPropertyImpl implements DomainProperty
         _schemaImport = isSchemaImport;
     }
 
+    @Override
     public void setName(String name)
     {
+        if (StringUtils.equals(name, getName()))
+            return;
         edit().setName(name);
     }
 
+    @Override
     public void setDescription(String description)
     {
         if (StringUtils.equals(description, getDescription()))
@@ -232,11 +253,13 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setDescription(description);
     }
 
+    @Override
     public void setType(IPropertyType domain)
     {
         edit().setRangeURI(domain.getTypeURI());
     }
 
+    @Override
     public void setPropertyURI(String uri)
     {
         if (StringUtils.equals(uri, getPropertyURI()))
@@ -244,6 +267,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setPropertyURI(uri);
     }
 
+    @Override
     public void setRangeURI(String rangeURI)
     {
         if (StringUtils.equals(rangeURI, getRangeURI()))
@@ -251,11 +275,13 @@ public class DomainPropertyImpl implements DomainProperty
         editSchema().setRangeURI(rangeURI);
     }
 
+    @Override
     public String getRangeURI()
     {
         return _pd.getRangeURI();
     }
 
+    @Override
     public void setFormat(String s)
     {
         if (StringUtils.equals(s, getFormat()))
@@ -263,6 +289,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setFormat(s);
     }
 
+    @Override
     public void setLabel(String caption)
     {
         if (StringUtils.equals(caption, getLabel()))
@@ -270,6 +297,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setLabel(caption);
     }
 
+    @Override
     public void setConceptURI(String conceptURI)
     {
         if (StringUtils.equals(conceptURI, getConceptURI()))
@@ -277,6 +305,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setConceptURI(conceptURI);
     }
 
+    @Override
     public void setRequired(boolean required)
     {
         if (required == isRequired())
@@ -284,6 +313,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setRequired(required);
     }
 
+    @Override
     public void setHidden(boolean hidden)
     {
         if (hidden == isHidden())
@@ -291,6 +321,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setHidden(hidden);
     }
 
+    @Override
     public void setShownInDetailsView(boolean shown)
     {
         if (shown == isShownInDetailsView())
@@ -298,6 +329,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setShownInDetailsView(shown);
     }
 
+    @Override
     public void setShownInInsertView(boolean shown)
     {
         if (shown == isShownInInsertView())
@@ -305,6 +337,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setShownInInsertView(shown);
     }
 
+    @Override
     public void setShownInUpdateView(boolean shown)
     {
         if (shown == isShownInUpdateView())
@@ -358,7 +391,8 @@ public class DomainPropertyImpl implements DomainProperty
     @Override
     public void setRedactedText(String redactedText)
     {
-        if (!isEdited() && getRedactedText() == redactedText)
+        if (!isEdited() && ((getRedactedText() != null && getRedactedText().equals(redactedText))
+                || (getRedactedText() == null && redactedText == null)))
             return;
         edit().setRedactedText(redactedText);
     }
@@ -372,6 +406,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setExcludeFromShifting(isExcludeFromShifting);
     }
 
+    @Override
     public void setMvEnabled(boolean mv)
     {
         if (mv == isMvEnabled())
@@ -379,6 +414,7 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setMvEnabled(mv);
     }
 
+    @Override
     public void setScale(int scale)
     {
         if (scale == getScale())
@@ -389,6 +425,8 @@ public class DomainPropertyImpl implements DomainProperty
     /** Need the string version of this method because it's called by reflection and must match by name */
     public void setImportAliases(String aliases)
     {
+        if (StringUtils.equals(aliases, getImportAliases()))
+            return;
         edit().setImportAliases(aliases);
     }
 
@@ -398,6 +436,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getImportAliases();
     }
 
+    @Override
     public void setImportAliasSet(Set<String> aliases)
     {
         String current = getImportAliases();
@@ -407,11 +446,13 @@ public class DomainPropertyImpl implements DomainProperty
         edit().setImportAliasesSet(aliases);
     }
 
+    @Override
     public Set<String> getImportAliasSet()
     {
         return _pd.getImportAliasSet();
     }
 
+    @Override
     public void setURL(String url)
     {
         if (StringUtils.equals(getURL(), url))
@@ -423,6 +464,7 @@ public class DomainPropertyImpl implements DomainProperty
             edit().setURL(StringExpressionFactory.createURL(url));
     }
 
+    @Override
     public String getURL()
     {
         return _pd.getURL() == null ? null : _pd.getURL().toString();
@@ -462,6 +504,7 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd;
     }
 
+    @Override
     public PropertyType getPropertyType()
     {
         return _pd.getPropertyType();
@@ -473,21 +516,25 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.getPropertyType().getJdbcType();
     }
 
+    @Override
     public int getScale()
     {
         return _pd.getScale();
     }
 
+    @Override
     public String getInputType()
     {
         return _pd.getPropertyType().getInputType();
     }
 
+    @Override
     public DefaultValueType getDefaultValueTypeEnum()
     {
         return _pd.getDefaultValueTypeEnum();
     }
 
+    @Override
     public void setDefaultValueTypeEnum(DefaultValueType defaultValueType)
     {
         _pd.setDefaultValueTypeEnum(defaultValueType);
@@ -514,27 +561,13 @@ public class DomainPropertyImpl implements DomainProperty
         return _defaultValue;
     }
 
+    @Override
     public Lookup getLookup()
     {
-        Lookup ret = new Lookup();
-        String containerId = _pd.getLookupContainer();
-        ret.setQueryName(_pd.getLookupQuery());
-        ret.setSchemaName(_pd.getLookupSchema());
-        if (ret.getQueryName() == null || ret.getSchemaName() == null)
-            return null;
-
-        if (containerId != null)
-        {
-            Container container = ContainerManager.getForId(containerId);
-            if (container == null)
-            {
-                return null;
-            }
-            ret.setContainer(container);
-        }
-        return ret;
+        return _pd.getLookup();
     }
 
+    @Override
     public void setLookup(Lookup lookup)
     {
         Lookup current = getLookup();
@@ -571,6 +604,7 @@ public class DomainPropertyImpl implements DomainProperty
     }
 
 
+    @Override
     public PropertyDescriptor getPropertyDescriptor()
     {
         return _pd;
@@ -670,12 +704,14 @@ public class DomainPropertyImpl implements DomainProperty
         DomainPropertyManager.get().saveConditionalFormats(user, getPropertyDescriptor(), ensureConditionalFormats());
     }
 
+    @Override
     @NotNull
     public List<PropertyValidatorImpl> getValidators()
     {
         return Collections.unmodifiableList(ensureValidators());
     }
 
+    @Override
     public void addValidator(IPropertyValidator validator)
     {
         if (validator != null)
@@ -686,6 +722,7 @@ public class DomainPropertyImpl implements DomainProperty
         }
     }
 
+    @Override
     public void removeValidator(IPropertyValidator validator)
     {
         int idx = ensureValidators().indexOf(validator);
@@ -696,6 +733,7 @@ public class DomainPropertyImpl implements DomainProperty
         }
     }
 
+    @Override
     public void removeValidator(int validatorId)
     {
         if (validatorId == 0) return;

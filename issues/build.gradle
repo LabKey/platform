@@ -1,0 +1,9 @@
+import org.labkey.gradle.util.BuildUtils
+
+dependencies {
+    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "experiment"), depProjectConfig: "published", depExtension: "module")
+    BuildUtils.addLabKeyDependency(project: project, config: "modules", depProjectPath: BuildUtils.getPlatformModuleProjectPath(project.gradle, "search"), depProjectConfig: "published", depExtension: "module")
+}
+
+project.evaluationDependsOn(BuildUtils.getPlatformProjectPath(project.gradle))
+project.tasks.npmInstall.dependsOn(project.project(BuildUtils.getPlatformProjectPath(project.gradle)).tasks.npmInstall)

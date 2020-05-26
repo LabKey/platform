@@ -46,12 +46,11 @@ import java.util.Map;
 @RequiresPermission(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
-    ExpProtocol _protocol;
     public ModelAndView getView(ProtocolIdForm rowIdForm, BindException errors) throws Exception
     {
-        _protocol = rowIdForm.getProtocol();
-        AssayProvider provider = AssayService.get().getProvider(_protocol);
-        Domain runDataDomain = provider.getResultsDomain(_protocol);
+        ExpProtocol protocol = rowIdForm.getProtocol();
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        Domain runDataDomain = provider.getResultsDomain(protocol);
         Map<String, String> colNameToPdname = new CaseInsensitiveHashMap<>();
         DataRegion dr = createDataRegionForInsert(OntologyManager.getTinfoObject(), "ObjectURI", runDataDomain.getProperties(), colNameToPdname);
         SimpleFilter filter = new SimpleFilter();
@@ -62,19 +61,21 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         for (DisplayColumn dc : dr.getDisplayColumns())
             dc.setCaption(colNameToPdname.get(dc.getName()));
 
-        dr.removeColumns(provider.getTableMetadata(_protocol).getResultRowIdFieldKey().toString());
+        dr.removeColumns(provider.getTableMetadata(protocol).getResultRowIdFieldKey().toString());
 
         RenderContext ctx = new RenderContext(getViewContext());
         ctx.setContainer(getContainer());
         ctx.setBaseFilter(filter);
 
-        Results rs = dr.getResultSet(ctx);
-        ExcelWriter xl = new ExcelWriter(rs, dr.getDisplayColumns());
-        xl.write(getViewContext().getResponse());
+        Results results = dr.getResults(ctx);
+        try (ExcelWriter xl = new ExcelWriter(results, dr.getDisplayColumns(), ExcelWriter.ExcelDocumentType.xlsx))
+        {
+            xl.write(getViewContext().getResponse());
+        }
         return null;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException("Not Yet Implemented");
     }

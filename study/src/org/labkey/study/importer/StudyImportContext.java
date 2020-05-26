@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportException;
@@ -33,8 +34,11 @@ import org.labkey.study.xml.StudyDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -44,7 +48,10 @@ import java.util.Set;
  */
 public class StudyImportContext extends AbstractContext
 {
+    public static final String ALLOW_DOMAIN_UPDATES = "allowDomainUpdates";
+
     private File _studyXml;
+    private HashMap<String, String> _props = new HashMap<>();
 
     // Study design table maps (primarily in Dataspace case) to help map dataset FKs
     private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
@@ -180,6 +187,33 @@ public class StudyImportContext extends AbstractContext
         if (null == map)
             map = Collections.emptyMap();
         return map;
+    }
+
+    public void setProperties(Map<String, String> props)
+    {
+        this._props.putAll(props);
+    }
+
+    public void setProperties(InputStream is) throws IOException
+    {
+        if (is == null)
+            return;
+
+        try (is)
+        {
+            Properties props = new Properties();
+            props.load(is);
+            for (Map.Entry<Object, Object> entry : props.entrySet())
+            {
+                this._props.put( StringUtils.trimToEmpty((String) entry.getKey()).toLowerCase(),
+                        StringUtils.trimToEmpty((String) entry.getValue()));
+            }
+        }
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return this._props;
     }
 
     public void addTableIdMap(String key, @NotNull Map<Object, Object> map)

@@ -19,14 +19,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -37,9 +35,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.query.olap.metadata.CachedCube;
@@ -47,8 +43,6 @@ import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
-import org.olap4j.OlapStatement;
-import org.olap4j.Position;
 import org.olap4j.mdx.ParseTreeNode;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Dimension;
@@ -86,10 +80,10 @@ import static org.labkey.query.olap.QubeQuery.OP;
  */
 public class BitSetQueryImpl
 {
-    final boolean mondrianCompatibleNullHandling = false;
+    private final boolean mondrianCompatibleNullHandling = false;
 
-    static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
-    final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    private static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
+    private final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
     static
     {
         olapServiceUser.setPrincipalType(PrincipalType.SERVICE);
@@ -98,25 +92,22 @@ public class BitSetQueryImpl
         olapServiceUser.setGUID(new GUID());
     }
 
-    final Container container;
-    final Cube cube;
-    final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
-    final QubeQuery qq;
-    final RolapCubeDef rolap;
-    final BindException errors;
-    MeasureDef measure;
-    OlapConnection connection;
-    final String cachePrefix;
-    SqlDialect dialect = null;
-    final User serviceUser;
-    final User user;
-    IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
+    private final Container container;
+    private final Cube cube;
+    private final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
+    private final QubeQuery qq;
+    private final RolapCubeDef rolap;
+    private MeasureDef measure;
+    private OlapConnection connection;
+    private final String cachePrefix;
+    private SqlDialect dialect = null;
+    private final User serviceUser;
+    private final User user;
+    private IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
 
-    MemberSet containerMembers = null;  // null == all
+    private MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq,
-           BindException errors
-           ) throws SQLException, IOException
+    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq) throws SQLException
     {
         this.serviceUser = olapServiceUser;
         this.user = user;
@@ -124,12 +115,8 @@ public class BitSetQueryImpl
         this.connection = connection;
         this.qq = qq;
         this.cube = qq.getCube();
-        this.errors = errors;
 
-        if (sd.usesRolap())
-            _dataSourceHelper = new SqlDataSourceHelper();
-        else
-            _dataSourceHelper = new CubeDataSourceHelper();
+        _dataSourceHelper = new SqlDataSourceHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -141,7 +128,7 @@ public class BitSetQueryImpl
         rolap = r;
         if (null == rolap)
             throw new IllegalStateException("Rolap definition not found: " + cube.getName());
-        String schemaName = rolap.getSchemaName();
+        String schemaName = rolap.getQuerySchemaName();
         QuerySchema s = DefaultSchema.get(serviceUser, c).getSchema(schemaName);
         if (null != s)
             dialect = s.getDbSchema().getSqlDialect();
@@ -171,14 +158,17 @@ public class BitSetQueryImpl
                 lContainer = l;
         }
 
-        CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
-        ids.addAll(containerFilter);
-        MemberSet s = new MemberSet();
-        for (Member m : lContainer.getMembers())
-            if (ids.contains(m.getName()))
-                s.add(m);
+        if (null != lContainer)
+        {
+            CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
+            ids.addAll(containerFilter);
+            MemberSet s = new MemberSet();
+            for (Member m : lContainer.getMembers())
+                if (ids.contains(m.getName()))
+                    s.add(m);
+            this.containerMembers = s;
+        }
 
-        this.containerMembers = s;
         return this;
     }
 
@@ -1389,7 +1379,7 @@ public class BitSetQueryImpl
     }
 
 
-    static StringKeyCache<MemberSet> _resultsCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, TimeUnit.DAYS.toMillis(1), "olap - count distinct queries");
+    static Cache<String, MemberSet> _resultsCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED, TimeUnit.DAYS.toMillis(1), "olap - count distinct queries");
 
     MemberSet resultsCacheGet(String query)
     {
@@ -1430,7 +1420,14 @@ public class BitSetQueryImpl
    }
 
 
-    // return sets/counts from the cube,
+    /*
+    // NOTE (please don't delete)
+    //
+    // This class enables executing CountDistinct queries using an MDX cube as a source
+    // This is not currently used or tested, but if we have cubes loaded into Mondrian
+    // it makes a lot of sense to query from there instead of reselecting from source tables.
+    // If we want to enable that, this code is probably 95% there.
+
     class CubeDataSourceHelper implements IDataSourceHelper
     {
         CellSet execute(String query)
@@ -1549,7 +1546,7 @@ public class BitSetQueryImpl
         /**
          * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
          * Note that this basically gives OR or UNION semantics w/respect to the sub members.
-         */
+         * /
         public MemberSet membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
         {
             MemberSet set;
@@ -1606,7 +1603,7 @@ public class BitSetQueryImpl
 
         /**
          * return a set of members in <Level=outer> that intersect (non empty cross join) with <Member=sub>
-         */
+         * /
         public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
             if (same(sub.getHierarchy(), outer.getHierarchy()))
@@ -1769,6 +1766,7 @@ public class BitSetQueryImpl
             return m;
         }
     }
+    */
 
 
     boolean same(MetadataElement a, MetadataElement b)
@@ -1802,7 +1800,7 @@ public class BitSetQueryImpl
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
-                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getSchemaName(),"core"));
+                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getQuerySchemaName(),"core"));
                 return QueryService.get().select(qs, query, null, true, false);
             }
             catch (QueryParseException|AssertionError x)
@@ -2554,7 +2552,7 @@ public class BitSetQueryImpl
 
     static public void invalidateCache(Container c)
     {
-        _resultsCache.removeUsingPrefix( "" + c.getRowId() + "/");
+        _resultsCache.removeUsingFilter(new Cache.StringPrefixFilter(c.getRowId() + "/"));
     }
     static public void invalidateCache(OlapSchemaDescriptor sd)
     {

@@ -32,11 +32,14 @@ import org.labkey.api.query.QueryException;
 import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.JsonUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResponseHelper;
 import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.springframework.beans.MutablePropertyValues;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
@@ -44,9 +47,11 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.time.Duration;
 import java.util.Map;
 
 /**
@@ -63,7 +68,8 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
-    private ObjectMapper _mapper;
+    private ObjectMapper _requestObjectMapper;
+    private ObjectMapper _responseObjectMapper;
 
     protected enum CommonParameters
     {
@@ -72,7 +78,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
 
     public BaseApiAction()
     {
-        setUnauthorizedType(UnauthorizedException.Type.sendBasicAuth);
         _marshaller = findMarshaller();
     }
 
@@ -108,31 +113,6 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return "execute";
     }
 
-    protected boolean isGet()
-    {
-        return "GET".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPost()
-    {
-        return "POST".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPut()
-    {
-        return "PUT".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isDelete()
-    {
-        return "DELETE".equals(getViewContext().getRequest().getMethod());
-    }
-
-    protected boolean isPatch()
-    {
-        return "PATCH".equals(getViewContext().getRequest().getMethod());
-    }
-
     @Override
     public ModelAndView handleRequest() throws Exception
     {
@@ -142,6 +122,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             return handleGet();
     }
 
+
+    @Override
+    public void setViewContext(ViewContext context)
+    {
+        // Issue 34825 - don't prompt for basic auth for browser requests
+        setUnauthorizedType(HttpUtil.isBrowser(context.getRequest()) ? UnauthorizedException.Type.sendUnauthorized : UnauthorizedException.Type.sendBasicAuth);
+        super.setViewContext(context);
+    }
 
     @SuppressWarnings("TryWithIdenticalCatches")
     public ModelAndView handlePost() throws Exception
@@ -180,9 +168,42 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
             //if we had binding or validation errors,
             //return them without calling execute.
             if (isFailure(errors))
+            {
                 createResponseWriter().writeAndClose((Errors) errors);
+            }
             else
             {
+                boolean cachable = false;
+
+                // ETag header
+                String eTag = getETag(form);
+                if (eTag != null)
+                {
+                    getViewContext().getResponse().setHeader("ETag", eTag);
+                    cachable = true;
+                }
+
+                // Last-Modified header
+                long lastModified = getLastModified(form);
+                if (lastModified != Long.MIN_VALUE)
+                {
+                    getViewContext().getResponse().addDateHeader("Last-Modified", lastModified);
+                    cachable = true;
+                }
+
+                if (cachable)
+                {
+                    // Include max-age to tell the browser to cache for a short duration before making another request to check "If-Modified-Since"
+                    ResponseHelper.setPrivate(getViewContext().getResponse(), Duration.ofSeconds(10));
+                }
+
+                // Check if the conditions specified in the optional If headers are satisfied.
+                if (!ResponseHelper.checkIfHeaders(getViewContext(), eTag, lastModified))
+                {
+                    assert getViewContext().getResponse().getStatus() != HttpServletResponse.SC_OK;
+                    return null;
+                }
+
                 Object response;
                 try (Timing ignored = MiniProfiler.step("execute"))
                 {
@@ -344,12 +365,14 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
         return Pair.of(form, errors);
     }
 
-
-    private ObjectMapper getObjectMapper()
+    private ObjectMapper getRequestObjectMapper()
     {
-        if (_mapper == null)
-            _mapper = createObjectMapper();
-        return _mapper;
+        return _requestObjectMapper == null ? _requestObjectMapper = createRequestObjectMapper() : _requestObjectMapper;
+    }
+
+    private ObjectMapper getResponseObjectMapper()
+    {
+        return _responseObjectMapper == null ? _responseObjectMapper = createResponseObjectMapper() : _responseObjectMapper;
     }
 
     /**
@@ -364,16 +387,23 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
      *     return om;
      * </pre>
      */
-    protected ObjectMapper createObjectMapper()
+    protected ObjectMapper createRequestObjectMapper()
+    {
+        return JsonUtil.DEFAULT_MAPPER;
+    }
+
+    /**
+     * {@link #createRequestObjectMapper()}
+    */
+    protected ObjectMapper createResponseObjectMapper()
     {
         return JsonUtil.DEFAULT_MAPPER;
     }
 
     protected ObjectReader getObjectReader(Class c)
     {
-        return getObjectMapper().readerFor(c);
+        return getRequestObjectMapper().readerFor(c);
     }
-
 
     /**
      * Parse POST body as JSONObject then use either CustomApiForm or spring form binding to populate the FORM instance.
@@ -413,7 +443,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         Object o = null;
 
-        if (null != obj && obj instanceof Map && ((Map)obj).containsKey(CommonParameters.apiVersion.name()))
+        if (obj instanceof Map && ((Map) obj).containsKey(CommonParameters.apiVersion.name()))
             o = ((Map)obj).get(CommonParameters.apiVersion.name());
         if (_empty(o))
             o = getProperty(CommonParameters.apiVersion.name());
@@ -527,7 +557,7 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     protected ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getObjectMapper());
+        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride(), getResponseObjectMapper());
         if (_marshaller == Marshaller.Jackson)
             writer.setSerializeViaJacksonAnnotations(true);
         return writer;
@@ -585,5 +615,16 @@ public abstract class BaseApiAction<FORM> extends BaseViewAction<FORM>
     {
         return new SimpleResponse<>(true, message, data);
     }
+
+    void notFound() throws NotFoundException
+    {
+        throw new NotFoundException();
+    }
+
+    void notFound(String message) throws NotFoundException
+    {
+        throw new NotFoundException(message);
+    }
+
 }
 

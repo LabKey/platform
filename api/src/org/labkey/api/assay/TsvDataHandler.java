@@ -18,14 +18,9 @@ package org.labkey.api.assay;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.labkey.api.assay.AbstractAssayTsvDataHandler;
-import org.labkey.api.assay.AbstractTsvAssayProvider;
-import org.labkey.api.assay.AssayDataType;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ColumnHeaderType;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -35,6 +30,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -102,8 +98,6 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     @Override
     public String getFileName(ExpData data, String defaultName)
     {
-        ExpRun run = data.getRun();
-
         if (!data.isFinalRunOutput())
             return defaultName;
 
@@ -152,8 +146,8 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                         TableSelector ts = new TableSelector(dataTable, new SimpleFilter(FieldKey.fromParts("DataId"), data.getRowId()), new Sort("RowId"));
                         // Be sure to request lookup values and other renderer-required info, see issue 36746
                         ts.setForDisplay(true);
-                        Results rs = ts.getResults();
-                        if (rs.getSize() == 0)
+                        Results results = ts.getResults();
+                        if (results.getSize() == 0)
                             return;
 
                         try
@@ -171,7 +165,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                                 }
                             }
 
-                            try (TSVGridWriter writer = new TSVGridWriter(rs, displayColumns))
+                            try (TSVGridWriter writer = new TSVGridWriter(results, displayColumns))
                             {
                                 writer.setColumnHeaderType(ColumnHeaderType.FieldKey);
                                 writer.write(tempFile);
@@ -187,5 +181,12 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
                 }
             }
         }
+    }
+
+    @Override
+    public void deleteData(ExpData data, Container container, User user)
+    {
+        // clean up plate metadata values if any
+        OntologyManager.deleteOntologyObject(data.getLSID(), container, true);
     }
 }

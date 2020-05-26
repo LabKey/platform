@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlError;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.apache.xmlbeans.XmlValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
@@ -77,7 +76,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,14 +94,14 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     protected QueryDef _queryDef;
     protected List<QueryPropertyChange> _changes = null;
 
-    private boolean _dirty;
+    protected boolean _dirty;
     private ContainerFilter _containerFilter;
     private boolean _temporary = false;
 
     // todo: spec 25628 making _cache static prevents the entire map of all tableInfos from being reloaded each time GetQueryViewsAction instantiates a new copy of QueryDefintionImpl
     // but may make _cache susceptible to concurrency conflicts or security problems -- more investigation is needed
     // private static Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
-    private  Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
+    private final Map<Pair<String, Boolean>, TableInfo> _cache = new HashMap<>();
 
     private Map<String, TableType> _metadataTableMap = null;
 
@@ -186,6 +184,8 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
     @Override
     public boolean canEdit(User user)
     {
+        if (!getDefinitionContainer().equals(getContainer()))
+            return false;
         return getDefinitionContainer().hasPermissions(user, ImmutableSet.of(EditQueriesPermission.class, UpdatePermission.class));
     }
 
@@ -369,12 +369,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
             for (XmlError xmle : xmlErrors)
             {
-                String message = (xmle instanceof XmlValidationError && null != ((XmlValidationError)xmle).getOffendingQName()) ?
-                        "Metadata validation error with '" + ((XmlValidationError)xmle).getOffendingQName().getLocalPart() + "'" :
-                        "Metadata validation error";
-                if (-1 != xmle.getLine())
-                    message += " [Line " + xmle.getLine() + "]";
-                errors.add(new MetadataParseException(message));
+                errors.add(new MetadataParseException(xmle));
             }
         }
 
@@ -453,9 +448,9 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
      */
     public Query getQuery(@NotNull QuerySchema schema, List<QueryException> errors, Query parent, boolean includeMetadata, boolean skipSuggestedColumns, boolean allowDuplicateColumns)
     {
-        Query query = new Query(schema, parent);
+        Query query = new Query(schema, getName(), parent);
 
-        query.setName(getSchemaName() + "." + getName());
+        query.setDebugName(getSchemaName() + "." + getName());
         query.setContainerFilter(getContainerFilter());
         query.setMetadataTableMap(_metadataTableMap);
         query.setAllowDuplicateColumns(allowDuplicateColumns);

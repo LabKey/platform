@@ -18,14 +18,11 @@ package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.collections.Sets;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.OntologyManager;
@@ -35,13 +32,14 @@ import org.labkey.api.exp.flag.FlagColumnRenderer;
 import org.labkey.api.exp.flag.FlagForeignKey;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
 import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.exp.query.ExpTable;
 import org.labkey.api.query.AliasedColumn;
-import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.PropertiesDisplayColumn;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
@@ -49,22 +47,22 @@ import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.settings.AppProps;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSchema> implements ExpTable<C>
+abstract public class ExpTableImpl<C extends Enum>
+        extends FilteredTable<UserSchema>
+        implements ExpTable<C>
 {
     private final ExpObjectImpl _objectType;
-    private Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
+    private final Set<Class<? extends Permission>> _allowablePermissions = new HashSet<>();
     private Domain _domain;
+    private ExpSchema _expSchema = null;
 
     // The populated flag indicates all standard columns have been added to the table, but metadata override have not yet been added
     protected boolean _populated;
@@ -78,6 +76,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         _allowablePermissions.add(ReadPermission.class);
     }
 
+    @Override
     public void addAllowablePermission(Class<? extends Permission> permission)
     {
         _allowablePermissions.add(permission);
@@ -113,7 +112,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
             }
         }
 
-        if (_populated && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS))
+        if (_populated)
         {
             ColumnInfo lsidCol = getColumn("LSID", false);
             if (lsidCol != null)
@@ -126,13 +125,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
                 // Attempt to resolve the column name as a property URI if it looks like a URI
                 if (URIUtil.hasURICharacters(name))
                 {
+                    // mark vocab propURI col as Voc column
                     PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(name /* uri */, getContainer());
                     if (pd != null)
                     {
                         PropertyColumn pc = new PropertyColumn(pd, lsidCol, getContainer(), getUserSchema().getUser(), false);
                         // use the property URI as the column's FieldKey name
+                        String label = pc.getLabel();
                         pc.setFieldKey(FieldKey.fromParts(name));
-                        pc.setLabel(BaseColumnInfo.labelFromName(pd.getName()));
+                        pc.setLabel(label);
                         return pc;
                     }
                 }
@@ -157,23 +158,27 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return result;
     }
 
-    final public BaseColumnInfo addColumn(C column)
+    @Override
+    final public MutableColumnInfo addColumn(C column)
     {
         return addColumn(column.toString(), column);
     }
 
-    final public BaseColumnInfo addColumn(String alias, C column)
+    @Override
+    final public MutableColumnInfo addColumn(String alias, C column)
     {
         var ret = createColumn(alias, column);
+        assert ret.getParentTable() == this;
         addColumn(ret);
         return ret;
     }
 
+    @Override
     public ColumnInfo getColumn(C column)
     {
         for (ColumnInfo info : getColumns())
         {
-            if (info instanceof ExprColumn && info.getAlias().equals(column.toString()))
+            if (info.getName().equals(column.toString()))
             {
                 return info;
             }
@@ -181,79 +186,32 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return null;
     }
 
-    protected BaseColumnInfo doAdd(BaseColumnInfo column)
+    protected MutableColumnInfo doAdd(MutableColumnInfo column)
     {
         addColumn(column);
         return column;
     }
 
-    public BaseColumnInfo createPropertyColumn(String name)
+    @Override
+    public MutableColumnInfo createPropertyColumn(String name)
     {
         return wrapColumn(name, getLSIDColumn());
     }
 
     // Expensive render-time fetching of all ontology properties attached to the object row
-    // TODO: Can we pre-fetch all properties referenced by the rows in the outer select and only include those properties?
-    // TODO: How to handle lookup values?
-    protected ColumnInfo createPropertiesColumn(String name)
+    protected MutableColumnInfo createPropertiesColumn(String name)
     {
         var col = new AliasedColumn(this, name, getLSIDColumn());
-        col.setDisplayColumnFactory(colInfo -> new DataColumn(colInfo)
-        {
-            @Override
-            public Object getValue(RenderContext ctx)
-            {
-                String lsid = (String)super.getValue(ctx);
-                if (lsid == null)
-                    return null;
-
-                Map<String, Object> props = OntologyManager.getProperties(ctx.getContainer(), lsid);
-                if (!props.isEmpty())
-                    return props;
-
-                return null;
-            }
-
-            @Override
-            public Object getExcelCompatibleValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            @Override
-            public String getTsvFormattedValue(RenderContext ctx)
-            {
-                return toJSONObjectString(ctx);
-            }
-
-            // return json string
-            private String toJSONObjectString(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return null;
-
-                return new JSONObject(props).toString(2);
-            }
-
-            // return html formatted value
-            @Override
-            public @NotNull String getFormattedValue(RenderContext ctx)
-            {
-                Object props = getValue(ctx);
-                if (props == null)
-                    return "&nbsp;";
-
-                String html = PageFlowUtil.filter(new JSONObject(props).toString(2));
-                html = html.replaceAll("\\n", "<br>\n");
-                return html;
-            }
-
-        });
+        col.setDescription("Includes all properties set for this row");
+        col.setDisplayColumnFactory(colInfo -> new PropertiesDisplayColumn(getUserSchema(), colInfo));
+        col.setHidden(true);
+        col.setUserEditable(false);
+        col.setReadOnly(true);
+        col.setCalculated(true);
         return col;
     }
 
-    public BaseColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
+    public MutableColumnInfo createUserColumn(String name, ColumnInfo userIdColumn)
     {
         var ret = wrapColumn(name, userIdColumn);
         UserIdQueryForeignKey.initColumn(getUserSchema(), ret, true);
@@ -275,7 +233,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     // if you change this, see similar AssayResultTable.createFlagColumn or TSVAssayProvider.createFlagColumn()
-    protected BaseColumnInfo createFlagColumn(String alias)
+    protected MutableColumnInfo createFlagColumn(String alias)
     {
         var ret = wrapColumn(alias, getLSIDColumn());
         ret.setFk(new FlagForeignKey(_userSchema, urlFlag(true), urlFlag(false)));
@@ -291,6 +249,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return ret;
     }
 
+    @Override
     public void addRowIdCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("RowId ");
@@ -298,6 +257,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         addCondition(sqlCondition);
     }
 
+    @Override
     public void addLSIDCondition(SQLFragment condition)
     {
         SQLFragment sqlCondition = new SQLFragment("LSID ");
@@ -318,19 +278,15 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
      * @param domain the domain from which to add all of the properties
      * @param legacyName if non-null, the name of a hidden node to be added as a FK for backwards compatibility
      */
-    public BaseColumnInfo addColumns(Domain domain, @Nullable String legacyName)
+    @Override
+    public MutableColumnInfo addColumns(Domain domain, @Nullable String legacyName)
     {
-        BaseColumnInfo colProperty = null;
+        MutableColumnInfo colProperty = null;
         if (legacyName != null && !domain.getProperties().isEmpty())
         {
-            colProperty = wrapColumn(legacyName, getLSIDColumn());
-            colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
             // Hide because the preferred way to get to these values is to add them directly to the table, instead of having
             // them under the legacyName node
-            colProperty.setHidden(true);
-            colProperty.setUserEditable(false);
-            colProperty.setIsUnselectable(true);
-            addColumn(colProperty);
+            colProperty = addDomainColumns(domain, legacyName);
         }
 
         List<FieldKey> visibleColumns = new ArrayList<>(getDefaultVisibleColumns());
@@ -351,12 +307,47 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         return colProperty;
     }
 
+    /**
+     * Create a hidden column as a fake lookup to include all columns in the domain.
+     * @param domain The domain to add columns from
+     * @param lookupColName The column name
+     * @return
+     */
+    protected MutableColumnInfo addDomainColumns(Domain domain, @NotNull String lookupColName)
+    {
+        var colProperty = wrapColumn(lookupColName, getLSIDColumn());
+        colProperty.setFk(new PropertyForeignKey(_userSchema, getContainerFilter(), domain));
+        colProperty.setHidden(true);
+        colProperty.setUserEditable(false);
+        colProperty.setIsUnselectable(true);
+        // As this column wraps the LSID (which is required for insert), we need
+        // to mark this as a calculated column so it won't be required during insert
+        colProperty.setCalculated(true);
+        addColumn(colProperty);
+
+        return colProperty;
+    }
+
+    protected void addVocabularyDomains()
+    {
+        List<? extends Domain> domains = PropertyService.get().getDomains(getContainer(), getUserSchema().getUser(), new VocabularyDomainKind(), true);
+        for (Domain domain : domains)
+        {
+            String columnName = domain.getName().replaceAll(" ", "") + domain.getTypeId();
+            var col = this.addDomainColumns(domain, columnName);
+            col.setLabel(domain.getName());
+            col.setDescription("Properties from " + domain.getLabel(getContainer()));
+        }
+    }
+
+
     @Override
     public Domain getDomain()
     {
         return _domain;
     }
 
+    @Override
     public void setDomain(Domain domain)
     {
         checkLocked();
@@ -366,11 +357,14 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
 
     public ExpSchema getExpSchema()
     {
-        if (_userSchema instanceof ExpSchema)
+        if (_expSchema == null)
         {
-            return (ExpSchema)_userSchema;
+            if (_userSchema instanceof ExpSchema)
+                _expSchema = (ExpSchema)_userSchema;
+            else
+                _expSchema = (ExpSchema)_userSchema.getDefaultSchema().getSchema(ExpSchema.SCHEMA_NAME);
         }
-        return new ExpSchema(_userSchema.getUser(), _userSchema.getContainer());
+        return _expSchema;
     }
 
     @Override

@@ -17,6 +17,8 @@
 package org.labkey.api.module;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.collections4.Factory;
+import org.apache.commons.lang3.ObjectUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
@@ -45,10 +47,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Modules are the basic unit of deployment for code and resources within LabKey Server. Modules are deployable
@@ -94,14 +97,36 @@ public interface Module extends Comparable<Module>
      */
     String getName();
 
-    /**
-     * Return the version of this module. Allows us to track whether
-     * module's version has changed.
-     */
-    double getVersion();
 
-    /** @return Formatted version number for display purposes. */
-    String getFormattedVersion();
+    /**
+     * Can this module be enabled in this container?
+     */
+    default boolean canBeEnabled(Container c)
+    {
+        return true;
+    }
+
+    /**
+     * Return this module's schema version. This version controls the upgrade process, particularly the running of SQL upgrade scripts.
+     */
+    @Nullable Double getSchemaVersion();
+
+    @Deprecated // Use getFormattedSchemaVersion() or getReleaseVersion() instead, as appropriate
+    default String getFormattedVersion()
+    {
+        return ObjectUtils.defaultIfNull(getFormattedSchemaVersion(), "");
+    }
+
+    @Nullable default String getFormattedSchemaVersion()
+    {
+        Double schemaVersion = getSchemaVersion();
+        return null != schemaVersion ? ModuleContext.formatVersion(schemaVersion) : null;
+    }
+
+    /**
+     * Return this module's release version, e.g., "20.3-SNAPSHOT" or "20.3.4"
+     */
+    @Nullable String getReleaseVersion();
 
     /** One line description of module's purpose (capitalized and without a period at the end) */
     @Nullable String getLabel();
@@ -228,6 +253,18 @@ public interface Module extends Comparable<Module>
     Set<Class> getIntegrationTests();
 
     /**
+     * Modules can provide JUnit tests that must be run inside the server
+     * VM. These tests will be executed as part of the DRT. These are not true unit tests, and may rely on external
+     * resources such as a database connection or services provided by other modules.
+     * @return the integration tests that this module provides
+     */
+    @JsonIgnore
+    default @NotNull Collection<Factory<Class>> getIntegrationTestFactories()
+    {
+        return getIntegrationTests().stream().map(c -> (Factory<Class>)() -> c).collect(Collectors.toList());
+    }
+
+    /**
      * Modules can provide JUnit tests that can be run independent of the server VM. Satisfies the requirements for a
      * traditional unit test.
      * @return the unit tests that this module provides
@@ -266,7 +303,7 @@ public interface Module extends Comparable<Module>
     @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 
     @JsonIgnore
-    Resolver getModuleResolver();
+    ModuleResourceResolver getModuleResolver();
     Resource getModuleResource(String path);
     Resource getModuleResource(Path path);
     InputStream getResourceStream(String filename) throws IOException;
@@ -278,11 +315,16 @@ public interface Module extends Comparable<Module>
     String getVcsBranch();
     String getVcsTag();
     String getBuildNumber();
+
+    default String getBuildTime()
+    {
+        return null;
+    }
+
     Map<String, String> getProperties();
     Set<String> getModuleDependenciesAsSet();
     @JsonIgnore
     Set<Module> getResolvedModuleDependencies();
-    boolean shouldConsolidateScripts();
     boolean shouldManageVersion();
 
     /**
@@ -297,6 +339,10 @@ public interface Module extends Comparable<Module>
      * @param path The path to the module's exploded directory
      */
     void setExplodedPath(File path);
+
+    @Nullable
+    File getZippedPath();
+    void setZippedPath(File zipped);
 
     /**
      * Returns a list of sql script file names for a given schema
@@ -360,7 +406,7 @@ public interface Module extends Comparable<Module>
      */
     JSONObject getPageContextJson(ContainerUser context);
 
-    @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
+    @NotNull List<Supplier<ClientDependency>> getClientDependencies(Container c);
 
     @JsonIgnore
     @Nullable UpgradeCode getUpgradeCode();

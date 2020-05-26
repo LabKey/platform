@@ -24,6 +24,7 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.security.User;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.ActionURL;
@@ -58,6 +59,8 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     private String _queryViewActionURL;
     private String _dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
 
+    private AuditBehaviorType _auditBehavior = null;
+
     // Allow URL parameters to bind schemaName, queryName, viewName, and dataRegionName.
     // If a derived class explicitly sets a schemaName and/or queryName (e.g. ListQueryForm or ChooseRunsToAnalyzeForm)
     // it won't be overridden by a URL parameter.
@@ -75,7 +78,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     /**
      * @throws NotFoundException if the query/table does not exist.
      */
-    public QueryView getQueryView()
+    public final QueryView getQueryView()
     {
         init();
         if (_schema == null)
@@ -132,6 +135,16 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         _bindViewName = false;
 
         assert MemTracker.getInstance().put(this);
+    }
+
+    public AuditBehaviorType getAuditBehavior()
+    {
+        return _auditBehavior;
+    }
+
+    public void setAuditBehavior(AuditBehaviorType auditBehavior)
+    {
+        _auditBehavior = auditBehavior;
     }
 
     @Override
@@ -285,7 +298,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _schemaName == null ? "" : _schemaName.toString();
     }
 
-    public @Nullable UserSchema getSchema()
+    public final @Nullable UserSchema getSchema()
     {
         init();
         return _schema;
@@ -426,5 +439,10 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     public void setInsertOption(QueryUpdateService.InsertOption insertOption)
     {
         _insertOption = insertOption;
+    }
+
+    public PropertyValues getInitParameters()
+    {
+        return _initParameters;
     }
 }

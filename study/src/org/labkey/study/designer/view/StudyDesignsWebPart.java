@@ -72,9 +72,7 @@ public class StudyDesignsWebPart extends GridView
                 boolean value = ((Boolean)super.getValue(ctx)).booleanValue();
                 if (value)
                 {
-                    Map<String, String> style = new HashMap<>();
-                    style.put("style", "white-space:nowrap");
-                    out.write(PageFlowUtil.link("Go To Study Folder").href(renderURL(ctx)).attributes(style).toString());
+                    out.write(PageFlowUtil.link("Go To Study Folder").href(renderURL(ctx)).style("white-space:nowrap").toString());
                 }
                 else
                 {

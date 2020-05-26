@@ -215,6 +215,11 @@ WITH : 'with';
 // SQL GRAMMAR
 //
 
+// public entry point
+parseSelect
+	: parameters? commonTableExpressions? selectStatement EOF
+	    -> ^(STATEMENT parameters? commonTableExpressions? selectStatement?)
+	;
 
 statement
 	: parameters? commonTableExpressions? ( updateStatement | deleteStatement | selectStatement | insertStatement )
@@ -505,6 +510,10 @@ annotation_label
 logicalExpression
 	: expression
 	;
+
+// public entry point
+parseExpression
+	: logicalOrExpression EOF!;
 
 // Main expression rule
 expression

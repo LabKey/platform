@@ -19,6 +19,8 @@ import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -33,6 +35,8 @@ import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.DefaultExperimentDataHandler;
+import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolAttachmentType;
@@ -53,7 +57,6 @@ import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.QueryService;
@@ -62,8 +65,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UsageReportingLevel;
@@ -77,25 +78,13 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.vocabulary.security.DesignVocabularyPermission;
 import org.labkey.api.webdav.WebdavResource;
-import org.labkey.experiment.api.DataClassDomainKind;
-import org.labkey.experiment.api.ExpDataClassDataTestCase;
-import org.labkey.experiment.api.ExpDataClassType;
-import org.labkey.experiment.api.ExpDataImpl;
-import org.labkey.experiment.api.ExpDataTableImpl;
-import org.labkey.experiment.api.ExpMaterialImpl;
-import org.labkey.experiment.api.ExpSampleSetImpl;
-import org.labkey.experiment.api.ExpSampleSetTestCase;
-import org.labkey.experiment.api.ExperimentServiceImpl;
-import org.labkey.experiment.api.ExperimentStressTest;
-import org.labkey.experiment.api.GraphAlgorithms;
-import org.labkey.experiment.api.LineagePerfTest;
-import org.labkey.experiment.api.LogDataType;
-import org.labkey.experiment.api.SampleSetDomainKind;
-import org.labkey.experiment.api.SampleSetServiceImpl;
-import org.labkey.experiment.api.UniqueValueCounterTestCase;
-import org.labkey.experiment.api.VocabularyDomainKind;
+import org.labkey.api.webdav.WebdavService;
+import org.labkey.experiment.api.*;
 import org.labkey.experiment.api.data.ChildOfCompareType;
+import org.labkey.experiment.api.data.ChildOfMethod;
+import org.labkey.experiment.api.data.LineageCompareType;
 import org.labkey.experiment.api.data.ParentOfCompareType;
+import org.labkey.experiment.api.data.ParentOfMethod;
 import org.labkey.experiment.api.property.DomainPropertyImpl;
 import org.labkey.experiment.api.property.LengthValidator;
 import org.labkey.experiment.api.property.LookupValidator;
@@ -106,6 +95,7 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
+import org.labkey.experiment.samples.SampleTimelineAuditProvider;
 import org.labkey.experiment.types.TypesController;
 import org.labkey.experiment.xar.FolderXarImporterFactory;
 import org.labkey.experiment.xar.FolderXarWriterFactory;
@@ -121,6 +111,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.labkey.api.exp.api.ExperimentService.MODULE_NAME;
 
@@ -142,9 +133,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.21;
+        return 20.006;
     }
 
     @Nullable
@@ -174,6 +165,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
 
         QueryService.get().addCompareType(new ChildOfCompareType());
         QueryService.get().addCompareType(new ParentOfCompareType());
+        QueryService.get().addCompareType(new LineageCompareType());
+        QueryService.get().registerMethod(ChildOfMethod.NAME, new ChildOfMethod(), null, 2, 3);
+        QueryService.get().registerMethod(ParentOfMethod.NAME, new ParentOfMethod(), null, 2, 3);
 
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
@@ -189,13 +183,18 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RESOLVE_PROPERTY_URI_COLUMNS, "Resolve property URIs as columns on experiment tables",
                 "If a column is not found on an experiment table, attempt to resolve the column name as a Property URI and add it as a property column", false);
 
-        AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
-                "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
+        //AdminConsole.addExperimentalFeatureFlag(ExperimentServiceImpl.EXPERIMENTAL_DOMAIN_DESIGNER, "UX Domain Designer",
+        //        "Directs UI to the new UX Domain Designer view for those domain kinds which are supported.", false);
 
         RoleManager.registerPermission(new DesignVocabularyPermission(), true);
 
         AttachmentService.get().registerAttachmentType(ExpRunAttachmentType.get());
         AttachmentService.get().registerAttachmentType(ExpProtocolAttachmentType.get());
+
+        WebdavService.get().addExpDataProvider((path, container) -> {
+            ExpData expData = ExperimentService.get().getExpDataByURL(path, container);
+            return expData == null ? Collections.emptyList() : Collections.singletonList(expData);
+        });
     }
 
     @Override
@@ -280,6 +279,9 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         // delete the default "Unspecified" SampleSet TODO: move to an upgrade script in 19.2
         SampleSetServiceImpl.get().deleteDefaultSampleSet();
 
+        // TODO move to an upgrade script
+        ExperimentUpgradeCode.upgradeMaterialSource(null);
+
         SearchService ss = SearchService.get();
         if (null != ss)
         {
@@ -306,10 +308,30 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (data == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeData(data, user);
+                    return ExperimentJSONConverter.serializeData(data, user, ExperimentJSONConverter.DEFAULT_SETTINGS);
                 }
             });
-            ss.addResourceResolver("materialSource", new SearchService.ResourceResolver(){
+            ss.addResourceResolver(ExpDataClassImpl.SEARCH_CATEGORY.getName(), new SearchService.ResourceResolver(){
+                @Override
+                public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
+                {
+                    int rowId = NumberUtils.toInt(resourceIdentifier.replace(ExpDataClassImpl.SEARCH_CATEGORY.getName() + ":", ""));
+                    if (rowId == 0)
+                        return null;
+
+                    ExpDataClass dataClass = ExperimentService.get().getDataClass(rowId);
+                    if (dataClass == null)
+                        return null;
+
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(dataClass, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
+
+                    //Need to map to proper Icon
+                    properties.put("type", "dataClass" + (dataClass.getCategory() != null ? ":" + dataClass.getCategory() : ""));
+
+                    return properties;
+                }
+            });
+            ss.addResourceResolver(ExpSampleSetImpl.searchCategory.getName(), new SearchService.ResourceResolver(){
                 @Override
                 public Map<String, Object> getCustomSearchJson(User user, @NotNull String resourceIdentifier)
                 {
@@ -321,7 +343,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (sampleSet == null)
                         return null;
 
-                    Map<String, Object> properties = ExperimentJSONConverter.serializeStandardProperties(sampleSet, null);
+                    Map<String, Object> properties = ExperimentJSONConverter.serializeExpObject(sampleSet, null, ExperimentJSONConverter.DEFAULT_SETTINGS);
 
                     //Need to map to proper Icon
                     properties.put("type", "sampleSet");
@@ -342,7 +364,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                     if (material == null)
                         return null;
 
-                    return ExperimentJSONConverter.serializeMaterial(material);
+                    return ExperimentJSONConverter.serializeMaterial(material, ExperimentJSONConverter.DEFAULT_SETTINGS);
                 }
             });
             ss.addDocumentProvider(this);
@@ -356,6 +378,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         AuditLogService.get().registerAuditType(new DomainPropertyAuditProvider());
         AuditLogService.get().registerAuditType(new ExperimentAuditProvider());
         AuditLogService.get().registerAuditType(new SampleSetAuditProvider());
+        AuditLogService.get().registerAuditType(new SampleTimelineAuditProvider());
 
         FileContentService fileContentService = FileContentService.get();
         if (null != fileContentService)
@@ -405,7 +428,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 {
                     Map<String, Object> assayMetrics = new HashMap<>();
                     SQLFragment baseRunSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoExperimentRun(), "r").append(" WHERE lsid LIKE ?");
-                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT COUNT(*) FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
+                    SQLFragment baseProtocolSQL = new SQLFragment("SELECT * FROM ").append(ExperimentService.get().getTinfoProtocol(), "p").append(" WHERE lsid LIKE ? AND ApplicationType = ?");
                     for (AssayProvider assayProvider : AssayService.get().getAssayProviders())
                     {
                         Map<String, Object> protocolMetrics = new HashMap<>();
@@ -419,7 +442,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                         SQLFragment protocolSQL = new SQLFragment(baseProtocolSQL);
                         protocolSQL.add(assayProvider.getProtocolPattern());
                         protocolSQL.add(ExpProtocol.ApplicationType.ExperimentRun.toString());
-                        protocolMetrics.put("protocolCount", new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getObject(Long.class));
+                        List<Protocol> protocols = new SqlSelector(ExperimentService.get().getSchema(), protocolSQL).getArrayList(Protocol.class);
+                        protocolMetrics.put("protocolCount", protocols.size());
+
+                        List<? extends ExpProtocol> wrappedProtocols = protocols.stream().map(ExpProtocolImpl::new).collect(Collectors.toList());
+
+                        protocolMetrics.put("resultRowCount", assayProvider.getResultRowCount(wrappedProtocols));
 
                         // Primary implementation class
                         protocolMetrics.put("implementingClass", assayProvider.getClass());
@@ -430,6 +458,7 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 }
 
                 results.put("sampleSetCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.materialsource").getObject(Long.class));
+                results.put("sampleCount", new SqlSelector(ExperimentService.get().getSchema(), "SELECT COUNT(*) FROM exp.material").getObject(Long.class));
 
                 return results;
             });
@@ -484,39 +513,41 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-                OntologyManager.TestCase.class,
-                DomainPropertyImpl.TestCase.class,
-                ExpDataClassDataTestCase.class,
-                ExpSampleSetTestCase.class,
-                UniqueValueCounterTestCase.class,
-                ExperimentServiceImpl.TestCase.class,
-                ExpDataTableImpl.TestCase.class,
-                ExperimentStressTest.class
-                , LineagePerfTest.class));
+        return Set.of(
+            DomainPropertyImpl.TestCase.class,
+            ExpDataClassDataTestCase.class,
+            ExpDataTableImpl.TestCase.class,
+            ExpSampleSetTestCase.class,
+            ExperimentServiceImpl.TestCase.class,
+            ExperimentStressTest.class,
+            LineagePerfTest.class,
+            LineageTest.class,
+            OntologyManager.TestCase.class,
+            UniqueValueCounterTestCase.class
+        );
     }
 
     @NotNull
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-            Lsid.TestCase.class,
-            LSIDRelativizer.TestCase.class,
-            LsidUtils.TestCase.class,
+        return Set.of(
             GraphAlgorithms.TestCase.class,
+            LSIDRelativizer.TestCase.class,
+            Lsid.TestCase.class,
+            LsidUtils.TestCase.class,
             PropertyController.TestCase.class
-        ));
+        );
     }
 
     @Override
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(
-                ExpSchema.SCHEMA_NAME,
-                DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
-                SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
+        return Set.of(
+            ExpSchema.SCHEMA_NAME,
+            DataClassDomainKind.PROVISIONED_SCHEMA_NAME,
+            SampleSetDomainKind.PROVISIONED_SCHEMA_NAME
         );
     }
 
@@ -531,34 +562,42 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     @Override
     public void enumerateDocuments(final @NotNull SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
-//        if (c == ContainerManager.getSharedContainer())
-//            OntologyManager.indexConcepts(task);
-
-        Runnable r = () -> {
+        task.addRunnable(() -> {
             for (ExpSampleSetImpl sampleSet : ExperimentServiceImpl.get().getIndexableSampleSets(c, modifiedSince))
             {
                 sampleSet.index(task);
             }
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpMaterialImpl material : ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince))
+        task.addRunnable(() -> {
+            // batch by the 100's
+            List<ExpMaterialImpl> materials = ExperimentServiceImpl.get().getIndexableMaterials(c, modifiedSince);
+            task.addResourceList(materials, 100, ExpMaterialImpl::createIndexDocument);
+        }, SearchService.PRIORITY.bulk);
+
+        task.addRunnable(() -> {
+            for (ExpDataClassImpl dataClass : ExperimentServiceImpl.get().getIndexableDataClasses(c, modifiedSince))
             {
-                material.index(task);
+                dataClass.index(task);
             }
+        }, SearchService.PRIORITY.bulk);
 
-            for (ExpDataImpl data : ExperimentServiceImpl.get().getIndexableData(c, modifiedSince))
-            {
-                data.index(task);
-            }
-        };
-        task.addRunnable(r, SearchService.PRIORITY.bulk);
-
+        task.addRunnable(() -> {
+            List<ExpDataImpl> dataObjects = ExperimentServiceImpl.get().getIndexableData(c, modifiedSince);
+            task.addResourceList(dataObjects, 100, ExpDataImpl::createDocument);
+        }, SearchService.PRIORITY.bulk);
     }
+
 
     @Override
     public void indexDeleted()
     {
         // Clear the last indexed time on all material sources
         new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoMaterialSource() +
+                " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
+
+        // Clear the last indexed time on all data classes
+        new SqlExecutor(ExperimentService.get().getSchema()).execute("UPDATE " + ExperimentService.get().getTinfoDataClass() +
                 " SET LastIndexed = NULL WHERE LastIndexed IS NOT NULL");
 
         // Clear the last indexed time on all materials

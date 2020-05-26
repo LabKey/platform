@@ -35,10 +35,17 @@ public class QueryUpdateForm extends TableViewForm
      * Prefix prepended to all form elements
      */
     public static final String PREFIX = "quf_";
+    private boolean _ignorePrefix; // for usages that want to use the QueryUpdateForm and QUS.updateRows directly
 
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx)
     {
         this(table, ctx, null);
+    }
+
+    public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx, boolean ignorePrefix)
+    {
+        this(table, ctx, null);
+        _ignorePrefix = ignorePrefix;
     }
 
     public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx, @Nullable BindException errors)
@@ -61,18 +68,19 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
+    @Override
     @Nullable
     public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
-        if (name.length() < PREFIX.length())
+        if (!_ignorePrefix && name.length() < PREFIX.length())
             return null;
 
-        return getTable().getColumn(name.substring(PREFIX.length()));
+        return getTable().getColumn(_ignorePrefix ? name : name.substring(PREFIX.length()));
     }
 
+    @Override
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        return PREFIX + column.getName();
+        return (_ignorePrefix ? "" : PREFIX) + column.getName();
     }
-
 }

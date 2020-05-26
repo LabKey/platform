@@ -16,18 +16,17 @@
 package org.labkey.query.olap;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.security.User;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.olap.rolap.RolapReader;
 import org.olap4j.OlapConnection;
-import org.olap4j.impl.Named;
-import org.olap4j.impl.NamedListImpl;
+import org.olap4j.impl.Olap4jUtil;
 import org.olap4j.metadata.Catalog;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
@@ -40,6 +39,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This maps to a mondrian schema definition file.
@@ -47,15 +47,11 @@ import java.util.List;
  */
 public abstract class OlapSchemaDescriptor
 {
-    public enum ImplStrategy {mondrian, rolapYourOwn}
-    final static Logger _log = Logger.getLogger(OlapSchemaDescriptor.class);
-
-    final Module _module;
-    final String _id;
-    final String _name;
-    final String _queryTag;
-    final ImplStrategy _strategy;
-    final OlapSchemaInfo _olapSchemaInfo;
+    private final Module _module;
+    private final String _id;
+    private final String _name;
+    private final String _queryTag;
+    private final OlapSchemaInfo _olapSchemaInfo;
 
     protected OlapSchemaDescriptor(@NotNull String id, @NotNull Module module)
     {
@@ -66,27 +62,25 @@ public abstract class OlapSchemaDescriptor
         // See if the module has any extra schema information about Olap queries
         _olapSchemaInfo = module.getOlapSchemaInfo();
         _queryTag = (_olapSchemaInfo == null) ? "" : _olapSchemaInfo.getQueryTag();
-
-        // TODO this is a horrible hack
-        if (_name.equalsIgnoreCase("Metrics"))
-            _strategy = ImplStrategy.mondrian;
-        else
-            _strategy = ImplStrategy.rolapYourOwn;
     }
 
-    public ImplStrategy getStrategy()
-    {
-        return _strategy;
-    }
 
+    /*
+     * Populating the mondrian cubes is expensive, but most usages of olap in LabKey use the CountDistinct API
+     * to enable using Mondrian in order to support MDX supply the "EnableMondrian" annotation
+     */
     public boolean usesMondrian()
     {
-        return _strategy == ImplStrategy.mondrian;
+        String s = getSchemaAnnotations().get("EnableMondrian");
+        if (null == s)
+            return false;
+        return (boolean)JdbcType.BOOLEAN.convert(s);
     }
 
-    public boolean usesRolap()
+    /* In the future we could support an annotation for this, for now return true if useMondrian is true */
+    public boolean allowExecuteMDX()
     {
-        return _strategy == ImplStrategy.rolapYourOwn;
+        return usesMondrian();
     }
 
     static String makeCatalogName(OlapSchemaDescriptor d, Container c)
@@ -145,25 +139,19 @@ public abstract class OlapSchemaDescriptor
             return null;
         Catalog catalog = connection.getOlapDatabase().getCatalogs().get(makeCatalogName(this,c));
         if (null == catalog)
-            return new ModuleOlapSchemaDescriptor.EmptyNamedList();
+            return Olap4jUtil.emptyNamedList();
         return catalog.getSchemas();
     }
 
-    public boolean shouldWarmCube(Container c)
+    boolean shouldWarmCube(Container c)
     {
         // Give the module a chance to respectfully decline the cube warming operation
-        // without throwing an error.  This may happen in Argos, for example, if we are trying to
-        // warm the cube in a Portal Selection container
+        // without throwing an error.
         if (_olapSchemaInfo != null)
             return _olapSchemaInfo.shouldWarmCube(c);
 
         return true;
     }
-
-    class EmptyNamedList<T extends Named> extends NamedListImpl<T>
-    {
-    }
-
 
     public Schema getSchema(OlapConnection connection, Container c, User u, String name) throws SQLException
     {
@@ -175,24 +163,74 @@ public abstract class OlapSchemaDescriptor
     public abstract String getDefinition();
 
 
-    List<RolapCubeDef> rolapCubes = null;
+    private List<RolapCubeDef> rolapCubes = null;
+    private Map<String,String> annotations = null;
+    private Boolean hasContainerColumn = null;
 
-    public synchronized List<RolapCubeDef> getRolapCubeDefinitions() throws IOException
+    private void _parse()
+    {
+        try (InputStream is = getInputStream(); Reader r = new InputStreamReader(is))
+        {
+            RolapReader rr = new RolapReader(r);
+            rolapCubes = rr.getCubes();
+            annotations = rr.getAnnotations();
+        }
+        catch (IOException x)
+        {
+            throw new RuntimeException(x);
+        }
+    }
+
+    private boolean isContainerLevel(RolapCubeDef.LevelDef l)
+    {
+        if (l.getName().equalsIgnoreCase("Container") || l.getName().equalsIgnoreCase("Folder"))
+            return true;
+        if (l.getKeyColumn().equalsIgnoreCase("Container") || l.getKeyColumn().equalsIgnoreCase("Folder"))
+            return true;
+        return false;
+    }
+
+    public synchronized boolean hasContainerColumn()
+    {
+        if (null == hasContainerColumn)
+        {
+            for (var def : getRolapCubeDefinitions())
+            {
+                for (var h : def.getHierarchies())
+                {
+                    for (var l : h.getLevels())
+                    {
+                        if (isContainerLevel(l))
+                        {
+                            hasContainerColumn = true;
+                            return true;
+                        }
+                    }
+                }
+            }
+            hasContainerColumn = false;
+        }
+        return hasContainerColumn;
+    }
+
+
+    public synchronized List<RolapCubeDef> getRolapCubeDefinitions()
     {
         if (null == rolapCubes)
-        {
-            try (InputStream is = getInputStream(); Reader r = new InputStreamReader(is))
-            {
-                RolapReader rr = new RolapReader(r);
-                rolapCubes = rr.getCubes();
-            }
-        }
+            _parse();
         return rolapCubes;
+    }
+
+    public synchronized Map<String,String> getSchemaAnnotations()
+    {
+        if (null == annotations)
+            _parse();
+        return annotations;
     }
 
 
     @Nullable
-    public RolapCubeDef getRolapCubeDefinitionByName(String name) throws IOException
+    public RolapCubeDef getRolapCubeDefinitionByName(String name)
     {
         List<RolapCubeDef> defs = getRolapCubeDefinitions();
         for (RolapCubeDef d : defs)
@@ -206,9 +244,9 @@ public abstract class OlapSchemaDescriptor
 
     protected abstract InputStream getInputStream() throws IOException;
 
-    /* TODO: get file directly from resource! */
-    final Object _fileLock = new Object();
-    File tmpFile = null;
+    /* Can't always get file directly from resource, so copy to known file system location */
+    private final Object _fileLock = new Object();
+    private File tmpFile = null;
 
     File getFile() throws IOException
     {
@@ -229,6 +267,7 @@ public abstract class OlapSchemaDescriptor
         return tmpFile;
     }
 
+    // TODO use ReferenceQueue to do cleanup instead of finalize()
     @Override
     protected void finalize() throws Throwable
     {

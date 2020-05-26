@@ -15,10 +15,10 @@
  */
 package org.labkey.experiment.api;
 
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.query.ExpMaterialInputTable;
@@ -40,21 +40,21 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null, cf);
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case Material:
             {
                 var result = wrapColumn(alias, _rootTable.getColumn("MaterialId"));
-                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null));
+                result.setFk(getExpSchema().getMaterialIdForeignKey(null, null, getContainerFilter()));
                 return result;
             }
             case Role:
                 return wrapColumn(alias, _rootTable.getColumn("Role"));
             case TargetProtocolApplication:
                 var result = wrapColumn(alias, _rootTable.getColumn("TargetApplicationId"));
-                result.setFk(getExpSchema().getProtocolApplicationForeignKey());
+                result.setFk(getExpSchema().getProtocolApplicationForeignKey(getContainerFilter()));
                 return result;
 
             case LSID:
@@ -78,7 +78,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
             case ProtocolInput:
             {
                 var col = wrapColumn(alias, _rootTable.getColumn("ProtocolInputId"));
-                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey());
+                col.setFk(getExpSchema().getMaterialProtocolInputForeignKey(getContainerFilter()));
                 col.setHidden(true);
                 return col;
             }

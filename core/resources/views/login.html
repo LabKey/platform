@@ -5,6 +5,9 @@
         <label for="email">Email</label>
         <input id="email" name="email" type="text" class="input-block" tabindex="1" autocomplete="off">
         <label for="password">Password</label>
+        <div class="forgot-password-link">
+            <a href="login-resetPassword.view?">Forgot password</a>
+        </div>
         <input id="password" name="password" type="password" class="input-block" tabindex="2" autocomplete="off">
         <input tabindex="3" type="checkbox" name="remember" id="remember"  checked> Remember my email address
         <div class="termsOfUseSection" hidden>
@@ -20,11 +23,8 @@
             <input type="submit" tabindex="-1" class="loginSubmitButton"/>
             <a tabindex="5" class="labkey-button primary signin-btn"><span>Sign In</span></a>
             <span class="registrationSection" hidden>
-                <a class="labkey-button" href="login-register.view?">Register</a>
+                <a class="labkey-button" id="registerButton" href="login-register.view?">Register</a>
             </span>
-        </div>
-        <div class="auth-item">
-            <a href="login-resetPassword.view?">Forgot your password?</a>
         </div>
 
         <input type="hidden" name="returnUrl">
@@ -36,3 +36,9 @@
     <div class="auth-header">Or Sign In using</div>
     <div class="otherLoginMechanismsContent"></div>
 </div>
+
+<script type="application/javascript">
+    if (LABKEY.ActionURL.getParameter('returnUrl')) {
+        document.getElementById('registerButton').href += 'returnUrl=' + encodeURIComponent(LABKEY.ActionURL.getParameter('returnUrl'));
+    }
+</script>

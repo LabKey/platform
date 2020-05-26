@@ -38,6 +38,10 @@
 <%
     AdminController.FileManagementForm bean = ((JspView<AdminController.FileManagementForm>)HttpView.currentView()).getModelBean();
 
+    // Issue 38439: get a copy of the original form bean in the error reshow case to use for toggling the migrateFilesRow message and select input
+    AdminController.FileRootsForm origBean = new AdminController.FileRootsForm();
+    AdminController.setFormAndConfirmMessage(getViewContext(), origBean);
+
     FileContentService service = FileContentService.get();
     if (null == service)
         throw new IllegalStateException("FileContentService not found.");
@@ -58,12 +62,12 @@
     {
         canChangeFileSettings = false;
     }
-    String currentFileRootOption =
-            FileRootProp.disable.name().equals(bean.getFileRootOption()) ? "Disabled" :
-            FileRootProp.siteDefault.name().equals(bean.getFileRootOption()) ? "Default based on project root" :
-            FileRootProp.folderOverride.name().equals(bean.getFileRootOption()) ? bean.getFolderRootPath() :
-            FileRootProp.cloudRoot.name().equals(bean.getFileRootOption()) ? "/@cloud/" + bean.getCloudRootName() : "";
-    boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(bean.getFileRootOption());
+    String originalFileRootOption =
+            FileRootProp.disable.name().equals(origBean.getFileRootOption()) ? "Disabled" :
+            FileRootProp.siteDefault.name().equals(origBean.getFileRootOption()) ? "Default based on project root" :
+            FileRootProp.folderOverride.name().equals(origBean.getFileRootOption()) ? origBean.getFolderRootPath() :
+            FileRootProp.cloudRoot.name().equals(origBean.getFileRootOption()) ? "/@cloud/" + origBean.getCloudRootName() : "";
+    boolean isCurrentFileRootOptionDisable = FileRootProp.disable.name().equals(origBean.getFileRootOption());
 
     CloudStoreService cloud = CloudStoreService.get();
     Map<String, CloudStoreService.StoreInfo> storeInfos = cloud != null ? cloud.getStoreInfos(getContainer()) : Collections.emptyMap();
@@ -145,7 +149,7 @@
                     <% } %>
                     <tr style="height: 1.75em" id="migrateFilesRow">
                         <td>
-                            <span style="color: #FF0000">Proposed File Root change from '<%=h(currentFileRootOption)%>'.</span> Existing files:
+                            <span style="color: #FF0000">Proposed File Root change from '<%=h(originalFileRootOption)%>'.</span> Existing files:
                             <select name="migrateFilesOption" id="migrateFilesOption" <%=h(canChangeFileSettings ? "" : " disabled ")%>>
                                 <option value="<%=MigrateFilesOption.leave%>" selected>
                                     Not copied or moved
@@ -305,6 +309,6 @@
         }
     }
 
-    updateSelection(false);
+    updateSelection(<%=!origBean.getFileRootOption().equals(bean.getFileRootOption())%>);
 </script>
 

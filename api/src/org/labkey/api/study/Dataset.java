@@ -19,6 +19,7 @@ package org.labkey.api.study;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.reports.model.ViewCategory;
@@ -41,6 +42,13 @@ import java.util.Set;
  */
 public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T>
 {
+    enum DataSharing
+    {
+        NONE,
+        ALL,
+        PTID
+    }
+
     Set<String> getDefaultFieldNames();
 
     /**
@@ -100,6 +108,16 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
     @Nullable
     String getKeyPropertyName();
 
+    String getTag();
+
+    String getVisitDatePropertyName();
+
+    DataSharing getDataSharingEnum();
+
+    boolean getUseTimeKeyField();
+
+    void setUseTimeKeyField(boolean useTimeKeyField);
+
     void setKeyPropertyName(String name);
 
     void save(User user) throws SQLException;
@@ -131,6 +149,11 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
 
     KeyType getKeyType();
 
+    void setKeyManagementType(@NotNull KeyManagementType type);
+
+    @NotNull
+    KeyManagementType getKeyManagementType();
+
     /**
      * Returns a string describing the primary keys of this Dataset for display purposes.
      * For example, "Mouse/Visit/ExtraKey"
@@ -143,11 +166,11 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param pkDataset dataset to compare
      * @return true if the extra key for this Dataset matches the extra key for the passed in dataset
      */
-    public boolean hasMatchingExtraKey(Dataset pkDataset);
+    boolean hasMatchingExtraKey(Dataset pkDataset);
 
-    public void delete(User user);
+    void delete(User user);
 
-    public void deleteAllRows(User user);
+    void deleteAllRows(User user);
 
     /**
      * Update a single dataset row
@@ -157,7 +180,7 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
      * @param data the data to be updated
      * @param errors any errors during update will be added to this list
      */
-    public String updateDatasetRow(User u, String lsid, Map<String,Object> data, List<String> errors);
+    String updateDatasetRow(User u, String lsid, Map<String,Object> data, List<String> errors);
 
     /**
      * Fetches a single row from a dataset given an LSID
@@ -253,6 +276,24 @@ public interface Dataset<T extends Dataset> extends StudyEntity, StudyCachable<T
                 }
             }
             throw new IllegalArgumentException("No match for '" + name + "'");
+        }
+
+        public static KeyManagementType getManagementTypeFromProp(PropertyType propertyType)
+        {
+            if (propertyType == PropertyType.INTEGER || propertyType == PropertyType.DOUBLE)
+            {
+                // Number fields must be RowIds
+                return RowId;
+            }
+            else if (propertyType == PropertyType.STRING)
+            {
+                // Strings can be managed as GUIDs
+                return GUID;
+            }
+            else
+            {
+                throw new IllegalStateException("Unsupported column type for managed keys: " + propertyType);
+            }
         }
     }
 }

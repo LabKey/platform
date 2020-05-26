@@ -1,0 +1,23 @@
+<view xmlns="http://labkey.org/data/xml/view" frame="none" title="<%= htmlWebpackPlugin.options.title %>">
+    <permissions>
+        <permission name="<%= htmlWebpackPlugin.options.permission %>"/>
+    </permissions>
+    <% const { files, options } = htmlWebpackPlugin; %>
+    <% if (options.mode !== 'dev') { %>
+    <dependencies>
+        <%
+            const publicPath = files.publicPath, modulePath = options.module + '/gen/';
+            [...files.css, ...files.js].forEach((filePath) => {
+                // It would be preferred to map these by entryPoint rather than hard code the file paths.
+                // This could theoretically be done by poking the "compilation" object from webpack but I could not
+                // find a strategy that works.
+                if (filePath.indexOf('/vendors~') > -1 ||
+                    filePath.indexOf('/' + options.name + '~') > -1 ||
+                    filePath.indexOf('/' + options.name + '.css') > -1 ||
+                    filePath.indexOf('/' + options.name + '.js') > -1) {
+        %>
+        <dependency path="<%= filePath.replace(publicPath, modulePath) %>"/>
+        <%  }}); %>
+    </dependencies>
+    <% } %>
+</view>

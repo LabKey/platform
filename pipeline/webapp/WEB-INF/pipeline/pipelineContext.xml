@@ -11,7 +11,7 @@
                 <bean class="org.labkey.pipeline.importer.FolderImportTask$Factory"/>
 
                 <!-- For unit-testing purposes -->
-                <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory"/>
+                <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory" />
             </list>
         </property>
         <property name="pipelineImpls">
@@ -31,12 +31,22 @@
 
         <property name="pipelines">
             <list>
+                <!-- For testing -->
+                <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
+                    <constructor-arg type="java.lang.Class" value="org.labkey.pipeline.mule.test.DummyPipelineJob"/>
+                    <property name="taskProgressionSpec">
+                        <list>
+                            <bean class="org.labkey.pipeline.mule.test.DummyTaskFactory" />
+                        </list>
+                    </property>
+                </bean>
+
                 <!-- Folder import job pipeline -->
                 <bean class="org.labkey.api.pipeline.TaskPipelineSettings">
                     <constructor-arg type="java.lang.Class" value="org.labkey.pipeline.importer.FolderImportJob"/>
                     <property name="taskProgressionSpec">
                         <list>
-                            <bean id="initialTask" class="org.labkey.api.pipeline.TaskId">
+                            <bean id="dummy" class="org.labkey.api.pipeline.TaskId">
                                 <constructor-arg><value type="java.lang.Class">org.labkey.pipeline.importer.FolderImportTask</value></constructor-arg>
                             </bean>
                         </list>

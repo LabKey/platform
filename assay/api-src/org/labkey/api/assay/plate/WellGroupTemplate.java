@@ -16,7 +16,10 @@
 
 package org.labkey.api.assay.plate;
 
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.exp.Identifiable;
 import org.labkey.api.study.PropertySet;
+import org.labkey.api.view.ActionURL;
 
 import java.util.List;
 
@@ -25,11 +28,16 @@ import java.util.List;
  * Date: Oct 23, 2006
  * Time: 1:33:19 PM
  */
-public interface WellGroupTemplate extends PropertySet
+public interface WellGroupTemplate extends PropertySet, Identifiable
 {
     Integer getRowId();
 
     List<Position> getPositions();
+
+    default void setPositions(List<? extends Position> positions)
+    {
+        throw new UnsupportedOperationException();
+    }
 
     WellGroup.Type getType();
 
@@ -38,4 +46,10 @@ public interface WellGroupTemplate extends PropertySet
     boolean contains(Position position);
 
     String getPositionDescription();
+
+    default @Nullable ActionURL detailsURL()
+    {
+        return null;
+    }
+
 }

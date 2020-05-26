@@ -16,11 +16,8 @@
 
 package org.labkey.api.gwt.client.ui;
 
-import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.*;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.ClickEvent;
 
 /**
  * User: Mark Igra
@@ -134,84 +131,13 @@ public class WindowUtil
         $wnd.history.back();
     }-*/;
 
-    public static PopupPanel.PositionCallback createPositionCallback(final DialogBox dialogBox)
-    {
-        return new PopupPanel.PositionCallback()
-        {
-            public void setPosition(int offsetWidth, int offsetHeight)
-            {
-                WindowUtil.centerDialog(dialogBox);
-            }
-        };
-    }
-
     public static void centerDialog(DialogBox dialogBox)
     {
         dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2 + WindowUtil.getScrollLeft(), (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2 + WindowUtil.getScrollTop());
     }
 
-    public static class NavigateCommand implements Command
-    {
-        private String loc;
-        public NavigateCommand(String loc)
-        {
-            this.loc = loc;
-        }
-
-        public void execute()
-        {
-            setLocation(loc);
-        }
-    }
-
     public static native String prompt(String prompt, String defaultValue) /*-{
         return $wnd.prompt(prompt, null == defaultValue ? "" : defaultValue);
     }-*/;
-
-    /**
-     * Shows a modal popup to ask for confirmation. Automatically adds a cancel button that just dismisses the dialog,
-     * as well as adding listeners to all the buttons that dismiss the dialog
-     */
-    public static void showConfirmDialog(String title, String message, ImageButton... buttons)
-    {
-        final DialogBox confirmDialog = new DialogBox(false, true);
-        confirmDialog.getElement().getStyle().setZIndex(50000);
-        for (ImageButton button : buttons)
-        {
-            button.addClickHandler(new ClickHandler()
-            {
-                public void onClick(ClickEvent event)
-                {
-                    confirmDialog.hide();
-                }
-            });
-        }
-        confirmDialog.setText(title);
-        VerticalPanel panel = new VerticalPanel();
-        panel.setSpacing(10);
-        panel.add(new Label(message));
-        HorizontalPanel buttonPanel = new HorizontalPanel();
-
-        for (ImageButton button : buttons)
-        {
-            buttonPanel.add(button);
-        }
-        ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
-        {
-            public void onClick(ClickEvent e)
-            {
-                confirmDialog.hide();
-            }
-        });
-        buttonPanel.add(cancelButton);
-        buttonPanel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-        panel.setHorizontalAlignment(HasHorizontalAlignment.ALIGN_CENTER);
-
-        panel.add(buttonPanel);
-        confirmDialog.add(panel);
-        confirmDialog.show();
-        WindowUtil.centerDialog(confirmDialog);
-    }
-
 
 }

@@ -20,7 +20,6 @@ import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
-import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +44,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
@@ -57,7 +55,6 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
-import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -66,19 +63,18 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.study.DataspaceContainerFilter;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
@@ -133,6 +129,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -159,6 +156,7 @@ public class OlapController extends SpringActionController
     }
 
 
+    @SuppressWarnings("WeakerAccess")
     public static class OlapForm
     {
         private String configId;
@@ -197,6 +195,7 @@ public class OlapController extends SpringActionController
     }
 
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class CubeForm extends OlapForm
     {
         private boolean includeMembers = true;
@@ -261,12 +260,12 @@ public class OlapController extends SpringActionController
             {
                 cube = getCube(form, errors);
             }
-            catch (OlapException|MondrianException x)
+            catch (MondrianException x)
             {
                 rethrowOlapException(x);
             }
 
-            String schemaName = getAnnotation(cube,"SchemaName");
+            String schemaName = cubeSchemaName();
             if (null != schemaName)
             {
                 UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
@@ -291,7 +290,7 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
-            if (d.usesRolap())
+            if (!d.usesMondrian())
             {
                 rolap = d.getRolapCubeDefinitionByName(cube.getName());
             }
@@ -351,7 +350,7 @@ public class OlapController extends SpringActionController
             // Validate the module is installed
             try
             {
-                Module m = d.lookupModule();
+                d.lookupModule();
             }
             catch (NotFoundException e)
             {
@@ -361,7 +360,7 @@ public class OlapController extends SpringActionController
             try
             {
                 // Instantiating the RolapReader will validate the definition and throw IllegalArgumentException
-                RolapReader rr = new RolapReader(new StringReader(d.getDefinition()));
+                new RolapReader(new StringReader(d.getDefinition()));
             }
             catch (IllegalArgumentException | IOException e)
             {
@@ -461,11 +460,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Create Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -486,11 +484,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()));
             root.addChild("Update Custom OLAP Definition");
-            return root;
         }
     }
 
@@ -513,7 +510,7 @@ public class OlapController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(CustomOlapDescriptorForm form, BindException errors)
         {
-            return new HtmlView("Are you sure you want do delete the custom olap definition '" + PageFlowUtil.filter(form.getBean().getName()) + "'?");
+            return new HtmlView(HtmlString.of("Are you sure you want do delete the custom olap definition '" + form.getBean().getName() + "'?"));
         }
 
         @Override
@@ -553,27 +550,67 @@ public class OlapController extends SpringActionController
     }
 
 
-    /*
-    // TODO Can't enable this action for non-site admins until we can check
-    // AllowMDX correctly, also note we can't support cubes that require container based filters to enforce permissions
-    */
-    @RequiresSiteAdmin
-    @Action(ActionType.SelectData.class)
-    public class ExecuteMdxAction extends ReadOnlyApiAction<ExecuteMdxForm>
+    abstract class AbstractOlapQueryAction<FORM extends OlapForm> extends ReadOnlyApiAction<FORM>
     {
         @Override
-        public void validateForm(ExecuteMdxForm form, Errors errors)
+        public void validateForm(OlapForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getConfigId()))
                 errors.reject(ERROR_REQUIRED, "configId");
 
-            if (!"GET".equals(getViewContext().getRequest().getMethod()))
+            OlapSchemaDescriptor sd = getOlapSchemaDescriptor(form, errors);
+            if (errors.hasErrors())
+                return;
+
+            if (null != form.getCubeName())
+                getCube(form, errors);
+        }
+
+        // validate that we can submit MDX against this CUBE
+        public void validateForMDX(OlapForm form, Errors errors)
+        {
+            if (errors.hasErrors())
+                return;
+
+            if (!_olapSchemaDescriptor.allowExecuteMDX())
             {
-                String sql = StringUtils.trimToNull(form.getQuery());
-                if (null == sql)
-                    errors.reject(ERROR_REQUIRED, "query");
+                errors.reject(ERROR_MSG, "This schema does not allow mdx queries via the public API");
             }
+
+            if (_olapSchemaDescriptor.hasContainerColumn())
+            {
+                errors.reject(ERROR_MSG, "This schema does not allow mdx queries because one or more cubes have container columns");
+            }
+
+            String schemaName = _olapSchemaDescriptor.getSchemaAnnotations().get("SchemaName");
+            if (null != schemaName)
+            {
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                schema.checkCanReadSchemaOlap();
+                schema.checkCanExecuteMDX();
+            }
+        }
+    }
+
+
+    @RequiresPermission(ReadPermission.class)
+    @Action(ActionType.SelectData.class)
+    public class ExecuteMdxAction extends AbstractOlapQueryAction<ExecuteMdxForm>
+    {
+        @Override
+        public void validateForm(ExecuteMdxForm form, Errors errors)
+        {
             super.validateForm(form, errors);
+            if (errors.hasErrors())
+                return;
+
+            super.validateForMDX(form, errors);
+
+            String sql = StringUtils.trimToNull(form.getQuery());
+            if (null == sql)
+                errors.reject(ERROR_REQUIRED, "query");
         }
 
 
@@ -582,13 +619,6 @@ public class OlapController extends SpringActionController
         {
             if (errors.hasErrors())
                 return null;
-
-            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
-            if (null == sd)
-            {
-                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
-                return null;
-            }
 
             String sql = StringUtils.trimToNull(form.getQuery());
 
@@ -627,9 +657,9 @@ public class OlapController extends SpringActionController
     class MDXCacheLoader implements CacheLoader<String,byte[]>
     {
         @Override
-        public byte[] load(String key, @Nullable Object argument)
+        public byte[] load(@NotNull String key, @Nullable Object argument)
         {
-            ExecuteMdxForm form = (ExecuteMdxForm)argument;
+            ExecuteMdxForm form = (ExecuteMdxForm) Objects.requireNonNull(argument);
             OlapController controller = OlapController.this;
 
             OlapStatement stmt = null;
@@ -702,59 +732,36 @@ public class OlapController extends SpringActionController
      */
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class JsonQueryAction extends ReadOnlyApiAction<JsonQueryForm>
+    public class JsonQueryAction extends AbstractOlapQueryAction<JsonQueryForm>
     {
+        @Override
+        public void validateForm(JsonQueryForm form, Errors errors)
+        {
+            super.validateForm(form, errors);
+            if (errors.hasErrors())
+                return;
+
+            JSONObject q = (JSONObject)form.json.get("query");
+            if (null == q)
+            {
+                errors.reject(ERROR_REQUIRED, "query");
+                return;
+            }
+            if (StringUtils.isEmpty(form.getCubeName()))
+                errors.reject(ERROR_REQUIRED, "cubeName");
+
+            super.validateForMDX(form, errors);
+        }
+
+
         @Override
         public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
                 return null;
 
-            Cube cube = getCube(form, errors);
-            if (errors.hasErrors())
-                return null;
-
-            JSONObject q = (JSONObject)form.json.get("query");
-            if (null == q)
-            {
-                errors.reject(ERROR_MSG, "query not specified");
-                return null;
-            }
-
-            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
-            if (null == sd)
-            {
-                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
-                return null;
-            }
-
-            ContainerFilter cf = null;
-            String schemaName = getAnnotation(cube,"SchemaName");
-            if (null != schemaName)
-            {
-                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
-                if (null == schema)
-                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
-                schema.checkCanReadSchemaOlap();
-                schema.checkCanExecuteMDX();
-                cf = schema.getOlapContainerFilter();
-            }
-
-            // does not override schema.checkCanExecuteMDX()
-            String allowMDX = getAnnotation(cube, "AllowMDX");
-            if (null != allowMDX && Boolean.FALSE == ConvertUtils.convert(allowMDX, Boolean.class))
-            {
-                errors.reject(ERROR_MSG, "this cube does not allow mdx queries: " + cube.getName());
-                return null;
-            }
-
-            QubeQuery qquery = new QubeQuery(cube);
-            qquery.fromJson(q, errors);
-            // TODO
-            // if (null != cf)
-            //    mdx.setContainerFilter(cf);
-            if (errors.hasErrors())
-                return null;
+            QubeQuery qquery = new QubeQuery(_cube);
+            qquery.fromJson((JSONObject)form.json.get("query"), errors);
 
             String mdx =  new MdxQueryImpl(qquery, errors).generateMDX();
             if (errors.hasErrors())
@@ -798,14 +805,14 @@ public class OlapController extends SpringActionController
  *
  * joinLevel : ""
  * name of the level that relates the row, column, and dataFilter results (e.g. ParticipantVisit).  In some sense,
- * the whereFilter applies directly to all the rows of the fact table, but the whole point of the cube/olap strategry
+ * the whereFilter applies directly to all the rows of the fact table, but the whole point of the cube/olap strategy
  * is to reduce the data-size as much as possible.  In some sense, the joinLevel indicates the useful level of
  * granularity for the fact table filter.
  * if not specified, this is the same as the countDistinctLevel
  * (optional)
  *
  * whereFilter : []
- * This filter is is used the data processed by the query.  The result will be a set of members of
+ * This is used to filter the data processed by the query.  The result will be a set of members of
  * the joinLevel.  If joinLevel==countDistinctLevel then this will be functionally equivalent to the countFilter:[]
  * e.g. (ParticipantVisit)
  * (optional)
@@ -817,35 +824,31 @@ public class OlapController extends SpringActionController
 
     @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    @Deprecated // same as countFilter
-    public class CountDistinctQueryAction extends ReadOnlyApiAction<JsonQueryForm>
+    public class CountDistinctQueryAction extends AbstractOlapQueryAction<JsonQueryForm>
     {
+        @Override
+        public void validateForm(JsonQueryForm form, Errors errors)
+        {
+            super.validateForm(form, errors);
+
+            JSONObject q = (JSONObject)form.json.get("query");
+            if (null == q)
+            {
+                errors.reject(ERROR_REQUIRED, "query");
+                return;
+            }
+            if (StringUtils.isEmpty(form.getCubeName()))
+                errors.reject(ERROR_REQUIRED, "cubeName");
+        }
+
         @Override
         public ApiResponse execute(JsonQueryForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
                 return null;
 
-            Cube cube = getCube(form, errors);
-            if (errors.hasErrors())
-                return null;
-
-            JSONObject q = (JSONObject)form.json.get("query");
-            if (null == q)
-            {
-                errors.reject(ERROR_MSG, "query not specified");
-                return null;
-            }
-
-            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
-            if (null == sd)
-            {
-                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
-                return null;
-            }
-
             ContainerFilter cf = null;
-            String schemaName = getAnnotation(cube,"SchemaName");
+            String schemaName = cubeSchemaName();
             if (null != schemaName)
             {
                 UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
@@ -854,10 +857,10 @@ public class OlapController extends SpringActionController
                 schema.checkCanReadSchemaOlap();
                 cf = schema.getOlapContainerFilter();
             }
-            String containerFilterName = getAnnotation(cube,"ContainerFilter");
+            String containerFilterName = getAnnotation(_cube,"ContainerFilter");
             if (null != containerFilterName)
             {
-                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getUser());
+                cf = ContainerFilter.getContainerFilterByName(containerFilterName, getContainer(), getUser());
                 if (null == cf)
                     throw new ConfigurationException("Container filter from olap configuration file not found : " + containerFilterName);
             }
@@ -866,7 +869,8 @@ public class OlapController extends SpringActionController
             StringWriter sw = new StringWriter();
             try
             {
-                QubeQuery qquery = new QubeQuery(cube);
+                QubeQuery qquery = new QubeQuery(_cube);
+                JSONObject q = (JSONObject)form.json.get("query");
                 qquery.fromJson(q, errors);
                 if (errors.hasErrors())
                     return null;
@@ -876,7 +880,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, null, qquery, errors);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), _olapSchemaDescriptor, _cube, null, qquery);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();
@@ -884,7 +888,7 @@ public class OlapController extends SpringActionController
                 }
                 finally
                 {
-                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + sd.getQueryTag(),
+                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + _olapSchemaDescriptor.getQueryTag(),
                             null, (0 == start || 0 == end) ? 0 : (end - start), null, true, QueryLogging.noValidationNeededQueryLogging());
                     _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
                 }
@@ -938,9 +942,8 @@ public class OlapController extends SpringActionController
     public class XmlaAction extends SimpleViewAction<OlapForm>
     {
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         @Override
@@ -994,7 +997,7 @@ public class OlapController extends SpringActionController
 
 
     // for testing
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
     public class TestBrowserAction extends SimpleViewAction<OlapForm>
     {
@@ -1005,22 +1008,21 @@ public class OlapController extends SpringActionController
             if (StringUtils.isNotEmpty(form.getCubeName()))
                 cube = getCube(form, errors);
 
-            return new JspView("/org/labkey/query/view/cube.jsp", cube, errors);
+            return new JspView<>("/org/labkey/query/view/cube.jsp", cube, errors);
         }
 
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
 
     // for testing
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class TestMdxAction extends SimpleViewAction<OlapForm>
+    static public class TestMdxAction extends SimpleViewAction<OlapForm>
     {
         @Override
         public ModelAndView getView(OlapForm form, BindException errors)
@@ -1036,17 +1038,16 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
 
     // for testing
-    @RequiresPermission(AdminPermission.class)
+    @RequiresPermission(ReadPermission.class)
     @Action(ActionType.SelectData.class)
-    public class TestJsonAction extends SimpleViewAction<OlapForm>
+    static public class TestJsonAction extends SimpleViewAction<OlapForm>
     {
         @Override
         public ModelAndView getView(OlapForm form, BindException errors)
@@ -1062,44 +1063,59 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
-
 
 
     // TODO move these annotations out of the schema.xml file, and into a separate .config.xml file
     @Nullable
-    private String getAnnotation(Cube cube, String name)  throws SQLException
+    private static String getAnnotation(Cube cube, String name)
     {
-        Annotated annotated = cube instanceof Annotated ? (Annotated)cube :
-                cube instanceof OlapWrapper ? ((OlapWrapper)cube).unwrap(Annotated.class) :
-                null;
-        if (null != annotated)
+        try
         {
-            Map<String,Annotation> annotations = annotated.getAnnotationMap();
-            if (null == annotations)
-                return null;
-            Annotation a = annotations.get(name);
-            return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
+            Annotated annotated = cube instanceof Annotated ? (Annotated) cube :
+                    cube instanceof OlapWrapper ? ((OlapWrapper) cube).unwrap(Annotated.class) :
+                            null;
+            if (null != annotated)
+            {
+                Map<String, Annotation> annotations = annotated.getAnnotationMap();
+                if (null == annotations)
+                    return null;
+                Annotation a = annotations.get(name);
+                return null == a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
+            }
+            else if (cube instanceof CachedCube)
+            {
+                return ((CachedCube) cube).getAnnotationMap().get(name);
+            }
+            return null;
         }
-        else if (cube instanceof CachedCube)
+        catch (SQLException x)
         {
-            return ((CachedCube) cube).getAnnotationMap().get(name);
+            throw new ConfigurationException("Olap runtime error",x);
         }
-        return null;
     }
 
 
+    private String cubeSchemaName()  throws SQLException
+    {
+        String schemaName = _olapSchemaDescriptor.getSchemaAnnotations().get("SchemaName");
+        // check cube for backwards compat, prefer olapdescriptor annotation
+        if (null == schemaName)
+            schemaName = getAnnotation(_cube, "SchemaName");
+        return schemaName;
+    }
 
+
+    private OlapSchemaDescriptor _olapSchemaDescriptor = null;
     private Cube _cube = null;
 
-    private Cube getCube(OlapForm form, BindException errors) throws SQLException, IOException
+    private OlapSchemaDescriptor getOlapSchemaDescriptor(OlapForm form, Errors errors)
     {
-        if (null != _cube)
-            return _cube;
+        if (null != _olapSchemaDescriptor)
+            return _olapSchemaDescriptor;
 
         OlapSchemaDescriptor d = null;
         if (StringUtils.isNotEmpty(form.getConfigId()))
@@ -1111,19 +1127,40 @@ public class OlapController extends SpringActionController
                 errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getConfigId());
             else
                 errors.reject(ERROR_MSG, "configId parameter is required");
-            return null;
         }
+        _olapSchemaDescriptor = d;
+        return _olapSchemaDescriptor;
+    }
 
-        OlapConnection conn = null;
-        if (d.usesMondrian())
-            conn = getConnection(d);
-        Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), BitSetQueryImpl.getOlapServiceUser(), form.getSchemaName(), form.getCubeName(), errors);
-        if (errors.hasErrors())
-        {
+
+    private Cube getCube(OlapForm form, Errors errors)
+    {
+        if (null != _cube)
+            return _cube;
+
+        OlapSchemaDescriptor d = getOlapSchemaDescriptor(form, errors);
+        if (null == d)
             return null;
+
+        try
+        {
+            OlapConnection conn = null;
+            if (d.usesMondrian())
+            {
+                conn = getConnection(d);
+            }
+            Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), BitSetQueryImpl.getOlapServiceUser(), form.getSchemaName(), form.getCubeName(), (BindException)errors);
+            if (errors.hasErrors())
+            {
+                return null;
+            }
+            _cube = cube;
+            return _cube;
         }
-        _cube = cube;
-        return _cube;
+        catch (SQLException|IOException x)
+        {
+            throw new ConfigurationException("Error getting mondrian connection", x);
+        }
     }
 
 
@@ -1153,9 +1190,9 @@ public class OlapController extends SpringActionController
     private OlapConnection _connection = null;
 
     @Nullable
-    OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
+    private OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
     {
-        if (d == null || d.usesRolap())
+        if (d == null || !d.usesMondrian())
             return null;
 
         if (null == _connection)
@@ -1169,7 +1206,7 @@ public class OlapController extends SpringActionController
 
     private MondrianServer _server = null;
 
-    MondrianServer getServer()
+    private MondrianServer getServer()
     {
         if (null == _server)
         {
@@ -1184,14 +1221,14 @@ public class OlapController extends SpringActionController
         if (cf instanceof DataspaceContainerFilter)
         {
             DataspaceContainerFilter dscf = (DataspaceContainerFilter)cf;
-            Collection<GUID> guids = dscf.getIds(getContainer(),ReadPermission.class, null);
+            Collection<GUID> guids = dscf.generateIds(getContainer(),ReadPermission.class, null);
             List<String> ret = guids.stream().map(GUID::toString).collect(Collectors.toList());
             return Collections.unmodifiableCollection(ret);
         }
         // TODO optimize, this is round-about since cf probabaly implements getIds() internally
         DbSchema core = CoreSchema.getInstance().getSchema();
         SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
-        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), getContainer(), new HashMap<FieldKey,ColumnInfo>()));
+        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), new HashMap<>()));
         ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
         return Collections.unmodifiableCollection(list);
     }
@@ -1290,7 +1327,7 @@ public class OlapController extends SpringActionController
         return contextNames;
     }
 
-    @RequiresPermission(AdminReadPermission.class)
+    @RequiresPermission(TroubleShooterPermission.class)
     public class ListAppsAction extends ReadOnlyApiAction<Object>
     {
         @Override
@@ -1456,9 +1493,9 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Manage Application");
+            root.addChild("Manage Application");
         }
     }
 
@@ -1488,11 +1525,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()));
             root.addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
-            return root;
         }
     }
 
@@ -1518,6 +1554,7 @@ public class OlapController extends SpringActionController
         }
     }
 
+    @SuppressWarnings("unused")
     @RequiresNoPermission
     public class GetActiveAppConfigAction extends ReadOnlyApiAction
     {
@@ -1555,8 +1592,12 @@ public class OlapController extends SpringActionController
             // @RequiresPermission(ReadPermission.class)
             assertForReadPermission(user,
                 controller.new GetCubeDefinitionAction(),
+                new TestMdxAction(),
+                new TestJsonAction(),
                 controller.new JsonQueryAction(),
                 controller.new CountDistinctQueryAction(),
+                controller.new TestBrowserAction(),
+                controller.new ExecuteMdxAction(),
                 controller.new XmlaAction()
             );
 
@@ -1565,20 +1606,12 @@ public class OlapController extends SpringActionController
                 controller.new CreateDefinitionAction(),
                 controller.new EditDefinitionAction(),
                 controller.new DeleteDefinitionAction(),
-                controller.new TestBrowserAction(),
-                controller.new TestMdxAction(),
-                controller.new TestJsonAction(),
                 controller.new InsertAppAction(),
                 controller.new DeleteAppAction(),
                 controller.new ManageAppsAction(),
                 controller.new EditAppAction(),
                 controller.new SetActiveAppConfigAction(),
                 controller.new ListAppsAction()
-            );
-
-            // @RequiresSiteAdmin
-            assertForRequiresSiteAdmin(user,
-                controller.new ExecuteMdxAction()
             );
         }
     }

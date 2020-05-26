@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.core.view.template.bootstrap.PageTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PageConfig> me = (JspView<PageConfig>) HttpView.currentView();
@@ -36,24 +35,19 @@
             <div class="row labkey-wizard-row hidden-md hidden-lg">
                 <div class="col-xs-12">
                     <ul class="nav nav-pills list-inline">
-                        <%
-                            int index = 1;
-                            for (NavTree navTree : pageConfig.getNavTrail())
-                            { %>
-                        <li <%= (navTree.getText().equals(pageConfig.getTitle()) || (navTree.getText().equals("Create Folder") && pageConfig.getTitle().startsWith("Create Folder"))) ? "class=\"active\"" : ""%>>
-                            <a><span class="list-group-item-heading">Step <%=(index++)%></span></a>
+                        <%for (NavTree navTree : pageConfig.getNavTrail()) { %>
+                        <li <%= pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : ""%>>
+                            <a><span class="list-group-item-heading"><%= navTree.getText() %></span></a>
                         </li>
-                        <%
-                            }%>
+                        <%}%>
                     </ul>
                 </div>
             </div>
             <div class="row labkey-wizard-row">
                 <div class="col-md-3 hidden-xs hidden-sm">
                     <ul class="nav nav-stacked labkey-wizard-pills">
-                        <% for (NavTree navTree : pageConfig.getNavTrail())
-                        { %>
-                            <li <%= (navTree.getText().equals(pageConfig.getTitle()) || (navTree.getText().equals("Create Folder") && pageConfig.getTitle().startsWith("Create Folder"))) ? "class=\"active\"" : ""%>>
+                        <% for (NavTree navTree : pageConfig.getNavTrail()) { %>
+                            <li <%= pageConfig.getTitle().startsWith(navTree.getText()) ? "class=\"active\"" : ""%>>
                                 <a><%= navTree.getText() %></a>
                             </li>
                         <% } %>

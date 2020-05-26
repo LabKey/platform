@@ -21,7 +21,6 @@
 <%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyUrls" %>
-<%@ page import="org.labkey.study.assay.PublishStartAction" %>
 <%@ page import="org.labkey.api.study.assay.AssayPublishService" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.element.Input" %>
@@ -30,6 +29,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.assay.PublishStartAction" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
@@ -159,7 +159,7 @@
         {
             String label = "All data is marked for copying to study <b>" + h(firstStudy.getLabel()) + "</b> in folder <b>" + h(firstStudy.getContainer().getPath()) + "</b>.";
     %>
-    <labkey:input type="displayfield" value="<%=text(label)%>"/>
+    <labkey:input type="displayfield" value="<%=label%>"/>
     <labkey:input type="checkbox" label="Copy to a different study" id="chooseStudy" onChange="toggleStudies();"/>
     <%
         }
@@ -177,7 +177,7 @@
     %>
 
     <labkey:button text="Next" onclick="handleNext();" submit="false"/>
-    <labkey:button text="Cancel" href="<%=text(bean.getReturnURL())%>"/>
+    <labkey:button text="Cancel" href="<%=bean.getReturnURL()%>"/>
 
     <%
         for (Pair<String, String> parameter : parameters)

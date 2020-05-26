@@ -20,16 +20,23 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnDecorator;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Table;
 import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.util.StringExpressionFactory;
 
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -68,7 +75,9 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         nameCol.setURL(new StringExpressionFactory.URLStringExpression("${URL}"));
         nameCol.setURLTargetWindow("_blank");
 
-        addWrapColumn(getRealTable().getColumn("InstalledVersion"));
+        addTextColumn("ReleaseVersion").setScale(255);
+        var schemaVersionColumn = addWrapColumn(getRealTable().getColumn("SchemaVersion"));
+        schemaVersionColumn.setDisplayColumnFactory(new SchemaVersionDisplayColumnFactory(schemaVersionColumn.getDisplayColumnFactory()));
         addWrapColumn(getRealTable().getColumn("ClassName"));
 
         addTextColumn("Label").setScale(255);
@@ -92,13 +101,24 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
 
         addWrapColumn(getRealTable().getColumn("Schemas"));
 
-        setDefaultVisibleColumns(Arrays.asList(
-                FieldKey.fromParts("Name"),
-                FieldKey.fromParts("InstalledVersion"),
-                FieldKey.fromParts("Label"),
-                FieldKey.fromParts("Organization"),
-                FieldKey.fromParts("License")
+        setDefaultVisibleColumns(List.of(
+            FieldKey.fromParts("Name"),
+            FieldKey.fromParts("ReleaseVersion"),
+            FieldKey.fromParts("SchemaVersion"),
+            FieldKey.fromParts("Label"),
+            FieldKey.fromParts("Organization"),
+            FieldKey.fromParts("License")
         ));
+    }
+
+    @Override
+    protected ColumnInfo resolveColumn(String name)
+    {
+        if ("InstalledVersion".equalsIgnoreCase(name))
+        {
+            return getColumn("SchemaVersion");
+        }
+        return super.resolveColumn(name);
     }
 
     private BaseColumnInfo addTextColumn(String name)
@@ -132,6 +152,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
             sep = ",\n";
             cte.append("(");
             cte.append("?").add(module.getName());
+            cte.append(",?").add(StringUtils.trimToNull(module.getReleaseVersion()));
             cte.append(",?").add(StringUtils.trimToNull(module.getLabel()));
             cte.append(",?").add(StringUtils.trimToNull(module.getDescription()));
             cte.append(",?").add(StringUtils.trimToNull(module.getUrl()));
@@ -148,6 +169,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         }
         cte.append(") AS T (");
         cte.append("ModuleName");
+        cte.append(",ReleaseVersion");
         cte.append(",Label");
         cte.append(",Description");
         cte.append(",Url");
@@ -163,7 +185,7 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         String token = ret.addCommonTableExpression(cte.toString(), tableName, cte);
 
         // join with core.modules
-        ret.append("(SELECT m.name, m.installedversion, m.classname, m.schemas");
+        ret.append("(SELECT m.name, m.schemaversion, m.classname, m.schemas");
         ret.append(",").append(tableName).append(".*");
         ret.append("\n");
         ret.append("FROM ").append(getFromTable().getFromSQL("m")).append("\n");
@@ -176,5 +198,46 @@ public class ModulesTableInfo extends SimpleUserSchema.SimpleTable<CoreQuerySche
         ret.append("\n").append(filterFrag).append(") ").append(alias);
 
         return ret;
+    }
+
+    // Format SchemaVersion column using the standard ModuleContext formatting rules: force three-decimal places for >= 20.000,
+    // otherwise suppress trailing zeroes. Also right align the values in the grid.
+    private static class SchemaVersionDisplayColumnFactory implements DisplayColumnFactory
+    {
+        private final DisplayColumnFactory _factory;
+
+        public SchemaVersionDisplayColumnFactory(DisplayColumnFactory factory)
+        {
+            _factory = factory;
+        }
+
+        @Override
+        public DisplayColumn createRenderer(ColumnInfo colInfo)
+        {
+            // This DisplayColumn's rendering assumes column type is Double; fail fast if it's something else
+            assert colInfo.getJdbcType() == JdbcType.DOUBLE;
+            return new DisplayColumnDecorator(_factory.createRenderer(colInfo))
+            {
+                {
+                    _textAlign = "right";
+                }
+
+                @Override
+                public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                {
+                    Object o = getValue(ctx);
+
+                    if (null == o)
+                    {
+                        super.renderGridCellContents(ctx, out);
+                    }
+                    else
+                    {
+                        String formatted = ModuleContext.formatVersion((double)o);
+                        out.write(formatted);
+                    }
+                }
+            };
+        }
     }
 }

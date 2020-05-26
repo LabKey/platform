@@ -21,7 +21,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.ConcurrentCaseInsensitiveSortedMap;
-import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -50,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * For performance a DefaultSchema caches resolved UserSchema objects. The DefaultSchema itself should not
  * be cached.  It should only be held onto for a short time (e.g. request or query scope).
  */
-final public class DefaultSchema extends AbstractSchema
+final public class DefaultSchema extends AbstractSchema implements QuerySchema.ContainerSchema
 {
     static public abstract class SchemaProvider
     {
@@ -107,6 +106,7 @@ final public class DefaultSchema extends AbstractSchema
     {
         registerProvider("Folder", new FolderSchemaProvider()
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new FolderSchema("Folder", schema.getUser(), schema.getContainer(), null);
@@ -114,6 +114,7 @@ final public class DefaultSchema extends AbstractSchema
         });
         registerProvider("Project", new FolderSchemaProvider()
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = schema.getContainer().getProject();
@@ -126,6 +127,7 @@ final public class DefaultSchema extends AbstractSchema
             }
         });
         registerProvider("Shared", new FolderSchemaProvider(){
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getSharedContainer();
@@ -133,6 +135,7 @@ final public class DefaultSchema extends AbstractSchema
             }
         });
         registerProvider("Site", new FolderSchemaProvider(){
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 Container container = ContainerManager.getRoot();
@@ -183,28 +186,29 @@ final public class DefaultSchema extends AbstractSchema
             return null;
 
         DefaultSchema schema = DefaultSchema.get(user, container);
-        return schema.get(schemaPath);
+        return resolve(schema, schemaPath);
     }
 
-    private QuerySchema get(SchemaKey schemaPath)
+    public static QuerySchema resolve(QuerySchema schema, SchemaKey schemaPath)
     {
+        DefaultSchema ds = schema.getDefaultSchema();
+        var cache = null==ds ? null : ds.cache;
         SchemaKey subPath = null;
         List<String> parts = schemaPath.getParts();
-        QuerySchema schema = this;
         for (String part : parts)
         {
             subPath = new SchemaKey(subPath, part);
-            QuerySchema child = cache.get(subPath);
+            QuerySchema child = null==cache ? null : cache.get(subPath);
             if (null == child)
             {
                 child = schema.getSchema(part);
                 if (null == child)
                     return null;
-                cache.put(subPath, child);
+                if (null != cache)
+                    cache.put(subPath, child);
             }
             schema = child;
         }
-
         return schema;
     }
 
@@ -214,11 +218,7 @@ final public class DefaultSchema extends AbstractSchema
         MemTracker.getInstance().put(this);
     }
 
-    public TableInfo getTable(String name)
-    {
-        throw new IllegalStateException("Use getTable(Name, ContainerFilter)");
-    }
-
+    @Override
     public TableInfo getTable(String name, ContainerFilter cf)
     {
         return null;
@@ -314,6 +314,7 @@ final public class DefaultSchema extends AbstractSchema
         return null;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         Set<String> ret = new TreeSet<>(_providers.keySet());    // TODO: Return a set in case-insensitive order?
@@ -382,17 +383,20 @@ final public class DefaultSchema extends AbstractSchema
         return visitor.visitTop(getSchemas(includeHidden), null);
     }
 
+    @Override
     public @NotNull String getName()
     {
         return "default";
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
     /** Returns a SchemaKey encoded name for this schema. */
+    @Override
     @NotNull
     public String getSchemaName()
     {

@@ -45,7 +45,6 @@ import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,11 +56,8 @@ import java.util.Set;
  * User: Matthew
  * Date: Apr 27, 2006
  */
-public interface TableInfo extends HasPermission, SchemaTreeNode
+public interface TableInfo extends TableDescription, HasPermission, SchemaTreeNode
 {
-
-    String getName();
-
     /** Get title, falling back to the name if title is null **/
     String getTitle();
 
@@ -108,8 +104,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     /** getSchema().getSqlDialect() */
     SqlDialect getSqlDialect();
 
-    List<String> getPkColumnNames();
-
     @NotNull List<ColumnInfo> getPkColumns();
 
     /** Gets all of the constraints that guarantee uniqueness in the underlying table. This includes both PRIMARY KEY and UNIQUE constraints */
@@ -119,6 +113,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     /** Gets all of the indices from the underlying table. This includes PRIMARY KEY and UNIQUE constraints, as well as non-unique INDEX */
     @NotNull
     Map<String, Pair<IndexType, List<ColumnInfo>>> getAllIndices();
+
+    /** Log an audit event to capture a data change made to this table */
+    default void addAuditEvent(User user, Container container, AuditBehaviorType auditBehavior, QueryService.AuditAction auditAction, List<Map<String, Object>>[] parameters)
+    {
+        QueryService.get().addAuditEvent(user, container, this, auditBehavior, auditAction, parameters);
+    }
 
     enum IndexType
     {
@@ -173,18 +173,9 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     String getVersionColumnName();
 
-    /** @return the default display value for this table if it's the target of a foreign key */
-    String getTitleColumn();
-
     boolean hasDefaultTitleColumn();
 
     DatabaseTableType getTableType();
-
-    /** Get select list for named (hopefully unique!) column to title column. */
-    default @NotNull NamedObjectList getSelectList(String columnName)
-    {
-        return getSelectList(columnName, Collections.emptyList(), null);
-    }
 
     /**
      * Get select list for named (hopefully unique!) column to title column, including filter on table.
@@ -192,7 +183,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * When maxRows is null a default maxRows will be used. To select all rows, set maxRows to {@link Table#ALL_ROWS}.
      * @see NamedObjectList#isComplete()
      */
-    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows);
+    @NotNull NamedObjectList getSelectList(String columnName, List<FilterType> filters, Integer maxRows, String titleColumn);
 
     ColumnInfo getColumn(@NotNull String colName);
 
@@ -210,6 +201,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     Set<String> getColumnNameSet();
 
+    default String getDbSequenceName(String columnName)
+    {
+        return (this.getSchema().getName() + ":" + this.getName() + ":" + columnName).toLowerCase();
+    }
+
     /**
      * Return a list of ColumnInfos that make up the extended set of
      * columns that could be considered a part of this table by default.
@@ -224,6 +220,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * @return All columns.
      */
     Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
+
 
     /**
      * @return the {@link org.labkey.api.query.FieldKey}s that should be part of the default view of the table,
@@ -333,13 +330,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * getImportTemplates() should be used instead
      */
     List<Pair<String, StringExpression>> getRawImportTemplates();
-
-    boolean isPublic();
-
-    String getPublicName();
-
-    /** @return The public (queryable) schema name in SchemaKey encoding. */
-    String getPublicSchemaName();
 
     // Most datasets do not have a container column
     boolean hasContainerColumn();
@@ -577,6 +567,19 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     default AuditBehaviorType getAuditBehavior()
     {
         return AuditBehaviorType.NONE;
+    }
+
+    /* Can be used to distinguish AuditBehaviorType.NONE vs absent xml audit config */
+    default AuditBehaviorType getXmlAuditBehaviorType()
+    {
+        return null;
+    }
+
+    /* fields to include in detailed UPDATE audit log, even if no change is made to field value */
+    @Nullable
+    default Set<String> getExtraDetailedUpdateAuditFields()
+    {
+        return null;
     }
 
     /**

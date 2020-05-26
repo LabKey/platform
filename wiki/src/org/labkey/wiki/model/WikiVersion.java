@@ -19,11 +19,12 @@ package org.labkey.wiki.model;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
-import org.labkey.api.wiki.WikiService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
@@ -121,12 +122,15 @@ public class WikiVersion
     }
 
     // TODO: WikiVersion should know its wiki & container
-    public String getHtml(Container c, Wiki wiki)
+    public HtmlString getHtml(Container c, Wiki wiki)
     {
-        return WikiService.WIKI_PREFIX + getHtmlForConvert(c, wiki) + WikiService.WIKI_SUFFIX;
+        return HtmlString.unsafe(
+                WikiRenderingService.WIKI_PREFIX +
+                HtmlString.toString(getHtmlForConvert(c, wiki)) +
+                WikiRenderingService.WIKI_SUFFIX);
     }
 
-    public String getHtmlForConvert(Container c, Wiki wiki)
+    public HtmlString getHtmlForConvert(Container c, Wiki wiki)
     {
         return WikiContentCache.getHtml(c, wiki, this, _cache);
     }
@@ -211,7 +215,7 @@ public class WikiVersion
         if (_rendererType == null)
             _rendererType = WikiManager.DEFAULT_WIKI_RENDERER_TYPE;
 
-        return WikiManager.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
+        return WikiRenderingService.get().getRenderer(_rendererType, hrefPrefix, attachPrefix, nameTitleMap, attachments);
     }
 
     // Cache the rendered wiki content by default; set to false to avoid caching
@@ -220,7 +224,7 @@ public class WikiVersion
         _cache = cache;
     }
 
-    private static Pattern NON_VISUAL_RE = Pattern.compile("(<(script|form)[\\s>]|\\$\\{labkey\\.)");
+    private static final Pattern NON_VISUAL_RE = Pattern.compile("(<(script|form)[\\s>]|\\$\\{labkey\\.)");
 
     public boolean hasNonVisualElements()
     {

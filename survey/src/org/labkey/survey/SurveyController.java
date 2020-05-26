@@ -37,7 +37,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -204,9 +203,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_title);
+            if (null != _title)
+                root.addChild(_title);
+            else
+                root.addChild("Update Survey");
         }
     }
 
@@ -230,9 +232,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_title);
+            root.addChild(_title);
         }
     }
 
@@ -579,19 +581,26 @@ public class SurveyController extends SpringActionController implements SurveyUr
                                 }
                                 else
                                 {
+                                    Object key = row.get(pk.toString());
                                     if (survey.isNew())
                                     {
                                         if (!row.isEmpty())
                                         {
                                             // update the survey instance with the key for the answers so that existing answers can
                                             // be updated.
-                                            Object key = row.get(pk.toString());
                                             survey.setResponsesPk(String.valueOf(key));
                                         }
 
                                         // set the initial status to Pending
                                         if (!form.isSubmitted())
                                             survey.setStatus(SurveyStatus.Pending.name());
+                                    }
+                                    else if (key != null)
+                                    {
+                                        // issue 39291 : can't assume that the response PK never changes, for example
+                                        // datatset lsids are not stable
+                                        if (!String.valueOf(key).equals(survey.getResponsesPk()))
+                                            survey.setResponsesPk(String.valueOf(key));
                                     }
 
                                     survey = SurveyManager.get().saveSurvey(getContainer(), getUser(), survey);

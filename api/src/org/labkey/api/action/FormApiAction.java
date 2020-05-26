@@ -16,12 +16,11 @@
 package org.labkey.api.action;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * User: matthewb
@@ -41,8 +40,17 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
-        HttpServletRequest req = getViewContext().getRequest();
-        setUnauthorizedType("GET".equals(req.getMethod()) ? UnauthorizedException.Type.sendBasicAuth : UnauthorizedException.Type.redirectToLogin);
+        UnauthorizedException.Type type;
+        // Issue 34825 - don't prompt for basic auth for browser requests
+        if (HttpUtil.isBrowser(getViewContext().getRequest()))
+        {
+            type = isGet() ? UnauthorizedException.Type.redirectToLogin : UnauthorizedException.Type.sendUnauthorized;
+        }
+        else
+        {
+            type = UnauthorizedException.Type.sendBasicAuth;
+        }
+        setUnauthorizedType(type);
         super.checkPermissions();
     }
 

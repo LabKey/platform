@@ -15,13 +15,16 @@
  */
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.util.GUID;
-import org.labkey.api.security.User;
-import org.labkey.api.exp.IdentifiableBase;
 import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.IdentifiableBase;
+import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.URLHelper;
 
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 /**
  * Base class for beans that have some standard fields, like RowId and Container.
@@ -36,7 +39,6 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     private long created = 0;
     private int modifiedBy;
     private long modified;
-    private Container container;
 
     protected IdentifiableEntity()
     {
@@ -131,17 +133,6 @@ public class IdentifiableEntity extends IdentifiableBase implements Identifiable
     public void setRowId(int rowId)
     {
         this.rowId = rowId;
-    }
-
-    public Container getContainer()
-    {
-        return container;
-    }
-
-    // for Table layer
-    public void setContainer(Container container)
-    {
-        this.container = container;
     }
 
     public String getEntityId()

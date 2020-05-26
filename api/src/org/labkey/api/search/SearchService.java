@@ -15,6 +15,7 @@
  */
 package org.labkey.api.search;
 
+import org.apache.commons.collections4.ListUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,8 +53,10 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 
 /**
  * User: matthewb
@@ -92,6 +95,12 @@ public interface SearchService
     {
         ServiceRegistry.get().registerService(SearchService.class, impl);
     }
+
+    /**
+     * Delete the index documents for any files in a container then start a new crawler task for just that container
+     * @param c
+     */
+    void reindexContainerFiles(Container c);
 
     enum PRIORITY
     {
@@ -176,6 +185,19 @@ public interface SearchService
         void addResource(@NotNull String identifier, SearchService.PRIORITY pri);
 
         void addResource(@NotNull WebdavResource r, SearchService.PRIORITY pri);
+
+        default <T> void addResourceList(List<T> list, int batchSize, Function<T,WebdavResource> mapper)
+        {
+            ListUtils.partition(list, batchSize).forEach(sublist ->
+            {
+                addRunnable( () ->
+                    sublist.stream()
+                            .map(mapper::apply)
+                            .filter(Objects::nonNull)
+                            .forEach(doc -> addResource(doc, PRIORITY.item))
+                    , PRIORITY.group);
+            });
+        }
     }
 
 
@@ -245,11 +267,14 @@ public interface SearchService
     {
         public int doc;
         public String docid;
+        public String category;
         public String container;
         public String title;
         public String summary;
         public String url;
         public String navtrail;
+        public String identifiers; // identifiersHi
+        public float score;
 
         public String normalizeHref(Path contextPath)
         {
@@ -301,6 +326,11 @@ public interface SearchService
     WebPartView getSearchView(boolean includeSubfolders, int textBoxWidth, boolean includeHelpLink, boolean isWebpart);
 
     SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit) throws IOException;
+
+    // return list of uniqueId
+    List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
+
+    SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException;
 
     @Nullable SearchHit find(String docId) throws IOException;
 
@@ -430,7 +460,8 @@ public interface SearchService
 
         public LastIndexedClause(TableInfo info, java.util.Date modifiedSince, String tableAlias)
         {
-            boolean incremental = modifiedSince == null || modifiedSince.compareTo(oldDate) > 0;
+            // Incremental if modifiedSince is set and is more recent than 1967-10-04
+            boolean incremental = modifiedSince != null && modifiedSince.compareTo(oldDate) > 0;
             
             // no filter
             if (!incremental)

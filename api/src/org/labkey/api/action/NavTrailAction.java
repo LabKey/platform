@@ -25,14 +25,15 @@ import org.labkey.api.view.NavTree;
  */
 public interface NavTrailAction
 {
-    /** NOTE: this works a little different than NavTrailConfig!
-     *
-     * Return the entire nav trail for this page, including the entry
-     * representing this page/action with URL.
-     *
-     * Base class implementations may use the entry as the page title by default.
-     *
-     * @return Return the tree handed in for convenience
-     */
-    NavTree appendNavTrail(NavTree root);
+    @Deprecated()  // Implement addNavTrail() instead
+    default NavTree appendNavTrail(NavTree root)
+    {
+        throw new IllegalStateException();
+    }
+
+    default void addNavTrail(NavTree root)
+    {
+        // TODO: Log a warning once we've communicated the migration plan to developers
+        appendNavTrail(root);
+    }
 }

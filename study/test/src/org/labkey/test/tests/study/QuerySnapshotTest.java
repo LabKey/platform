@@ -19,15 +19,25 @@ package org.labkey.test.tests.study;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.labkey.remoteapi.CommandException;
 import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.BVT;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.components.html.BootstrapMenu;
+import org.labkey.test.pages.study.DatasetDesignerPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
+import org.labkey.test.util.APIAssayHelper;
 import org.labkey.test.util.DataRegionTable;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.assertTrue;
 
@@ -209,6 +219,63 @@ public class QuerySnapshotTest extends StudyBaseTest
         deleteSnapshot();
     }
 
+    // Regression coverage for Issue 38311: Creating query snapshots tied to Assay Data table generates java.lang.IllegalStateException error
+    @Test
+    public void testQuerySnapshotAgainstAssayDataTable() throws IOException, CommandException
+    {
+        goToProjectHome();
+        navigateToFolder(getProjectName(), FOLDER_1);
+
+        final String ASSAY_NAME = "Simple_GPAT";
+        final File SIMPLE_ASSAY_FILE = TestFileUtils.getSampleData("/assay/" + ASSAY_NAME + ".xar.xml");
+        final File ASSAY_RUN_FILE = TestFileUtils.getSampleData("/assay/GPAT_Run1.tsv");
+
+        Map<String, Object> batchProperties = new HashMap<>();
+        batchProperties.put("OperatorEmail", "john.doe@email.com");
+        batchProperties.put("Instrument", "iCYT Eclipse Flow");
+
+        log("Create a generic assay");
+        APIAssayHelper assayHelper = new APIAssayHelper(this);
+        assayHelper.uploadXarFileAsAssayDesign(SIMPLE_ASSAY_FILE, 2);
+        assayHelper.importAssay(ASSAY_NAME, ASSAY_RUN_FILE, getCurrentContainerPath(), batchProperties);
+
+        log("Create a query against the Assay Data table.");
+
+        final String CROSS_STUDY_QUERY_SQL =
+                "SELECT 1 as sequenceNum, \n" +
+                        "Data.ParticipantID, \n" +
+                        "Data.M1, \n" +
+                        "Data.Date \n" +
+                        "FROM assay.General." + ASSAY_NAME + ".Data";
+
+        createQuery(getCurrentContainerPath(), "assay_query", "study", CROSS_STUDY_QUERY_SQL, null, false);
+        clickButton("Save & Finish");
+
+        log("Create a snapshot of the query.");
+        createQuerySnapshot("Assay.Data Query Snapshot", true, false);
+
+        log("Validate the data in the snapshot.");
+
+        DataRegionTable dataRegionTable = DataRegionTable.DataRegion(getDriver()).find();
+
+        boolean dataThere = true;
+
+        String columnData = dataRegionTable.getDataAsText(4, "Mouse Id");
+        if(!columnData.equals("249325717"))
+            dataThere = false;
+
+        columnData = dataRegionTable.getDataAsText(4, "Date");
+        if(!columnData.equals("2008-04-27"))
+            dataThere = false;
+
+        columnData = dataRegionTable.getDataAsText(4, "M1");
+        if(!columnData.equals("874"))
+            dataThere = false;
+
+        assertTrue("The data shown in this snapshot is not as expected.", dataThere);
+
+    }
+
     @Test
     public void testCustomQuery()
     {
@@ -382,15 +449,13 @@ public class QuerySnapshotTest extends StudyBaseTest
         if (keyField != null)
         {
             clickButton("Edit Dataset Definition");
-            waitForElement(Locator.input("dsName"), WAIT_FOR_JAVASCRIPT);
-
-            _listHelper.addField("Dataset Fields", keyField, null, ListHelper.ListColumnType.Integer);
-
-            click(Locator.name("ff_name0"));
-            click(Locator.radioButtonById("button_managedField"));
-            selectOptionByText(Locator.name("list_managedField"), keyField);
-            clickButton("Save", WAIT_FOR_JAVASCRIPT);
+            DatasetDesignerPage datasetDesignerPage = new DatasetDesignerPage(getDriver());
+            DomainFormPanel domainFormPanel = datasetDesignerPage.getFieldsPanel();
+            domainFormPanel.addField(keyField).setType(FieldDefinition.ColumnType.Integer);
+            datasetDesignerPage.setAdditionalKeyColManagedField(keyField);
+            datasetDesignerPage.clickSave();
         }
+
         clickButton("Create Snapshot");
     }
 
@@ -401,7 +466,7 @@ public class QuerySnapshotTest extends StudyBaseTest
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
                 .setDatasetLabel(newLabel)
-                .save();
+                .clickSave();
     }
 
     @LogMethod
@@ -410,8 +475,8 @@ public class QuerySnapshotTest extends StudyBaseTest
         _studyHelper.goToManageDatasets()
                 .selectDatasetByName(datasetName)
                 .clickEditDefinition()
-                .setDatasetName(newName)
-                .save();
+                .setName(newName)
+                .clickSave();
     }
 
     @LogMethod

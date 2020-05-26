@@ -38,7 +38,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
      * no longer have permission to access the container */
     public UserIdQueryForeignKey(QuerySchema sourceSchema, boolean includeAllUsers)
     {
-        super(sourceSchema, null,"core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        super(sourceSchema, null, "core", sourceSchema.getContainer(), null, sourceSchema.getUser(), includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
         _includeAllUsers = includeAllUsers;
     }
 
@@ -59,26 +59,33 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     {
         if (_table == null && getSchema() != null)
         {
-            _table = ((UserSchema) getSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
-
-            if (_includeAllUsers)
-            {
-                // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
-                FilteredTable table = (FilteredTable) _table;
-                if (table == null)
-                {
-                    // Exception 23740
-                    throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
-                }
-                table.clearConditions(FieldKey.fromParts("UserId"));
-            }
-            _table.setLocked(true);
+            String cacheKey = this.getClass().getName() + "/" + _includeAllUsers;
+            _table = ((UserSchema) getSchema()).getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
         }
         return _table;
     }
 
+    private TableInfo createLookupTableInfo()
+    {
+        TableInfo ret = ((UserSchema) getSchema()).getTable(_tableName, getLookupContainerFilter(), true, true);
+
+        if (_includeAllUsers)
+        {
+            // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
+            FilteredTable table = (FilteredTable) ret;
+            if (table == null)
+            {
+                // Exception 23740
+                throw new IllegalStateException("Failed to find lookup target " + getLookupSchemaName() + "." + getLookupTableName() + " in container " + getLookupContainer());
+            }
+            table.clearConditions(FieldKey.fromParts("UserId"));
+        }
+        ret.setLocked(true);
+        return ret;
+    }
+
     /* set foreign key and display column */
-    static public ColumnInfo initColumn(QuerySchema sourceSchema, BaseColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(QuerySchema sourceSchema, MutableColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(sourceSchema, showAllUsers));
@@ -87,7 +94,7 @@ public class UserIdQueryForeignKey extends QueryForeignKey
     }
 
     @Deprecated // TODO ContainerFilter
-    static public ColumnInfo initColumn(User user, Container container, BaseColumnInfo column, boolean guestAsBlank)
+    static public ColumnInfo initColumn(User user, Container container, MutableColumnInfo column, boolean guestAsBlank)
     {
         boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
         column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));

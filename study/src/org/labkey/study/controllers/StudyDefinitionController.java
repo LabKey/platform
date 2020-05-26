@@ -84,7 +84,8 @@ public class StudyDefinitionController extends BaseStudyController
         @Override
         public URLHelper getSuccessURL(ReturnUrlForm form)
         {
-            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(getContainer(), _domain, false, false, false);
+            // since the study additional properties domain is scoped to the project, use the domain.getContainer() here instead of getContainer()
+            ActionURL url = PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(_domain.getContainer(), _domain);
             form.propagateReturnURL(url);
             return url;
         }
@@ -116,12 +117,13 @@ public class StudyDefinitionController extends BaseStudyController
 
         protected abstract String getPluralName();
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
-            return root.addChild(getPluralName());
+            _addManageStudy(root);
+            root.addChild(getPluralName());
         }
 
+        @Override
         protected QueryView createQueryView(QueryExportForm queryExportForm, BindException errors, boolean forExport, String dataRegion)
         {
             return new ExtensibleObjectQueryView(getUser(), getStudyRedirectIfNull(), getDomainInfo(), HttpView.currentContext(), false);

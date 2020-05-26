@@ -39,6 +39,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewServlet;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -229,7 +230,7 @@ public class ApiQueryResponse implements ApiResponse
         _dataRegion.setAllowAsync(true);
         try
         {
-            return _dataRegion.getResultSet(_ctx);
+            return _dataRegion.getResults(_ctx);
         }
         catch (ConversionException e)
         {
@@ -268,7 +269,14 @@ public class ApiQueryResponse implements ApiResponse
         }
 
         _ctx = ctx;
-        _ctx.setCache(false);
+
+        // Issue 40011: Query API calls within trigger scripts run in separate transaction
+        // To handle large database result sets, we use non-caching connections by default.
+        // However, when inside the trigger script enviornment and making a Query API call back into the server we want
+        // to execute within the same transaction as the outer query insert/update/delete operation.
+        boolean cache = ViewServlet.isMockRequest(ctx.getRequest());
+
+        _ctx.setCache(cache);
     }
 
 
@@ -559,7 +567,7 @@ public class ApiQueryResponse implements ApiResponse
             return ensureJSONDate(value);
     }
 
-    protected Object ensureJSONDate(Object value)
+    protected static Object ensureJSONDate(Object value)
     {
         return value instanceof Date ? DateUtil.formatJsonDateTime((Date)value) : value;
     }

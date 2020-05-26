@@ -32,6 +32,8 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.vcs.Vcs;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.writer.PrintWriters;
@@ -50,6 +52,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 /**
  * User: adam
@@ -147,7 +151,19 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     // Returns all script file names listed in required_scripts.txt
     public @NotNull Collection<String> getRequiredScripts(SqlDialect dialect) throws IOException
     {
-        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append("required_scripts.txt");
+        return getScriptsFromFile(dialect, "required_scripts.txt");
+    }
+
+    // Returns all script file names listed in ignored_scripts.txt
+    public @NotNull Collection<String> getIgnoredScripts(SqlDialect dialect) throws IOException
+    {
+        return getScriptsFromFile(dialect, "ignored_scripts.txt");
+    }
+
+    // Returns all script file names listed in the specified file
+    private @NotNull Collection<String> getScriptsFromFile(SqlDialect dialect, String filename) throws IOException
+    {
+        Path path = Path.parse(_module.getSqlScriptsPath(dialect)).append(filename);
         Resource r = _module.getModuleResource(path);
 
         return null != r ? PageFlowUtil.getStreamContentsAsList(r.getInputStream(), true) : Collections.emptyList();
@@ -184,7 +200,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         return script;
     }
 
-    private String getContents(DbSchema schema, String filename) throws SqlScriptException
+    protected String getContents(DbSchema schema, String filename) throws SqlScriptException
     {
         try
         {
@@ -233,8 +249,9 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             throw new IllegalStateException("SQL scripts directory not found");
 
         File file = new File(scriptsDir, description);
+        boolean exists = file.exists();
 
-        if (file.exists() && !overwrite)
+        if (exists && !overwrite)
             throw new IllegalStateException("File " + file.getAbsolutePath() + " already exists");
 
         try (PrintWriter pw = PrintWriters.getPrintWriter(file))
@@ -242,10 +259,25 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             pw.write(contents);
             pw.flush();
         }
+
+        if (!exists)
+        {
+            File dir = file.getParentFile();
+
+            Vcs vcs = VcsService.get().getVcs(dir);
+
+            if (null != vcs)
+            {
+                vcs.addFile(description);
+            }
+        }
     }
 
     public File getScriptDirectory(SqlDialect dialect)
     {
+        if (isBlank(_module.getSourcePath()))
+            return null;
+
         String scriptsPath = _module.getSqlScriptsPath(dialect);
         File scriptsDir = new File(new File(_module.getSourcePath(), "resources"), scriptsPath);
 
@@ -465,10 +497,10 @@ public class FileSqlScriptProvider implements SqlScriptProvider
 
     public static class ScriptContext
     {
-        // Model bean for jsps generating SQL scripts. For now this is limited to the DbSchema and a map
+        // Model bean for jsps generating SQL scripts. For now, this is limited to the DbSchema and a map
         // of the datasource -> database names. Additional context can be added as needed.
         public final DbSchema schema;
-        public final Map<String,String> dataSources = new HashMap<>();
+        public final Map<String, String> dataSources = new HashMap<>();
 
         private ScriptContext(DbSchema schema)
         {

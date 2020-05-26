@@ -64,9 +64,9 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public static final String METADATA_INPUT_FORMAT_SUFFIX = "#SampleMetadataInputFormat";
     public static final String VIRUS_WELL_GROUP_NAME = "VirusWellGroupName";
 
-    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
+    public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLsidPrefix, AssayDataType dataType, Module declaringModule)
     {
-        super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLsidPrefix, dataType, declaringModule);
     }
 
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)
@@ -95,7 +95,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     {
         String domainLsid = getPresubstitutionLsid(ASSAY_DOMAIN_SAMPLE_WELLGROUP);
         Domain sampleWellGroupDomain = PropertyService.get().createDomain(c, domainLsid, "Sample Fields");
-        sampleWellGroupDomain.setDescription("The user will be prompted to enter these properties for each of the sample well groups in their chosen plate template.");
+        sampleWellGroupDomain.setDescription("Define the sample fields for this assay design. The user will be prompted to enter these fields for each of the sample well groups in their chosen plate template.");
         return new Pair<>(sampleWellGroupDomain, Collections.emptyMap());
     }
 

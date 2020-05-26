@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.samples;
 
-import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +25,6 @@ import org.labkey.api.collections.Sets;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.NameGenerator;
 import org.labkey.api.data.RemapCache;
@@ -45,10 +43,13 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpDataRunInput;
+import org.labkey.api.exp.api.ExpLineage;
+import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.SampleSetService;
@@ -58,11 +59,9 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpMaterialTable;
-import org.labkey.api.exp.query.ExpSchema;
-import org.labkey.api.exp.query.SamplesSchema;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.QueryKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
@@ -75,6 +74,7 @@ import org.labkey.experiment.controllers.exp.RunInputOutputBean;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -84,9 +84,6 @@ public abstract class UploadSamplesHelper
 {
     private static final Logger _log = Logger.getLogger(UploadSamplesHelper.class);
     private static final String MATERIAL_LSID_SUFFIX = "ToBeReplaced";
-    private static final SchemaKey SCHEMA_EXP = SchemaKey.fromParts(ExpSchema.SCHEMA_NAME);
-    private static final SchemaKey SCHEMA_EXP_DATA = SchemaKey.fromString(SCHEMA_EXP, ExpSchema.NestedSchemas.data.name());
-    private static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
 
 
     private static boolean isNameHeader(String name)
@@ -293,87 +290,159 @@ public abstract class UploadSamplesHelper
      * support for mapping DataClass or SampleSet objects as a parent input using the column name format:
      * DataInputs/<data class name> or MaterialInputs/<sample set name>. Either / or . works as a delimiter
      *
-     * @param parentNames - set of (parent column name, parent value) pairs
+     * @param parentNames set of (parent column name, parent value) pairs.  Parent values that are empty
+     *                    indicate tha parent should be removed.
+     * @param runItem the item whose parents are being modified.  If provided, existing parents of the item
+     *                will be incorporated into the resolved inputs and outputs
      * @throws ExperimentException
      */
     @NotNull
-    public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c,
-                                                                         Set<Pair<String, String>> parentNames,
-                                                                         @Nullable MaterialSource source,
-                                                                         RemapCache cache,
-                                                                         Map<Integer, ExpMaterial> materialMap,
-                                                                         Map<Integer, ExpData> dataMap)
-            throws ExperimentException, ValidationException
+    public static Pair<RunInputOutputBean, RunInputOutputBean> resolveInputsAndOutputs(User user, Container c, @Nullable ExpRunItem runItem,
+                                                                                       Set<Pair<String, String>> parentNames,
+                                                                                       @Nullable MaterialSource source,
+                                                                                       RemapCache cache,
+                                                                                       Map<Integer, ExpMaterial> materialMap,
+                                                                                       Map<Integer, ExpData> dataMap)
+            throws ValidationException, ExperimentException
     {
         Map<ExpMaterial, String> parentMaterials = new HashMap<>();
         Map<ExpData, String> parentData = new HashMap<>();
+        Set<String> parentDataTypesToRemove = new CaseInsensitiveHashSet();
+        Set<String> parentSampleTypesToRemove = new CaseInsensitiveHashSet();
 
         Map<ExpMaterial, String> childMaterials = new HashMap<>();
         Map<ExpData, String> childData = new HashMap<>();
+        boolean isMerge = runItem != null;
 
         for (Pair<String, String> pair : parentNames)
         {
             String parentColName = pair.first;
             String parentValue = pair.second;
+            boolean isEmptyParent = StringUtils.isEmpty(parentValue);
 
             String[] parts = parentColName.split("\\.|/");
             if (parts.length == 1)
             {
                 if (parts[0].equalsIgnoreCase("parent"))
                 {
-                    ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
-                    if (sample != null)
-                        parentMaterials.put(sample, sampleRole(sample));
-                    else
-                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + parts[1] + "' not found");
+                    if (!isEmptyParent)
+                    {
+                        ExpMaterial sample = findMaterial(c, user, null, parentValue, cache, materialMap);
+                        if (sample != null)
+                            parentMaterials.put(sample, sampleRole(sample));
+                        else
+                        {
+                            String message = "Sample input '" + parentValue + "' not found";
+                            throw new ValidationException(message);
+                        }
+                    }
                 }
             }
             if (parts.length == 2)
             {
-                String namePart = parts[1];
+                String namePart = QueryKey.decodePart(parts[1]);
                 if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_INPUT_PARENT))
                 {
                     if (!findMaterialSource(c, user, namePart))
                         throw new ValidationException(String.format("Invalid import alias: parent SampleSet [%1$s] does not exist or may have been deleted", namePart));
 
-                    ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
-                    if (sample != null)
-                        parentMaterials.put(sample, sampleRole(sample));
+                    if (isEmptyParent)
+                    {
+                        if (isMerge)
+                            parentSampleTypesToRemove.add(namePart);
+                    }
                     else
-                        throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + namePart + "' not found");
-                }
+                    {
+                        ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
+                        if (sample != null)
+                            parentMaterials.put(sample, sampleRole(sample));
+                        else
+                            throw new ValidationException("Sample input '" + parentValue + "' in SampleSet '" + namePart + "' not found");
+
+                    }
+                 }
                 else if (parts[0].equalsIgnoreCase(ExpMaterial.MATERIAL_OUTPUT_CHILD))
                 {
-                    ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
-                    if (sample != null)
-                        childMaterials.put(sample, sampleRole(sample));
-                    else
-                        throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + namePart + "' not found");
+                    if (!isEmptyParent)
+                    {
+                        ExpMaterial sample = findMaterial(c, user, namePart, parentValue, cache, materialMap);
+                        if (sample != null)
+                            childMaterials.put(sample, sampleRole(sample));
+                        else
+                            throw new ValidationException("Sample output '" + parentValue + "' in SampleSet '" + namePart + "' not found");
+                    }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_INPUT_PARENT))
                 {
                     if (source != null)
                         ensureTargetColumnLookup(user, c, source, parentColName, "exp.data", namePart);
-                    ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
-                    if (data != null)
-                        parentData.put(data, dataRole(data, user));
+                    if (isEmptyParent)
+                    {
+                        if (isMerge)
+                            parentDataTypesToRemove.add(namePart);
+                    }
                     else
-                        throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                    {
+                        ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
+                        if (data != null)
+                            parentData.put(data, dataRole(data, user));
+                        else
+                            throw new ValidationException("Data input '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                    }
                 }
                 else if (parts[0].equalsIgnoreCase(ExpData.DATA_OUTPUT_CHILD))
                 {
-                    ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
-                    if (data != null)
-                        childData.put(data, dataRole(data, user));
-                    else
-                        throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                    if (!isEmptyParent)
+                    {
+                        ExpData data = findData(c, user, namePart, parentValue, cache, dataMap);
+                        if (data != null)
+                            childData.put(data, dataRole(data, user));
+                        else
+                            throw new ValidationException("Data output '" + parentValue + "' in DataClass '" + namePart + "' not found");
+                    }
                 }
             }
         }
 
+
+        if (isMerge)
+        {
+            ExpLineageOptions options = new ExpLineageOptions();
+            options.setChildren(false);
+            options.setDepth(2); // use 2 to get the first generation of parents because the first "parent" is the run
+
+            ExpLineage lineage = ExperimentService.get().getLineage(c, user, runItem, options);
+            Pair<Set<ExpData>, Set<ExpMaterial>> currentParents = Pair.of(lineage.getDatas(), lineage.getMaterials());
+            if (currentParents.first != null)
+            {
+                Map<ExpData, String> existingParentData = new HashMap<>();
+                currentParents.first.forEach((dataParent) -> {
+                    ExpDataClass dataClass = dataParent.getDataClass(user);
+                    String role = dataRole(dataParent, user);
+                    if (dataClass != null && !parentData.containsValue(role) && !parentDataTypesToRemove.contains(role))
+                    {
+                        existingParentData.put(dataParent, role);
+                    }
+                });
+                parentData.putAll(existingParentData);
+            }
+            if (currentParents.second != null)
+            {
+                Map<ExpMaterial, String> existingParentMaterials = new HashMap<>();
+                currentParents.second.forEach((materialParent) -> {
+                    ExpSampleSet sampleSet = materialParent.getSampleSet();
+                    String role = sampleRole(materialParent);
+                    if (sampleSet != null && !parentMaterials.containsValue(role) && !parentSampleTypesToRemove.contains(role))
+                        existingParentMaterials.put(materialParent, role);
+                });
+                parentMaterials.putAll(existingParentMaterials);
+            }
+        }
+
         RunInputOutputBean parents = null;
-        if (!parentMaterials.isEmpty() || !parentData.isEmpty())
-            parents = new RunInputOutputBean(parentMaterials, parentData);
+
+        if (!parentMaterials.isEmpty() || !parentData.isEmpty() || !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty())
+            parents = new RunInputOutputBean(parentMaterials, parentData, !parentDataTypesToRemove.isEmpty() || !parentSampleTypesToRemove.isEmpty());
 
         RunInputOutputBean children = null;
         if (!childMaterials.isEmpty() || !childData.isEmpty())
@@ -382,18 +451,18 @@ public abstract class UploadSamplesHelper
         return Pair.of(parents, children);
     }
 
-    private static String sampleRole(ExpMaterial material)
+
+    public static String sampleRole(ExpMaterial material)
     {
         ExpSampleSet ss = material.getSampleSet();
         return ss != null ? ss.getName() : "Sample";
     }
 
-    private static String dataRole(ExpData data, User user)
+    public static String dataRole(ExpData data, User user)
     {
         ExpDataClass dc = data.getDataClass(user);
         return dc != null ? dc.getName() : ExpDataRunInput.DEFAULT_ROLE;
     }
-
 
     public static Lsid.LsidBuilder generateSampleLSID(MaterialSource source)
     {
@@ -420,51 +489,13 @@ public abstract class UploadSamplesHelper
     private static ExpMaterial findMaterial(Container c, User user, String sampleSetName, String sampleName, RemapCache cache, Map<Integer, ExpMaterial> materialCache)
             throws ValidationException
     {
-        Integer rowId;
-        try
-        {
-            if (sampleSetName == null)
-                rowId = cache.remap(SCHEMA_EXP, ExpSchema.TableType.Materials.name(), user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-            else
-                rowId = cache.remap(SCHEMA_SAMPLES, sampleSetName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, sampleName);
-
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Failed to resolve '" + sampleName + "' into a sample.");
-            if (sampleSetName == null)
-            {
-                sb.append(" Use 'MaterialInputs/<SampleSetName>' column header to resolve parent samples from a specific SampleSet.");
-            }
-            sb.append(" " + e.getMessage());
-            throw new ValidationException(sb.toString());
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return materialCache.computeIfAbsent(rowId, svc::getExpMaterial);
+        return ExperimentService.get().findExpMaterial(c, user, sampleSetName, sampleName, cache, materialCache);
     }
 
     private static ExpData findData(Container c, User user, @NotNull String dataClassName, String dataName, RemapCache cache, Map<Integer, ExpData> dataCache)
             throws ValidationException
     {
-        Integer rowId;
-
-        try
-        {
-            rowId = cache.remap(SCHEMA_EXP_DATA, dataClassName, user, c, ContainerFilter.Type.CurrentPlusProjectAndShared, dataName);
-            if (rowId == null)
-                return null;
-        }
-        catch (ConversionException e)
-        {
-            throw new ValidationException("Failed to resolve '" + dataName + "' into a data. " + e.getMessage());
-        }
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        return dataCache.computeIfAbsent(rowId, svc::getExpData);
+        return ExperimentService.get().findExpData(c, user, dataClassName, dataName, cache, dataCache);
     }
 
 
@@ -552,7 +583,7 @@ public abstract class UploadSamplesHelper
         @Override
         public DataIterator getDataIterator(DataIteratorContext context)
         {
-            DataIterator source = builder.getDataIterator(context);
+            DataIterator source = LoggingDataIterator.wrap(builder.getDataIterator(context));
 
             // drop columns
             var drop = new CaseInsensitiveHashSet();
@@ -581,8 +612,7 @@ public abstract class UploadSamplesHelper
 
 //            CoerceDataIterator to handle the lookup/alternatekeys functionality of loadRows(),
 //            TODO check if this covers all the functionality, in particular how is alternateKeyCandidates used?
-            CoerceDataIterator c = new CoerceDataIterator(source, context, sampleset.getTinfo());
-
+            DataIterator c = LoggingDataIterator.wrap(new CoerceDataIterator(source, context, sampleset.getTinfo(), false));
 
             // auto gen a sequence number for genId - reserve BATCH_SIZE numbers at a time so we don't select the next sequence value for every row
             SimpleTranslator addGenId = new SimpleTranslator(c, context);

@@ -106,6 +106,7 @@ import org.labkey.study.query.SpecimenSummaryTable;
 import org.labkey.study.query.SpecimenWrapTable;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.VialTable;
+import org.labkey.study.query.VisitTable;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
@@ -896,7 +897,21 @@ public class StudyServiceImpl implements StudyService
                         fk.addJoin(FieldKey.fromParts("Container"), "Container", false);
                         unionCol.setFk(fk);
                     }
-                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name) || "visit".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name)))
+                    else if ("visit".equalsIgnoreCase(name))
+                    {
+                        var fk = new LookupForeignKey()
+                        {
+                            @Override
+                            public TableInfo getLookupTableInfo()
+                            {
+                                var ret = new VisitTable(schemaDefault, new ContainerFilter.SimpleContainerFilter(containers));
+                                return ret;
+                            }
+                        };
+                        fk.addJoin(new FieldKey(null, "Container"), "Folder", false);
+                        unionCol.setFk(fk);
+                    }
+                    else if (null != unionCol.getFk() && ("participantid".equalsIgnoreCase(name) || "collectioncohort".equalsIgnoreCase(name)))
                     {
                         TableInfo lookupTable = unionCol.getFk().getLookupTableInfo();
                         UserSchema schema = null==lookupTable ? null : lookupTable.getUserSchema();

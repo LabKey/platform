@@ -24,45 +24,57 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpLineageOptions;
 import org.labkey.api.exp.api.ExpRunItem;
 import org.labkey.api.query.FieldKey;
-import org.labkey.experiment.api.ExperimentServiceImpl;
 
-import java.util.List;
 import java.util.Map;
 
 /**
  * User: kevink
  * Date: 3/16/16
  */
-public abstract class LineageClause extends CompareType.CompareClause
+public class LineageClause extends CompareType.CompareClause
 {
+    private String _lsid;
+    private int _depth;
+
     public LineageClause(@NotNull FieldKey fieldKey, Object value)
     {
         super(fieldKey, CompareType.MEMBER_OF, value);
     }
 
+    public LineageClause(@NotNull FieldKey fieldKey, Object value, String lsid, int depth)
+    {
+        this(fieldKey, value);
+        _lsid = lsid;
+        _depth = depth;
+    }
+
     protected ExpRunItem getStart()
     {
+        if (null != _lsid)
+            return LineageHelper.getStart(_lsid);
+
         Object o = getParamVals().length == 0 ? null : getParamVals()[0];
         if (o == null)
             return null;
 
         // TODO: support rowId as well
-        String lsid = String.valueOf(o);
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
-        ExpRunItem start = svc.getExpMaterial(lsid);
-        if (start == null)
-            start = svc.getExpData(lsid);
-
-        if (start == null || svc.isUnknownMaterial(start))
-            return null;
-
-        return start;
+        return LineageHelper.getStart(String.valueOf(o));
     }
 
-    protected abstract ExpLineageOptions createOptions();
+    protected int getDepth()
+    {
+        return _depth;
+    }
 
-    protected abstract String getLsidColumn();
+    protected ExpLineageOptions createOptions()
+    {
+        return _depth < 0 ? LineageHelper.createParentOfOptions(_depth) : LineageHelper.createChildOfOptions(_depth);
+    }
+
+    protected String getLsidColumn()
+    {
+        return "lsid";
+    }
 
     @Override
     public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
@@ -71,16 +83,9 @@ public abstract class LineageClause extends CompareType.CompareClause
         String alias = colInfo != null ? colInfo.getAlias() : getFieldKey().getName();
 
         ExpRunItem start = getStart();
-        if (start == null)
-            return new SQLFragment("(1 = 2)");
-
-        ExperimentServiceImpl svc = ExperimentServiceImpl.get();
         ExpLineageOptions options = createOptions();
-        List<String> runsToInvestigate = svc.collectRunsToInvestigate(start, options);
-        if (runsToInvestigate.isEmpty())
-            return new SQLFragment("(1 = 2)");
 
-        SQLFragment tree = svc.generateExperimentTreeSQL(runsToInvestigate, options);
+        SQLFragment tree = LineageHelper.createExperimentTreeSQLLsidSeeds(start, options);
 
         SQLFragment sql = new SQLFragment();
         sql.append("(").append(alias).append(") IN (");
@@ -91,7 +96,10 @@ public abstract class LineageClause extends CompareType.CompareClause
         return sql;
     }
 
-    protected abstract String filterTextType();
+    protected String filterTextType()
+    {
+        return " lineage of";
+    }
 
     @Override
     protected void appendFilterText(StringBuilder sb, SimpleFilter.ColumnNameFormatter formatter)

@@ -31,11 +31,13 @@ import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -58,6 +60,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static org.labkey.api.data.RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE;
 
 /**
  * Basic form for handling posts into views.
@@ -113,11 +117,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     {
         _dynaClass = dynaClass;
         _tinfo = tinfo;
-    }
-
-    protected void setDynaClass(StringWrapperDynaClass dynaClass)
-    {
-        _dynaClass = dynaClass;
     }
 
     /**
@@ -189,7 +188,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             set("container", _c.getId());
 
         Object[] pkVal = getPkVals();
-        Map newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
+        Map<String, Object> newMap = Table.update(_user, _tinfo, getTypedValues(), pkVal);
         setTypedValues(newMap, true);
     }
 
@@ -404,6 +403,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
          */
         Map<String, Object> values = new CaseInsensitiveHashMap<>();
         Set<String> keys = _stringValues.keySet();
+        RemapCache cache = new RemapCache();        // only used if the experimental feature : EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE is enabled
 
         for (String propName : keys)
         {
@@ -467,10 +467,31 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             }
             catch (ConversionException e)
             {
-                String error = SpringActionController.ERROR_CONVERSION;
-                if (null != propType)
-                    error += "." + propType.getSimpleName();
-                errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
+                boolean skipError = false;
+
+                if (ExperimentalFeatureService.get().isFeatureEnabled(EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE))
+                {
+                    ColumnInfo col = getColumnByFormFieldName(propName);
+                    if (col != null && col.getFk() != null)
+                    {
+                        ForeignKey fk = col.getFk();
+                        Object remappedValue = cache.remap(SchemaKey.fromParts(fk.getLookupSchemaName()), fk.getLookupTableName(), getUser(), getContainer(), ContainerFilter.Type.CurrentPlusProjectAndShared, str);
+
+                        if (remappedValue != null)
+                        {
+                            values.put(propName, remappedValue);
+                            skipError = true;
+                        }
+                    }
+                }
+
+                if (!skipError)
+                {
+                    String error = SpringActionController.ERROR_CONVERSION;
+                    if (null != propType)
+                        error += "." + propType.getSimpleName();
+                    errors.addError(new FieldError(errors.getObjectName(), propName, this, true, new String[] {error}, new String[] {str, caption}, "Could not convert value: " + str));
+                }
             }
         }
 
@@ -630,16 +651,18 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         return _stringValues.containsKey(col.getFormFieldName(ctx));
     }
 
-    public Object get(String arg0)
+    @Override
+    public String get(String arg0)
     {
         return _stringValues.get(arg0);
     }
 
-    public Object get(ColumnInfo col)
+    public String get(ColumnInfo col)
     {
         return _stringValues.get(getFormFieldName(col));
     }
 
+    @Override
     public void set(String arg0, Object arg1)
     {
         String v;
@@ -661,36 +684,43 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         _values = null;
     }
 
+    @Override
     public boolean contains(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public Object get(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public Object get(String arg0, int arg1)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
+    @Override
     public DynaClass getDynaClass()
     {
         return _dynaClass;
     }
 
+    @Override
     public void remove(String arg0, String arg1)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
     }
 
+    @Override
     public void set(String arg0, String arg1, Object arg2)
     {
         throw new UnsupportedOperationException("No mapped properties in a table");
     }
 
+    @Override
     public void set(String arg0, int arg1, Object arg2)
     {
         throw new UnsupportedOperationException("No indexed properties in a table");
@@ -716,7 +746,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     public void forceReselect()
     {
         Object[] pk = getPkVals();
-        setStrings(new HashMap<String,String>());
+        setStrings(new HashMap<>());
         setOldValues(null);
         setPkVals(pk);
         setDataLoaded(false);
@@ -763,14 +793,16 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
             if (null != StringUtils.trimToNull(oldVals))
             {
-                _oldValues = PageFlowUtil.decodeObject(oldVals);
+                String className = getDynaClass().getName();
+                Class beanClass = "className".equals(className) ? Map.class : Class.forName(className);
+                _oldValues = PageFlowUtil.decodeObject(beanClass, oldVals);
                 _isDataLoaded = true;
             }
         }
         catch (Exception ignored) {}
     }
 
-
+    @Override
     public @NotNull BindException bindParameters(PropertyValues params)
     {
         /*

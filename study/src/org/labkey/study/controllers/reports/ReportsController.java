@@ -99,7 +99,6 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.AssayProgressReport;
-import org.labkey.study.reports.ExportExcelReport;
 import org.labkey.study.reports.ExternalReport;
 import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ReportManager;
@@ -149,7 +148,7 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_study == null)
                 root.addChild("No Study In Folder");
@@ -157,8 +156,6 @@ public class ReportsController extends BaseStudyController
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
             else
                 root.addChild("Views");
-
-            return root;
         }
     }
 
@@ -186,9 +183,8 @@ public class ReportsController extends BaseStudyController
                 return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -218,9 +214,8 @@ public class ReportsController extends BaseStudyController
             return HttpView.redirect(PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -266,10 +261,10 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("advancedReport");
-            return _appendNavTrail(root, "External Report Builder");
+            _addNavTrail(root, "External Report Builder");
         }
     }
 
@@ -310,9 +305,8 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -437,9 +431,8 @@ public class ReportsController extends BaseStudyController
                 return getViewContext().cloneActionURL().deleteParameters().setAction(BeginAction.class);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -462,9 +455,8 @@ public class ReportsController extends BaseStudyController
             return report.renderReport(getViewContext());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -635,7 +627,7 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
 /*
             ViewContext context = getViewContext();
@@ -645,7 +637,7 @@ public class ReportsController extends BaseStudyController
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
 */
             setHelpTopic("crosstabReports");
-            return root.addChild("Crosstab Report Builder");
+            root.addChild("Crosstab Report Builder");
         }
     }
 
@@ -675,55 +667,6 @@ public class ReportsController extends BaseStudyController
         }
     }
 
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelConfigureAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object o, BindException errors)
-        {
-            setHelpTopic(new HelpTopic("exportExcel"));
-
-            return new JspView<>("/org/labkey/study/reports/configureExportExcel.jsp", getStudyRedirectIfNull());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return _appendNavTrail(root, "Export study data to spreadsheet");
-        }
-    }
-
-    @RequiresPermission(ReadPermission.class)
-    public class ExportExcelAction extends SimpleViewAction<ExportForm>
-    {
-        public ModelAndView getView(ExportForm form, BindException errors) throws Exception
-        {
-            ExportExcelReport report;
-            if (form.getReportId() != null)
-            {
-                Report r = form.getReportId().getReport(getViewContext());
-                if (!(r instanceof ExportExcelReport))
-                {
-                    throw new NotFoundException();
-                }
-                report = (ExportExcelReport) r;
-            }
-            else
-            {
-                report = new ExportExcelReport();
-                report.setLocationId(form.getLocationId());
-            }
-
-            User user = getUser();
-            StudyImpl study = getStudyRedirectIfNull();
-
-            report.runExportToExcel(getViewContext(), study, user, errors);
-            return null;
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
-        }
-    }
 
     @RequiresPermission(AdminPermission.class)
     public class CreateQueryReportAction extends SimpleViewAction<QueryReportForm>
@@ -735,9 +678,9 @@ public class ReportsController extends BaseStudyController
                     new CreateQueryReportBean(getViewContext(), form.getQueryName()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Create Grid View");
+            _addNavTrail(root, "Create Grid View");
         }
     }
 
@@ -752,9 +695,9 @@ public class ReportsController extends BaseStudyController
                     new CreateCrosstabBean(getViewContext()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return _appendNavTrail(root, "Create Crosstab Report");
+            _addNavTrail(root, "Create Crosstab Report");
         }
     }
 
@@ -1261,9 +1204,8 @@ public class ReportsController extends BaseStudyController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1363,41 +1305,38 @@ public class ReportsController extends BaseStudyController
             return _def;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             Dataset def = getDatasetDefinition();
 
             if (def != null)
             {
                 String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _appendNavTrail(root, def.getDatasetId(), 0, null, qcState);
+                _addNavTrail(root, def.getDatasetId(), 0, null, qcState);
             }
-            return root;
         }
     }
 
-    private NavTree _appendNavTrail(NavTree root, String name)
+    private void _addNavTrail(NavTree root, String name)
     {
         try
         {
-            appendRootNavTrail(root);
-
+            addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
         }
         catch (Exception e)
         {
-            return root.addChild(name);
         }
-        return root.addChild(name);
+        root.addChild(name);
     }
 
-    private NavTree _appendNavTrail(NavTree root, String name, int datasetId, int visitRowId)
+    private void _addNavTrail(NavTree root, String name, int datasetId, int visitRowId)
     {
         try
         {
-            Study study = appendRootNavTrail(root);
+            Study study = addRootNavTrail(root);
 
             if (getContainer().hasPermission(getUser(), AdminPermission.class))
                 root.addChild("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer()));
@@ -1430,9 +1369,8 @@ public class ReportsController extends BaseStudyController
         }
         catch (Exception e)
         {
-            return root.addChild(name);
         }
-        return root.addChild(name);
+        root.addChild(name);
     }
 
     public static class ReportsWebPart extends JspView<Object>
@@ -1490,10 +1428,10 @@ public class ReportsController extends BaseStudyController
                 return new HtmlView("A study does not exist in this folder");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("participantReport");
-            return _appendNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
+            _addNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
         }
     }
 
@@ -1728,11 +1666,10 @@ public class ReportsController extends BaseStudyController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
+            root.addChild(_actionName + AssayProgressReport.REPORT_LABEL);
         }
-
     }
 
     @RequiresLogin

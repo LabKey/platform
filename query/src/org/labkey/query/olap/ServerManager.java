@@ -34,7 +34,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.Constants;
 import org.labkey.api.cache.BlockingCache;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.concurrent.CountingSemaphore;
@@ -121,7 +121,7 @@ public class ServerManager
     private static final ModuleResourceCache<Map<String, OlapSchemaDescriptor>> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create("Olap cube definitions (module)", new OlapSchemaCacheHandler(), ResourceRootProvider.getStandard(new Path(DIR_NAME)));
     private static final BlockingCache<Container, Map<String, OlapSchemaDescriptor>> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingCache(Constants.getMaxContainers(), CacheManager.DAY, "Olap cube definitions (db)", new OlapCacheLoader());
 
-    private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
+    private static final BlockingCache<String, Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, 2 * CacheManager.DAY, "cube cache", null);
 
     private static final String DATA_SOURCE_NAME = "dsn_LABKEY";
 
@@ -223,7 +223,7 @@ public class ServerManager
     public static Cube getCachedCube(@NotNull OlapSchemaDescriptor sd, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
             throws SQLException, IOException
     {
-        if (sd.usesRolap())
+        if (!sd.usesMondrian())
             return getCachedCubeRolap(sd, c, user, cubeName, null);
         else
             return getCachedCubeMondrian(sd, conn, c, user, schemaName, cubeName, errors);
@@ -509,7 +509,7 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery, errors);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
 
@@ -629,7 +629,7 @@ public class ServerManager
 
     static void invalidateCaches(Container c)
     {
-        CUBES.removeUsingPrefix(c.getId());
+        CUBES.removeUsingFilter(new Cache.StringPrefixFilter(c.getId()));
     }
 
 
@@ -906,7 +906,7 @@ public class ServerManager
             // Make sure the cache retrieves the test OLAP descriptor from this module
 
             Module module = ModuleLoader.getInstance().getModule("query");
-            assertEquals("OLAP descriptors from the query module", 1, MODULE_DESCRIPTOR_CACHE.getResourceMap(module).size());
+            assertEquals("OLAP descriptors from the query module", 4, MODULE_DESCRIPTOR_CACHE.getResourceMap(module).size());
         }
     }
 }

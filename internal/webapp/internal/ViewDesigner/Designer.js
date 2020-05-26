@@ -9,8 +9,8 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
 
     cls: 'labkey-customize-grid-panel',
     layout: 'border',
-    height: 310,
-    width: 800,
+    height: 480,
+    width: 910,
     activeTab: 0,
     border: false,
     bodyStyle: 'background-color: transparent;',
@@ -577,7 +577,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 autoScroll: true,
                 border: false,
                 cls: 'labkey-fieldmeta-tree',
-                height: 200,
+                height: 355,
                 rootVisible: false,
                 store: treeStore,
                 dockedItems: [{
@@ -636,7 +636,6 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                         cls: 'labkey-customview-panel',
                         flex: 1,
                         border: false,
-                        margin: '0 5px 0 0',
                         items: [
                             {
                                 xtype: 'box',
@@ -645,6 +644,11 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                             },
                             this.fieldsTree
                         ]
+                    },{
+                        xtype: 'panel',
+                        region: 'center',
+                        border: false,
+                        flex : 0.07
                     },
                     this.getInnerTabPanel(this.activeTab)
                 ]
@@ -797,7 +801,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
     getInnerTabPanel : function(activeTab) {
         if (!this.tabsTabPanel) {
             this.tabsTabPanel = Ext4.create('Ext.tab.Panel', {
-                region: 'center',
+                region: 'east',
                 flex: 1,
                 border: false,
                 activeTab: activeTab,
@@ -815,6 +819,7 @@ Ext4.define('LABKEY.internal.ViewDesigner.Designer', {
                 region: 'south',
                 layout: 'fit',
                 border: false,
+                padding : '15, 0, 0 ,0',
                 items: [{
                     xtype: 'toolbar',
                     dock: 'bottom',

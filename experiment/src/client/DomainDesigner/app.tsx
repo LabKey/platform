@@ -13,14 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-import $ from 'jquery'
-
+import React from 'react'
+import ReactDOM from 'react-dom'
 import { App } from './DomainDesigner'
 
-$(() => ReactDOM.render(
-    <App/>,
-    document.getElementById('app'))
-);
+// Need to wait for container element to be available in labkey wrapper before render
+window.addEventListener('DOMContentLoaded', (event) => {
+    ReactDOM.render(<App/>, document.getElementById('app'));
+});
 

@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
@@ -157,7 +158,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
-    public void decorateColumn(BaseColumnInfo columnInfo, PropertyDescriptor pd)
+    public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
     {
         for (PropertyColumnDecorator decorator : _decorators)
         {

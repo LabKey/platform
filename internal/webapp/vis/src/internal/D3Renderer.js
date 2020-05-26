@@ -1874,14 +1874,16 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         // Now that we've rendered the text, iterate through the nodes and adjust the y values so they no longer overlap.
         // Instead of using selection.each we do this because we need access to the neighboring items.
-        for (i = 1; i < selection[0].length; i++) {
-            currentItem = selection[0][i];
-            cBBox = currentItem.getBBox();
-            pBBox = selection[0][i-1].getBBox();
+        if (selection[0]) {
+            for (i = 1; i < selection[0].length; i++) {
+                currentItem = selection[0][i];
+                cBBox = currentItem.getBBox();
+                pBBox = selection[0][i-1].getBBox();
 
-            if (pBBox.y + pBBox.height >= cBBox.y) {
-                var newY = parseInt(currentItem.childNodes[0].getAttribute('y')) + Math.abs((pBBox.y + pBBox.height + 3) - cBBox.y);
-                currentItem.childNodes[0].setAttribute('y', newY);
+                if (pBBox.y + pBBox.height >= cBBox.y) {
+                    var newY = parseInt(currentItem.childNodes[0].getAttribute('y')) + Math.abs((pBBox.y + pBBox.height + 3) - cBBox.y);
+                    currentItem.childNodes[0].setAttribute('y', newY);
+                }
             }
         }
 
@@ -2901,7 +2903,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
 
         hoverFn = geom.hoverFn ? geom.hoverFn : function(d) {
-            return geom.yAes.getValue(d);
+            return (d.label !== undefined ? d.label + '\n' : '')
+                + (d.subLabel !== undefined ? 'Subcategory: ' + d.subLabel + '\n' : '')
+                + 'Value: ' + geom.yAes.getValue(d);
         };
 
         xOffsetFn = function(d) {
@@ -2974,6 +2978,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .text(function(d) { return geom.yAes.getValue(d); });
 
         if (geom.clickFn) {
+            // Improve discoverability of the click handler
+            barWrappers.attr('cursor', 'pointer');
+
             barWrappers.on('click', function(data) {
                 geom.clickFn(d3.event, data, layer);
             });

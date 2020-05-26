@@ -16,6 +16,10 @@
 
 package org.labkey.mothership;
 
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.JsonPathException;
+import com.jayway.jsonpath.PathNotFoundException;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -33,6 +37,7 @@ import org.jfree.data.time.Day;
 import org.jfree.data.time.TimeSeries;
 import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
+import org.json.JSONObject;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -57,9 +62,11 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BadRequestException;
@@ -122,9 +129,8 @@ public class MothershipController extends SpringActionController
             throw new RedirectException(url);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -142,9 +148,9 @@ public class MothershipController extends SpringActionController
             return updateView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Update Release Info");
+            root.addChild("Update Release Info");
         }
     }
 
@@ -175,15 +181,15 @@ public class MothershipController extends SpringActionController
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
             QuerySettings settings = schema.getSettings(getViewContext(), "softwareReleases", MothershipSchema.SOFTWARE_RELEASES_TABLE_NAME);
-            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("SVNRevision"), Sort.SortDirection.DESC);
+            settings.getBaseSort().insertSortColumn(FieldKey.fromParts("BuildTime"), Sort.SortDirection.DESC);
 
             QueryView queryView = schema.createView(getViewContext(), settings, errors);
             return new VBox(getLinkBar(), queryView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Installations");
+            root.addChild("Installations");
         }
     }
 
@@ -231,9 +237,8 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -298,9 +303,8 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -362,9 +366,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), queryView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Exceptions");
+            root.addChild("Exceptions");
         }
     }
 
@@ -388,9 +392,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), gridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Installations");
+            root.addChild("Installations");
         }
     }
 
@@ -435,9 +439,9 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Upgrade Message");
+            root.addChild("Upgrade Message");
         }
     }
 
@@ -462,6 +466,7 @@ public class MothershipController extends SpringActionController
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
+
     }
 
     @RequiresPermission(ReadPermission.class)
@@ -490,9 +495,9 @@ public class MothershipController extends SpringActionController
             return new VBox(detailView, exceptionGridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Server Session");
+            root.addChild("Server Session");
         }
     }
 
@@ -529,9 +534,9 @@ public class MothershipController extends SpringActionController
             return new VBox(updateView, sessionGridView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Server Installation");
+            root.addChild("Server Installation");
         }
     }
 
@@ -628,9 +633,9 @@ public class MothershipController extends SpringActionController
             return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Exception Reports");
+            root.addChild("Exception Reports");
         }
     }
 
@@ -749,11 +754,14 @@ public class MothershipController extends SpringActionController
                 stackTrace.setStackTrace(form.getStackTrace());
                 stackTrace.setContainer(getContainer().getId());
 
-                ServerSession session = form.toSession(getContainer());
+                Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
+                ServerSession session = sessionAndRelease.first;
+                SoftwareRelease release = sessionAndRelease.second;
 
                 installation.setUsedInstaller(form.isUsedInstaller());
                 session = MothershipManager.get().updateServerSession(form.getServerHostName(), session, installation, getContainer());
-                if (form.getSvnRevision() != null && form.getSvnURL() != null)
+                // Skip reports when we don't even know what code it's running
+                if (release.getVcsUrl() != null && release.getVcsRevision() != null)
                 {
                     ExceptionReport report = new ExceptionReport();
                     report.setExceptionMessage(form.getExceptionMessage());
@@ -804,7 +812,7 @@ public class MothershipController extends SpringActionController
             throw new SQLException("Intentional exception for testing purposes", "400");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
         }
@@ -819,7 +827,7 @@ public class MothershipController extends SpringActionController
         public Object execute(UpdateCheckForm form, BindException errors) throws Exception
         {
             // First log this installation and session
-            ServerSession session = form.toSession(getContainer());
+            Pair<ServerSession, SoftwareRelease> sessionAndRelease = form.toSession(getContainer());
             ServerInstallation installation = new ServerInstallation();
             if (form.getServerGUID() != null)
             {
@@ -831,9 +839,9 @@ public class MothershipController extends SpringActionController
                 installation.setSystemShortName(form.getSystemShortName());
                 installation.setContainer(getContainer().getId());
                 installation.setUsedInstaller(form.isUsedInstaller());
-                MothershipManager.get().updateServerSession(form.getServerHostName(), session, installation, getContainer());
+                MothershipManager.get().updateServerSession(form.getServerHostName(), sessionAndRelease.first, installation, getContainer());
                 setSuccessHeader();
-                getViewContext().getResponse().getWriter().print(getUpgradeMessage(form.parseSvnRevision()));
+                getViewContext().getResponse().getWriter().print(getUpgradeMessage(sessionAndRelease.second));
             }
 
             return null;
@@ -865,9 +873,9 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportsAction extends SimpleViewAction
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Mothership Reports");
+            root.addChild("Mothership Reports");
         }
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
@@ -923,11 +931,14 @@ public class MothershipController extends SpringActionController
         }
     }
 
-    private String getUpgradeMessage(Integer rev)
+    private String getUpgradeMessage(@NotNull SoftwareRelease release)
     {
+        // We still key off the SVN revision to determine if a build is current, though we should soon
+        // migrate to looking at the version number we're assigning for maintenance releases or SNAPSHOT, etc
         int currentRevision = MothershipManager.get().getCurrentRevision(getContainer());
+        Integer reportedRevision = release.getSVNRevision();
 
-        if (rev != null && rev.intValue() < currentRevision)
+        if (reportedRevision != null && reportedRevision.intValue() < currentRevision)
         {
             return MothershipManager.get().getUpgradeMessage(getContainer());
         }
@@ -1064,19 +1075,6 @@ public class MothershipController extends SpringActionController
             return _svnRevision;
         }
 
-        public Integer parseSvnRevision()
-        {
-            try
-            {
-                return Integer.valueOf(getSvnRevision());
-            }
-            catch (NumberFormatException e)
-            {
-                // Probably not built from an SVN enlistment
-                return null;
-            }
-        }
-
         public void setSvnRevision(String svnRevision)
         {
             _svnRevision = svnRevision;
@@ -1152,10 +1150,68 @@ public class MothershipController extends SpringActionController
             _serverHostName = serverHostName;
         }
 
-        public ServerSession toSession(Container container)
+        private String getJsonProperty(DocumentContext dc, String jsonPath)
         {
+            Object val = dc.read(jsonPath);
+            return val == null || "".equals(val) ? null : val.toString();
+        }
+
+        public Pair<ServerSession, SoftwareRelease> toSession(Container container)
+        {
+            String vcsUrl = null;
+            String vcsRevision = null;
+            String vcsBranch = null;
+            String vcsTag = null;
+            Date buildTime = null;
+            String buildNumber = null;
+            // As of 19.3, we include info for every module that was built since they may come from different repos
+            if (getJsonMetrics() != null)
+            {
+                try
+                {
+                    // Capture the Core module's info to put into mothership.SoftwareRelease
+                    DocumentContext dc = JsonPath.parse(getJsonMetrics());
+                    vcsUrl = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsUrl");
+                    vcsBranch = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsBranch");
+                    vcsTag = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsTag");
+                    vcsRevision = getJsonProperty(dc, "$.modules.Core.buildInfo.vcsRevision");
+                    buildNumber = getJsonProperty(dc, "$.modules.Core.buildInfo.buildNumber");
+                    String buildTimeString = getJsonProperty(dc, "$.modules.Core.buildInfo.buildTime");
+                    if (buildTimeString != null)
+                    {
+                        try
+                        {
+                            buildTime = new Date(DateUtil.parseDateTime(container, buildTimeString));
+                        }
+                        catch (ConversionException ignored) {}
+                    }
+                }
+                catch (JsonPathException ignored) {}
+            }
+
+            // For older servers that are submitting data, fall back to form-based values where they used to be POSTed
+            if (vcsUrl == null)
+            {
+                // Backwards compatible name for form property
+                vcsUrl = getSvnURL();
+            }
+            if (vcsRevision == null)
+            {
+                // Backwards compatible name for form property
+                vcsRevision = getSvnRevision();
+            }
+            if (buildTime == null)
+            {
+                buildTime = getBuildTime();
+            }
+            if (buildNumber == null)
+            {
+                // Backwards compatible name for form property
+                buildNumber = getDescription();
+            }
+
             ServerSession session = new ServerSession();
-            SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, parseSvnRevision(), getSvnURL(), getDescription());
+            SoftwareRelease release = MothershipManager.get().ensureSoftwareRelease(container, vcsRevision, vcsUrl, vcsBranch, vcsTag, buildTime, buildNumber);
             session.setSoftwareReleaseId(release.getSoftwareReleaseId());
             session.setBuildTime(getBuildTime());
             session.setServerSessionGUID(getServerSessionGUID());
@@ -1179,7 +1235,7 @@ public class MothershipController extends SpringActionController
             session.setExceptionReportingLevel(getExceptionReportingLevel());
             session.setJsonMetrics(getJsonMetrics());
 
-            return session;
+            return new Pair<>(session, release);
         }
 
         public boolean isEnterprisePipelineEnabled()

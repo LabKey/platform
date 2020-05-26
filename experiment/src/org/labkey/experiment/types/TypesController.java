@@ -20,16 +20,21 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ContainerType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.LsidManager;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExperimentService;
@@ -39,10 +44,12 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DOM;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.util.URLHelper;
@@ -70,7 +77,22 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+
+import static org.labkey.api.util.DOM.A;
+import static org.labkey.api.util.DOM.Attribute.href;
+import static org.labkey.api.util.DOM.B;
+import static org.labkey.api.util.DOM.CODE;
+import static org.labkey.api.util.DOM.DIV;
+import static org.labkey.api.util.DOM.H2;
+import static org.labkey.api.util.DOM.TABLE;
+import static org.labkey.api.util.DOM.TBODY;
+import static org.labkey.api.util.DOM.TD;
+import static org.labkey.api.util.DOM.THEAD;
+import static org.labkey.api.util.DOM.TR;
+import static org.labkey.api.util.DOM.at;
+import static org.labkey.api.util.DOM.cl;
 
 
 /**
@@ -104,11 +126,10 @@ public class TypesController extends SpringActionController
             return jspView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getContainer()));
             root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -169,9 +190,8 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -231,11 +251,10 @@ public class TypesController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Import Vocabulary", new ActionURL(ImportVocabularyAction.class, getContainer()));
-            return root;
         }
     }
     
@@ -296,11 +315,10 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/types.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Defined Types", new ActionURL(TypesAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -336,6 +354,8 @@ public class TypesController extends SpringActionController
     {
         public String typeName;
         public DomainDescriptor dd;
+        public Domain d;
+        public DomainKind kind;
         public List<PropertyDescriptor> properties = Collections.emptyList();
 
         public ModelAndView getView(TypeForm form, BindException errors)
@@ -347,16 +367,18 @@ public class TypesController extends SpringActionController
             {
                 dd = OntologyManager.getDomainDescriptor(typeName, getContainer());
                 properties = OntologyManager.getPropertiesForType(typeName, getContainer());
+
+                d = dd != null ? d = PropertyService.get().getDomain(dd.getDomainId()) : null;
+                kind = d != null ? d.getDomainKind() : null;
             }
 
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new TypesAction(getViewContext())).appendNavTrail(root);
+            (new TypesAction(getViewContext())).addNavTrail(root);
             root.addChild("Type -- " + StringUtils.defaultIfEmpty(dd != null ? dd.getName() : typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -506,11 +528,10 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/findConcepts.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Find Concepts", new ActionURL(FindConceptsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -601,7 +622,7 @@ public class TypesController extends SpringActionController
         return conceptCount;
     }
 
-    private static final StringKeyCache<String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
+    private static final Cache<String, String[]> SEMANTIC_TYPES_CACHE = CacheManager.getSharedCache();
 
     public static String[] getSemanticTypes()
     {
@@ -679,6 +700,77 @@ public class TypesController extends SpringActionController
         public void setPrefixMatch(boolean prefixMatch)
         {
             this.prefixMatch = prefixMatch;
+        }
+    }
+
+    @RequiresPermission(AdminPermission.class)
+    public static class CheckResolveAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"),
+                    SimpleFilter.createContainerFilter(getContainer()), new Sort("ObjectId")).getArrayList(String.class);
+
+            return new HtmlView("Check Resolve LSIDs",
+                    DIV(H2("Resolving " + objectURIs.size() + " objects"),
+                            TABLE(THEAD(
+                                    TR(TD(B("Name")),
+                                            TD(B("Query")),
+                                            TD(B("Class")),
+                                            TD(B("LSID")))),
+                                    TBODY(objectURIs.stream().map(this::resolve)))));
+        }
+
+        // render a row in the table
+        public DOM.Renderable renderRow(String objectUri, Identifiable obj)
+        {
+            if (obj == null)
+            {
+                return TR(cl("text-warning bg-warning"),
+                        TD(B("Unresolved")),
+                        TD(),
+                        TD(),
+                        TD(lsid(objectUri)));
+            }
+            else
+            {
+                ActionURL url = obj.detailsURL();
+                QueryRowReference ref = obj.getQueryRowReference();
+                return TR(
+                        TD(url != null ? A(at(href, url), obj.getName()) : obj.getName()),
+                        TD(ref != null ? A(at(href, ref.toExecuteQueryURL()), ref.toString()) : null),
+                        TD(obj.getClass().getSimpleName()),
+                        TD(lsid(objectUri)));
+            }
+        }
+
+
+        public DOM.Renderable resolve(String objectURI)
+        {
+            try
+            {
+                Identifiable obj = LsidManager.get().getObject(objectURI);
+                return renderRow(objectURI, obj);
+            }
+            catch (Exception e)
+            {
+                return TR(cl("text-danger bg-danger"),
+                        TD("Error"),
+                        TD(),
+                        TD(),
+                        TD(lsid(objectURI), ": ", e.getMessage()));
+            }
+        }
+
+        public DOM.Renderable lsid(String lsid)
+        {
+            return CODE(cl("small"), lsid);
+        }
+
+        @Override
+        public void addNavTrail(NavTree root)
+        {
         }
     }
 }

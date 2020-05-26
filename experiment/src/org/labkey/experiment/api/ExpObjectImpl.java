@@ -18,27 +18,19 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.OntologyObject;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpObject;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.ExperimentProperty;
-import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.exp.property.ValidatorContext;
-import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -74,16 +66,12 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         if (_objectId == 0)
         {
             OntologyObject oo = OntologyManager.getOntologyObject(getContainer(), getLSID());
-            if (oo != null)
-                _objectId = oo.getObjectId();
+            if (oo == null)
+                return null;
+            _objectId = oo.getObjectId();
         }
 
         return _objectId;
-    }
-
-    public String getLSIDNamespacePrefix()
-    {
-        return new Lsid(getLSID()).getNamespacePrefix();
     }
 
     public String getComment()
@@ -140,31 +128,12 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
             throw new IllegalArgumentException("PropertyType resource is NYI in this method");
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
-        {
-            OntologyManager.deleteProperty(getLSID(), pd.getPropertyURI(), getContainer(), pd.getContainer());
-
-            ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd, value);
-            if (value != null)
-            {
-                oprop.setPropertyId(pd.getPropertyId());
-                OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
-            }
-            else
-            {
-                // We still need to validate blanks
-                List<ValidationError> errors = new ArrayList<>();
-                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, oprop, errors, new ValidatorContext(pd.getContainer(), user));
-                if (!errors.isEmpty())
-                    throw new ValidationException(errors);
-            }
-            transaction.commit();
-        }
+        OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this);
     }
 
     public String urlFlag(boolean flagged)
     {
-        return AppProps.getInstance().getContextPath() + "/Experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
+        return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
     }
 
     public Object getProperty(DomainProperty prop)

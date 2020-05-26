@@ -80,7 +80,7 @@ public class TreatmentDataWriter extends DefaultStudyDesignWriter implements Int
         Set<String> designTableNames = new HashSet<>();
 
         // study designs can have lookup data stored at both the project and folder level
-        ContainerFilter containerFilter = new ContainerFilter.CurrentPlusProject(ctx.getUser());
+        ContainerFilter containerFilter = ContainerFilter.Type.CurrentPlusProject.create(ctx.getContainer(), ctx.getUser());
 
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
         designTableNames.add(StudyQuerySchema.STUDY_DESIGN_ROUTES_TABLE_NAME);

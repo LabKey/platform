@@ -22,7 +22,6 @@ import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
 import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,6 +36,7 @@ import static org.labkey.api.module.ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION
  */
 public class ModuleHtmlViewCacheHandler implements ModuleResourceCacheHandler<Map<Path, ModuleHtmlViewDefinition>>
 {
+    @Override
     public Map<Path, ModuleHtmlViewDefinition> load(Stream<? extends Resource> resources, Module module)
     {
         return unmodifiable(resources

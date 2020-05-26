@@ -29,18 +29,9 @@ import java.util.Map;
 public interface CustomColumnConfiguration
 {
     CustomColumn getCustomColumn(String name);
-
     Map<String, DomainProperty> getPropertyMap();
     Collection<DomainProperty> getCustomProperties();
-
-    @Deprecated
-    Collection<CustomColumn> getCustomColumns();
     Collection<CustomColumn> getCustomColumns(User user);
-
-    @Deprecated
-    boolean shouldDisplay(String name);
     boolean shouldDisplay(User user, String name);
-
-    @Nullable
-    String getCaption(String name);
+    @Nullable String getCaption(String name);
 }

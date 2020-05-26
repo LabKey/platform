@@ -28,6 +28,7 @@ import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -300,8 +301,8 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         {
             try
             {
-                Object oldObject = PageFlowUtil.decodeObject((String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue());
-                PropertyUtils.copyProperties(form, oldObject);
+                Map<String, ?> oldObject = PageFlowUtil.decodeObject(Map.class, (String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue());
+                ((ObjectFactory<Object>)ObjectFactory.Registry.getFactory(form.getClass())).fromMap(form, oldObject);
             }
             catch (Exception x)
             {
@@ -662,4 +663,19 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return _commandName;
     }
 
+    /**
+     * Cacheable resources can calculate a last modified timestamp to send to the browser.
+     */
+    protected long getLastModified(FORM form)
+    {
+        return Long.MIN_VALUE;
+    }
+
+    /**
+     * Cacheable resources can calculate an ETag header to send to the browser.
+     */
+    protected String getETag(FORM form)
+    {
+        return null;
+    }
 }

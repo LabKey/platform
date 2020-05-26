@@ -44,11 +44,14 @@ import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.query.ExpDataClassDataTable;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchResultTemplate;
@@ -96,6 +99,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     public static final SearchService.SearchCategory expDataCategory = new SearchService.SearchCategory("data", "ExpData");
 
+    /** Cache this because it can be expensive to recompute */
+    private Boolean _finalRunOutput;
+
     /**
      * Temporary mapping until experiment.xml contains the mime type
      */
@@ -128,13 +134,36 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
 
     @Override
     @Nullable
-    public URLHelper detailsURL()
+    public ActionURL detailsURL()
     {
         DataType dataType = getDataType();
-        if (dataType == null)
-            return null;
+        if (dataType != null)
+        {
+            ActionURL url = dataType.getDetailsURL(this);
+            if (url != null)
+                return url;
+        }
 
-        return dataType.getDetailsURL(this);
+        return _object.detailsURL();
+    }
+
+    @Override
+    public @Nullable QueryRowReference getQueryRowReference()
+    {
+        ExpDataClassImpl dc = getDataClass();
+        if (dc != null)
+            return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP_DATA, dc.getName(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
+
+        // Issue 40123: see MedImmuneDataHandler MEDIMMUNE_DATA_TYPE, this claims the "Data" namespace
+        DataType type = getDataType();
+        if (type != null)
+        {
+            QueryRowReference queryRowReference = type.getQueryRowReference(this);
+            if (queryRowReference != null)
+                return queryRowReference;
+        }
+
+        return new QueryRowReference(getContainer(), ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Data.name(), FieldKey.fromParts(ExpDataTable.Column.RowId), getRowId());
     }
 
     @Override
@@ -273,9 +302,9 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
         if (flagged)
         {
-            return AppProps.getInstance().getContextPath() + "/Experiment/flagData.png";
+            return AppProps.getInstance().getContextPath() + "/experiment/flagData.png";
         }
-        return AppProps.getInstance().getContextPath() + "/Experiment/images/unflagData.png";
+        return AppProps.getInstance().getContextPath() + "/experiment/images/unflagData.png";
     }
 
     @Override
@@ -346,11 +375,12 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
     @Override
     public boolean isFinalRunOutput()
     {
-        ExpRun run = getRun();
-        if (run == null)
-            return false;
-        else
-            return run.isFinalOutput(this);
+        if (_finalRunOutput == null)
+        {
+            ExpRun run = getRun();
+            _finalRunOutput = run != null && run.isFinalOutput(this);
+        }
+        return _finalRunOutput.booleanValue();
     }
 
     @Override
@@ -525,6 +555,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         return Collections.unmodifiableList(aliases);
     }
 
+    @Override
     public String getDocumentId()
     {
         String dataClassName = "-";
@@ -650,12 +681,14 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         Set<String> identifiersMed = new HashSet<>();
         Set<String> identifiersLo = new HashSet<>();
 
+        StringBuilder body = new StringBuilder();
+
         // Name is an identifier with highest weight
         identifiersHi.add(getName());
 
         // Description is added as a keywordsLo -- in Biologics it is common for the description to
         // contain names of other DataClasses, e.g., "Mature desK of PS-10", which would will be tokenized as
-        // [mature, desk, ps, 10] if added it as a keyword so we lower it's priority to avoid useless results.
+        // [mature, desk, ps, 10] if added it as a keyword so we lower its priority to avoid useless results.
         // CONSIDER: tokenize the description and extract identifiers
         if (null != getDescription())
             keywordsLo.add(getDescription());
@@ -685,6 +718,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
             props.put(SearchService.PROPERTY.navtrail.toString(), nav);
 
             props.put(DataSearchResultTemplate.PROPERTY, dc.getName());
+            body.append(dc.getName());
         }
 
 
@@ -730,7 +764,7 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
                 docId,
                 getContainer().getId(),
                 "text/plain",
-                null,
+                body.toString(),
                 view,
                 props,
                 getCreatedBy(),
@@ -910,17 +944,16 @@ public class ExpDataImpl extends AbstractRunItemImpl<Data> implements ExpData
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        public void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
-            NavTree tree = SearchResultTemplate.super.appendNavTrail(root, ctx, scope, category);
+            SearchResultTemplate.super.addNavTrail(root, ctx, scope, category);
 
             String dataclass = ctx.getActionURL().getParameter(PROPERTY);
             if (dataclass != null)
             {
-                String text = tree.getText();
-                tree.setText(text + " - " + dataclass);
+                String text = root.getText();
+                root.setText(text + " - " + dataclass);
             }
-            return tree;
         }
     }
 }

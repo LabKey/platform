@@ -13,12 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import * as React from 'react'
-import * as ReactDOM from 'react-dom'
-import $ from 'jquery'
-
+import React from 'react'
+import ReactDOM from 'react-dom'
 import { AppContainer } from 'react-hot-loader'
-
 import { App } from './DomainDesigner'
 
 const render = () => {
@@ -32,9 +29,8 @@ const render = () => {
 
 declare const module: any;
 
-$(() => {
-    render();
-    if (module.hot) {
-        module.hot.accept();
-    }
-});
+if (module.hot) {
+    module.hot.accept();
+}
+
+render();

@@ -75,6 +75,7 @@ import java.sql.BatchUpdateException;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -111,7 +112,7 @@ public class ExceptionUtil
 
         for (int i = 2; i < stackTrace.length; i++)
         {
-            String line = stackTrace[i].toString();
+            String line = String.valueOf(stackTrace[i]);
             if (line.startsWith("javax.servlet.http.HttpServlet.service("))
                 break;
             trace.append("\n\tat ");
@@ -150,22 +151,22 @@ public class ExceptionUtil
     }
 
 
-    public static String renderException(Throwable e)
+    public static HtmlString renderException(Throwable e)
     {
         StringWriter sw = new StringWriter();
         e.printStackTrace(new PrintWriter(sw));
         String s = PageFlowUtil.filter(sw.toString());
         s = s.replaceAll(" ", "&nbsp;");
         s = s.replaceAll("\t", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");
-        return "<pre class='exception-stacktrace'>\n" + s + "</pre>\n";
+        return HtmlString.unsafe("<pre class='exception-stacktrace'>\n" + s + "</pre>\n");
     }
 
 
-    public static String getUnauthorizedMessage(ViewContext context)
+    public static HtmlString getUnauthorizedMessage(ViewContext context)
     {
-        return "<table width=\"100%\"><tr><td align=left>" +
+        return HtmlString.unsafe("<table width=\"100%\"><tr><td align=left>" +
                 (context.getUser().isGuest() ? "Please sign in to see this data." : "You do not have permission to see this data.") +
-                "</td></tr></table>";
+                "</td></tr></table>");
     }
 
 
@@ -327,7 +328,8 @@ public class ExceptionUtil
                     {
                         logMessage += "\n" + decorations;
                     }
-                    if (HttpView.hasCurrentView()) {
+                    if (HttpView.hasCurrentView())
+                    {
                         ViewContext viewContext = HttpView.currentContext();
                         logMessage += "\nCurrent URL: " + viewContext.getActionURL();
                         logMessage += "\nCurrent user: " + (viewContext.getUser().isGuest() ? "Guest" : viewContext.getUser().getEmail());
@@ -474,6 +476,10 @@ public class ExceptionUtil
             report.addParam("stackTrace", stackTrace);
             report.addParam("sqlState", sqlState);
             report.addParam("browser", browser);
+
+            Map<String, Map<String, Object>> modulesMap = new HashMap<>();
+            UsageReportingLevel.putModulesBuildInfo(modulesMap);
+            report.setMetrics(Collections.singletonMap("modules", modulesMap));
 
             if (requestURL != null)
             {
@@ -819,8 +825,8 @@ public class ExceptionUtil
 
                 ApiSimpleResponse errorResponse = new ApiSimpleResponse("success", false);
 
-                if (responseStatusMessage != null)
-                    errorResponse.put("exception", responseStatusMessage);
+                if (responseStatusMessage != null || message != null)
+                    errorResponse.put("exception", StringUtils.defaultString(message,responseStatusMessage));
 
                 ApiResponseWriter writer;
                 if (isJSON)

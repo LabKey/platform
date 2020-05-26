@@ -17,16 +17,23 @@ package org.labkey.api.message.settings;
 
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
+import org.labkey.api.message.settings.MessageConfigService.ConfigTypeProvider;
+import org.labkey.api.message.settings.MessageConfigService.EmailConfigForm;
+import org.labkey.api.message.settings.MessageConfigService.NotificationOption;
+import org.labkey.api.message.settings.MessageConfigService.PanelInfo;
+import org.labkey.api.message.settings.MessageConfigService.UserPreference;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+
+import java.util.Collection;
 
 /**
  * User: klum
  * Date: Jan 19, 2011
  * Time: 5:54:06 PM
  */
-public abstract class AbstractConfigTypeProvider implements MessageConfigService.ConfigTypeProvider
+public abstract class AbstractConfigTypeProvider implements ConfigTypeProvider
 {
     @Override
     public void savePreference(User currentUser, Container c, User projectUser, int preference, String srcIdentifier)
@@ -35,31 +42,25 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     }
 
     @Override
-    public MessageConfigService.UserPreference getPreference(Container c, User user, String srcIdentifier)
+    public UserPreference getPreference(Container c, User user, String srcIdentifier)
     {
         return MessageConfigService.get().getPreference(c, user, this, srcIdentifier);
     }
 
     @Override
-    public MessageConfigService.UserPreference[] getPreferences(Container c)
+    public Collection<? extends UserPreference> getPreferences(Container c)
     {
         return MessageConfigService.get().getPreferences(c, this);
     }
 
     @Override
-    public MessageConfigService.NotificationOption getOption(int optionId)
-    {
-        return MessageConfigService.get().getOption(optionId);
-    }
-
-    @Override
-    public MessageConfigService.NotificationOption[] getOptions()
+    public Collection<? extends NotificationOption> getOptions()
     {
         return MessageConfigService.get().getOptions(this);
     }
 
     @Override
-    public MessageConfigService.EmailConfigForm createConfigForm(ViewContext context, MessageConfigService.PanelInfo info)
+    public EmailConfigForm createConfigForm(ViewContext context, PanelInfo info)
     {
         EmailConfigFormImpl form = new EmailConfigFormImpl();
         form.setType(getType());
@@ -73,19 +74,20 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
         return form;
     }
 
+    @Override
     abstract public String getType();
 
     abstract protected int getDefaultEmailOption(Container c);
 
     abstract protected ActionURL getSetDefaultPrefURL(Container c);
 
-    public static class EmailConfigFormImpl extends ReturnUrlForm implements MessageConfigService.EmailConfigForm
+    public static class EmailConfigFormImpl extends ReturnUrlForm implements EmailConfigForm
     {
-        int _defaultEmailOption;
-        int _individualEmailOption;
-        String _dataRegionSelectionKey;
-        String _type;
-        ActionURL _setDefaultPrefURL;
+        private int _defaultEmailOption;
+        private int _individualEmailOption;
+        private String _dataRegionSelectionKey;
+        private String _type;
+        private ActionURL _setDefaultPrefURL;
 
         @Override
         public int getDefaultEmailOption()
@@ -148,7 +150,7 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
         }
 
         @Override
-        public MessageConfigService.ConfigTypeProvider getProvider()
+        public ConfigTypeProvider getProvider()
         {
             return MessageConfigService.get().getConfigType(_type);
         }

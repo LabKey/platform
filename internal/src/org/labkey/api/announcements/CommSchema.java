@@ -79,21 +79,6 @@ public class CommSchema
         return getSchema().getTable("PageVersions");
     }
 
-    public TableInfo getTableInfoEmailPrefs()
-    {
-        return getSchema().getTable("EmailPrefs");
-    }
-
-    public TableInfo getTableInfoEmailOptions()
-    {
-        return getSchema().getTable("EmailOptions");
-    }
-
-    public TableInfo getTableInfoEmailFormats()
-    {
-        return getSchema().getTable("EmailFormats");
-    }
-
     public TableInfo getTableInfoUserList()
     {
         return getSchema().getTable("UserList");

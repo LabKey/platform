@@ -16,6 +16,7 @@
 package org.labkey.issue.query;
 
 import com.google.common.collect.Sets;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -23,6 +24,7 @@ import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainTemplate;
 import org.labkey.api.exp.property.DomainTemplateGroup;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.issues.AbstractIssuesListDefDomainKind;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -209,6 +211,18 @@ public class IssueDefDomainKind extends AbstractIssuesListDefDomainKind
     public String getDefaultPluralName()
     {
         return DEFAULT_ENTRY_TYPE_PLURAL;
+    }
+
+    @Override
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
+    {
+        return DefaultValueType.values();
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        return DefaultValueType.FIXED_EDITABLE;
     }
 }
 

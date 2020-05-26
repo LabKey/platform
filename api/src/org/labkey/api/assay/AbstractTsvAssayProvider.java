@@ -22,9 +22,11 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.FieldKey;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -41,6 +43,11 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
     public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {
         super(protocolLSIDPrefix, runLSIDPrefix, dataType, declaringModule);
+    }
+
+    public AbstractTsvAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, String resultRowLSIDPrefix, AssayDataType dataType, Module declaringModule)
+    {
+        super(protocolLSIDPrefix, runLSIDPrefix, resultRowLSIDPrefix, dataType, declaringModule);
     }
 
     public ExpData getDataForDataRow(Object dataRowId, ExpProtocol protocol)
@@ -78,5 +85,21 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
         }
 
         return null;
+    }
+
+    @Override
+    public Long getResultRowCount(List<? extends ExpProtocol> protocols)
+    {
+        long resultCount = 0;
+        for (ExpProtocol protocol : protocols)
+        {
+            Domain domain = getResultsDomain(protocol);
+            if (domain != null && domain.isProvisioned())
+            {
+                TableInfo tableInfo = StorageProvisioner.getSchemaTableInfo(domain);
+                resultCount += new TableSelector(tableInfo).getRowCount();
+            }
+        }
+        return resultCount;
     }
 }

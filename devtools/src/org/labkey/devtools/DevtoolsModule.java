@@ -16,19 +16,27 @@
 
 package org.labkey.devtools;
 
+import org.apache.commons.collections4.Factory;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.CodeOnlyModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.util.JspTestCase;
 import org.labkey.api.view.WebPartFactory;
+import org.labkey.devtools.authentication.TestSecondaryController;
+import org.labkey.devtools.authentication.TestSecondaryProvider;
+import org.labkey.devtools.authentication.TestSsoController;
+import org.labkey.devtools.authentication.TestSsoProvider;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 public class DevtoolsModule extends CodeOnlyModule
 {
-    public static final String NAME = "LabkeyDeveloperTools";
+    private static final String NAME = "DeveloperTools";
 
     @Override
     public String getName()
@@ -48,6 +56,11 @@ public class DevtoolsModule extends CodeOnlyModule
     {
         addController(TestController.NAME, TestController.class);
         addController(ToolsController.NAME, ToolsController.class);
+
+        addController("testsecondary", TestSecondaryController.class);
+        AuthenticationManager.registerProvider(new TestSecondaryProvider());
+        addController("testsso", TestSsoController.class);
+        AuthenticationManager.registerProvider(new TestSsoProvider());
     }
 
     @Override
@@ -62,5 +75,11 @@ public class DevtoolsModule extends CodeOnlyModule
     public Collection<String> getSummary(Container c)
     {
         return Collections.emptyList();
+    }
+
+    @Override
+    public @NotNull List<Factory<Class>> getIntegrationTestFactories()
+    {
+        return Collections.singletonList(new JspTestCase("/org/labkey/devtools/test/JspTestCaseTest.jsp"));
     }
 }

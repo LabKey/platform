@@ -36,16 +36,22 @@ public class VisitTable extends BaseStudyTable
     public VisitTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoVisit(), null);
-
-        cf = schema.getDefaultContainerFilter();
         Study study = schema.getStudy();
+
+        // TODO This logic does not handle the case where this table is the target of a union table
+        // (e.g. SpecimenForeignKey) and one or more of the target studies are Dataspace studies.
+        // We would probably need to do so some sort of union table here to handle that complicated case correctly,
+        // and also return the container of the target study not the storage location of the visit (e.g. project)
+
+        if (null == cf)
+            cf = schema.getDefaultContainerFilter();
         if (null != study)
         {
             if (cf instanceof DataspaceContainerFilter)
             {
                 // fix up container filter to include project if dataspace study with shard visits
                 if (schema.getContainer().isProject() && study.getShareVisitDefinitions())
-                    cf = new ContainerFilter.Project(schema.getUser());
+                    cf = ContainerFilter.Type.Project.create(schema);
             }
             else
             {
@@ -53,11 +59,10 @@ public class VisitTable extends BaseStudyTable
                 // If shared visits are enabled, only show visits from the project level.
                 Study visitStudy = StudyManager.getInstance().getSharedStudy(study);
                 if (visitStudy != null && visitStudy.getShareVisitDefinitions())
-                    cf = new ContainerFilter.Project(schema.getUser());
+                    cf = ContainerFilter.Type.Project.create(schema);
             }
-
-            _setContainerFilter(cf);
         }
+        _setContainerFilter(cf);
 
         addColumn(new AliasedColumn(this, "RowId", _rootTable.getColumn("RowId")));
         addColumn(new AliasedColumn(this, "TypeCode", _rootTable.getColumn("TypeCode")));

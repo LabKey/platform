@@ -26,7 +26,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
 import java.util.Map;
@@ -42,10 +42,9 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     @Nullable Integer getObjectId();
     void setLSID(String lsid);
     void setLSID(Lsid lsid);
-    String getLSIDNamespacePrefix();
     void setName(String name);
     @Nullable
-    URLHelper detailsURL();
+    ActionURL detailsURL();
     Container getContainer();
     void setContainer(Container container);
 

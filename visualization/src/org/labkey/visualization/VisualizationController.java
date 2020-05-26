@@ -49,8 +49,8 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.Activity;
 import org.labkey.api.data.ActivityService;
 import org.labkey.api.data.ColumnInfo;
@@ -95,7 +95,6 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -278,7 +277,7 @@ public class VisualizationController extends SpringActionController
      * action.
      */
 
-    static private final StringKeyCache _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
+    static private final Cache<String, Object> _getMeasuresCache = CacheManager.getStringKeyCache(CacheManager.UNLIMITED,CacheManager.UNLIMITED,"getMeasuresStaticCache");
 
     @Action(ActionType.SelectMetaData.class)
     @RequiresPermission(ReadPermission.class)
@@ -587,9 +586,8 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -680,15 +678,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
-
-
-
-
 
     /**
      * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
@@ -1194,10 +1187,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("timeChart");
-            return root.addChild(_navTitle);
+            root.addChild(_navTitle);
         }
     }
 
@@ -1228,10 +1221,10 @@ public class VisualizationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("reportsAndViews");
-            return root.addChild(_navTitle);
+            root.addChild(_navTitle);
         }
     }
 
@@ -1635,11 +1628,8 @@ public class VisualizationController extends SpringActionController
             writer.startResponse();
 
             writer.startMap("counts");
-            ResultSet rs = null;
-            try
+            try (ResultSet rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName)))
             {
-                rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName));
-
                 Map<String, Integer> values = new HashMap<>();
                 while (rs.next())
                 {
@@ -1647,7 +1637,7 @@ public class VisualizationController extends SpringActionController
                 }
 
                 String key;
-                for (int i=0; i < sources.length(); i++)
+                for (int i = 0; i < sources.length(); i++)
                 {
                     key = sources.getString(i);
                     if (values.containsKey(key))
@@ -1659,10 +1649,6 @@ public class VisualizationController extends SpringActionController
             catch (SQLException x)
             {
                 throw new RuntimeSQLException(x);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
             writer.endMap();
             writer.endResponse();
@@ -1686,10 +1672,6 @@ public class VisualizationController extends SpringActionController
             return (JSONObject) _props;
         }
     }
-
-
-
-
 
 
     public static class TestCase extends Assert
@@ -1782,5 +1764,4 @@ public class VisualizationController extends SpringActionController
             assertEquals(1,vs.getGroupBys().size());
         }
     } /* TestCase */
-
 }

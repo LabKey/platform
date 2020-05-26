@@ -85,11 +85,12 @@ public class StorageProvisioner
     private static final Logger log = Logger.getLogger(StorageProvisioner.class);
     private static final CPUTimer create = new CPUTimer("StorageProvisioner.create");
 
-    private static String _create(DbScope scope, DomainKind kind, Domain domain)
+    private static String _create(DbScope scope, DomainKind<?> kind, Domain domain)
     {
         assert create.start();
 
-        try (Transaction transaction = scope.ensureTransaction())
+        // CONSIDER: could combine the two SELECT here: SELECT...FOR UPDATE (domain.getDatabaseLock()) and the SELECT (getDomainDescriptor())
+        try (Transaction transaction = scope.ensureTransaction(domain.getDatabaseLock()))
         {
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId());
@@ -153,7 +154,7 @@ public class StorageProvisioner
                     .setStorageSchemaName(kind.getStorageSchemaName())
                     .build();
 
-            OntologyManager.updateDomainDescriptor(editDD);
+            OntologyManager.ensureDomainDescriptor(editDD);
 
             kind.invalidate(domain);
 
@@ -228,7 +229,7 @@ public class StorageProvisioner
 
     public static void addStorageProperties(Domain domain, Collection<PropertyStorageSpec> properties, boolean allowAddBaseProperty)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction
@@ -267,16 +268,15 @@ public class StorageProvisioner
 
     public static void addProperties(Domain domain, Collection<DomainProperty> properties, boolean allowAddBaseProperty)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
-        String tableName = domain.getStorageTableName();
-        if (null == tableName)
+        if (null == domain.getStorageTableName())
         {
-            tableName = _create(scope, kind, domain);
+            _create(scope, kind, domain);
             return;
         }
 
@@ -286,7 +286,6 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties(domain))
             base.add(s.getName());
 
-        int changeCount = 0;
         for (DomainProperty prop : properties)
         {
             if (prop.getName() == null || prop.getName().length() == 0)
@@ -303,12 +302,10 @@ public class StorageProvisioner
             if (null != spec)
             {
                 change.addColumn(spec);
-                changeCount++;
             }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));
-                changeCount++;
             }
         }
 
@@ -390,7 +387,7 @@ public class StorageProvisioner
 
     public static void dropProperties(Domain domain, Collection<DomainProperty> properties)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         assert scope.isTransactionActive() : "should be in a transaction with propertydescriptor changes";
@@ -422,7 +419,7 @@ public class StorageProvisioner
 
     public static void renameProperty(Domain domain, DomainProperty domainProperty, PropertyDescriptor oldPropDescriptor, boolean mvDropped)
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -485,7 +482,7 @@ public class StorageProvisioner
      */
     public static void resizeProperty(Domain domain, DomainProperty prop, Integer scale) throws ChangePropertyDescriptorException
     {
-        DomainKind kind = domain.getDomainKind();
+        DomainKind<?> kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
         // should be in a transaction with propertydescriptor changes
@@ -547,7 +544,7 @@ public class StorageProvisioner
                 map.put(scn, name);
         }
 
-        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);
+        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map, domain);
 
         for (ColumnInfo from : sti.getColumns())
         {
@@ -607,12 +604,19 @@ public class StorageProvisioner
     {
         private final SchemaTableInfo _inner;
         private final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
+        private Domain _domain;
 
         _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
         {
             super(schema, name);
             _inner = inner;
             _map.putAll(map);
+        }
+
+        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map, Domain domain)
+        {
+            this(schema, name, inner, map);
+            _domain = domain;
         }
 
         @Override
@@ -709,14 +713,14 @@ public class StorageProvisioner
         @Override
         public ObjectUriType getObjectUriType()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumn();
         }
 
         @Nullable
         @Override
         public String getObjectURIColumnName()
         {
-            return null;
+            return _domain.getDomainKind().getObjectUriColumnName();
         }
 
         @Nullable
@@ -766,29 +770,23 @@ public class StorageProvisioner
     }
 
 
-
-    private static final Object ENSURE_LOCK = new Object();
-
     /**
      * This is really an internal method, use createTableInfo() in most scenarios
      * This is public to support upgrade scenarios only.
      */
     public static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
     {
-        synchronized (ENSURE_LOCK)
+        String tableName = domain.getStorageTableName();
+
+        if (null == tableName)
         {
-            String tableName = domain.getStorageTableName();
-
-            if (null == tableName)
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
             {
-                try (var ignored = SpringActionController.ignoreSqlUpdates())
-                {
-                    tableName = _create(scope, kind, domain);
-                }
+                tableName = _create(scope, kind, domain);
             }
-
-            return tableName;
         }
+
+        return tableName;
     }
 
     enum RequiredIndicesAction
@@ -1020,7 +1018,7 @@ public class StorageProvisioner
         }
     }
 
-    public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind kind, Domain domain, String tableName)
+    public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind<?> kind, Domain domain, String tableName)
     {
         assert !ti.isLocked();
 
@@ -1285,7 +1283,7 @@ public class StorageProvisioner
                         domainReport.getSchemaName(), domainReport.getTableName()));
                 continue;
             }
-            DomainKind kind = domain.getDomainKind();
+            DomainKind<?> kind = domain.getDomainKind();
             if (kind == null)
             {
                 domainReport.addError(String.format("Could not find a domain kind for %s.%s",

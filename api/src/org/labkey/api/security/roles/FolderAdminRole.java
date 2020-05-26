@@ -22,6 +22,8 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DesignDataClassPermission;
+import org.labkey.api.security.permissions.DesignSampleSetPermission;
 import org.labkey.api.security.permissions.Permission;
 
 import java.util.Arrays;
@@ -37,7 +39,9 @@ public class FolderAdminRole extends AbstractRole
     // Most permissions are assigned to all admin roles automatically, and shouldn't be added to this list
     static Collection<Class<? extends Permission>> PERMISSIONS = Arrays.asList(
         AdminPermission.class,
-        FolderExportPermission.class
+        FolderExportPermission.class,
+        DesignDataClassPermission.class,
+        DesignSampleSetPermission.class
     );
 
     public FolderAdminRole()

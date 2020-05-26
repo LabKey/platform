@@ -48,22 +48,13 @@ public class UserInfoMenuSection extends MenuSection
     public List<MenuItem> getAllItems()
     {
         List<MenuItem> items = new ArrayList<>();
-        UserUrls urlProvider =  PageFlowUtil.urlProvider(UserUrls.class);
-        if (urlProvider != null)
-        {
-            MenuItem profileItem = new MenuItem("Profile", urlProvider.getUserDetailsURL(getContainer(), getUser().getUserId(), null), getUser().getUserId(), 0);
-            profileItem.setRequiresLogin(true);
-            profileItem.setKey("profile");
-            items.add(profileItem);
-        }
+
         String docUrl = _provider.getDocumentationUrl();
         if (docUrl != null)
         {
-            MenuItem docsItem = new MenuItem("Documentation", docUrl, null, 1);
-            docsItem.setKey(DOCS_KEY);
-            items.add(docsItem);
+            items.add(new MenuItem(_provider.getDocumentationLabel(), docUrl, 0, DOCS_KEY, null));
         }
-        items.addAll(_provider.getUserMenuItems());
+        items.addAll(_provider.getUserMenuItems(_context));
 
         return items;
     }

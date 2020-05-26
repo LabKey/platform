@@ -42,6 +42,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryIconURLProvider;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -82,6 +83,12 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
 {
     private static final Logger LOG = Logger.getLogger(GetQueryDetailsAction.class);
 
+    @Override
+    protected long getLastModified(Form form)
+    {
+        return QueryService.get().metadataLastModified();
+    }
+
     public ApiResponse execute(Form form, BindException errors)
     {
         ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -113,6 +120,7 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
         resp.put("isUserDefined", isUserDefined);
         boolean canEdit = queryDef.canEdit(user);
         resp.put("canEdit", canEdit);
+        resp.put("canDelete", queryDef.canDelete(user));
         resp.put("canEditSharedViews", container.hasPermission(user, EditSharedViewPermission.class));
         resp.put("isMetadataOverrideable", canEdit); //for now, this is the same as canEdit(), but in the future we can support this for non-editable queries
 
@@ -186,6 +194,20 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 resp.put("insertUrlDisabled", true);
             else
                 resp.put("insertUrl", insertDataUrl);
+        }
+
+        QueryService qs = QueryService.get();
+        if (qs != null)
+        {
+            for (QueryIconURLProvider provider : qs.getQueryIconURLProviders())
+            {
+                String iconURL = provider.getIconURL(form.getSchemaName(), form.getQueryName(), container, user);
+                if (null != iconURL)
+                {
+                    resp.put("iconURL", iconURL);
+                    break;
+                }
+            }
         }
 
         Map<FieldKey, Map<String, Object>> columnMetadata;
@@ -361,7 +383,13 @@ public class GetQueryDetailsAction extends ReadOnlyApiAction<GetQueryDetailsActi
                 if (domain != null)
                 {
                     if (kind.canEditDefinition(user, domain))
-                        resp.put("editDefinitionUrl", kind.urlEditDefinition(domain, getViewContext()));
+                    {
+                        ActionURL editUrl = kind.urlEditDefinition(domain, getViewContext());
+                        ActionURL showDataUrl = domain.urlShowData(getViewContext());
+                        if (editUrl != null && showDataUrl != null)
+                            editUrl.addReturnURL(showDataUrl); // send user to executeQuery action after save
+                        resp.put("editDefinitionUrl", editUrl);
+                    }
                 }
                 else
                 {

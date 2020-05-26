@@ -26,10 +26,10 @@ import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.categories.FileBrowser;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.components.DomainDesignerPage;
+import org.labkey.test.components.domain.DomainFormPanel;
 import org.labkey.test.pages.ImportDataPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.pages.study.ManageDatasetQCStatesPage;
 import org.labkey.test.pages.study.ManageStudyPage;
 import org.labkey.test.pages.study.ManageVisitPage;
@@ -38,7 +38,6 @@ import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.tests.StudyBaseTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.Ext4Helper;
-import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
@@ -61,7 +60,7 @@ import static org.junit.Assert.fail;
  * The @BeforeClass creates a new study manually using the default settings.
  * Each @Test then sets a property in that study, exports the study, and reimports it into a subfolder
  */
-@Category({DailyC.class, FileBrowser.class})
+@Category({DailyC.class})
 @BaseWebDriverTest.ClassTimeout(minutes = 28)
 public class StudySimpleExportTest extends StudyBaseTest
 {
@@ -134,27 +133,26 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         log("Do Setup: create simple dataset with one ptid and one visit");
         clickFolder(getFolderName());
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName(TEST_DATASET_NAME)
-                .submit();
-        PropertiesEditor fieldsEditor = editDatasetPage.getFieldsEditor();
-        fieldsEditor.selectField(0).markForDeletion();
-        fieldsEditor.addField(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
-                .setValidator(new ListHelper.RangeValidator("numberValidator", "numberValidator", "TestInt must equals '999'.", ListHelper.RangeType.Equals, "999"))
-                .setRequired(false));
+                .setName(TEST_DATASET_NAME);
+
+        DomainFormPanel fieldsEditor = editDatasetPage.getFieldsPanel();
+        fieldsEditor.manuallyDefineFields(new FieldDefinition("TestInt").setLabel("TestInt").setType(FieldDefinition.ColumnType.Integer)
+                .setValidator(new FieldDefinition.RangeValidator("numberValidator", "numberValidator",
+                        "TestInt must equals '999'.", FieldDefinition.RangeType.Equals, "999")).setRequired(false));
         fieldsEditor.addField(new FieldDefinition("TestString").setLabel("TestRequiredString").setType(FieldDefinition.ColumnType.String)
                 .setRequired(true));
         // Format "TestDate" as "Date"
-        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDate").setLabel("TestDate").setType(FieldDefinition.ColumnType.DateAndTime));
         // "TestDateTime" format will default to date-time
-        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateTime));
+        fieldsEditor.addField(new FieldDefinition("TestDateTime").setLabel("TestDateTime").setType(FieldDefinition.ColumnType.DateAndTime));
         editDatasetPage
-                .save()
-                .clickViewData()
-                .getDataRegion()
-                .clickImportBulkData();
+            .clickSave()
+            .clickViewData()
+            .getDataRegion()
+            .clickImportBulkData();
         waitForElement(Locator.name("text"));
         setFormElement(Locator.name("text"), "ParticipantId\tSequenceNum\tTestInt\tTestString\tTestDate\tTestDateTime\nPTID123\t1.0\t999\tABC\t2013-10-29\t2013-10-28 01:23");
         clickButton("Submit");
@@ -921,8 +919,8 @@ public class StudySimpleExportTest extends StudyBaseTest
         // add custom fields to all the extensible tables
         addCustomField("Treatment", "cust_treatment", FieldDefinition.ColumnType.String);
         addCustomField("TreatmentProductMap", "cust_map", FieldDefinition.ColumnType.Integer);
-        addCustomField("Product", "cust_product", FieldDefinition.ColumnType.DateTime);
-        addCustomField("ProductAntigen", "cust_antigen", FieldDefinition.ColumnType.Double);
+        addCustomField("Product", "cust_product", FieldDefinition.ColumnType.DateAndTime);
+        addCustomField("ProductAntigen", "cust_antigen", FieldDefinition.ColumnType.Decimal);
         addCustomField("Personnel", "cust_personnel", FieldDefinition.ColumnType.MultiLine);
 
         // add data and export
@@ -990,14 +988,10 @@ public class StudySimpleExportTest extends StudyBaseTest
     {
         goToSchemaBrowser();
         selectQuery("study", tableName);
-        waitForText("edit definition");
-        clickAndWait(Locator.linkWithText("Edit Definition"));
-        waitForText("No fields have been defined.");
-
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
-        editor.addField(new FieldDefinition(fieldName)
-            .setType(type));
-        clickButton("Save", WAIT_FOR_JAVASCRIPT);
+        waitAndClickAndWait(Locator.linkWithText("Edit Definition"));
+        DomainDesignerPage domainDesignerPage = new DomainDesignerPage(getDriver());
+        domainDesignerPage.fieldsPanel().addField(new FieldDefinition(fieldName, type));
+        domainDesignerPage.clickFinish();
 
         // update the default view to contain the custom column
         _customizeViewsHelper.openCustomizeViewPanel();
@@ -1150,23 +1144,14 @@ public class StudySimpleExportTest extends StudyBaseTest
         clickFolder(getFolderName());
 
         log("Study Properties: adding custom fields");
-        goToManageStudy();
-        waitAndClickAndWait(Locator.linkWithText("Edit Additional Properties"));
-        waitForText("No fields have been defined.");
-
-        PropertiesEditor editor = PropertiesEditor.PropertiesEditor(getDriver()).withTitleContaining("Field Properties").find();
-        editor.addField(new FieldDefinition("cust_string")
-            .setType(FieldDefinition.ColumnType.String));
-        editor.addField(new FieldDefinition("cust_integer")
-                .setType(FieldDefinition.ColumnType.Integer));
-        editor.addField(new FieldDefinition("cust_dateTime")
-                .setType(FieldDefinition.ColumnType.DateTime));
-        editor.addField(new FieldDefinition("cust_double")
-                .setType(FieldDefinition.ColumnType.Double));
-        editor.addField(new FieldDefinition("cust_multiline")
-                .setType(FieldDefinition.ColumnType.MultiLine));
-
-        clickButton("Save", WAIT_FOR_JAVASCRIPT);
+        DomainDesignerPage domainDesignerPage = goToManageStudy().clickEditAdditionalProperties();
+        DomainFormPanel domainFormPanel = domainDesignerPage.fieldsPanel();
+        domainFormPanel.addField("cust_string").setType(FieldDefinition.ColumnType.String).setLabel("cust_string");
+        domainFormPanel.addField("cust_integer").setType(FieldDefinition.ColumnType.Integer).setLabel("cust_integer");
+        domainFormPanel.addField("cust_dateTime").setType(FieldDefinition.ColumnType.DateAndTime).setLabel("cust_dateTime");
+        domainFormPanel.addField("cust_double").setType(FieldDefinition.ColumnType.Decimal).setLabel("cust_double");
+        domainFormPanel.addField("cust_multiline").setType(FieldDefinition.ColumnType.MultiLine).setLabel("cust_multiline");
+        domainDesignerPage.clickFinish();
 
         // add data and export
         Map studyProperties = toMap(new Object[][]{

@@ -45,10 +45,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * A module that does nothing. Used for unit and integration tests.
@@ -58,18 +59,18 @@ import java.util.Set;
 public class MockModule implements Module
 {
     private final String _name;
-    private final double _version;
+    private final Double _schemaVersion;
     private final String[] _dependencies;
 
     public MockModule(String name, String... dependencies)
     {
-        this(name, 0, dependencies);
+        this(name, 0.0, dependencies);
     }
 
-    public MockModule(String name, double version, String... dependencies)
+    public MockModule(String name, Double schemaVersion, String... dependencies)
     {
         _name = name;
-        _version = version;
+        _schemaVersion = schemaVersion;
         _dependencies = dependencies;
     }
 
@@ -91,15 +92,15 @@ public class MockModule implements Module
     }
 
     @Override
-    public double getVersion()
+    public @Nullable Double getSchemaVersion()
     {
-        return _version;
+        return _schemaVersion;
     }
 
     @Override
-    public String getFormattedVersion()
+    public String getReleaseVersion()
     {
-        return ModuleContext.formatVersion(getVersion());
+        return null;
     }
 
     @Override
@@ -268,7 +269,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public Resolver getModuleResolver()
+    public ModuleResourceResolver getModuleResolver()
     {
         return null;
     }
@@ -341,12 +342,6 @@ public class MockModule implements Module
     }
 
     @Override
-    public boolean shouldConsolidateScripts()
-    {
-        return false;
-    }
-
-    @Override
     public boolean shouldManageVersion()
     {
         return false;
@@ -385,6 +380,18 @@ public class MockModule implements Module
     public File getExplodedPath()
     {
         return null;
+    }
+
+    @Override
+    public @Nullable File getZippedPath()
+    {
+        return null;
+    }
+
+    @Override
+    public void setZippedPath(File zipped)
+    {
+
     }
 
     @Override
@@ -457,9 +464,9 @@ public class MockModule implements Module
     }
 
     @Override
-    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c)
+    public @NotNull List<Supplier<ClientDependency>> getClientDependencies(Container c)
     {
-        return new LinkedHashSet<>();
+        return new LinkedList<>();
     }
 
     @NotNull

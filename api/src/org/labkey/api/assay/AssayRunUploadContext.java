@@ -19,6 +19,7 @@ package org.labkey.api.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -84,6 +85,16 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     @Nullable
     default List<Map<String, Object>> getRawData()
+    {
+        return null;
+    }
+
+    /**
+     * Plate metadata for assays that support metadata integration
+     * @return
+     */
+    @Nullable
+    default Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
     {
         return null;
     }
@@ -168,6 +179,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
         protected Map<?, String> _inputMaterials;
         protected Map<?, String> _outputMaterials;
         protected List<Map<String, Object>> _rawData;
+        protected Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
         protected Map<String, File> _uploadedData;
 
         public Factory(
@@ -297,11 +309,20 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
             return self();
         }
 
-
+        public FACTORY setRawPlateMetadata(Map<String, AssayPlateMetadataService.MetadataLayer> rawPlateMetadata)
+        {
+            _rawPlateMetadata = rawPlateMetadata;
+            return self();
+        }
 
         /** FACTORY and self() make it easier to chain setters while returning the correct subclass type. */
         public abstract FACTORY self();
 
         public abstract AssayRunUploadContext<ProviderType> create();
     }
+
+    /**
+     *  
+     */
+    default Map<String, Object> getUnresolvedRunProperties() { return  emptyMap(); }
 }

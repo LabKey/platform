@@ -15,17 +15,17 @@
  */
 package org.labkey.core;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.action.ApiXmlWriter;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminConsoleService;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.admin.HealthCheck;
 import org.labkey.api.admin.HealthCheckRegistry;
-import org.labkey.api.admin.SubfolderWriter;
 import org.labkey.api.admin.notification.NotificationService;
 import org.labkey.api.admin.sitevalidation.SiteValidationService;
 import org.labkey.api.analytics.AnalyticsService;
@@ -37,39 +37,19 @@ import org.labkey.api.audit.provider.ContainerAuditProvider;
 import org.labkey.api.audit.provider.FileSystemAuditProvider;
 import org.labkey.api.audit.provider.GroupAuditProvider;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.collections.CaseInsensitiveTreeSet;
-import org.labkey.api.collections.CollectionUtils;
-import org.labkey.api.collections.MultiValuedMapCollectors;
-import org.labkey.api.collections.Sampler;
-import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.SqlDialectRegistry;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.dataiterator.CachingDataIterator;
-import org.labkey.api.dataiterator.RemoveDuplicatesDataIterator;
-import org.labkey.api.dataiterator.ResultSetDataIterator;
-import org.labkey.api.dataiterator.SimpleTranslator;
-import org.labkey.api.dataiterator.StatementDataIterator;
-import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.DomainTemplateGroup;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.property.TestDomainKind;
 import org.labkey.api.files.FileContentService;
-import org.labkey.api.iterator.MarkableIterator;
-import org.labkey.api.ldap.LdapAuthenticationManager;
 import org.labkey.api.markdown.MarkdownService;
-import org.labkey.api.module.DefaultModule;
+import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeManager;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleDependencySorter;
-import org.labkey.api.module.ModuleHtmlView;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
 import org.labkey.api.notification.EmailMessage;
@@ -78,10 +58,7 @@ import org.labkey.api.notification.NotificationMenuView;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.premium.PremiumService;
 import org.labkey.api.products.ProductRegistry;
-import org.labkey.api.query.AbstractQueryUpdateService;
-import org.labkey.core.qc.QCStateImporter;
-import org.labkey.core.qc.QCStateWriter;
-import org.labkey.api.query.AliasManager;
+import org.labkey.api.qc.QCStateManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -91,35 +68,28 @@ import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.DataLoaderFactory;
 import org.labkey.api.reader.DataLoaderService;
-import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.reader.FastaDataLoader;
 import org.labkey.api.reader.HTMLDataLoader;
 import org.labkey.api.reader.JSONDataLoader;
-import org.labkey.api.reader.MapLoader;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
-import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.RReport;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.script.RhinoService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AuthenticationManager;
 import org.labkey.api.security.AuthenticationManager.Priority;
-import org.labkey.api.security.AuthenticationProviderConfigAuditTypeProvider;
+import org.labkey.api.security.AuthenticationSettingsAuditTypeProvider;
 import org.labkey.api.security.DummyAntiVirusService;
-import org.labkey.api.security.Encryption;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.MutableSecurityPolicy;
-import org.labkey.api.security.NestedGroupsTest;
-import org.labkey.api.security.PasswordExpiration;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPointcutService;
 import org.labkey.api.security.SecurityPointcutServiceImpl;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.WikiTermsOfUseProvider;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.QCAnalystPermission;
@@ -137,31 +107,37 @@ import org.labkey.api.settings.CustomLabelService.CustomLabelServiceImpl;
 import org.labkey.api.settings.ExperimentalFeatureService;
 import org.labkey.api.settings.ExperimentalFeatureService.ExperimentalFeatureServiceImpl;
 import org.labkey.api.settings.FolderSettingsCache;
+import org.labkey.api.settings.LookAndFeelPropertiesManager;
+import org.labkey.api.settings.LookAndFeelPropertiesManager.SiteResourceHandler;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.SummaryStatisticRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.usageMetrics.UsageMetricsService;
-import org.labkey.api.util.*;
-import org.labkey.api.util.emailTemplate.EmailTemplate;
+import org.labkey.api.util.CommandLineTokenizer;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.ShutdownListener;
+import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.vcs.VcsService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.Portal;
 import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.ShortURLService;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewService;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.menu.FolderMenu;
@@ -174,6 +150,7 @@ import org.labkey.api.webdav.WebFilesResolverImpl;
 import org.labkey.api.webdav.WebdavResolverImpl;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
+import org.labkey.api.wiki.WikiRenderingService;
 import org.labkey.core.admin.ActionsTsvWriter;
 import org.labkey.core.admin.AdminConsoleServiceImpl;
 import org.labkey.core.admin.AdminController;
@@ -204,24 +181,27 @@ import org.labkey.core.admin.writer.SecurityGroupWriterFactory;
 import org.labkey.core.analytics.AnalyticsController;
 import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
-import org.labkey.core.authentication.ldap.LdapAuthenticationProvider;
-import org.labkey.core.authentication.ldap.LdapController;
-import org.labkey.core.authentication.test.TestSecondaryController;
-import org.labkey.core.authentication.test.TestSecondaryProvider;
-import org.labkey.core.authentication.test.TestSsoController;
-import org.labkey.core.authentication.test.TestSsoProvider;
 import org.labkey.core.dialect.PostgreSql92Dialect;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
+import org.labkey.core.dialect.PostgreSqlVersion;
 import org.labkey.core.junit.JunitController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
+import org.labkey.core.notification.EmailPreferenceConfigServiceImpl;
+import org.labkey.core.notification.EmailPreferenceContainerListener;
+import org.labkey.core.notification.EmailPreferenceUserListener;
+import org.labkey.core.notification.EmailServiceImpl;
 import org.labkey.core.notification.NotificationController;
 import org.labkey.core.notification.NotificationServiceImpl;
+import org.labkey.core.portal.CollaborationFolderType;
 import org.labkey.core.portal.PortalJUnitTest;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.portal.UtilController;
 import org.labkey.core.products.ProductController;
 import org.labkey.core.project.FolderNavigationForm;
+import org.labkey.core.qc.CoreQCStateHandler;
+import org.labkey.core.qc.QCStateImporter;
+import org.labkey.core.qc.QCStateWriter;
 import org.labkey.core.query.AttachmentAuditProvider;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UserAuditProvider;
@@ -236,11 +216,15 @@ import org.labkey.core.statistics.StatsServiceImpl;
 import org.labkey.core.statistics.SummaryStatisticRegistryImpl;
 import org.labkey.core.thumbnail.ThumbnailServiceImpl;
 import org.labkey.core.user.UserController;
+import org.labkey.core.vcs.VcsServiceImpl;
 import org.labkey.core.view.ShortURLServiceImpl;
 import org.labkey.core.view.template.bootstrap.CoreWarningProvider;
 import org.labkey.core.view.template.bootstrap.ViewServiceImpl;
 import org.labkey.core.view.template.bootstrap.WarningServiceImpl;
 import org.labkey.core.webdav.DavController;
+import org.labkey.core.wiki.MarkdownServiceImpl;
+import org.labkey.core.wiki.RadeoxRenderer;
+import org.labkey.core.wiki.WikiRenderingServiceImpl;
 import org.labkey.core.workbook.WorkbookFolderType;
 import org.labkey.core.workbook.WorkbookQueryView;
 import org.labkey.core.workbook.WorkbookSearchView;
@@ -258,13 +242,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 /**
  * User: migra
@@ -291,6 +273,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     public int compareTo(@NotNull Module m)
     {
         //core module always sorts first
+        // TODO: Nice try, but this doesn't work consistently, since no one told DefaultModule.compareTo() that core is special -- fix this or remove the override
         return (m instanceof CoreModule) ? 0 : -1;
     }
 
@@ -328,7 +311,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("util", UtilController.class);
         addController("logger", LoggerController.class);
         addController("mini-profiler", MiniProfilerController.class);
-        addController("ldap", LdapController.class);
         addController("notification", NotificationController.class);
         addController("product", ProductController.class);
 
@@ -352,6 +334,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         WarningService.setInstance(new WarningServiceImpl());
         SecurityPointcutService.setInstance(new SecurityPointcutServiceImpl());
         AdminConsoleService.setInstance(new AdminConsoleServiceImpl());
+        WikiRenderingService.setInstance(new WikiRenderingServiceImpl());
+        VcsService.setInstance(new VcsServiceImpl());
         ServiceRegistry.get().registerService(LabkeyScriptEngineManager.class, new ScriptEngineManagerImpl());
 
         try
@@ -393,16 +377,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         AdminConsole.addExperimentalFeatureFlag(NotificationMenuView.EXPERIMENTAL_NOTIFICATION_MENU, "Notifications Menu",
                 "Notifications 'inbox' count display in the header bar with click to show the notifications panel of unread notifications.", false);
-
-        // test authentication provider implementations... dev mode only
-        if (AppProps.getInstance().isDevMode())
-        {
-            addController("testsecondary", TestSecondaryController.class);
-            AuthenticationManager.registerProvider(new TestSecondaryProvider());
-            addController("testsso", TestSsoController.class);
-            AuthenticationManager.registerProvider(new TestSsoProvider());
-        }
-        AuthenticationManager.registerProvider(new LdapAuthenticationProvider());
+        AdminConsole.addExperimentalFeatureFlag(RemapCache.EXPERIMENTAL_RESOLVE_LOOKUPS_BY_VALUE, "Resolve lookups by Value",
+                "This feature will attempt to resolve lookups by value through the UI insert/update form. This can be useful when the " +
+                        "lookup list is long (> 10000) and the UI stops rendering a dropdown.", false);
 
         SiteValidationService svc = SiteValidationService.get();
         if (null != svc)
@@ -418,27 +395,27 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     private void registerHealthChecks()
     {
         HealthCheckRegistry.get().registerHealthCheck("database",  HealthCheckRegistry.DEFAULT_CATEGORY, () ->
+            {
+                Map<String, Object> healthValues = new HashMap<>();
+                boolean allConnected = true;
+                for (DbScope dbScope : DbScope.getDbScopes())
                 {
-                    Map<String, Object> healthValues = new HashMap<>();
-                    Boolean allConnected = true;
-                    for (DbScope dbScope : DbScope.getDbScopes())
+                    boolean dbConnected;
+                    try (Connection conn = dbScope.getConnection())
                     {
-                        Boolean dbConnected;
-                        try (Connection conn = dbScope.getConnection())
-                        {
-                            dbConnected = conn != null;
-                        }
-                        catch (SQLException e)
-                        {
-                            dbConnected = false;
-                        }
-
-                        healthValues.put(dbScope.getDatabaseName(), dbConnected);
-                        allConnected &= dbConnected;
+                        dbConnected = conn != null;
+                    }
+                    catch (SQLException e)
+                    {
+                        dbConnected = false;
                     }
 
-                    return new HealthCheck.Result(allConnected, healthValues);
+                    healthValues.put(dbScope.getDatabaseName(), dbConnected);
+                    allConnected &= dbConnected;
                 }
+
+                return new HealthCheck.Result(allConnected, healthValues);
+            }
         );
 
         HealthCheckRegistry.get().registerHealthCheck("modules", HealthCheckRegistry.TRIAL_INSTANCES_CATEGORY, () -> {
@@ -503,6 +480,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new ArrayList<>(Arrays.asList(
             new AlwaysAvailableWebPartFactory("Contacts")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(ctx.getUser(), ctx.getContainer(), CoreQuerySchema.NAME);
@@ -520,6 +498,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("FolderNav")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     FolderNavigationForm form = getForm(portalCtx);
@@ -547,6 +526,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbooks")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
@@ -565,6 +545,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new BaseWebPartFactory("Workbook Description")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
@@ -581,6 +562,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Projects")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -591,7 +573,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
@@ -599,6 +581,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             },
             new AlwaysAvailableWebPartFactory("Subfolders")
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
@@ -617,31 +600,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     if (portalCtx.hasPermission(getClass().getName(), AdminPermission.class))
                     {
                         NavTree customize = new NavTree("");
-                        customize.setScript("customizeProjectWebpart(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");");
+                        customize.setScript("customizeProjectWebpart" + webPart.getRowId() + "(" + webPart.getRowId() + ", " + PageFlowUtil.jsString(webPart.getPageId()) + ", " + webPart.getIndex() + ");");
                         view.setCustomize(customize);
                     }
                     return view;
                 }
             },
-            // TODO: Delete this? I see no usages
-            new BaseWebPartFactory("ProjectNav")
-            {
-                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull WebPart webPart)
-                {
-                    JspView<WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
-                    view.setTitle("Project Navigation");
-                    view.setFrame(WebPartView.FrameType.NONE);
-                    return view;
-                }
-
-                @Override
-                public boolean isAvailable(Container c, String scope, String location)
-                {
-                    return false;
-                }
-            },
             new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR)
             {
+                @Override
                 public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull WebPart webPart)
                 {
                     final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -662,6 +629,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     return view;
                 }
 
+                @Override
                 public HttpView getEditView(WebPart webPart, ViewContext context)
                 {
                     CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
@@ -696,7 +664,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     {
         if (moduleContext.isNewInstall())
         {
-            bootstrap();
+            bootstrap(moduleContext.getUpgradeUser());
         }
 
         // Increment on every core module upgrade to defeat browser caching of static resources.
@@ -726,7 +694,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     }
 
 
-    private void bootstrap()
+    private void bootstrap(User upgradeUser)
     {
         // Create the initial groups
         GroupManager.bootstrapGroup(Group.groupAdministrators, "Administrators");
@@ -747,11 +715,18 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         policy.addRoleAssignment(devs, PlatformDeveloperRole.class);
         SecurityPolicyManager.savePolicy(policy, false);
 
+        // Create all the standard containers (Home, Home/support, Shared) using an empty Collaboration folder type
+        FolderType collaborationType = new CollaborationFolderType(Collections.emptyList());
+
         // Users & guests can read from /home
-        ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        Container home = ContainerManager.bootstrapContainer(ContainerManager.HOME_PROJECT_PATH, readerRole, readerRole, null);
+        home.setFolderType(collaborationType, upgradeUser);
+        addWebPart("Projects", home, HttpView.BODY, 0); // Wiki module used to do this, but it's optional now. If wiki isn't present, at least we'll have the projects webpart.
+
+        ContainerManager.createDefaultSupportContainer().setFolderType(collaborationType, upgradeUser);
 
         // Only users can read from /Shared
-        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null);
+        ContainerManager.bootstrapContainer(ContainerManager.SHARED_CONTAINER_PATH, readerRole, null, null).setFolderType(collaborationType, upgradeUser);
 
         try
         {
@@ -802,6 +777,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         ContainerManager.addContainerListener(new FolderSettingsCache.FolderSettingsCacheListener());
         SecurityManager.init();
         FolderTypeManager.get().registerFolderType(this, FolderType.NONE);
+        FolderTypeManager.get().registerFolderType(this, new CollaborationFolderType());
+        EmailService.setInstance(new EmailServiceImpl());
 
         if (null != AuditLogService.get() && AuditLogService.get().getClass() != DefaultAuditProvider.class)
         {
@@ -812,7 +789,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             AuditLogService.get().registerAuditType(new FileSystemAuditProvider());
             AuditLogService.get().registerAuditType(new FileSystemBatchAuditProvider());
             AuditLogService.get().registerAuditType(new ClientApiAuditProvider());
-            AuditLogService.get().registerAuditType(new AuthenticationProviderConfigAuditTypeProvider());
+            AuditLogService.get().registerAuditType(new AuthenticationSettingsAuditTypeProvider());
+
+            QCStateManager.getInstance().registerQCHandler(new CoreQCStateHandler());
         }
         ContextListener.addShutdownListener(TempTableTracker.getShutdownListener());
         ContextListener.addShutdownListener(DavController.getShutdownListener());
@@ -882,6 +861,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         });
 
         // populate look and feel settings and site settings with values read from startup properties as appropriate for not bootstrap
+        populateSiteSettingsWithStartupProps();
+        populateLookAndFeelWithStartupProps();
         WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps();
         WriteableAppProps.populateSiteSettingsWithStartupProps();
         // create users and groups and assign roles with values read from startup properties as appropriate for not bootstrap
@@ -934,6 +915,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 .forEach(ss::addDocumentParser);
         }
 
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_API,
+                "Use clientapi_core.lib.xml instead of @labkey/api on the client-side",
+                "As of LabKey Server v20.5 @labkey/api as the default client-side implementation of JavaScript API.",
+                false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
                 "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
@@ -957,6 +942,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_STRICT_RETURN_URL,
                 "Check for return URL parameter casing as 'returnUrl'",
                 "Raise an error if the return URL parameter is capitalized incorrectly. It should be 'returnUrl' and not 'returnURL'.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_NO_QUESTION_MARK_URL,
+                "No Question Marks in URLs",
+                "Don't append '?' to URLs unless there are query parameters.",
                 false);
 
         if (null != PropertyService.get())
@@ -983,8 +972,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             return results;
         });
 
-        LdapAuthenticationManager.registerMetricsProvider();
-
         if (AppProps.getInstance().isDevMode())
             PremiumService.get().registerAntiVirusProvider(new DummyAntiVirusService.Provider());
 
@@ -993,6 +980,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             fileContentService.addFileListener(WebFilesResolverImpl.get());
 
         RoleManager.registerPermission(new QCAnalystPermission());
+
+        try
+        {
+            MarkdownService.setInstance(new MarkdownServiceImpl());
+        }
+        catch (Exception e)
+        {
+            LOG.error("Exception registering MarkdownServiceImpl", e);
+        }
+
+        // initialize email preference service and listeners
+        MessageConfigService.setInstance(new EmailPreferenceConfigServiceImpl());
+        ContainerManager.addContainerListener(new EmailPreferenceContainerListener());
+        UserManager.addUserListener(new EmailPreferenceUserListener());
     }
 
     @Override
@@ -1016,34 +1017,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         // ping, and then once every 24 hours.
         AppProps.getInstance().getUsageReportingLevel().scheduleUpgradeCheck();
         TempTableTracker.init();
-    }
-
-    private static final String LIB_PATH = "/WEB-INF/lib/";
-    private static final Pattern LABKEY_JAR_PATTERN = Pattern.compile("^(?:schemas|labkey-client-api).*\\.jar$");
-
-    @NotNull
-    @Override
-    public Collection<String> getJarFilenames()
-    {
-        if (!AppProps.getInstance().isDevMode())
-            return Collections.emptySet();
-
-        //noinspection unchecked
-        Set<String> resources = ViewServlet.getViewServletContext().getResourcePaths(LIB_PATH);
-        Set<String> filenames = new CaseInsensitiveTreeSet();
-
-        // Remove path prefix and copy to a modifiable collection
-        for (String filename : resources)
-        {
-            String name = filename.substring(LIB_PATH.length());
-
-            // We don't need to include licensing information for our own JAR files (only third-party JARs), so filter out
-            // our JARs that end up in WEB-INF/lib
-            if (DefaultModule.isRuntimeJar(name) && !LABKEY_JAR_PATTERN.matcher(name).matches())
-                filenames.add(name);
-        }
-
-        return filenames;
     }
 
     @Override
@@ -1073,80 +1046,32 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        @SuppressWarnings({"unchecked"})
-        Set<Class> testClasses = new HashSet<>(Arrays.asList(
-                Table.TestCase.class,
-                Table.DataIteratorTestCase.class,
-                SchemaXMLTestCase.class,
-                DbSchema.TableSelectTestCase.class,
-                DbSchema.TransactionTestCase.class,
-                DbSchema.CachingTestCase.class,
-                DbSchema.DDLMethodsTestCase.class,
-                DbSchema.SchemaCasingTestCase.class,
-                TableViewFormTestCase.class,
-                ActionURL.TestCase.class,
-                URLHelper.TestCase.class,
-                SecurityManager.TestCase.class,
-                PropertyManager.TestCase.class,
-                ContainerManager.TestCase.class,
-                TabLoader.TabLoaderTestCase.class,
-                MapLoader.MapLoaderTestCase.class,
-                GroupManager.TestCase.class,
-                AttachmentServiceImpl.TestCase.class,
-                WebdavResolverImpl.TestCase.class,
-                MimeMap.TestCase.class,
-                ModuleStaticResolverImpl.TestCase.class,
-                StorageProvisioner.TestCase.class,
-                RhinoService.TestCase.class,
-                MarkdownService.TestCase.class,
-                DbScope.GroupConcatTestCase.class,
-                DbScope.TransactionTestCase.class,
-                SimpleTranslator.TranslateTestCase.class,
-                ResultSetDataIterator.TestCase.class,
-                ExceptionUtil.TestCase.class,
-                ViewCategoryManager.TestCase.class,
-                TableSelectorTestCase.class,
-                RowTrackingResultSetWrapper.TestCase.class,
-                SqlSelectorTestCase.class,
-                ResultSetSelectorTestCase.class,
-                NestedGroupsTest.class,
-                ModulePropertiesTestCase.class,
-                ModuleInfoTestCase.class,
-                PortalJUnitTest.class,
-                ContainerDisplayColumn.TestCase.class,
-                AliasManager.TestCase.class,
-                AtomicDatabaseInteger.TestCase.class,
-                DbSequenceManager.TestCase.class,
-                //RateLimiter.TestCase.class,
-                StatementUtils.TestCase.class,
-                StatementDataIterator.TestCase.class,
-                Encryption.TestCase.class,
-                NotificationServiceImpl.TestCase.class,
-                JspTemplate.TestCase.class,
-                SQLFragment.TestCase.class,
-                DavController.TestCase.class,
-                DomainTemplateGroup.TestCase.class,
-                AdminController.TestCase.class,
-                CoreController.TestCase.class,
-                FilesSiteSettingsAction.TestCase.class,
-                LoginController.TestCase.class,
-                LoggerController.TestCase.class,
-                SecurityController.TestCase.class,
-                SecurityApiActions.TestCase.class,
-                SqlScriptController.TestCase.class,
-                UserController.TestCase.class,
-                FolderTypeManager.TestCase.class,
-                ModuleHtmlView.TestCase.class,
-                Portal.TestCase.class,
-                MultiValuedMapCollectors.TestCase.class,
-                PostgreSql92Dialect.TestCase.class,
-                AdminController.SerializationTest.class,
-                ProductRegistry.TestCase.class,
-                ContainerFilter.TestCase.class,
-                AdminController.ModuleVersionTestCase.class,
-                AbstractQueryUpdateService.TestCase.class,
-                DomTestCase.class
-        ));
+        // Must be mutable since we add the dialect tests below
+        Set<Class> testClasses = Sets.newHashSet
+        (
+            AdminController.SchemaVersionTestCase.class,
+            AdminController.SerializationTest.class,
+            AdminController.TestCase.class,
+            AttachmentServiceImpl.TestCase.class,
+            CoreController.TestCase.class,
+            DavController.TestCase.class,
+            EmailServiceImpl.TestCase.class,
+            FilesSiteSettingsAction.TestCase.class,
+            LoggerController.TestCase.class,
+            LoginController.TestCase.class,
+            ModuleInfoTestCase.class,
+            ModulePropertiesTestCase.class,
+            NotificationServiceImpl.TestCase.class,
+            PortalJUnitTest.class,
+            PostgreSql92Dialect.TestCase.class,
+            ProductRegistry.TestCase.class,
+            RadeoxRenderer.RadeoxRenderTest.class,
+            SchemaXMLTestCase.class,
+            SecurityApiActions.TestCase.class,
+            SecurityController.TestCase.class,
+            SqlScriptController.TestCase.class,
+            UserController.TestCase.class
+        );
 
         testClasses.addAll(SqlDialectManager.getAllJUnitTests());
 
@@ -1157,67 +1082,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public Set<Class> getUnitTests()
     {
-        return new HashSet<>(Arrays.asList(
-                DateUtil.TestCase.class,
-                TSVWriter.TestCase.class,
-                TSVMapWriter.Tests.class,
-                ExcelLoader.ExcelLoaderTestCase.class,
-                ExcelFactory.ExcelFactoryTestCase.class,
-                ModuleDependencySorter.TestCase.class,
-                DatabaseCache.TestCase.class,
-                PasswordExpiration.TestCase.class,
-                BooleanFormat.TestCase.class,
-                FileUtil.TestCase.class,
-                FileType.TestCase.class,
-                TabLoader.HeaderMatchTest.class,
-                MemTracker.TestCase.class,
-                StringExpressionFactory.TestCase.class,
-                Path.TestCase.class,
-                PageFlowUtil.TestCase.class,
-                ResultSetUtil.TestCase.class,
-                ArrayListMap.TestCase.class,
-                DbScope.DialectTestCase.class,
-                ValidEmail.TestCase.class,
-                RemoveDuplicatesDataIterator.DeDuplicateTestCase.class,
-                CachingDataIterator.ScrollTestCase.class,
-                StringUtilsLabKey.TestCase.class,
-                Compress.TestCase.class,
-                ExtUtil.TestCase.class,
-                JsonTest.class,
-                ExtUtil.TestCase.class,
-                ReplacedRunFilter.TestCase.class,
-                MultiValuedRenderContext.TestCase.class,
-                SubfolderWriter.TestCase.class,
-                Aggregate.TestCase.class,
-                CaseInsensitiveHashSet.TestCase.class,
-                SwapQueue.TestCase.class,
-                ApiXmlWriter.TestCase.class,
-                TidyUtil.TestCase.class,
-                JSONDataLoader.HeaderMatchTest.class,
-                JSONDataLoader.MetadataTest.class,
-                JSONDataLoader.RowTest.class,
-                EmailTemplate.TestCase.class,
-                HelpTopic.TestCase.class,
-                CaseInsensitiveHashMap.TestCase.class,
-                CaseInsensitiveMapWrapper.TestCase.class,
-                StatsServiceImpl.TestCase.class,
-                NumberUtilsLabKey.TestCase.class,
-                SimpleFilter.FilterTestCase.class,
-                SimpleFilter.InClauseTestCase.class,
-                SimpleFilter.BetweenClauseTestCase.class,
-                InlineInClauseGenerator.TestCase.class,
-                CollectionUtils.TestCase.class,
-                MarkableIterator.TestCase.class,
-                Sampler.TestCase.class,
-                BuilderObjectFactory.TestCase.class,
-                ChecksumUtil.TestCase.class,
-                MaterializedQueryHelper.TestCase.class,
-                ScriptEngineManagerImpl.TestCase.class,
-                ConvertHelper.TestCase.class,
-                RReport.TestCase.class,
-                CopyFileRootPipelineJob.TestCase.class,
-                MothershipReport.TestCase.class
-        ));
+        return Set.of(
+            CommandLineTokenizer.TestCase.class,
+            CopyFileRootPipelineJob.TestCase.class,
+            PostgreSqlVersion.TestCase.class,
+            ScriptEngineManagerImpl.TestCase.class,
+            StatsServiceImpl.TestCase.class
+        );
     }
 
     @Override
@@ -1336,10 +1207,104 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         r.run();
     }
 
-    
     @Override
     public void indexDeleted()
     {
         new SqlExecutor(CoreSchema.getInstance().getSchema()).execute("UPDATE core.Documents SET LastIndexed = NULL");
+    }
+
+    /**
+     * This method will handle those startup props for LookAndFeelSettings which are not stored in WriteableLookAndFeelProperties.populateLookAndFeelWithStartupProps().
+     */
+    private void populateLookAndFeelWithStartupProps()
+    {
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_LOOK_AND_FEEL_SETTINGS);
+        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+        boolean incrementRevision = false;
+
+        for (ConfigProperty prop : startupProps)
+        {
+            SiteResourceHandler handler = getResourceHandler(prop.getName());
+            if (handler != null)
+                incrementRevision = setSiteResource(handler, prop, user);
+        }
+
+        // Bump the look & feel revision so browsers retrieve the new logo, custom stylesheet, etc.
+        if (incrementRevision)
+            WriteableAppProps.incrementLookAndFeelRevisionAndSave();
+    }
+
+    /**
+     * This method will handle those startup props for settings to apply at the site level.
+     */
+    private void populateSiteSettingsWithStartupProps()
+    {
+        Collection<ConfigProperty> startupProps = ModuleLoader.getInstance().getConfigProperties(ConfigProperty.SCOPE_SITE_SETTINGS);
+        User user = User.guest; // using guest user since the server startup doesn't have a true user (this will be used for audit events)
+
+        for (ConfigProperty prop : startupProps)
+        {
+            if ("homeProjectFolderType".equalsIgnoreCase(prop.getName()))
+            {
+                FolderType folderType = FolderTypeManager.get().getFolderType(prop.getValue());
+                if (folderType != null)
+                    ContainerManager.getHomeContainer().setFolderType(folderType, user);
+                else
+                    LOG.error("Unable to find folder type for home project during server startup: " + prop.getValue());
+            }
+            else if ("homeProjectResetPermissions".equalsIgnoreCase(prop.getName()) && Boolean.valueOf(prop.getValue()))
+            {
+                // reset the home project permissions to remove the default assignments given at server install
+                MutableSecurityPolicy homePolicy = new MutableSecurityPolicy(ContainerManager.getHomeContainer());
+                SecurityPolicyManager.savePolicy(homePolicy);
+                // remove the guest role assignment from the support subfolder
+                MutableSecurityPolicy supportPolicy = new MutableSecurityPolicy(ContainerManager.getDefaultSupportContainer().getPolicy());
+                Group guests = SecurityManager.getGroup(Group.groupGuests);
+                for (Role assignedRole : supportPolicy.getAssignedRoles(guests))
+                    supportPolicy.removeRoleAssignment(guests, assignedRole);
+                SecurityPolicyManager.savePolicy(supportPolicy);
+            }
+        }
+    }
+
+    private @Nullable SiteResourceHandler getResourceHandler(@NotNull String name)
+    {
+        return LookAndFeelPropertiesManager.get().getResourceHandler(name);
+    }
+
+    private boolean setSiteResource(SiteResourceHandler resourceHandler, ConfigProperty prop, User user)
+    {
+        Resource resource = getModuleResourceFromPropValue(prop.getValue());
+        if (resource != null)
+        {
+            try
+            {
+                resourceHandler.accept(resource, ContainerManager.getRoot(), user);
+                return true;
+            }
+            catch(Exception e)
+            {
+                LOG.error(String.format("Exception setting %1$s during server startup.", prop.getName()), e);
+            }
+        }
+
+        LOG.error(String.format("Unable to find %1$s resource during server startup: %2$s", prop.getName(), prop.getValue()));
+        return false;
+    }
+
+    private Resource getModuleResourceFromPropValue(String propValue)
+    {
+        if (propValue != null)
+        {
+            // split the prop value on the separator char to get the module name and resource path in that module
+            String moduleName = propValue.substring(0, propValue.indexOf(":"));
+            String resourcePath = propValue.substring(propValue.indexOf(":") + 1);
+
+            Module module = ModuleLoader.getInstance().getModule(moduleName);
+            if (module != null)
+                return module.getModuleResource(resourcePath);
+        }
+
+        return null;
     }
 }

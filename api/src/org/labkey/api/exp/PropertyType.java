@@ -577,7 +577,7 @@ public enum PropertyType
                     return t;
             }
         }
-        throw new IllegalArgumentException("No such class mapping: " + clazz.getName());
+        return PropertyType.STRING;
     }
 
     @NotNull
@@ -627,5 +627,20 @@ public enum PropertyType
                 return t.convertExcelValue(cell);
         }
         return ExcelFactory.getCellStringValue(cell);
+    }
+
+    public String getValueTypeColumn()
+    {
+        switch (this.getStorageType())
+        {
+            case 's':
+                return "stringValue";
+            case 'd':
+                return "dateTimeValue";
+            case 'f':
+                return "floatValue";
+            default:
+                throw new IllegalArgumentException("Unknown property type: " + this);
+        }
     }
 }

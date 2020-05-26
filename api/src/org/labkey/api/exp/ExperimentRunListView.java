@@ -18,6 +18,8 @@ package org.labkey.api.exp;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -30,6 +32,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExpRunEditor;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.query.ExpRunTable;
@@ -40,8 +43,6 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.assay.AssayProvider;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
@@ -221,16 +222,13 @@ public class ExperimentRunListView extends QueryView
 
             if (!protocols.isEmpty())
             {
-                MenuButton addRunsButton;
+                MenuButton addRunsButton = new MenuButton("Create Run");
 
-                if (!c.isContainerFor(ContainerType.DataType.assayData))
-                // the folder type may indicate that assays should be uploaded into a different container (a workbook)
+                List<ExpRunEditor> runEditors = ExperimentService.get().getRunEditors();
+                for (ExpRunEditor editor : runEditors)
                 {
-                    addRunsButton = new MenuButton("Upload Assay Runs");
-                }
-                else
-                {
-                    addRunsButton = new MenuButton("Upload Assay Runs");
+                    addRunsButton.addMenuItem("Create New " + editor.getDisplayName() + " Run", editor.getEditUrl(getContainer()));
+                    addRunsButton.addSeparator();
                 }
 
                 for (ExpProtocol protocol : protocols)

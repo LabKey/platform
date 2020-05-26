@@ -31,7 +31,7 @@ public class ExpProtocolAttachmentParent implements AttachmentParent
     @Override
     public String getEntityId()
     {
-        return _protocol.getLSID();
+        return _protocol.getEntityId();
     }
 
     @Override
@@ -43,6 +43,6 @@ public class ExpProtocolAttachmentParent implements AttachmentParent
     @Override
     public @NotNull AttachmentType getAttachmentType()
     {
-        return ExpProtocolAttachmentType.get();
+        return ExpRunAttachmentType.get();
     }
 }

@@ -15,12 +15,29 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.study.StudySchema;
+import org.labkey.study.query.SpecimenTablesProvider;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -140,5 +157,77 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
     public Set<PropertyStorageSpec> getPropertySpecsFromTemplate(@Nullable SpecimenTablesTemplate template)
     {
         return null != template ? template.getExtraSpecimenProperties() : Collections.emptySet();
+    }
+
+    @Override
+    public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
+    {
+        return PageFlowUtil.urlProvider(ExperimentUrls.class).getDomainEditorURL(containerUser.getContainer(), domain);
+    }
+
+    @Override
+    public @NotNull ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update,
+                                                     @Nullable JSONObject options, Container container, User user, boolean includeWarnings)
+    {
+        ValidationException exception;
+        try (var transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            exception = new ValidationException();
+            SpecimenTablesProvider stp = new SpecimenTablesProvider(container, user, null);
+            Domain domainVial = stp.getDomain("vial", false);
+            Domain domainSpecimen = stp.getDomain("specimen", false);
+
+            // Check for the same name in Specimen and Vial
+            CaseInsensitiveHashSet vialFields = new CaseInsensitiveHashSet();
+            if (null != domainVial)
+            {
+                domainVial.getProperties().forEach(prop -> {
+                    if (null != prop.getName())
+                    {
+                        vialFields.add(prop.getName().toLowerCase());
+                    }
+                });
+            }
+
+            Set<String> mandatoryPropertyNames = getMandatoryPropertyNames(domainSpecimen);
+            List<PropertyDescriptor> optionalSpecimenProps = new ArrayList<>();
+            for (GWTPropertyDescriptor prop : update.getFields())
+            {
+                if (null != prop.getName())
+                {
+                    if (!mandatoryPropertyNames.contains(prop.getName()))
+                    {
+                        if (vialFields.contains(prop.getName().toLowerCase()))
+                        {
+                            exception.addError(new PropertyValidationError("Specimen cannot have a custom field of the same name as a Vial field.", prop.getName(), prop.getPropertyId()));
+                        }
+
+                        optionalSpecimenProps.add(getPropFromGwtProp(prop));
+                        if (prop.getName().contains(" "))
+                        {
+                            exception.addError(new PropertyValidationError("Name should not contain spaces.", prop.getName(), prop.getPropertyId()));
+                        }
+                    }
+                }
+            }
+
+            exception = checkRollups(null, optionalSpecimenProps, container, user, exception, includeWarnings);
+            exception.addErrors(super.updateDomain(original, update, options, container, user, includeWarnings));
+
+            if (!exception.hasErrors())
+            {
+                transaction.commit();
+            }
+            return exception;
+        }
+    }
+
+    @Override
+    public Set<String> getReservedPropertyNames(Domain domain)
+    {
+        Set<String> names = new HashSet<>();
+        names.add(COMMENTS);
+        names.add(COLUMN);
+        return names;
     }
 }

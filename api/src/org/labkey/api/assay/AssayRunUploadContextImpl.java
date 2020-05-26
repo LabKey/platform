@@ -18,16 +18,22 @@ package org.labkey.api.assay;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.plate.AssayPlateMetadataService;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URIUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +44,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -66,6 +73,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Map<String, Object> _rawRunProperties;
     private final Map<String, Object> _rawBatchProperties;
     private final List<Map<String, Object>> _rawData;
+    private final Map<String, AssayPlateMetadataService.MetadataLayer> _rawPlateMetadata;
     private final Map<?, String> _inputDatas;
     private final Map<?, String> _inputMaterials;
     private final Map<?, String> _outputDatas;
@@ -75,6 +83,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private Map<String, File> _uploadedData;
     private Map<DomainProperty, String> _runProperties;
     private Map<DomainProperty, String> _batchProperties;
+    private Map<String, Object> _unresolvedRunProperties;
 
     // Mutable fields
     private TransformResult _transformResult;
@@ -101,6 +110,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
 
         // TODO: Wrap the rawData in an unmodifiableList -- unfortunately, AbstractAssayTsvDataHandler.checkData mutates the list items in-place
         _rawData = factory._rawData;
+        _rawPlateMetadata = factory._rawPlateMetadata;
 
         _uploadedData = factory._uploadedData;
 
@@ -152,7 +162,8 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_runProperties == null)
         {
             Domain runDomain = _provider.getRunDomain(_protocol);
-            _runProperties = propertiesFromRawValues(runDomain, _rawRunProperties);
+            _unresolvedRunProperties = new HashMap<>();
+            _runProperties = propertiesFromRawValues(runDomain, _rawRunProperties, _unresolvedRunProperties);
         }
         return _runProperties;
     }
@@ -162,12 +173,18 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         if (_batchProperties == null)
         {
             Domain batchDomain = _provider.getBatchDomain(_protocol);
-            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties);
+            _batchProperties = propertiesFromRawValues(batchDomain, _rawBatchProperties, null);
         }
         return _batchProperties;
     }
 
-    private static Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties)
+    @Override
+    public Map<String, Object> getUnresolvedRunProperties()
+    {
+        return _unresolvedRunProperties;
+    }
+
+    private Map<DomainProperty, String> propertiesFromRawValues(Domain domain, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
     {
         Map<DomainProperty, String> properties = new HashMap<>();
         if (rawProperties != null)
@@ -181,9 +198,49 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                     value = rawProperties.get(prop.getPropertyURI());
                 properties.put(prop, Objects.toString(value, null));
             }
+
+            addVocabularyAndUnresolvedRunProperties(properties, rawProperties, unresolvedProperties);
         }
 
         return unmodifiableMap(properties);
+    }
+
+    private void addVocabularyAndUnresolvedRunProperties(Map<DomainProperty, String> properties, Map<String, Object> rawProperties, Map<String, Object> unresolvedProperties)
+    {
+        // 1. Properties belonging to a VocabularyDomain will be added to the run properties.
+        // 2. This is the only implementation of AssayRunUploadContext for adding these properties as importRuns Api uses this implementation.
+        // 3. Provenance object input property will be added to the unresolved run properties.
+
+        for (Map.Entry<String, Object> property : rawProperties.entrySet())
+        {
+            if (URIUtil.hasURICharacters(property.getKey()))
+            {
+                PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(property.getKey(), _container);
+
+                if (null == pd)
+                {
+                    throw new NotFoundException("Property URI is not valid - " + property.getKey());
+                }
+                List<Domain> domains = OntologyManager.getDomainsForPropertyDescriptor(_container, pd);
+                List<Domain> vocabularyDomains = domains.stream().filter(d -> d.getDomainKind().getKindName().equalsIgnoreCase(ExperimentJSONConverter.VOCABULARY_DOMAIN)).collect(Collectors.toList());
+
+                if (vocabularyDomains.isEmpty())
+                {
+                    throw new NotFoundException("No Vocabularies found for this property - " + property.getKey());
+                }
+
+                DomainProperty dp = vocabularyDomains.get(0).getPropertyByURI(property.getKey());
+                if (!properties.containsKey(dp))
+                {
+                    properties.put(dp, property.getValue().toString());
+                }
+            }
+            else if (null != unresolvedProperties)
+            {
+                unresolvedProperties.put(property.getKey(),property.getValue());
+            }
+
+        }
     }
 
     public String getComments()
@@ -250,6 +307,12 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     public List<Map<String, Object>> getRawData()
     {
         return _rawData;
+    }
+
+    @Override
+    public @Nullable Map<String, AssayPlateMetadataService.MetadataLayer> getRawPlateMetadata()
+    {
+        return _rawPlateMetadata;
     }
 
     @NotNull

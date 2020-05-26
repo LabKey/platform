@@ -26,7 +26,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -128,7 +128,7 @@ public class IssueManager
     public static final SearchService.SearchCategory searchCategory = new SearchService.SearchCategory("issue", "Issues");
     // UNDONE: Keywords, Summary, etc.
 
-    private static IssuesSchema _issuesSchema = IssuesSchema.getInstance();
+    private static final IssuesSchema _issuesSchema = IssuesSchema.getInstance();
     
     public static final int NOTIFY_ASSIGNEDTO_OPEN = 1;     // if a bug is assigned to me
     public static final int NOTIFY_ASSIGNEDTO_UPDATE = 2;   // if a bug assigned to me is modified
@@ -199,6 +199,7 @@ public class IssueManager
         return issue;
     }
 
+    @Nullable
     public static Issue getIssue(@Nullable Container c, User user, int issueId)
     {
         Issue issue = _getIssue(c, issueId);
@@ -333,6 +334,7 @@ public class IssueManager
 
                 factory.toMap(issue, row);
                 row.putAll(issue.getProperties());
+                row.remove("Related");
 
                 BatchValidationException batchErrors = new BatchValidationException();
                 List<Map<String, Object>> results;
@@ -453,7 +455,7 @@ public class IssueManager
     }
 
 
-    private static final StringKeyCache<Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
+    private static final Cache<String, Set<User>> ASSIGNED_TO_CACHE = new DatabaseCache<>(IssuesSchema.getInstance().getSchema().getScope(), 1000, "AssignedTo");
 
     // Returns the assigned to list that is used for every new issue in this container.  We can cache it and share it
     // across requests.  The collection is unmodifiable.
@@ -996,6 +998,7 @@ public class IssueManager
             _task = task;
         }
 
+        @Override
         public void run()
         {
             User user = new LimitedUser(UserManager.getGuestUser(), new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
@@ -1059,6 +1062,7 @@ public class IssueManager
     {
         return new SearchService.ResourceResolver()
         {
+            @Override
             public WebdavResource resolve(@NotNull String resourceIdentifier)
             {
                 return IssueManager.resolve(resourceIdentifier);
@@ -1345,7 +1349,7 @@ public class IssueManager
 
         IssueResource(Issue issue)
         {
-            super(new Path("issue:" + String.valueOf(issue.getIssueId())));
+            super(new Path("issue:" + issue.getIssueId()));
             _issueId = issue.issueId;
             Map<String,Object> m = _issueFactory.toMap(issue, null);
             // UNDONE: custom field names
@@ -1360,7 +1364,7 @@ public class IssueManager
 
         IssueResource(int issueId, Map<String,Object> m, Collection<Issue.Comment> comments)
         {
-            super(new Path("issue:"+String.valueOf(issueId)));
+            super(new Path("issue:"+ issueId));
             _issueId = issueId;
             _containerId = (String)m.get("folder");
             _properties = m;
@@ -1410,12 +1414,14 @@ public class IssueManager
             IssueManager.setLastIndexed(_containerId, _issueId, ms);
         }
 
+        @Override
         public String getDocumentId()
         {
-            return "issue:"+String.valueOf(_properties.get("issueid"));
+            return "issue:"+ _properties.get("issueid");
         }
 
 
+        @Override
         public boolean exists()
         {
             return true;
@@ -1436,6 +1442,7 @@ public class IssueManager
         }
 
 
+        @Override
         public FileStream getFileStream(User user) throws IOException
         {
             String title = String.valueOf(_properties.get("title"));
@@ -1458,16 +1465,19 @@ public class IssueManager
             }
         }
         
+        @Override
         public InputStream getInputStream(User user) throws IOException
         {
             return getFileStream(user).openInputStream();
         }
 
+        @Override
         public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public long getContentLength()
         {
             throw new UnsupportedOperationException();

@@ -15,9 +15,13 @@
  */
 package org.labkey.pipeline.mule.test;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -36,9 +40,40 @@ import java.io.IOException;
  */
 public class DummyPipelineJob extends PipelineJob
 {
-    public DummyPipelineJob(Container c, User user)
+    private Worker _worker;
+
+    public enum Worker
+    {
+        success
+                {
+                    @Override
+                    public void run(Logger log)
+                    {
+                        log.info("Successful worker!");
+                    }
+                },
+        failure
+            {
+                @Override
+                public void run(Logger log)
+                {
+                    throw new UnsupportedOperationException("Oopsies!");
+                }
+            };
+
+        public abstract void run(Logger log);
+    }
+
+    @JsonCreator
+    protected DummyPipelineJob()
+    {
+        super();
+    }
+
+    public DummyPipelineJob(Container c, User user, Worker worker)
     {
         super(null, new ViewBackgroundInfo(c, user, null), PipelineService.get().findPipelineRoot(c));
+        _worker = worker;
         try
         {
             setLogFile(File.createTempFile("DummyPipelineJob", ".tmp"));
@@ -47,6 +82,12 @@ public class DummyPipelineJob extends PipelineJob
         {
             throw new UnexpectedException(e);
         }
+        setActiveTaskId(getTaskPipeline().getTaskProgression()[0], false);
+    }
+
+    public Worker getWorker()
+    {
+        return _worker;
     }
 
     @Override
@@ -65,8 +106,6 @@ public class DummyPipelineJob extends PipelineJob
     @Override
     public TaskPipeline getTaskPipeline()
     {
-        TaskPipelineImpl result = new TaskPipelineImpl(new TaskId(DummyRemoteExecutionEngine.class, "DummyPipeline"));
-        result.setTaskProgression(new TaskId(DummyTaskFactory.class));
-        return result;
+        return PipelineJobService.get().getTaskPipeline(new TaskId(DummyPipelineJob.class));
     }
 }

@@ -49,18 +49,18 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
     }
 
     @Override
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
             case RunGroup:
                 var experimentId = wrapColumn(alias, _rootTable.getColumn("ExperimentId"));
-                experimentId.setFk(getExpSchema().getRunGroupIdForeignKey(true));
+                experimentId.setFk(getExpSchema().getRunGroupIdForeignKey(getContainerFilter(), true));
                 return experimentId;
 
             case Run:
                 var experimentRunId = wrapColumn(alias, _rootTable.getColumn("ExperimentRunId"));
-                experimentRunId.setFk(getExpSchema().getRunIdForeignKey());
+                experimentRunId.setFk(getExpSchema().getRunIdForeignKey(getContainerFilter()));
                 return experimentRunId;
 
             case Created:

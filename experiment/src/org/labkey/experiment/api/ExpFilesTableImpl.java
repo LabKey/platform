@@ -16,14 +16,13 @@
 package org.labkey.experiment.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.exp.api.ExpData;
@@ -53,7 +52,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
     {
         super(name, schema, null);
         addCondition(new SimpleFilter(FieldKey.fromParts("DataFileUrl"), null, CompareType.NONBLANK));
-        _svc.ensureFileData(getUpdateService(), schema.getUser(), schema.getContainer());
+        _svc.ensureFileData(this);
     }
 
     @Override
@@ -74,7 +73,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
 
         ExpSchema schema = getExpSchema();
         var runCol = addColumn(Column.Run);
-        runCol.setFk(schema.getRunIdForeignKey());
+        runCol.setFk(schema.getRunIdForeignKey(getContainerFilter()));
         runCol.setUserEditable(true);
         runCol.setShownInUpdateView(false);
         runCol.setShownInDetailsView(true);
@@ -134,7 +133,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return (null != container && SecurityManager.canSeeFilePaths(container, getUserSchema().getUser()));
     }
 
-    private BaseColumnInfo getAbsolutePathColumn()
+    private MutableColumnInfo getAbsolutePathColumn()
     {
         var result = wrapColumn("AbsoluteFilePath", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");
@@ -190,7 +189,7 @@ public class ExpFilesTableImpl extends ExpDataTableImpl
         return result;
     }
 
-    private BaseColumnInfo getRelativeFolderColumn()
+    private MutableColumnInfo getRelativeFolderColumn()
     {
         var result = wrapColumn("RelativeFolder", _rootTable.getColumn("RowId"));
         result.setTextAlign("left");

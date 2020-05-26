@@ -22,14 +22,13 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.action.Action;
-import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.FormViewAction;
-import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.ReadOnlyApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -62,8 +61,10 @@ import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.lists.permissions.DesignListPermission;
+import org.labkey.api.module.ModuleHtmlView;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -92,7 +93,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpPostRedirectView;
 import org.labkey.api.view.JspView;
@@ -106,12 +106,11 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.list.model.ListAuditProvider;
 import org.labkey.list.model.ListDefinitionImpl;
-import org.labkey.list.model.ListEditorServiceImpl;
+import org.labkey.list.model.ListDomainKindProperties;
 import org.labkey.list.model.ListManager;
 import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
-import org.labkey.list.view.ListImportServiceImpl;
 import org.labkey.list.view.ListItemAttachmentParent;
 import org.labkey.list.view.ListQueryForm;
 import org.labkey.list.view.ListQueryView;
@@ -126,7 +125,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -147,9 +145,9 @@ public class ListController extends SpringActionController
     }
 
 
-    private NavTree appendRootNavTrail(NavTree root)
+    private void appendRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer(), getUser());
+        appendRootNavTrail(root, getContainer(), getUser());
     }
 
     public static class ListUrlsImpl implements ListUrls
@@ -215,22 +213,11 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Available Lists");
+            root.addChild("Available Lists");
         }
     }
-
-    @RequiresPermission(DesignListPermission.class)
-    public class DomainImportServiceAction extends GWTServiceAction
-    {
-        @Override
-        protected BaseRemoteService createService()
-        {
-            return new ListImportServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresPermission(ReadPermission.class)
     public class ShowListDefinitionAction extends SimpleRedirectAction<ListDefinitionForm>
@@ -246,66 +233,57 @@ public class ListController extends SpringActionController
         }
     }
 
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermission(ReadPermission.class)
+    public class GetListPropertiesAction extends ReadOnlyApiAction<ListDefinitionForm>
+    {
+        @Override
+        public Object execute(ListDefinitionForm form, BindException errors) throws Exception
+        {
+            ListDomainKindProperties properties = ListManager.get().getListDomainKindProperties(getContainer(), form.getListId());
+            if (properties != null)
+                return properties;
+            else
+                throw new NotFoundException("List does not exist in this container for listId " + form.getListId() + ".");
+        }
+    }
 
     @RequiresPermission(DesignListPermission.class)
     public class EditListDefinitionAction extends SimpleViewAction<ListDefinitionForm>
     {
         private ListDefinition _list;
+        String listDesignerHeader = "List Designer";
 
         @Override
         public ModelAndView getView(ListDefinitionForm form, BindException errors)
         {
             _list = null;
-
             boolean createList = (null == form.getListId() || 0 == form.getListId()) && form.getName() == null;
             if (!createList)
                 _list = form.getList();
 
-            Map<String, String> props = new HashMap<>();
-
-            URLHelper returnURL = form.getReturnURLHelper();
-
-            props.put("listId", null == _list ? "0" : String.valueOf(_list.getListId()));
-            props.put(ActionURL.Param.returnUrl.name(), returnURL.toString());
-            props.put("allowFileLinkProperties", "0");
-            props.put("allowAttachmentProperties", "1");
-            props.put("showDefaultValueSettings", "1");
-            props.put("hasDesignListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("hasInsertPermission", getContainer().hasPermission(getUser(), InsertPermission.class) ? "true":"false");
-            props.put("hasDeleteListPermission", getContainer().hasPermission(getUser(), DesignListPermission.class) ? "true":"false");
-            props.put("loading", "Loading...");
-
-            return new GWTView("org.labkey.list.Designer", props);
+            return ModuleHtmlView.get(ModuleLoader.getInstance().getModule("list"), "designer");
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (null == _list)
-                root.addChild("Create new List");
+            {
+                root.addChild(listDesignerHeader);
+            }
             else
-                appendListNavTrail(root, _list, null);
-            return root;
+            {
+                appendListNavTrail(root, _list, listDesignerHeader);
+            }
         }
     }
-
-
-    @RequiresPermission(DesignListPermission.class)
-    @Action(ActionType.SelectMetaData.class)
-    public class ListEditorServiceAction extends GWTServiceAction
-    {
-        protected BaseRemoteService createService()
-        {
-            return new ListEditorServiceImpl(getViewContext());
-        }
-    }
-
 
     @RequiresPermission(DesignListPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
-        private ArrayList<Integer> _listIDs = new ArrayList<>();
-        private ArrayList<Container> _containers = new ArrayList<>();
+        private final ArrayList<Integer> _listIDs = new ArrayList<>();
+        private final ArrayList<Container> _containers = new ArrayList<>();
 
         @Override
         public void validateCommand(ListDefinitionForm form, Errors errors)
@@ -341,6 +319,8 @@ public class ListController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors)
         {
+            if (getPageConfig().getTitle() == null)
+                setTitle("Delete List");
             return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
@@ -398,9 +378,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, _title);
+            appendListNavTrail(root, _list, _title);
         }
     }
 
@@ -446,9 +426,8 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -487,70 +466,6 @@ public class ListController extends SpringActionController
                 else
                     inputs.add(Pair.of(value.getName(), value.getValue().toString()));
             }
-
-            return inputs;
-        }
-    }
-
-
-    /**
-     * DO NOT USE. This action has been deprecated in 13.2 in favor of the standard query/updateQueryRow action.
-     * Only here for backwards compatibility to resolve requests and redirect.
-     */
-    @Deprecated
-    @RequiresPermission(UpdatePermission.class)
-    public class UpdateAction extends InsertUpdateAction
-    {
-        @Override
-        protected ActionURL getActionView(ListDefinition list, BindException errors)
-        {
-            TableInfo listTable = list.getTable(getUser());
-            return listTable.getUserSchema().getQueryDefForTable(listTable.getName()).urlFor(QueryAction.updateQueryRow, getContainer());
-        }
-
-        @Override
-        protected Collection<Pair<String, String>> getInputs(ListDefinition list, ActionURL url, PropertyValue[] propertyValues)
-        {
-            Collection<Pair<String, String>> inputs = new ArrayList<>();
-            final String FORM_PREFIX = "quf_";
-
-            for (PropertyValue value : getPropertyValues().getPropertyValues())
-            {
-                if (value.getName().equals(ActionURL.Param.returnUrl.toString()))
-                {
-                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
-                }
-                else if (value.getName().equalsIgnoreCase(ActionURL.Param.returnUrl.toString()))
-                {
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_STRICT_RETURN_URL))
-                        throw new UnsupportedOperationException("Use 'returnUrl' instead of 'returnURL'");
-                    url.addParameter(ActionURL.Param.returnUrl, (String) value.getValue());
-                }
-                else if (value.getName().equalsIgnoreCase(list.getKeyName()) || (FORM_PREFIX + list.getKeyName()).equalsIgnoreCase(value.getName()))
-                {
-                    url.addParameter(list.getKeyName(), (String) value.getValue());
-                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
-                }
-                else
-                    inputs.add(Pair.of(value.getName(), value.getValue().toString()));
-            }
-
-            // support for old values
-            try
-            {
-                // convert to map
-                HashMap<String, Object> oldValues = new HashMap<>();
-                for (Pair<String, String> entry : inputs)
-                {
-                    oldValues.put(entry.getKey().replace(FORM_PREFIX, ""), entry.getValue());
-                }
-                inputs.add(Pair.of(DataRegion.OLD_VALUES_NAME, PageFlowUtil.encodeObject(oldValues)));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Bad " + DataRegion.OLD_VALUES_NAME + " on List.UpdateAction");
-            }
-
 
             return inputs;
         }
@@ -668,7 +583,7 @@ public class ListController extends SpringActionController
                 view.addView(new HtmlView(PageFlowUtil.textLink("show item history", getViewContext().cloneActionURL().addParameter("showHistory", "1"))));
             }
 
-            if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled())
+            if (_list.getDiscussionSetting().isLinked() && LookAndFeelProperties.getInstance(getContainer()).isDiscussionEnabled() && DiscussionService.get() != null)
             {
                 String entityId = item.getEntityId();
 
@@ -697,9 +612,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "View List Item");
+            appendListNavTrail(root, _list, "View List Item");
         }
     }
 
@@ -707,7 +622,7 @@ public class ListController extends SpringActionController
     // Override to ensure that pk value type matches column type.  This is critical for PostgreSQL 8.3.
     public static class ListQueryUpdateForm extends QueryUpdateForm
     {
-        private ListDefinition _list;
+        private final ListDefinition _list;
 
         public ListQueryUpdateForm(TableInfo table, ViewContext ctx, ListDefinition list, BindException errors)
         {
@@ -771,7 +686,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors) throws IOException
+        protected int importData(DataLoader dl, FileStream file, String originalName, BatchValidationException errors, @Nullable AuditBehaviorType auditBehaviorType) throws IOException
         {
             int count = _list.insertListItems(getUser(),getContainer() , dl, errors, null, null, false, _importLookupByAlternateKey);
             return count;
@@ -786,9 +701,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "Import Data");
+            appendListNavTrail(root, _list, "Import Data");
         }
     }
 
@@ -843,12 +758,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, _list.getName() + ":History");
+                appendListNavTrail(root, _list, _list.getName() + ":History");
             else
-                return root.addChild(":History");
+                root.addChild(":History");
         }
     }
 
@@ -911,12 +826,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, "List Item Details");
+                appendListNavTrail(root, _list, "List Item Details");
             else
-                return root.addChild("List Item Details"); 
+                root.addChild("List Item Details");
         }
     }
 
@@ -1045,9 +960,10 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Import List Archive");
+            appendRootNavTrail(root);
+            root.addChild("Import List Archive");
         }
     }
 

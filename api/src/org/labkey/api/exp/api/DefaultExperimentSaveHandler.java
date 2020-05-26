@@ -17,10 +17,13 @@ package org.labkey.api.exp.api;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.assay.AssayService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentException;
@@ -36,7 +39,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -242,7 +244,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     }
 
     @Override
-    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
+    public ExpRun handleRun(ViewContext context, JSONObject runJsonObject, ExpProtocol protocol, @Nullable  ExpExperiment batch) throws JSONException, ValidationException, ExperimentException
     {
         String name = runJsonObject.has(ExperimentJSONConverter.NAME) ? runJsonObject.getString(ExperimentJSONConverter.NAME) : null;
         ExpRun run;
@@ -255,7 +257,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             {
                 throw new NotFoundException("Could not find experiment run " + runId);
             }
-            if (!batch.getContainer().equals(context.getContainer()))
+            if (null != batch && !batch.getContainer().equals(context.getContainer()))
             {
                 throw new NotFoundException("Could not find experiment run " + runId + " in folder " + context.getContainer());
             }
@@ -303,7 +305,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
     {
         for (Map.Entry<PropertyDescriptor, Object> entry : ExperimentJSONConverter.convertProperties(propertiesJsonObject, dps, context.getContainer(), true).entrySet())
         {
-            object.setProperty(context.getUser(), entry.getKey(), entry.getValue());
+            object.setProperty(context.getUser(), entry.getKey(), entry.getValue()); // handle inputs/outputs
         }
     }
 
@@ -330,6 +332,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         }
     }
 
+    @NotNull
     protected Map<ExpData, String> getInputData(ViewContext context, JSONArray inputDataArray) throws ValidationException
     {
         Map<ExpData, String> inputData = new HashMap<>();
@@ -342,6 +345,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
         return inputData;
     }
 
+    @NotNull
     protected Map<ExpMaterial, String> getInputMaterial(ViewContext context, JSONArray inputMaterialArray) throws ValidationException
     {
         Map<ExpMaterial, String> inputMaterial = new HashMap<>();
@@ -363,6 +367,19 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (data.getDataFileUrl() == null)
             {
                 data.delete(context.getUser(), false);
+            }
+        }
+    }
+
+    // Disallow creating a run with inputs which are also outputs
+    private void checkForCycles(Map<? extends ExpRunItem, String> inputs, Map<? extends ExpRunItem, String> outputs) throws ExperimentException
+    {
+        for (ExpRunItem input : inputs.keySet())
+        {
+            if (outputs.containsKey(input))
+            {
+                String role = outputs.get(input);
+                throw new ExperimentException("Circular input/output '" + input.getName() + "' with role '" + role + "'");
             }
         }
     }
@@ -403,6 +420,10 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (material != null)
                 outputMaterial.put(material, materialObject.optString(ExperimentJSONConverter.ROLE, "Material"));
         }
+
+        checkForCycles(inputData, outputData);
+        checkForCycles(inputMaterial, outputMaterial);
+
         saveExperimentRun(context, protocol, batch, run, runJsonObject, dataArray, inputData, outputData, inputMaterial, outputMaterial);
     }
 
@@ -494,17 +515,14 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             if (materialName != null && materialName.length() > 0)
             {
                 if (sampleSet != null)
-                    material = sampleSet.getSample(materialName);
+                    material = sampleSet.getSample(context.getContainer(), materialName);
                 else
                 {
                     List<? extends ExpMaterial> materials = ExperimentService.get().getExpMaterialsByName(materialName, context.getContainer(), context.getUser());
-                    if (materials != null)
-                    {
-                        if (materials.size() > 1)
-                            throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleSet to disambiguate the desired material.");
-                        if (materials.size() == 1)
-                            material = materials.get(0);
-                    }
+                    if (materials.size() > 1)
+                        throw new NotFoundException("More than one material matches name '" + materialName + "'.  Provide name and sampleSet to disambiguate the desired material.");
+                    if (materials.size() == 1)
+                        material = materials.get(0);
                 }
 
                 if (material == null)
@@ -525,7 +543,7 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (materialProperties.size() > 0)
             {
-                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getType().getProperties() : Collections.emptyList();
+                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getDomain().getProperties() : Collections.emptyList();
                 handleProperties(context, material, dps, materialProperties);
             }
         }
@@ -574,5 +592,11 @@ public class DefaultExperimentSaveHandler implements ExperimentSaveHandler
             material.setCpasType(sampleSet.getLSID());
         material.save(viewContext.getUser());
         return material;
+    }
+
+    @Override
+    public ExpRun handleRunWithoutBatch(ViewContext context, JSONObject runJson, ExpProtocol protocol) throws ExperimentException, ValidationException
+    {
+        return handleRun(context, runJson, protocol, null);
     }
 }

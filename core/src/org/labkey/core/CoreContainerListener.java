@@ -29,6 +29,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TestSchema;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.view.Portal;
 
@@ -97,7 +98,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;
-        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, evt.container, null);
+        Container c = evt.container;
+        ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
 
         switch (evt.property)
         {
@@ -105,8 +107,8 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
             {
                 String oldValue = (String) evt.getOldValue();
                 String newValue = (String) evt.getNewValue();
-                String message = evt.container.getName() + " was renamed from " + oldValue + " to " + newValue;
-                addAuditEvent(evt.user, evt.container, message);
+                String message = c.getName() + " was renamed from " + oldValue + " to " + newValue;
+                addAuditEvent(evt.user, c, message);
                 break;
             }
         }

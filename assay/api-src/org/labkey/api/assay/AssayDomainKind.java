@@ -17,13 +17,22 @@
 package org.labkey.api.assay;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.assay.security.DesignAssayPermission;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
+import org.labkey.api.exp.TemplateInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.property.AbstractDomainKind;
+import org.labkey.api.exp.property.BaseAbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.security.DesignAssayPermission;
 import org.labkey.api.util.PageFlowUtil;
@@ -41,7 +50,7 @@ import java.util.Set;
  * Date: June 25, 2007
  * Time: 1:01:43 PM
  */
-public abstract class AssayDomainKind extends AbstractDomainKind
+public abstract class AssayDomainKind extends BaseAbstractDomainKind
 {
     private final String _namespacePrefix;
     private final Priority _priority;
@@ -70,9 +79,44 @@ public abstract class AssayDomainKind extends AbstractDomainKind
     }
 
     @Override
-    public boolean allowAttachmentProperties()
+    public DefaultValueType[] getDefaultValueOptions(Domain domain)
     {
-        return false;
+        ExpProtocol protocol = findProtocol(domain);
+
+        // In the case of a new assay there may not be a protocol yet. This value will be set in getAssayTemplate in AssayService
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            if (provider != null)
+            {
+                if (provider.allowDefaultValues(domain))
+                {
+                    return provider.getDefaultValueOptions(domain);
+                }
+            }
+        }
+
+        return new DefaultValueType[0];
+    }
+
+    @Override
+    public DefaultValueType getDefaultDefaultType(Domain domain)
+    {
+        ExpProtocol protocol = findProtocol(domain);
+
+        // In the case of a new assay there may not be a protocol yet. This value will be set in getAssayTemplate in AssayService
+        if (protocol != null)
+        {
+            AssayProvider provider = AssayService.get().getProvider(protocol);
+
+            if (provider != null)
+            {
+                return provider.getDefaultValueDefault(domain);
+            }
+        }
+
+        return null;
     }
 
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
@@ -88,7 +132,17 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         return new SQLFragment("NULL");
     }
 
-    private ExpProtocol findProtocol(Domain domain)
+    protected ExpProtocol findProtocol(Domain domain)
+    {
+        Pair<AssayProvider, ExpProtocol> pair = findProviderAndProtocol(domain);
+        if (pair == null)
+            return null;
+
+        return pair.second;
+    }
+
+    @Nullable
+    protected Pair<AssayProvider, ExpProtocol> findProviderAndProtocol(Domain domain)
     {
         List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(domain.getContainer());
         for (ExpProtocol protocol : protocols)
@@ -100,7 +154,7 @@ public abstract class AssayDomainKind extends AbstractDomainKind
                 {
                     if (protocolDomain.getKey().getTypeURI().equals(domain.getTypeURI()))
                     {
-                        return protocol;
+                        return Pair.of(provider, protocol);
                     }
                 }
             }
@@ -136,6 +190,22 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         return domain.getContainer().hasPermission(user, DesignAssayPermission.class);
     }
 
+    @Override
+    public boolean canCreateDefinition(User user, Container container)
+    {
+        return container.hasPermission(user, DesignAssayPermission.class);
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, JSONObject arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        DomainDescriptor dd = OntologyManager.ensureDomainDescriptor(domain.getDomainURI(), domain.getName(), container);
+        dd = dd.edit().setDescription(domain.getDescription()).build();
+        OntologyManager.ensureDomainDescriptor(dd);
+
+        return PropertyService.get().getDomain(container, dd.getDomainURI());
+    }
+
     protected Set<String> getAssayReservedPropertyNames()
     {
         Set<String> result = new HashSet<>();
@@ -149,5 +219,11 @@ public abstract class AssayDomainKind extends AbstractDomainKind
         result.add("ModifiedBy");
         result.add("Modified");
         return result;
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
     }
 }

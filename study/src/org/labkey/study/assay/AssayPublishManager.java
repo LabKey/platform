@@ -22,10 +22,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AbstractAssayProvider;
+import org.labkey.api.assay.AssayFileWriter;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayService;
+import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -38,10 +45,13 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ProvenanceService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -59,19 +69,14 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Dataset;
+import org.labkey.api.study.Dataset.KeyManagementType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.assay.AbstractAssayProvider;
-import org.labkey.api.assay.AssayFileWriter;
-import org.labkey.api.assay.AssayProtocolSchema;
-import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishKey;
 import org.labkey.api.study.assay.AssayPublishService;
-import org.labkey.api.assay.AssayService;
-import org.labkey.api.assay.AssayTableMetadata;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
@@ -80,6 +85,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.query.AssayAuditProvider;
 import org.labkey.study.controllers.PublishController;
@@ -95,15 +101,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+
+import static org.labkey.study.query.DatasetTableImpl.ASSAY_RESULT_LSID;
 
 /**
  * Manages the copy-to-study operation that links assay rows into datasets in the target study, creating the dataset
@@ -249,6 +260,7 @@ public class AssayPublishManager implements AssayPublishService
         boolean schemaChanged = false;
         DatasetDefinition dataset = null;
         List<Map<String, Object>> convertedDataMaps;
+        List<String> lsids;
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
@@ -312,6 +324,23 @@ public class AssayPublishManager implements AssayPublishService
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
             convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+
+            // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
+            // in 'ensurePropertyDescriptors'.
+            if (schemaChanged)
+                StudyManager.getInstance().uncache(dataset);
+            dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
+            Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
+            QCState defaultQCState = null;
+            if (defaultQCStateId != null)
+                defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+
+            lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+
+            createProvenanceRun(user, targetContainer, assayName, protocol, errors, dataset, lsids);
+            if (!errors.isEmpty())
+                return null;
+
             transaction.commit();
         }
         catch (ChangePropertyDescriptorException e)
@@ -319,23 +348,12 @@ public class AssayPublishManager implements AssayPublishService
             throw new UnexpectedException(e);
         }
 
-        // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
-        // in 'ensurePropertyDescriptors'.
-        if (schemaChanged)
-            StudyManager.getInstance().uncache(dataset);
-        dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
-        Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
-        QCState defaultQCState = null;
-        if (defaultQCStateId != null)
-            defaultQCState = QCStateManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
 
-        // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
-        // IllegalStateException in ContainerManager.ensureContainer.
-        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DatasetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
         if (lsids.size() > 0 && protocol != null)
         {
             for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
             {
+                // CONSIDER: add reference to the provenance run?
                 AssayAuditProvider.AssayAuditEvent event = new AssayAuditProvider.AssayAuditEvent(sourceContainer.getId(),
                         entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
 
@@ -348,10 +366,99 @@ public class AssayPublishManager implements AssayPublishService
                 AuditLogService.get().addEvent(user, event);
             }
         }
+
         //Make sure that the study is updated with the correct timepoints.
         StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
 
         return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
+    }
+
+    private void createProvenanceRun(User user, @NotNull Container targetContainer, String assayName, @Nullable ExpProtocol protocol, List<String> errors, DatasetDefinition dataset, List<String> lsids)
+    {
+        if (lsids.isEmpty() || null == protocol)
+            return;
+
+        // If provenance module is not present, do nothing
+        ProvenanceService pvs = ProvenanceService.get();
+        if (pvs == null)
+            return;
+
+        AssayProvider provider = AssayService.get().getProvider(protocol);
+        if (provider == null)
+        {
+            errors.add("provenance error: assay provider for '" + protocol.getName() + "' not found");
+            return;
+        }
+
+        if (provider.getResultRowLSIDPrefix() == null)
+        {
+            LOG.info("Can't create provenance run; Assay provider '" + provider.getName() + "' for assay '" + protocol.getName() + "' has no result row lsid prefix");
+            return;
+        }
+
+        String domainName = dataset.getDomain().getName();
+        TableInfo datasetTable = dataset.getDomainKind().getTableInfo(user, targetContainer, domainName);
+        if (datasetTable.getColumn(ASSAY_RESULT_LSID) == null)
+        {
+            errors.add("provenance error: Assay result table for assay '" + protocol.getName() + "' has no LSID column");
+            return;
+        }
+
+        // Add Provenance details
+        // Create a mapping from the assay result LSID to the dataset LSID
+        Set<Pair<String, String>> lsidPairs = new HashSet<>();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("lsid"), lsids, CompareType.IN);
+        Collection<Map<String, Object>> resultRowsMap = new TableSelector(datasetTable, datasetTable.getColumns("lsid", ASSAY_RESULT_LSID), filter, null).getMapCollection();
+        Set<String> resultRowLsids = new LinkedHashSet<>();
+        for (Map<String, Object> resultRow : resultRowsMap)
+        {
+            String resultRowLsid = Objects.toString(resultRow.get(ASSAY_RESULT_LSID), null);
+            String datasetLsid = Objects.toString(resultRow.get("lsid"), null);
+            if (resultRowLsid == null || datasetLsid == null)
+            {
+                errors.add("provenance error: Expected assay result row to have an lsid: " + resultRow);
+                return;
+            }
+            lsidPairs.add(Pair.of(resultRowLsid, datasetLsid));
+            resultRowLsids.add(resultRowLsid);
+        }
+
+        // Create a new experiment run using the "Study Publish" Protocol
+        ExpRun run = ExperimentService.get().createExperimentRun(targetContainer, "StudyPublishRun");
+        ExpProtocol studyPublishProtocol = null;
+
+        try
+        {
+            studyPublishProtocol = ensureStudyPublishProtocol(user, targetContainer);
+
+            run.setProtocol(studyPublishProtocol);
+            ViewBackgroundInfo info = new ViewBackgroundInfo(targetContainer, user, null);
+            PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(info.getContainer());
+            run.setFilePathRoot(pipeRoot.getRootPath());
+
+            run = ExperimentService.get().saveSimpleExperimentRun(run,
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    Collections.emptyMap(),
+                    info, LOG, false);
+        }
+        catch (ExperimentException e)
+        {
+            errors.add("provenance error: StudyPublishRun can not be created.");
+            LOG.error(e);
+            return;
+        }
+
+        // Add the assay result LSID as provenance inputs to the “StudyPublish” run’s starting protocol application
+        pvs.addProvenanceInputs(targetContainer, run.getInputProtocolApplication(), resultRowLsids);
+
+        // Add the provenance mapping of assay result LSID to study dataset LSID to the run’s final protocol application
+        pvs.addProvenance(targetContainer, run.getOutputProtocolApplication(), lsidPairs);
+
+        // Call syncRunEdges
+        ExperimentService.get().syncRunEdges(run);
     }
 
     private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
@@ -575,25 +682,34 @@ public class AssayPublishManager implements AssayPublishService
     @NotNull
     public DatasetDefinition createDataset(User user, StudyImpl study, String name, @Nullable Integer datasetId, boolean isDemographicData)
     {
-        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false);
+        return createAssayDataset(user, study, name, null, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, null, false, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId, boolean isDemographicData, @Nullable ExpProtocol protocol)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, false, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
                                                 boolean isDemographicData, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
     {
-        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField);
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, Dataset.TYPE_STANDARD, null, protocol, useTimeKeyField, KeyManagementType.None);
     }
 
     @NotNull
     public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
-                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField)
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType)
+    {
+        return createAssayDataset(user, study, name, keyPropertyName, datasetId, isDemographicData, type, categoryId, protocol, useTimeKeyField, managementType, true, null, null, null, null, null, null);
+    }
+
+    @NotNull
+    public DatasetDefinition createAssayDataset(User user, StudyImpl study, String name, @Nullable String keyPropertyName, @Nullable Integer datasetId,
+                                                boolean isDemographicData, String type, @Nullable Integer categoryId, @Nullable ExpProtocol protocol, boolean useTimeKeyField, KeyManagementType managementType,
+                                                boolean showByDefault, @Nullable String label, @Nullable String description, @Nullable Integer cohortId,
+                                                @Nullable String tag, String visitDatePropertyName, @Nullable String dataSharing)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         if (useTimeKeyField && (isDemographicData || keyPropertyName != null))
@@ -603,17 +719,26 @@ public class AssayPublishManager implements AssayPublishService
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
             DatasetDefinition newDataset = new DatasetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataset.setShowByDefault(true);
+            newDataset.setShowByDefault(showByDefault);
             newDataset.setType(type);
+            newDataset.setDemographicData(isDemographicData);
+            newDataset.setUseTimeKeyField(useTimeKeyField);
+            newDataset.setKeyManagementType(managementType);
+            newDataset.setDescription(description);
+            newDataset.setCohortId(cohortId);
+            newDataset.setTag(tag);
+            newDataset.setVisitDatePropertyName(visitDatePropertyName);
 
+            if (label != null)
+                newDataset.setLabel(label);
             if (categoryId != null)
                 newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
                 newDataset.setKeyPropertyName(keyPropertyName);
-            newDataset.setDemographicData(isDemographicData);
-            newDataset.setUseTimeKeyField(useTimeKeyField);
             if (protocol != null)
                 newDataset.setProtocolId(protocol.getRowId());
+            if (dataSharing != null)
+                newDataset.setDataSharing(dataSharing);
 
             StudyManager.getInstance().createDatasetDefinition(user, newDataset);
 
@@ -936,5 +1061,19 @@ public class AssayPublishManager implements AssayPublishService
             }
         }
         return null;
+    }
+
+    public ExpProtocol ensureStudyPublishProtocol(User user, Container container) throws ExperimentException
+    {
+        ExpProtocol protocol = ExperimentService.get().getExpProtocol(STUDY_PUBLISH_PROTOCOL_LSID);
+        if (protocol == null)
+        {
+            ExpProtocol baseProtocol = ExperimentService.get().createExpProtocol(container, ExpProtocol.ApplicationType.ExperimentRun, STUDY_PUBLISH_PROTOCOL_NAME);
+            baseProtocol.setLSID(STUDY_PUBLISH_PROTOCOL_LSID);
+            baseProtocol.setMaxInputMaterialPerInstance(0);
+            baseProtocol.setProtocolDescription("Simple protocol for publishing study using copy to study.");
+            return ExperimentService.get().insertSimpleProtocol(baseProtocol, user);
+        }
+        return protocol;
     }
 }

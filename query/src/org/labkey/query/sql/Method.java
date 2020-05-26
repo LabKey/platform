@@ -575,13 +575,13 @@ public abstract class Method
         @Override
         public BaseColumnInfo createColumnInfo(TableInfo parentTable, ColumnInfo[] arguments, String alias)
         {
-            SQLFragment[] fragments = getSQLFragments(arguments);
             JdbcType jdbcType = _jdbcType;
-            if (fragments.length >= 2)
+            if (arguments.length >= 2)
             {
                 try
                 {
-                    String sqlEscapeTypeName = getTypeArgument(fragments);
+                    SQLFragment[] frags = getSQLFragments(new ColumnInfo[] {arguments[1]}); // only convert the type arg
+                    String sqlEscapeTypeName = getTypeArgument(frags[0]);
                     jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
                 }
                 catch (IllegalArgumentException x)
@@ -589,7 +589,15 @@ public abstract class Method
                     /* */
                 }
             }
-            return new ExprColumn(parentTable, alias, getSQL(parentTable.getSchema().getSqlDialect(), fragments), jdbcType);
+
+            return new ExprColumn(parentTable, alias, null, jdbcType)
+            {
+                @Override
+                public SQLFragment getValueSql(String tableAlias)
+                {
+                    return getSQL(parentTable.getSchema().getSqlDialect(), getSQLFragments(arguments));
+                }
+            };
         }
 
         @Override
@@ -599,7 +607,7 @@ public abstract class Method
             SQLFragment length = null;
             if (fragments.length >= 2)
             {
-                String sqlEscapeTypeName = getTypeArgument(fragments);
+                String sqlEscapeTypeName = getTypeArgument(fragments[1]);
                 try
                 {
                     jdbcType = ConvertType.valueOf(sqlEscapeTypeName).jdbcType;
@@ -643,11 +651,9 @@ public abstract class Method
             ret.append(")");                            
             return ret;
         }
-        String getTypeArgument(SQLFragment[] argumentsIN) throws IllegalArgumentException
+        String getTypeArgument(SQLFragment typeSqlFragment) throws IllegalArgumentException
         {
-            if (argumentsIN.length < 2)
-                return "VARCHAR";
-            String typeName = StringUtils.trimToEmpty(argumentsIN[1].getSQL());
+            String typeName = StringUtils.trimToEmpty(typeSqlFragment.getSQL());
             if (typeName.length() >= 2 && typeName.startsWith("'") && typeName.endsWith("'"))
                 typeName = typeName.substring(1,typeName.length()-1);
             if (typeName.startsWith("SQL_"))
@@ -951,7 +957,7 @@ public abstract class Method
         @Override
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
-            return new SQLFragment("CAST(" + (new DecimalFormat("0.0###")).format(ModuleLoader.getInstance().getCoreModule().getVersion()) + " AS NUMERIC(15,4))");
+            return new SQLFragment("CAST(" + (new DecimalFormat("0.000#")).format(AppProps.getInstance().getSchemaVersion()) + " AS NUMERIC(15,4))");
         }
     }
 
@@ -1001,15 +1007,11 @@ public abstract class Method
         public SQLFragment getSQL(Query query, SqlDialect dialect, SQLFragment[] arguments)
         {
             SQLFragment ret = new SQLFragment("?");
-            ret.add(new Callable(){
-                @Override
-                public Object call()
-                {
-                    User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
-                    if (null == user)
-                        return null;
-                    return user.getDisplayName(user);
-                }
+            ret.add((Callable) () -> {
+                User user = (User)QueryServiceImpl.get().getEnvironment(QueryService.Environment.USER);
+                if (null == user)
+                    return null;
+                return user.getDisplayName(user);
             });
             return ret;
         }

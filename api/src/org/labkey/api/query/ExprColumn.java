@@ -20,10 +20,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * {@link ColumnInfo} backed by a {@link SQLFragment} with the expression to generate the desired value. A typical way
@@ -34,8 +36,8 @@ public class ExprColumn extends BaseColumnInfo
     /** Placeholder that is later substituted with the table/subquery alias during SQL generation */
     public static final String STR_TABLE_ALIAS = "'''~~TABLE~~'''";
 
-    private SQLFragment _sql;
-    private ColumnInfo[] _dependentColumns;
+    protected SQLFragment _sql;
+    private final ColumnInfo[] _dependentColumns;
 
     public ExprColumn(TableInfo parent, FieldKey key, SQLFragment sql, JdbcType type, ColumnInfo ... dependentColumns)
     {
@@ -68,6 +70,32 @@ public class ExprColumn extends BaseColumnInfo
         this(parent, FieldKey.fromParts(name), sql, type, dependentColumns);
     }
 
+    public static MutableColumnInfo create(TableInfo parent, String name, JdbcType type, SQLFragment sqlf, ColumnInfo ... dependentColumns)
+    {
+        return new ExprColumn(parent, name, sqlf, type, dependentColumns);
+    }
+
+
+    /*
+     * Use this 'constructor' to create an ExprColumn whose SQL is generated on demand.  This is useful if generating
+     * the SQL is at all expensive.  Most TableInfo objects are not used for generating SQL and do not need to get this value.
+     */
+    public static MutableColumnInfo create(TableInfo parent, FieldKey name, JdbcType type, Supplier<SQLFragment> sqlFn, ColumnInfo ... dependentColumns)
+    {
+        return new ExprColumn(parent, name, null, type, dependentColumns)
+        {
+            @Override
+            public SQLFragment getValueSql(String tableAlias)
+            {
+                if (null == _sql)
+                    _sql = sqlFn.get();
+                return super.getValueSql(tableAlias);
+            }
+        };
+    }
+
+
+    @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         if (tableAlias.equals(STR_TABLE_ALIAS))

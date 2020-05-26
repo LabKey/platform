@@ -19,18 +19,17 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.dataiterator.DataIteratorContext;
 import org.labkey.api.dataiterator.ListofMapsDataIterator;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpLineage;
 import org.labkey.api.exp.api.ExpLineageOptions;
@@ -38,11 +37,7 @@ import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.list.ListDefinition;
-import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.property.Lookup;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryService;
@@ -54,6 +49,7 @@ import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestWhen;
 import org.labkey.api.util.TestContext;
+import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.StringBufferInputStream;
 import java.util.ArrayList;
@@ -78,7 +74,7 @@ import static org.junit.Assert.assertTrue;
  * Date: 11/24/16
  */
 @TestWhen(TestWhen.When.BVT)
-public class ExpSampleSetTestCase
+public class ExpSampleSetTestCase extends ExpProvisionedTableTestHelper
 {
     Container c;
 
@@ -570,6 +566,120 @@ public class ExpSampleSetTestCase
         assertEquals("Expected 5 total samples", 4, allSamples.size());
     }
 
+    // Issue 40109: Assure we can change one parent during merge without affecting the others
+    @Test
+    public void testUpdateSomeParents() throws Exception
+    {
+        final User user = TestContext.get().getUser();
+
+        // setup
+        List<GWTPropertyDescriptor> props = new ArrayList<>();
+        props.add(new GWTPropertyDescriptor("name", "string"));
+        props.add(new GWTPropertyDescriptor("age", "int"));
+        final ExpSampleSetImpl childType = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "ChildSamples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        final ExpSampleSetImpl parent1Type = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "Parent1Samples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+        final ExpSampleSetImpl parent2Type = SampleSetServiceImpl.get().createSampleSet(c, user,
+                "Parent2Samples", null, props, Collections.emptyList(),
+                -1, -1, -1, -1, null, null);
+
+
+        UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
+        List<Map<String, Object>> rows = new ArrayList<>();
+
+
+        // add first parents
+        TableInfo table = schema.getTable("Parent1Samples", null, true, false);
+        QueryUpdateService svc = table.getUpdateService();
+
+        BatchValidationException errors = new BatchValidationException();
+        rows.add(CaseInsensitiveHashMap.of("name", "P1-1"));
+        rows.add(CaseInsensitiveHashMap.of("name", "P1-2"));
+        rows.add(CaseInsensitiveHashMap.of("name", "P1-3"));
+        List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
+        assertEquals("Number of parent1 samples inserted not as expected", 3, inserted.size());
+
+        // add second parents
+        table = schema.getTable("Parent2Samples", null, true, false);
+        svc = table.getUpdateService();
+
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("name", "P2-1"));
+        rows.add(CaseInsensitiveHashMap.of("name", "P2-2"));
+        rows.add(CaseInsensitiveHashMap.of("name", "P2-3"));
+        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
+        assertEquals("Number of parent2 samples inserted not as expected", 3, inserted.size());
+
+        // add child samples
+        table = schema.getTable("ChildSamples", null, true, false);
+        svc = table.getUpdateService();
+
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("name", "C1",  "MaterialInputs/Parent1Samples", "P1-1,P1-2", "MaterialInputs/Parent2Samples", "P2-1"));
+        rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1"));
+        rows.add(CaseInsensitiveHashMap.of("name", "C3", "age", 42, "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1, P2-2"));
+        rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-2", "MaterialInputs/Parent2Samples", "P2-2"));
+        inserted = svc.insertRows(user, c, rows, errors, null, null);
+        assertFalse(errors.hasErrors());
+        assertEquals("Number of child samples inserted not as expected", 4, inserted.size());
+
+        ExpMaterial P11 = parent1Type.getSample(c, "P1-1");
+        ExpMaterial P12 = parent1Type.getSample(c, "P1-2");
+        ExpMaterial P21 = parent2Type.getSample(c, "P2-1");
+        ExpMaterial P22 = parent2Type.getSample(c, "P2-2");
+
+
+        ExpMaterial C1 = childType.getSample(c, "C1");
+        ExpMaterial C2 = childType.getSample(c, "C2");
+        ExpMaterial C3 = childType.getSample(c, "C3");
+        ExpMaterial C4 = childType.getSample(c, "C4");
+
+        ExpLineageOptions opts = new ExpLineageOptions();
+        opts.setChildren(false);
+        opts.setParents(true);
+        opts.setDepth(2);
+
+        // now update the children with various types of modifications to the parentage
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("name", "C1", "MaterialInputs/Parent1Samples", "P1-1")); // change one parent but not the other
+        rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", null)); // remove one parent but not the other
+
+        svc.mergeRows(user, c, new ListofMapsDataIterator(rows.get(0).keySet(),rows), errors, null, null);
+        assertFalse(errors.hasErrors());
+
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, C1, opts);
+        assertTrue("Expected 'C1' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
+        assertFalse("Expected 'C1' to no longer be derived from 'P1-2'", lineage.getMaterials().contains(P12));
+        assertTrue("Expected 'C1' to still be derived from 'P2-1'", lineage.getMaterials().contains(P21));
+
+        lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+        assertFalse("Expected 'C4' to not be derived from 'P1-2'", lineage.getMaterials().contains(P12));
+        assertTrue("Expected 'C4' to still be derived from 'P2-2'", lineage.getMaterials().contains(P22));
+
+
+        rows.clear();
+        rows.add(CaseInsensitiveHashMap.of("name", "C4", "MaterialInputs/Parent1Samples", "P1-1", "MaterialInputs/Parent2Samples", "P2-1")); // change both parents
+        rows.add(CaseInsensitiveHashMap.of("name", "C2", "MaterialInputs/Parent1Samples", "", "MaterialInputs/Parent2Samples", null)); // remove both parents
+
+        svc.mergeRows(user, c, new ListofMapsDataIterator(rows.get(0).keySet(),rows), errors, null, null);
+        assertFalse(errors.hasErrors());
+
+        lineage = ExperimentService.get().getLineage(c, user, C2, opts);
+        assertTrue("Expected 'C2' to have no parents'", lineage.getMaterials().isEmpty());
+
+        lineage = ExperimentService.get().getLineage(c, user, C4, opts);
+        assertEquals("Expected 'C4' to have two parents", 2, lineage.getMaterials().size());
+        assertTrue("Expected 'C4' to be derived from 'P1-1'", lineage.getMaterials().contains(P11));
+        assertTrue("Expected 'C4' to be derived from 'P2-1'", lineage.getMaterials().contains(P21));
+
+    }
 
     // Issue 29060: Deriving with DataInputs and MaterialInputs on SampleSet even when Parent col is set
     @Test
@@ -621,33 +731,34 @@ public class ExpSampleSetTestCase
 
         ExpMaterial A = ss.getSample(c, "A");
         assertNotNull(A);
-        ExpLineage lineage = ExperimentService.get().getLineage(A, opts);
+        ExpLineage lineage = ExperimentService.get().getLineage(c, user, A, opts);
         assertTrue(lineage.getMaterials().isEmpty());
         assertNull(A.getRunId());
 
         ExpMaterial B = ss.getSample(c, "B");
         assertNotNull(B);
-        lineage = ExperimentService.get().getLineage(B, opts);
+        lineage = ExperimentService.get().getLineage(c, user, B, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'B' to be derived from 'A'", lineage.getMaterials().contains(A));
         assertNotNull(B.getRunId());
 
         ExpMaterial C = ss.getSample(c, "C");
         assertNotNull(C);
-        lineage = ExperimentService.get().getLineage(C, opts);
+        lineage = ExperimentService.get().getLineage(c, user, C, opts);
         assertEquals(1, lineage.getMaterials().size());
         assertTrue("Expected 'C' to be derived from 'B'", lineage.getMaterials().contains(B));
 
         ExpMaterial D = ss.getSample(c, "D");
         assertNotNull(D);
-        lineage = ExperimentService.get().getLineage(D, opts);
+        lineage = ExperimentService.get().getLineage(c, user, D, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'C'", lineage.getMaterials().contains(C));
 
         ExpMaterial E = ss.getSample(c, "E");
         assertNotNull(E);
-        lineage = ExperimentService.get().getLineage(E, opts);
+        lineage = ExperimentService.get().getLineage(c, user, E, opts);
+        assertTrue("Expected 'E' to be the seed", lineage.getSeeds().contains(E));
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'E' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'E' to be derived from 'C'", lineage.getMaterials().contains(C));
@@ -657,10 +768,22 @@ public class ExpSampleSetTestCase
                 E.getRowId(), E.getRowId());
         ExpRun derivationRun = E.getRun();
 
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun.getMaterialOutputs().contains(D));
         assertTrue(derivationRun.getMaterialOutputs().contains(E));
+
+        assertEquals(1, lineage.getRuns().size());
+        assertTrue("Expected lineage to include derivation run", lineage.getRuns().contains(derivationRun));
+
+
+        // verify lineage using the derivation run as a seed
+        lineage = ExperimentServiceImpl.get().getLineage(c, user, Set.of(derivationRun), new ExpLineageOptions(true, false, 1));
+        assertTrue("Expected derivationRun to be the seed", lineage.getSeeds().contains(derivationRun));
+        assertEquals(2, lineage.getMaterials().size());
+        assertTrue("Expected 'B' to be input into derivationRun", lineage.getMaterials().contains(B));
+        assertTrue("Expected 'C' to be input into derivationRun", lineage.getMaterials().contains(C));
+        assertTrue("Expected no additional runs in lineage results", lineage.getRuns().isEmpty());
 
 
         // update 'D' to derive from 'B' and 'E'
@@ -671,7 +794,7 @@ public class ExpSampleSetTestCase
         assertEquals(1, updated.size());
 
         ExpMaterial D2 = ss.getSample(c, "D");
-        lineage = ExperimentService.get().getLineage(D2, opts);
+        lineage = ExperimentService.get().getLineage(c, user, D2, opts);
         assertEquals(2, lineage.getMaterials().size());
         assertTrue("Expected 'D' to be derived from 'B'", lineage.getMaterials().contains(B));
         assertTrue("Expected 'D' to be derived from 'E'", lineage.getMaterials().contains(E));
@@ -681,84 +804,86 @@ public class ExpSampleSetTestCase
         ExpRun derivationRun2 = D2.getRun();
         assertNotEquals("Updating 'D' lineage should create new derivation run", derivationRun.getRowId(), derivationRun2.getRowId());
 
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(B));
-        assertTrue(derivationRun2.getMaterialInputs().keySet().contains(E));
-        assertFalse(derivationRun2.getMaterialInputs().keySet().contains(C));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(B));
+        assertTrue(derivationRun2.getMaterialInputs().containsKey(E));
+        assertFalse(derivationRun2.getMaterialInputs().containsKey(C));
         assertTrue(derivationRun2.getMaterialOutputs().contains(D));
         assertFalse(derivationRun2.getMaterialOutputs().contains(E));
 
         ExpRun oldDerivationRun = ExperimentService.get().getExpRun(derivationRun.getRowId());
         assertEquals(oldDerivationRun.getRowId(), derivationRun.getRowId());
 
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(B));
-        assertTrue(oldDerivationRun.getMaterialInputs().keySet().contains(C));
-        assertFalse(oldDerivationRun.getMaterialInputs().keySet().contains(E));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(B));
+        assertTrue(oldDerivationRun.getMaterialInputs().containsKey(C));
+        assertFalse(oldDerivationRun.getMaterialInputs().containsKey(E));
         assertFalse(oldDerivationRun.getMaterialOutputs().contains(D));
         assertTrue(oldDerivationRun.getMaterialOutputs().contains(E));
 
     }
 
-    // Issue 37690: Customize Grid on Assay Results Data Won't Allow for Showing Input to Sample ID
     @Test
-    public void testListAndSampleLineage() throws Exception
+    public void testSampleSetWithVocabularyProperties() throws Exception
     {
-        final User user = TestContext.get().getUser();
+        User user = TestContext.get().getUser();
 
-        // setup sample set
-        List<GWTPropertyDescriptor> props = new ArrayList<>();
-        props.add(new GWTPropertyDescriptor("name", "string"));
-        props.add(new GWTPropertyDescriptor("age", "int"));
-        final ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
-                "MySamples", null, props, Collections.emptyList(),
+        String sampleName = "SamplesWithVocabularyProperties";
+        String sampleType = "TypeA";
+        String updatedSampleType = "TypeB";
+        String sampleColor = "Blue";
+        int sampleAge = 5;
+
+        Domain mockDomain = createVocabularyTestDomain(user, c);
+        Map<String, String> vocabularyPropertyURIs = getVocabularyPropertyURIS(mockDomain);
+
+        //create sample set
+        ExpSampleSetImpl ss = SampleSetServiceImpl.get().createSampleSet(c, user,
+                sampleName, null, List.of(new GWTPropertyDescriptor("name", "string")), Collections.emptyList(),
                 -1, -1, -1, -1, null, null);
 
+        assertNotNull(ss);
+
         UserSchema schema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("Samples"));
-        TableInfo table = schema.getTable("MySamples");
-        QueryUpdateService svc = table.getUpdateService();
 
-        // insert a sample and a derived sample
-        List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(CaseInsensitiveHashMap.of("name", "bob", "age", 50));
-        rows.add(CaseInsensitiveHashMap.of("name", "sally", "age", 10, "MaterialInputs/MySamples", "bob"));
+        // insert a sample
+        ArrayListMap<String, Object> row = new ArrayListMap<>();
+        row.put("name", "TestSample");
+        row.put(vocabularyPropertyURIs.get(typePropertyName), sampleType);
+        row.put(vocabularyPropertyURIs.get(colorPropertyName), sampleColor);
+        row.put(vocabularyPropertyURIs.get(agePropertyName), null); // inserting a property with null value
+        List<Map<String, Object>> rows = buildRows(row);
 
-        BatchValidationException errors = new BatchValidationException();
-        List<Map<String, Object>> inserted = svc.insertRows(user, c, rows, errors, null, null);
-        if (errors.hasErrors())
-            throw errors;
+        var insertedSample = insertRows(c, rows ,sampleName, schema);
 
-        // setup list with lookup to sample set
-        ListDefinition listDef = ListService.get().createList(c, "MyList", ListDefinition.KeyType.AutoIncrementInteger);
+        assertEquals("Custom Property is not inserted", sampleType,
+                OntologyManager.getPropertyObjects(c, insertedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
 
-        Domain listDomain = listDef.getDomain();
-        listDomain.addProperty(new PropertyStorageSpec("Key", JdbcType.INTEGER));
-        DomainProperty sampleLookup = listDomain.addProperty(new PropertyStorageSpec("SampleId", JdbcType.VARCHAR));
-        sampleLookup.setLookup(new Lookup(null, "Samples", "MySamples"));
-        listDef.setKeyName("Key");
-        listDef.save(user);
+        //Verifying property with null value is not inserted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(agePropertyName)).size());
 
-        // insert a a row with a lookup to the sample
-        UserSchema listSchema = QueryService.get().getUserSchema(user, c, SchemaKey.fromParts("lists"));
-        QueryUpdateService listQus = listSchema.getTable("MyList").getUpdateService();
+        //update inserted sample
+        ArrayListMap<String, Object> rowToUpdate = new ArrayListMap<>();
+        rowToUpdate.put("name", "TestSample");
+        rowToUpdate.put("RowId", insertedSample.get(0).get("RowId"));
+        rowToUpdate.put(vocabularyPropertyURIs.get(typePropertyName), updatedSampleType);
+        rowToUpdate.put(vocabularyPropertyURIs.get(colorPropertyName), null); // nulling out existing property
+        rowToUpdate.put(vocabularyPropertyURIs.get(agePropertyName), sampleAge); //inserting a new property in update rows
+        List<Map<String, Object>> rowsToUpdate = buildRows(rowToUpdate);
 
-        rows = new ArrayList<>();
-        rows.add(CaseInsensitiveHashMap.of("SampleId", "sally"));
+        List<Map<String, Object>> oldKeys = new ArrayList<>();
+        ArrayListMap<String, Object> oldKey = new ArrayListMap<>();
+        oldKey.put("name", "TestSample");
+        oldKey.put("RowId", insertedSample.get(0).get("RowId"));
+        oldKeys.add(oldKey);
 
-        DataIteratorContext context = new DataIteratorContext();
-        context.setAllowImportLookupByAlternateKey(true);
+        var updatedSample = updateRows(c, rowsToUpdate, oldKeys, sampleName, schema);
+        assertEquals("Custom Property is not updated", updatedSampleType,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(typePropertyName)).getStringValue());
 
-        errors = new BatchValidationException();
-        listQus.loadRows(user, c, new ListofMapsDataIterator.Builder(Set.of("SampleId"), rows), context, null);
-        if (errors.hasErrors())
-            throw errors;
+        //Verify property updated to a null value gets deleted
+        assertEquals("Property with null value is present.", 0, OntologyManager.getPropertyObjects(c, vocabularyPropertyURIs.get(colorPropertyName)).size());
 
-        // query
-        TableSelector ts = QueryService.get().selector(listSchema,
-                "SELECT SampleId, SampleId.Inputs.Materials.MySamples.Name As MySampleParent FROM MyList");
-        Collection<Map<String, Object>> results = ts.getMapCollection();
-        assertEquals(1, results.size());
-        Map<String, Object> row = results.iterator().next();
-        assertEquals("sally", row.get("SampleId"));
-        assertEquals("bob", row.get("MySampleParent"));
+        //Verify property inserted during update rows in inserted
+        assertEquals("New Property is not inserted with update rows", sampleAge,
+                OntologyManager.getPropertyObjects(c, updatedSample.get(0).get("LSID").toString()).get(vocabularyPropertyURIs.get(agePropertyName)).getFloatValue().intValue());
     }
-
 }

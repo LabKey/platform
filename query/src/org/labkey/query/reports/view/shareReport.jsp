@@ -72,7 +72,7 @@
             <br/>
 
             <b>Message Subject:</b><br/>
-            <labkey:input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=h(messageSubject)%>" />
+            <labkey:input type="text" name="messageSubject" id="messageSubject" size="95" value="<%=messageSubject%>" />
             <br/>
 
             <b>Message Body:</b><br/>

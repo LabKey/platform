@@ -22,7 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.admin.InvalidFileException;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.Container;
@@ -107,7 +107,7 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
+    private static final BlockingCache<String, PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots",
         (key, argument) -> new TableSelector(pipeline.getTableInfoPipelineRoots(), (Filter)argument, null).getObject(PipelineRoot.class));
 
     protected static PipelineRoot getPipelineRootObject(Container container, String type)
@@ -451,7 +451,7 @@ public class PipelineManager
             {
                 MailHelper.MultipartMessage m = MailHelper.createMultipartMessage();
 
-                ActionURL url = StatusController.urlDetails(_statusFile); 
+                ActionURL url = StatusController.urlDetails(_statusFile);
 
                 _template.setOriginatingUser(user);
                 _template.setDataUrl(url.getURIString());
@@ -504,7 +504,7 @@ public class PipelineManager
                 _template.setStartTime(_min);
                 _template.setEndTime(_max);
 
-                m.setTemplate(_template, _c);
+                _template.renderAllToMessage(m, _c);
 
                 m.addFrom(new Address[]{_template.renderFrom(_c, LookAndFeelProperties.getInstance(_c).getSystemEmailAddress())});
                 m.addRecipients(Message.RecipientType.TO, MailHelper.createAddressArray(_recipients));
@@ -537,15 +537,19 @@ public class PipelineManager
             super(name);
 
             _replacements.add(new ReplacementParam<String>("dataURL", String.class, "Link to the job details for this pipeline job"){
+                @Override
                 public String getValue(Container c) {return _dataUrl;}
             });
             _replacements.add(new ReplacementParam<String>("jobDescription", String.class, "The job description"){
+                @Override
                 public String getValue(Container c) {return _jobDescription;}
             });
             _replacements.add(new ReplacementParam<Date>("timeCreated", Date.class, "The date and time this job was created"){
+                @Override
                 public Date getValue(Container c) {return _timeCreated;}
             });
             _replacements.add(new ReplacementParam<String>("status", String.class, "The job status"){
+                @Override
                 public String getValue(Container c) {return _status;}
             });
 
@@ -555,6 +559,7 @@ public class PipelineManager
         public void setJobDescription(String description){_jobDescription = description;}
         public void setTimeCreated(Date timeCreated){_timeCreated = timeCreated;}
         public void setStatus(String status){_status = status;}
+        @Override
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
     }
 
@@ -592,17 +597,20 @@ public class PipelineManager
         protected static final String DEFAULT_BODY = "The following jobs have completed between the time of: ^startTime^ " +
                 "and the end time of: ^endTime^:\n\n^pipelineJobs^";
 
-        protected PipelineDigestTemplate(String name)
+        protected PipelineDigestTemplate(String name, String subject, String body, String description)
         {
-            super(name);
+            super(name, subject, body, description, ContentType.HTML);
 
-            _replacements.add(new ReplacementParam<String>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period"){
+            _replacements.add(new ReplacementParam<>("pipelineJobs", String.class, "The list of all pipeline jobs that have completed for this notification period", ContentType.HTML){
+                @Override
                 public String getValue(Container c) {return getJobStatus();}
             });
-            _replacements.add(new ReplacementParam<Date>("startTime", Date.class, "The start of the time period for job completion"){
+            _replacements.add(new ReplacementParam<>("startTime", Date.class, "The start of the time period for job completion", ContentType.HTML){
+                @Override
                 public Date getValue(Container c) {return _startTime;}
             });
-            _replacements.add(new ReplacementParam<Date>("endTime", Date.class, "The end of the time period for job completion"){
+            _replacements.add(new ReplacementParam<>("endTime", Date.class, "The end of the time period for job completion", ContentType.HTML){
+                @Override
                 public Date getValue(Container c) {return _endTime;}
             });
             _replacements.addAll(super.getValidReplacements());
@@ -610,6 +618,7 @@ public class PipelineManager
         public void setStatusFiles(PipelineStatusFileImpl[] statusFiles){_statusFiles = statusFiles;}
         public void setStartTime(Date startTime){_startTime = startTime;}
         public void setEndTime(Date endTime){_endTime = endTime;}
+        @Override
         public List<ReplacementParam> getValidReplacements(){return _replacements;}
 
         private String getJobStatus()
@@ -641,10 +650,10 @@ public class PipelineManager
     {
         public PipelineDigestJobSuccess()
         {
-            super("Pipeline jobs succeeded (digest)");
-            setSubject("The pipeline jobs have completed successfully");
-            setBody(DEFAULT_BODY);
-            setDescription("Sent for pipeline jobs that have completed successfully during a configured time period");
+            super("Pipeline jobs succeeded (digest)",
+                    "The pipeline jobs have completed successfully",
+                    DEFAULT_BODY,
+                    "Sent for pipeline jobs that have completed successfully during a configured time period");
             setPriority(20);
         }
     }
@@ -653,10 +662,10 @@ public class PipelineManager
     {
         public PipelineDigestJobFailed()
         {
-            super("Pipeline jobs failed (digest)");
-            setSubject("The pipeline jobs did not complete successfully");
-            setBody(DEFAULT_BODY);
-            setDescription("Sent for pipeline jobs that have not completed successfully during a configured time period");
+            super("Pipeline jobs failed (digest)",
+                    "The pipeline jobs did not complete successfully",
+                    DEFAULT_BODY,
+                    "Sent for pipeline jobs that have not completed successfully during a configured time period");
             setPriority(21);
         }
     }

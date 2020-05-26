@@ -24,7 +24,7 @@ import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.pages.DesignerController.DesignerTester;
-import org.labkey.test.pages.EditDatasetDefinitionPage;
+import org.labkey.test.pages.study.DatasetDesignerPage;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.ListHelper;
 import org.labkey.test.util.PortalHelper;
@@ -168,8 +168,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
 
         ListHelper.ListColumn valueColumn = new ListHelper.ListColumn("Value", "Value", ListHelper.ListColumnType.String, "Vaccine Value");
         _listHelper.createList(getProjectName() + "/" + FOLDER_NAME + "/" + STUDY_FOLDER, LIST_NAME, ListHelper.ListColumnType.Integer, "Key", valueColumn);
-        clickButton("Done");
-
+        goToManageLists();
         clickAndWait(Locator.linkWithText(LIST_NAME));
         DataRegionTable.findDataRegion(this).clickInsertNewRow();
         setFormElement(Locator.name("quf_Key"), "1");
@@ -217,15 +216,14 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         navigateToFolder(getProjectName(), STUDY_FOLDER);
         clickAndWait(Locator.linkWithText("Study Navigator"));
         assertTextPresent("Day 12");
-        EditDatasetDefinitionPage editDatasetPage = _studyHelper
+        DatasetDesignerPage editDatasetPage = _studyHelper
                 .goToManageDatasets()
                 .clickCreateNewDataset()
-                .setName("Simple")
-                .submit();
-        editDatasetPage.getFieldsEditor()
-                .selectField(0).setName("Value");
+                .setName("Simple");
+        editDatasetPage.getFieldsPanel()
+                .manuallyDefineFields("Value");
         editDatasetPage
-                .save()
+                .clickSave()
                 .clickViewData()
                 .getDataRegion()
                 .clickImportBulkData();

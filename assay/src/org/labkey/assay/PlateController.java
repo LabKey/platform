@@ -96,9 +96,8 @@ public class PlateController extends SpringActionController
             return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -128,9 +127,9 @@ public class PlateController extends SpringActionController
                     new PlateTemplateListBean(plateTemplates));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Plate Templates");
+            root.addChild("Plate Templates");
         }           
     }
 
@@ -174,9 +173,8 @@ public class PlateController extends SpringActionController
             return HttpView.redirect(url);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -221,10 +219,10 @@ public class PlateController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("editPlateTemplate");
-            return root.addChild("Plate Template Editor");
+            root.addChild("Plate Template Editor");
         }
     }
 
@@ -250,6 +248,7 @@ public class PlateController extends SpringActionController
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
+
     }
 
     public static class CopyTemplateBean
@@ -345,9 +344,9 @@ public class PlateController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Select Copy Destination");
+            root.addChild("Select Copy Destination");
         }
     }
 

@@ -19,6 +19,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.view.ActionURL;
@@ -53,7 +54,9 @@ public interface AssayUrls extends UrlProvider
     ActionURL getAssayRunsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... batchIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, int... runIds);
+    ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter.Type containerFilterType, int... runIds);
     ActionURL getAssayResultsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter, int... runIds);
+    @Nullable ActionURL getAssayResultRowURL(AssayProvider provider, Container container, ExpProtocol protocol, int rowId);
 
     ActionURL getShowUploadJobsURL(Container container, ExpProtocol protocol, ContainerFilter containerFilter);
 
@@ -93,4 +96,5 @@ public interface AssayUrls extends UrlProvider
     ActionURL getShowSelectedRunsURL(Container container, ExpProtocol protocol, @Nullable ContainerFilter containerFilter);
     ActionURL getSetDefaultValuesAssayURL(Container container, String providerName, Domain domain, ActionURL returnUrl);
     String getBatchIdFilterParam();
+    ActionURL getPlateMetadataTemplateURL(Container container, AssayProvider provider);
 }

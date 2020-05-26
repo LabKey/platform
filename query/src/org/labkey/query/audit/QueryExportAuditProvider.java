@@ -20,8 +20,8 @@ import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -115,7 +115,7 @@ public class QueryExportAuditProvider extends AbstractAuditTypeProvider implemen
         DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_DATA_ROW_COUNT.equalsIgnoreCase(col.getName()))
                 {

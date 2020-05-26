@@ -27,24 +27,7 @@ import org.labkey.api.assay.query.BatchListQueryView;
 import org.labkey.api.assay.query.ResultsQueryView;
 import org.labkey.api.assay.query.RunListQueryView;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AbstractTableInfo;
-import org.labkey.api.data.BaseColumnInfo;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ColumnRenderPropertiesImpl;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DataColumn;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.Results;
-import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.*;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExperimentService;
@@ -54,7 +37,7 @@ import org.labkey.api.exp.query.ExpExperimentTable;
 import org.labkey.api.exp.query.ExpQCFlagTable;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.exp.query.ExpTable;
-import org.labkey.api.gwt.client.ui.PropertiesEditorUtil;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
@@ -130,6 +113,11 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
+    public static SchemaKey schemaName(@NotNull AssayProvider provider, @NotNull ExpProtocol protocol)
+    {
+        return SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName());
+    }
+
     @Deprecated
     public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
@@ -138,7 +126,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
+        super(schemaName(provider, protocol), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
 
         if (protocol == null)
             throw new NotFoundException("Assay protocol not found");
@@ -297,7 +285,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         TableInfo table = createDataTable(cf, true);
         if (null != table)
         {
-            var columnInfo = (BaseColumnInfo)table.getColumn("Properties");
+            var columnInfo = ((AbstractTableInfo)table).getMutableColumn("Properties");
             if (null != columnInfo)
                 fixupPropertyURLs(columnInfo);
         }
@@ -308,7 +296,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
     {
         ExpQCFlagTable table = ExperimentService.get().createQCFlagsTable(QC_FLAGS_TABLE_NAME, this, cf);
         table.populate();
-        table.setAssayProtocol(getProtocol());
+        table.setAssayProtocol(getProvider(), getProtocol());
         return table;
     }
 
@@ -365,7 +353,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
         for (ColumnInfo col : result.getColumns())
         {
-            fixupRenderers((BaseColumnInfo)col, (BaseColumnInfo)col);
+            fixupRenderers(col, (MutableColumnInfo)col);
         }
 
         result.setDescription("Contains a row per " + protocol.getName() + " batch (a group of runs that were loaded at the same time)");
@@ -479,8 +467,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
         AssayFlagHandler handler = AssayFlagHandler.getHandler(getProvider());
         if (handler != null)
         {
-            BaseColumnInfo flagCol = handler.createFlagColumn(getProtocol(), runTable, getSchemaName(), true);
-            BaseColumnInfo enabledCol = handler.createQCEnabledColumn(getProtocol(), runTable, getSchemaName());
+            var flagCol = handler.createFlagColumn(getProtocol(), runTable, getSchemaName(), true);
+            var enabledCol = handler.createQCEnabledColumn(getProtocol(), runTable, getSchemaName());
 
             if (flagCol != null)
                 runTable.addColumn(flagCol);
@@ -712,7 +700,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                             QueryView allResultsQueryView = createAllResultsQueryView(viewContext, qs);
 
                             DataView dataView = allResultsQueryView.createDataView();
-                            try (Results r = dataView.getDataRegion().getResultSet(dataView.getRenderContext()))
+                            try (Results r = dataView.getDataRegion().getResults(dataView.getRenderContext()))
                             {
                                 final int rowCount = r.getSize();
 
@@ -769,7 +757,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
      *
      * @param fk properties column (e.g. RunProperties)
      */
-    private static void fixupPropertyURL(BaseColumnInfo fk, BaseColumnInfo col)
+    private static void fixupPropertyURL(ColumnInfo fk, MutableColumnInfo col)
     {
         if (null == fk || !(col.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression))
             return;
@@ -826,7 +814,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 String studyName = assayDataset.getStudy().getLabel();
                 if (studyName == null)
                     continue; // No study in that folder
-                String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
+                String studyColumnName = "copied_to_" + AliasManager.legalNameFromName(studyName);
 
                 // column names must be unique. Prevent collisions
                 while (usedColumnNames.contains(studyColumnName))
@@ -865,21 +853,21 @@ public abstract class AssayProtocolSchema extends AssaySchema
     }
 
 
-    private static void fixupPropertyURLs(BaseColumnInfo fk)
+    private static void fixupPropertyURLs(MutableColumnInfo fk)
     {
         for (ColumnInfo c : fk.getParentTable().getColumns())
-            fixupPropertyURL(fk, (BaseColumnInfo)c);
+            fixupPropertyURL(fk, (MutableColumnInfo)c);
     }
 
     public void fixupRenderers(TableInfo table)
     {
         for (ColumnInfo col : table.getColumns())
         {
-            fixupRenderers((BaseColumnInfo)col, (BaseColumnInfo)col);
+            fixupRenderers(col, (MutableColumnInfo)col);
         }
     }
 
-    public void fixupRenderers(final ColumnRenderPropertiesImpl col, BaseColumnInfo columnInfo)
+    public void fixupRenderers(final ColumnRenderProperties col, MutableColumnInfo columnInfo)
     {
         StudyService svc = StudyService.get();
 

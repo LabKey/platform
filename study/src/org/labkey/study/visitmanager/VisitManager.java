@@ -100,11 +100,11 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      */
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets)
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, null);
     }
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Logger logger)
     {
         updateParticipantVisits(user, changedDatasets, null, null, true, logger);
     }
@@ -112,7 +112,7 @@ public abstract class VisitManager
     {
         updateParticipantVisits(user, Collections.emptyList(), null, null, true, true, logger);
     }
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         @Nullable Logger logger)
     {
@@ -138,7 +138,7 @@ public abstract class VisitManager
      * @param isSpecimenImport true if called from specimen import, which forces updateParticipantCohorts()
      * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
+    public void updateParticipantVisits(User user, @NotNull Collection<DatasetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants,
                                         @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired,
                                         boolean isSpecimenImport, @Nullable Logger logger)
     {
@@ -376,7 +376,7 @@ public abstract class VisitManager
      * Return a map mapping the minimum value of a visit to the visit.
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
      */
-    private TreeMap<Double, VisitImpl> getVisitSequenceMap()
+    private TreeMap<Double, VisitImpl> getVisitSequenceMapOld()
     {
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<Double, VisitImpl> visitMap = new TreeMap<>();
@@ -389,7 +389,7 @@ public abstract class VisitManager
     public VisitImpl findVisitBySequence(double seq)
     {
         if (_sequenceMap == null)
-            _sequenceMap = getVisitSequenceMap();
+            _sequenceMap = getVisitSequenceMapOld();
 
         if (_sequenceMap.containsKey(seq))
             return _sequenceMap.get(seq);
@@ -411,7 +411,7 @@ public abstract class VisitManager
      * Return a map mapping the minimum value of a visit to the visit.
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
      */
-    private TreeMap<BigDecimal, VisitImpl> getVisitSequenceMapNew()
+    private TreeMap<BigDecimal, VisitImpl> getVisitSequenceMap()
     {
         List<VisitImpl> visits = getStudy().getVisits(Visit.Order.DISPLAY);
         TreeMap<BigDecimal, VisitImpl> visitMap = new TreeMap<>();
@@ -422,13 +422,13 @@ public abstract class VisitManager
 
     public Collection<VisitImpl> getVisits()
     {
-        return getVisitSequenceMapNew().values();
+        return getVisitSequenceMap().values();
     }
 
     public VisitImpl findVisitBySequence(BigDecimal seq)
     {
         if (_sequenceMapNew == null)
-            _sequenceMapNew = getVisitSequenceMapNew();
+            _sequenceMapNew = getVisitSequenceMap();
 
         if (_sequenceMapNew.containsKey(seq))
             return _sequenceMapNew.get(seq);
@@ -440,7 +440,8 @@ public abstract class VisitManager
         // v will be null only if we already searched for seq and didn't find it
         if (null == v)
             return null;
-        if (!(v.getSequenceNumMinDouble() <= seq.doubleValue() && seq.doubleValue() <= v.getSequenceNumMaxDouble()))
+
+        if (!(v.getSequenceNumMin().compareTo(seq) <= 0 && seq.compareTo(v.getSequenceNumMax()) <= 0))
             v = null;
         _sequenceMapNew.put(seq, v);
         return v;
@@ -461,8 +462,8 @@ public abstract class VisitManager
         SQLFragment sql = new SQLFragment("SELECT * FROM ");
         sql.append(visitTable, "vt");
         sql.append(" WHERE SequenceNumMax >= ? AND SequenceNumMin <= ? AND Container = ? AND RowId <> ?");
-        sql.add(visit.getSequenceNumMinDouble());
-        sql.add(visit.getSequenceNumMaxDouble());
+        sql.add(visit.getSequenceNumMin());
+        sql.add(visit.getSequenceNumMax());
         sql.add(visit.getContainer());
         sql.add(visit.getRowId()); // exclude the specified visit itself; new visits will have a rowId of 0, which shouldn't conflict
 

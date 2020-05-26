@@ -17,7 +17,8 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -27,6 +28,7 @@ import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.DirectoryResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Path;
 
 import java.io.File;
@@ -43,12 +45,12 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 public class ModuleResourceResolver implements Resolver
 {
     private static final Logger LOG = Logger.getLogger(ModuleResourceResolver.class);
-    private static final BlockingStringKeyCache<Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
+    private static final BlockingCache<String, Resource> CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Module resources", null);
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get();
 
     // This ends up one per module; Consider: single static set to track all registered listeners?
     private final Set<Path> _pathsWithListeners = new ConcurrentHashSet<>();
-    private final Module _module;
+    private final String _moduleName;
     private final DirectoryResource _root;
     private final CacheLoader<String, Resource> RESOURCE_LOADER = (key, argument) -> {
         Path normalized = (Path)argument;
@@ -66,9 +68,15 @@ public class ModuleResourceResolver implements Resolver
         return r;
     };
 
+    static
+    {
+        // Need to clear resource caches when modules change. See #40250
+        ContextListener.addModuleChangeListener(m -> m.getModuleResolver().clear());
+    }
+
     ModuleResourceResolver(Module module, File dir)
     {
-        _module = module;
+        _moduleName = module.getName();
         _root = new DirectoryResource(this, Path.emptyPath, dir);
     }
 
@@ -103,16 +111,18 @@ public class ModuleResourceResolver implements Resolver
     // Clear all resources from the cache for just this module
     public void clear()
     {
-        String prefix = _module.getName();  // Remove all entries having a key that starts with this module name
-        CACHE.removeUsingPrefix(prefix);
+        // Remove all entries having a key that starts with this module name
+        CACHE.removeUsingFilter(new Cache.StringPrefixFilter(_moduleName));
         DirectoryResource.clearResourceCache(this);
     }
 
+    @Override
     public Path getRootPath()
     {
         return Path.emptyPath;
     }
 
+    @Override
     @Nullable
     public Resource lookup(Path path)
     {
@@ -120,7 +130,7 @@ public class ModuleResourceResolver implements Resolver
             return null;
 
         Path normalized = path.normalize();
-        String cacheKey = _module.getName() + ":" + normalized;
+        String cacheKey = _moduleName + ":" + normalized;
 
         return CACHE.get(cacheKey, normalized, RESOURCE_LOADER);
     }
@@ -144,23 +154,23 @@ public class ModuleResourceResolver implements Resolver
     protected boolean filter(String p)
     {
         return //p.equalsIgnoreCase("META-INF") ||
-                p.equalsIgnoreCase("WEB-INF") ||
-                p.equals("web") ||
-                p.equals("webapp") ||
-                p.startsWith(".");
+            p.equalsIgnoreCase("WEB-INF") ||
+            p.equals("web") ||
+            p.equals("webapp") ||
+            p.startsWith(".");
     }
 
     public String toString()
     {
-        return _module.getName();
+        return _moduleName;
     }
 
     public Module getModule()
     {
-        return _module;
+        return ModuleLoader.getInstance().getModule(_moduleName);
     }
 
-    public class ModuleResourceResolverListener implements FileSystemDirectoryListener
+    private class ModuleResourceResolverListener implements FileSystemDirectoryListener
     {
         @Override
         public void entryCreated(java.nio.file.Path directory, java.nio.file.Path entry)
@@ -177,7 +187,16 @@ public class ModuleResourceResolver implements Resolver
         {
             LOG.debug(entry + " deleted");
             java.nio.file.Path nioPath = directory.resolve(entry);
-            _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            if (Files.isDirectory(nioPath))
+                _pathsWithListeners.remove(_root.getRelativePath(nioPath));
+            clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
+        }
+
+        @Override
+        public void directoryDeleted(java.nio.file.Path directory)
+        {
+            LOG.debug("Directory " + directory + " deleted");
+            _pathsWithListeners.remove(_root.getRelativePath(directory));
             clear(); // Clear all resources and children in this module. A bit heavy-handed, but attempts at targeted approaches have been wrong.
         }
 

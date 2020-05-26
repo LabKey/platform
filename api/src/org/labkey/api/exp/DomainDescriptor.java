@@ -21,11 +21,14 @@ import org.labkey.api.data.BuilderObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UnexpectedException;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Bean class for domains (persisted in exp.DomainDescriptor). Most code shouldn't use this class directly, but should
@@ -56,6 +59,9 @@ public final class DomainDescriptor
     private final Container _project;
     private final int _titlePropertyId;
     private final TemplateInfo _templateInfo;
+
+    /* DomainDescriptors are cached, but DomainImpl is not, so cache DomainKind here on DomainDescriptor */
+    private DomainKind<?> _domainKind;
 
     // for StorageProvisioner (currently assuming labkey scope)
     private final String _storageTableName;
@@ -142,6 +148,13 @@ public final class DomainDescriptor
             _titlePropertyId = 0;
 
         _templateInfo = null;
+    }
+
+    public synchronized DomainKind<?> getDomainKind()
+    {
+        if (null == _domainKind)
+            _domainKind = PropertyService.get().getDomainKind(_domainURI);
+        return _domainKind;
     }
 
     public DomainDescriptor.Builder edit()
@@ -231,6 +244,7 @@ public final class DomainDescriptor
         return Integer.valueOf(getDomainId()).hashCode();
     }
 
+    /** Compares just the IDs */
     @Override
     public boolean equals(Object obj)
     {
@@ -242,6 +256,21 @@ public final class DomainDescriptor
 
         // two domain descriptors are equal if they have the same row ID:
         return ((DomainDescriptor) obj).getDomainId() == getDomainId();
+    }
+
+    /** Compare all persisted properties */
+    public boolean deepEquals(DomainDescriptor d)
+    {
+        return (d.getDomainId() == 0 || Objects.equals(getDomainId(), d.getDomainId())) &&
+                Objects.equals(getName(), d.getName()) &&
+                Objects.equals(getStorageTableName(), d.getStorageTableName()) &&
+                Objects.equals(getStorageSchemaName(), d.getStorageSchemaName()) &&
+                Objects.equals(getProject(), d.getProject()) &&
+                Objects.equals(getTitlePropertyId(), d.getTitlePropertyId()) &&
+                Objects.equals(getDomainURI(), d.getDomainURI()) &&
+                Objects.equals(getDescription(), d.getDescription()) &&
+                Objects.equals(getContainer(), d.getContainer());
+
     }
 
     public boolean isProvisioned()

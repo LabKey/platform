@@ -80,6 +80,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.HttpUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -129,9 +130,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -152,6 +153,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.Reader;
 import java.io.Writer;
@@ -165,25 +167,7 @@ import java.nio.file.Files;
 import java.nio.file.attribute.FileTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.TimeZone;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -253,44 +237,10 @@ public class DavController extends SpringActionController
         return _webdavresolver;
     }
 
-    // best guess is this a browser vs. a WebDAV client
-    boolean isBrowser()
-    {
-        if ("XMLHttpRequest".equals(getRequest().getHeader("x-requested-with")))
-            return true;
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("Mozilla/") || userAgent.startsWith("Opera/");
-    }
-
-    // best guess is this a browser vs. a WebDAV client
-    boolean isMacFinder()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("WebDAVFS/") && userAgent.contains("Darwin/");
-    }
-
-    boolean isWindowsExplorer()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        if (null == userAgent)
-            return false;
-        return userAgent.startsWith("Microsoft-WebDAV");
-    }
-
-    boolean isChrome()
-    {
-        String userAgent = getRequest().getHeader("User-Agent");
-        return StringUtils.contains(userAgent, "Chrome/") || StringUtils.contains(userAgent, "Chromium/");
-    }
-
     // clients that support following redirects when getting a resource
     boolean supportsGetRedirect()
     {
-        return isBrowser();
+        return HttpUtil.isBrowser(getRequest());
     }
 
 
@@ -431,17 +381,38 @@ public class DavController extends SpringActionController
         return config;
     }
 
-
-    private class WebdavResponse
+    private class WebdavResponse extends HttpServletResponseWrapper
     {
-        private HttpServletResponse _response;
         private WebdavStatus _status = null;
-        private String _message = null;
         private boolean _sendError = false;
 
         WebdavResponse(HttpServletResponse response)
         {
-            _response = response;
+            super(response);
+        }
+
+        @Override
+        public HttpServletResponse getResponse()
+        {
+            return (HttpServletResponse)super.getResponse();
+        }
+
+        @Override
+        public void sendError(int code)
+        {
+            sendError(WebdavStatus.fromCode(code));
+        }
+
+        @Override
+        public void sendError(int sc, String msg) throws IOException
+        {
+            sendError(WebdavStatus.fromCode(sc), msg);
+        }
+
+        @Override
+        public void setStatus(int code)
+        {
+            setStatus(WebdavStatus.fromCode(code));
         }
 
         WebdavStatus sendError(WebdavStatus status)
@@ -469,11 +440,13 @@ public class DavController extends SpringActionController
             try
             {
                 if (null == StringUtils.trimToNull(message))
-                    _response.sendError(status.code);
+                {
+                    super.sendError(status.code);
+                }
                 else
                 {
                     String accept = StringUtils.join(getRequest().getHeader("Accept"), "," , getRequest().getParameter("Accept"));
-                    if(CONTENT_TYPE_JSON.equals(getRequest().getHeader("Content-Type")) ||
+                    if (CONTENT_TYPE_JSON.equals(getRequest().getHeader("Content-Type")) ||
                             accept.contains(CONTENT_TYPE_JSON))
                     {
                         JSONObject o = new JSONObject();
@@ -482,22 +455,22 @@ public class DavController extends SpringActionController
                         o.put("exception", message);
                         // if this is a multi-part post, it's probably really a background ext form, respond in an ext compatible way
                         if (!"XMLHttpRequest".equals(getRequest().getHeader("X-Requested-With")) &&
-                                "post".equals(getViewContext().getActionURL().getAction()) &&
+                                isPost() &&
                                 getRequest() instanceof MultipartHttpServletRequest)
                         {
-                            _response.setHeader("Content-Type", "text/html");
-                            _response.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
+                            super.setHeader("Content-Type", "text/html");
+                            super.getWriter().write("<html><body><textarea>" + o.toString() + "</textarea></body></html>");
                         }
                         else
                         {
-                            _response.setHeader("Content-Type", CONTENT_TYPE_JSON);
-                            _response.getWriter().write(o.toString());
-                            _response.setStatus(HttpServletResponse.SC_OK);
+                            super.setHeader("Content-Type", CONTENT_TYPE_JSON);
+                            super.getWriter().write(o.toString());
+                            super.setStatus(HttpServletResponse.SC_OK);
                         }
                     }
                     else
                     {
-                        _response.sendError(status.code, message);
+                        super.sendError(status.code, message);
                     }
                 }
                 _status = status;
@@ -518,7 +491,7 @@ public class DavController extends SpringActionController
             assert _status == null || (200 <= _status.code && _status.code < 300);
             try
             {
-                _response.setStatus(status.code);
+                super.setStatus(status.code);
             }
             catch (Exception x)
             {
@@ -528,118 +501,120 @@ public class DavController extends SpringActionController
             return status;
         }
 
-        WebdavStatus getStatus()
+        @Override
+        public int getStatus()
+        {
+            if (_status != null)
+                return _status.code;
+
+            return HttpServletResponse.SC_OK;
+        }
+
+        WebdavStatus getWebdavStatus()
         {
             return _status;
         }
 
-        String getMessage()
-        {
-            return _message;
-        }
-
         void setPublicStatic(int days)
         {
-            ResponseHelper.setPublicStatic(_response, days);
+            ResponseHelper.setPublicStatic(this.getResponse(), days);
         }
 
         void setContentEncoding(String value)
         {
-            _response.setHeader("Content-Encoding", value);
-            _response.addHeader("Vary", "Accept-Encoding");
+            super.setHeader("Content-Encoding", value);
+            super.addHeader("Vary", "Accept-Encoding");
         }
 
         void setCacheForUserOnly()
         {
-            ResponseHelper.setPrivate(_response);
+            ResponseHelper.setPrivate(this.getResponse());
         }
 
         void setContentDisposition(String value)
         {
-            _response.setHeader("Content-Disposition", value);
+            super.setHeader("Content-Disposition", value);
         }
 
-        void  setContentType(String contentType)
+        @Override
+        public void setContentType(String contentType)
         {
-            _response.setContentType(contentType);
+            super.setContentType(contentType);
         }
 
         void setContentLength(long contentLength)
         {
             if (contentLength < Integer.MAX_VALUE)
             {
-                _response.setContentLength((int)contentLength);
+                super.setContentLength((int)contentLength);
             }
             else
             {
                 // Set the content-length as String to be able to use a long
-                _response.setHeader("content-length", "" + contentLength);
+                super.setHeader("content-length", "" + contentLength);
             }
         }
 
         void setContentRange(long fileLength)
         {
-            _response.addHeader("Content-Range", "bytes */" + fileLength);
+            super.addHeader("Content-Range", "bytes */" + fileLength);
         }
 
         void addContentRange(Range range)
         {
-            _response.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
+            super.addHeader("Content-Range", "bytes "+ range.start + "-" + range.end + "/" + range.length);
         }
 
 
         void setEntityTag(String etag)
         {
-            _response.setHeader("ETag", etag);
+            super.setHeader("ETag", etag);
         }
 
         void setLastModified(long d)
         {
-            _response.setHeader("Last-Modified", getHttpDateFormat(d));
+            super.setHeader("Last-Modified", getHttpDateFormat(d));
         }
 
         void addLockToken(String lockToken)
         {
-            _response.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
+            super.addHeader("Lock-Token", "<opaquelocktoken:" + lockToken + ">");
         }
 
         void setMethodsAllowed(CharSequence methods)
         {
-            _response.addHeader("Allow", methods.toString());
+            super.addHeader("Allow", methods.toString());
         }
 
         void addOptionsHeaders()
         {
-            _response.addHeader("DAV", "1,2");
-            _response.addHeader("MS-Author-Via", "DAV");
+            super.addHeader("DAV", "1,2");
+            super.addHeader("MS-Author-Via", "DAV");
         }
 
         void setRealm(String realm)
         {
-            _response.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
+            super.setHeader("WWW-Authenticate", "Basic realm=\"" + realm  + "\"");
         }
 
         void setLocation(String value)
         {
-            _response.setHeader("Location", value);
+            super.setHeader("Location", value);
         }
 
-        ServletOutputStream getOutputStream() throws IOException
-        {
-            return _response.getOutputStream();
-        }
-        
+
         StringBuilder sbLogResponse = new StringBuilder();
 
-        Writer getWriter() throws IOException
+        @Override
+        public PrintWriter getWriter() throws IOException
         {
-            Writer responseWriter = _response.getWriter();
+            PrintWriter responseWriter = super.getWriter();
             assert track(responseWriter);
 
             if (!_log.isDebugEnabled())
                 return responseWriter;
 
-            FilterWriter f = new java.io.FilterWriter(responseWriter)
+            PrintWriter p = new PrintWriter(new FilterWriter(responseWriter)
             {
                 @Override
                 public void write(int c) throws IOException
@@ -680,9 +655,9 @@ public class DavController extends SpringActionController
                     super.close();
                     assert untrack(out);
                 }
-            };
-            assert track(f);
-            return f;
+            });
+            assert track(p);
+            return p;
         }
     }
 
@@ -740,7 +715,7 @@ public class DavController extends SpringActionController
 
 //                    _log.info("DoMethod " + method + " " + getResourcePath());    // TODO TEMP logging
                     WebdavStatus ret = doMethod();
-                    assert null != ret || getResponse().getStatus() != null;
+                    assert null != ret || getResponse().getWebdavStatus() != null;
                     if (null != ret && 200 <= ret.code && ret.code < 300)
                         getResponse().setStatus(ret);
                 }
@@ -770,14 +745,17 @@ public class DavController extends SpringActionController
                 {
                     getResponse().sendError(WebdavStatus.SC_FORBIDDEN, resourcePath);
                 }
-                else if ("GET".equals(method) && isBrowser())
+                else if ("GET".equals(method) && HttpUtil.isBrowser(getRequest()))
                 {
                     getResponse().setStatus(WebdavStatus.SC_MOVED_TEMPORARILY);
                     getResponse().setLocation(getLoginURL().getEncodedLocalURIString());
                 }
                 else
                 {
-                    getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
+                    if (!HttpUtil.isBrowser(getRequest()))
+                    {
+                        getResponse().setRealm(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription());
+                    }
                     getResponse().sendError(WebdavStatus.SC_UNAUTHORIZED, resourcePath);
                 }
             }
@@ -806,10 +784,9 @@ public class DavController extends SpringActionController
             {
                 if (getResponse().sbLogResponse.length() > 0)
                     _log.debug(getResponse().sbLogResponse);
-                WebdavStatus status = getResponse().getStatus();
-                String message = getResponse().getMessage();
+                WebdavStatus status = getResponse().getWebdavStatus();
                 _log.debug("<<<< " + (status != null ? status.code : 0) + " " +
-                        StringUtils.defaultString(message, null != status ? status.message : "") + " " +
+                        (null != status ? status.message : "") + " " +
                         DateUtil.formatDuration(System.currentTimeMillis()-start));
             }
 
@@ -1187,7 +1164,7 @@ public class DavController extends SpringActionController
 
             try
             {
-                CSRFUtil.validate(getRequest(), getResponse()._response);
+                CSRFUtil.validate(getRequest(), getResponse());
             }
             catch (CSRFException ex)
             {
@@ -1860,15 +1837,7 @@ public class DavController extends SpringActionController
 
                 resourceWriter.sendData();
             }
-            catch (ConfigurationException x)
-            {
-                throw x;
-            }
-            catch (IOException x)
-            {
-                throw x;
-            }
-            catch (DavException x)
+            catch (ConfigurationException | IOException | DavException | CloudStoreService.ServiceException x)
             {
                 throw x;
             }
@@ -1880,13 +1849,15 @@ public class DavController extends SpringActionController
             {
                 if (resourceWriter != null)
                 {
-                    try {
-                        resourceWriter.endResponse();
-                        resourceWriter.sendData();
-                    }
-                    catch (Exception e) { }
+                    resourceWriter.endResponse();
                 }
             }
+
+            try
+            {
+                resourceWriter.sendData();
+            }
+            catch (Exception ignored) { }
 
             close(writer, "response writer");
             return WebdavStatus.SC_MULTI_STATUS;
@@ -2150,18 +2121,6 @@ public class DavController extends SpringActionController
                     xml.writeProperty(null, "iconFontCls", resource.getIconFontCls());
 
                     xml.writeProperty(null, "source", "");
-
-//					 String supportedLocks = "<lockentry>"
-//								+ "<lockscope><exclusive/></lockscope>"
-//								+ "<locktype><write/></locktype>"
-//								+ "</lockentry>" + "<lockentry>"
-//								+ "<lockscope><shared/></lockscope>"
-//								+ "<locktype><write/></locktype>"
-//								+ "</lockentry>";
-//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.OPENING);
-//					 generatedXML.writeText(supportedLocks);
-//					 generatedXML.writeElement(null, "supportedlock", XMLWriter.CLOSING);
-//					 generateLockDiscovery(resource.getPath(), generatedXML);
 
                     xml.writeElement(null, "prop", XMLWriter.CLOSING);
                     xml.writeElement(null, "status", XMLWriter.OPENING);
@@ -3171,7 +3130,7 @@ public class DavController extends SpringActionController
                 if (!overwrite)
                 {
                     // allow finder to overwrite zero byte files without overwrite header
-                    boolean finderException = isMacFinder() && 0 == resource.getContentLength();
+                    boolean finderException = HttpUtil.isMacFinder(getRequest()) && 0 == resource.getContentLength();
                     if (!finderException)
                         throw new DavException(WebdavStatus.SC_FILE_MATCH, "Cannot overwrite file");
                 }
@@ -3292,6 +3251,10 @@ public class DavController extends SpringActionController
     {
         Date lastModified = null;
         String lastModifiedHeader = getRequest().getHeader("X-LABKEY-Last-Modified");
+        if (lastModifiedHeader == null)
+        {
+            lastModifiedHeader = getRequest().getParameter("X-LABKEY-Last-Modified");
+        }
         if (lastModifiedHeader != null)
         {
             try
@@ -3618,7 +3581,7 @@ public class DavController extends SpringActionController
             checkReadOnly();
             checkLocked();
 
-            if (!isWindowsExplorer())
+            if (!HttpUtil.isWindowsExplorer(getRequest()))
             {
                 throw new DavException(WebdavStatus.SC_METHOD_NOT_ALLOWED);
             }
@@ -3838,6 +3801,11 @@ public class DavController extends SpringActionController
                 }
             }
 
+            //Remember source children prior to move so we can remove from index. Issue #39696
+            Collection<? extends WebdavResource> movedChildren = null;
+            if (src.isCollection())
+                movedChildren = src.list();
+
             // File based
             File srcFile = src.getFile();
             File destFile = dest.getFile();
@@ -3903,7 +3871,7 @@ public class DavController extends SpringActionController
             }
             else
             {
-                fireFileMovedEvent(dest, src);
+                fireFileMovedEvent(dest, src, movedChildren);
             }
 
             // Removing any lock-null resource which would be present at
@@ -3914,7 +3882,7 @@ public class DavController extends SpringActionController
         }
     }
 
-    private void fireFileMovedEvent(WebdavResource dest, WebdavResource src)
+    private void fireFileMovedEvent(@NotNull WebdavResource dest, @NotNull WebdavResource src, @Nullable Collection<? extends WebdavResource> movedChildren)
     {
         long start = System.currentTimeMillis();
         src.notify(getViewContext(), null == dest.getFile() ? "deleted" : "deleted: moved to " + dest.getFile().getPath());
@@ -3930,10 +3898,15 @@ public class DavController extends SpringActionController
         }
 
         removeFromIndex(src);
+        if (movedChildren != null)
+            movedChildren.forEach(this::removeFromIndex);
+
         addToIndex(dest);
+        if (dest.isCollection() && dest.list() != null)
+            dest.list().forEach(this::addToIndex);
+
         _log.debug("fireFileMovedEvent: " + DateUtil.formatDuration(System.currentTimeMillis() - start));
     }
-
 
     boolean isSafeCopy(WebdavResource src, WebdavResource dest)
     {
@@ -4714,7 +4687,7 @@ public class DavController extends SpringActionController
         // force non browsers to log-in, except windowsexplorer over http (avoid cryptic "appears to be invalid" message)
         //if (isWindowsExplorer() && "http".equals(getRequest().getScheme()))
         //    return;
-        if (!isBrowser())
+        if (!HttpUtil.isBrowser(getRequest()))
             throw new UnauthorizedException(r);
     }
 
@@ -4963,7 +4936,8 @@ public class DavController extends SpringActionController
 
         // ETag header
         // NOTE it is better to use an older etag and newer content, than vice-versa
-        getResponse().setEntityTag(resource.getETag(true));
+        String eTag = resource.getETag(true);
+        getResponse().setEntityTag(eTag);
 
         // Last-Modified header
         long modified = resource.getLastModified();
@@ -4992,7 +4966,7 @@ public class DavController extends SpringActionController
         }
 
         // Check if the conditions specified in the optional If headers are satisfied.
-        if (!checkIfHeaders(resource))
+        if (!ResponseHelper.checkIfHeaders(getRequest(), getResponse(), eTag, modified))
             return null;
 
         String contentDisposition = getRequest().getParameter("contentDisposition");
@@ -5005,7 +4979,7 @@ public class DavController extends SpringActionController
             try
             {
                 // https://bugs.chromium.org/p/chromium/issues/detail?id=1503
-                if (isChrome())
+                if (HttpUtil.isChrome(getRequest()))
                 {
                     Path requestPath = new URLHelper(getRequest().getRequestURI()).getParsedPath();
                     getResponse().setContentDisposition(contentDisposition + "; filename=" + requestPath.getName());
@@ -5333,8 +5307,6 @@ public class DavController extends SpringActionController
             String path = trimToEmpty(url.getParameter("path"));
             if (path == null || path.length() == 0)
                 path = "/";
-            if (path.equals(""))
-                path = "/";
             _urlResourcePathStr = path;
         }
         if (!_urlResourcePathStr.startsWith("/"))
@@ -5348,14 +5320,12 @@ public class DavController extends SpringActionController
         if (null == _resourcePath)
         {
             String str = getUrlResourcePathStr();
-            if (null == str)
-                return Path.rootPath;
             Path p = Path.parse(str).normalize();
             Path urlDirectory = p.isDirectory() ? p : p.getParent();
             if (StringUtils.equalsIgnoreCase("GET",getViewContext().getActionURL().getAction()))
             {
-            String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
-            if (null != filename)
+                String filename = StringUtils.trimToNull(getRequest().getParameter("filename"));
+                if (null != filename)
                 {
                     if (!p.isDirectory())
                     {
@@ -5468,8 +5438,7 @@ public class DavController extends SpringActionController
         // some user agents incorrectly double encode!  check here
         if (destinationPath.contains("%") && StringUtils.contains(request.getHeader("User-Agent"),"cadaver"))
         {
-            Resource r = null;
-            r = resolvePath(path);
+            Resource r = resolvePath(path);
             if (null == r || r instanceof WebdavResolverImpl.UnboundResource)
             {
                 String decodeAgain = PageFlowUtil.decode(destinationPath);
@@ -5557,180 +5526,6 @@ public class DavController extends SpringActionController
     }
 
 
-    /**
-     * Check if the conditions specified in the optional If headers are
-     * satisfied.
-     *
-     * @param resource
-     * @return boolean true if the resource meets all the specified conditions,
-     *         and false if any of the conditions is not satisfied, in which case
-     *         request processing is stopped
-     */
-    private boolean checkIfHeaders(WebdavResource resource)
-            throws DavException
-    {
-        return checkIfMatch(resource)
-                && checkIfModifiedSince(resource)
-                && checkIfNoneMatch(resource)
-                && checkIfUnmodifiedSince(resource);
-    }
-
-    /**
-     * Check if the if-match condition is satisfied.
-     *
-     * @param resource
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfMatch(WebdavResource resource)
-    {
-        String headerValue = getRequest().getHeader("If-Match");
-        if (headerValue != null)
-        {
-            String eTag = resource.getETag();
-            if (headerValue.indexOf('*') == -1)
-            {
-                StringTokenizer commaTokenizer = new StringTokenizer
-                        (headerValue, ",");
-                boolean conditionSatisfied = false;
-
-                while (!conditionSatisfied && commaTokenizer.hasMoreTokens())
-                {
-                    String currentToken = commaTokenizer.nextToken();
-                    if (currentToken.trim().equals(eTag))
-                        conditionSatisfied = true;
-                }
-
-                // If none of the given ETags match, 412 Precondition failed is
-                // sent back
-                if (!conditionSatisfied)
-                {
-                    getResponse().sendError(WebdavStatus.SC_PRECONDITION_FAILED);
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-modified-since condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfModifiedSince(WebdavResource resource)
-    {
-        try
-        {
-            long headerValue = getRequest().getDateHeader("If-Modified-Since");
-            if (headerValue != -1)
-            {
-                // If an If-None-Match header has been specified, if modified since
-                // is ignored.
-                if ((getRequest().getHeader("If-None-Match") == null))
-                {
-                    long lastModified = resource.getLastModified();
-                    if (lastModified < headerValue + 1000)
-                    {
-                    // The entity has not been modified since the date
-                    // specified by the client. This is not an error case.
-                    getResponse().setEntityTag(resource.getETag());
-                    getResponse().setStatus(WebdavStatus.SC_NOT_MODIFIED);
-                    return false;
-                    }
-                }
-            }
-        }
-        catch (IllegalArgumentException illegalArgument)
-        {
-            return true;
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-none-match condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfNoneMatch(WebdavResource resource) throws DavException
-    {
-        String headerValue = getRequest().getHeader("If-None-Match");
-        if (headerValue != null)
-        {
-            boolean conditionSatisfied = false;
-
-            if (!headerValue.equals("*"))
-            {
-                String eTag = resource.getETag();
-                StringTokenizer commaTokenizer = new StringTokenizer(headerValue, ",");
-                while (!conditionSatisfied && commaTokenizer.hasMoreTokens())
-                {
-                    String currentToken = commaTokenizer.nextToken();
-                    if (currentToken.trim().equals(eTag))
-                        conditionSatisfied = true;
-                }
-            }
-            else
-            {
-                conditionSatisfied = true;
-            }
-
-            if (conditionSatisfied)
-            {
-                // For GET and HEAD, we should respond with
-                // 304 Not Modified.
-                // For every other method, 412 Precondition Failed is sent
-                // back.
-                if (("GET".equals(getRequest().getMethod())) || ("HEAD".equals(getRequest().getMethod())))
-                {
-                    getResponse().setStatus(WebdavStatus.SC_NOT_MODIFIED);
-                    getResponse().setEntityTag(resource.getETag());
-                    return false;
-                }
-                else
-                {
-                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
-                }
-            }
-        }
-        return true;
-    }
-
-
-    /**
-     * Check if the if-unmodified-since condition is satisfied.
-     *
-     * @return boolean true if the resource meets the specified condition,
-     *         and false if the condition is not satisfied, in which case request
-     *         processing is stopped
-     */
-    private boolean checkIfUnmodifiedSince(WebdavResource resource) throws DavException
-    {
-        try
-        {
-            long headerValue = getRequest().getDateHeader("If-Unmodified-Since");
-            if (headerValue != -1)
-            {
-                long lastModified = resource.getLastModified();
-                if (lastModified >= (headerValue + 1000))   // UNDONE: why the +1000???
-                    throw new DavException(WebdavStatus.SC_PRECONDITION_FAILED);
-            }
-        }
-        catch (IllegalArgumentException illegalArgument)
-        {
-            return true;
-        }
-        return true;
-    }
-
 
     boolean getOverwriteParameter(boolean defaultOverwrite)
     {
@@ -5794,8 +5589,8 @@ public class DavController extends SpringActionController
         {
             range.start = Long.parseLong(rangeHeader.substring(0, dashPos));
             range.end = Long.parseLong(rangeHeader.substring(dashPos + 1, slashPos));
-            if (!"*".equals(rangeHeader.substring(slashPos + 1, rangeHeader.length())))
-                range.length = Long.parseLong(rangeHeader.substring(slashPos + 1, rangeHeader.length()));
+            if (!"*".equals(rangeHeader.substring(slashPos + 1)))
+                range.length = Long.parseLong(rangeHeader.substring(slashPos + 1));
         }
         catch (NumberFormatException e)
         {
@@ -5927,7 +5722,7 @@ public class DavController extends SpringActionController
                 {
                     currentRange.start = Long.parseLong(rangeDefinition.substring(0, dashPos));
                     if (dashPos < rangeDefinition.length() - 1)
-                        currentRange.end = Long.parseLong(rangeDefinition.substring(dashPos + 1, rangeDefinition.length()));
+                        currentRange.end = Long.parseLong(rangeDefinition.substring(dashPos + 1));
                     else
                         currentRange.end = fileLength - 1;
                 }
@@ -6215,9 +6010,6 @@ public class DavController extends SpringActionController
     /**
      * Holds a lock information.
      */
-    /**
-     * Holds a lock information.
-     */
     private class LockInfo
     {
         public LockInfo()
@@ -6234,7 +6026,7 @@ public class DavController extends SpringActionController
         String scope = "exclusive";
         int depth = 0;
         String owner = "";
-        final List<String> tokens = Collections.synchronizedList(new ArrayList<String>());
+        final List<String> tokens = Collections.synchronizedList(new ArrayList<>());
         long expiresAt = 0;
         final Date creationDate = new Date();
 
@@ -6411,7 +6203,7 @@ public class DavController extends SpringActionController
     private class ReadAheadInputStream extends FilterInputStream
     {
         ByteArrayOutputStream bos = null;
-        InputStream is = null;
+        InputStream is;
 
         ReadAheadInputStream(InputStream is) throws IOException
         {
@@ -6759,12 +6551,7 @@ public class DavController extends SpringActionController
                 f.setAccessible(true);
                 inner = (HttpSession)f.get(facade);
             }
-            catch (NoSuchFieldException x)
-            {
-            }
-            catch (IllegalAccessException x)
-            {
-            }
+            catch (NoSuchFieldException | IllegalAccessException ignored) {}
             if (null == inner)
                 inner = facade;
             Method access = null;
@@ -6774,9 +6561,7 @@ public class DavController extends SpringActionController
                 access = inner.getClass().getMethod("access");
                 endAccess = inner.getClass().getMethod("endAccess");
             }
-            catch (NoSuchMethodException x)
-            {
-            }
+            catch (NoSuchMethodException ignored) {}
             if (null == access || null == endAccess)
                 return in;
             return new SessionKeepAliveFilter(in, inner, access, endAccess);
@@ -6809,14 +6594,7 @@ public class DavController extends SpringActionController
                     accessMethod.invoke(session);
                     endAccessMethod.invoke(session);
                 }
-                catch (IllegalAccessException x)
-                {
-
-                }
-                catch (InvocationTargetException x)
-                {
-
-                }
+                catch (IllegalAccessException | InvocationTargetException ignored) {}
             }
         }
 

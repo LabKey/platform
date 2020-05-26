@@ -20,6 +20,7 @@ import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.DomainUtil;
@@ -48,7 +49,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         return domain.getName();
     }
 
-    public Domain updateDomain(Container container, User user, GWTDomain<GWTPropertyDescriptor> gwtDomain)
+    public Domain updateDomain(Container container, User user, GWTDomain<GWTPropertyDescriptor> gwtDomain, JSONObject options)
     {
         String domainURI = generateDomainURI(getSchemaName(), gwtDomain.getName(), container, user);
 
@@ -57,8 +58,8 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         updatedDomain.setFields(gwtDomain.getFields());
         updatedDomain.setName(gwtDomain.getName());
 
-        ValidationException errors = updateDomain(existingDomain, updatedDomain, container, user);
-        if(errors.hasErrors())
+        ValidationException errors = updateDomain(existingDomain, updatedDomain, options, container, user, false);
+        if (errors.hasErrors())
         {
             throw new RuntimeException(errors);
         }
@@ -67,7 +68,7 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
     }
 
     @Override
-    public Domain createDomain(GWTDomain gwtDomain, Map<String, Object> arguments, Container container, User user, TemplateInfo templateInfo)
+    public Domain createDomain(GWTDomain gwtDomain, JSONObject arguments, Container container, User user, TemplateInfo templateInfo)
     {
         if (gwtDomain.getName() == null)
             throw new IllegalArgumentException("table name is required");
@@ -76,9 +77,9 @@ public abstract class ExtendedTableDomainKind extends SimpleTableDomainKind
         Domain domain = PropertyService.get().getDomain(container, domainURI);
 
         // First check if this should be an update
-        if( null != domain )
+        if (null != domain)
         {
-            updateDomain(container, user, gwtDomain);
+            updateDomain(container, user, gwtDomain, arguments);
         }
         else
         {

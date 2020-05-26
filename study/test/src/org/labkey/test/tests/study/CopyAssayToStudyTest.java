@@ -22,19 +22,22 @@ import org.junit.experimental.categories.Category;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
+import org.labkey.test.WebTestHelper;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
-import org.labkey.test.pages.AssayDesignerPage;
-import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.components.CustomizeView;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -42,95 +45,6 @@ import static org.junit.Assert.assertTrue;
 @Category({DailyC.class, Assays.class})
 public class CopyAssayToStudyTest extends AbstractAssayTest
 {
-    private final PortalHelper portalHelper = new PortalHelper(this);
-
-    protected static final String TEST_ASSAY = "Test" + TRICKY_CHARACTERS + "Assay1";
-    protected static final String TEST_ASSAY_DESC = "Description for assay 1";
-
-    protected static final String TEST_ASSAY_SET_PROP_EDIT = "NewTargetStudy";
-    protected static final String TEST_ASSAY_SET_PROP_NAME = "testAssaySetProp";
-    protected static final int TEST_ASSAY_SET_PREDEFINED_PROP_COUNT = 2;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_SET_PROP_TYPES = {
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Double,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime
-    };
-    protected static final String[] TEST_ASSAY_SET_PROPERTIES = { "false", "100.0", "200", "2001-10-10" };
-    protected static final String TEST_ASSAY_RUN_PROP_NAME = "testAssayRunProp";
-    protected static final int TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT = 0;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_RUN_PROP_TYPES = {
-            FieldDefinition.ColumnType.String,
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Double,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime,
-            FieldDefinition.ColumnType.File
-    };
-    protected static final String TEST_ASSAY_RUN_PROP1 = "TestRunProp";
-    protected static final String TEST_ASSAY_DATA_PROP_NAME = "testAssayDataProp";
-    protected static final String TEST_ASSAY_DATA_ALIASED_PROP_NAME = "testAssayAliasedData";
-    protected static final String ALIASED_DATA = "aliasedData";
-    public static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_DATA_PROP_TYPES = {
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime,
-            FieldDefinition.ColumnType.String
-    };
-
-    protected static final String TEST_RUN1 = "FirstRun";
-    protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final String TEST_RUN1_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
-            "AAA07XK5-05\t\t\ttrue\t\t2000-01-01\t"+ALIASED_DATA+"\n" +
-            "AAA07XMC-02\t\t\ttrue\t\t2000-02-02\t"+ALIASED_DATA+"\n" +
-            "AAA07XMC-04\t\t\ttrue\t\t2000-03-03\t"+ALIASED_DATA+"\n" +
-            "AAA07XSF-02\t\t\tfalse\t\t2000-04-04\t"+ALIASED_DATA+"\n" +
-            "AssayTestControl1\te\t5\tfalse\t\t2000-05-05\t"+ALIASED_DATA+"\n" +
-            "AssayTestControl2\tf\t6\tfalse\t\t2000-06-06\t"+ALIASED_DATA;
-
-    protected static final String TEST_RUN2 = "SecondRun";
-    protected static final String TEST_RUN2_COMMENTS = "Second comments";
-    protected static final String TEST_RUN2_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "20\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN2_DATA2 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN2_DATA3 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t";
-    protected static final String TEST_RUN2_DATA4 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
-            "1\tj\t1\t\t\t4/4/06";
-
-    protected static final String TEST_RUN3 = "ThirdRun";
-    protected static final String TEST_RUN3_COMMENTS = "Third comments";
-    protected static final String TEST_RUN3_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "BAQ00051-09\tg\t7\ttrue\t20\t2000-01-01\n" +
-            "BAQ00051-08\th\t8\ttrue\t19\t2000-02-02\n" +
-            "BAQ00051-11\ti\t9\ttrue\t18\t2000-03-03\n";
-
-    private static final String INVESTIGATOR = "Dr. No";
-    private static final String GRANT = "SPECTRE";
-    private static final String DESCRIPTION = "World Domination.";
-
-    private final File PROTOCOL_DOC = TestFileUtils.getSampleData("study/Protocol.txt");
-    private final File PROTOCOL_DOC2 = TestFileUtils.getSampleData("study/Protocol2.txt");
-
-    public List<String> getAssociatedModules()
-    {
-        return Arrays.asList("study");
-    }
-
     @Override
     protected String getProjectName()
     {
@@ -160,7 +74,7 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
         setupEnvironment();
         setupPipeline(getProjectName());
         SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(),
-                new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"),
+                StudyHelper.SPECIMEN_ARCHIVE_A,
                 new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer.importAndWaitForComplete();
         defineAssay();
@@ -192,51 +106,6 @@ public class CopyAssayToStudyTest extends AbstractAssayTest
                 "AssayTestControl1", "AssayTestControl2", "BAQ00051-09", "BAQ00051-08", "BAQ00051-11", "1");
 
         assertEquals("expected copied rows should be for ", specimenIds, dataSet.getColumnDataAsText("Specimen ID"));
-    }
-
-    /**
-     * Defines an test assay at the project level for the security-related tests
-     */
-    @LogMethod
-    private void defineAssay()
-    {
-        log("Defining a test assay at the project level");
-        //define a new assay at the project level
-        //the pipeline must already be setup
-        goToProjectHome();
-        portalHelper.addWebPart("Assay List");
-
-        AssayDesignerPage designerPage = _assayHelper.createAssayAndEdit("General", TEST_ASSAY);
-        designerPage.setDescription(TEST_ASSAY_DESC);
-
-        for (int i = TEST_ASSAY_SET_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + TEST_ASSAY_SET_PROP_TYPES.length; i++)
-        {
-            designerPage.addBatchField(TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_TYPES[i - TEST_ASSAY_SET_PREDEFINED_PROP_COUNT]);
-        }
-
-        for (int i = TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT + TEST_ASSAY_RUN_PROP_TYPES.length; i++)
-        {
-            designerPage.addRunField(TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_TYPES[i - TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT]);
-        }
-
-        for (int i = TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + TEST_ASSAY_DATA_PROP_TYPES.length; i++)
-        {
-            designerPage.addDataField(TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_TYPES[i - TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT]);
-        }
-
-        designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
-
-        // Set some to required
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().setRequired(true);
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1).properties().selectValidatorsTab().setRequired(true);
-        designerPage.runFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().setRequired(true);
-
-        // import aliases
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().setImportAliases(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
-
-        designerPage.save();
     }
 
     /**

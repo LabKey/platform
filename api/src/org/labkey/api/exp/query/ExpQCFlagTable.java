@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.query;
 
+import org.labkey.api.assay.AssayProvider;
 import org.labkey.api.exp.api.ExpProtocol;
 
 //Associated with hard table exp.AssayQCFlag
@@ -39,5 +40,5 @@ public interface ExpQCFlagTable extends ExpTable<ExpQCFlagTable.Column>
         Key2
     }
 
-    public void setAssayProtocol(ExpProtocol protocol);
+    public void setAssayProtocol(AssayProvider provider, ExpProtocol protocol);
 }

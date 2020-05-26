@@ -31,7 +31,7 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AbstractActionPermissionTest;
 import org.labkey.api.security.permissions.AdminOperationsPermission;
-import org.labkey.api.security.permissions.AdminReadPermission;
+import org.labkey.api.security.permissions.TroubleShooterPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
@@ -105,7 +105,7 @@ public class StatusController extends SpringActionController
         Container c = getContainer();
         if (c == null || c.isRoot())
         {
-            if (!getUser().hasRootPermission(AdminReadPermission.class))
+            if (!getUser().hasRootPermission(TroubleShooterPermission.class))
             {
                 throw new UnauthorizedException();
             }
@@ -199,9 +199,9 @@ public class StatusController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Data Pipeline");
+            root.addChild("Data Pipeline");
         }
     }
 
@@ -360,10 +360,10 @@ public class StatusController extends SpringActionController
             return result;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Pipeline Jobs", new ActionURL(BeginAction.class, getContainer()));
-            return root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
+            root.addChild(_statusFile == null ? "Job Status" : _statusFile.getDescription());
         }
     }
 
@@ -805,9 +805,9 @@ public class StatusController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Confirm Deletion");
+            root.addChild("Confirm Deletion");
         }
     }
 
@@ -860,9 +860,9 @@ public class StatusController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Escalate Pipeline Job Failure");
+            root.addChild("Escalate Pipeline Job Failure");
         }
     }
 
@@ -1152,7 +1152,7 @@ public class StatusController extends SpringActionController
             throw new RedirectException(new ActionURL(ShowListAction.class, ContainerManager.getRoot()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException();
         }

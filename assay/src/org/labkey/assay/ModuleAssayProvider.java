@@ -131,7 +131,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public ModuleAssayProvider(String name, Module module, Resource basePath, ProviderType providerConfig)
     {
-        super(name + "Protocol", name + "Run", module);
+        super(name + "Protocol", name + "Run", name + RESULT_LSID_PREFIX_PART, module);
         this.name = name;
         this.basePath = basePath;
 
@@ -285,7 +285,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
     public AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol)
     {
         AssayTableMetadata metadata = super.getTableMetadata(protocol);
-        return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName())
+        return new AssayTableMetadata(this, protocol, metadata.getSpecimenDetailParentFieldKey(), metadata.getRunFieldKeyFromResults(), metadata.getResultRowIdFieldKey(), metadata.getDatasetRowIdPropertyName(), metadata.getResultLsidFieldKey())
         {
             @Override
             public FieldKey getParticipantIDFieldKey()

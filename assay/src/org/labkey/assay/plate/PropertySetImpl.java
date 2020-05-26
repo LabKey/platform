@@ -16,17 +16,21 @@
 
 package org.labkey.assay.plate;
 
-import org.labkey.api.study.PropertySet;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.study.PropertySet;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
  * Date: Oct 20, 2006
  * Time: 4:43:49 PM
  */
-public class PropertySetImpl implements PropertySet
+public abstract class PropertySetImpl implements PropertySet
 {
     private Map<String, Object> _properties = new HashMap<>();
     private String _lsid;
@@ -42,27 +46,37 @@ public class PropertySetImpl implements PropertySet
         _container = container;
     }
 
+    @Override
     public Set<String> getPropertyNames()
     {
         return _properties.keySet();
     }
 
 
+    @Override
     public Object getProperty(String name)
     {
         return _properties.get(name);
     }
 
+    @Override
     public void setProperty(String name, Object value)
     {
         _properties.put(name, value);
+    }
+
+    @Override
+    public void setProperties(Map<String, Object> properties)
+    {
+        _properties = new HashMap<>(properties);
     }
 
     public Map<String, Object> getProperties()
     {
         return Collections.unmodifiableMap(_properties);
     }
-    
+
+    @Override
     public String getLSID()
     {
         return _lsid;
@@ -73,6 +87,7 @@ public class PropertySetImpl implements PropertySet
         _lsid = lsid;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;

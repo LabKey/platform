@@ -15,34 +15,46 @@
  */
 package org.labkey.api.exp;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.assay.AssayProtocolSchema;
+import org.labkey.api.assay.AssayProvider;
+import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.ExpObject;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryRowReference;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.settings.AppProps;
-import org.labkey.api.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
+ * Manages instances of {@link LsidHandler} to figure out who owns an LSID and can provide services or UI for its type.
  * User: migra
  * Date: Aug 17, 2005
- * Time: 2:37:30 PM
  */
 public class LsidManager
 {
+    private static Logger LOG = Logger.getLogger(LsidManager.class);
     private static final LsidManager INSTANCE = new LsidManager();
 
     private final Map<String, Map<String, LsidHandler>> _authorityMap = new ConcurrentHashMap<>();
@@ -59,9 +71,9 @@ public class LsidManager
         return INSTANCE;
     }
 
-    public interface LsidHandler
+    public interface LsidHandler<I extends Identifiable>
     {
-        Identifiable getObject(Lsid lsid);
+        I getObject(Lsid lsid);
 
         @Nullable
         ActionURL getDisplayURL(Lsid lsid);
@@ -71,13 +83,13 @@ public class LsidManager
         boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm);
     }
 
-    public abstract static class ExpObjectLsidHandler implements LsidHandler
+    public abstract static class ExpObjectLsidHandler<I extends ExpObject> implements LsidHandler<I>
     {
-        public abstract ExpObject getObject(Lsid lsid);
+        public abstract I getObject(Lsid lsid);
 
         public Container getContainer(Lsid lsid)
         {
-            ExpObject run = getObject(lsid);
+            I run = getObject(lsid);
             return run == null ? null : run.getContainer();
         }
 
@@ -88,7 +100,7 @@ public class LsidManager
         }
     }
 
-    public static class ExpRunLsidHandler extends ExpObjectLsidHandler
+    public static class ExpRunLsidHandler extends ExpObjectLsidHandler<ExpRun>
     {
         public ExpRun getObject(Lsid lsid)
         {
@@ -111,6 +123,117 @@ public class LsidManager
         {
             return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, protocol, run.getRowId());
         }
+    }
+
+    // This is different from ExpObjectLsidHandler in that it supports generic
+    // OntologyObjects that don't fit into the ExpObject class hierarchy.
+    public static class OntologyObjectLsidHandler<I extends IdentifiableBase> implements LsidHandler<I>
+    {
+        @Override
+        public I getObject(Lsid lsid)
+        {
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            return (I)new IdentifiableBase(oo);
+        }
+
+        @Override
+        public final @Nullable ActionURL getDisplayURL(Lsid lsid)
+        {
+            I obj = getObject(lsid);
+            return obj == null ? null : obj.detailsURL();
+        }
+
+        @Override
+        public Container getContainer(Lsid lsid)
+        {
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            return oo.getContainer();
+        }
+
+        @Override
+        public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
+        {
+            Container c = getContainer(lsid);
+            return c != null && c.hasPermission(user, perm);
+        }
+    }
+
+    /**
+     * Represents a single row in the assay results table.
+     */
+    public static class AssayResultIdentifiable extends IdentifiableBase
+    {
+        private final AssayProvider _provider;
+        private final ExpProtocol _protocol;
+        private int _rowId;
+
+        public AssayResultIdentifiable(AssayProvider provider, OntologyObject oo, ExpProtocol protocol, int rowId)
+        {
+            super(oo);
+            _provider = provider;
+
+            Pair<ExpProtocol, Integer> pair = provider.getAssayResultRowIdFromLsid(oo.getContainer(), new Lsid(oo.getObjectURI()));
+            if (pair != null)
+            {
+                _protocol = pair.first;
+                _rowId = pair.second;
+            }
+            else
+            {
+                _protocol = null;
+                _rowId = 0;
+            }
+        }
+
+        @Override
+        public @Nullable ActionURL detailsURL()
+        {
+            var urls = PageFlowUtil.urlProvider(AssayUrls.class);
+            if (urls == null)
+                return null;
+
+            return urls.getAssayResultRowURL(_provider, getContainer(), _protocol, _rowId);
+        }
+
+        @Override
+        public @Nullable QueryRowReference getQueryRowReference()
+        {
+            var schemaKey = AssayProtocolSchema.schemaName(_provider, _protocol);
+            return new QueryRowReference(getContainer(), schemaKey, AssayProtocolSchema.DATA_TABLE_NAME, FieldKey.fromParts("rowId"), _rowId);
+        }
+    }
+
+    public static class AssayResultLsidHandler extends OntologyObjectLsidHandler<AssayResultIdentifiable>
+    {
+        private final AssayProvider _provider;
+
+        public AssayResultLsidHandler(AssayProvider provider)
+        {
+            _provider = provider;
+            assert _provider.getResultRowLSIDPrefix() != null;
+        }
+
+        @Override
+        public AssayResultIdentifiable getObject(Lsid lsid)
+        {
+            assert _provider.getResultRowLSIDPrefix().equals(lsid.getNamespacePrefix());
+            OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
+            if (oo == null)
+                return null;
+
+            Pair<ExpProtocol, Integer> pair = _provider.getAssayResultRowIdFromLsid(oo.getContainer(), lsid);
+            if (pair == null)
+                return null;
+
+            return new AssayResultIdentifiable(_provider, oo, pair.first, pair.second);
+        }
+
     }
 
     public void registerHandlerFinder(LsidHandlerFinder finder)
@@ -237,5 +360,53 @@ public class LsidManager
             return null;
 
         return type.getDisplayURL(lsid);
+    }
+
+    /**
+     * Attempt to resolve all exp.object.ObjectURI within a Container and
+     * list those that are not resolvable.
+     * @return true if all objects in the container can be resolved
+     */
+    public boolean testResolveAll(Container c)
+    {
+        if (ContainerManager.isDeleting(c))
+            return true;
+
+        List<String> objectURIs = new TableSelector(OntologyManager.getTinfoObject(), Set.of("ObjectURI"), SimpleFilter.createContainerFilter(c), new Sort("ObjectId")).getArrayList(String.class);
+        if (objectURIs.isEmpty())
+        {
+            LOG.info("No objects to resolve in container (" + c.getId() + "): " + c.toString());
+            return true;
+        }
+
+        LOG.info("Resolving " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
+
+        int success = 0;
+        int failed = 0;
+        for (String objectURI : objectURIs)
+        {
+            try
+            {
+                Identifiable obj = getObject(objectURI);
+                if (obj == null)
+                {
+                    LOG.warn("Failed to resolve '" + objectURI + "'");
+                    failed++;
+                }
+                else
+                {
+                    LOG.info("Resolved '" + objectURI + "' to object (" + obj.getClass().getSimpleName() + "): " + obj.getName());
+                    success++;
+                }
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error when resolving '" + objectURI + "'", e);
+                failed++;
+            }
+        }
+
+        LOG.info("Resolved " + success + " of " + objectURIs.size() + " LSIDs in container (" + c.getId() + "): " + c.getPath());
+        return failed == 0;
     }
 }

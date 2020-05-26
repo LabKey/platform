@@ -45,6 +45,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.stats.AnalyticsProviderRegistry;
 import org.labkey.api.stats.ColumnAnalyticsProvider;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.HtmlString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
@@ -755,34 +756,40 @@ public class DataRegion extends DisplayElement
         return null == getSettings() ? Collections.emptyMap() : getSettings().getQueryParameters();
     }
 
+    @Deprecated  // Use getResults() instead
+    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
+    {
+        return getResults(ctx);
+    }
+
     /**
-     * Get a ResultSet from the DataRegion.
-     * Has the side-effect of setting the ResultSet and this DataRegion
+     * Get a Results from the DataRegion.
+     * Has the side-effect of setting the Results and this DataRegion
      * on the RenderContext and selecting any aggregates
      * (including the row count aggregate, unless pagination or pagination count are false.)
-     * Callers should check for ReadPermission before requesting a ResultSet.
+     * Callers should check for ReadPermission before requesting a Results.
      *
      * @param ctx The RenderContext
-     * @return A new ResultSet or the existing ResultSet in the RenderContext or null if no READ permission.
+     * @return A new Results or the existing Results in the RenderContext or null if no READ permission.
      * @throws SQLException SQLException
      * @throws IOException  IOException
      */
-    final public Results getResultSet(RenderContext ctx) throws SQLException, IOException
+    final public Results getResults(RenderContext ctx) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission("DataRegion.getResultSet()", ReadPermission.class))
+        if (!ctx.getViewContext().hasPermission("DataRegion.getResults()", ReadPermission.class))
             return null;
 
         DataRegion oldRegion = ctx.getCurrentRegion();
         if (oldRegion != this)
             ctx.setCurrentRegion(this);
 
-        Results rs = null;
+        Results results = null;
         boolean success = false;
 
         try
         {
-            rs = ctx.getResults();
-            if (null == rs)
+            results = ctx.getResults();
+            if (null == results)
             {
                 TableInfo tinfoMain = getTable();
                 if (null == tinfoMain)
@@ -791,13 +798,13 @@ public class DataRegion extends DisplayElement
                 }
                 else
                 {
-                    rs = getResultSet(ctx, isAllowAsync());
+                    results = getResults(ctx, isAllowAsync());
                 }
             }
 
             getAggregateResults(ctx);
             success = true;
-            return rs;
+            return results;
         }
         finally
         {
@@ -805,14 +812,14 @@ public class DataRegion extends DisplayElement
 
             // If getAggregateResults() throws then we won't be returning rs... so close it now
             if (!success)
-                ResultSetUtil.close(rs);
+                ResultSetUtil.close(results);
         }
     }
 
 
-    protected Results getResultSet(RenderContext ctx, boolean async) throws SQLException, IOException
+    protected Results getResults(RenderContext ctx, boolean async) throws SQLException, IOException
     {
-        return ctx.getResultSet(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
+        return ctx.getResults(getSelectColumns(), getDisplayColumns(), getTable(), getSettings(), getQueryParameters(), getMaxRows(), getOffset(), getName(), async);
     }
 
 
@@ -823,9 +830,9 @@ public class DataRegion extends DisplayElement
 
     public Map<String, List<Aggregate.Result>> getAggregateResults(RenderContext ctx) throws IOException
     {
-        Results rs = ctx.getResults();
-        assert rs != null;
-        _complete = rs.isComplete();
+        Results results = ctx.getResults();
+        assert results != null;
+        _complete = results.isComplete();
 
         boolean countAggregate = getMaxRows() > 0 && !_complete && _showPagination && _showPaginationCount;
         countAggregate = countAggregate || (getMaxRows() == Table.ALL_ROWS && getTable() != null);
@@ -968,7 +975,7 @@ public class DataRegion extends DisplayElement
             return;
         }
 
-        ResultSet rs = null;
+        Results results = null;
         try
         {
             boolean showParameterForm = false;
@@ -980,7 +987,7 @@ public class DataRegion extends DisplayElement
                     if (null != t && !t.getNamedParameters().isEmpty() && getQueryParameters().isEmpty())
                         showParameterForm = true;
                     else
-                        rs = getResultSet(ctx);
+                        results = getResults(ctx);
                 }
                 catch (QueryService.NamedParameterNotProvided x)
                 {
@@ -1001,12 +1008,12 @@ public class DataRegion extends DisplayElement
             }
             else
             {
-                _renderTableNew(ctx, out, rs);
+                _renderTableNew(ctx, out, results);
             }
         }
         finally
         {
-            ResultSetUtil.close(rs);
+            ResultSetUtil.close(results);
         }
     }
 
@@ -1809,17 +1816,7 @@ public class DataRegion extends DisplayElement
 
         if (value != null && url != null)
         {
-            Map<String, String> props;
-            if (column.getLinkTarget() != null)
-            {
-                props = Collections.singletonMap("target", column.getLinkTarget());
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-
-            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).attributes(props).toString());
+            out.write(PageFlowUtil.iconLink(iconCls, value.toString()).href(url).target(column.getLinkTarget()).toString());
         }
     }
 
@@ -1952,8 +1949,8 @@ public class DataRegion extends DisplayElement
 
     private void initDetailsResultSet(RenderContext ctx) throws SQLException
     {
-        Results rs = ctx.getResults();
-        if (null != rs)
+        Results results = ctx.getResults();
+        if (null != results)
             return;
 
         TableInfo tinfoMain = getTable();
@@ -2114,9 +2111,9 @@ public class DataRegion extends DisplayElement
 
     protected void renderMainErrors(RenderContext ctx, Writer out) throws IOException
     {
-        String error = ctx.getErrors("main");
+        HtmlString error = ctx.getErrors("main");
         if (null != error)
-            out.write(error);
+            out.write(error.toString());
     }
 
     protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
@@ -2151,7 +2148,7 @@ public class DataRegion extends DisplayElement
             if (renderer.isQueryColumn())
                 col = renderer.getColumnInfo();
 
-            String error = viewForm == null || col == null ? "" : ctx.getErrors(col);
+            String error = viewForm == null || col == null ? "" : ctx.getErrors(col).toString();
             if (error != null && error.length() > 0)
             {
                 errors.add(error);
@@ -2198,7 +2195,7 @@ public class DataRegion extends DisplayElement
 
         if (action == MODE_UPDATE_MULTIPLE)
         {
-            String msg = "This will edit " + StringUtilsLabKey.pluralize(ctx.getForm().getSelectedRows().length, "row");
+            String msg = "This will edit " + StringUtilsLabKey.pluralize(DataRegionSelection.getSelected(ctx.getViewContext(), null, false).size(), "row");
             out.write("<tr><td colspan=\"3\">" + msg + "</td></tr>");
         }
 
@@ -2631,6 +2628,49 @@ public class DataRegion extends DisplayElement
     }
 
     /**
+     * Add a DataRegion message for invalid conditional formats.
+     */
+    private void prepareConditionalFormats(RenderContext ctx)
+    {
+        for (DisplayColumn dc : getDisplayColumns())
+        {
+            String msg = prepareConditionalFormats(dc);
+            if (msg != null)
+                addMessage(new Message(PageFlowUtil.filter(msg), MessageType.WARNING, "filter"));
+        }
+    }
+
+    /**
+     * Check for invalid conditional formats.
+     */
+    private String prepareConditionalFormats(DisplayColumn dc)
+    {
+        ColumnInfo col = dc.getColumnInfo();
+        if (col == null)
+            return null;
+
+        for (ConditionalFormat format : col.getConditionalFormats())
+        {
+            String msg = format.validateFormat(col);
+            if (msg != null)
+                return msg;
+        }
+
+        ColumnInfo displayCol = dc.getDisplayColumnInfo();
+        if (displayCol != null && col != displayCol)
+        {
+            for (ConditionalFormat format : displayCol.getConditionalFormats())
+            {
+                String msg = format.validateFormat(displayCol);
+                if (msg != null)
+                    return msg;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param fieldKey The fieldKey to match a DisplayColumn against.
      * @return DisplayColumn associated with the fieldKey if it is shown in this DataRegion, otherwise, null
      */
@@ -2672,9 +2712,6 @@ public class DataRegion extends DisplayElement
                 int dotIndex = formatted.lastIndexOf('.');
                 if (dotIndex >= 0)
                     formatted = formatted.substring(dotIndex + 1);
-                int slashIndex = formatted.lastIndexOf('/');
-                if (slashIndex >= 0)
-                    formatted = formatted.substring(slashIndex);
                 return formatted;
             }
         });
@@ -2752,6 +2789,7 @@ public class DataRegion extends DisplayElement
         {
             prepareParameters(ctx);
             prepareFilters(ctx);
+            prepareConditionalFormats(ctx);
         }
 
         prepareView(ctx);

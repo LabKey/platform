@@ -20,7 +20,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
-import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -49,6 +48,7 @@ import java.util.Set;
 public class SamplesSchema extends AbstractExpSchema
 {
     public static final String SCHEMA_NAME = "samples";
+    public static final SchemaKey SCHEMA_SAMPLES = SchemaKey.fromParts(SamplesSchema.SCHEMA_NAME);
     public static final String SCHEMA_DESCR = "Contains data about the samples used in experiment runs.";
     static final Logger log = Logger.getLogger(SamplesSchema.class);
 
@@ -73,11 +73,18 @@ public class SamplesSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
-                return new SamplesSchema(schema.getUser(), schema.getContainer());
+                return new SamplesSchema(schema);
             }
         });
+    }
+
+    public SamplesSchema(QuerySchema schema)
+    {
+        this(schema.getUser(), schema.getContainer());
+        setDefaultSchema(schema.getDefaultSchema());
     }
 
     public SamplesSchema(User user, Container container)
@@ -107,11 +114,13 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleSets().isEmpty();
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return getSampleSets().keySet();
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpSampleSet ss = getSampleSets().get(name);
@@ -123,25 +132,13 @@ public class SamplesSchema extends AbstractExpSchema
     @Override
     public QueryView createView(ViewContext context, @NotNull QuerySettings settings, BindException errors)
     {
-        if (settings.getQueryName() != null && getTableNames().contains(settings.getQueryName()))
-        {
-            return new QueryView(this, settings, errors)
-            {
-                @Override
-                public ActionButton createDeleteButton()
-                {
-                    // Use default delete button, but without showing the confirmation text
-                    ActionButton button = super.createDeleteButton();
-                    if (button != null)
-                    {
-                        button.setRequiresSelection(true);
-                    }
-                    return button;
-                }
-            };
-        }
+        QueryView queryView = super.createView(context, settings, errors);
 
-        return super.createView(context, settings, errors);
+        // Use default delete button, but without showing the confirmation text
+        // NOTE: custom queries in the schema don't support delete so setting this flag is ok
+        queryView.setShowDeleteButtonConfirmationText(false);
+
+        return queryView;
     }
 
     /** Creates a table of materials, scoped to the given sample set and including its custom columns, if provided */
@@ -167,18 +164,33 @@ public class SamplesSchema extends AbstractExpSchema
 
         return new LookupForeignKey(null, null, schemaName, tableName, "RowId", null)
         {
-            public TableInfo getLookupTableInfo()
+            @Override
+            public @Nullable TableInfo getLookupTableInfo()
+            {
+                ContainerFilter cf = getLookupContainerFilter();
+                String cacheKey = SamplesSchema.class.getName() + "/" + schemaName + "/" + tableName + "/" + (null==ss ? "" : ss.getMaterialLSIDPrefix()) + "/" + (null==domainProperty ? "" : domainProperty.getPropertyURI()) + cf.getCacheKey();
+                return SamplesSchema.this.getCachedLookupTableInfo(cacheKey, this::createLookupTableInfo);
+            }
+
+            private TableInfo createLookupTableInfo()
             {
                 ExpMaterialTable ret = ExperimentService.get().createMaterialTable(tableName, SamplesSchema.this, null);
                 ret.populate(ss, true);
-                ret.setContainerFilter(new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser())));
+                ret.setContainerFilter(getLookupContainerFilter());
                 ret.overlayMetadata(ret.getPublicName(), SamplesSchema.this, new ArrayList<>());
                 if (domainProperty != null && domainProperty.getPropertyType().getJdbcType().isText())
                 {
                     // Hack to support lookup via RowId or Name
                     _columnName = "Name";
                 }
+                ret.setLocked(true);
                 return ret;
+            }
+
+            @Override
+            protected ContainerFilter getLookupContainerFilter()
+            {
+                return new ContainerFilter.SimpleContainerFilter(ExpSchema.getSearchContainers(getContainer(), ss, domainProperty, getUser()));
             }
 
             @Override
@@ -197,6 +209,6 @@ public class SamplesSchema extends AbstractExpSchema
         if (ss == null)
             throw new NotFoundException("Sample set '" + queryName + "' not found in this container '" + container.getPath() + "'.");
 
-        return ss.getType().getTypeURI();
+        return ss.getDomain().getTypeURI();
     }
 }

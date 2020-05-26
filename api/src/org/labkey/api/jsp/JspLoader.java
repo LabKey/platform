@@ -19,6 +19,8 @@ package org.labkey.api.jsp;
 import org.apache.log4j.Logger;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
 
 import javax.servlet.ServletConfig;
@@ -41,25 +43,36 @@ public class JspLoader
         {
             _jspClassLoader = new JspClassLoader();
         }
-    }
 
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "JspLoader";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                // tell jspClassLoader to rescan modules
+                _jspClassLoader.resetClassLoader();
+            }
+        });
+    }
 
     /**
      * Create a new JSP page.
      *
-     * @param packageName Dot separated package where the JSP file was in the source tree.  May be null, in which case
-     * "jspFile" should be a full path to the page, starting with "/"
-     * @param jspFile Path to the JSP from the package in which it resides.  For JSP files that are in the same
-     * directory as their controller, pass the package name of the controller, and the filename of the JSP with no
-     * "/"
+     * @param jspFile Full path to the JSP page, starting with "/"
      * @return inited page
      */
-    public static HttpJspPage createPage(String packageName, String jspFile)
+    public static HttpJspPage createPage(String jspFile)
     {
         try
         {
             ServletContext context = ModuleLoader.getServletContext();
-            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, packageName, jspFile);
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, jspFile);
             HttpJspPage ret = clazz.getConstructor().newInstance();
             ret.init(new JspServletConfig(context));
             return ret;
@@ -70,43 +83,49 @@ public class JspLoader
         }
     }
 
-
-    /**
-     * Instantiates a JSP class in a particular directory.
-     *
-     * @param clazz   A class which is in the same folder as the JSP folder.
-     * @param jspFile Name of the JSP file, without the path.
-     */
-    public static HttpJspPage createPage(Class clazz, String jspFile)
+    public static Class loadClass(String jspFile)
     {
-        return createPage(clazz.getPackage().getName(), jspFile);
+        try
+        {
+            ServletContext context = ModuleLoader.getServletContext();
+            Class<HttpJspPage> clazz = _jspClassLoader.loadClass(context, jspFile);
+            return clazz;
+        }
+        catch (Exception e)
+        {
+            throw UnexpectedException.wrap(e);
+        }
     }
 
 
     private static class JspServletConfig implements ServletConfig
     {
-        ServletContext _context;
+        private final ServletContext _context;
 
         public JspServletConfig(ServletContext context)
         {
             _context = context;
         }
 
+        @Override
         public String getServletName()
         {
             return "jsp";
         }
 
+        @Override
         public ServletContext getServletContext()
         {
             return _context;
         }
 
+        @Override
         public String getInitParameter(String name)
         {
             return null;
         }
 
+        @Override
         public Enumeration<String> getInitParameterNames()
         {
             return null;

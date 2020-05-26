@@ -43,6 +43,7 @@ import org.labkey.test.util.DataRegionTable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -187,7 +188,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // test the reload without first removing the overlapping visits
         importFolderArchiveWithFailureFlag(archive, true, 3, true);
         clickAndWait(Locator.linkWithText("ERROR"));
-        assertElementPresent(Locator.tagContainingText("pre", "ERROR: New visit 2 week Post-V#1 overlaps existing visit 2 week Post-V#1"));
+        assertElementPresent(Locator.tagContainingText("pre", "ERROR: New visit 2 week Post-V#1 (400.0 - 499.0) overlaps existing visit 2 week Post-V#1 (401.0)"));
 
         // delete some visits so that the reload will have the failure case
         deleteMultipleVisits(Arrays.asList("2 week Post-V#1", "411.0 - 491.0", "4 week Post-V#1", "1 week Post-V#2"));
@@ -205,6 +206,14 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         verifyStudyVisits(definedVisits, null);
 
         checkExpectedErrors(numExpectedErrors);
+    }
+
+    public File getModifiedStudyReloadTxt()
+    {
+        File file = TestFileUtils.getSampleData("study/StudyVisitManagement.folder/studyload.txt");
+        file.setLastModified((new Date()).getTime());
+
+        return file;
     }
 
     @Test
@@ -240,7 +249,7 @@ public class StudyVisitManagementTest extends BaseWebDriverTest
         // test reload again with the failure bit unset
         goToModule("Pipeline");
         clickButton("Process and Import Data");
-        _fileBrowserHelper.uploadFile(EXPLODED_FOLDER_STUDYLOAD_TXT, null, null, true);
+        _fileBrowserHelper.uploadFile(getModifiedStudyReloadTxt(), null, null, true);
         attemptStudyReloadNow("Reloading Study 001", false);
 
         // verify undefined visits now created

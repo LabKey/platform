@@ -137,15 +137,9 @@ public class DatasetFileReader
 
     public void validate(List<String> errors) throws IOException
     {
-        Properties props = new Properties();
-
-        if (_datasetsFileName != null)
+        if (_datasetsFileName != null && _studyImportContext != null)
         {
-            try (InputStream is = _datasetsDirectory.getInputStream(_datasetsFileName))
-            {
-                if (is != null)
-                    props.load(is);
-            }
+            _studyImportContext.setProperties(_datasetsDirectory.getInputStream(_datasetsFileName));
         }
 
         if (null == _study)
@@ -168,103 +162,106 @@ public class DatasetFileReader
 
         OneToOneStringMap defaultColumnMap = new OneToOneStringMap();
 
-        for (Map.Entry e : props.entrySet())
+        if (_studyImportContext != null)
         {
-            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String) e.getValue());
-            if (!key.startsWith("default."))
-                continue;
-            if (key.equals("default.action"))
+            Map<String, String> properties = _studyImportContext.getProperties();
+            for (String key : properties.keySet())
             {
-                defaultAction = actionForName(value);
+                String value = properties.get(key);
+                if (!key.startsWith("default."))
+                    continue;
+                if (key.equals("default.action"))
+                {
+                    defaultAction = actionForName(value);
+                }
+                else if (key.equals("default.filepattern"))
+                {
+                    _filePattern = Pattern.compile("^" + value + "$");
+                }
+                else if (key.equals("default.deleteafterimport"))
+                {
+                    defaultDeleteAfterImport = "true".equals(value.trim().toLowerCase());
+                }
+                else if (key.equals("default.importallmatches"))
+                {
+                    importAllMatches = "true".equals(value.trim().toLowerCase());
+                }
+                else if (key.equals("default.replacenewerthandate"))
+                {
+                    if ("false".equalsIgnoreCase(value))
+                        defaultReplaceCutoff = null;
+                    else
+                        defaultReplaceCutoff = parseDate(value, errors);
+                }
+                else if (key.startsWith("default.property."))
+                {
+                    String property = key.substring("default.property.".length()).trim();
+                    String column = value.trim();
+                    property = toStudyPropertyURI(property);
+                    defaultColumnMap.put(column, property);
+                }
             }
-            else if (key.equals("default.filepattern"))
-            {
-                _filePattern = Pattern.compile("^" + value + "$");
-            }
-            else if (key.equals("default.deleteafterimport"))
-            {
-                defaultDeleteAfterImport = "true".equals(value.trim().toLowerCase());
-            }
-            else if (key.equals("default.importallmatches"))
-            {
-                importAllMatches = "true".equals(value.trim().toLowerCase());
-            }
-            else if (key.equals("default.replacenewerthandate"))
-            {
-                if ("false".equalsIgnoreCase(value))
-                    defaultReplaceCutoff = null;
-                else
-                    defaultReplaceCutoff = parseDate(value, errors);
-            }
-            else if (key.startsWith("default.property."))
-            {
-                String property = key.substring("default.property.".length()).trim();
-                String column = value.trim();
-                property = toStudyPropertyURI(property);
-                defaultColumnMap.put(column, property);
-            }
-        }
 
-        //
-        // load explicit definitions
-        //
+            //
+            // load explicit definitions
+            //
 
-        for (Map.Entry e : props.entrySet())
-        {
-            String key = StringUtils.trimToEmpty((String) e.getKey()).toLowerCase();
-            String value = StringUtils.trimToEmpty((String) e.getValue());
-            int period = key.indexOf('.');
-            if (key.startsWith("default.") || -1 == period)
-                continue;
-            String datasetKey = key.substring(0, period);
-            String propertyKey = key.substring(period + 1);
-            DatasetDefinition ds = dsMap.get(datasetKey);
-            if (null == ds)
+            for (Map.Entry<String, String> entry : properties.entrySet())
             {
-                errors.add("Could not find dataset for '" + datasetKey + "'");
-                continue;
-            }
-            DatasetImportRunnable runnable = jobMap.get(ds);
-            if (null == runnable)
-            {
-                runnable = newImportJob(ds, _datasetsDirectory, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
-                jobMap.put(ds, runnable);
-            }
-            if (propertyKey.equals("file"))
-            {
-                runnable._fileName = value;
-            }
-            else if (propertyKey.equals("action"))
-            {
-                runnable._action = actionForName(value);
-            }
-            else if (propertyKey.equals("deleteafterimport"))
-            {
-                runnable._deleteAfterImport = "true".equals(value.trim().toLowerCase());
-            }
-            else if (propertyKey.equals("visitdatepropertyname"))
-            {
-                runnable.setVisitDatePropertyName(StringUtils.trimToNull(value));
-            }
-            else if (propertyKey.equals("replacenewerthandate"))
-            {
-                if ("false".equalsIgnoreCase(value))
-                    runnable._replaceCutoff = null;
-                else
-                    runnable._replaceCutoff = parseDate(value, errors);
-            }
-            else if (propertyKey.startsWith("property."))
-            {
-                String property = propertyKey.substring("property.".length()).trim();
-                String column = value.trim();
-                property = toStudyPropertyURI(property);
-                runnable._columnMap.put(column, property);
-            }
-            else if (propertyKey.equals("sitelookup"))
-            {
-                if (runnable instanceof ParticipantImportRunnable)
-                    ((ParticipantImportRunnable) runnable).setSiteLookup(value.trim());
+                String key = entry.getKey();
+                String value = entry.getValue();
+                int period = key.indexOf('.');
+                if (key.startsWith("default.") || -1 == period)
+                    continue;
+                String datasetKey = key.substring(0, period);
+                String propertyKey = key.substring(period + 1);
+                DatasetDefinition ds = dsMap.get(datasetKey);
+                if (null == ds)
+                {
+                    errors.add("Could not find dataset for '" + datasetKey + "'");
+                    continue;
+                }
+                DatasetImportRunnable runnable = jobMap.get(ds);
+                if (null == runnable)
+                {
+                    runnable = newImportJob(ds, _datasetsDirectory, null, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
+                    jobMap.put(ds, runnable);
+                }
+                if (propertyKey.equals("file"))
+                {
+                    runnable._fileName = value;
+                }
+                else if (propertyKey.equals("action"))
+                {
+                    runnable._action = actionForName(value);
+                }
+                else if (propertyKey.equals("deleteafterimport"))
+                {
+                    runnable._deleteAfterImport = "true".equals(value.trim().toLowerCase());
+                }
+                else if (propertyKey.equals("visitdatepropertyname"))
+                {
+                    runnable.setVisitDatePropertyName(StringUtils.trimToNull(value));
+                }
+                else if (propertyKey.equals("replacenewerthandate"))
+                {
+                    if ("false".equalsIgnoreCase(value))
+                        runnable._replaceCutoff = null;
+                    else
+                        runnable._replaceCutoff = parseDate(value, errors);
+                }
+                else if (propertyKey.startsWith("property."))
+                {
+                    String property = propertyKey.substring("property.".length()).trim();
+                    String column = value.trim();
+                    property = toStudyPropertyURI(property);
+                    runnable._columnMap.put(column, property);
+                }
+                else if (propertyKey.equals("sitelookup"))
+                {
+                    if (runnable instanceof ParticipantImportRunnable)
+                        ((ParticipantImportRunnable) runnable).setSiteLookup(value.trim());
+                }
             }
         }
 

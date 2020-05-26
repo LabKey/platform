@@ -50,6 +50,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
@@ -88,6 +89,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.Vial;
 import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.SpecimenTablesProvider;
+import org.labkey.study.specimen.LocationCache;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.BufferedReader;
@@ -128,7 +130,7 @@ public class SpecimenImporter
         UpdateAllStatistics, CommitTransaction, ClearCaches, PopulateMaterials, PopulateSpecimens, PopulateVials, PopulateSpecimenEvents,
         PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments, NotifyChanged}
 
-    private static MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
+    private static final MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
 
     public static class ImportableColumn
     {
@@ -1323,7 +1325,16 @@ public class SpecimenImporter
             setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.PopulateLabs);
             if (null != sifMap.get(_labsTableType))
-                mergeTable(schema, sifMap.get(_labsTableType), getTableInfoLocation(), true, true);
+            {
+                try
+                {
+                    mergeTable(schema, sifMap.get(_labsTableType), getTableInfoLocation(), true, true);
+                }
+                finally
+                {
+                    LocationCache.clear(_container);
+                }
+            }
 
             _iTimer.setPhase(ImportPhases.SpecimenTypes);
             if (merge)
@@ -2266,10 +2277,15 @@ public class SpecimenImporter
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Object O ON T.LSID = O.ObjectURI\n" +
                 "WHERE O.ObjectURI IS NULL\n";
 
-        String insertMaterialSQL = "INSERT INTO exp.Material (LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
-                "SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ?, ?, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ")\n" +
+        String countMaterialToInsertSQL = "SELECT DISTINCT T.LSID\n" +
                 "FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
                 "WHERE M.LSID IS NULL\n";
+
+        String insertMaterialSQL = "INSERT INTO exp.Material (RowId, LSID, Name, ObjectId, Container, CpasType, Created)  \n" +
+                "SELECT ? + (ROW_NUMBER() OVER (ORDER BY ObjectId)), LSID, Name, ObjectId, Container, CpasType, Created FROM\n" +
+                "(SELECT DISTINCT T.LSID, T." + columnName + " AS Name, (SELECT ObjectId FROM exp.Object O where O.ObjectURI=T.LSID) AS ObjectId, ? AS Container, ? AS CpasType, CAST(? AS " + _dialect.getDefaultDateTimeDataType()+ ") AS Created\n" +
+                " FROM " + info.getTempTableName() + " T LEFT OUTER JOIN exp.Material M ON T.LSID = M.LSID\n" +
+                " WHERE M.LSID IS NULL) X\n";
 
         /* NOTE: Not really necessary to delete and recreate the object rows
         String deleteObjectSQL = "DELETE FROM exp.Object WHERE ObjectURI IN (SELECT M.LSID FROM exp.Material M\n" +
@@ -2330,12 +2346,28 @@ public class SpecimenImporter
             logSQLFragment(insertObjectFragment);
         executeSQL(info.getSchema(), insertObjectFragment);
 
-        SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, info.getContainer().getId(), cpasType, createdTimestamp);
-        if (DEBUG)
-            logSQLFragment(insertMaterialFragment);
-        affected = executeSQL(info.getSchema(), insertMaterialFragment);
-        if (affected >= 0)
-            info("exp.Material: " + affected + " rows inserted.");
+        long count = new SqlSelector(info.getSchema(), countMaterialToInsertSQL).getRowCount();
+        if (count > 0)
+        {
+            // reserve rowids for this insert
+            // NOTE QuerySchema exp.Materials (plural) has dbsequence info, but DbSchema exp.Material (singular) does not
+            TableInfo material = DefaultSchema.get(info.getUser(),info.getContainer(),"exp").getTable("Materials", null);
+            ColumnInfo rowId = material.getColumn("RowId");
+            DbSequence seq = DbSequenceManager.getPreallocatingSequence(rowId.getDbSequenceContainer(null), material.getDbSequenceName(rowId.getName()), 0, 1000);
+
+            /* HACK, we don't do this anywhere else, but we need to get a block of continuous IDS to make this work */
+            // row_number() starts at 1 so subtract 1
+            long start = DbSequenceManager.reserveSequentialBlock(seq, (int)count);
+            start -= 1;
+
+            SQLFragment insertMaterialFragment = new SQLFragment(insertMaterialSQL, start, info.getContainer().getId(), cpasType, createdTimestamp);
+            if (DEBUG)
+                logSQLFragment(insertMaterialFragment);
+            affected = executeSQL(info.getSchema(), insertMaterialFragment);
+            if (affected >= 0)
+                info("exp.Material: " + affected + " rows inserted.");
+        }
+
         info("exp.Material: Update complete.");
     }
 
@@ -3319,7 +3351,8 @@ public class SpecimenImporter
         info("Remapping lookup indexes in temp table...");
         if (DEBUG)
             info(remapExternalIdsSql.toDebugString());
-        executeSQL(schema, remapExternalIdsSql);
+        if (!sep.isBlank())
+            executeSQL(schema, remapExternalIdsSql);
         info("Update complete.");
     }
 

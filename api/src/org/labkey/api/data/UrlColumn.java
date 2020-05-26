@@ -46,17 +46,6 @@ public class UrlColumn extends SimpleDisplayColumn
         String url = renderURL(ctx);
 
         if (value != null && url != null)
-        {
-            Map<String, String> props;
-            if (_linkTarget != null)
-            {
-                props = Collections.singletonMap("target", _linkTarget);
-            }
-            else
-            {
-                props = Collections.emptyMap();
-            }
-            out.write(PageFlowUtil.link(value.toString()).href(url).attributes(props).toString());
-        }
+            out.write(PageFlowUtil.link(value.toString()).href(url).target(_linkTarget).toString());
     }
 }

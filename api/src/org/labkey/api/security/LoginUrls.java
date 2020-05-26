@@ -18,6 +18,7 @@ package org.labkey.api.security;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.security.AuthenticationConfiguration.SSOAuthenticationConfiguration;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -33,7 +34,6 @@ import java.util.List;
 public interface LoginUrls extends UrlProvider
 {
     ActionURL getConfigureURL();
-    ActionURL getConfigureDbLoginURL();
     ActionURL getVerificationURL(Container c, ValidEmail email, String verification, @Nullable List<Pair<String, String>> extraParameters);
     ActionURL getChangePasswordURL(Container c, User user, URLHelper returnURL, @Nullable String message);
     ActionURL getInitialUserURL();
@@ -44,12 +44,7 @@ public interface LoginUrls extends UrlProvider
     ActionURL getLogoutURL(Container c, URLHelper returnURL);
     ActionURL getStopImpersonatingURL(Container c, @Nullable URLHelper returnURL);
     ActionURL getAgreeToTermsURL(Container c, URLHelper returnURL);
-    ActionURL getEnableProviderURL(AuthenticationProvider provider);
-    ActionURL getDisableProviderURL(AuthenticationProvider provider);
-    ActionURL getPickLogosURL(AuthenticationProvider provider);
-    ActionURL getSSORedirectURL(AuthenticationProvider provider, URLHelper returnURL, boolean skipProfile);
-    ActionURL getEnableConfigParameterURL(String name);
-    ActionURL getDisableConfigParameterURL(String name);
+    ActionURL getSSORedirectURL(SSOAuthenticationConfiguration<?> configuration, URLHelper returnURL, boolean skipProfile);
 
     NavTree appendAuthenticationNavTrail(NavTree root);
 }

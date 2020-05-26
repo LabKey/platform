@@ -347,7 +347,7 @@ public class PipelineController extends SpringActionController
 
                 if (pipeRoot != null && !errors.hasErrors())
                 {
-                    PermissionView permissionView = new PermissionView(SecurityPolicyManager.getPolicy(pipeRoot));
+                    PermissionView permissionView = new PermissionView(pipeRoot);
                     permissionView.setTitle("File Permissions");
                     permissionView.setFrame(WebPartView.FrameType.PORTAL);
                     result.addView(permissionView);
@@ -381,11 +381,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Data Pipeline", new ActionURL(BeginAction.class, getContainer()));
             root.addChild("Data Processing Pipeline Setup");
-            return root;
         }
     }
 
@@ -407,10 +406,9 @@ public class PipelineController extends SpringActionController
             return wp;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Files");
-            return root;
         }
     }
 
@@ -726,6 +724,7 @@ public class PipelineController extends SpringActionController
         {
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
+
     }
 
     public static class PermissionForm extends ReturnUrlForm
@@ -778,11 +777,11 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public class PermissionView extends JspView<SecurityPolicy>
+    public class PermissionView extends JspView<PipeRoot>
     {
-        PermissionView(SecurityPolicy policy)
+        PermissionView(PipeRoot pipeRoot)
         {
-            super("/org/labkey/pipeline/permission.jsp", policy);
+            super("/org/labkey/pipeline/permission.jsp", pipeRoot);
         }
     }
 
@@ -1097,9 +1096,9 @@ public class PipelineController extends SpringActionController
                     new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Pipeline Status");
+            root.addChild("Pipeline Status");
         }
     }
 
@@ -1192,9 +1191,8 @@ public class PipelineController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1429,11 +1427,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_navTrail);
+            root.addChild(_navTrail);
         }
-
     }
 
     public static class StartFolderImportForm
@@ -1579,10 +1576,10 @@ public class PipelineController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("fileWatcher");
-            return root.addChild(_title);
+            root.addChild(_title);
         }
     }
 

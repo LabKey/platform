@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="64px" height="64px" viewBox="0 0 64 64" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 63.1 (92452) - https://sketch.com -->
+    <title>run_square_gray_64x64_svg</title>
+    <desc>Created with Sketch.</desc>
+    <g id="run_square_gray_64x64" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g transform="translate(5.000000, 5.000000)" stroke-width="2">
+            <rect id="Background" stroke="#808080" fill="#D3D3D3" x="0" y="0" width="54" height="54" rx="2"></rect>
+            <rect id="Rectangle" stroke="#808080" fill="#FFFFFF" x="10" y="7" width="18" height="8" rx="1"></rect>
+            <rect id="Rectangle" stroke="#808080" fill="#FFFFFF" x="4" y="38" width="18" height="8" rx="1"></rect>
+            <rect id="Rectangle" stroke="#808080" fill="#FFFFFF" x="32" y="23" width="18" height="8" rx="1"></rect>
+            <path d="M33,11 L40,11 C40.5522847,11 41,11.4477153 41,12 L41,18 L41,18" id="Path" stroke="#FFFFFF" stroke-linecap="round"></path>
+            <path d="M27,36 L40,36 C40.5522847,36 41,36.4477153 41,37 L41,42 L41,42" id="Path" stroke="#FFFFFF" stroke-linecap="round" transform="translate(34.000000, 39.000000) scale(1, -1) translate(-34.000000, -39.000000) "></path>
+            <line x1="26" y1="44" x2="28" y2="42" id="Path" stroke="#FFFFFF" stroke-linecap="round" transform="translate(27.000000, 43.000000) scale(-1, 1) translate(-27.000000, -43.000000) "></line>
+            <line x1="26" y1="42" x2="28" y2="40" id="Path" stroke="#FFFFFF" stroke-linecap="round"></line>
+            <line x1="41" y1="19" x2="43" y2="17" id="Path" stroke="#FFFFFF" stroke-linecap="round"></line>
+            <line x1="39" y1="19" x2="41" y2="17" id="Path" stroke="#FFFFFF" stroke-linecap="round" transform="translate(40.000000, 18.000000) scale(-1, 1) translate(-40.000000, -18.000000) "></line>
+        </g>
+    </g>
+</svg>

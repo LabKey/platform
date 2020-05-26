@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.ObjectUtils" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.admin.AdminBean" %>
-<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.CoreSchema" %>
 <%@ page import="org.labkey.api.module.DefaultModule" %>
 <%@ page import="org.labkey.api.module.Module" %>
@@ -40,7 +40,6 @@
 <%
     HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
     AdminBean bean = me.getModelBean();
-    Container c = getContainer();
     boolean devMode = AppProps.getInstance().isDevMode();
 
     String location = null;
@@ -51,9 +50,6 @@
     }
     catch (Exception ignored)
     {}
-
-    String edition = bean.scope.getSqlDialect().getProductEdition();
-    String databaseProductVersion = bean.scope.getDatabaseProductVersion() + (null != edition ? " (" + edition + ")" : "");
 
     int row = 0;
 %>
@@ -66,15 +62,15 @@
 <div class="row">
     <div class="col-sm-12 col-md-3">
         <div id="lk-admin-nav" class="list-group">
+            <a href="#links" class="list-group-item">Settings</a>
             <a href="#info" class="list-group-item">Server Information</a>
-            <a href="#links" class="list-group-item">Admin Console Links</a>
             <a href="#modules" class="list-group-item">Module Information</a>
             <a href="#users" class="list-group-item">Active Users</a>
         </div>
     </div>
     <div class="col-sm-12 col-md-9">
         <labkey:panel id="info" className="lk-admin-section">
-            <h3 class="header-title labkey-page-section-header">Server Information</h3>
+            <h3 class="header-title labkey-page-section-header">LabKey Server <%=h(ObjectUtils.defaultIfNull(bean.releaseVersion, "Information"))%></h3>
             <% for (NavTree link : bean.getLinks(getViewContext())) { %>
             <div class="header-link">
                 <a href="<%=h(link.getHref())%>"><%=h(link.getText())%></a>
@@ -83,16 +79,18 @@
             <h4>Core Database Configuration</h4>
             <table class="labkey-data-region-legacy labkey-show-borders">
                 <tr><td class="labkey-column-header">Property</td><td class="labkey-column-header">Value</td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Product Version</td><td id="databaseProductVersion"><%=h(databaseProductVersion)%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Server URL</td><td id="databaseServerURL"><%=h(bean.scope.getURL())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Name</td><td id="databaseProductName"><%=h(bean.scope.getDatabaseProductName())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Database Product Version</td><td id="databaseProductVersion"><%=h(bean.scope.getDatabaseProductVersion())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Name</td><td id="databaseDriverName"><%=h(bean.scope.getDriverName())%></td></tr>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Version</td><td id="databaseDriverVersion"><%=h(bean.scope.getDriverVersion())%></td></tr><%
                 if (null != location)
                 { %>
                 <tr class="<%=getShadeRowClass(row++)%>"><td>JDBC Driver Location</td><td id="databaseDriverLocation"><%=h(location)%></td></tr><%
                 } %>
-                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Max Size</td><td id="connectionPoolSize"><%=h(bean.scope.getDataSourceProperties().getMaxTotal())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Active</td><td id="connectionPoolActive"><%=h(bean.scope.getDataSourceProperties().getNumActive())%></td></tr>
+                <tr class="<%=getShadeRowClass(row++)%>"><td>Connection Pool Idle</td><td id="connectionPoolIdle"><%=h(bean.scope.getDataSourceProperties().getNumIdle())%></td></tr>
             </table>
             <br/>
 <%
@@ -119,7 +117,7 @@
             </table>
         </labkey:panel>
         <labkey:panel id="links" className="lk-admin-section">
-            <h3 class="labkey-page-section-header">Admin Console Links</h3>
+            <h3 class="labkey-page-section-header">Settings</h3>
             <%
                 for (SettingsLinkType type : SettingsLinkType.values())
                 {
@@ -159,7 +157,7 @@
                         <%=h(module.getName())%>
                     </span>
                         <span style="color: #333;">
-                        <%=h(module.getFormattedVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
+                        <%=h(module.getReleaseVersion())%> <%=h(StringUtils.isEmpty(module.getLabel()) ? "" : "- " + module.getLabel())%>
                     </span>
                     </td>
                 </tr>
@@ -182,8 +180,8 @@
                                 if (StringUtils.equals("Source Path", entry.getKey()))
                                 {%>
                             <tr class="<%=getShadeRowClass(count)%>">
-                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && !sourcePathMatched) ? helpPopup("source path not found") : HtmlString.EMPTY_STRING%></td>
-                                <td nowrap="true" style="color:<%=h(!devMode?"":sourcePathMatched?"green":"red")%>;"><%=h(entry.getValue())%></td>
+                                <td nowrap="true"><%=h(entry.getKey())%><%=(devMode && (!sourcePathMatched || !enlistmentIdMatched)) ? helpPopup(!sourcePathMatched ? "source path not found" : "enlistmentId not found/matched") : HtmlString.EMPTY_STRING%></td>
+                                <td nowrap="true" style="color:<%=h(!devMode?"":enlistmentIdMatched?"green":sourcePathMatched?"yellow":"red")%>;"><%=h(entry.getValue())%></td>
                             </tr><%
                         }
                         else if (StringUtils.equals("Enlistment ID", entry.getKey()))
@@ -245,7 +243,7 @@
 <script type="text/javascript">
     +function($) {
 
-        var defaultRoute = "info";
+        var defaultRoute = "links";
 
         function loadRoute(hash) {
             if (!hash || hash === '#') {

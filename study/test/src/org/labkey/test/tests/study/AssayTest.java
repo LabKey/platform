@@ -24,112 +24,32 @@ import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.Assays;
 import org.labkey.test.categories.DailyC;
 import org.labkey.test.components.CustomizeView;
-import org.labkey.test.components.PropertiesEditor;
-import org.labkey.test.pages.AssayDesignerPage;
+import org.labkey.test.components.domain.DomainFieldRow;
+import org.labkey.test.components.domain.DomainFormPanel;
+import org.labkey.test.pages.ReactAssayDesignerPage;
+import org.labkey.test.pages.assay.AssayBeginPage;
 import org.labkey.test.params.FieldDefinition;
+import org.labkey.test.params.experiment.SampleSetDefinition;
 import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.tests.AuditLogTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
-import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.SampleSetHelper;
+import org.labkey.test.util.StudyHelper;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
+import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 
 @Category({DailyC.class, Assays.class})
 public class AssayTest extends AbstractAssayTest
 {
-    private final PortalHelper portalHelper = new PortalHelper(this);
-
-    protected static final String TEST_ASSAY = "Test" + TRICKY_CHARACTERS + "Assay1";
-    protected static final String TEST_ASSAY_DESC = "Description for assay 1";
-
-    protected static final String TEST_ASSAY_SET_PROP_EDIT = "NewTargetStudy";
-    protected static final String TEST_ASSAY_SET_PROP_NAME = "testAssaySetProp";
-    protected static final int TEST_ASSAY_SET_PREDEFINED_PROP_COUNT = 2;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_SET_PROP_TYPES = {
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Double,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime
-    };
-    protected static final String[] TEST_ASSAY_SET_PROPERTIES = { "false", "100.0", "200", "2001-10-10" };
-    protected static final String TEST_ASSAY_RUN_PROP_NAME = "testAssayRunProp";
-    protected static final int TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT = 0;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_RUN_PROP_TYPES = {
-            FieldDefinition.ColumnType.String,
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Double,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime,
-            FieldDefinition.ColumnType.File
-    };
-    protected static final String TEST_ASSAY_RUN_PROP1 = "TestRunProp";
-    protected static final String TEST_ASSAY_DATA_PROP_NAME = "testAssayDataProp";
-    protected static final String TEST_ASSAY_DATA_ALIASED_PROP_NAME = "testAssayAliasedData";
-    protected static final String ALIASED_DATA = "aliasedData";
-    public static final int TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT = 4;
-    protected static final FieldDefinition.ColumnType[] TEST_ASSAY_DATA_PROP_TYPES = {
-            FieldDefinition.ColumnType.Boolean,
-            FieldDefinition.ColumnType.Integer,
-            FieldDefinition.ColumnType.DateTime,
-            FieldDefinition.ColumnType.String
-    };
-
-    protected static final String TEST_RUN1 = "FirstRun";
-    protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final String TEST_RUN1_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
-            "AAA07XK5-05\t\t\ttrue\t\t2000-01-01\t"+ALIASED_DATA+"\n" +
-            "AAA07XMC-02\t\t\ttrue\t\t2000-02-02\t"+ALIASED_DATA+"\n" +
-            "AAA07XMC-04\t\t\ttrue\t\t2000-03-03\t"+ALIASED_DATA+"\n" +
-            "AAA07XSF-02\t\t\tfalse\t\t2000-04-04\t"+ALIASED_DATA+"\n" +
-            "AssayTestControl1\te\t5\tfalse\t\t2000-05-05\t"+ALIASED_DATA+"\n" +
-            "AssayTestControl2\tf\t6\tfalse\t\t2000-06-06\t"+ALIASED_DATA;
-
-    protected static final String TEST_RUN2 = "SecondRun";
-    protected static final String TEST_RUN2_COMMENTS = "Second comments";
-    protected static final String TEST_RUN2_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "20\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN2_DATA2 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\ttrue\t20\t2000-01-01\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t2000-02-02\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t2000-03-03\n" +
-            "AAA07XSF-02\t\t\tfalse\t17\t2000-04-04\n" +
-            "AssayTestControl1\te\t5\tfalse\t16\t2000-05-05\n" +
-            "AssayTestControl2\tf\tg\tfalse\t15\t2000-06-06";
-    protected static final String TEST_RUN2_DATA3 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "AAA07XK5-05\t\t\ttrue\t20\t\n" +
-            "AAA07XMC-02\t\t\ttrue\t19\t\n" +
-            "AAA07XMC-04\t\t\ttrue\t18\t";
-    protected static final String TEST_RUN2_DATA4 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\t" + TEST_ASSAY_DATA_ALIASED_PROP_NAME + "\n" +
-            "1\tj\t1\t\t\t4/4/06";
-
-    protected static final String TEST_RUN3 = "ThirdRun";
-    protected static final String TEST_RUN3_COMMENTS = "Third comments";
-    protected static final String TEST_RUN3_DATA1 = "specimenID\tparticipantID\tvisitID\t" + TEST_ASSAY_DATA_PROP_NAME + "4\t" + TEST_ASSAY_DATA_PROP_NAME + "5\t" + TEST_ASSAY_DATA_PROP_NAME + "6\n" +
-            "BAQ00051-09\tg\t7\ttrue\t20\t2000-01-01\n" +
-            "BAQ00051-08\th\t8\ttrue\t19\t2000-02-02\n" +
-            "BAQ00051-11\ti\t9\ttrue\t18\t2000-03-03\n";
-
     private static final String INVESTIGATOR = "Dr. No";
     private static final String GRANT = "SPECTRE";
     private static final String DESCRIPTION = "World Domination.";
-
-    private final File PROTOCOL_DOC = TestFileUtils.getSampleData("study/Protocol.txt");
-    private final File PROTOCOL_DOC2 = TestFileUtils.getSampleData("study/Protocol2.txt");
-
-    public List<String> getAssociatedModules()
-    {
-        return Arrays.asList("study");
-    }
+    private static final String SAMPLE_FIELD_TEST_ASSAY = "SampleFieldTestAssay";
+    private static final String SAMPLE_FIELD_PROJECT_NAME = "Sample Field Test Project";
 
     @Override
     protected String getProjectName()
@@ -144,6 +64,7 @@ public class AssayTest extends AbstractAssayTest
     {
         //should also delete the groups
         _containerHelper.deleteProject(getProjectName(), afterTest);
+        _containerHelper.deleteProject(SAMPLE_FIELD_PROJECT_NAME, afterTest);
 
         _userHelper.deleteUsers(false, TEST_ASSAY_USR_PI1, TEST_ASSAY_USR_TECH1);
     }
@@ -160,7 +81,7 @@ public class AssayTest extends AbstractAssayTest
         log("Starting Assay security scenario tests");
         setupEnvironment();
         setupPipeline(getProjectName());
-        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"), new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+        SpecimenImporter importer = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer.importAndWaitForComplete();
         defineAssay();
         uploadRuns(TEST_ASSAY_FLDR_LAB1, TEST_ASSAY_USR_TECH1);
@@ -175,6 +96,104 @@ public class AssayTest extends AbstractAssayTest
         // TODO: Turn this on once file browser migration is complete.
         //verifyWebdavTree();
         goBack();
+    }
+
+    @Test
+    public void testSampleFieldUpdate()
+    {
+        log("Starting sample field update test");
+        _containerHelper.createProject(SAMPLE_FIELD_PROJECT_NAME, "Assay");
+
+        log("Create test assay");
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.createAssayDesign("General", SAMPLE_FIELD_TEST_ASSAY)
+                .setDescription(TEST_ASSAY_DESC);
+
+        String sampleFieldName = "SampleField";
+        assayDesignerPage.goToBatchFields().removeAllFields(false); //remove preset batch fields
+
+        DomainFormPanel resultsPanel = assayDesignerPage.goToResultsFields().removeAllFields(false); //remove preset result fields
+        click(Locator.tag("span").withText("manually define fields"));
+        resultsPanel.addField(sampleFieldName)
+                .setType(FieldDefinition.ColumnType.Sample)
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+        resultsPanel.removeField(""); //remove field added by manual definition link
+
+        log("Save initial assay design with sample field set to 'All Samples'");
+        assayDesignerPage.clickFinish();
+
+        log("Verify save successful");
+        assertEquals("Error saving initial assay", 0, checker().errorsSinceMark());
+        AssayBeginPage assayPage = goToManageAssays();
+        assertElementPresent(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+
+        log("Create new Sample Types to verify against");
+        String targetSetName = "Target Sample Set";
+        SampleSetDefinition targetDefinition = new SampleSetDefinition(targetSetName).setFields(new ArrayList<>());
+        SampleSetHelper ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
+        ssHelper.createSampleSet(targetDefinition, "Name\nS_1\nS_2\nS_3");
+
+        String otherSetName = "Other Sample Set";
+        SampleSetDefinition otherDefinition = new SampleSetDefinition(otherSetName).setFields(new ArrayList<>());
+        ssHelper = SampleSetHelper.beginAtSampleSetsList(this, getCurrentContainerPath());
+        ssHelper.createSampleSet(otherDefinition, "Name\nOS_1\nOS_2");
+
+        importSampleAssayData(TEST_RUN1, "OS_1");
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
+
+
+        log("Edit assay design and change Sample field to point to created Sample Type");
+        goToManageAssays();
+        clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+        designerPage.expandFieldsPanel("Results")
+                .getField(sampleFieldName)
+                .setSampleType(targetSetName);
+        designerPage.clickFinish();
+
+        log("Verify updates saved successfully");
+        assertEquals("Error saving initial assay", 0, checker().errorsSinceMark());
+        importSampleAssayData(TEST_RUN2, "S_1");
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+//        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1); //TODO this becomes the RowId "<123>" after change. Issue #40047
+
+        assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
+
+        log("Edit assay design and change Sample field to point back to 'All Samples'");
+        goToManageAssays();
+        clickAndWait(Locator.LinkLocator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        designerPage = _assayHelper.clickEditAssayDesign();
+        designerPage.expandFieldsPanel("Results")
+                .getField(sampleFieldName)
+                .setSampleType(DomainFieldRow.ALL_SAMPLES_OPTION_TEXT);
+        designerPage.clickFinish();
+        assertEquals("Error saving updated sample field", 0, checker().errorsSinceMark());
+
+        log("Verify updates saved successfully");
+        importSampleAssayData(TEST_RUN3, "S_2\nOS_2");
+        assertEquals("Error importing data after assay sample field update", 0, checker().errorsSinceMark());
+
+        goToManageAssays().clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickAndWait(Locator.linkWithText("view results"));
+        assertElementPresent("Sample lookup failed for: OS_1", new Locator.LinkLocator("OS_1"), 1);
+        assertElementPresent("Sample lookup failed for: S_1", new Locator.LinkLocator("S_1"), 1);
+        assertElementPresent("Sample lookup failed for: S_2", new Locator.LinkLocator("S_2"), 1);
+        assertElementPresent("Sample lookup failed for: OS_2", new Locator.LinkLocator("OS_2"), 1);
+
+    }
+
+    private void importSampleAssayData(String runName, String sampleId)
+    {
+        goToManageAssays();
+        clickAndWait(Locator.linkWithText(SAMPLE_FIELD_TEST_ASSAY));
+        clickButton("Import Data", "Run Data");
+        setFormElement(Locator.name("name"), runName);
+        click(Locator.xpath("//input[@value='textAreaDataProvider']"));
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"),  "SampleField\n" + sampleId);
+        clickButton("Save and Finish");
+
     }
 
     @LogMethod
@@ -225,10 +244,9 @@ public class AssayTest extends AbstractAssayTest
         assertElementNotPresent(Locator.button("Delete"));
 
         // Edit the design to make them editable
-        _assayHelper.clickEditAssayDesign(true);
-        waitForElement(Locator.xpath("//span[@id='id_editable_results_properties']"), WAIT_FOR_JAVASCRIPT);
-        checkCheckbox(Locator.xpath("//span[@id='id_editable_results_properties']/input"));
-        clickButton("Save & Close");
+        ReactAssayDesignerPage assayDesignerPage = _assayHelper.clickEditAssayDesign(true);
+        assayDesignerPage.setEditableResults(true);
+        assayDesignerPage.clickFinish();
 
         // Try an edit
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);
@@ -246,8 +264,8 @@ public class AssayTest extends AbstractAssayTest
         setFormElement(Locator.name("quf_Flags"), "This Flag Has Been Edited");
         clickButton("Submit");
         assertTextPresent("EditedSpecimenID", "601.5", "514801");
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
-        assertElementPresent(Locator.xpath("//img[@src='/labkey/Experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/flagDefault.gif'][@title='This Flag Has Been Edited']"), 1);
+        assertElementPresent(Locator.xpath("//img[@src='/labkey/experiment/unflagDefault.gif'][@title='Flag for review']"), 9);
 
         // Try a delete
         dataTable.checkCheckbox(table.getRowIndex("Specimen ID", "EditedSpecimenID"));
@@ -267,51 +285,6 @@ public class AssayTest extends AbstractAssayTest
                 "Visit ID changed from '601.0' to '601.5",
                 "testAssayDataProp5 changed from blank to '514801'",
                 "Deleted data row.");
-    }
-
-    /**
-     * Defines an test assay at the project level for the security-related tests
-     */
-    @LogMethod
-    private void defineAssay()
-    {
-        log("Defining a test assay at the project level");
-        //define a new assay at the project level
-        //the pipeline must already be setup
-        goToProjectHome();
-        portalHelper.addWebPart("Assay List");
-
-        AssayDesignerPage designerPage = _assayHelper.createAssayAndEdit("General", TEST_ASSAY);
-        designerPage.setDescription(TEST_ASSAY_DESC);
-
-        for (int i = TEST_ASSAY_SET_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + TEST_ASSAY_SET_PROP_TYPES.length; i++)
-        {
-            designerPage.addBatchField(TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_NAME + i, TEST_ASSAY_SET_PROP_TYPES[i - TEST_ASSAY_SET_PREDEFINED_PROP_COUNT]);
-        }
-
-        for (int i = TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT + TEST_ASSAY_RUN_PROP_TYPES.length; i++)
-        {
-            designerPage.addRunField(TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_NAME + i, TEST_ASSAY_RUN_PROP_TYPES[i - TEST_ASSAY_RUN_PREDEFINED_PROP_COUNT]);
-        }
-
-        for (int i = TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT; i < TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + TEST_ASSAY_DATA_PROP_TYPES.length; i++)
-        {
-            designerPage.addDataField(TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_NAME + i, TEST_ASSAY_DATA_PROP_TYPES[i - TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT]);
-        }
-
-        designerPage.addDataField("Flags", "Flags", FieldDefinition.ColumnType.Flag);
-
-        // Set some to required
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT).properties().selectValidatorsTab().setRequired(true);
-        designerPage.batchFields().selectField(TEST_ASSAY_SET_PREDEFINED_PROP_COUNT + 1).properties().selectValidatorsTab().setRequired(true);
-        designerPage.runFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(0).properties().selectValidatorsTab().setRequired(true);
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 2).properties().selectValidatorsTab().setRequired(true);
-
-        // import aliases
-        designerPage.dataFields().selectField(TEST_ASSAY_DATA_PREDEFINED_PROP_COUNT + 3).properties().selectAdvancedTab().setImportAliases(TEST_ASSAY_DATA_ALIASED_PROP_NAME);
-
-        designerPage.save();
     }
 
     /**
@@ -842,16 +815,16 @@ public class AssayTest extends AbstractAssayTest
     private void editAssay()
     {
         log("Testing edit and delete and assay definition");
-
         clickProject(getProjectName());
-
         waitAndClickAndWait(Locator.linkWithText(TEST_ASSAY));
-        AssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
-        PropertiesEditor dataFields = designerPage.dataFields();
-        dataFields.selectField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        dataFields.selectField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
-        dataFields.selectField(4).markForDeletion();
-        designerPage.save();
+
+        // change a field name and label and remove a field
+        ReactAssayDesignerPage designerPage = _assayHelper.clickEditAssayDesign();
+        DomainFormPanel domainFormPanel = designerPage.expandFieldsPanel("Results");
+        domainFormPanel.getField(5).setName(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        domainFormPanel.getField(5).setLabel(TEST_ASSAY_DATA_PROP_NAME + "edit");
+        domainFormPanel.removeField(domainFormPanel.getField(4).getName(), true);
+        designerPage.clickFinish();
 
         //ensure that label has changed in run data in Lab 1 folder
         navigateToFolder(getProjectName(), TEST_ASSAY_FLDR_LAB1);

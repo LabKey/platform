@@ -100,9 +100,9 @@
 
             applyOverride: function (override) {
                 if (override) {
-                    this.update("<span class='labkey-link' style='font-size:smaller;'>Revert to template value</span>");
+                    this.update("<span class='labkey-link'>Revert to template value</span>");
                 } else {
-                    this.update("<span class='labkey-link' style='font-size:smaller;'>Override template value</span>");
+                    this.update("<span class='labkey-link'>Override template value</span>");
 
                     var value = this.resetValueFunction();
                     if (value !== undefined)
@@ -375,8 +375,7 @@
             name: 'tables',
             fieldLabel: false,
             width: 395,
-            //value: <%=text(new JSONArray(tables).toString())%>,
-            initialValue: <%=text(new JSONArray(tables).toString())%>,
+            initialValue: <%=new JSONArray(tables)%>,
             // Prevent the 'dataloaded' event from being fired when the template changes when creating a new linked schema.
             initiallyLoaded: <%=bean.isInsert()%>,
             disabled: <%=def.getTables() == null && initialTemplate != null%>,

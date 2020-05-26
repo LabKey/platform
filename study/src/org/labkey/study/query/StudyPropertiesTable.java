@@ -23,9 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -36,7 +35,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
@@ -94,22 +92,22 @@ public class StudyPropertiesTable extends BaseStudyTable
         addRootColumn("assayPlan", true, true);
         var descriptionColumn = addRootColumn("description", true, true);
         final var descriptionRendererTypeColumn = addRootColumn("descriptionRendererType", false, true);
-        descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
+
+        WikiService ws = WikiService.get();
+
+        if (null != ws)
         {
-            @Override
-            public TableInfo getLookupTableInfo()
+            descriptionRendererTypeColumn.setFk(new LookupForeignKey("Value")
             {
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), WikiService.SCHEMA_NAME).getTable(WikiService.RENDERER_TYPE_TABLE_NAME);
-            }
-        });
-        descriptionColumn.setDisplayColumnFactory(new DisplayColumnFactory()
-        {
-            @Override
-            public DisplayColumn createRenderer(ColumnInfo colInfo)
-            {
-                return new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS);
-            }
-        });
+                @Override
+                public TableInfo getLookupTableInfo()
+                {
+                    return ws.getRendererTypeTable(_userSchema.getUser(), _userSchema.getContainer());
+                }
+            });
+        }
+
+        descriptionColumn.setDisplayColumnFactory(colInfo -> new WikiRendererDisplayColumn(colInfo, descriptionRendererTypeColumn.getName(), WikiRendererType.TEXT_WITH_LINKS));
 
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
@@ -157,7 +155,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         setImportURL(AbstractTableInfo.LINK_DISABLER);
     }
 
-    private BaseColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
+    private MutableColumnInfo addRootColumn(String columnName, boolean visible, boolean userEditable)
     {
         var columnInfo = addWrapColumn(_rootTable.getColumn(columnName));
         columnInfo.setUserEditable(userEditable);

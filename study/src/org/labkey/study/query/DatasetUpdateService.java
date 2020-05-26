@@ -98,7 +98,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
         if (count > 0)
         {
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -110,7 +110,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingDIB(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -154,7 +154,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.datasetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, true);
             resyncStudy(user, container);
         }
         return result;
@@ -387,12 +387,14 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             // Need to resync the ParticipantVisit table too
             _participantVisitResyncRequired = true;
         }
+        // Check if the timepoint may have changed, but only if we don't already know we need to resync
         else if (!_participantVisitResyncRequired)
         {
-            // Check if the visit has changed, but only if we don't already know we need to resync
-            Object oldSequenceNum = oldRow.get("SequenceNum");
-            Object newSequenceNum = row.get("SequenceNum");
-            if (!Objects.equals(oldSequenceNum, newSequenceNum))
+            String columnName = StudyManager.getInstance().getStudy(container).getTimepointType().isVisitBased() ?
+                    "SequenceNum" : "Date";
+            Object oldTimepoint = oldRow.get(columnName);
+            Object newTimepoint = row.get(columnName);
+            if (!Objects.equals(oldTimepoint, newTimepoint))
             {
                 _participantVisitResyncRequired = true;
             }
@@ -425,7 +427,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     @Override
     protected int truncateRows(User user, Container container)
     {
-       return _dataset.deleteRows(user, (Date) null);
+       return _dataset.deleteRows((Date) null);
     }
 
     public String keyFromMap(Map<String, Object> map) throws InvalidKeyException

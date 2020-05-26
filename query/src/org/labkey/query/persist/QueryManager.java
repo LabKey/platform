@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -44,6 +45,7 @@ import org.labkey.api.query.CustomViewChangeListener;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryChangeListener;
+import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
@@ -102,7 +104,7 @@ public class QueryManager
     /**
      * @param customQuery whether to look for custom queries or modified metadata on built-in tables
      */
-    public List<QueryDef> getQueryDefs(Container container, String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
+    public List<QueryDef> getQueryDefs(Container container, @Nullable String schema, boolean inheritableOnly, boolean includeSnapshots, boolean customQuery)
     {
         return QueryDefCache.getQueryDefs(container, schema, inheritableOnly, includeSnapshots, customQuery);
     }
@@ -292,39 +294,48 @@ public class QueryManager
         CustomViewCache.uncache(ContainerManager.getForId(view.getContainerId()));
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, ExternalSchemaDef.class);
     }
 
+    @NotNull
     public List<ExternalSchemaDef> getExternalSchemaDefs(@Nullable Container container)
     {
         return ExternalSchemaDefCache.getSchemaDefs(container, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public ExternalSchemaDef getExternalSchemaDef(Container container, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(container, userSchemaName, ExternalSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, int rowId)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, rowId, LinkedSchemaDef.class);
     }
 
+    @NotNull
     public List<LinkedSchemaDef> getLinkedSchemaDefs(@Nullable Container c)
     {
         return ExternalSchemaDefCache.getSchemaDefs(c, LinkedSchemaDef.class);
     }
 
+    @Nullable
     public LinkedSchemaDef getLinkedSchemaDef(Container c, @Nullable String userSchemaName)
     {
         return ExternalSchemaDefCache.getSchemaDef(c, userSchemaName, LinkedSchemaDef.class);
     }
 
-    public void delete(AbstractExternalSchemaDef def)
+    public void delete(@NotNull AbstractExternalSchemaDef def)
     {
-        Table.delete(getTableInfoExternalSchema(), def.getExternalSchemaId());
+        Container c = def.lookupContainer();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        filter.addCondition(getTableInfoExternalSchema().getColumn("ExternalSchemaId"), def.getExternalSchemaId());
+        Table.delete(getTableInfoExternalSchema(), filter);
         updateExternalSchemas(def.lookupContainer());
     }
 
@@ -348,6 +359,7 @@ public class QueryManager
     // changes in any way (insert/update/delete).
     public void updateExternalSchemas(Container c)
     {
+        QueryService.get().updateLastModified();
         if (null != c)
         {
             ExternalSchemaDefCache.uncache(c);
@@ -477,19 +489,21 @@ public class QueryManager
 
     public void fireQueryCreated(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull Collection<String> queries)
     {
+        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryCreated(user, container, scope, schema, queries);
     }
 
-    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryChangeListener.QueryPropertyChange> changes)
+    public void fireQueryChanged(User user, Container container, ContainerFilter scope, SchemaKey schema, @NotNull QueryChangeListener.QueryProperty property, @NotNull Collection<QueryPropertyChange> changes)
     {
+        QueryService.get().updateLastModified();
         assert checkChanges(property, changes);
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryChanged(user, container, scope, schema, property, changes);
     }
 
     // Checks all changes have the correct property and type.
-    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryChangeListener.QueryPropertyChange> changes)
+    private boolean checkChanges(QueryChangeListener.QueryProperty property, Collection<QueryPropertyChange> changes)
     {
         if (property == null)
         {
@@ -498,7 +512,7 @@ public class QueryManager
         }
 
         boolean valid = true;
-        for (QueryChangeListener.QueryPropertyChange change : changes)
+        for (QueryPropertyChange change : changes)
         {
             if (change.getProperty() != property)
             {
@@ -521,6 +535,7 @@ public class QueryManager
 
     public void fireQueryDeleted(User user, Container container, ContainerFilter scope, SchemaKey schema, Collection<String> queries)
     {
+        QueryService.get().updateLastModified();
         for (QueryChangeListener l : QUERY_LISTENERS)
             l.queryDeleted(user, container, scope, schema, queries);
     }
@@ -545,18 +560,21 @@ public class QueryManager
 
     public void fireViewCreated(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewCreated(view);
     }
 
     public void fireViewChanged(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewChanged(view);
     }
 
     public void fireViewDeleted(CustomView view)
     {
+        QueryService.get().updateLastModified();
         for (CustomViewChangeListener l : VIEW_LISTENERS)
             l.viewDeleted(view);
     }
@@ -699,7 +717,9 @@ public class QueryManager
 
         validateFk(col, user, container, parentTable, errors, warnings, errorBase);
 
-        List<String> specialCols = new ArrayList<>();
+        Set<String> specialCols = new CaseInsensitiveHashSet();
+        specialCols.add("LSID");
+        specialCols.add("entityId");
         specialCols.add("container");
         specialCols.add("created");
         specialCols.add("createdby");
@@ -723,19 +743,9 @@ public class QueryManager
         if(col.isAutoIncrement() && col.isShownInUpdateView())
             warnings.add(new QueryParseWarning(errorBase + " column is autoIncrement, but has shownInUpdateView set to true", null, 0, 0));
 
-//        if(col.isShownInInsertView() && !col.isUserEditable())
-//            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is not userEditable");
-//        if(col.isShownInUpdateView() && !col.isUserEditable())
-//            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is not userEditable");
-
-//        if(col.isShownInInsertView() && col.isHidden())
-//            queryErrors.add("INFO: " + errorBase + " has shownInInsertView=true, but it is hidden");
-//        if(col.isShownInUpdateView() && col.isHidden())
-//            queryErrors.add("INFO: " + errorBase + " has shownInUpdateView=true, but it is hidden");
-
         try
         {
-            if(col.getDisplayWidth() != null && Integer.parseInt(col.getDisplayWidth()) > 200 && !"textarea".equalsIgnoreCase(col.getInputType()))
+            if (StringUtils.isNotBlank(col.getDisplayWidth()) && Integer.parseInt(col.getDisplayWidth()) > 200 && !"textarea".equalsIgnoreCase(col.getInputType()))
             {
                 if (col.isUserEditable() && col.getJdbcType() != null && col.getJdbcType().getJavaClass() == String.class)
                     warnings.add(new QueryParseWarning(errorBase + " column has a displayWidth > 200, but does not use a textarea as the inputType", null, 0, 0));
@@ -743,7 +753,7 @@ public class QueryManager
         }
         catch (NumberFormatException e)
         {
-            warnings.add(new QueryParseWarning(errorBase + " column has a blank value for displayWidth: '" + col.getDisplayWidth() + "'", null, 0, 0));
+            warnings.add(new QueryParseWarning(errorBase + " column has invalid value for displayWidth: '" + col.getDisplayWidth() + "'", null, 0, 0));
         }
         return errors.isEmpty();
     }
@@ -781,7 +791,7 @@ public class QueryManager
 
         if (!isPublic)
         {
-            warnings.add(new QueryParseWarning(errorBase + " has a lookup to a non-public table: " + schemaPath.toDisplayString() + "." + queryName, null, 0, 0));
+            warnings.add(new QueryParseWarning(errorBase + " has a lookup to a non-public table: " + (schemaPath == null ? "<null>" : schemaPath.toDisplayString()) + "." + queryName, null, 0, 0));
             return errors.isEmpty();
         }
 

@@ -31,6 +31,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.Date;
@@ -193,6 +194,11 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public void reindexContainerFiles(Container c)
+    {
+    }
+
+    @Override
     public void addPathToCrawl(Path path, Date d)
     {
     }
@@ -242,7 +248,19 @@ public class NoopSearchService implements SearchService
     }
 
     @Override
+    public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults)
+    {
+        return null;
+    }
+
+    @Override
     public SearchResult search(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit)
+    {
+        return null;
+    }
+
+    @Override
+    public List<String> searchUniqueIds(String queryString, @Nullable List<SearchCategory> categories, User user, Container current, SearchScope scope, @Nullable String sortField, int offset, int limit, boolean invertResults) throws IOException
     {
         return null;
     }

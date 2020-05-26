@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
@@ -133,7 +134,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
         return new DefaultAuditTypeTable(GroupAuditProvider.this, createStorageTableInfo(), userSchema, cf, defaultVisibleColumns)
         {
             @Override
-            protected void initColumn(BaseColumnInfo col)
+            protected void initColumn(MutableColumnInfo col)
             {
                 if (COLUMN_NAME_GROUP.equalsIgnoreCase(col.getName()))
                 {
@@ -163,13 +164,14 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         List<FieldKey> columns = new ArrayList<>();
 
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_PROJECT_ID));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_COMMENT));
 
-        return createUserView(context, filter, "Access Modification History:", columns, errors, ContainerFilter.Type.AllFolders);
+        return createUserView(context, filter, "Access Modification History", columns, errors, ContainerFilter.Type.AllFolders);
     }
 
     @Nullable
@@ -180,6 +182,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
 
         List<FieldKey> columns = new ArrayList<>();
 
+        columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CONTAINER));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_CREATED_BY));
         columns.add(FieldKey.fromParts(GroupAuditProvider.COLUMN_NAME_GROUP));
@@ -199,6 +202,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             settings.setBaseFilter(filter);
             settings.setQueryName(GroupManager.GROUP_AUDIT_EVENT);
             settings.setFieldKeys(columns);
+            settings.setAllowCustomizeView(false);
 
             if (filterType != null)
                 settings.setContainerFilterName(filterType.name());
@@ -326,6 +330,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             _userSchema = userSchema;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             TableInfo tinfoUsers = CoreSchema.getInstance().getTableInfoPrincipals();
@@ -347,11 +352,13 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             _groupId = groupId;
         }
 
+        @Override
         public String getName()
         {
             return "group";
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Integer id = (Integer)getBoundColumn().getValue(ctx);
@@ -388,6 +395,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
             out.write("&nbsp;");
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             set.add(_groupId);

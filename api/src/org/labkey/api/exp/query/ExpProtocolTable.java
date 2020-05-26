@@ -34,6 +34,7 @@ public interface ExpProtocolTable extends ExpTable<ExpProtocolTable.Column>
         Instrument,
         Software,
         ApplicationType,
-        ProtocolImplementation
+        ProtocolImplementation,
+        RunCount
     }
 }

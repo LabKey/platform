@@ -74,9 +74,9 @@ public class AnalyticsController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class BeginAction extends FormViewAction<SettingsForm>
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Analytics", null);
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", null);
         }
 
         public void validateCommand(SettingsForm target, Errors errors)

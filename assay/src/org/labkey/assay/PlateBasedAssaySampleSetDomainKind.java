@@ -15,11 +15,18 @@
  */
 package org.labkey.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.assay.AssayDomainKind;
+import org.labkey.api.exp.TemplateInfo;
+import org.json.JSONObject;
+import org.labkey.api.exp.api.SampleTypeDomainKindProperties;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.assay.plate.AbstractPlateBasedAssayProvider;
 import org.labkey.api.view.ActionURL;
@@ -27,6 +34,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.SampleSetDomainKind;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -120,5 +128,26 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     public void appendNavTrail(NavTree root, Container c, User user)
     {
         _assayDelegate.appendNavTrail(root, c, user);
+    }
+
+    @Override
+    public boolean showDefaultValueSettings()
+    {
+        return true;
+    }
+
+    @Override
+    public Domain createDomain(GWTDomain domain, SampleTypeDomainKindProperties arguments, Container container, User user, @Nullable TemplateInfo templateInfo)
+    {
+        JSONObject args = arguments != null ? arguments.toJSONObject() : null;
+        return _assayDelegate.createDomain(domain, args, container, user, templateInfo);
+    }
+
+    @NotNull
+    @Override
+    public ValidationException updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, @Nullable SampleTypeDomainKindProperties options, Container container, User user, boolean includeWarnings)
+    {
+        JSONObject args = options != null ? options.toJSONObject() : null;
+        return _assayDelegate.updateDomain(original, update, args, container, user, includeWarnings);
     }
 }

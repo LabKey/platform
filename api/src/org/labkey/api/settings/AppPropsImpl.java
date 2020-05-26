@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,13 +42,12 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.net.URISyntaxException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import static org.apache.commons.lang3.StringUtils.trimToNull;
@@ -104,16 +104,19 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
     private static final String SITE_CONFIG_NAME = "SiteConfig";
     private static final String SERVER_SESSION_GUID = GUID.makeGUID();
 
+    @Override
     protected String getType()
     {
         return "site settings";
     }
 
+    @Override
     protected String getGroupName()
     {
         return SITE_CONFIG_NAME;
     }
 
+    @Override
     public String getContextPath()
     {
         if (_contextPathStr == null)
@@ -123,11 +126,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return _contextPathStr;
     }
 
+    @Override
     public Path getParsedContextPath()
     {
         return _contextPath;
     }
 
+    @Override
     public void setContextPath(String contextPathStr)
     {
         _contextPathStr = contextPathStr;
@@ -140,21 +145,25 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         assert _contextPath.isDirectory();
     }
 
+    @Override
     public int getServerPort()
     {
         return getBaseServerProperties().getServerPort();
     }
 
+    @Override
     public String getScheme()
     {
         return getBaseServerProperties().getScheme();
     }
 
+    @Override
     public String getServerName()
     {
         return getBaseServerProperties().getServerName();
     }
 
+    @Override
     public void ensureBaseServerUrl(HttpServletRequest request)
     {
         String baseServerUrl = getBaseServerUrl();
@@ -196,16 +205,19 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return BaseServerProperties.parse(getBaseServerUrl());
     }
 
+    @Override
     public boolean isSetBaseServerUrl()
     {
         return null != getBaseServerUrl();
     }
 
+    @Override
     public String getBaseServerUrl()
     {
         return lookupStringValue(BASE_SERVER_URL_PROP, null);
     }
 
+    @Override
     public String getDefaultDomain()
     {
         return lookupStringValue(DEFAULT_DOMAIN_PROP, "");
@@ -213,27 +225,32 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     // CONSIDER: All the following should probably be migrated into look & feel settings, making them overrideable at the project level
 
+    @Override
     public String getHomePageUrl()
     {
         return getHomePageActionURL().getLocalURIString();
     }
 
+    @Override
     public ActionURL getHomePageActionURL()
     {
         //noinspection ConstantConditions
         return PageFlowUtil.urlProvider(ProjectUrls.class).getHomeURL();
     }
 
+    @Override
     public String getSiteWelcomePageUrlString()
     {
         return StringUtils.trimToNull(LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getCustomWelcome());
     }
 
+    @Override
     public int getLookAndFeelRevision()
     {
         return lookupIntValue(LOOK_AND_FEEL_REVISION, 0);
     }
 
+    @Override
     public String getDefaultLsidAuthority()
     {
         // Bad things happen if you change this value on an existing server, so making read-only per issue 26335
@@ -248,6 +265,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return result;
     }
 
+    @Override
     public String getPipelineToolsDirectory()
     {
         @SuppressWarnings("ConstantConditions")
@@ -257,56 +275,68 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupStringValue(PIPELINE_TOOLS_DIR_PROP, binDir.getAbsolutePath());
     }
 
+    @Override
     public boolean isSSLRequired()
     {
         return lookupBooleanValue(SSL_REQUIRED, false);
     }
 
+    @Override
     public boolean isUserRequestedAdminOnlyMode()
     {
         return lookupBooleanValue(USER_REQUESTED_ADMIN_ONLY_MODE, false);
     }
 
+    @Override
     public String getAdminOnlyMessage()
     {
         return lookupStringValue(ADMIN_ONLY_MESSAGE, "This site is currently undergoing maintenance, and only administrators can log in.");
     }
 
+    @Override
     public boolean isShowRibbonMessage()
     {
         return lookupBooleanValue(SHOW_RIBBON_MESSAGE, false);
     }
 
+    @Override
     public @Nullable String getRibbonMessageHtml()
     {
         return lookupStringValue(RIBBON_MESSAGE, null);
     }
 
 
+    @Override
     public int getSSLPort()
     {
         return lookupIntValue(SSL_PORT, 443);
     }
 
+    @Override
     public int getMemoryUsageDumpInterval()
     {
         return lookupIntValue(MEMORY_USAGE_DUMP_INTERVAL, 0);
     }
 
+    @Override
     public int getMaxBLOBSize()
     {
         return lookupIntValue(MAX_BLOB_SIZE, 50_000_000);
     }
 
+    @Override
     public boolean isExt3Required()
     {
         return lookupBooleanValue(EXT3_REQUIRED, false);
     }
 
+    @Override
     public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, false); }
 
+    @Override
     public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(SELF_REPORT_EXCEPTIONS, true); }
 
+    @Override
     public ExceptionReportingLevel getExceptionReportingLevel()
     {
         try
@@ -319,11 +349,13 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         }
     }
 
+    @Override
     public boolean isNavigationAccessOpen()
     {
         return lookupBooleanValue(NAV_ACCESS_OPEN, true);
     }
 
+    @Override
     public String getServerGUID()
     {
         ServletContext context = ModuleLoader.getServletContext();
@@ -352,21 +384,25 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return serverGUID;
     }
 
+    @Override
     public String getBLASTServerBaseURL()
     {
         return lookupStringValue(BLAST_SERVER_BASE_URL_PROP, "http://www.ncbi.nlm.nih.gov/blast/Blast.cgi?CMD=Web&amp;LAYOUT=TwoWindows&amp;AUTO_FORMAT=Semiauto&amp;ALIGNMENTS=50&amp;ALIGNMENT_VIEW=Pairwise&amp;CDD_SEARCH=on&amp;CLIENT=web&amp;COMPOSITION_BASED_STATISTICS=on&amp;DATABASE=nr&amp;DESCRIPTIONS=100&amp;ENTREZ_QUERY=(none)&amp;EXPECT=1000&amp;FILTER=L&amp;FORMAT_OBJECT=Alignment&amp;FORMAT_TYPE=HTML&amp;I_THRESH=0.005&amp;MATRIX_NAME=BLOSUM62&amp;NCBI_GI=on&amp;PAGE=Proteins&amp;PROGRAM=blastp&amp;SERVICE=plain&amp;SET_DEFAULTS.x=41&amp;SET_DEFAULTS.y=5&amp;SHOW_OVERVIEW=on&amp;END_OF_HTTPGET=Yes&amp;SHOW_LINKOUT=yes&amp;QUERY=");
     }
 
+    @Override
     public String getServerSessionGUID()
     {
         return SERVER_SESSION_GUID;
     }
 
+    @Override
     public boolean isMailRecorderEnabled()
     {
         return lookupBooleanValue(MAIL_RECORDER_ENABLED, false);
     }
 
+    @Override
     public boolean isExperimentalFeatureEnabled(String feature)
     {
         feature = EXPERIMENTAL_FEATURE_PREFIX + feature;
@@ -375,6 +411,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return lookupBooleanValue(feature, false);
     }
 
+    @Override
     public boolean isDevMode()
     {
         return Boolean.getBoolean("devmode");
@@ -386,16 +423,30 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return _enlistmentId;
     }
 
+    @Override
     public boolean isCachingAllowed()
     {
         return Boolean.getBoolean("caching") || !isDevMode();
     }
 
+    @Override
     public boolean isRecompileJspEnabled()
     {
         return isDevMode() && !Boolean.getBoolean("labkey.disableRecompileJsp");
     }
 
+    /**
+     * @inheritDoc
+     *
+     * Default Implementation.
+     */
+    @Override
+    public boolean isIgnoreModuleSource()
+    {
+        return Boolean.getBoolean("labkey.ignoreModuleSource");
+    }
+
+    @Override
     public void setProjectRoot(String projectRoot)
     {
         _projectRoot = projectRoot;
@@ -404,12 +455,14 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             _enlistmentId = ModuleLoader.getInstance().loadEnlistmentId(new File(_projectRoot));
     }
 
+    @Override
     @Nullable
     public String getProjectRoot()
     {
         return _projectRoot;
     }
 
+    @Override
     @Nullable
     public File getFileSystemRoot()
     {
@@ -421,6 +474,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return null;
     }
 
+    @Override
     @Nullable
     public File getUserFilesRoot()
     {
@@ -432,6 +486,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return null;
     }
 
+    @Override
     @NotNull
     public UsageReportingLevel getUsageReportingLevel()
     {
@@ -447,6 +502,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     // Get the name of the webapp configuration file, e.g., labkey.xml, cpas.xml, or ROOT.xml.  Used in some error messages
     //  to provide suggestions to the admin.
+    @Override
     public String getWebappConfigurationFilename()
     {
         String path = getContextPath();
@@ -468,7 +524,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         }
 
         // Sort to find the minimum user id (i.e. oldest administrator's email address)
-        members.sort(Comparator.comparing(Pair::getKey));
+        members.sort(Entry.comparingByKey());
         
         Set<String> validOptions = new HashSet<>();
         for (Pair<Integer, String> entry : members)
@@ -495,11 +551,20 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
         return "Please <a href=\"mailto:" + PageFlowUtil.filter(getAdministratorContactEmail(true)) + "\">contact a system administrator</a>";
     }
 
-    // TODO: Ditch this in favor of Constants.getPreviousReleaseVersion()?
-    public String getLabKeyVersionString()
+    @NotNull
+    @Override
+    public String getReleaseVersion()
     {
-        DecimalFormat format = new DecimalFormat("0.00");
-        return format.format(ModuleLoader.getInstance().getCoreModule().getVersion());
+        return ObjectUtils.defaultIfNull(ModuleLoader.getInstance().getCoreModule().getReleaseVersion(), UNKNOWN_VERSION);
+    }
+
+    @Override
+    public double getSchemaVersion()
+    {
+        Double version = ModuleLoader.getInstance().getCoreModule().getSchemaVersion();
+        if (null == version)
+            throw new IllegalStateException("Core module schema version shouldn't be null");
+        return version;
     }
 
     @Override
@@ -543,8 +608,6 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
 
     public static void populateSiteSettingsWithStartupProps()
     {
-        final boolean isBootstrap = ModuleLoader.getInstance().isNewInstall();
-
         // populate site settings with values from startup configuration as appropriate for prop modifier and isBootstrap flag
         // expects startup properties formatted like: SiteSettings.sslRequired;bootstrap=True
         // for a list of recognized site setting properties refer to: AppPropsImpl.java
@@ -553,12 +616,7 @@ class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppProps
             return;
         WriteableAppProps writeable = AppProps.getWriteableInstance();
         startupProps
-            .forEach(prop -> {
-                if (prop.getModifier() == ConfigProperty.modifier.startup || (isBootstrap && prop.getModifier() == ConfigProperty.modifier.bootstrap))
-                {
-                    writeable.storeStringValue(prop.getName(), prop.getValue());
-                }
-            });
+            .forEach(prop -> writeable.storeStringValue(prop.getName(), prop.getValue()));
         writeable.save(null);
     }
 

@@ -79,6 +79,12 @@ public interface ExperimentSaveHandler
             throws JSONException, ValidationException, ExperimentException;
 
     /**
+     * Handles each run without batch.
+     * Invoked by SaveAssayRun action.
+     */
+    ExpRun handleRunWithoutBatch(ViewContext context, JSONObject runJson, ExpProtocol protocol) throws ExperimentException, ValidationException;
+
+    /**
      * Handles persistence of each outout data object if included
      * Called from DefaultAssaySaveHandler.handleProtocolApplications
      */

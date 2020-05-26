@@ -16,7 +16,10 @@
 package org.labkey.api.exp;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.exp.api.ExpDataClass;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -66,7 +69,6 @@ public enum LsidType
                 {
                     return ExperimentService.get().getExpProtocol(lsid.toString());
                 }
-
             },
 
     ProtocolApplication
@@ -103,7 +105,6 @@ public enum LsidType
 
     MaterialSource
             {
-
                 @Nullable
                 public ActionURL getDisplayURL(Lsid lsid)
                 {
@@ -134,6 +135,22 @@ public enum LsidType
                 }
             },
 
+    DataClass
+            {
+                @Nullable
+                public ActionURL getDisplayURL(Lsid lsid)
+                {
+                    ExpDataClass source = getObject(lsid);
+                    return source == null ? null :
+                            PageFlowUtil.urlProvider(ExperimentUrls.class).getShowDataClassURL(source.getContainer(), source.getRowId());
+                }
+
+                public ExpDataClass getObject(Lsid lsid)
+                {
+                    return ExperimentService.get().getDataClass(lsid.toString());
+                }
+            },
+
     ExperimentRun
             {
                 @Nullable
@@ -148,7 +165,6 @@ public enum LsidType
                 {
                     return ExperimentService.get().getExpRun(lsid.toString());
                 }
-
             },
 
     Fraction

@@ -23,6 +23,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.MutableColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UnionContainerFilter;
@@ -55,7 +56,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
-    public BaseColumnInfo createColumn(String alias, Column column)
+    public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
         {
@@ -100,12 +101,15 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 setupNonEditableCol(batchProtocolCol);
                 return batchProtocolCol;
             }
+
+            case Properties:
+                return (BaseColumnInfo) createPropertiesColumn(alias);
             default:
                 throw new UnsupportedOperationException("Unknown column " + column);
         }
     }
 
-    private BaseColumnInfo setupNonEditableCol (BaseColumnInfo col)
+    private MutableColumnInfo setupNonEditableCol (MutableColumnInfo col)
     {
         col.setUserEditable(false);
         col.setReadOnly(true);
@@ -179,6 +183,10 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         defaultCols.add(FieldKey.fromParts(Column.Folder.toString()));
         setDefaultVisibleColumns(defaultCols);
         addColumn(Column.LSID).setHidden(true);
+
+        addVocabularyDomains();
+        addColumn(Column.Properties);
+
         setTitleColumn("Name");
 
         DetailsURL detailsURL = new DetailsURL(new ActionURL(ExperimentController.DetailsAction.class, _userSchema.getContainer()), Collections.singletonMap("rowId", "RowId"));

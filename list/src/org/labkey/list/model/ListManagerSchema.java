@@ -38,7 +38,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Button;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -213,7 +213,7 @@ public class ListManagerSchema extends UserSchema
                                 Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
                                 ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
                                 designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
-                                out.write(PageFlowUtil.textLink("View Design", designUrl));
+                                out.write(PageFlowUtil.textLink("Design", designUrl));
                             }
                         };
                         ret.add(designColumn);

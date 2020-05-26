@@ -28,6 +28,7 @@ import org.labkey.test.tests.AbstractAssayTest;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
+import org.labkey.test.util.StudyHelper;
 import org.openqa.selenium.By;
 
 import java.io.File;
@@ -99,10 +100,10 @@ public class TargetStudyTest extends AbstractAssayTest
     {
         log("** Import specimens into Study 1 and Study 2");
         setupPipeline(TEST_ASSAY_PRJ_SECURITY);
-        SpecimenImporter importer1 = new SpecimenImporter(TestFileUtils.getTestTempDir(), new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"), new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY1, 1);
+        SpecimenImporter importer1 = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY1, 1);
         importer1.startImport();
 
-        SpecimenImporter importer2 = new SpecimenImporter(TestFileUtils.getTestTempDir(), new File(TestFileUtils.getLabKeyRoot(), "/sampledata/study/specimens/sample_a.specimens"), new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
+        SpecimenImporter importer2 = new SpecimenImporter(TestFileUtils.getTestTempDir(), StudyHelper.SPECIMEN_ARCHIVE_A, new File(TestFileUtils.getTestTempDir(), "specimensSubDir"), TEST_ASSAY_FLDR_STUDY2, 1);
         importer2.startImport();
 
         importer1.waitForComplete();

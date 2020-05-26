@@ -59,9 +59,9 @@ public class FileContentModule extends DefaultModule
     }
 
     @Override
-    public double getVersion()
+    public Double getSchemaVersion()
     {
-        return 19.20;
+        return 20.000;
     }
 
     @Override
@@ -77,9 +77,9 @@ public class FileContentModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(
-                new FilesWebPart.Factory()
-        ));
+        return Arrays.asList(
+            new FilesWebPart.Factory()
+        );
     }
 
     @Override
@@ -195,9 +195,9 @@ public class FileContentModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<>(Arrays.asList(
-            FileContentServiceImpl.TestCase.class,
-            FileContentController.TestCase.class
-        ));
+        return Set.of(
+            FileContentController.TestCase.class,
+            FileContentServiceImpl.TestCase.class
+        );
     }
 }

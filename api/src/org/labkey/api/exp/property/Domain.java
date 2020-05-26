@@ -35,12 +35,13 @@ import org.labkey.api.writer.ContainerUser;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 public interface Domain extends IPropertyType
 {
     Object get_Ts();
     Container getContainer();
-    DomainKind getDomainKind();
+    DomainKind<?> getDomainKind();
     String getName();
     String getDescription();
     int getTypeId();
@@ -66,6 +67,13 @@ public interface Domain extends IPropertyType
     DomainProperty addProperty(PropertyStorageSpec spec);
 
     List<BaseColumnInfo> getColumns(TableInfo sourceTable, ColumnInfo lsidColumn, Container container, User user);
+
+    /*
+     * This returns a lock which will acquire an UPDATE lock on the domain row in the database.
+     * This can be called at the beginning of a transaction to help reduce the chance of a dead-lock.
+     * This pattern effectively forces all callers who are trying to manipulate this domain to queue up.
+     */
+    public Lock getDatabaseLock();
 
     void delete(@Nullable User user) throws DomainNotFoundException;
     void save(User user) throws ChangePropertyDescriptorException;

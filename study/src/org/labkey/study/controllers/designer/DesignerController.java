@@ -161,9 +161,9 @@ public class DesignerController extends SpringActionController
             return new StudyDesignsWebPart(getViewContext(), false);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Protocol Registration");
+            root.addChild("Study Protocol Registration");
         }
     }
 
@@ -205,15 +205,9 @@ public class DesignerController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DesignerAction extends SimpleViewAction<StudyDesignForm>
     {
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            try
-            {
-            if (null != getCommand().getPanel())
-                root.addChild("Study Protocol Registration");
-            } catch(Exception e)
-            {}
-            return root;
+            root.addChild("Study Protocol Registration");
         }
 
         public ModelAndView getView(StudyDesignForm form, BindException errors) throws Exception
@@ -253,7 +247,7 @@ public class DesignerController extends SpringActionController
                     params.put("finishURL", form.getFinishURL());
 
                 HttpView studyView = new StudyGWTView(gwt.client.org.labkey.study.designer.client.Designer.class, params);
-                if (0 != form.getStudyId() && info != null)
+                if (0 != form.getStudyId() && info != null && DiscussionService.get() != null)
                 {
                     HttpView discussion = DiscussionService.get().getDiscussionArea(
                             getViewContext(),
@@ -526,9 +520,9 @@ public class DesignerController extends SpringActionController
             return new JspView<>("/org/labkey/study/designer/view/CreateRepositoryWizard.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Create Study Folder: " + _titleForNav);
+            root.addChild("Create Study Folder: " + _titleForNav);
         }
     }
 

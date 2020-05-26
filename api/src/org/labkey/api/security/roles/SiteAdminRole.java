@@ -16,9 +16,11 @@
 package org.labkey.api.security.roles;
 
 import org.labkey.api.security.permissions.*;
+import org.labkey.api.settings.AppProps;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * The Site Administrator role. Site admins are equivalent to root in *nix - they can do anything.
@@ -35,7 +37,8 @@ public class SiteAdminRole extends AbstractRootContainerRole
         CanUseSendMessageApiPermission.class,
         EmailNonUsersPermission.class,
         PlatformDeveloperPermission.class,
-        TrustedPermission.class
+        TrustedPermission.class,
+        UploadFileBasedModulePermission.class
     );
 
     public SiteAdminRole()
@@ -43,7 +46,8 @@ public class SiteAdminRole extends AbstractRootContainerRole
         super("Site Administrator", "Site Administrators have full control over the entire system.",
             FolderAdminRole.PERMISSIONS,
             ApplicationAdminRole.PERMISSIONS,
-            PERMISSIONS
+            PERMISSIONS,
+            AppProps.getInstance().isDevMode() ? Collections.singleton(EditModuleResourcesPermission.class) : Collections.emptyList()
         );
     }
 }

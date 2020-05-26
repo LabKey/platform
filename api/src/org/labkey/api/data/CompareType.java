@@ -18,28 +18,33 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
-import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.junit.Test;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.SimpleFilter.ColumnNameFormatter;
 import org.labkey.api.data.SimpleFilter.FilterClause;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdQueryForeignKey;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.data.xml.queryCustomView.OperatorType;
 
 import java.util.ArrayList;
@@ -53,6 +58,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Comparison operators that can be used to create filters over columns.
@@ -69,6 +80,7 @@ import java.util.Set;
  */
 public abstract class CompareType
 {
+    public static final String ME_FILTER_PARAM_VALUE = "~me~";
     public static final String JSON_MARKER_START = "{json:";
     public static final String JSON_MARKER_END = "}";
 
@@ -85,7 +97,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             if (value == null)
             {
@@ -96,8 +108,7 @@ public abstract class CompareType
             {
                 return true;
             }
-            // Then try converting to the same type
-            return value.equals(convert(filterValues[0], value.getClass()));
+            return value.equals(convertParamValue(col, filterValues[0]));
         }
     };
 
@@ -110,14 +121,14 @@ public abstract class CompareType
             if (value == null || "".equals(value))
                 return ISBLANK.createFilterClause(fieldKey, value);
 
-            return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateEqCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
@@ -130,9 +141,9 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
-            return !CompareType.EQUAL.meetsCriteria(value, filterValues);
+            return !CompareType.EQUAL.meetsCriteria(col, value, filterValues);
         }
     };
 
@@ -145,14 +156,14 @@ public abstract class CompareType
             if (value == null || "".equals(value))
                 return NONBLANK.createFilterClause(fieldKey, value);
 
-            return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateNeqCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
@@ -165,27 +176,27 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
-            return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
+            return value == null || !CompareType.EQUAL.meetsCriteria(col, value, filterValues);
         }
     };
 
     public static final CompareType GT = new CompareType("Is Greater Than", "gt", "GREATER_THAN", true, " > ?", OperatorType.GT)
     {
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             if (!(value instanceof Comparable))
             {
                 return false;
             }
-            Object filterValue = convert(filterValues[0], value.getClass());
-            if (filterValue == null)
+            Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) > 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) > 0;
         }
     };
 
@@ -194,32 +205,33 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateGtCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
     public static final CompareType LT = new CompareType("Is Less Than", "lt", "LESS_THAN", true, " < ?", OperatorType.LT)
     {
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             if (!(value instanceof Comparable))
             {
                 return false;
             }
-            Object filterValue = convert(filterValues[0], value.getClass());
-            if (filterValue == null)
+            Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) < 0;
+
+            return compareTo((Comparable)value, (Comparable)filterValue) < 0;
         }
     };
 
@@ -228,32 +240,32 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateLtCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
     public static final CompareType GTE = new CompareType("Is Greater Than or Equal To", "gte", "GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
     {
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             if (!(value instanceof Comparable))
             {
                 return false;
             }
-            Object filterValue = convert(filterValues[0], value.getClass());
-            if (filterValue == null)
+            Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) >= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) >= 0;
         }
     };
 
@@ -262,32 +274,32 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateGteCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
     public static final CompareType LTE = new CompareType("Is Less Than or Equal To", "lte", "LESS_THAN_OR_EQUAL", true, " <= ?", OperatorType.LTE)
     {
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             if (!(value instanceof Comparable))
             {
                 return false;
             }
-            Object filterValue = convert(filterValues[0], value.getClass());
-            if (filterValue == null)
+            Object filterValue = CompareType.convertParamValue(col, filterValues[0]);
+            if (!(filterValue instanceof Comparable))
             {
                 return false;
             }
-            return ((Comparable)value).compareTo(filterValue) <= 0;
+            return compareTo((Comparable)value, (Comparable)filterValue) <= 0;
         }
     };
 
@@ -296,14 +308,14 @@ public abstract class CompareType
         @Override
         public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
         {
-            return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
+            return new DateLteCompareClause(fieldKey, value, toDatePart(asDate(value)));
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             CompareClause clause = createFilterClause(FieldKey.fromParts("unused"), paramVals.length > 0 ? paramVals[0] : null);
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
     };
 
@@ -316,7 +328,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value != null && value.toString().startsWith((String)filterValues[0]);
         }
@@ -331,7 +343,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value == null || !value.toString().startsWith((String)filterValues[0]);
         }
@@ -346,7 +358,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value != null && value.toString().contains((String) filterValues[0]);
         }
@@ -361,7 +373,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value == null || !value.toString().contains((String) filterValues[0]);
         }
@@ -389,10 +401,10 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -421,10 +433,10 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = createFilterClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-            return !clause.meetsCriteria(value);
+            return !clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -463,10 +475,10 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-            return clause.meetsCriteria(value);
+            return clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -505,10 +517,10 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FilterClause clause = new SimpleFilter.InClause(FieldKey.fromParts("unused"), Arrays.asList(paramVals));
-            return !clause.meetsCriteria(value);
+            return !clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -531,7 +543,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
         }
@@ -550,7 +562,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
         }
@@ -581,13 +593,23 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FieldKey fieldKey = FieldKey.fromParts("unused");
-            FilterClause clause = new SimpleFilter.AndClause(
-                    GTE.createFilterClause(fieldKey, paramVals[0]),
-                    LTE.createFilterClause(fieldKey, paramVals[1]));
-            return clause.meetsCriteria(value);
+            FilterClause clause;
+            if (col.isDateTimeType())
+            {
+                clause = new SimpleFilter.AndClause(
+                        DATE_GTE.createFilterClause(fieldKey, asDate(paramVals[0])),
+                        DATE_LTE.createFilterClause(fieldKey, asDate(paramVals[1])));
+            }
+            else
+            {
+                clause = new SimpleFilter.AndClause(
+                        GTE.createFilterClause(fieldKey, paramVals[0]),
+                        LTE.createFilterClause(fieldKey, paramVals[1]));
+            }
+            return clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -622,13 +644,23 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             FieldKey fieldKey = FieldKey.fromParts("unused");
-            FilterClause clause = new SimpleFilter.OrClause(
-                    LT.createFilterClause(fieldKey, paramVals[0]),
-                    GT.createFilterClause(fieldKey, paramVals[1]));
-            return clause.meetsCriteria(value);
+            FilterClause clause;
+            if (col.isDateTimeType())
+            {
+                clause = new SimpleFilter.OrClause(
+                        DATE_LT.createFilterClause(fieldKey, asDate(paramVals[0])),
+                        DATE_GT.createFilterClause(fieldKey, asDate(paramVals[1])));
+            }
+            else
+            {
+                clause = new SimpleFilter.OrClause(
+                        LT.createFilterClause(fieldKey, paramVals[0]),
+                        GT.createFilterClause(fieldKey, paramVals[1]));
+            }
+            return clause.meetsCriteria(col, value);
         }
 
         @Override
@@ -647,7 +679,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
         }
@@ -666,7 +698,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value == null;
         }
@@ -688,7 +720,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] filterValues)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] filterValues)
         {
             return value != null;
         }
@@ -710,7 +742,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
         }
@@ -725,7 +757,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value, Object[] paramVals)
+        public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
         {
             throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
         }
@@ -747,6 +779,8 @@ public abstract class CompareType
 
     private static class QClause extends CompareType.CompareClause
     {
+        private List<ColumnInfo> _queryColumns = null;
+
         QClause(String value)
         {
             super(new FieldKey(null, "*"), Q, value);
@@ -764,43 +798,96 @@ public abstract class CompareType
         @Override
         public List<FieldKey> getFieldKeys()
         {
-            return Collections.emptyList();
+            return this.getQueryColumns(null).stream().map(ColumnInfo::getFieldKey).collect(Collectors.toList());
+        }
+
+        private List<ColumnInfo> getQueryColumns(@Nullable Integer paramNum)
+        {
+            if (_selectColumns == null)
+                return Collections.emptyList();
+
+            if (_queryColumns == null)
+            {
+                _queryColumns = new ArrayList<>();
+                for (ColumnInfo column : _selectColumns)
+                {
+                    if (column == null)
+                        continue;
+
+                    // If the search term parsed as a number, include a test for the primary key column
+                    if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
+                    {
+                        _queryColumns.add(column);
+                    }
+
+                    // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
+                    if (column.isHidden())
+                        continue;
+
+                    // skip uninteresting things like 'Folder' and 'CreatedBy'
+                    ForeignKey fk = column.getFk();
+                    if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
+                        continue;
+
+                    ColumnInfo targetColumn = column.getDisplayField();
+                    if (targetColumn == null)
+                        targetColumn = column;
+
+                    // skip more uninteresting columns
+                    if (!targetColumn.isStringType() ||
+                            targetColumn.getName().equalsIgnoreCase("lsid") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") ||
+                            targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
+                        continue;
+
+                    _queryColumns.add(targetColumn);
+                }
+            }
+            return _queryColumns;
         }
 
         @Override
         public SQLFragment toSQLFragment(Map<FieldKey, ? extends ColumnInfo> columnMap, SqlDialect dialect)
         {
-            final String escapedValue = escapeLabKeySqlValue(getParamVals()[0], JdbcType.VARCHAR, true /* suppressQuotes */);
+            final Object param = getParamVals()[0];
+            final String escapedValue = escapeLabKeySqlValue(param, JdbcType.VARCHAR, true);
             if (_selectColumns == null || _selectColumns.isEmpty() || escapedValue.isEmpty())
                 return new SQLFragment("1=1");
+
+            Integer paramNum = null;
+            try
+            {
+                String paramString = Objects.toString(param, null);
+                if (paramString != null)
+                    paramNum = Integer.parseInt(paramString);
+            }
+            catch (NumberFormatException ex)
+            {
+                // ok
+            }
 
             boolean hasResult = false;
             SQLFragment sql = new SQLFragment();
             String sep = "";
 
-            for (ColumnInfo column : _selectColumns)
+            for (ColumnInfo column : this.getQueryColumns(paramNum))
             {
                 if (column == null)
                     continue;
 
-                // skip uninteresting things like 'LSID' and 'SourceProtocolApplication'
-                if (column.isHidden())
+                // If the search term parsed as a number, include a test for the primary key column
+                if (paramNum != null && column.isKeyField() && column.getJdbcType().isNumeric())
+                {
+                    hasResult = true;
+                    sql.append(sep);
+                    sep = " OR ";
+                    sql.append(dialect.getColumnSelectName(column.getAlias()));
+                    sql.append(" = ");
+                    sql.append(paramNum);
                     continue;
+                }
 
-                // skip uninteresting things like 'Folder' and 'CreatedBy'
-                ForeignKey fk = column.getFk();
-                if (fk instanceof UserIdQueryForeignKey || fk instanceof UserIdForeignKey || fk instanceof ContainerForeignKey)
-                    continue;
-
-                ColumnInfo targetColumn = column.getDisplayField();
-                if (targetColumn == null)
-                    targetColumn = column;
-
-                // skip more uninteresting columns
-                if (!targetColumn.isStringType() || targetColumn.getName().equalsIgnoreCase("lsid") || targetColumn.getSqlTypeName().equalsIgnoreCase("lsidtype") || targetColumn.getSqlTypeName().equalsIgnoreCase("entityid"))
-                    continue;
-
-                ColumnInfo mappedColumn = columnMap.get(targetColumn.getFieldKey());
+                ColumnInfo mappedColumn = columnMap.get(column.getFieldKey());
                 if (mappedColumn == null)
                     continue;
 
@@ -851,7 +938,7 @@ public abstract class CompareType
         return QueryService.get().getCompareTypes();
     }
 
-    private static Set<String> parseParams(Object value_, String separator)
+    protected static Set<String> parseParams(Object value_, String separator)
     {
         if (value_ == null)
             return Collections.emptySet();
@@ -889,25 +976,6 @@ public abstract class CompareType
             Collections.addAll(values, st);
         }
         return values;
-    }
-
-    private static <T> T convert(Object value, Class<T> targetClass)
-    {
-        if (value == null || targetClass.isInstance(value))
-        {
-            return (T)value;
-        }
-
-        Converter converter = ConvertUtils.lookup(targetClass);
-        if (converter != null)
-        {
-            try
-            {
-                return (T)converter.convert(targetClass, value);
-            }
-            catch (ConversionException e) {}
-        }
-        return null;
     }
 
     @Nullable
@@ -998,7 +1066,7 @@ public abstract class CompareType
         return _valueSeparator;
     }
 
-    public boolean meetsCriteria(Object value, Object[] paramVals)
+    public boolean meetsCriteria(ColumnRenderProperties col, Object value, Object[] paramVals)
     {
         // if not implemented, but be implemented by the FilterClause
         throw new UnsupportedOperationException();
@@ -1175,14 +1243,30 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
-            return getCompareType().meetsCriteria(value, getParamVals());
+            return getCompareType().meetsCriteria(col, value, getParamVals());
         }
     }
 
+    // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+    // Widen numeric types before calling compareTo to avoid ClassCastException comparing Long to Integer
+    private static int compareTo(@NotNull Comparable a, @NotNull Comparable b)
+    {
+        if (a.getClass() == b.getClass())
+            return a.compareTo(b);
+
+        if (a instanceof Number && b instanceof Number)
+        {
+            // widen and compare both numbers as doubles
+            return Double.compare(((Number) a).doubleValue(), ((Number) b).doubleValue());
+        }
+
+        return ((Comparable)a).compareTo(b);
+    }
+
     // Converts parameter value to the proper type based on the SQL type of the ColumnInfo
-    public static Object convertParamValue(ColumnInfo colInfo, Object paramVal)
+    public static Object convertParamValue(ColumnRenderProperties colInfo, Object paramVal)
     {
         if (colInfo == null)
         {
@@ -1195,12 +1279,12 @@ public abstract class CompareType
         String stringValue = (String)paramVal;
 
         // Expand the magic 'me' value if the column is a userid or a user display name
-        if ("~me~".equals(stringValue))
+        if (ME_FILTER_PARAM_VALUE.equals(stringValue))
         {
             // get the current user from the query env
             User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
 
-            if (colInfo.getJdbcType() == JdbcType.INTEGER && ("userid".equals(colInfo.getSqlTypeName()) || colInfo.getFk() instanceof UserIdForeignKey))
+            if (isUserIdColumn(colInfo))
             {
                 if (user != null)
                     return user.getUserId();
@@ -1208,10 +1292,7 @@ public abstract class CompareType
                 return User.guest.getUserId();
             }
 
-            // TODO: How can I tell if this column is the core.Users DisplayName display column?
-            if (colInfo.getJdbcType() == JdbcType.VARCHAR &&
-                    (colInfo instanceof LookupColumn  || (colInfo instanceof AliasedColumn && ((AliasedColumn)colInfo).getColumn() instanceof LookupColumn)) &&
-                    (colInfo.getPropertyURI().endsWith("core#UsersData.DisplayName") || colInfo.getPropertyURI().endsWith("core#Users.DisplayName")))
+            if (isUserDisplayColumn(colInfo))
             {
                 if (user != null)
                     return user.getDisplayName(user);
@@ -1223,8 +1304,63 @@ public abstract class CompareType
         return getParamValue(colInfo, stringValue);
     }
 
+    // Returns true if the column is an integer user id column or is a lookup to core.Users
+    private static boolean isUserIdColumn(ColumnRenderProperties col)
+    {
+        if (col.getJdbcType() != JdbcType.INTEGER)
+            return false;
 
-    private static Object getParamValue(ColumnInfo colInfo, String stringValue)
+        ForeignKey fk = null;
+        String lookupSchemaName = null;
+        String lookupQueryName = null;
+        if (col instanceof ColumnInfo)
+        {
+            ColumnInfo colInfo = (ColumnInfo)col;
+            String sqlTypeName = colInfo.getSqlTypeName();
+            if ("userid".equalsIgnoreCase(sqlTypeName))
+                return true;
+
+            fk = colInfo.getFk();
+            if (fk instanceof UserIdForeignKey || fk instanceof UserIdQueryForeignKey)
+                return true;
+
+            if (fk != null)
+            {
+                lookupSchemaName = fk.getLookupSchemaName();
+                lookupQueryName = fk.getLookupTableName();
+            }
+        }
+        else if (col instanceof PropertyDescriptor)
+        {
+            lookupSchemaName = ((PropertyDescriptor)col).getLookupSchema();
+            lookupQueryName = ((PropertyDescriptor)col).getLookupQuery();
+        }
+
+        if ("core".equalsIgnoreCase(lookupSchemaName) &&
+                ("users".equalsIgnoreCase(lookupQueryName) || "usersdata".equalsIgnoreCase(lookupQueryName)))
+            return true;
+
+        return false;
+    }
+
+    // TODO: How can I tell if this column is the core.Users DisplayName display column?
+    // Returns true if the column is a varchar user display value column
+    private static boolean isUserDisplayColumn(ColumnRenderProperties col)
+    {
+        if (col.getJdbcType() != JdbcType.VARCHAR)
+            return false;
+
+        if (col instanceof LookupColumn || (col instanceof AliasedColumn && ((AliasedColumn)col).getColumn() instanceof LookupColumn))
+        {
+            String propertyURI = col.getPropertyURI();
+            if (propertyURI != null && (propertyURI.endsWith("core#UsersData.DisplayName") || propertyURI.endsWith("core#Users.DisplayName")))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static Object getParamValue(ColumnRenderProperties colInfo, String stringValue)
     {
         JdbcType type = colInfo.getJdbcType();
         switch (type)
@@ -1304,9 +1440,9 @@ public abstract class CompareType
                     stringValue = StringUtils.trimToNull(stringValue);
                     if (stringValue == null)
                     {
-                        return new Parameter.TypedValue(null, JdbcType.DOUBLE);
+                        return new Parameter.TypedValue(null, type == JdbcType.REAL ? JdbcType.REAL : JdbcType.DOUBLE);
                     }
-                    return Double.valueOf(stringValue);
+                    return type == JdbcType.REAL ? Float.valueOf(stringValue) : Double.valueOf(stringValue);
                 }
                 catch (NumberFormatException e)
                 {
@@ -1385,17 +1521,25 @@ public abstract class CompareType
         private final String _filterTextDate;
         private final String _filterTextOperator;
 
-        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0)
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0)
         {
             super(fieldKey, t, param0.getTime());
-            _filterTextDate = ConvertUtils.convert(date.getTime());
+            if (null == rawFilterValue)
+                rawFilterValue = "";
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
         }
 
-        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Calendar date, Calendar param0, Calendar param1)
+        DateCompareClause(FieldKey fieldKey, CompareType t, String op, Object rawFilterValue, Calendar param0, Calendar param1)
         {
             super(fieldKey, t, null);
-            _filterTextDate = ConvertUtils.convert(date.getTime());
+            if (null == rawFilterValue)
+                rawFilterValue = "";
+            if (rawFilterValue instanceof Calendar)
+                rawFilterValue = ((Calendar)rawFilterValue).getTime();
+            _filterTextDate = rawFilterValue instanceof Date ? ConvertUtils.convert(rawFilterValue) : String.valueOf(rawFilterValue);
             _filterTextOperator = op;
             _paramVals = new Object[]{param0.getTime(), param1.getTime()};
         }
@@ -1415,6 +1559,12 @@ public abstract class CompareType
             sb.append(_filterTextOperator);
             sb.append(_filterTextDate);
         }
+
+        @Override
+        protected String toURLParamValue()
+        {
+            return _filterTextDate;
+        }
     }
 
 
@@ -1422,7 +1572,12 @@ public abstract class CompareType
     {
         DateEqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_EQUAL, " = ", startValue, startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateEqCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_EQUAL, " = ", rawFilterValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -1441,7 +1596,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return false;
@@ -1457,7 +1612,12 @@ public abstract class CompareType
     {
         DateNeqCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_NOT_EQUAL, " <> ", startValue, startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateNeqCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_NOT_EQUAL, " <> ", rawFilterValue, startValue, addOneDay(startValue));
         }
 
         @Override
@@ -1476,7 +1636,7 @@ public abstract class CompareType
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return true;
@@ -1492,11 +1652,16 @@ public abstract class CompareType
     {
         DateGtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_GT, " > ", startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateGtCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_GT, " > ", rawFilterValue, addOneDay(startValue));
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return false;
@@ -1511,11 +1676,16 @@ public abstract class CompareType
     {
         DateGteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_GTE, " >= ", startValue, startValue);
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateGteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_GTE, " >= ", rawFilterValue, startValue);
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return false;
@@ -1530,11 +1700,16 @@ public abstract class CompareType
     {
         DateLtCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_LT, " < ", startValue, startValue);
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateLtCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_LT, " < ", rawFilterValue, startValue);
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return false;
@@ -1549,11 +1724,16 @@ public abstract class CompareType
     {
         DateLteCompareClause(FieldKey fieldKey, Calendar startValue)
         {
-            super(fieldKey, DATE_LTE, " <= ", startValue, addOneDay(startValue));
+            this(fieldKey, startValue, startValue);
+        }
+
+        DateLteCompareClause(FieldKey fieldKey, Object rawFilterValue, Calendar startValue)
+        {
+            super(fieldKey, DATE_LTE, " <= ", rawFilterValue, addOneDay(startValue));
         }
 
         @Override
-        public boolean meetsCriteria(Object value)
+        protected boolean meetsCriteria(ColumnRenderProperties col, Object value)
         {
             if (value == null)
                 return false;
@@ -1996,5 +2176,81 @@ public abstract class CompareType
         ret.append(" UNION SELECT ").append(Group.groupUsers).append(" WHERE 0 < (").append(userIdSQL).append(")");
         ret.append(")");
         return ret;
+    }
+
+    public static class TestCase
+    {
+        @Test
+        public void testMeFilterValue()
+        {
+            User user = TestContext.get().getUser();
+            Container container = ContainerManager.getSharedContainer();
+            UserSchema core = QueryService.get().getUserSchema(user, container, "core");
+
+            // lookup to core.SiteUsers
+            TableInfo usersTable = core.getTable("Users");
+            assertTrue(isUserIdColumn(usersTable.getColumn("UserId")));
+            assertTrue(isUserIdColumn(usersTable.getColumn("CreatedBy")));
+            assertTrue(isUserIdColumn(usersTable.getColumn("Owner")));
+
+            // lookup to core.Users
+            TableInfo usersAndGroupsTable = core.getTable("UsersAndGroups");
+            assertTrue(isUserIdColumn(usersTable.getColumn("UserId")));
+
+            TableInfo containerTable = core.getTable("Containers");
+            assertTrue(isUserIdColumn(((FilteredTable)containerTable).getRealTable().getColumn("CreatedBy")));
+
+            ColumnInfo createdByCol = containerTable.getColumn("CreatedBy");
+            assertTrue(isUserIdColumn(createdByCol));
+            assertFalse(isUserDisplayColumn(createdByCol));
+
+            // verify the user lookup display column
+            ColumnInfo createdByDisplayCol = createdByCol.getFk().createLookupColumn(createdByCol, "DisplayName");
+            assertFalse(isUserIdColumn(createdByDisplayCol));
+            assertTrue(isUserDisplayColumn(createdByDisplayCol));
+
+            // expand the '~me~' filter parameter value
+            assertEquals(user.getUserId(), CompareType.convertParamValue(createdByCol, ME_FILTER_PARAM_VALUE));
+            assertEquals(user.getDisplayName(user), CompareType.convertParamValue(createdByDisplayCol, ME_FILTER_PARAM_VALUE));
+
+            // Issue 40361: query-selectDistinct.api doesn't work when a ~me~ filter exists
+            // The logic checking isUserDisplayColumn() for QAliasedColumn was incorrect
+            var createdByDisplayNameFieldKey = FieldKey.fromParts("CreatedBy", "DisplayName");
+            Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(containerTable, List.of(createdByDisplayNameFieldKey));
+            ColumnInfo qAliasedCreatedByDisplayCol = cols.get(createdByDisplayNameFieldKey);
+            assertNotNull(qAliasedCreatedByDisplayCol);
+            assertFalse(isUserIdColumn(qAliasedCreatedByDisplayCol));
+            assertTrue(isUserDisplayColumn(qAliasedCreatedByDisplayCol));
+
+            // create PropertyDescriptor with lookup to core.Users table
+            PropertyDescriptor userPd = new PropertyDescriptor();
+            userPd.setPropertyType(PropertyType.INTEGER);
+            userPd.setName("Owner");
+            userPd.setLookupSchema("core");
+            userPd.setLookupQuery("Users");
+            assertTrue(isUserIdColumn(userPd));
+            assertEquals(user.getUserId(), CompareType.convertParamValue(userPd, ME_FILTER_PARAM_VALUE));
+
+            // verify conditional formatting matches
+            SimpleFilter.FilterClause clause = CompareType.EQUAL.createFilterClause(createdByCol.getFieldKey(), ME_FILTER_PARAM_VALUE);
+            assertFalse(clause.meetsCriteria(createdByCol, User.guest.getUserId()));
+            assertTrue(clause.meetsCriteria(createdByCol, user.getUserId()));
+            assertTrue(clause.meetsCriteria(userPd, user.getUserId()));
+            assertFalse(clause.meetsCriteria(createdByDisplayCol, user.getUserId()));
+            assertTrue(clause.meetsCriteria(createdByDisplayCol, user.getDisplayName(user)));
+
+            // Issue 39395: ClassCastException when rendering conditional formats in issue reports
+            // call meetsCriteria with a Long value against an Integer column type
+            SimpleFilter.FilterClause gtClause = CompareType.GT.createFilterClause(createdByCol.getFieldKey(), "1000");
+            assertTrue(gtClause.meetsCriteria(createdByCol, 1001L));
+        }
+
+        @Test
+        public void testUrlParamValue()
+        {
+            CompareClause ct = (CompareClause)CompareType.DATE_GT.createFilterClause(new FieldKey(null,"datecol"), "-1");
+            // make sure this isn't converted into a date
+            assertEquals("-1",ct.toURLParamValue());
+        }
     }
 }

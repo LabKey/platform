@@ -110,7 +110,13 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public String getDescriptorType()
     {
-        return RReportDescriptor.TYPE;
+        return null==_descriptor ? RReportDescriptor.TYPE : getDescriptor().getDescriptorType();
+    }
+
+    @Override
+    public ScriptReportDescriptor getDescriptor()
+    {
+        return super.getDescriptor();
     }
 
     public static boolean isEnabled()
@@ -869,21 +875,26 @@ public class RReport extends ExternalScriptEngineReport
     @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
-        // hack : prevent editing on module R reports, but for long term we probably want
-        // to create a module R report and handle the permission checking directly.
-        if (getDescriptorType().equals(ModuleRReportDescriptor.TYPE))
+        if (!super.hasEditPermissions(user, container, errors))
             return false;
 
-        if (!super.canEdit(user, container, errors))
+        // TODO consider: create subclass ModuleRReport
+        // Why aren't these two checks consistent???
+        if (getDescriptor() instanceof ModuleReportDescriptor)
+        {
+            if (!((ModuleReportDescriptor)getDescriptor()).canEdit(user, errors))
+                return false;
+        }
+        else if (getDescriptor().isModuleBased())
+        {
             return false;
+        }
 
-        if (user.isPlatformDeveloper())
-            return true;
         if (!user.isTrustedAnalyst())
         {
             errors.add(new SimpleValidationError("You must be either a PlatformDeveloper or TrustedAnalyst to update an R report."));
         }
-        else
+        else if (!user.isPlatformDeveloper())
         {
             ScriptEngine engine = getScriptEngine(container);
             boolean sandboxed;

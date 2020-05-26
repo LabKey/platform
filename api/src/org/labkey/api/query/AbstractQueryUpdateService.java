@@ -60,10 +60,13 @@ import org.labkey.api.exceptions.OptimisticConflictException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.exp.PropertyType;
+import org.labkey.api.exp.api.SampleSetService;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.exp.query.SamplesSchema;
+import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.TabLoader;
@@ -94,6 +97,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
+import static org.labkey.api.dataiterator.DetailedAuditLogDataIterator.AuditConfigs.AuditBehavior;
 
 public abstract class AbstractQueryUpdateService implements QueryUpdateService
 {
@@ -161,7 +165,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         DataIteratorBuilder dib = ((UpdateableTableInfo)getQueryTable()).persistRows(etl, context);
         dib = AttachmentDataIterator.getAttachmentDataIteratorBuilder(getQueryTable(), dib, user, context.getInsertOption().batch ? getAttachmentDirectory() : null, container, getAttachmentParentFactory());
-        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, QueryService.AuditAction.INSERT, user, container);
+        dib = DetailedAuditLogDataIterator.getDataIteratorBuilder(getQueryTable(), dib, context.getInsertOption() == InsertOption.MERGE ? QueryService.AuditAction.MERGE : QueryService.AuditAction.INSERT, user, container);
 
         return dib;
     }
@@ -208,12 +212,16 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, Map<String, Object> extraScriptContext)
+    protected int _importRowsUsingDIB(User user, Container container, DataIteratorBuilder in, @Nullable final ArrayList<Map<String, Object>> outputRows, DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
 
         context.getErrors().setExtraContext(extraScriptContext);
+        if (extraScriptContext != null)
+        {
+            context.setDataSource((String) extraScriptContext.get(DataIteratorUtil.DATA_SOURCE));
+        }
 
         in = preTriggerDataIterator(in, context);
 
@@ -320,7 +328,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     protected @Nullable List<Map<String, Object>> _insertRowsUsingDIB(User user, Container container, List<Map<String, Object>> rows,
-                                                      DataIteratorContext context, Map<String, Object> extraScriptContext)
+                                                      DataIteratorContext context, @Nullable Map<String, Object> extraScriptContext)
     {
         if (!hasPermission(user, InsertPermission.class))
             throw new UnauthorizedException("You do not have permission to insert data into this table.");
@@ -357,7 +365,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
         ListofMapsDataIterator maps = new ListofMapsDataIterator(colNames, rows);
         maps.setDebugName(debugName);
-        return LoggingDataIterator.wrap(maps);
+        return LoggingDataIterator.wrap((DataIterator)maps);
     }
 
 
@@ -427,10 +435,19 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (hasTableScript)
             getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.INSERT, false, errors, extraScriptContext);
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.INSERT, result);
+        addAuditEvent(user, container, QueryService.AuditAction.INSERT, null, result);
 
         return result;
+    }
+
+    protected void addAuditEvent(User user, Container container, QueryService.AuditAction auditAction, @Nullable Map<Enum, Object> configParameters, List<Map<String, Object>>... parameters)
+    {
+        if (!isBulkLoad())
+        {
+            AuditBehaviorType auditBehavior = configParameters != null ? (AuditBehaviorType) configParameters.get(AuditBehavior) : null;
+
+            getQueryTable().addAuditEvent(user, container, auditBehavior, auditAction, parameters);
+        }
     }
 
     private Map<String, Object> normalizeColumnNames(Map<String, Object> row)
@@ -580,8 +597,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         if (errors.hasErrors())
             throw errors;
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.UPDATE, oldRows, result);
+        addAuditEvent(user, container, QueryService.AuditAction.UPDATE, configParameters, oldRows, result);
 
         return result;
     }
@@ -644,8 +660,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         // Fire triggers, if any, and also throw if there are any errors
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.DELETE, false, errors, extraScriptContext);
 
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.DELETE, result);
+        addAuditEvent(user, container,  QueryService.AuditAction.DELETE, configParameters, result);
 
         return result;
     }
@@ -670,8 +685,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         int result = truncateRows(user, container);
 
         getQueryTable().fireBatchTrigger(container, user, TableInfo.TriggerType.TRUNCATE, false, errors, extraScriptContext);
-        if (!isBulkLoad())
-            QueryService.get().addAuditEvent(user, container, getQueryTable(), QueryService.AuditAction.TRUNCATE);
+        addAuditEvent(user, container,  QueryService.AuditAction.TRUNCATE, configParameters);
 
         return result;
     }

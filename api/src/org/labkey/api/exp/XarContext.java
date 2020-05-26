@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
@@ -40,6 +39,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * Helper to expand LSID templates and translate file paths from URIs during a XAR import.
  * User: jeckels
  * Date: Dec 7, 2006
  */
@@ -82,21 +82,27 @@ public class XarContext
 
     public XarContext(PipelineJob job)
     {
-        this(job.getDescription(), job.getContainer(), job.getUser());
-        _job = job;
+        this(job.getDescription(), job.getContainer(), job.getUser(), job);
     }
 
     public XarContext(String jobDescription, Container c, User user)
     {
-        this(jobDescription, c, user, AppProps.getInstance().getDefaultLsidAuthority());
+        this(jobDescription, c, user, null);
     }
 
-    public XarContext(String jobDescription, Container c, User user, String defaultLsidAuthority)
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job)
+    {
+        this(jobDescription, c, user, job, AppProps.getInstance().getDefaultLsidAuthority());
+    }
+
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job, String defaultLsidAuthority)
     {
         _jobDescription = jobDescription;
         _originalURLs = new HashMap<>();
         _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<>();
         _substitutions = new HashMap<>();
+
+        _job = job;
 
         String path = c.getPath();
         if (path.startsWith("/"))
@@ -191,33 +197,13 @@ public class XarContext
 
         // Check if it's in the current directory, stripping off any extra path from the file name
         int index = path.lastIndexOf("/");
-        if (index != -1)
-        {
-            String filename = path.substring(index + 1);
-            if (!filename.isEmpty())
-            {
-                f = new File(relativeFile, filename);
-                if (NetworkDrive.exists(f))
-                {
-                    return f;
-                }
-            }
-        }
+        f = resolveFile(path, relativeFile, index);
+        if (f != null) return f;
 
         // Do the same for Windows paths
         index = path.lastIndexOf("\\");
-        if (index != -1)
-        {
-            String filename = path.substring(index + 1);
-            if (!filename.isEmpty())
-            {
-                f = new File(relativeFile, filename);
-                if (NetworkDrive.exists(f))
-                {
-                    return f;
-                }
-            }
-        }
+        f = resolveFile(path, relativeFile, index);
+        if (f != null) return f;
 
         // Finally, try using the pipeline's path mapper if we have one to
         // translate from a cluster path to a webserver path
@@ -237,11 +223,28 @@ public class XarContext
                     return f;
                 }
             }
-            catch (URISyntaxException e)
-            {
-            }
+            catch (URISyntaxException ignored) {}
         }
 
+        return null;
+    }
+
+    @Nullable
+    private File resolveFile(String path, File relativeFile, int index)
+    {
+        File f;
+        if (index != -1)
+        {
+            String filename = path.substring(index + 1);
+            if (!filename.isEmpty())
+            {
+                f = new File(relativeFile, filename);
+                if (NetworkDrive.exists(f))
+                {
+                    return f;
+                }
+            }
+        }
         return null;
     }
 
