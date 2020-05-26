@@ -495,8 +495,18 @@ public class DomainImpl implements Domain
         }
     }
 
+    public void saveIfNotExists(User user) throws ChangePropertyDescriptorException
+    {
+        save(user, false, true);
+    }
+
     @Override
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
+    {
+        save(user, false, false);
+    }
+
+    public void save(User user, boolean allowAddBaseProperty, boolean saveOnlyIfNotExists) throws ChangePropertyDescriptorException
     {
         ExperimentService exp = ExperimentService.get();
 
@@ -520,10 +530,14 @@ public class DomainImpl implements Domain
 
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
             boolean isDomainNew = isNew();         // #32406 Need to capture because _new changes during the process
-            if (!isDomainNew)
+            if (saveOnlyIfNotExists && !isDomainNew)
+                throw new IllegalStateException();
+            if (!isDomainNew || saveOnlyIfNotExists)
             {
                 DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
-                if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
+                if (saveOnlyIfNotExists && null != ddCheck)
+                    return;
+                if (!isDomainNew && !JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
                     throw new OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
             }
 
