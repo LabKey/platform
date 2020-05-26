@@ -298,7 +298,7 @@ public class ExpGeneratorHelper
         Map<URI, ExpData> datas = new LinkedHashMap<>();
 
         // Set up the inputs to the whole run
-        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Provenance Recording Run Protocol");
+        ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
