@@ -96,7 +96,6 @@ api/gwtsrc/org/labkey/api/gwt/client/ui/HelpPopup.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/ImageButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/LinkButton.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/StringListBox.java -text
-api/gwtsrc/org/labkey/api/gwt/client/ui/TestUtil.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/TextBoxDialogBox.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/VennDiagramView.java -text
 api/gwtsrc/org/labkey/api/gwt/client/ui/WebPartPanel.java -text
@@ -107,8 +106,6 @@ api/gwtsrc/org/labkey/api/gwt/client/util/ColorGenerator.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/DateProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/DoubleProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/ErrorDialogAsyncCallback.java -text
-api/gwtsrc/org/labkey/api/gwt/client/util/FlexTableRowDragController.java -text
-api/gwtsrc/org/labkey/api/gwt/client/util/FlexTableRowDropController.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/IntegerProperty.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/IPropertyWrapper.java -text
 api/gwtsrc/org/labkey/api/gwt/client/util/PropertyUtil.java -text
