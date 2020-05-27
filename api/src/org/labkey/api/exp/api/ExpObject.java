@@ -43,8 +43,10 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     void setLSID(String lsid);
     void setLSID(Lsid lsid);
     void setName(String name);
+    @Override
     @Nullable
     ActionURL detailsURL();
+    @Override
     Container getContainer();
     void setContainer(Container container);
 

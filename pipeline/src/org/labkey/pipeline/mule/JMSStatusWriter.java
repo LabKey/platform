@@ -38,6 +38,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
         this.hostName = hostName;
     }
 
+    @Override
     public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert) throws Exception
     {
         if (job.getActiveTaskStatus() == PipelineJob.TaskStatus.complete)
@@ -77,6 +78,7 @@ public class JMSStatusWriter implements PipelineStatusFile.StatusWriter
         return true;
     }
 
+    @Override
     public void ensureError(PipelineJob job)
     {
         throw new UnsupportedOperationException("Method supported only on web server");

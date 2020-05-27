@@ -198,6 +198,7 @@ public class ReturnURLString
     {
         private static ConvertHelper.DateFriendlyStringConverter _impl = new ConvertHelper.DateFriendlyStringConverter();
 
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null)

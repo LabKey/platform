@@ -49,36 +49,43 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         _id = id;
     }
 
+    @Override
     public String getId()
     {
         return _id;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public void setName(String name)
     {
         _name = name;
     }
 
+    @Override
     public Report getReport()
     {
         return _report;
     }
 
+    @Override
     public void setReport(Report report)
     {
         _report = report;
     }
 
+    @Override
     public void setHeaderVisible(boolean headerVisible)
     {
         _headerVisible = headerVisible;
     }
 
+    @Override
     public boolean getHeaderVisible()
     {
         return _headerVisible;
@@ -89,21 +96,25 @@ public abstract class AbstractParamReplacement implements ParamReplacement
         return getName() + " (" + getId() + ")";
     }
 
+    @Override
     public Map<String, String> getProperties()
     {
         return _properties;
     }
 
+    @Override
     public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
     }
 
+    @Override
     public boolean isRemote()
     {
         return _isRemote;
     }
 
+    @Override
     public void setRemote(boolean isRemote)
     {
         _isRemote = isRemote;

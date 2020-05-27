@@ -41,6 +41,7 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
         return _pipeline;
     }
 
+    @Override
     public String getName()
     {
         String name = _pipeline.getProtocolFactoryName();
@@ -49,6 +50,7 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
         return _pipeline.getId().getName();
     }
 
+    @Override
     public String getDefaultParametersXML(PipeRoot root) throws FileNotFoundException, IOException
     {
         String xml = super.getDefaultParametersXML(root);
@@ -59,6 +61,7 @@ public class FileAnalysisProtocolFactory extends AbstractFileAnalysisProtocolFac
         return PipelineJobService.get().createParamParser().getXMLFromMap(new HashMap<>());
     }
 
+    @Override
     public FileAnalysisProtocol createProtocolInstance(String name, String description, String xml)
     {
         FileAnalysisProtocol protocol = new FileAnalysisProtocol(name, description, xml);

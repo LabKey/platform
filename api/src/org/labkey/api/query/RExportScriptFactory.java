@@ -22,16 +22,19 @@ package org.labkey.api.query;
  */
 public class RExportScriptFactory implements ExportScriptFactory
 {
+    @Override
     public String getScriptType()
     {
         return "r";
     }
 
+    @Override
     public String getMenuText()
     {
         return "R";
     }
 
+    @Override
     public ExportScriptModel getModel(QueryView queryView)
     {
         return new RExportScriptModel(queryView);

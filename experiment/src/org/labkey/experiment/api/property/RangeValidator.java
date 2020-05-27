@@ -38,21 +38,25 @@ import java.util.List;
 */
 public class RangeValidator extends DefaultPropertyValidator implements ValidatorKind
 {
+    @Override
     public String getName()
     {
         return "Range Property Validator";
     }
 
+    @Override
     public String getTypeURI()
     {
         return createValidatorURI(PropertyValidatorType.Range).toString();
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
+    @Override
     public IPropertyValidator createInstance()
     {
         PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
@@ -61,11 +65,13 @@ public class RangeValidator extends DefaultPropertyValidator implements Validato
         return validator;
     }
 
+    @Override
     public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         return true;
     }
 
+    @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties field, @NotNull Object value,
                             List<ValidationError> errors, ValidatorContext validatorCache)
     {

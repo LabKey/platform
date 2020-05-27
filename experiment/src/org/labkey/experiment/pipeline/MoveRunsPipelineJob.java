@@ -71,11 +71,13 @@ public class MoveRunsPipelineJob extends PipelineJob
         }
     }
 
+    @Override
     public String getDescription()
     {
         return "Move " + _runIds.length + " run" + (_runIds.length == 1 ? "" : "s") + " from " + _sourceContainer.getPath() + " to " + getContainer().getPath();
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         return null;
@@ -91,6 +93,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         return _sourceContainer;
     }
 
+    @Override
     public TaskPipeline getTaskPipeline()
     {
         return PipelineJobService.get().getTaskPipeline(new TaskId(MoveRunsPipelineJob.class));

@@ -20,6 +20,7 @@ abstract public class QUnsafeExpr extends QExpr
 {
     abstract protected void unsafeAppendSql(SqlBuilder builder);
 
+    @Override
     final public void appendSql(SqlBuilder builder, Query query)
     {
         if (!builder.allowUnsafeCode())

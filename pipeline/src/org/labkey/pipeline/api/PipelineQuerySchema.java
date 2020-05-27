@@ -66,6 +66,7 @@ public class PipelineQuerySchema extends UserSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new PipelineQuerySchema(schema.getUser(), schema.getContainer());
@@ -78,6 +79,7 @@ public class PipelineQuerySchema extends UserSchema
         super(SCHEMA_NAME, "Contains data about pipeline jobs", user, container, PipelineSchema.getInstance().getSchema());
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (JOB_TABLE_NAME.equalsIgnoreCase(name))
@@ -145,6 +147,7 @@ public class PipelineQuerySchema extends UserSchema
             UserIdQueryForeignKey.initColumn(this, table.getMutableColumn("ModifiedBy"), true);
             table.getMutableColumn("JobParent").setFk(new LookupForeignKey(cf,"Job", "Description")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     return getTable(JOB_TABLE_NAME, getLookupContainerFilter());
@@ -181,6 +184,7 @@ public class PipelineQuerySchema extends UserSchema
         return new TriggerConfigurationsTable(this, cf).init();
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         Set<String> names = new TreeSet<>();

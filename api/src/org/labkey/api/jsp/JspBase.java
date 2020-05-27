@@ -124,7 +124,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
      */
     public HtmlString getWebappURL(String path)
     {
-        return HtmlString.of(_viewContext.getContextPath() + (path.startsWith("/") ? "" : "/") + path);
+        return HtmlString.of(PageFlowUtil.staticResourceUrl(path));
     }
 
     /**

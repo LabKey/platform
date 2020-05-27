@@ -43,6 +43,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         _actorClass = actorClass;
     }
 
+    @Override
     public R[] getDefaultRequirements(Container container, RequirementType type)
     {
         String ownerId = getDefaultRequirementPlaceholder(container, type, false);
@@ -60,6 +61,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return defaultRequirements.toArray((R[]) Array.newInstance(_requirementClass, defaultRequirements.size()));
     }
 
+    @Override
     public R createDefaultRequirement(User user, R requirement, RequirementType type)
     {
         String owner = getDefaultRequirementPlaceholder(requirement.getContainer(), type, true);
@@ -82,6 +84,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return ownerEntityId;
     }
 
+    @Override
     public R getRequirement(Container container, Object requirementPrimaryKey)
     {
         return new TableSelector(getRequirementTableInfo()).getObject(requirementPrimaryKey, _requirementClass);
@@ -106,6 +109,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return new TableSelector(getRequirementTableInfo(), filter, getDefaultRequirementSort()).getArray(_requirementClass);
     }
 
+    @Override
     public A[] getActors(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -113,6 +117,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return new TableSelector(getActorTableInfo(), filter, new Sort(getActorSortColumnName())).getArray(_actorClass);
     }
 
+    @Override
     public A getActor(Container c, Object primaryKey)
     {
         return new TableSelector(getActorTableInfo()).getObject(primaryKey, _actorClass);
@@ -126,6 +131,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return new TableSelector(getActorTableInfo(), filter, new Sort(getActorSortColumnName())).getArrayList(_actorClass);
     }
 
+    @Override
     public Collection<A> getActorsInUse(Container c)
     {
         Requirement[] requirements = getRequirements(c);
@@ -144,6 +150,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         return actors.values();
     }
 
+    @Override
     public void purgeContainer(Container c)
     {
         R[] requirements = getRequirements(c);
@@ -156,6 +163,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
     }
 
 
+    @Override
     public void deleteRequirements(RequirementOwner owner)
     {
         R[] requirements = getRequirements(owner);
@@ -169,11 +177,13 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         }
     }
 
+    @Override
     public R[] getRequirements(RequirementOwner owner)
     {
         return getRequirements(owner.getContainer(), owner.getEntityId());
     }
 
+    @Override
     public void generateDefaultRequirements(User user, RequirementOwner owner)
     {
         for (RequirementType type : getRequirementTypes())
@@ -188,12 +198,14 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         }
     }
 
+    @Override
     public R createRequirement(User user, RequirementOwner owner, R requirement)
     {
         return createRequirement(user, owner, requirement, false);
     }
 
 
+    @Override
     public R createRequirement(User user, RequirementOwner owner, R requirement, boolean forceDuplicate)
     {
         // unless we're forcing, we'll double-check to see if there's already an incomplete requirement matching this one:

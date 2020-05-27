@@ -71,6 +71,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         _protocol = protocol;
     }
 
+    @Override
     public ModelAndView getView(AssayRunsForm summaryForm, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
@@ -96,6 +97,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         return new AssayRunsView(_protocol, false, errors);
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         super.addNavTrail(root);

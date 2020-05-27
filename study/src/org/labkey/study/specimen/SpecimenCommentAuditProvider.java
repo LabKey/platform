@@ -126,16 +126,19 @@ public class SpecimenCommentAuditProvider extends AbstractAuditTypeProvider impl
 
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(final ColumnInfo colInfo)
                         {
                         return new DataColumn(colInfo)
                         {
+                            @Override
                             public void addQueryColumns(Set<ColumnInfo> columns)
                             {
                                 columns.add(containerColumn);
                                 super.addQueryColumns(columns);
                             }
 
+                            @Override
                             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
                             {
                                 Object containerId = containerColumn.getValue(ctx);

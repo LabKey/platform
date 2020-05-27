@@ -66,6 +66,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         super();
     }
 
+    @Override
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
@@ -78,16 +79,19 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         return lsid.toString();
     }
 
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         return new SQLFragment("NULL");
     }
 
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return null;
     }
 
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());   // TODO: view specimen grid
@@ -100,6 +104,7 @@ public abstract class AbstractSpecimenDomainKind extends BaseAbstractDomainKind
         return lsid.getNamespacePrefix() != null && getNamespacePrefix().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
+    @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         return new HashSet<>();

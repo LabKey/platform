@@ -57,6 +57,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
         _expRunFieldKey = expRunFieldKey;
     }
 
+    @Override
     public DisplayColumn createRenderer(ColumnInfo colInfo)
     {
         return new ExperimentMembershipDisplayColumn(colInfo);
@@ -72,6 +73,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             setWidth("20");
         }
 
+        @Override
         public boolean isFilterable()
         {
             return true;
@@ -91,6 +93,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             return _expRunFieldKey == null ? FieldKey.fromParts("RowId") : new FieldKey(_expRunFieldKey, "RowId");
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> queryCols)
         {
             super.addQueryColumns(queryCols);
@@ -100,6 +103,7 @@ public class ExperimentMembershipDisplayColumnFactory implements DisplayColumnFa
             }
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             if (!_renderedFunction)

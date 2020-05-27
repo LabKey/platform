@@ -49,7 +49,7 @@ public class PortalJUnitTest extends Assert
     public void testPortal()
     {
         User user = TestContext.get().getUser();
-        assertTrue(null != user);
+        assertNotNull(user);
 
         // clean up if anything was left over from last time
         if (null != ContainerManager.getForPath(_testDirName))
@@ -108,7 +108,7 @@ public class PortalJUnitTest extends Assert
         Map<String,String> props = parts.get(0).getPropertyMap();
         assertEquals(props.get("pageName"), "testPage");
         Portal.addPart(folder,  newPageGuid, filesFactory, location_body, -1, null);
-        parts = Portal.getParts(folder, newPageGuid);
+        parts = Portal.getEditableParts(folder, newPageGuid);
         assertEquals(parts.size(), 2);
         assertEquals("Wrong body webparts", Arrays.asList("Wiki", "Files"), getWebPartNames(location_body, parts));
         //Now swap the parts
@@ -135,7 +135,8 @@ public class PortalJUnitTest extends Assert
 
     private List<String> getWebPartNames(String body, List<WebPart> parts)
     {
-        List<String> bodyParts;MultiValuedMap<String, WebPart> lfocMap = Portal.getPartsByLocation(parts);
+        MultiValuedMap<String, WebPart> lfocMap = Portal.getPartsByLocation(parts);
+        List<String> bodyParts;
         bodyParts = lfocMap.get(body).stream().map(WebPart::getName).collect(Collectors.toList());
         return bodyParts;
     }

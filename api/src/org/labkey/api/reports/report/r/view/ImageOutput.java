@@ -74,6 +74,7 @@ public class ImageOutput extends AbstractParamReplacement
         return file;
     }
 
+    @Override
     public HttpView render(ViewContext context)
     {
         return new ImgReportView(this, canDeleteFile());

@@ -107,6 +107,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return _includedReports;
     }
 
+    @Override
     public ScriptReport getReport(ContainerUser cu) throws Exception
     {
         Report report = super.getReport(cu);
@@ -157,6 +158,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         }
     }
 
+    @Override
     public List<Pair<String, String>> getParameters()
     {
         List<Pair<String, String>> list = super.getParameters();
@@ -184,6 +186,7 @@ public class ScriptReportDesignBean extends ScriptReportBean
         return list;
     }
 
+    @Override
     void populateFromDescriptor(ReportDescriptor descriptor)
     {
         super.populateFromDescriptor(descriptor);

@@ -87,16 +87,19 @@ public class QNumber extends QExpr implements IConstant
     }
 
 
+    @Override
     public Number getValue()
     {
 		return _value;
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append(getValueString());
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getValueString());

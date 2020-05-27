@@ -22,16 +22,19 @@ package org.labkey.api.query;
  */
 public class PerlExportScriptFactory implements ExportScriptFactory
 {
+    @Override
     public String getScriptType()
     {
         return "pl";
     }
 
+    @Override
     public String getMenuText()
     {
         return "Perl";
     }
 
+    @Override
     public ExportScriptModel getModel(QueryView queryView)
     {
         return new PerlExportScriptModel(queryView);

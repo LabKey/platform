@@ -187,11 +187,13 @@ public class ContainerDisplayColumn extends DataColumn
         return displayValue;
     }
 
+    @Override
     public boolean isFilterable()
     {
         return !_showPath;
     }
 
+    @Override
     public boolean isSortable()
     {
         return !_showPath;

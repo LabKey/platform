@@ -415,6 +415,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
 
     private ViewContext _context;
 
+    @Override
     public void setViewContext(ViewContext context)
     {
         assert this != LINK_DISABLER : "Shouldn't set ViewContext on disabled link";
@@ -422,6 +423,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     }
 
 
+    @Override
     public ViewContext getViewContext()
     {
         return _context;

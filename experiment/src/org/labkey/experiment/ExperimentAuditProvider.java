@@ -138,6 +138,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     col.setLabel("Assay/Protocol");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new ProtocolColumn(colInfo, containerCol, protocolRunCol);
@@ -152,6 +153,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     col.setLabel("Run");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new RunColumn(colInfo, containerCol, protocolRunCol);
@@ -166,6 +168,7 @@ public class ExperimentAuditProvider extends AbstractAuditTypeProvider implement
                     col.setLabel("Run Group");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new RunGroupColumn(colInfo, containerCol, protocolRunCol);

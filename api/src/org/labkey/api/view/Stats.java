@@ -143,6 +143,7 @@ public abstract class Stats
             super(.5);
         }
 
+        @Override
         public String getName()
         {
             return "Median";
@@ -240,21 +241,25 @@ public abstract class Stats
             this(data, STRING_STATS);
         }
 
+        @Override
         public int getCount()
         {
             return count;
         }
 
+        @Override
         public String getMin()
         {
             return min;
         }
 
+        @Override
         public String getMax()
         {
             return max;
         }
 
+        @Override
         public Object getStat(StatDefinition stat)
         {
             if (stat == MIN)
@@ -267,6 +272,7 @@ public abstract class Stats
                 return null;
         }
 
+        @Override
         public String getFormattedStat(StatDefinition stat)
         {
             if (stat == MIN)
@@ -378,26 +384,31 @@ public abstract class Stats
             }
         }
 
+        @Override
         public int getCount()
         {
             return count;
         }
 
+        @Override
         public double getMean()
         {
             return mean;
         }
 
+        @Override
         public double getGeometricMean()
         {
             return geomMean;
         }
 
+        @Override
         public Double getMin()
         {
             return Double.valueOf(min);
         }
 
+        @Override
         public Double getMax()
         {
             return max;
@@ -415,6 +426,7 @@ public abstract class Stats
             return max;
         }
 
+        @Override
         public Object getStat(StatDefinition stat)
         {
             if (stat == MIN)
@@ -446,6 +458,7 @@ public abstract class Stats
             throw new IllegalArgumentException("Undefined statistic: " + stat.toString());
         }
 
+        @Override
         public String getFormattedStat(StatDefinition stat)
         {
             if (stat == COUNT)
@@ -457,16 +470,19 @@ public abstract class Stats
             return formatter.format(getStat(stat));
         }
 
+        @Override
         public double getStdDev()
         {
             return stdDev;
         }
 
+        @Override
         public double getVar()
         {
             return var;
         }
 
+        @Override
         public double getSum()
         {
             return sum;
@@ -481,6 +497,7 @@ public abstract class Stats
         }
 
 
+        @Override
         public double getMedian()
         {
             if (median == null)
@@ -506,6 +523,7 @@ public abstract class Stats
             return data[(count -1) / 2];
         }
 
+        @Override
         public double getMode()
         {
             if (mode == null)
@@ -557,6 +575,7 @@ public abstract class Stats
             return modeValue;
         }
 
+        @Override
         public double getPercentile(double percentile)
         {
             ensureSorted();
@@ -574,6 +593,7 @@ public abstract class Stats
         /**
          * <pre>MAD = median( { | x_i - median | } )</pre>
          */
+        @Override
         public double getMedianAbsoluteDeviation()
         {
             if (mad == null)

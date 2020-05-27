@@ -111,6 +111,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                     col.setLabel("Domain");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new DomainAuditProvider.DomainColumn(colInfo, container, name);
@@ -236,11 +237,13 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
             _defaultName = defaultName;
         }
 
+        @Override
         public String getName()
         {
             return getColumnInfo().getLabel();
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             String uri = (String)getBoundColumn().getValue(ctx);
@@ -272,6 +275,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 out.write("&nbsp;");
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
@@ -281,6 +285,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
                 columns.add(_defaultName);
         }
 
+        @Override
         public boolean isFilterable()
         {
             return false;

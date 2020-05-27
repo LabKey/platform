@@ -54,6 +54,7 @@ public class MasterPatientIndexUpdateTask extends PipelineJob
         return "Master Patient Index Update job.";
     }
 
+    @Override
     public void run()
     {
         _svc.updateIndices(this);

@@ -51,16 +51,19 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
         _comments = comments;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public String getContainerId()
     {
         return _container.getId();
     }
 
+    @Override
     public void setContainer(Container container)
     {
         verifyMutability();
@@ -89,6 +92,7 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
         _createdBy = createdBy;
     }
 
+    @Override
     public String getEntityId()
     {
         return _entityId;
@@ -122,6 +126,7 @@ public class SpecimenRequestEvent extends AbstractStudyCachable<SpecimenRequestE
         _requestId = requestId;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();

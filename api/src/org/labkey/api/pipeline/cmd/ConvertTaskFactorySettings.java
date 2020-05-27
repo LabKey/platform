@@ -45,6 +45,7 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         super(namespaceClass, name);
     }
 
+    @Override
     public TaskId getCloneId()
     {
         return new TaskId(ConvertTaskId.class, _cloneName);
@@ -110,6 +111,7 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         return commandIds;
     }
 
+    @Override
     public List<TaskFactorySettings> getSettings()
     {
         if (_commands == null)

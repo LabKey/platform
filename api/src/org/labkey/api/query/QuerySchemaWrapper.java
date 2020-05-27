@@ -47,11 +47,13 @@ public class QuerySchemaWrapper implements QuerySchema
         _schema = schema;
     }
 
+    @Override
     public User getUser()
     {
         return null;
     }
 
+    @Override
     public Container getContainer()
     {
         return null;
@@ -68,16 +70,19 @@ public class QuerySchemaWrapper implements QuerySchema
     {
     }
 
+    @Override
     public DbSchema getDbSchema()
     {
         return _schema;
     }
 
+    @Override
     public TableInfo getTable(String name)
     {
         return _schema.getTable(name);
     }
 
+    @Override
     public TableInfo getTable(String name, ContainerFilter cf)
     {
         return _schema.getTable(name);
@@ -107,11 +112,13 @@ public class QuerySchemaWrapper implements QuerySchema
         return Collections.unmodifiableList(tables);
     }
 
+    @Override
     public QuerySchema getSchema(String name)
     {
         return null;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         return Collections.emptySet();
@@ -123,6 +130,7 @@ public class QuerySchemaWrapper implements QuerySchema
         return Collections.emptySet();
     }
 
+    @Override
     public @NotNull String getName()
     {
         return _schema.getName();
@@ -134,6 +142,7 @@ public class QuerySchemaWrapper implements QuerySchema
         return _schema.getName();
     }
 
+    @Override
     public String getDescription()
     {
         return "Contains data tables from the '" + _schema.getName() + "' database schema.";

@@ -39,16 +39,19 @@ public abstract class AbstractDataProvider implements DataProvider
                 ;
     }
 
+    @Override
     public List<NavItem> getReportItems(Container c, User u)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<TabbedReportItem> getTabbedReportItems(Container c, User u)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<NavItem> getMiscItems(Container c, User u)
     {
         return Collections.emptyList();

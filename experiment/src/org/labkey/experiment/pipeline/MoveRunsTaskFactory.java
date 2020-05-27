@@ -34,6 +34,7 @@ public class MoveRunsTaskFactory extends AbstractTaskFactory<AbstractTaskFactory
         super(MoveRunsTask.class);
     }
 
+    @Override
     public PipelineJob.Task createTask(PipelineJob job)
     {
         if (!(job instanceof MoveRunsPipelineJob))
@@ -43,21 +44,25 @@ public class MoveRunsTaskFactory extends AbstractTaskFactory<AbstractTaskFactory
         return new MoveRunsTask(this, job);
     }
 
+    @Override
     public List<FileType> getInputTypes()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<String> getProtocolActionNames()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public String getStatusName()
     {
         return "MOVE RUNS";
     }
 
+    @Override
     public boolean isJobComplete(PipelineJob j)
     {
         MoveRunsPipelineJob job = (MoveRunsPipelineJob)j;

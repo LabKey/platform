@@ -35,6 +35,7 @@ public class FolderListWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "lists";
 
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.LISTS;
@@ -58,6 +59,7 @@ public class FolderListWriter extends BaseFolderWriter
 
     public static class Factory implements FolderWriterFactory
     {
+        @Override
         public FolderWriter create()
         {
             return new FolderListWriter();

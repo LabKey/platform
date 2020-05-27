@@ -33,6 +33,7 @@ public class XMLUtils
 
     private static class GWTClassNameService implements ClassNameService
     {
+        @Override
         public String getClassName(Object obj)
         {
             return GWT.getTypeName(obj);

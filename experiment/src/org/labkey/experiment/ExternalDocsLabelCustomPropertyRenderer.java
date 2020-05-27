@@ -29,16 +29,19 @@ public class ExternalDocsLabelCustomPropertyRenderer implements CustomPropertyRe
 {
     public static final String URI = "terms.fhcrc.org#ExternalDocumentation.label";
 
+    @Override
     public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         return false;

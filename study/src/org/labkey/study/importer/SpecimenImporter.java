@@ -283,6 +283,7 @@ public class SpecimenImporter
     {
         SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -290,16 +291,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -307,6 +311,7 @@ public class SpecimenImporter
         },
         SPECIMENS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -314,16 +319,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return false;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return true;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -331,6 +339,7 @@ public class SpecimenImporter
         },
         VIALS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -338,16 +347,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return false;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return true;
@@ -355,6 +367,7 @@ public class SpecimenImporter
         },
         SPECIMENS_AND_SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -363,16 +376,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return true;
             }
 
+            @Override
             public boolean isVials()
             {
                 return false;
@@ -380,6 +396,7 @@ public class SpecimenImporter
         },
         VIALS_AND_SPECIMEN_EVENTS
         {
+            @Override
             public List<String> getTableNames()
             {
                 List<String> names = new ArrayList<>(1);
@@ -388,16 +405,19 @@ public class SpecimenImporter
                 return names;
             }
 
+            @Override
             public boolean isEvents()
             {
                 return true;
             }
 
+            @Override
             public boolean isSpecimens()
             {
                 return false;
             }
 
+            @Override
             public boolean isVials()
             {
                 return true;
@@ -577,10 +597,12 @@ public class SpecimenImporter
     {
         EventVialLatest
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("%", "Latest%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -590,6 +612,7 @@ public class SpecimenImporter
                     throw new IllegalStateException("Expected SpecimenEvents.");
                 return SpecimenManager.getInstance().getLastEvent(events).get(eventColName);
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -597,10 +620,12 @@ public class SpecimenImporter
         },
         EventVialFirst
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("First%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -610,6 +635,7 @@ public class SpecimenImporter
                     throw new IllegalStateException("Expected SpecimenEvents.");
                 return SpecimenManager.getInstance().getFirstEvent(events).get(eventColName);
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -617,10 +643,12 @@ public class SpecimenImporter
         },
         EventVialLatestNonBlank
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("LatestNonBlank%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -644,6 +672,7 @@ public class SpecimenImporter
                 }
                 return result;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.equals(to) || canPromoteNumeric(from, to);
@@ -651,10 +680,12 @@ public class SpecimenImporter
         },
         EventVialCombineAll
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Combine%");
             }
+            @Override
             public Object getRollupResult(List<SpecimenEvent> events, String eventColName, JdbcType fromType, JdbcType toType)
             {
                 // Input is SpecimenEvent list
@@ -714,6 +745,7 @@ public class SpecimenImporter
                 return result;
             }
 
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return (from.equals(to) || canPromoteNumeric(from, to)) &&
@@ -725,6 +757,7 @@ public class SpecimenImporter
         // Gets the field value from a particular object in the list (used for event -> vial rollups)
         public abstract Object getRollupResult(List<SpecimenEvent> objs, String colName, JdbcType fromType, JdbcType toType);
 
+        @Override
         public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismatch)
         {
             for (String pattern : getPatterns())
@@ -740,10 +773,12 @@ public class SpecimenImporter
     {
         VialSpecimenCount
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Count%", "%Count");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("SUM(CASE ");
@@ -751,6 +786,7 @@ public class SpecimenImporter
                 sql.add(Boolean.TRUE);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return JdbcType.BOOLEAN.equals(from) && to.isInteger();
@@ -758,16 +794,19 @@ public class SpecimenImporter
         },
         VialSpecimenTotal
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Total%", "%Total", "SumOf%");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("SUM(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return from.isNumeric() && to.isNumeric();
@@ -775,16 +814,19 @@ public class SpecimenImporter
         },
         VialSpecimenMaximum
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Max%", "%Max");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("MAX(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
@@ -793,16 +835,19 @@ public class SpecimenImporter
         },
         VialSpecimenMinimum
         {
+            @Override
             public List<String> getPatterns()
             {
                 return Arrays.asList("Min%", "%Min");
             }
+            @Override
             public SQLFragment getRollupSql(String fromColName, String toColName)
             {
                 SQLFragment sql = new SQLFragment("MIN(");
                 sql.append(fromColName).append(") AS ").append(toColName);
                 return sql;
             }
+            @Override
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
@@ -813,6 +858,7 @@ public class SpecimenImporter
         // Gets SQL to calulate rollup (used for vial -> specimen rollups)
         public abstract SQLFragment getRollupSql(String fromColName, String toColName);
 
+        @Override
         public boolean match(PropertyDescriptor from, PropertyDescriptor to, boolean allowTypeMismtach)
         {
             for (String pattern : getPatterns())
@@ -915,6 +961,7 @@ public class SpecimenImporter
             new SpecimenColumn("record_source", "RecordSource", "VARCHAR(20)", TargetTable.SPECIMEN_EVENTS),
             GLOBAL_UNIQUE_ID = new SpecimenColumn(GLOBAL_UNIQUE_ID_TSV_COL, "GlobalUniqueId", "VARCHAR(50)", true, TargetTable.VIALS, true),
             LAB_ID = new SpecimenColumn(LAB_ID_TSV_COL, "LabId", "INT", TargetTable.SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER") {
+                @Override
                 public boolean isUnique() { return true; }
             },
             new SpecimenColumn("originating_location", "OriginatingLocationId", "INT", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS, "Site", "ExternalId", "LEFT OUTER"),
@@ -2687,7 +2734,9 @@ public class SpecimenImporter
 
     private class EntityIdComputedColumn implements ComputedColumn
     {
+        @Override
         public String getName() { return "EntityId"; }
+        @Override
         public Object getValue(Map<String, Object> row) { return GUID.makeGUID(); }
     }
 
@@ -3178,7 +3227,9 @@ public class SpecimenImporter
 
         ComputedColumn lsidCol = new ComputedColumn()
         {
+            @Override
             public String getName() { return "LSID"; }
+            @Override
             public Object getValue(Map<String, Object> row) throws ValidationException
             {
                 String id = (String) row.get(GLOBAL_UNIQUE_ID_TSV_COL);
@@ -3848,7 +3899,9 @@ public class SpecimenImporter
             final Integer[] counter = new Integer[] { 0 };
             ComputedColumn idCol = new ComputedColumn()
             {
+                @Override
                 public String getName() { return "id"; }
+                @Override
                 public Object getValue(Map<String, Object> row)
                 {
                     return String.valueOf(++counter[0]);

@@ -50,6 +50,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         _cstmView = view;
     }
 
+    @Override
     public String getName()
     {
         return null == _cstmView ? null : _cstmView.getName();
@@ -64,6 +65,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return getName();
     }
 
+    @Override
     public User getOwner()
     {
         Integer userId = _cstmView.getCustomViewOwner();
@@ -72,11 +74,13 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return UserManager.getUser(userId);
     }
 
+    @Override
     public boolean isShared()
     {
         return _cstmView.isShared();
     }
 
+    @Override
     public User getCreatedBy()
     {
         return UserManager.getUser(_cstmView.getCreatedBy());
@@ -102,6 +106,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return _cstmView.getModified();
     }
 
+    @Override
     public Container getContainer()
     {
         return ContainerManager.getForId(_cstmView.getContainerId());
@@ -113,6 +118,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return _cstmView.getEntityId();
     }
 
+    @Override
     @NotNull
     public List<FieldKey> getColumns()
     {
@@ -157,27 +163,32 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return Collections.unmodifiableList(ret);
     }
 
+    @Override
     @NotNull
     public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
     {
         return decodeProperties(_cstmView.getColumns());
     }
 
+    @Override
     public String getFilterAndSort()
     {
         return _cstmView.getFilter();
     }
 
+    @Override
     public boolean canInherit()
     {
         return _mgr.canInherit(_cstmView.getFlags());
     }
 
+    @Override
     public boolean isHidden()
     {
         return _mgr.isHidden(_cstmView.getFlags());
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
@@ -211,6 +222,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         _overridesModuleView = overridesModuleView;
     }
 
+    @Override
     public boolean isSession()
     {
         return _inSession;
@@ -221,37 +233,44 @@ public class CustomViewInfoImpl implements CustomViewInfo
         _inSession = b;
     }
 
+    @Override
     public String getSchemaName()
     {
         return _cstmView.getSchema();
     }
 
+    @Override
     public SchemaKey getSchemaPath()
     {
         return SchemaKey.fromString(_cstmView.getSchema());
     }
 
+    @Override
     public String getQueryName()
     {
         return _cstmView.getQueryName();
     }
 
+    @Override
     public String getCustomIconUrl()
     {
         return isShared() ? "/reports/grid.gif" : "/reports/icon_private_view.png";
     }
 
+    @Override
     public String getCustomIconCls()
     {
         // ideally we would use fa-lock stacked on top of fa-table, but stacking icons looks bad in fonts
         return isShared() ? "fa fa-table" : "fa fa-lock fa-lg";
     }
 
+    @Override
     public boolean hasFilterOrSort()
     {
         return StringUtils.trimToNull(_cstmView.getFilter()) != null;
     }
 
+    @Override
     public String getContainerFilterName()
     {
         if (!hasFilterOrSort())

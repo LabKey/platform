@@ -1581,11 +1581,13 @@ public class DbScope
         final _WeakestLinkMap<Connection, Integer> m = new _WeakestLinkMap<>();
 
         return new ConnectionMap() {
+            @Override
             public synchronized Integer get(Connection c)
             {
                 return m.get(c);
             }
 
+            @Override
             public synchronized Integer put(Connection c, Integer spid)
             {
                 return m.put(c,spid);
@@ -1602,6 +1604,7 @@ public class DbScope
         final ReferenceQueue<K> _q = new ReferenceQueue<>();
         LinkedHashMap<_IdentityWrapper, V> _map = new LinkedHashMap<_IdentityWrapper, V>()
         {
+            @Override
             protected boolean removeEldestEntry(Map.Entry<_IdentityWrapper, V> eldest)
             {
                 _purge();
@@ -1765,6 +1768,7 @@ public class DbScope
         <T extends Runnable> T addCommitTask(@NotNull T runnable, @NotNull CommitTaskOption firstOption, CommitTaskOption... additionalOptions);
         @NotNull
         Connection getConnection();
+        @Override
         void close();
         void commit();
 
@@ -1915,6 +1919,7 @@ public class DbScope
             return result;
         }
 
+        @Override
         @NotNull
         public ConnectionWrapper getConnection()
         {

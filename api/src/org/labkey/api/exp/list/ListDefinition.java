@@ -48,6 +48,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
     {
         Integer("Integer")
             {
+                @Override
                 protected Object convertKeyInternal(Object key)
                 {
                     if (key instanceof Integer)
@@ -55,6 +56,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
+                @Override
                 public PropertyType getPropertyType()
                 {
                     return PropertyType.INTEGER;
@@ -62,6 +64,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
             },
         AutoIncrementInteger("Auto-Increment Integer")
             {
+                @Override
                 protected Object convertKeyInternal(Object key)
                 {
                     if (key instanceof Integer)
@@ -69,6 +72,7 @@ public interface ListDefinition extends Comparable<ListDefinition>
                     else
                         return java.lang.Integer.valueOf(key.toString());
                 }
+                @Override
                 public PropertyType getPropertyType()
                 {
                     return PropertyType.INTEGER;
@@ -76,10 +80,12 @@ public interface ListDefinition extends Comparable<ListDefinition>
             },
         Varchar("Text (String)")
             {
+                @Override
                 protected Object convertKeyInternal(Object key)
                 {
                     return key.toString();
                 }
+                @Override
                 public PropertyType getPropertyType()
                 {
                     return PropertyType.STRING;

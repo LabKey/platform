@@ -38,11 +38,13 @@ public class ExperimentRunGroupsView extends VBox
         QuerySettings settings = schema.getSettings(getViewContext(), "Experiments", ExpSchema.EXPERIMENTS_MEMBERSHIP_FOR_RUN_TABLE_NAME);
         QueryView experimentsView = new QueryView(schema, settings, errors)
         {
+            @Override
             protected TableInfo createTable()
             {
                 return ((ExpSchema)getSchema()).createExperimentsTableWithRunMemberships(run, getContainerFilter());
             }
 
+            @Override
             protected void populateButtonBar(DataView view, ButtonBar bar)
             {
                 ActionButton createButton = new ActionButton(ExperimentController.ExperimentUrlsImpl.get().getCreateRunGroupURL(c, currentURL, false), "Create new group");

@@ -45,6 +45,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
                 };
                 LookupForeignKey fk = new LookupForeignKey(null, (String) null, "GlobalUniqueId", "GlobalUniqueId")
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return new SpecimenDetailTable(schema, cf);
@@ -55,6 +56,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
                 globalUniqueIdColumn.setKeyField(true);
                 globalUniqueIdColumn.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new DataColumn(colInfo, false);
@@ -68,6 +70,7 @@ public class VialRequestTable extends FilteredTable<StudyQuerySchema>
                 AliasedColumn requestIdColumn = new AliasedColumn(this, "Request", _rootTable.getColumn("SampleRequestId"));
                 LookupForeignKey fk = new LookupForeignKey(null, (String) null, "RequestId", "RequestId")
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return new SpecimenRequestTable(schema, cf);

@@ -132,6 +132,7 @@ public interface WorkDirectory
     /** A lock for copying files over a network share, for convenient use with try-with-resources */
     public interface CopyingResource extends AutoCloseable
     {
+        @Override
         public void close();
     }
 }

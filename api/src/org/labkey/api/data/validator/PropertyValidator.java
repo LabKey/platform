@@ -50,6 +50,7 @@ public class PropertyValidator implements ColumnValidator
         throw new UnsupportedOperationException("Use validate(rowNum, value, validatorContext) instead");
     }
 
+    @Override
     public String validate(int rowNum, Object value, ValidatorContext validatorContext)
     {
         // Don't validate null values, #15683, #19352

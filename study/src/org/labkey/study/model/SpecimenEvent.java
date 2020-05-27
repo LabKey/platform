@@ -47,11 +47,13 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         return (String)get("comments");
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         throw new IllegalStateException("Container should be set in constructor");
@@ -67,6 +69,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
         return (Date)get("labreceiptdate");
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();

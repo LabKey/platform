@@ -58,6 +58,7 @@ public class FolderImportProvider extends PipelineProvider
 
     private static class FolderImportFilter implements FileFilter
     {
+        @Override
         public boolean accept(File file)
         {
             return file.getName().endsWith("folder.xml") || file.getName().endsWith(".folder.zip");

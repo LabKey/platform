@@ -86,6 +86,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         _ownerId = owner;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;

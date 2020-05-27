@@ -71,25 +71,30 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
         return getServletConfig().getServletName();
     }
 
+    @Override
     public ServletConfig getServletConfig()
     {
         return new ServletConfig()
         {
+            @Override
             public String getInitParameter(String string)
             {
                 return null;
             }
 
+            @Override
             public Enumeration<String> getInitParameterNames()
             {
                 return new Vector<String>().elements();
             }
 
+            @Override
             public ServletContext getServletContext()
             {
                 return ModuleLoader.getServletContext();
             }
 
+            @Override
             public String getServletName()
             {
                 return "BaseRemoteService";
@@ -97,6 +102,7 @@ public abstract class BaseRemoteService extends RemoteServiceServlet
         };
     }
 
+    @Override
     protected void doUnexpectedFailure(Throwable failure)
     {
         failure = ExceptionUtil.unwrapException(failure);

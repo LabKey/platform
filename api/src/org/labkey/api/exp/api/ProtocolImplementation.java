@@ -74,6 +74,7 @@ public class ProtocolImplementation implements ExperimentProtocolHandler
     /**
      * Get a query reference for the protocol type.
      */
+    @Override
     public QueryRowReference getQueryRowReference(ExpProtocol protocol)
     {
         return null;
@@ -82,6 +83,7 @@ public class ProtocolImplementation implements ExperimentProtocolHandler
     /**
      * Get a query reference for the run of the protocol type.
      */
+    @Override
     public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpRun run)
     {
         return null;
@@ -90,6 +92,7 @@ public class ProtocolImplementation implements ExperimentProtocolHandler
     /**
      * Get a query reference for the protocol application of the protocol type.
      */
+    @Override
     public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpProtocolApplication app)
     {
         return null;

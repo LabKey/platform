@@ -37,16 +37,19 @@ public class SimpleAssayDataImportHelper implements OntologyManager.ImportHelper
         _data = data;
     }
 
+    @Override
     public String beforeImportObject(Map<String, Object> map)
     {
         return _data.getLSID() + ".DataRow-" + _id++;
     }
 
+    @Override
     public void afterBatchInsert(int currentRow)
     {
 
     }
 
+    @Override
     public void updateStatistics(int currentRow)
     {
     }

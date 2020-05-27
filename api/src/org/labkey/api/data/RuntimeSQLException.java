@@ -41,16 +41,19 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
         sqlx = x;
     }
 
+    @Override
     public String getMessage()
     {
         return sqlx.getMessage();
     }
 
+    @Override
     public String getLocalizedMessage()
     {
         return sqlx.getLocalizedMessage();
     }
 
+    @Override
     public Throwable getCause()
     {
         return sqlx.getCause();
@@ -61,6 +64,7 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
         return sqlx.getSQLState();
     }
 
+    @Override
     public synchronized Throwable initCause(Throwable cause)
     {
         return sqlx.initCause(cause);
@@ -71,31 +75,37 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
         return sqlx.toString();
     }
 
+    @Override
     public void printStackTrace()
     {
         sqlx.printStackTrace();
     }
 
+    @Override
     public void printStackTrace(PrintStream s)
     {
         sqlx.printStackTrace(s);
     }
 
+    @Override
     public void printStackTrace(PrintWriter s)
     {
         sqlx.printStackTrace(s);
     }
 
+    @Override
     public synchronized Throwable fillInStackTrace()
     {
         return super.fillInStackTrace();
     }
 
+    @Override
     public StackTraceElement[] getStackTrace()
     {
         return sqlx.getStackTrace();
     }
 
+    @Override
     public void setStackTrace(StackTraceElement[] stackTrace)
     {
         sqlx.setStackTrace(stackTrace);

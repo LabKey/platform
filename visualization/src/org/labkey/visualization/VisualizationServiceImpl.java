@@ -57,6 +57,7 @@ import java.util.Map;
 
 public class VisualizationServiceImpl implements VisualizationService
 {
+    @Override
     public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, IOException
     {
         ViewContext context = new ViewContext();
@@ -77,6 +78,7 @@ public class VisualizationServiceImpl implements VisualizationService
         return ret;
     }
 
+    @Override
     public SQLResponse getDataCDSGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException, SQLException, BindException, IOException
     {
         ViewContext context = new ViewContext();
@@ -99,6 +101,7 @@ public class VisualizationServiceImpl implements VisualizationService
     }
 
 
+    @Override
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest)
     {
         VisualizationProvider provider = getProvider(c, u, measureRequest);
@@ -106,6 +109,7 @@ public class VisualizationServiceImpl implements VisualizationService
     }
 
 
+    @Override
     public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(Container c, User u, MeasureSetRequest measureRequest)
     {
         Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
@@ -162,6 +166,7 @@ public class VisualizationServiceImpl implements VisualizationService
     }
 
 
+    @Override
     public List<Map<String, Object>> toJSON(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimMeasureCols)
     {
         return getColumnResponse(dimMeasureCols);

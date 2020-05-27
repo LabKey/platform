@@ -64,27 +64,32 @@ public class DatabaseAttachmentFile implements AttachmentFile
         _fileSize = (size > 0 ? size : 0);
     }
 
+    @Override
     public String getContentType()
     {
         return _contentType;
     }
 
+    @Override
     public long getSize()
     {
         return _fileSize;
     }
 
+    @Override
     public String getError()
     {
         return null;
     }
 
+    @Override
     public String getFilename()
     {
         return _attachment.getName();
     }
 
     // NOTE: ResultSet is left open to allow streaming attachment contents from the database.  closeInputStream() must be called when through.
+    @Override
     public InputStream openInputStream() throws IOException
     {
         if (!(_rs == null && _is == null))
@@ -111,6 +116,7 @@ public class DatabaseAttachmentFile implements AttachmentFile
         }
     }
 
+    @Override
     public void closeInputStream()
     {
         IOUtils.closeQuietly(_is);

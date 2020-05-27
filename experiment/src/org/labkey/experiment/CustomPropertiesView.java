@@ -44,6 +44,7 @@ public class CustomPropertiesView extends JspView<CustomPropertiesView.CustomPro
     private static final CustomPropertyRenderer DEFAULT_RENDERER = new DefaultCustomPropertyRenderer();
     private static final Map<String, CustomPropertyRenderer> _renderers = new HashMap<String, CustomPropertyRenderer>()
     {
+        @Override
         public CustomPropertyRenderer get(Object key)
         {
             CustomPropertyRenderer result = super.get(key);

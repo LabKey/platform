@@ -42,11 +42,13 @@ public class BooleanProperty implements IPropertyWrapper, IsSerializable
         set(b);
     }
 
+    @Override
     public Object get()
     {
         return b;
     }
 
+    @Override
     public void set(Object o)
     {
         if (o instanceof String)

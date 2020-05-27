@@ -39,15 +39,18 @@ import java.util.Objects;
  */
 public class DatasetCohortAssigner implements InternalStudyImporter
 {
+    @Override
     public String getDescription()
     {
         return "dataset cohort assignments";
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.DATASET_DEFINITIONS; }
 
     // Parses the dataset manifest again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))

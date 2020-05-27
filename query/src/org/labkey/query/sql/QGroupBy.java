@@ -23,6 +23,7 @@ public class QGroupBy extends QNode
 		super(QExpr.class);
 	}
 	
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("\nGROUP BY ");

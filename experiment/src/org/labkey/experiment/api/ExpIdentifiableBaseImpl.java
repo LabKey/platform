@@ -42,6 +42,7 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
             _objectId = _object.getObjectId();
     }
 
+    @Override
     public String getLSID()
     {
         return _object.getLSID();
@@ -52,23 +53,27 @@ public abstract class ExpIdentifiableBaseImpl<Type extends IdentifiableBase> ext
         return _object;
     }
 
+    @Override
     public void setLSID(Lsid lsid)
     {
         ensureUnlocked();
         setLSID(lsid == null ? null : lsid.toString());
     }
 
+    @Override
     public void setLSID(String lsid)
     {
         ensureUnlocked();
         _object.setLSID(lsid);
     }
 
+    @Override
     public String getName()
     {
         return _object.getName();
     }
 
+    @Override
     public void setName(String name)
     {
         ensureUnlocked();

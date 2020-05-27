@@ -33,26 +33,31 @@ import org.labkey.study.controllers.StudyController;
  */
 public class StudyDomainKind extends BaseStudyDomainKind
 {
+    @Override
     protected ExtensibleStudyEntity.DomainInfo getDomainInfo()
     {
         return StudyImpl.DOMAIN_INFO;
     }
 
+    @Override
     protected TableInfo getTableInfo()
     {
         return StudySchema.getInstance().getTableInfoStudy();
     }
 
+    @Override
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());
     }
 
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());
     }
 
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         return new SQLFragment("NULL");

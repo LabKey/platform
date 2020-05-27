@@ -60,6 +60,7 @@ public class AssayTest extends AbstractAssayTest
     /**
      * Cleanup entry point.
      */
+    @Override
     protected void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         //should also delete the groups

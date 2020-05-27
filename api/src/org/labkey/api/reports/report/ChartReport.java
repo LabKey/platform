@@ -26,16 +26,19 @@ import org.labkey.api.view.ViewContext;
  */
 public abstract class ChartReport extends AbstractReport implements Report.ResultSetGenerator
 {
+    @Override
     public String getDescriptorType()
     {
         return ChartReportDescriptor.TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Chart View";
     }
 
+    @Override
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         return null;

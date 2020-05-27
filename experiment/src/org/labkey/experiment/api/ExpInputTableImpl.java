@@ -40,6 +40,7 @@ public abstract class ExpInputTableImpl<C extends Enum> extends ExpTableImpl<C> 
         super(name, rootTable, schema, objectType, cf);
     }
 
+    @Override
     public void setRun(ExpRun run, ExpProtocol.ApplicationType type)
     {
         checkLocked();

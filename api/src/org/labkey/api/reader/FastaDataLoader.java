@@ -145,6 +145,7 @@ public class FastaDataLoader extends DataLoader
         {
             super(fastaFile, new FastaIteratorElementFactory<Map<String, Object>>()
             {
+                @Override
                 public Map<String, Object> createNext(String header, byte[] body)
                 {
                     Map<String, Object> row = new LinkedHashMap<>();

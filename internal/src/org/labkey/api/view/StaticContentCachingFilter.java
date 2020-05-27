@@ -29,10 +29,12 @@ public class StaticContentCachingFilter implements Filter
 {
     private static boolean _cachingAllowed = AppProps.getInstance().isCachingAllowed();
 
+    @Override
     public void destroy()
     {
     }
 
+    @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException
     {
         HttpServletRequest request = (HttpServletRequest)servletRequest;
@@ -50,6 +52,7 @@ public class StaticContentCachingFilter implements Filter
         filterChain.doFilter(servletRequest, servletResponse);
     }
 
+    @Override
     public void init(FilterConfig filterConfig)
     {
     }

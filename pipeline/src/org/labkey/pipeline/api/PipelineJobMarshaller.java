@@ -63,46 +63,55 @@ import java.util.Map;
 public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 {
     /* CONSIDER: create a separate interface? */
+    @Override
     public void storeJob(PipelineJob job) throws NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public PipelineJob getJob(String jobId)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public PipelineJob getJob(int rowId)
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public void retry(String jobId) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public void retry(PipelineStatusFile sf) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");        
     }
 
+    @Override
     public void split(PipelineJob job) throws IOException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public void join(PipelineJob job) throws IOException, NoSuchJobException
     {
         throw new UnsupportedOperationException("Method supported only on web server");
     }
 
+    @Override
     public String serializeToJSON(Object job)
     {
         return serializeToJSON(job, true);
     }
 
+    @Override
     public String serializeToJSON(Object job, boolean ensureDeserialize)
     {
         ObjectMapper mapper = PipelineJob.createObjectMapper();
@@ -136,6 +145,7 @@ public class PipelineJobMarshaller implements PipelineStatusFile.JobStore
 
     }
 
+    @Override
     public Object deserializeFromJSON(String json, Class<?> cls)
     {
 

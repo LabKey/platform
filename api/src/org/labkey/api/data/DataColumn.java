@@ -212,6 +212,7 @@ public class DataColumn extends DisplayColumn
         _preserveNewlines = preserveNewlines;
     }
 
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _boundColumn;
@@ -223,16 +224,19 @@ public class DataColumn extends DisplayColumn
         return _displayColumn;
     }
 
+    @Override
     public boolean isFilterable()
     {
         return _filterColumn != null;
     }
 
+    @Override
     public boolean isQueryColumn()
     {
         return true;
     }
 
+    @Override
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
@@ -251,6 +255,7 @@ public class DataColumn extends DisplayColumn
         }
     }
 
+    @Override
     public void addQueryColumns(Set<ColumnInfo> columns)
     {
         if (_boundColumn != null)
@@ -261,11 +266,13 @@ public class DataColumn extends DisplayColumn
             columns.add(_filterColumn);
     }
 
+    @Override
     public boolean isSortable()
     {
         return _sortFieldKeys != null && _sortFieldKeys.size() > 0;
     }
 
+    @Override
     public Object getValue(RenderContext ctx)
     {
         Object result = ctx.get(_boundColumn.getFieldKey());
@@ -277,6 +284,7 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    @Override
     public Object getDisplayValue(RenderContext ctx)
     {
         Object result = ctx.get(_displayColumn.getFieldKey());
@@ -288,27 +296,32 @@ public class DataColumn extends DisplayColumn
         return result;
     }
 
+    @Override
     public Object getJsonValue(RenderContext ctx)
     {
         return getValue(ctx);
     }
 
+    @Override
     public Class getValueClass()
     {
         return _boundColumn.getJavaClass();
     }
 
+    @Override
     public Class getDisplayValueClass()
     {
         return _displayColumn.getJavaClass();
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         // By default, use the same rendering for both the details and grid views
         renderGridCellContents(ctx, out);
     }
 
+    @Override
     @Nullable
     public FieldKey getFilterKey()
     {
@@ -318,6 +331,7 @@ public class DataColumn extends DisplayColumn
         return _filterColumn.getFieldKey();
     }
 
+    @Override
     public void renderFilterOnClick(RenderContext ctx, Writer out) throws IOException
     {
         if (_filterColumn == null)
@@ -347,6 +361,7 @@ public class DataColumn extends DisplayColumn
         return DataRegion.getJavaScriptObjectReference(regionName) + ".clearSort(" + PageFlowUtil.jsString(fieldKey) + ");";
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);
@@ -442,6 +457,7 @@ public class DataColumn extends DisplayColumn
         return super.renderURL(ctx);
     }
 
+    @Override
     protected String getHoverContent(RenderContext ctx)
     {
         ConditionalFormat format = findApplicableFormat(ctx);
@@ -584,6 +600,7 @@ public class DataColumn extends DisplayColumn
         return entry.getObject().toString();
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         if (_boundColumn.isVersionColumn() || _inputType.equalsIgnoreCase("none"))
@@ -861,6 +878,7 @@ public class DataColumn extends DisplayColumn
                 ".changeSort(" + PageFlowUtil.jsString(fieldKey) + ", '" + h(sort.getDir()) + "')";
     }
 
+    @Override
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         String title = PageFlowUtil.filter(getTitle(ctx));
@@ -871,6 +889,7 @@ public class DataColumn extends DisplayColumn
         out.write(title);
     }
 
+    @Override
     public String getTitle(RenderContext ctx)
     {
         if (_caption == null)
@@ -878,6 +897,7 @@ public class DataColumn extends DisplayColumn
         return _caption.eval(ctx);
     }
 
+    @Override
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
@@ -923,6 +943,7 @@ public class DataColumn extends DisplayColumn
         return true;
     }
 
+    @Override
     public boolean isEditable()
     {
         return _editable;
@@ -933,6 +954,7 @@ public class DataColumn extends DisplayColumn
         _editable = b;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (ctx.getMode() == DataRegion.MODE_INSERT || ctx.getMode() == DataRegion.MODE_UPDATE)

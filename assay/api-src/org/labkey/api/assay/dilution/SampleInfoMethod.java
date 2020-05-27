@@ -24,6 +24,7 @@ public enum SampleInfoMethod
 {
     Concentration
     {
+        @Override
         public String getAbbreviation()
         {
             return "Conc.";
@@ -31,6 +32,7 @@ public enum SampleInfoMethod
     },
     Dilution
     {
+        @Override
         public String getAbbreviation()
         {
             return "Dilution";

@@ -24,6 +24,7 @@ public class JSONException extends RuntimeException implements SkipMothershipLog
         this.cause = t;
     }
 
+    @Override
     public Throwable getCause() {
         return this.cause;
     }

@@ -80,16 +80,19 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         _contextMap = new HashMap<>();
     }
 
+    @Override
     public User getUser()
     {
         return _user;
     }
 
+    @Override
     public Container getContainer()
     {
         return _c;
     }
 
+    @Override
     public VirtualFile getDir(String xmlNodeName) throws ImportException
     {
         if (_root == null)
@@ -265,6 +268,7 @@ public abstract class AbstractImportContext<XmlRoot extends XmlObject, XmlDocume
         return _dataTypes == null || dataType == null || _dataTypes.contains(dataType);
     }
 
+    @Override
     public Activity getActivity()
     {
         return _activity;

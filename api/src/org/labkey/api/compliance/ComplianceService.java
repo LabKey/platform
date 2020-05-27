@@ -63,26 +63,32 @@ public interface ComplianceService
 
     class DefaultComplianceService implements ComplianceService
     {
+        @Override
         public String getModuleName()
         {
             return ComplianceService.class.getName();
         }
+        @Override
         public ActionURL urlFor(Container container, QueryAction action, ActionURL queryBasedUrl)
         {
             return null;
         }
+        @Override
         public boolean hasElecSignPermission(@NotNull Container container, @NotNull User user)
         {
             return false;
         }
+        @Override
         public boolean hasViewSignedSnapshotsPermission(@NotNull Container container, @NotNull User user)
         {
             return false;
         }
+        @Override
         @NotNull public PHI getMaxAllowedPhi(@NotNull Container container, @NotNull User user)
         {
             return PHI.Restricted;
         }
+        @Override
         public Activity getCurrentActivity(ViewContext viewContext)
         {
             return null;

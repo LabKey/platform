@@ -85,6 +85,7 @@ public class PipelineQueryView extends QueryView
         return rgn;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();

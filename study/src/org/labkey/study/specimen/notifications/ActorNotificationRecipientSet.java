@@ -66,6 +66,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         return _location;
     }
 
+    @Override
     public String getShortRecipientDescription()
     {
         StringBuilder shortDesc = new StringBuilder();
@@ -75,6 +76,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         return shortDesc.toString();
     }
 
+    @Override
     public String getLongRecipientDescription()
     {
         StringBuilder emailList = new StringBuilder(getShortRecipientDescription());

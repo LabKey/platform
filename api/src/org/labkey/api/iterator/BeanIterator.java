@@ -36,22 +36,26 @@ public class BeanIterator<T> implements CloseableIterator<T>
         _factory = ObjectFactory.Registry.getFactory(clazz);
     }
 
+    @Override
     public void close() throws IOException
     {
         _mapIter.close();
     }
 
+    @Override
     public boolean hasNext()
     {
         return _mapIter.hasNext();
     }
 
+    @Override
     public T next()
     {
         Map<String, Object> row = _mapIter.next();
         return _factory.fromMap(row);
     }
 
+    @Override
     public void remove()
     {
         _mapIter.remove();

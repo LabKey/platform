@@ -54,21 +54,25 @@ public class SpringAttachmentFile implements AttachmentFile
 
     }
 
+    @Override
     public String getFilename()
     {
         return _filename;
     }
 
+    @Override
     public String getContentType()
     {
         return _file.getContentType();
     }
 
+    @Override
     public long getSize()
     {
         return _file.getSize();
     }
 
+    @Override
     public String getError()
     {
         if (!_file.isEmpty() && 0 == getSize())
@@ -84,12 +88,14 @@ public class SpringAttachmentFile implements AttachmentFile
         return "250MB";
     }
 
+    @Override
     public InputStream openInputStream() throws IOException
     {
         _in = _file.getInputStream();
         return _in;
     }
 
+    @Override
     public void closeInputStream() throws IOException
     {
         if (null != _in)

@@ -41,21 +41,25 @@ public class ByteArrayAttachmentFile implements AttachmentFile
         _fileName = fileName;
     }
 
+    @Override
     public String getContentType()
     {
         return _contentType;
     }
 
+    @Override
     public String getFilename()
     {
         return _fileName;
     }
 
+    @Override
     public long getSize()
     {
         return _content.length;
     }
 
+    @Override
     public InputStream openInputStream()
     {
         if (_inputStream != null)
@@ -64,6 +68,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
         return _inputStream;
     }
 
+    @Override
     public void closeInputStream() throws IOException
     {
         if (_inputStream == null)
@@ -71,6 +76,7 @@ public class ByteArrayAttachmentFile implements AttachmentFile
         _inputStream.close();
     }
 
+    @Override
     public String getError()
     {
         return null;

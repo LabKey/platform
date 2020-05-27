@@ -55,6 +55,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
         super(factory, job);
     }
 
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {

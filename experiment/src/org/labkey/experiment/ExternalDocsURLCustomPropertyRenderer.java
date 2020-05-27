@@ -34,16 +34,19 @@ public class ExternalDocsURLCustomPropertyRenderer implements CustomPropertyRend
 {
     public static final String URI = "terms.fhcrc.org#ExternalDocumentation.href";
 
+    @Override
     public boolean shouldRender(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         return true;
     }
 
+    @Override
     public String getDescription(ObjectProperty prop, List<ObjectProperty> siblingProperties)
     {
         return "External documentation";
     }
 
+    @Override
     public String getValue(ObjectProperty prop, List<ObjectProperty> siblingProperties, Container c)
     {
         String label = null;

@@ -141,6 +141,7 @@ public class PipelineController extends SpringActionController
         setActionResolver(_resolver);
     }
 
+    @Override
     public PageConfig defaultPageConfig()
     {
         PageConfig p = super.defaultPageConfig();
@@ -151,6 +152,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return StatusController.urlShowList(getContainer(), false);
@@ -395,6 +397,7 @@ public class PipelineController extends SpringActionController
         {
         }
 
+        @Override
         public ModelAndView getView(PathForm pathForm, BindException errors)
         {
             Path path = null;
@@ -406,6 +409,7 @@ public class PipelineController extends SpringActionController
             return wp;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Files");
@@ -483,6 +487,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ActionsAction extends ReadOnlyApiAction<PipelineActionsForm>
     {
+        @Override
         public ApiResponse execute(PipelineActionsForm form, BindException errors)
         {
             Container c = getContainer();
@@ -556,6 +561,7 @@ public class PipelineController extends SpringActionController
     {
         private Map<String,Object> _props;
 
+        @Override
         public void bindProperties(Map<String, Object> props)
         {
             _props = props;
@@ -570,6 +576,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdatePipelineActionConfigAction extends MutatingApiAction<SaveOptionsForm>
     {
+        @Override
         public ApiResponse execute(SaveOptionsForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
@@ -586,6 +593,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineActionConfigAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             Container container = getContainer();
@@ -616,6 +624,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineFilePropertiesAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -720,6 +729,7 @@ public class PipelineController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(PermissionForm permissionForm)
         {
             return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
@@ -731,6 +741,7 @@ public class PipelineController extends SpringActionController
     {
         private List<Integer> groups = new FormArrayList<Integer>(Integer.class)
         {
+            @Override
             protected Integer newInstance()
             {
                 return Integer.valueOf(Integer.MIN_VALUE);
@@ -799,10 +810,12 @@ public class PipelineController extends SpringActionController
             return SetupField.email;
         }
 
+        @Override
         public void validateCommand(EmailNotificationForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(EmailNotificationForm form, BindException errors)
         {
             if (!form.getNotifyOnSuccess())
@@ -844,6 +857,7 @@ public class PipelineController extends SpringActionController
             return errors.getGlobalErrorCount() == 0;
         }
 
+        @Override
         public ActionURL getSuccessURL(EmailNotificationForm form)
         {
             return form.getReturnActionURL(urlSetup(getContainer()));
@@ -1083,6 +1097,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminOperationsPermission.class)
     public class StatusAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             // Job data is only available from the mini-pipeline.
@@ -1096,6 +1111,7 @@ public class PipelineController extends SpringActionController
                     new StatusModel(queue.getJobDataInMemory(getJobDataContainer())));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Pipeline Status");
@@ -1173,6 +1189,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadAction extends SimpleViewAction<PathForm>
     {
+        @Override
         public ModelAndView getView(PathForm form, BindException errors) throws Exception
         {
             PipeRoot pipeRoot = getPipelineRoot(getContainer());
@@ -1191,6 +1208,7 @@ public class PipelineController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -1220,6 +1238,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPipelineContainerAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors)
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
@@ -1233,6 +1252,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ImportFolderFromPipelineAction extends SimpleRedirectAction<PipelinePathForm>
     {
+        @Override
         public ActionURL getRedirectURL(PipelinePathForm form)
         {
             Container c = getContainer();
@@ -1682,16 +1702,19 @@ public class PipelineController extends SpringActionController
 
     public static class PipelineUrlsImp implements PipelineUrls
     {
+        @Override
         public ActionURL urlBrowse(Container container)
         {
             return urlBrowse(container, null, null);
         }
 
+        @Override
         public ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl)
         {
             return urlBrowse(container, returnUrl, null);
         }
 
+        @Override
         public ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl, @Nullable String path)
         {
             ActionURL url = new ActionURL(BrowseAction.class, container);
@@ -1705,21 +1728,25 @@ public class PipelineController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL urlSetup(Container container)
         {
             return PipelineController.urlSetup(container);
         }
 
+        @Override
         public ActionURL urlBegin(Container container)
         {
             return PipelineController.urlBegin(container);
         }
 
+        @Override
         public ActionURL urlActions(Container container)
         {
             return new ActionURL(ActionsAction.class, container);
         }
 
+        @Override
         public ActionURL urlStartFolderImport(Container container, @NotNull File archiveFile, boolean asStudy, @Nullable ImportOptions options, boolean fromTemplateSourceFolder)
         {
             ActionURL url = new ActionURL(StartFolderImportAction.class, container);
@@ -1729,6 +1756,7 @@ public class PipelineController extends SpringActionController
             return addStartImportParameters(url, archiveFile, options, fromTemplateSourceFolder);
         }
 
+        @Override
         public ActionURL urlCreatePipelineTrigger(Container container, String pipelineId, @Nullable ActionURL returnUrl)
         {
             ActionURL url = new ActionURL(CreatePipelineTriggerAction.class, container);
@@ -1767,6 +1795,7 @@ public class PipelineController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PipelineConfigurationAction extends GWTServiceAction
     {
+        @Override
         protected BaseRemoteService createService()
         {
             return new PipelineGWTServiceImpl(getViewContext());

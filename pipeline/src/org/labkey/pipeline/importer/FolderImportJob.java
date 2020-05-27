@@ -75,16 +75,19 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         LOG.info("Pipeline job initialized for importing folder properties to folder " + c.getPath());
     }
 
+    @Override
     public FolderImportContext getImportContext()
     {
         return _ctx;
     }
 
+    @Override
     public VirtualFile getRoot()
     {
         return _root;
     }
 
+    @Override
     public String getOriginalFilename()
     {
         return _originalFilename;
@@ -102,6 +105,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer());
     }
 
+    @Override
     public String getDescription()
     {
         return "Folder import";

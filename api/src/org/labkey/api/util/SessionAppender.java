@@ -47,6 +47,7 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     private static final ThreadLocal<AppenderInfo> localInfo = new ThreadLocal<>();
 
 
+    @Override
     protected void append(LoggingEvent event)
     {
         AppenderInfo info = localInfo.get();
@@ -62,11 +63,13 @@ public class SessionAppender extends org.apache.log4j.AppenderSkeleton
     }
 
 
+    @Override
     public void close()
     {
     }
 
 
+    @Override
     public boolean requiresLayout()
     {
         return false;

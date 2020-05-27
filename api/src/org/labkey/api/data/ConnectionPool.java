@@ -70,6 +70,7 @@ public class ConnectionPool implements AutoCloseable
         return true;
     }
 
+    @Override
     public void close()
     {
         _connectionPool.clear();

@@ -39,6 +39,7 @@ public class StandaloneSpecimenTask extends AbstractSpecimenTask<StandaloneSpeci
             super(StandaloneSpecimenTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new StandaloneSpecimenTask(this, job);

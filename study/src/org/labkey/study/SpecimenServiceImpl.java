@@ -139,26 +139,31 @@ public class SpecimenServiceImpl implements SpecimenService
             return _studyContainer;
         }
 
+        @Override
         public String getParticipantID()
         {
             return _participantID;
         }
 
+        @Override
         public Double getVisitID()
         {
             return _visitID;
         }
 
+        @Override
         public String getSpecimenID()
         {
             return _specimenID;
         }
 
+        @Override
         public Integer getCohortID()
         {
             throw new UnsupportedOperationException("Not Implemented for StudyParticipantVisit");
         }
 
+        @Override
         public ExpMaterial getMaterial()
         {
             if (_material == null)
@@ -187,6 +192,7 @@ public class SpecimenServiceImpl implements SpecimenService
             return _material;
         }
 
+        @Override
         public Date getDate()
         {
             return _date;
@@ -198,6 +204,7 @@ public class SpecimenServiceImpl implements SpecimenService
         }
     }
 
+    @Override
     public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId)
     {
         Vial match = SpecimenManager.getInstance().getVial(studyContainer, user, sampleId);
@@ -207,6 +214,7 @@ public class SpecimenServiceImpl implements SpecimenService
             return new StudyParticipantVisit(studyContainer, sampleId, null, null, null);
     }
 
+    @Override
     public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Date date)
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
@@ -226,6 +234,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, null, date));
     }
 
+    @Override
     public Set<ParticipantVisit> getSampleInfo(Container studyContainer, User user, String participantId, Double visit)
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
@@ -244,6 +253,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return Collections.singleton(new StudyParticipantVisit(studyContainer, null, participantId, visit, null));
     }
 
+    @Override
     public String getCompletionURLBase(Container studyContainer, SpecimenService.CompletionType type)
     {
         if (studyContainer == null)
@@ -254,6 +264,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return url.getLocalURIString() + "&prefix=";
     }
 
+    @Override
     public Set<Pair<String, Date>> getSampleInfo(Container studyContainer, User user, boolean truncateTime)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
@@ -276,6 +287,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return sampleInfo;
     }
 
+    @Override
     public Set<Pair<String, Double>> getSampleInfo(Container studyContainer, User user)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(studyContainer);
@@ -297,6 +309,7 @@ public class SpecimenServiceImpl implements SpecimenService
         return sampleInfo;
     }
 
+    @Override
     public Lsid getSpecimenMaterialLsid(@NotNull Container studyContainer, @NotNull String id)
     {
         return new Lsid(StudyService.SPECIMEN_NAMESPACE_PREFIX, "Folder-" + studyContainer.getRowId(), id);

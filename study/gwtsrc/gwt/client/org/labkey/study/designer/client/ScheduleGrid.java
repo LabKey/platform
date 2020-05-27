@@ -53,6 +53,7 @@ public abstract class ScheduleGrid extends EditableGrid
         this.designer = designer;
     }
 
+    @Override
     public void updateAll()
     {
         super.updateAll();
@@ -75,16 +76,19 @@ public abstract class ScheduleGrid extends EditableGrid
         }
     }
 
+    @Override
     int getDataColumnCount()
     {
         return getCategoryColumnCount() + schedule.getTimepoints().size() + (isReadOnly() ? 0 : 1);
     }
 
+    @Override
     int getDataRowCount()
     {
         return getCategoryRowCount();
     }
 
+    @Override
     Widget getCellWidget(int row, int col)
     {
         if (col < getCategoryColumnCount())
@@ -99,6 +103,7 @@ public abstract class ScheduleGrid extends EditableGrid
     }
 
 
+    @Override
     Object getCellValue(int row, int col)
     {
         if (col < getCategoryColumnCount())
@@ -112,6 +117,7 @@ public abstract class ScheduleGrid extends EditableGrid
             return null;
     }
 
+    @Override
     Widget getGhostRowWidget(int col)
     {
         if (col < getCategoryColumnCount())
@@ -120,6 +126,7 @@ public abstract class ScheduleGrid extends EditableGrid
         return new Label("");
     }
 
+    @Override
     void makeGhostRowReal()
     {
         int categoryIndex = getCategoryRowCount();
@@ -132,11 +139,13 @@ public abstract class ScheduleGrid extends EditableGrid
         }
     }
 
+    @Override
     int getHeaderRows()
     {
         return 2;
     }
 
+    @Override
     public Widget getColumnHeader(int row, int column)
     {
         if (row == 0)
@@ -182,6 +191,7 @@ public abstract class ScheduleGrid extends EditableGrid
             setWidth("100%");
 
             addClickListener(new ClickListener() {
+                @Override
                 public void onClick(Widget sender)
                 {
                     if (designer.isReadOnly())
@@ -238,14 +248,17 @@ public abstract class ScheduleGrid extends EditableGrid
                 hpTime.add(lbUnit);
 
                 KeyboardListener enterListener = new KeyboardListener() {
+                    @Override
                     public void onKeyDown(Widget sender, char keyCode, int modifiers) {
                     }
 
+                    @Override
                     public void onKeyPress(Widget sender, char keyCode, int modifiers) {
                         if (keyCode == '\n' || keyCode == '\r')
                             doOk();
                     }
 
+                    @Override
                     public void onKeyUp(Widget sender, char keyCode, int modifiers) {
                     }
                 };
@@ -259,6 +272,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 HorizontalPanel hp = new HorizontalPanel();
                 hp.setSpacing(3);
                 hp.add(new Button("Cancel", new ClickListener() {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         hide();
@@ -266,6 +280,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 }));
                 hp.add(new Button("OK", new ClickListener(){
 
+                    @Override
                     public void onClick(Widget sender)
                     {
                         doOk();
@@ -276,6 +291,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 {
                     hp.add(new Button("Delete Timepoint", new ClickListener()
                     {
+                        @Override
                         public void onClick(Widget sender)
                         {
                             schedule.removeTimepoint(tp);
@@ -293,6 +309,7 @@ public abstract class ScheduleGrid extends EditableGrid
             }
 
 
+            @Override
             protected void onLoad() {
                 super.onLoad();
                 tbCount.setFocus(true);
@@ -355,6 +372,7 @@ public abstract class ScheduleGrid extends EditableGrid
             setWidth("100%");
 
             addClickListener(new ClickListener() {
+                @Override
                 public void onClick(Widget sender)
                 {
                     if (designer.isReadOnly())
@@ -399,6 +417,7 @@ public abstract class ScheduleGrid extends EditableGrid
 
                 newRadio.addClickListener(new ClickListener()
                 {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         existList.setEnabled(false);
@@ -406,6 +425,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 });
                 existRadio.addClickListener(new ClickListener()
                 {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         existList.setEnabled(existList.getItemCount() > 0);
@@ -422,6 +442,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 HorizontalPanel hp = new HorizontalPanel();
                 hp.setSpacing(3);
                 hp.add(new Button("Cancel", new ClickListener() {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         hide();
@@ -429,6 +450,7 @@ public abstract class ScheduleGrid extends EditableGrid
                 }));
                 hp.add(new Button("OK", new ClickListener(){
 
+                    @Override
                     public void onClick(Widget sender)
                     {
                         doOk();
@@ -478,6 +500,7 @@ public abstract class ScheduleGrid extends EditableGrid
 
     }
 
+    @Override
     void deleteRow(int dataRow)
     {
         deleteCategory(dataRow);

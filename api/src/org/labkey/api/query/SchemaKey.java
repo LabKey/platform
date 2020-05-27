@@ -118,6 +118,7 @@ public class SchemaKey extends QueryKey<SchemaKey>
         return (SchemaKey)super.getParent();
     }
 
+    @Override
     public int compareTo(SchemaKey o)
     {
         return CASE_INSENSITIVE_ORDER.compare(this, o);

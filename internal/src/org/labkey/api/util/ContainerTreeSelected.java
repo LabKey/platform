@@ -44,6 +44,7 @@ public class ContainerTreeSelected extends ContainerTree
         current = c;
     }
 
+    @Override
     protected void renderCellContents(StringBuilder html, Container c, ActionURL url)
     {
         if (c.equals(current))

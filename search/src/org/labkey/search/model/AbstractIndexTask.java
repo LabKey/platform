@@ -56,36 +56,42 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public String getDescription()
     {
         return _description;
     }
 
 
+    @Override
     public int getDocumentCountEstimate()
     {
         return _estimate.get();
     }
 
 
+    @Override
     public int getIndexedCount()
     {
         return _indexed.get();
     }
 
 
+    @Override
     public int getFailedCount()
     {
         return _failed.get();
     }
 
 
+    @Override
     public long getStartTime()
     {
         return _start;
     }
 
 
+    @Override
     public long getCompleteTime()
     {
         return _complete;
@@ -98,6 +104,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public void log(String message)
     {
         synchronized (_sw)
@@ -107,6 +114,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public Reader getLog()
     {
         synchronized (_sw)
@@ -116,6 +124,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public void addToEstimate(int i)
     {
         _estimate.addAndGet(i);
@@ -123,6 +132,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
 
 
     // indicates that caller is done adding Resources to this task
+    @Override
     public void setReady()
     {
         synchronized (_completeEvent)
@@ -161,6 +171,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public boolean isCancelled()
     {
         synchronized (_completeEvent)
@@ -170,6 +181,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         synchronized (_completeEvent)
@@ -181,6 +193,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public boolean isDone()
     {
         synchronized (_completeEvent)
@@ -190,6 +203,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public SearchService.IndexTask get() throws InterruptedException
     {
         synchronized (_completeEvent)
@@ -201,6 +215,7 @@ public abstract class AbstractIndexTask implements SearchService.IndexTask
     }
 
 
+    @Override
     public SearchService.IndexTask get(long timeout, TimeUnit unit) throws InterruptedException
     {
         synchronized (_completeEvent)

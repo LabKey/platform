@@ -145,6 +145,7 @@ public class RelativeDateVisitManager extends VisitManager
 
 
     /* call updateParticipants() first */
+    @Override
     protected void updateParticipantVisitTable(@Nullable User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -261,6 +262,7 @@ public class RelativeDateVisitManager extends VisitManager
 
 
     /** Make sure there is a Visit for each row in StudyData otherwise rows will be orphaned */
+    @Override
     protected void updateVisitTable(final User user, @Nullable Logger logger)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -312,6 +314,7 @@ public class RelativeDateVisitManager extends VisitManager
     }
 
     // Return sql for fetching all datasets and their visit sequence numbers, given a container
+    @Override
     protected SQLFragment getDatasetSequenceNumsSQL(Study study)
     {
         SQLFragment sql = new SQLFragment();

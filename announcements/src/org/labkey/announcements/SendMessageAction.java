@@ -83,6 +83,7 @@ public class SendMessageAction extends MutatingApiAction<SendMessageAction.Messa
         principalId,
     }
 
+    @Override
     public ApiResponse execute(MessageForm form, BindException errors) throws Exception
     {
         if (TRUE == JdbcType.BOOLEAN.convert(System.getProperty("SendMessage.disable", "false")))

@@ -94,6 +94,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         super(taskId);
     }
 
+    @Override
     public TaskPipeline cloneAndConfigure(FileAnalysisTaskPipelineSettings settings, TaskId[] taskProgression) throws CloneNotSupportedException
     {
         FileAnalysisTaskPipelineImpl pipeline = (FileAnalysisTaskPipelineImpl)
@@ -175,32 +176,38 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return this;
     }
 
+    @Override
     public PipelineActionConfig.displayState getDefaultDisplayState()
     {
         return _defaultDisplayState;
     }
 
+    @Override
     public boolean isAllowForTriggerConfiguration()
     {
         return _allowForTriggerConfiguration;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
     }
 
+    @Override
     public String getProtocolFactoryName()
     {
         return _protocolFactoryName;
     }
 
+    @Override
     @NotNull
     public List<FileType> getInitialFileTypes()
     {
         return _initialFileTypes;
     }
 
+    @Override
     @NotNull
     public FileFilter getInitialFileTypeFilter()
     {
@@ -221,6 +228,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return new PipelineProvider.FileTypesEntryFilter(_initialFileTypes);
     }
 
+    @Override
     @NotNull
     public URLHelper getAnalyzeURL(Container c, String path)
     {
@@ -251,6 +259,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         return AnalysisController.urlAnalyze(c, getId(), path);
     }
 
+    @Override
     @NotNull
     public Map<FileType, List<FileType>> getTypeHierarchy()
     {

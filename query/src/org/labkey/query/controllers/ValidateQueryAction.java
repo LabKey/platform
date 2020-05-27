@@ -77,6 +77,7 @@ public class ValidateQueryAction extends ReadOnlyApiAction<ValidateQueryAction.V
     }
 
 
+    @Override
     public ApiResponse execute(ValidateQueryForm form, BindException errors)
     {
         ApiSimpleResponse response = new ApiSimpleResponse();

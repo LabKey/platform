@@ -40,6 +40,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
     {
         NONE()
         {
+            @Override
             public boolean check(String method)
             {
                 return false;
@@ -48,6 +49,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
 
         POST()
         {
+            @Override
             public boolean check(String method)
             {
                 return StringUtils.equalsIgnoreCase("POST", method);
@@ -56,6 +58,7 @@ public @Retention(java.lang.annotation.RetentionPolicy.RUNTIME) @Target(ElementT
 
         ALL()
         {
+            @Override
             public boolean check(String method)
             {
                 return true;
