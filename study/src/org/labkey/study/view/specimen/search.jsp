@@ -28,7 +28,6 @@
         dependencies.add("clientapi");
         dependencies.add("Ext4ClientApi");
         dependencies.add("extWidgets/SearchPanel.js");
-        dependencies.add("study/redesignUtils.js");
         dependencies.add("ux/CheckCombo/CheckCombo.js");
         dependencies.add("ux/CheckCombo/CheckCombo.css");
         dependencies.add("study/SpecimenSearchPanel.js");
