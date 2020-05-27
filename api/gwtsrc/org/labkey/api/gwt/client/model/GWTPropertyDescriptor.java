@@ -139,6 +139,7 @@ public class GWTPropertyDescriptor implements IsSerializable
         setRedactedText(s.getRedactedText());
         setIsPrimaryKey(s.getIsPrimaryKey());
         setLockType(s.getLockType());
+        setTypeEditable(s.isTypeEditable());
 
         for (GWTPropertyValidator v : s.getPropertyValidators())
         {
@@ -662,47 +663,6 @@ public class GWTPropertyDescriptor implements IsSerializable
             result = 31 * result + gwtPropertyValidator.hashCode();
         }
         return result;
-    }
-
-    public IPropertyWrapper bindProperty(String prop)
-    {
-        if ("propertyId".equals(prop)) return propertyId;
-        if ("propertyURI".equals(prop)) return propertyURI;
-        if ("ontologyURI".equals(prop)) return ontologyURI;
-        if ("name".equals(prop)) return name;
-        if ("description".equals(prop)) return description;
-        if ("container".equals(prop)) return container;
-        if ("rangeURI".equals(prop)) return rangeURI;
-        if ("conceptURI".equals(prop)) return conceptURI;
-        if ("label".equals(prop)) return label;
-        if ("searchTerms".equals(prop)) return searchTerms;
-        if ("semanticType".equals(prop)) return semanticType;
-        if ("format".equals(prop)) return format;
-        if ("required".equals(prop)) return required;
-        if ("hidden".equals(prop)) return hidden;
-        if ("lookupContainer".equals(prop)) return lookupContainer;
-        if ("lookupSchema".equals(prop)) return lookupSchema;
-        if ("lookupQuery".equals(prop)) return lookupQuery;
-        if ("mvEnabled".equals(prop)) return mvEnabled;
-        if ("url".equals(prop)) return url;
-        if ("dimension".equals(prop)) return dimension;
-        if ("measure".equals(prop)) return measure;
-        if ("recommendedVariable".equals(prop)) return recommendedVariable;
-        if ("defaultScale".equals(prop)) return defaultScale;
-        if ("importAliases".equals(prop)) return importAliases;
-        if ("shownInInsertView".equals(prop)) return shownInInsertView;
-        if ("shownInUpdateView".equals(prop)) return shownInUpdateView;
-        if ("shownInDetailsView".equals(prop)) return shownInDetailsView;
-        if ("defaultValueType".equals(prop)) throw new IllegalStateException("defaultValueType cannot be bound.");
-        if ("defaultValue".equals(prop)) throw new IllegalStateException("defaultValue cannot be bound.");
-        if ("defaultDisplayValue".equals(prop)) throw new IllegalStateException("defaultDisplayValue cannot be bound.");
-        if ("facetingBehaviorType".equals(prop)) return facetingBehaviorType;
-        if ("phi".equals(prop)) return phi;
-        if ("excludeFromShifting".equals(prop)) return isExcludeFromShifting;
-        if ("scale".equals(prop)) return scale;
-        if ("redactedText".equals(prop)) return redactedText;
-
-        return null;
     }
 
     public List<GWTPropertyValidator> getPropertyValidators()

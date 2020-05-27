@@ -82,21 +82,27 @@ public class XarContext
 
     public XarContext(PipelineJob job)
     {
-        this(job.getDescription(), job.getContainer(), job.getUser());
-        _job = job;
+        this(job.getDescription(), job.getContainer(), job.getUser(), job);
     }
 
     public XarContext(String jobDescription, Container c, User user)
     {
-        this(jobDescription, c, user, AppProps.getInstance().getDefaultLsidAuthority());
+        this(jobDescription, c, user, null);
     }
 
-    public XarContext(String jobDescription, Container c, User user, String defaultLsidAuthority)
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job)
+    {
+        this(jobDescription, c, user, job, AppProps.getInstance().getDefaultLsidAuthority());
+    }
+
+    public XarContext(String jobDescription, Container c, User user, @Nullable PipelineJob job, String defaultLsidAuthority)
     {
         _jobDescription = jobDescription;
         _originalURLs = new HashMap<>();
         _originalCaseInsensitiveURLs = new CaseInsensitiveHashMap<>();
         _substitutions = new HashMap<>();
+
+        _job = job;
 
         String path = c.getPath();
         if (path.startsWith("/"))

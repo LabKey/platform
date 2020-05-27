@@ -48,7 +48,7 @@ public class CompressedXarSource extends AbstractFileXarSource
      */
     public CompressedXarSource(File xarFile, PipelineJob job, Container targetContainer)
     {
-        super(job.getDescription(), targetContainer, job.getUser());
+        super(job.getDescription(), targetContainer, job.getUser(), job);
         _xarFile = xarFile;
     }
 
