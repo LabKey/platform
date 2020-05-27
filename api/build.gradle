@@ -44,7 +44,6 @@ List apache = [
 
 
 List gwt = [
-        "com.allen-sauer.gwt.dnd:gwt-dnd:${gwtDndVersion}",
         "com.google.gwt:gwt-servlet:${gwtServletVersion}"
 ]
 
