@@ -24,10 +24,12 @@ import org.labkey.api.data.ColumnInfo;
  */
 public abstract class SimpleAuditColumnFactory implements AuditDisplayColumnFactory
 {
+    @Override
     public void init(ColumnInfo columnInfo)
     {
     }
 
+    @Override
     public int getPosition()
     {
         return -1;

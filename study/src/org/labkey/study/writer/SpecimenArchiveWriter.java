@@ -54,11 +54,13 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 {
     public static final String SCHEMA_FILENAME = "specimens_metadata.xml";
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.SPECIMENS;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         StudyDocument.Study.Specimens specimensXml = ensureSpecimensElement(ctx);

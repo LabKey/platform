@@ -33,6 +33,7 @@ public class LabKeyDbSchema extends DbSchema
     }
 
     // Used to retrieve schema XML file and scripts. Override so this is not datasource-qualified (we want to always resolve to labkey.xml, labkey-0.00-14.20.sql, etc.)
+    @Override
     public String getResourcePrefix()
     {
         return "labkey";

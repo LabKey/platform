@@ -265,11 +265,13 @@ public class SchemaTsvReader implements SchemaReader
         return ImportTypesHelper.getImportPropertyDescriptors(_propertyBuilders, factory, errors, defaultContainer);
     }
 
+    @Override
     public Map<Integer, DatasetImportInfo> getDatasetInfo()
     {
         return _datasetInfoMap;
     }
 
+    @Override
     public String getTypeNameColumn()
     {
         return _typeNameColumn;

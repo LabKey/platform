@@ -733,6 +733,7 @@ public abstract class AbstractWrappedColumnInfo implements ColumnInfo
         return delegate.isRootDbSequence();
     }
 
+    @Override
     public Container getDbSequenceContainer(Container container)
     {
         return delegate.getDbSequenceContainer(container);

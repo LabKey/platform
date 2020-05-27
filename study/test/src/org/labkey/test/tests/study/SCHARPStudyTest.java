@@ -52,6 +52,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
             _waitForMessage = waitForMessage;
         }
 
+        @Override
         public Boolean get()
         {
             String curMessage = _test.getText(_loc);
@@ -96,6 +97,7 @@ public class SCHARPStudyTest extends BaseWebDriverTest implements PostgresOnlyTe
         clickProject(PROJECT_NAME);
     }
 
+    @Override
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("study");

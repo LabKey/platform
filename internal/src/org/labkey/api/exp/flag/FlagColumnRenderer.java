@@ -173,6 +173,7 @@ public class FlagColumnRenderer extends DataColumn
     }
 
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderFlag(ctx, out);

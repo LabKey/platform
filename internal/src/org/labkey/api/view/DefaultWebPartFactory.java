@@ -41,6 +41,7 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
         this.cls = cls;
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))

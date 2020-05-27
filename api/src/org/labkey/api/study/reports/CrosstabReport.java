@@ -50,16 +50,19 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
 {
     public static final String TYPE = "ReportService.CrossTab";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Crosstab Report";
     }
 
+    @Override
     public String getDescriptorType()
     {
         return CrosstabReportDescriptor.TYPE;
@@ -89,6 +92,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return null;
     }
 
+    @Override
     public HttpView renderReport(ViewContext context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
@@ -121,6 +125,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return null;
     }
 
+    @Override
     public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportQueryView view = createQueryView(context, getDescriptor());

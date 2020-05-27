@@ -50,11 +50,13 @@ public class StudyQueryReport extends QueryReport
 {
     public static final String TYPE = "Study.queryReport";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public void beforeSave(ContainerUser context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
@@ -97,9 +99,11 @@ public class StudyQueryReport extends QueryReport
         return ReportQueryViewFactory.getStudyQuerySchema(context, getDescriptor());
     }
 
+    @Override
     public QueryReportDescriptor.QueryViewGenerator getQueryViewGenerator()
     {
         return new QueryReportDescriptor.QueryViewGenerator() {
+            @Override
             public ReportQueryView generateQueryView(ViewContext context, ReportDescriptor descriptor)
             {
                 ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
@@ -120,6 +124,7 @@ public class StudyQueryReport extends QueryReport
         };
     }
 
+    @Override
     @Deprecated
     public ActionURL getRunReportURL(ViewContext context)
     {

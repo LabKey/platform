@@ -83,11 +83,13 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         }
     }
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return null;
     }
 
+    @Override
     public ModelAndView handleRequest() throws Exception
     {
         //throw any previously-stored exception
@@ -103,6 +105,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         return _view;
     }
 
+    @Override
     public void validate(Object target, Errors errors)
     {
         //since simple HTML views don't interact with permanent storage (i.e., the database)
@@ -166,6 +169,7 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         verifyTermsOfUse(false);
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         root.addChild(_view.getTitle());

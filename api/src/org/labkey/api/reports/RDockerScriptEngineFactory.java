@@ -34,6 +34,7 @@ public class RDockerScriptEngineFactory extends ExternalScriptEngineFactory
         this._dockerImage = image;
     }
 
+    @Override
     public synchronized ScriptEngine getScriptEngine()
     {
         DockerService ds = DockerService.get();

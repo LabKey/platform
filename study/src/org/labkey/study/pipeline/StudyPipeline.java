@@ -52,6 +52,7 @@ public class StudyPipeline extends PipelineProvider
     }
 
 
+    @Override
     public void updateFileProperties(final ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))
@@ -66,6 +67,7 @@ public class StudyPipeline extends PipelineProvider
             return;
 
         File[] files = directory.listFiles(new FileEntryFilter() {
+            @Override
             public boolean accept(File f)
             {
                 return f.getName().endsWith(".dataset");
@@ -76,6 +78,7 @@ public class StudyPipeline extends PipelineProvider
 
         files = directory.listFiles(new FileEntryFilter()
         {
+            @Override
             public boolean accept(File f)
             {
                 if (SpecimenBatch.ARCHIVE_FILE_TYPE.isType(f))

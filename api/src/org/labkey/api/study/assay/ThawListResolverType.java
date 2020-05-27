@@ -91,6 +91,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             AbstractAssayProvider.VISITID_PROPERTY_NAME,
             AbstractAssayProvider.DATE_PROPERTY_NAME));
 
+    @Override
     public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
                                                    Collection<ExpData> inputDatas,
                                                    Collection<ExpMaterial> outputMaterials,
@@ -207,6 +208,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         }
     }
 
+    @Override
     public ParticipantVisitResolver createResolver(ExpRun run, Container targetStudyContainer, User user) throws IOException, ExperimentException
     {
         return createResolver(run.getMaterialInputs().keySet(),
@@ -216,16 +218,19 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 targetStudyContainer, user);
     }
 
+    @Override
     public String getName()
     {
         return NAME;
     }
 
+    @Override
     public String getDescription()
     {
         return "Sample indices, which map to values in a different data source.";
     }
 
+    @Override
     public void render(RenderContext ctx) throws Exception
     {
         JspView<RenderContext> view = new JspView<>("/org/labkey/api/study/assay/thawListSelector.jsp", ctx);
@@ -235,6 +240,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         ContainerManager.getAllChildren(ContainerManager.getRoot());
     }
 
+    @Override
     public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
     {
         view.getDataRegion().addHiddenFormField(THAW_LIST_TYPE_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME));
@@ -245,6 +251,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         view.getDataRegion().addHiddenFormField(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, form.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
     }
 
+    @Override
     public void configureRun(AssayRunUploadContext<?> context, ExpRun run, Map<ExpData, String> inputDatas) throws ExperimentException
     {
         String type = context.getRequest() == null ? null : context.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
@@ -476,6 +483,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         return schemaName + "." + queryName + " in " + container.getPath();
     }
 
+    @Override
     public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
     {
         return !(propertyName.equals(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME) ||

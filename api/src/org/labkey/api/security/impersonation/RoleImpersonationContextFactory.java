@@ -155,6 +155,7 @@ public class RoleImpersonationContextFactory extends AbstractImpersonationContex
         return builder.toString();
     }
 
+    @Override
     public User getAdminUser()
     {
         return UserManager.getUser(_adminUserId);

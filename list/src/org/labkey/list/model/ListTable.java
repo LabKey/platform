@@ -479,6 +479,7 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
         return getRealTable();
     }
 
+    @Override
     public ObjectUriType getObjectUriType()
     {
         return UpdateableTableInfo.ObjectUriType.schemaColumn;

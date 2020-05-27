@@ -84,6 +84,7 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
             return min;
         }
 
+        @Override
         public Map<String, Object> toMap()
         {
             Map<String, Object> params = new HashMap<>();

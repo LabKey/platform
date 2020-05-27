@@ -70,6 +70,7 @@ public class ReportViewProvider implements DataViewProvider
 {
     public static final DataViewProvider.Type TYPE = new ProviderType("reports", "Report Views", true);
 
+    @Override
     public DataViewProvider.Type getType()
     {
         return TYPE;

@@ -138,6 +138,7 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageCohortsAction extends FormViewAction<ManageCohortsForm>
     {
+        @Override
         public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors)
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), HttpView.currentContext().getUser());
@@ -160,6 +161,7 @@ public class CohortController extends BaseStudyController
             return vbox;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageCohorts");
@@ -167,8 +169,10 @@ public class CohortController extends BaseStudyController
             root.addChild("Manage Cohorts");
         }
 
+        @Override
         public void validateCommand(ManageCohortsForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(ManageCohortsForm form, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -234,6 +238,7 @@ public class CohortController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ManageCohortsForm form)
         {
             if (form.isReshow())
@@ -310,6 +315,7 @@ public class CohortController extends BaseStudyController
             return new CohortTable(schema, null);
         }
 
+        @Override
         public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors)
         {
             TableInfo table = getTableInfo();
@@ -368,6 +374,7 @@ public class CohortController extends BaseStudyController
             return view;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             _addManageStudy(root);
@@ -375,8 +382,10 @@ public class CohortController extends BaseStudyController
             addExtraNavTrail(root);
         }
 
+        @Override
         public void validateCommand(EditCohortForm form, Errors errors) {}
 
+        @Override
         public boolean handlePost(EditCohortForm form, BindException errors)
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
@@ -465,6 +474,7 @@ public class CohortController extends BaseStudyController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(EditCohortForm form)
         {
             return new ActionURL(ManageCohortsAction.class, getContainer());
@@ -483,11 +493,13 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
+        @Override
         protected boolean isInsert()
         {
             return true;
         }
 
+        @Override
         protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Insert New Cohort");
@@ -498,11 +510,13 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends InsertAction
     {
+        @Override
         protected boolean isInsert()
         {
             return false;
         }
 
+        @Override
         protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Update Cohort: " + cohortLabel);

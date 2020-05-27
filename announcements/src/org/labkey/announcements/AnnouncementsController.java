@@ -480,6 +480,7 @@ public class AnnouncementsController extends SpringActionController
             return "Remove";
         }
 
+        @Override
         @NotNull
         public ActionURL getSuccessURL(MemberListRemovalForm memberListRemovalForm)
         {
@@ -677,11 +678,13 @@ public class AnnouncementsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CustomizeAction extends FormViewAction<Settings>
     {
+        @Override
         public URLHelper getSuccessURL(Settings form)
         {
             return form.getReturnURLHelper();
         }
 
+        @Override
         public ModelAndView getView(Settings form, boolean reshow, BindException errors)
         {
             CustomizeBean bean = new CustomizeBean();
@@ -699,6 +702,7 @@ public class AnnouncementsController extends SpringActionController
             return new JspView<>("/org/labkey/announcements/customize.jsp", bean);
         }
 
+        @Override
         public boolean handlePost(Settings form, BindException errors)
         {
             AnnouncementManager.saveMessageBoardSettings(getContainer(), form);
@@ -706,10 +710,12 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(Settings settings, Errors errors)
         {
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
@@ -1221,11 +1227,13 @@ public class AnnouncementsController extends SpringActionController
             return super.bindParameters(m);
         }
 
+        @Override
         public ActionURL getSuccessURL(AnnouncementForm form)
         {
             throw new IllegalStateException("Shouldn't get here; post handler should have redirected.");
         }
 
+        @Override
         public ModelAndView getView(AnnouncementForm form, boolean reshow, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
@@ -1244,6 +1252,7 @@ public class AnnouncementsController extends SpringActionController
             return new AnnouncementUpdateView(form, ann, errors);
         }
 
+        @Override
         public boolean handlePost(AnnouncementForm form, BindException errors)
         {
             AnnouncementModel ann = form.selectAnnouncement();
@@ -1305,11 +1314,13 @@ public class AnnouncementsController extends SpringActionController
                 throw new RedirectException(new ActionURL(ThreadAction.class, getContainer()).addParameter("rowId",ann.getRowId()));
         }
 
+        @Override
         public void validateCommand(AnnouncementForm form, Errors errors)
         {
             form.validate(errors);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
@@ -1411,6 +1422,7 @@ public class AnnouncementsController extends SpringActionController
             super.checkPermissions();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -1431,6 +1443,7 @@ public class AnnouncementsController extends SpringActionController
             return v;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -1480,11 +1493,13 @@ public class AnnouncementsController extends SpringActionController
     {
         private String _message = null;
 
+        @Override
         public ActionURL getSuccessURL(EmailOptionsForm form)
         {
             return null;  // Reshow the page with success message
         }
 
+        @Override
         public ModelAndView getView(EmailOptionsForm form, boolean reshow, BindException errors)
         {
             Container c = getContainer();
@@ -1517,6 +1532,7 @@ public class AnnouncementsController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(EmailOptionsForm form, BindException errors)
         {
             int emailOption = form.getResetFolderDefault() ? -1 : form.getEmailOption(errors);
@@ -1536,10 +1552,12 @@ public class AnnouncementsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(EmailOptionsForm target, Errors errors)
         {
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             new BeginAction(getViewContext()).addNavTrail(root);
@@ -2170,6 +2188,7 @@ public class AnnouncementsController extends SpringActionController
             super(name);
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
         {
             String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";

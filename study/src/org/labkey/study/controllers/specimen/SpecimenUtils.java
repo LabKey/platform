@@ -395,6 +395,7 @@ public class SpecimenUtils
 
     public static final class ExcludeSiteDropDown extends DisplayElement
     {
+        @Override
         public void render(RenderContext ctx, Writer out) throws IOException
         {
             ActionURL url = ctx.getViewContext().cloneActionURL();
@@ -901,6 +902,7 @@ public class SpecimenUtils
             setCaption("Attachments");
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Map<String, Object> cols = ctx.getRow();

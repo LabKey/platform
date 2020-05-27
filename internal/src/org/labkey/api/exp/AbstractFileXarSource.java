@@ -60,6 +60,7 @@ public abstract class AbstractFileXarSource extends XarSource
         super(description, container, user, job);
     }
 
+    @Override
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException
     {
         FileInputStream fIn = null;
@@ -85,21 +86,25 @@ public abstract class AbstractFileXarSource extends XarSource
         }
     }
 
+    @Override
     public File getRoot()
     {
         return getXmlFile().getParentFile();
     }
 
+    @Override
     public Path getRootPath()
     {
         return null != getRoot() ? getRoot().toPath() : null;
     }
 
+    @Override
     public boolean shouldIgnoreDataFiles()
     {
         return false;
     }
 
+    @Override
     public String canonicalizeDataFileURL(String dataFileURL)
     {
         Path xarDirectory = getRootPath();

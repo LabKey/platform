@@ -60,6 +60,7 @@ public class DatasetViewProvider implements DataViewProvider
 {
     public static final DataViewProvider.Type TYPE = new ProviderType("datasets", "Provides a view of Study Datasets", true);
 
+    @Override
     public DataViewProvider.Type getType()
     {
         return TYPE;

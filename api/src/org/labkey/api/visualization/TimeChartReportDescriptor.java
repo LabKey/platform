@@ -50,6 +50,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         setDescriptorType(TYPE);
     }
 
+    @Override
     public Map<String, Object> getReportProps()
     {
         Map<String, Object> props = new HashMap<>();
@@ -319,6 +320,7 @@ public class TimeChartReportDescriptor extends VisualizationReportDescriptor
         return false;
     }
 
+    @Override
     public String getViewClass()
     {
         return VisualizationReportDescriptor.VIEW_CLASS;

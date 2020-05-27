@@ -65,6 +65,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         super(context);
     }
 
+    @Override
     public GWTStudyDesignVersion save(GWTStudyDefinition def)
     {
         if (!getContainer().hasPermission(getUser(), UpdatePermission.class))
@@ -96,6 +97,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    @Override
     public GWTStudyDefinition getBlank()
     {
         try
@@ -113,6 +115,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    @Override
     public GWTStudyDefinition getRevision(int studyId, int revision)
     {
         try
@@ -138,6 +141,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    @Override
     public GWTStudyDefinition getTemplate()
     {
         try
@@ -150,6 +154,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    @Override
     public GWTStudyDesignVersion[] getVersions(int studyId)
     {
         StudyDesignVersion[] versions = StudyDesignManager.get().getStudyDesignVersions(getContainer(), studyId);
@@ -160,6 +165,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         return gwtVersions;
     }
 
+    @Override
     public GWTStudyDefinition ensureDatasetPlaceholders(GWTStudyDefinition studyDefinition)
     {
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -190,6 +196,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         return studyDefinition;
     }
 
+    @Override
     public GWTStudyDefinition createTimepoints(GWTStudyDefinition studyDefinition)
     {
         if (!getContainer().hasPermission(getUser(), AdminPermission.class))
@@ -245,6 +252,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         return  studyDefinition;
     }
 
+    @Override
     public GWTStudyDefinition createCohorts(GWTStudyDefinition studyDefinition)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
@@ -296,6 +304,7 @@ public class StudyDefinitionServiceImpl extends BaseRemoteService implements Stu
         }
     }
 
+    @Override
     public Boolean hasNewCohorts(GWTStudyDefinition studyDefinition)
     {
         for (GWTCohort defGroup : studyDefinition.getGroups())

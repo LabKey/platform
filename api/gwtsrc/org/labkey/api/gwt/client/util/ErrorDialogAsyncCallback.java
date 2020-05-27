@@ -46,6 +46,7 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
     {
         ErrorDialogAsyncCallback dialog = new ErrorDialogAsyncCallback(message)
         {
+            @Override
             public void onSuccess(Object result)
             {
             }
@@ -53,6 +54,7 @@ public abstract class ErrorDialogAsyncCallback<Type> implements AsyncCallback<Ty
         dialog.onFailure(caught);
     }
 
+    @Override
     public final void onFailure(Throwable caught)
     {
         String message = null;

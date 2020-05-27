@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.ParamParser;
  */
 public class ValidateBoolean implements ParamParser.ParamValidator
 {
+    @Override
     public void validate(String name, String value, ParamParser parser)
     {
         if (!value.equalsIgnoreCase("yes") && !value.equalsIgnoreCase("no"))

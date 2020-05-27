@@ -111,10 +111,12 @@ public class PublishResultsQueryView extends ResultsQueryView
     {
         Assay
         {
+            @Override
             public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
             {
                 return tableMetadata.getParticipantIDFieldKey();
             }
+            @Override
             public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
             {
                 return tableMetadata.getVisitIDFieldKey(type);
@@ -122,10 +124,12 @@ public class PublishResultsQueryView extends ResultsQueryView
         },
         Specimen
         {
+            @Override
             public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
             {
                 return new FieldKey(tableMetadata.getSpecimenIDFieldKey(), "ParticipantID");
             }
+            @Override
             public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
             {
                 if (type == TimepointType.VISIT)
@@ -140,10 +144,12 @@ public class PublishResultsQueryView extends ResultsQueryView
         },
         UserSpecified
         {
+            @Override
             public FieldKey getParticipantIDFieldKey(AssayTableMetadata tableMetadata)
             {
                 return null;
             }
+            @Override
             public FieldKey getVisitIDFieldKey(AssayTableMetadata tableMetadata, TimepointType type)
             {
                 return null;
@@ -186,6 +192,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         getSettings().setShowRows(ShowRows.ALL);
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -214,6 +221,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         return view;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion dr = new DataRegion();
@@ -715,6 +723,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             setCaption(caption);
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> set)
         {
             super.addQueryColumns(set);
@@ -727,6 +736,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return _completionBase;
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             if (_editable)
@@ -812,6 +822,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.ParticipantId);
         }
 
+        @Override
         protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserParticipantId(ctx);
@@ -833,6 +844,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             return SpecimenService.get().getCompletionURLBase(c, SpecimenService.CompletionType.VisitId);
         }
 
+        @Override
         protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserVisitId(ctx);
@@ -851,6 +863,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             _includeTimestamp = includeTimestamp;
         }
 
+        @Override
         protected Object calculateValue(RenderContext ctx)
         {
             return _resolverHelper.getUserDate(ctx, _includeTimestamp);
@@ -915,6 +928,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             _resolverHelper = resolverHelper;
         }
 
+        @Override
         protected Object calculateValue(RenderContext ctx)
         {
             Container c = _resolverHelper.getUserTargetStudy(ctx);

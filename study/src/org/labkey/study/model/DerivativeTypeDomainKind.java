@@ -68,6 +68,7 @@ public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
         BASE_INDICES = new HashSet<>(Arrays.asList(indices));
     }
 
+    @Override
     public String getKindName()
     {
         return NAME;
@@ -91,6 +92,7 @@ public final class DerivativeTypeDomainKind extends AbstractSpecimenDomainKind
         return Collections.emptySet();
     }
 
+    @Override
     protected String getNamespacePrefix()
     {
         return NAMESPACE_PREFIX;

@@ -69,6 +69,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
         return "treatment data";
     }
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.TREATMENT_DATA;

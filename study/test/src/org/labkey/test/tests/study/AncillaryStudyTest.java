@@ -413,6 +413,7 @@ public class AncillaryStudyTest extends StudyBaseTest
         _extHelper.waitForExtDialogToDisappear("Error");
     }
 
+    @Override
     public String getProjectName()
     {
         return PROJECT_NAME;

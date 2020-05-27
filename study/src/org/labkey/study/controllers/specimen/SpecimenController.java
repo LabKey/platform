@@ -267,6 +267,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return getSamplesURL();
@@ -839,6 +840,7 @@ public class SpecimenController extends BaseStudyController
             _specimenIds = specimenIds;
         }
 
+        @Override
         public String getHiddenFormInputs(ViewContext ctx)
         {
             StringBuilder builder = new StringBuilder();
@@ -1488,6 +1490,7 @@ public class SpecimenController extends BaseStudyController
         private boolean _extendedRequestUrl;
         private String[] _sampleIds;
 
+        @Override
         public String getHiddenFormInputs(ViewContext ctx)
         {
             StringBuilder builder = new StringBuilder();
@@ -5343,11 +5346,13 @@ public class SpecimenController extends BaseStudyController
         private String[] _ruleData;
         private String[] _markType;
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
         }
 
+        @Override
         public void setViewContext(ViewContext viewContext)
         {
             _viewContext = viewContext;

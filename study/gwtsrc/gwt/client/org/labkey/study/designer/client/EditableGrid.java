@@ -118,6 +118,7 @@ public abstract class EditableGrid extends FlexTable
     }
 
     private ChangeListener ghostChangeListener = new ChangeListener() {
+        @Override
         public void onChange(Widget sender) {
             if (isInGhostRow(sender))
                 adjustGhostRow();
@@ -184,6 +185,7 @@ public abstract class EditableGrid extends FlexTable
     {
         final PopupMenu popupMenu = new PopupMenu();
         popupMenu.addItem("Delete " + getRowNoun(), new Command() {
+            @Override
             public void execute()
             {
                 deleteRow(dataRow);
@@ -218,6 +220,7 @@ public abstract class EditableGrid extends FlexTable
         public void addItem(String title, final Command command)
         {
             MenuItem item = new MenuItem(title, new Command() {
+                @Override
                 public void execute()
                 {
                     command.execute();
@@ -245,6 +248,7 @@ public abstract class EditableGrid extends FlexTable
 
     class RowHeaderClickListener implements TableListener
     {
+        @Override
         public void onCellClicked(SourcesTableEvents sender, int row, int cell)
         {
             if (cell == 0 && row >= getHeaderRows() && row < getDataRowCount() + getHeaderRows())

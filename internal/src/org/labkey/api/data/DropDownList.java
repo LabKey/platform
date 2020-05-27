@@ -59,6 +59,7 @@ public class DropDownList extends DisplayElement implements Cloneable
         out.write("</select>");
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (shouldRender(ctx))

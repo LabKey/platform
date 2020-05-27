@@ -52,6 +52,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
 {
     public static final ExperimentRunType ALL_RUNS_TYPE = new ExperimentRunType("All Runs", ExpSchema.SCHEMA_EXP, ExpSchema.TableType.Runs.toString())
     {
+        @Override
         public Priority getPriority(ExpProtocol protocol)
         {
             if (protocol.getApplicationType() == ExpProtocol.ApplicationType.ExperimentRun)
@@ -95,6 +96,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     /**
      * Reference to the row that represents the protocol for this run type.
      */
+    @Override
     @Nullable
     public QueryRowReference getQueryRowReference(ExpProtocol protocol)
     {
@@ -104,6 +106,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     /**
      * Reference to the row that represents the run of for this run type.
      */
+    @Override
     @Nullable
     public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpRun run)
     {
@@ -113,6 +116,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     /**
      * Reference to the row that represents the protocol application for this run type.
      */
+    @Override
     @Nullable
     public QueryRowReference getQueryRowReference(ExpProtocol protocol, ExpProtocolApplication app)
     {
@@ -134,6 +138,7 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
         return new TableSelector(table).getRowCount();
     }
 
+    @Override
     public int compareTo(ExperimentRunType o)
     {
         return _description.compareTo(o.getDescription());

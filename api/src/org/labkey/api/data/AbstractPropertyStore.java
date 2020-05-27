@@ -127,16 +127,19 @@ public abstract class AbstractPropertyStore implements PropertyStore
     }
 
 
+    @Override
     public void deletePropertySet(String category)
     {
         deletePropertySet(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category);
     }
 
+    @Override
     public void deletePropertySet(Container container, String category)
     {
         deletePropertySet(PropertyManager.SHARED_USER, container, category);
     }
 
+    @Override
     public void deletePropertySet(User user, Container container, String category)
     {
         try

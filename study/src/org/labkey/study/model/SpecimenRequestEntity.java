@@ -30,11 +30,13 @@ public abstract class SpecimenRequestEntity extends AbstractStudyCachable<Specim
     private Container _container;
     private String _label;
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         verifyMutability();

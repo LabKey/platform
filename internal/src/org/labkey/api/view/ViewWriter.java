@@ -33,81 +33,97 @@ public class ViewWriter extends PrintWriter
         // UNDONE: getContentType? assume text/html;charset=UTF-8
     }
 
+    @Override
     public void close()
     {
         _out.close();
     }
 
+    @Override
     public void flush()
     {
         _out.flush();
     }
 
+    @Override
     public void print(boolean b)
     {
         _out.print(b);
     }
 
+    @Override
     public void print(char c)
     {
         _out.print(c);
     }
 
+    @Override
     public void print(double d)
     {
         _out.print(d);
     }
 
+    @Override
     public void print(int i)
     {
         _out.print(i);
     }
 
+    @Override
     public void print(long l)
     {
         _out.print(l);
     }
 
+    @Override
     public void print(java.lang.String s)
     {
         _out.print(s);
     }
 
+    @Override
     public void println()
     {
         _out.println();
     }
 
+    @Override
     public void println(boolean b)
     {
         _out.println(b);
     }
 
+    @Override
     public void println(char c)
     {
         _out.println(c);
     }
 
+    @Override
     public void println(double d)
     {
         _out.println(d);
     }
 
+    @Override
     public void println(float f)
     {
         _out.println(f);
     }
 
+    @Override
     public void println(int i)
     {
         _out.println(i);
     }
 
+    @Override
     public void println(long l)
     {
         _out.println(l);
     }
 
+    @Override
     public void println(java.lang.String s)
     {
         _out.println(s);

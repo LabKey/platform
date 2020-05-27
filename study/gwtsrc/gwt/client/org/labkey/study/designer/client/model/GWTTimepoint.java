@@ -53,6 +53,7 @@ public class GWTTimepoint implements Comparable, IsSerializable
         return (name  != null ? name + ": " : "") + unit.daysAsUnit(days) + " " + unit.name;
     }
 
+    @Override
     public int compareTo(Object o)
     {
         GWTTimepoint p = (GWTTimepoint) o;
@@ -179,6 +180,7 @@ public class GWTTimepoint implements Comparable, IsSerializable
     //Need this since bad bug in google's sorting...
     public static class TimepointComparator implements Comparator<GWTTimepoint>
     {
+        @Override
         public int compare(GWTTimepoint o1, GWTTimepoint o2)
         {
             return o1.compareTo(o2);

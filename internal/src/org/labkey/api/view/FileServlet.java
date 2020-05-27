@@ -76,12 +76,14 @@ public class FileServlet extends HttpServlet
     }
 
 
+    @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
         _log.info("FileServlet initialized");
     }
 
+    @Override
     public void log(String s, Throwable t)
     {
         _log.error(s, t);

@@ -53,6 +53,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         }
     }
 
+    @Override
     public V get(Object key)
     {
         String correctKey = normalizeKey(key);
@@ -73,6 +74,7 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         return result;
     }
 
+    @Override
     public V put(String key, V value)
     {
         String correctKey = normalizeKey(key);
@@ -163,22 +165,26 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         }
     }
 
+    @Override
     public V remove(Object key)
     {
         return _map.remove(normalizeKey(key));
     }
 
+    @Override
     public boolean containsKey(Object key)
     {
         return _map.containsKey(normalizeKey(key));
     }
 
+    @Override
     public void clear()
     {
         _map.clear();
         _correctCaseMap.clear();
     }
 
+    @Override
     public void putAll(Map<? extends String, ? extends V> t)
     {
         for (Map.Entry<? extends String, ? extends V> entry : t.entrySet())

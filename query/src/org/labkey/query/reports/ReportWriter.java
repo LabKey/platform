@@ -42,6 +42,7 @@ public class ReportWriter extends BaseFolderWriter
 {
     private static final String DEFAULT_DIRECTORY = "reports";
 
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.REPORTS_AND_CHARTS;
@@ -91,6 +92,7 @@ public class ReportWriter extends BaseFolderWriter
 
     public static class Factory implements FolderWriterFactory
     {
+        @Override
         public FolderWriter create()
         {
             return new ReportWriter();

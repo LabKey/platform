@@ -66,6 +66,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
         _includeMonolithic = includeMonolithic;
     }
 
+    @Override
     public String getExpression()
     {
         StringBuilder expr = new StringBuilder();

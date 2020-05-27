@@ -45,6 +45,7 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
         _externalId = (int) map.get(DerivativeTypeDomainKind.EXTERNALID);
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return _rowId;
@@ -70,11 +71,13 @@ public class DerivativeType extends AbstractStudyCachable<DerivativeType>
         _externalId = externalId;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         _container = container;

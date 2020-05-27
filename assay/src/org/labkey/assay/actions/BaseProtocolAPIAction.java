@@ -44,6 +44,7 @@ public abstract class BaseProtocolAPIAction<FORM extends SimpleApiJsonForm> exte
 {
     private AssayProvider _provider;
 
+    @Override
     public final ApiResponse execute(FORM form, BindException errors) throws Exception
     {
         if (form.getJsonObject() == null)

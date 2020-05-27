@@ -50,6 +50,7 @@ import java.util.Map;
 @RequiresPermission(InsertPermission.class)
 public class PipelineDataCollectorRedirectAction extends SimpleViewAction<PipelineDataCollectorRedirectAction.UploadRedirectForm>
 {
+    @Override
     public ModelAndView getView(UploadRedirectForm form, BindException errors)
     {
         Container container = getContainer();
@@ -142,6 +143,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         return files;
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         root.addChild("Assay Upload Attempt");

@@ -49,6 +49,7 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class ListServiceImpl implements ListService
 {
+    @Override
     public Map<String, ListDefinition> getLists(Container container)
     {
         Map<String, ListDefinition> ret = new CaseInsensitiveHashMap<>();
@@ -60,22 +61,26 @@ public class ListServiceImpl implements ListService
         return ret;
     }
 
+    @Override
     public boolean hasLists(Container container)
     {
         Collection<ListDef> lists = ListManager.get().getLists(container);
         return !lists.isEmpty();
     }
 
+    @Override
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType)
     {
         return new ListDefinitionImpl(container, name, keyType, null);
     }
 
+    @Override
     public ListDefinition createList(Container container, String name, ListDefinition.KeyType keyType, @Nullable TemplateInfo templateInfo)
     {
         return new ListDefinitionImpl(container, name, keyType, templateInfo);
     }
 
+    @Override
     public ListDefinition getList(Container container, int listId)
     {
         ListDef def = ListManager.get().getList(container, listId);
@@ -98,6 +103,7 @@ public class ListServiceImpl implements ListService
         return null;
     }
 
+    @Override
     public ListDefinition getList(Domain domain)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("domainid"), domain.getTypeId());
@@ -105,11 +111,13 @@ public class ListServiceImpl implements ListService
         return ListDefinitionImpl.of(def);
     }
 
+    @Override
     public ActionURL getManageListsURL(Container container)
     {
         return new ActionURL(ListController.BeginAction.class, container);
     }
 
+    @Override
     public void importListArchive(InputStream is, BindException errors, Container c, User user) throws Exception
     {
         File dir = FileUtil.createTempDirectory("list");

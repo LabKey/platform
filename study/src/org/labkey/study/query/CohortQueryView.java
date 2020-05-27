@@ -60,6 +60,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         setShowUpdateColumn(canEditDelete);
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
@@ -120,6 +121,7 @@ public class CohortQueryView extends ExtensibleObjectQueryView
             setTextAlign("center");
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Integer rowId = (Integer)rowIdColumn.getValue(ctx);

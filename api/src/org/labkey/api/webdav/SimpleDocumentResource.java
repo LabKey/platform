@@ -106,21 +106,25 @@ public class SimpleDocumentResource extends AbstractDocumentResource
         return _contentType == null ? super.getContentType() : _contentType;
     }
 
+    @Override
     public boolean exists()
     {
         return true;
     }
 
+    @Override
     public InputStream getInputStream(User user)
     {
         return new ByteArrayInputStream(_body);
     }
 
+    @Override
     public long copyFrom(User user, FileStream in)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public long getContentLength()
     {
         return _body.length;

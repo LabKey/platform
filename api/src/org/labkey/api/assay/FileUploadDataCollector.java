@@ -67,6 +67,7 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         }
     }
 
+    @Override
     public HttpView getView(ContextType context)
     {
         return new JspView<FileUploadDataCollector>("/org/labkey/api/assay/fileUpload.jsp", this);
@@ -77,16 +78,19 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         return _reusableFiles;
     }
 
+    @Override
     public String getShortName()
     {
         return "File upload";
     }
 
+    @Override
     public String getDescription(ContextType context)
     {
         return _maxFileInputs == 1 ? "Upload a data file" : "Upload one or more data files";
     }
 
+    @Override
     @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, IllegalArgumentException, ExperimentException
     {

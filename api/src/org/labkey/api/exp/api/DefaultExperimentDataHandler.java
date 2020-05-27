@@ -40,21 +40,25 @@ public class DefaultExperimentDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
+    @Override
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context)
     {
         log.debug("No ExperimentDataHandler registered for data file " + data.getDataFileURI() + ", no special loading will be done on this file.");
     }
 
+    @Override
     public ActionURL getContentURL(ExpData data)
     {
         return null;
     }
 
+    @Override
     public void deleteData(ExpData data, Container container, User user)
     {
         // Do nothing
     }
 
+    @Override
     public Handler.Priority getPriority(ExpData data)
     {
         return Handler.Priority.LOW;

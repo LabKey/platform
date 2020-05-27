@@ -149,6 +149,7 @@ public abstract class DefaultCurveFit implements CurveFit
     /**
      * Calculate the area under the curve
      */
+    @Override
     public double calculateAUC(StatsService.AUCType type, double startX, double endX) throws FitFailedException
     {
         ensureCurve();

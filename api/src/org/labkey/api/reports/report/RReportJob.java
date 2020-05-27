@@ -101,6 +101,7 @@ public class RReportJob extends PipelineJob implements Serializable
         return _jobIdentifier.get();
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         File statusFile = getLogFile();
@@ -112,6 +113,7 @@ public class RReportJob extends PipelineJob implements Serializable
         return null;
     }
 
+    @Override
     public String getDescription()
     {
         RReport report = getReport();
@@ -132,6 +134,7 @@ public class RReportJob extends PipelineJob implements Serializable
         throw new RuntimeException("The report is not a valid instance of an RReport");
     }
 
+    @Override
     public void run()
     {
         _jobIdentifier.set(getJobGUID());

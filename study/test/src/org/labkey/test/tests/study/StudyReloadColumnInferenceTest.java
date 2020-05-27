@@ -166,11 +166,13 @@ public class StudyReloadColumnInferenceTest extends StudyBaseTest
     /*Medical History re-reload: define new dataset that didn't exist*/
     private static final DataToVerify MEDICAL_HISTORY = new DataToVerify(DATASET_MEDICAL_HISTORY, MEDICAL_HISTORY_COLUMNS, 0, null, null);
 
+    @Override
     protected String getProjectName()
     {
         return "StudyReloadColumnInferenceProject";
     }
 
+    @Override
     protected String getFolderName()
     {
         return "Study Reload";

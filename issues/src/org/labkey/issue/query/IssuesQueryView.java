@@ -65,6 +65,7 @@ public class IssuesQueryView extends QueryView
         return resources;
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);

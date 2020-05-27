@@ -60,11 +60,13 @@ public class QueryWrapperDynaClass extends StringWrapperDynaClass
     }
     
 
+    @Override
     public DynaBean newInstance()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getPropertyCaption(String propName)
     {
         ColumnInfo column = _form.getColumnByFormFieldName(propName);

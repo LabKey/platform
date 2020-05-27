@@ -48,6 +48,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames("Narrow Wiki");
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = webPart.getPropertyMap();

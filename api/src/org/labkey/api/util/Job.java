@@ -49,6 +49,7 @@ public abstract class Job implements Future, Runnable
     //
     // Future
     //
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         if (_task == null)
@@ -58,24 +59,28 @@ public abstract class Job implements Future, Runnable
         return _task.cancel(mayInterruptIfRunning);
     }
 
+    @Override
     public boolean isCancelled()
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.isCancelled();
     }
 
+    @Override
     public boolean isDone()
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.isDone();
     }
 
+    @Override
     public Object get() throws InterruptedException, ExecutionException
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");
         return _task.get();
     }
 
+    @Override
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
     {
         if (_task == null) throw new IllegalStateException("job has not been submitted");

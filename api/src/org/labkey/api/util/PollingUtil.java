@@ -209,10 +209,12 @@ public class PollingUtil
      */
     public static class PollingFilter implements javax.servlet.Filter
     {
+        @Override
         public void init(FilterConfig filterConfig)
         {
         }
 
+        @Override
         public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException
         {
             String servletPath = ((HttpServletRequest)request).getServletPath();    // decoded already, leading '/'
@@ -261,6 +263,7 @@ public class PollingUtil
             out.flush();
         }
 
+        @Override
         public void destroy()
         {
         }

@@ -44,6 +44,7 @@ public class PlateMetadataDataHandler extends AbstractAssayTsvDataHandler
         return DATA_TYPE;
     }
 
+    @Override
     public Priority getPriority(ExpData data)
     {
         Lsid lsid = new Lsid(data.getLSID());

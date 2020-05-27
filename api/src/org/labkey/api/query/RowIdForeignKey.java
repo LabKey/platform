@@ -45,6 +45,7 @@ public class RowIdForeignKey extends AbstractForeignKey
         _rowidColumn = rowidColumn;
     }
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         if (displayField == null)
@@ -52,11 +53,13 @@ public class RowIdForeignKey extends AbstractForeignKey
         return LookupColumn.create(parent, _rowidColumn, getLookupTableInfo().getColumn(displayField), false);
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         return _rowidColumn.getParentTable();
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         return LookupForeignKey.getDetailsURL(parent, getLookupTableInfo(), _rowidColumn.getName());

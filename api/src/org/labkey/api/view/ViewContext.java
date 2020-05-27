@@ -307,6 +307,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
     }
 
 
+    @Override
     public User getUser()
     {
         if (_user == null)
@@ -329,6 +330,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return container;
     }
 
+    @Override
     public Container getContainer()
     {
         if (null == _c)
@@ -349,6 +351,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
 
 
     /** ContainerContext */
+    @Override
     public Container getContainer(Map context)
     {
         return getContainer();
@@ -414,16 +417,19 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _messageSource;
     }
 
+    @Override
     public String getMessage(String code, Object[] args, String defaultMessage, Locale locale)
     {
         return getMessageSource().getMessage(code, args, defaultMessage, locale);
     }
 
+    @Override
     public String getMessage(String code, Object[] args, Locale locale) throws NoSuchMessageException
     {
         return getMessageSource().getMessage(code, args, locale);
     }
 
+    @Override
     public String getMessage(MessageSourceResolvable resolvable, Locale locale) throws NoSuchMessageException
     {
         return getMessageSource().getMessage(resolvable, locale);
@@ -453,6 +459,7 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
         return _applicationContext;
     }
 
+    @Override
     public void setApplicationContext(ApplicationContext applicationContext)
     {
         _applicationContext = applicationContext;

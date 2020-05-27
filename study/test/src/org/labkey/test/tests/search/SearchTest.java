@@ -84,6 +84,7 @@ public abstract class SearchTest extends StudyBaseTest
         return BrowserType.CHROME;
     }
 
+    @Override
     protected String getFolderName()
     {
         return FOLDER_NAME;
@@ -120,6 +121,7 @@ public abstract class SearchTest extends StudyBaseTest
         doVerifySteps();
     }
 
+    @Override
     protected void doCreateSteps()
     {
         // TODO: move these out someday into separate tests, like DataClassSearchTest
@@ -160,6 +162,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.enqueueSearchItem("Garfield");
     }
 
+    @Override
     @LogMethod
     protected void doVerifySteps()
     {
@@ -287,6 +290,7 @@ public abstract class SearchTest extends StudyBaseTest
         _searchHelper.verifyNoSearchResults();
     }
 
+    @Override
     public void runApiTests()
     {
         /* No API tests */

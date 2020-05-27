@@ -73,16 +73,19 @@ public class VisitTag
     // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()
     private static class VisitTagFactory implements ObjectFactory<VisitTag>
     {
+        @Override
         public VisitTag fromMap(Map<String, ?> m)
         {
             return new VisitTag(m);
         }
 
+        @Override
         public VisitTag fromMap(VisitTag bean, Map<String, ?> m)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Map<String, Object> toMap(VisitTag bean, Map m)
         {
             throw new java.lang.UnsupportedOperationException();
@@ -94,11 +97,13 @@ public class VisitTag
             throw new java.lang.UnsupportedOperationException();
         }
 
+        @Override
         public VisitTag[] handleArray(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();
         }
 
+        @Override
         public VisitTag handle(ResultSet rs)
         {
             throw new java.lang.UnsupportedOperationException();

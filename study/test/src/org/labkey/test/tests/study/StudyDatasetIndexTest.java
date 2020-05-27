@@ -34,11 +34,13 @@ public class StudyDatasetIndexTest extends StudyBaseTest
     private static final File STUDY_WITH_DATASET_SHARED_INDEX = TestFileUtils.getSampleData("studies/StudyWithDatasetSharedIndex.folder.zip");
     private static final String METADATA = "Table Meta Data";
 
+    @Override
     protected String getProjectName()
     {
         return "StudyDatasetSharedColumnAndIndexProject";
     }
 
+    @Override
     protected String getFolderName()
     {
         return "Study Dataset Shared Column and Index";

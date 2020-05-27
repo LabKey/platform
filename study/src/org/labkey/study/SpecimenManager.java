@@ -347,6 +347,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             throw new IllegalStateException("Can only tiebreak events with at least one date present.");
         }
 
+        @Override
         public int compare(SpecimenEvent event1, SpecimenEvent event2)
         {
             // Obsolete always < non-obsolete
@@ -1669,21 +1670,25 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             _cacheKey = cacheKey;
         }
 
+        @Override
         public StudyCachable createMutable()
         {
             throw new UnsupportedOperationException("DistinctValueList objects are never mutable.");
         }
 
+        @Override
         public Container getContainer()
         {
             return _container;
         }
 
+        @Override
         public Object getPrimaryKey()
         {
             return _cacheKey;
         }
 
+        @Override
         public void lock()
         {
         }
@@ -2243,6 +2248,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     {
         PrimaryType()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> list = new ArrayList<>();
@@ -2250,17 +2256,20 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return list;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType() };
             }
 
+            @Override
             public String getLabel()
             {
                 return "Primary Type";
             }},
         Derivative()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.PrimaryType.getGroupingColumns();
@@ -2268,16 +2277,19 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return parent;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative() };
             }
+            @Override
             public String getLabel()
             {
                 return "Derivative";
             }},
         Additive()
         {
+            @Override
             public List<SpecimenTypeBeanProperty> getGroupingColumns()
             {
                 List<SpecimenTypeBeanProperty> parent = SpecimenTypeLevel.Derivative.getGroupingColumns();
@@ -2285,11 +2297,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
                 return parent;
             }
 
+            @Override
             public String[] getTitleHierarchy(SummaryByVisitType summary)
             {
                 return new String[] { summary.getPrimaryType(), summary.getDerivative(), summary.getAdditive() };
             }
 
+            @Override
             public String getLabel()
             {
                 return "Additive";

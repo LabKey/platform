@@ -59,12 +59,14 @@ public class ExtensibleObjectQueryView extends QueryView
         return domainInfo.getDomainName();
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
         return view;
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         List<String> recordSelectorColumns = view.getDataRegion().getRecordSelectorValueColumns();

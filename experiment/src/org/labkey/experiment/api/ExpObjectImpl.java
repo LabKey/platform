@@ -43,6 +43,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     // For serialization
     protected ExpObjectImpl() {}
 
+    @Override
     public void lock()
     {
         _locked = true;
@@ -74,6 +75,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return _objectId;
     }
 
+    @Override
     public String getComment()
     {
         return (String) getProperty(ExperimentProperty.COMMENT.getPropertyDescriptor());
@@ -90,11 +92,13 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
     /**
      * @return Map from PropertyURI to ObjectProperty
      */
+    @Override
     public Map<String, ObjectProperty> getObjectProperties()
     {
         return OntologyManager.getPropertyObjects(getContainer(), getLSID());
     }
 
+    @Override
     public void setComment(User user, String comment) throws ValidationException
     {
         comment = StringUtils.trimToNull(comment);
@@ -124,6 +128,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return this;
     }
 
+    @Override
     public void setProperty(User user, PropertyDescriptor pd, Object value) throws ValidationException
     {
         if (pd.getPropertyType() == PropertyType.RESOURCE)
@@ -131,16 +136,19 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         OntologyManager.updateObjectProperty(user, getContainer(), pd, getLSID(), value, this);
     }
 
+    @Override
     public String urlFlag(boolean flagged)
     {
         return AppProps.getInstance().getContextPath() + "/experiment/" + (flagged ? "flagDefault.gif" : "unflagDefault.gif");
     }
 
+    @Override
     public Object getProperty(DomainProperty prop)
     {
         return getProperty(prop.getPropertyDescriptor());
     }
 
+    @Override
     public Object getProperty(PropertyDescriptor pd)
     {
         if (pd == null)
@@ -169,6 +177,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         return getRowId() ^ getClass().hashCode();
     }
 
+    @Override
     public int compareTo(ExpObject o2)
     {
         if (getName() != null)

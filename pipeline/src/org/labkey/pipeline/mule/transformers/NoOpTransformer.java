@@ -33,6 +33,7 @@ public class NoOpTransformer extends AbstractTransformer
         this.registerSourceType(Object.class);
     }
 
+    @Override
     protected Object doTransform(Object object, String string)
     {
         return object;

@@ -171,11 +171,10 @@ public class LoginController extends SpringActionController
     public static class LoginUrlsImpl implements LoginUrls
     {
         @Override
-        public NavTree appendAuthenticationNavTrail(NavTree root)
+        public void addAuthenticationNavTrail(NavTree root)
         {
             root.addChild("Admin Console", AdminController.getShowAdminURL());
             root.addChild("Authentication", getConfigureURL());
-            return root;
         }
 
         @Override
@@ -2401,7 +2400,7 @@ public class LoginController extends SpringActionController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            getUrls().appendAuthenticationNavTrail(root);
+            getUrls().addAuthenticationNavTrail(root);
         }
     }
 

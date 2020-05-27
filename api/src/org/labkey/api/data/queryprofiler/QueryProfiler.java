@@ -101,11 +101,13 @@ public class QueryProfiler
 
         getTrackerSets().add(new QueryTrackerSet("Total", "highest cumulative execution time", false, true, new QueryTrackerComparator()
         {
+            @Override
             long getPrimaryStatisticValue(QueryTracker qt)
             {
                 return qt.getCumulative();
             }
 
+            @Override
             long getSecondaryStatisticValue(QueryTracker qt)
             {
                 return qt.getCount();
@@ -114,11 +116,13 @@ public class QueryProfiler
 
         getTrackerSets().add(new QueryTrackerSet("Avg", "highest average execution time", false, true, new QueryTrackerComparator()
         {
+            @Override
             long getPrimaryStatisticValue(QueryTracker qt)
             {
                 return qt.getAverage();
             }
 
+            @Override
             long getSecondaryStatisticValue(QueryTracker qt)
             {
                 return qt.getCumulative();
@@ -127,11 +131,13 @@ public class QueryProfiler
 
         getTrackerSets().add(new QueryTrackerSet("Max", "highest maximum execution time", false, true, new QueryTrackerComparator()
         {
+            @Override
             long getPrimaryStatisticValue(QueryTracker qt)
             {
                 return qt.getMax();
             }
 
+            @Override
             long getSecondaryStatisticValue(QueryTracker qt)
             {
                 return qt.getCumulative();
@@ -140,11 +146,13 @@ public class QueryProfiler
 
         getTrackerSets().add(new QueryTrackerSet("Last", "most recent invocation time", false, true, new QueryTrackerComparator()
         {
+            @Override
             long getPrimaryStatisticValue(QueryTracker qt)
             {
                 return qt.getLastInvocation();
             }
 
+            @Override
             long getSecondaryStatisticValue(QueryTracker qt)
             {
                 return qt.getCumulative();
@@ -161,11 +169,13 @@ public class QueryProfiler
         // the first N unique queries would dominate the statistics.
         getTrackerSets().add(new QueryTrackerSet("First", "first invocation time", true, false, new QueryTrackerComparator()
         {
+            @Override
             long getPrimaryStatisticValue(QueryTracker qt)
             {
                 return qt.getFirstInvocation();
             }
 
+            @Override
             long getSecondaryStatisticValue(QueryTracker qt)
             {
                 return 0;   // Don't care about secondary sort -- we don't display this anyway
@@ -487,9 +497,11 @@ public class QueryProfiler
 
     public static class QueryStatTsvWriter extends TSVWriter
     {
+        @Override
         protected void write()
         {
             QueryTrackerSet export = new InvocationQueryTrackerSet() {
+                @Override
                 protected int getLimit()
                 {
                     return Integer.MAX_VALUE;
@@ -600,11 +612,13 @@ public class QueryProfiler
         private final QueryStatTsvWriter shutdownWriter = new QueryStatTsvWriter();
 
 
+        @Override
         public void shutdownPre()
         {
             interrupt();
         }
 
+        @Override
         public void shutdownStarted()
         {
             Logger logger = Logger.getLogger(QueryProfilerThread.class);
@@ -638,11 +652,13 @@ public class QueryProfiler
         {
             super("Count", "highest number of invocations", false, true, new QueryTrackerComparator()
             {
+                @Override
                 long getPrimaryStatisticValue(QueryTracker qt)
                 {
                     return qt.getCount();
                 }
 
+                @Override
                 long getSecondaryStatisticValue(QueryTracker qt)
                 {
                     return qt.getCumulative();

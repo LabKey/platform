@@ -52,6 +52,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
         return "assay schedule data";
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.ASSAY_SCHEDULE; }
 
     @Override

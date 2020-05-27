@@ -58,6 +58,7 @@ public class Test {
             	return "x";
             }
             
+            @Override
             public String toJSONString() {
             	return "{" + JSONObject.quote(this.aString) + ":" + 
             	JSONObject.doubleToString(this.aNumber) + "}";

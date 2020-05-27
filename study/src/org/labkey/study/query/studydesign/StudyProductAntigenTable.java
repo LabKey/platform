@@ -89,6 +89,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
         {
             col.setFk(new LookupForeignKey("Name")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_GENES_TABLE_NAME);
@@ -99,6 +100,7 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
         {
             col.setFk(new LookupForeignKey("Name")
             {
+                @Override
                 public TableInfo getLookupTableInfo()
                 {
                     return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), StudyQuerySchema.SCHEMA_NAME).getTable(StudyQuerySchema.STUDY_DESIGN_SUB_TYPES_TABLE_NAME);

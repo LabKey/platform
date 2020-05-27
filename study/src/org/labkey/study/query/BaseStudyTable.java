@@ -153,6 +153,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return _userSchema.getTable(subjectTableName);
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 TableInfo table = getLookupTableInfo();
@@ -204,6 +205,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         var locationColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         locationColumn.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 LocationTable result = new LocationTable(_userSchema, _userSchema.allowSetContainerFilter() ? getContainerFilter() : null);
@@ -242,6 +244,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         var typeColumn = new AliasedColumn(this, wrappedName, _rootTable.getColumn(rootTableColumnName));
         LookupForeignKey fk = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 BaseStudyTable result;
@@ -296,6 +299,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
         LookupForeignKey visitFK = new LookupForeignKey(getContainerFilter(), "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 VisitTable visitTable = new VisitTable(_userSchema, getLookupContainerFilter());
@@ -452,6 +456,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         var commentsColumn = new AliasedColumn(this, "VialComments", _rootTable.getColumn("GlobalUniqueId"));
         LookupForeignKey commentsFK = new LookupForeignKey(getContainerFilter(), "GlobalUniqueId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 SpecimenCommentTable result = new SpecimenCommentTable(_userSchema, getLookupContainerFilter(), joinBackToSpecimens);
@@ -464,6 +469,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         commentsColumn.setDescription("");
         commentsColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new CommentDisplayColumn(colInfo);
@@ -732,6 +738,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             super(commentColumn);
         }
 
+        @Override
         public Object getDisplayValue(RenderContext ctx)
         {
             Object value = getDisplayColumn().getValue(ctx);
@@ -741,6 +748,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 return value;
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object value = getDisplayColumn().getValue(ctx);

@@ -49,6 +49,7 @@ public class HelpPopup extends InlineLabel
 
         addMouseOverHandler(new MouseOverHandler()
         {
+            @Override
             public void onMouseOver(MouseOverEvent e)
             {
                 showHelpDiv(_element, _title, _body);
@@ -57,6 +58,7 @@ public class HelpPopup extends InlineLabel
 
         addMouseOutHandler(new MouseOutHandler()
         {
+            @Override
             public void onMouseOut(MouseOutEvent e)
             {
                 hideHelpDiv();

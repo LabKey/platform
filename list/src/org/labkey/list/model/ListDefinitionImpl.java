@@ -104,6 +104,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     // For new lists only, we'll attempt to use these IDs at insert time
+    @Override
     public void setPreferredListIds(Collection<Integer> preferredListIds)
     {
         _preferredListIds = preferredListIds;
@@ -120,11 +121,13 @@ public class ListDefinitionImpl implements ListDefinition
         return _def.getEntityId();
     }
 
+    @Override
     public Container getContainer()
     {
         return ContainerManager.getForId(_def.getContainerId());
     }
 
+    @Override
     @Nullable
     public Domain getDomain()
     {
@@ -135,16 +138,19 @@ public class ListDefinitionImpl implements ListDefinition
         return _domain;
     }
 
+    @Override
     public String getName()
     {
         return _def.getName();
     }
 
+    @Override
     public String getKeyName()
     {
         return _def.getKeyName();
     }
 
+    @Override
     public void setKeyName(String name)
     {
         if (_def.getTitleColumn() != null && _def.getTitleColumn().equals(getKeyName()))
@@ -154,56 +160,67 @@ public class ListDefinitionImpl implements ListDefinition
         edit().setKeyName(name);
     }
 
+    @Override
     public void setDescription(String description)
     {
         edit().setDescription(description);
     }
 
+    @Override
     public KeyType getKeyType()
     {
         return KeyType.valueOf(_def.getKeyType());
     }
 
+    @Override
     public void setKeyType(KeyType type)
     {
         edit().setKeyType(type.toString());
     }
 
+    @Override
     public DiscussionSetting getDiscussionSetting()
     {
         return _def.getDiscussionSettingEnum();
     }
 
+    @Override
     public void setDiscussionSetting(DiscussionSetting discussionSetting)
     {
         edit().setDiscussionSettingEnum(discussionSetting);
     }
 
+    @Override
     public boolean getAllowDelete()
     {
         return _def.getAllowDelete();
     }
 
+    @Override
     public void setAllowDelete(boolean allowDelete)
     {
         edit().setAllowDelete(allowDelete);
     }
 
+    @Override
     public boolean getAllowUpload()
     {
         return _def.getAllowUpload();
     }
 
+    @Override
     public void setAllowUpload(boolean allowUpload)
     {
         edit().setAllowUpload(allowUpload);
     }
 
+    @Override
     public boolean getAllowExport()
     {
         return _def.getAllowExport();
     }
 
+    @Override
     public void setAllowExport(boolean allowExport)
     {
         edit().setAllowExport(allowExport);
@@ -354,11 +371,13 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
+    @Override
     public void save(User user) throws Exception
     {
         save(user, true);
     }
 
+    @Override
     public void save(User user, boolean ensureKey) throws Exception
     {
         if (ensureKey)
@@ -420,16 +439,19 @@ public class ListDefinitionImpl implements ListDefinition
         _domain.setPropertyIndex(prop, 0);
     }
 
+    @Override
     public ListItem createListItem()
     {
         return new ListItemImpl(this);
     }
 
+    @Override
     public ListItem getListItem(Object key, User user)
     {
         return getListItem(key, user, getContainer());
     }
 
+    @Override
     public ListItem getListItem(Object key, User user, Container c)
     {
         // Convert key value to the proper type, since PostgreSQL 8.3 requires that key parameter types match their column types.
@@ -438,6 +460,7 @@ public class ListDefinitionImpl implements ListDefinition
         return getListItem(new SimpleFilter(FieldKey.fromParts(getKeyName()), typedKey), user, c);
     }
 
+    @Override
     public ListItem getListItemForEntityId(String entityId, User user)
     {
         return getListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user, getContainer());
@@ -494,6 +517,7 @@ public class ListDefinitionImpl implements ListDefinition
         return new TableSelector(tbl, filter, null).exists();
     }
 
+    @Override
     public void delete(User user) throws DomainNotFoundException
     {
         TableInfo table = getTable(user);
@@ -581,16 +605,19 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
 
+    @Override
     public String getDescription()
     {
         return _def.getDescription();
     }
 
+    @Override
     public String getTitleColumn()
     {
         return _def.getTitleColumn();
     }
 
+    @Override
     public void setTitleColumn(String titleColumn)
     {
         edit().setTitleColumn(titleColumn);
@@ -621,6 +648,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
+    @Override
     @Nullable
     public TableInfo getTable(User user)
     {
@@ -628,6 +656,7 @@ public class ListDefinitionImpl implements ListDefinition
     }
 
     /** NOTE consider using ListQuerySchema.getTable(), unless you have a good reason */
+    @Override
     @Nullable
     public TableInfo getTable(User user, Container c)
     {
@@ -656,16 +685,19 @@ public class ListDefinitionImpl implements ListDefinition
         return table;
     }
 
+    @Override
     public ActionURL urlShowDefinition()
     {
         return urlFor(ListController.EditListDefinitionAction.class, getContainer());
     }
 
+    @Override
     public ActionURL urlShowData(Container c)
     {
         return urlFor(ListController.GridAction.class, c);
     }
 
+    @Override
     public ActionURL urlUpdate(User user, Container container, @Nullable Object pk, @Nullable URLHelper returnAndCancelUrl)
     {
         ActionURL url = QueryService.get().urlFor(user, container, QueryAction.updateQueryRow, ListQuerySchema.NAME, getName());
@@ -683,11 +715,13 @@ public class ListDefinitionImpl implements ListDefinition
         return url;
     }
 
+    @Override
     public ActionURL urlDetails(@Nullable Object pk)
     {
         return urlDetails(pk, getContainer());
     }
 
+    @Override
     public ActionURL urlDetails(@Nullable Object pk, Container c)
     {
         ActionURL url = urlFor(ListController.DetailsAction.class, c);
@@ -699,21 +733,25 @@ public class ListDefinitionImpl implements ListDefinition
         return url;
     }
 
+    @Override
     public ActionURL urlShowHistory(Container c)
     {
         return urlFor(ListController.HistoryAction.class, c);
     }
 
+    @Override
     public ActionURL urlShowData()
     {
         return urlShowData(getContainer());
     }
 
+    @Override
     public ActionURL urlFor(Class<? extends Controller> actionClass)
     {
         return urlFor(actionClass, getContainer());
     }
 
+    @Override
     public ActionURL urlFor(Class<? extends Controller> actionClass, Container c)
     {
         ActionURL ret = new ActionURL(actionClass, c);
@@ -739,6 +777,7 @@ public class ListDefinitionImpl implements ListDefinition
         return getName() + ", id: " + getListId();
     }
 
+    @Override
     public int compareTo(ListDefinition l)
     {
         return getName().compareToIgnoreCase(l.getName());

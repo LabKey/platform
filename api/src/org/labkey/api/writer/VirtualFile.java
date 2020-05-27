@@ -52,5 +52,6 @@ public interface VirtualFile extends AutoCloseable
     VirtualFile getDir(String path);
     String makeLegalName(String name);
     String getLocation();
+    @Override
     void close() throws IOException;
 }

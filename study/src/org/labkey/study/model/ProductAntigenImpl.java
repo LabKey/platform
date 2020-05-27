@@ -65,6 +65,7 @@ public class ProductAntigenImpl implements ProductAntigen
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -75,6 +76,7 @@ public class ProductAntigenImpl implements ProductAntigen
         _rowId = rowId;
     }
 
+    @Override
     public int getProductId()
     {
         return _productId;
@@ -85,6 +87,7 @@ public class ProductAntigenImpl implements ProductAntigen
         _productId = productId;
     }
 
+    @Override
     public String getGene()
     {
         return _gene;
@@ -95,6 +98,7 @@ public class ProductAntigenImpl implements ProductAntigen
         _gene = gene;
     }
 
+    @Override
     public String getSubType()
     {
         return _subType;
@@ -105,6 +109,7 @@ public class ProductAntigenImpl implements ProductAntigen
         _subType = subType;
     }
 
+    @Override
     public String getGenBankId()
     {
         return _genBankId;
@@ -115,6 +120,7 @@ public class ProductAntigenImpl implements ProductAntigen
         _genBankId = genBankId;
     }
 
+    @Override
     public String getSequence()
     {
         return _sequence;

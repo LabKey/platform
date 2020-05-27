@@ -34,6 +34,7 @@ public class SpecimenReplaceTest extends SpecimenMergeTest
     protected static final File LAB20_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab20.specimens");
     protected static final File LAB21_SPECIMENS = TestFileUtils.getSampleData("study/specimens/lab21.specimens");
 
+    @Override
     @Test
     public void testSteps()
     {

@@ -72,26 +72,31 @@ public class StudyReloadSourceTask extends PipelineJob.Task<StudyReloadSourceTas
             super(StudyReloadSourceTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new StudyReloadSourceTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getStatusName()
         {
             return "GENERATE STUDY RELOAD SOURCE";
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

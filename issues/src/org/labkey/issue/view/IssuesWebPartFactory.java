@@ -40,6 +40,7 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         super("Issues List", true, true);
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> properties = webPart.getPropertyMap();
@@ -75,6 +76,7 @@ public class IssuesWebPartFactory extends BaseWebPartFactory
         return view;
     }
 
+    @Override
     @Nullable
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {

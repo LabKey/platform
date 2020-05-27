@@ -104,6 +104,7 @@ public class RRF_Reader
             }
         }
 
+        @Override
         public boolean hasNext()
         {
             boolean ret = null != _next;
@@ -112,6 +113,7 @@ public class RRF_Reader
             return ret;
         }
 
+        @Override
         public String[] next()
         {
             try
@@ -126,6 +128,7 @@ public class RRF_Reader
             }
         }
 
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException();
@@ -137,6 +140,7 @@ public class RRF_Reader
             return null==line ? null : StringUtils.splitPreserveAllTokens(line,'|');
         }
 
+        @Override
         public void close()
         {
             closeQuietly(_in);
@@ -182,6 +186,7 @@ public class RRF_Reader
             }
         }
 
+        @Override
         public boolean hasNext()
         {
             boolean ret = null != _next;
@@ -190,6 +195,7 @@ public class RRF_Reader
             return ret;
         }
 
+        @Override
         public T next()
         {
             try
@@ -204,6 +210,7 @@ public class RRF_Reader
             }
         }
 
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException();
@@ -238,6 +245,7 @@ public class RRF_Reader
             }
         }
 
+        @Override
         public void close()
         {
             closeQuietly(_in);
@@ -264,11 +272,13 @@ public class RRF_Reader
             _next = readNext();
         }
         
+        @Override
         public boolean hasNext()
         {
             return null != _next;
         }
 
+        @Override
         public T next()
         {
             T ret = _next;
@@ -289,11 +299,13 @@ public class RRF_Reader
             return null;
         }
         
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void close()
         {
             while (null != _current)
@@ -344,6 +356,7 @@ public class RRF_Reader
             type = _types.hasNext() ? _types.next() : null;
         }
 
+        @Override
         public boolean hasNext()
         {
             boolean ret = null != name || null != def || null != type;
@@ -352,6 +365,7 @@ public class RRF_Reader
             return ret;
         }
 
+        @Override
         public ArrayList next()
         {
             String nextCUI = _min(
@@ -383,11 +397,13 @@ public class RRF_Reader
             return ret;
         }
 
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public void close()
         {
             if (_names instanceof Closeable)

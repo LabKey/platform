@@ -61,11 +61,13 @@ public class FileSystemFile extends AbstractVirtualFile
         _root = root;
     }
 
+    @Override
     public String getLocation()
     {
         return _root.getAbsolutePath();
     }
 
+    @Override
     public PrintWriter getPrintWriter(String filename) throws IOException
     {
         File file = new File(_root, makeLegalName(filename));
@@ -73,6 +75,7 @@ public class FileSystemFile extends AbstractVirtualFile
         return PrintWriters.getPrintWriter(file);
     }
 
+    @Override
     public OutputStream getOutputStream(String filename) throws IOException
     {
         File file = new File(_root, makeLegalName(filename));
@@ -80,6 +83,7 @@ public class FileSystemFile extends AbstractVirtualFile
         return new FileOutputStream(file);
     }
 
+    @Override
     public void saveXmlBean(String filename, XmlObject doc) throws IOException
     {
         try
@@ -101,16 +105,19 @@ public class FileSystemFile extends AbstractVirtualFile
         doc.save(file, options);
     }
 
+    @Override
     public VirtualFile getDir(String name)
     {
         return new FileSystemFile(new File(_root, makeLegalName(name)));
     }
 
+    @Override
     public VirtualFile createZipArchive(String name) throws IOException
     {
         return new ZipFile(_root, name);
     }
 
+    @Override
     public String makeLegalName(String name)
     {
         return makeLegal(name);

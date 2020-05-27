@@ -36,25 +36,31 @@ public class ReportContentEmailManager
     {
         NONE
         {
+            @Override
             public int getSpecialCategoryId() {return -1;}
+            @Override
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
-                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+                                                                                    SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
                 return Collections.emptyMap();
             }
         },
         ALL
         {
+            @Override
             public int getSpecialCategoryId() {return -2;}
+            @Override
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
-                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
+                                                                                    SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {
                 return SELECT.getReportsForUserByCategory(reportInfosByCategory, allCategories, allCategories);
             }
         },
         SELECT
         {
+            @Override
             public int getSpecialCategoryId() {return -3;}
+            @Override
             public Map<Integer, List<NotificationInfo>> getReportsForUserByCategory(Map<Integer, List<NotificationInfo>> reportInfosByCategory,
                                                                                     SortedSet<Integer> categories, SortedSet<Integer> allCategories)
             {

@@ -37,11 +37,13 @@ public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
 {
     public static final String TYPE = "xls";
     
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
         try

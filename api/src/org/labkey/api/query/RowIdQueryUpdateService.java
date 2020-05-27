@@ -48,16 +48,19 @@ public abstract class RowIdQueryUpdateService<T> extends AbstractBeanQueryUpdate
         _keyColumn = table.getPkColumnNames().get(0);
     }
 
+    @Override
     public java.lang.Integer keyFromMap(Map<String, Object> map) throws InvalidKeyException
     {
         return getInteger(map, _keyColumn);
     }
 
+    @Override
     public final T get(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
     {
         return get(user, container, key.intValue());
     }
 
+    @Override
     public final void delete(User user, Container container, Integer key) throws QueryUpdateServiceException, SQLException
     {
         delete(user, container, key.intValue());

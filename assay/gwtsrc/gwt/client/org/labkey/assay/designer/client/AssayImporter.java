@@ -71,6 +71,7 @@ public class AssayImporter implements EntryPoint
     private RootPanel _rootPanel;
     private String _containerId;
 
+    @Override
     public void onModuleLoad()
     {
         _rootPanel = AssayApplication.getRootPanel();
@@ -93,11 +94,13 @@ public class AssayImporter implements EntryPoint
             {
                 getService().getBaseColumns(_providerName, new ErrorDialogAsyncCallback<List<GWTPropertyDescriptor>>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
                     }
 
+                    @Override
                     public void onSuccess(List<GWTPropertyDescriptor> baseColumns)
                     {
                         _rootPanel.add(new HTML("<br/>"));
@@ -112,6 +115,7 @@ public class AssayImporter implements EntryPoint
     {
         HorizontalPanel btnBar = new HorizontalPanel();
         btnBar.add(new ImageButton("Begin import", new ClickHandler(){
+            @Override
             public void onClick(ClickEvent event)
             {
                 String assayName = _assayName != null ? _assayName.getString() : null;
@@ -125,6 +129,7 @@ public class AssayImporter implements EntryPoint
             }
         }));
         btnBar.add(new ImageButton("Show Assay Designer", new ClickHandler(){
+            @Override
             public void onClick(ClickEvent event)
             {
                 String assayName = _assayName != null ? _assayName.getString() : null;
@@ -139,6 +144,7 @@ public class AssayImporter implements EntryPoint
             }
         }));
         btnBar.add(new ImageButton("Cancel", new ClickHandler(){
+            @Override
             public void onClick(ClickEvent event)
             {
                 onCancel();
@@ -152,11 +158,13 @@ public class AssayImporter implements EntryPoint
     {
         getService().getAssayLocations(new ErrorDialogAsyncCallback<List<Map<String, String>>>()
         {
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 onCancel();
             }
 
+            @Override
             public void onSuccess(List<Map<String, String>> locations)
             {
                 VerticalPanel panel = new VerticalPanel();
@@ -285,15 +293,18 @@ public class AssayImporter implements EntryPoint
 
         getService().validateColumns(inferencedColumns, _path, _file, new ErrorDialogAsyncCallback<Boolean>()
         {
+            @Override
             public void onSuccess(Boolean result)
             {
                 // on import create the protocol using the assay name specified
                 getService().createProtocol(PropertyUtil.getServerProperty("providerName"), _assayName.getString(), _containerId,  new ErrorDialogAsyncCallback<GWTProtocol>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                     }
 
+                    @Override
                     public void onSuccess(GWTProtocol protocol)
                     {
                         _protocol = protocol;
@@ -312,6 +323,7 @@ public class AssayImporter implements EntryPoint
                 });
             }
 
+            @Override
             public void handleFailure(String message, Throwable caught)
             {
                 // do nothing, we will already show the error in a popup
@@ -329,11 +341,13 @@ public class AssayImporter implements EntryPoint
             {
                 getService().getDesignerURL(_protocol, _path, _file, new ErrorDialogAsyncCallback<String>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
                     }
 
+                    @Override
                     public void onSuccess(String importURL)
                     {
                         navigate(importURL);
@@ -344,11 +358,13 @@ public class AssayImporter implements EntryPoint
             {
                 getService().getImportURL(_protocol, _path, _file, new ErrorDialogAsyncCallback<String>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
                     }
 
+                    @Override
                     public void onSuccess(String importURL)
                     {
                         navigate(importURL);
@@ -386,11 +402,13 @@ public class AssayImporter implements EntryPoint
 
             service.getInferenceColumns(PropertyUtil.getServerProperty("path"), PropertyUtil.getServerProperty("file"), new ErrorDialogAsyncCallback<List<InferencedColumn>>()
             {
+                @Override
                 public void handleFailure(String message, Throwable caught)
                 {
                     onCancel();
                 }
 
+                @Override
                 public void onSuccess(List<InferencedColumn> result)
                 {
                     displayInferredColumns(result);
@@ -406,11 +424,13 @@ public class AssayImporter implements EntryPoint
             {
                 service.getDomainImportURI(_protocol, new ErrorDialogAsyncCallback<String>()
                 {
+                    @Override
                     public void handleFailure(String message, Throwable caught)
                     {
                         onCancel();
                     }
 
+                    @Override
                     public void onSuccess(String typeURI)
                     {
                         _typeURI = typeURI;

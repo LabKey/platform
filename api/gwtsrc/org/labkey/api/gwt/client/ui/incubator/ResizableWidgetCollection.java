@@ -242,6 +242,7 @@ public class ResizableWidgetCollection implements WindowResizeListener,
     return resizeCheckingEnabled;
   }
 
+  @Override
   public Iterator<ResizableWidget> iterator() {
     return widgets.keySet().iterator();
   }
@@ -252,6 +253,7 @@ public class ResizableWidgetCollection implements WindowResizeListener,
    * @param width the width of the window's client area.
    * @param height the height of the window's client area.
    */
+  @Override
   @Deprecated
   public void onWindowResized(int width, int height) {
     checkWidgetSize();
@@ -287,6 +289,7 @@ public class ResizableWidgetCollection implements WindowResizeListener,
       resizeCheckingEnabled = true;
       if (windowHandler == null) {
         windowHandler = Window.addResizeHandler(new ResizeHandler() {
+          @Override
           public void onResize(ResizeEvent event) {
             onWindowResized(event.getWidth(), event.getHeight());
           }

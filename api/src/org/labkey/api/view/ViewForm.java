@@ -59,6 +59,7 @@ public class ViewForm extends ReturnUrlForm implements HasViewContext
     }
 
 
+    @Override
     public void setViewContext(@NotNull ViewContext context)
     {
         _context = context;
@@ -68,6 +69,7 @@ public class ViewForm extends ReturnUrlForm implements HasViewContext
     }
 
 
+    @Override
     public ViewContext getViewContext()
     {
         if (null == _context)

@@ -465,6 +465,7 @@ public class SQLFragment implements Appendable, CharSequence
     }
 
     /** Add to the SQL */
+    @Override
     public SQLFragment append(char ch)
     {
         getStringBuilder().append(ch);

@@ -39,11 +39,13 @@ public class DateProperty implements IPropertyWrapper, IsSerializable
         this.d = d;
     }
 
+    @Override
     public Object get()
     {
         return d;
     }
 
+    @Override
     public void set(Object o)
     {
         d = (Date)o;

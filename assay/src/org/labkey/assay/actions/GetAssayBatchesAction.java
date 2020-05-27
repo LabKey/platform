@@ -32,6 +32,7 @@ import java.util.List;
 @RequiresPermission(ReadPermission.class)
 public class GetAssayBatchesAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
+    @Override
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         List<ExpExperiment> batches = new ArrayList<>();

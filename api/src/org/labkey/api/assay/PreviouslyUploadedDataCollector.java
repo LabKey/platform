@@ -91,6 +91,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         this(uploadedFiles, Type.ErrorReshow);
     }
 
+    @Override
     public HttpView getView(ContextType context)
     {
         StringBuilder sb = new StringBuilder();
@@ -125,16 +126,19 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         return sb.toString();
     }
 
+    @Override
     public String getShortName()
     {
         return "Previously uploaded files";
     }
 
+    @Override
     public String getDescription(ContextType context)
     {
         return "Use the data file(s) already uploaded to the server";
     }
 
+    @Override
     @NotNull
     public Map<String, File> createData(ContextType context) throws IOException
     {
@@ -180,6 +184,7 @@ public class PreviouslyUploadedDataCollector<ContextType extends AssayRunUploadC
         return result;
     }
 
+    @Override
     public boolean isVisible()
     {
         return !_uploadedFiles.isEmpty();

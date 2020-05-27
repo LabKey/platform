@@ -36,11 +36,13 @@ import java.util.List;
  */
 class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo, ImportContext<StudyDocument.Study>>
 {
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(QueryInfo queryInfo, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws Exception
     {
         TableInfo tinfo = queryInfo.getTableInfo();

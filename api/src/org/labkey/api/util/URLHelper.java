@@ -845,6 +845,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
 
     public static class Converter implements org.apache.commons.beanutils.Converter
     {
+        @Override
         public Object convert(Class type, Object value)
         {
             if (value == null)
@@ -863,6 +864,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     }
 
 
+    @Override
     public boolean isTainted()
     {
         return _tainted;

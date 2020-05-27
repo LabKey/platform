@@ -52,6 +52,7 @@ public class QueryWriter extends BaseFolderWriter
 
     private static final String DEFAULT_DIRECTORY = "queries";
 
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.QUERIES;
@@ -121,6 +122,7 @@ public class QueryWriter extends BaseFolderWriter
 
     public static class Factory implements FolderWriterFactory
     {
+        @Override
         public FolderWriter create()
         {
             return new QueryWriter();

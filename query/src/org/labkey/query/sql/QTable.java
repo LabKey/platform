@@ -63,6 +63,7 @@ public class QTable implements QJoinOrTable
     }
 
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         _table.appendSource(builder);
@@ -74,6 +75,7 @@ public class QTable implements QJoinOrTable
     }
 
 
+    @Override
     public void appendSql(SqlBuilder sql, QuerySelect select)
     {
         SQLFragment sqlRelation = getQueryRelation().getFromSql();

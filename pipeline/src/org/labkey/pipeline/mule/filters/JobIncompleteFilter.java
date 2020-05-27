@@ -27,6 +27,7 @@ import org.mule.umo.UMOMessage;
  */
 public class JobIncompleteFilter implements UMOFilter
 {
+    @Override
     public boolean accept(UMOMessage message)
     {
         Object payload = message.getPayload();
