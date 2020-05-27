@@ -55,7 +55,7 @@ import java.util.TreeMap;
  */
 abstract public class AbstractFileAnalysisJob extends PipelineJob implements FileAnalysisJobSupport
 {
-    private static Logger _log = Logger.getLogger(AbstractFileAnalysisJob.class);
+    private static final Logger _log = Logger.getLogger(AbstractFileAnalysisJob.class);
 
     protected Integer _experimentRunRowId;
     private String _protocolName;

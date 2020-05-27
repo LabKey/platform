@@ -103,7 +103,7 @@ abstract public class PipelineJob extends Job implements Serializable
     protected static Logger _log = Logger.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to
     // only write ERROR level events to the system log
-    private static Logger _logJobStopStart = Logger.getLogger(Job.class);
+    private static final Logger _logJobStopStart = Logger.getLogger(Job.class);
 
     public static Logger getJobLogger(Class clazz)
     {
@@ -215,7 +215,7 @@ abstract public class PipelineJob extends Job implements Serializable
      */
     abstract static public class Task<FactoryType extends TaskFactory>
     {
-        private PipelineJob _job;
+        private final PipelineJob _job;
         protected FactoryType _factory;
 
         public Task(FactoryType factory, PipelineJob job)
@@ -240,7 +240,7 @@ abstract public class PipelineJob extends Job implements Serializable
     /*
      * JMS message header names
      */
-    private static String HEADER_PREFIX = "LABKEY_";
+    private static final String HEADER_PREFIX = "LABKEY_";
     public static final String LABKEY_JOBTYPE_PROPERTY = HEADER_PREFIX + "JOBTYPE";
     public static final String LABKEY_JOBID_PROPERTY = HEADER_PREFIX + "JOBID";
     public static final String LABKEY_CONTAINERID_PROPERTY = HEADER_PREFIX + "CONTAINERID";
@@ -1040,7 +1040,6 @@ abstract public class PipelineJob extends Job implements Serializable
                     ExceptionUtil.logExceptionToMothership(null, e);
                     // Rethrow to let the standard Mule exception handler fire and deal with the job state
                     throw e;
-
                 }
             }
             while (runStateMachine());
@@ -1492,8 +1491,8 @@ abstract public class PipelineJob extends Job implements Serializable
 
     private static class OutputLoggerRepository implements LoggerRepository
     {
-        private String _name;
-        private OutputLogger _outputLogger;
+        private final String _name;
+        private final OutputLogger _outputLogger;
 
         protected OutputLoggerRepository(String name, OutputLogger logger)
         {
@@ -1567,7 +1566,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         @Override
-        public Enumeration getCurrentLoggers()
+        public Enumeration<OutputLogger> getCurrentLoggers()
         {
             Vector<OutputLogger> v = new Vector<>();
             v.add(_outputLogger);
@@ -1575,7 +1574,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
 
         @Override
-        public Enumeration getCurrentCategories()
+        public Enumeration<OutputLogger> getCurrentCategories()
         {
             return getCurrentLoggers();
         }

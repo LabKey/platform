@@ -33,9 +33,8 @@ import java.util.List;
 
 public class ListReloadJob extends PipelineJob
 {
-
-    private File _dataFile;
-    private ListImportContext _importContext;
+    private final File _dataFile;
+    private final ListImportContext _importContext;
 
     @JsonCreator
     protected ListReloadJob(@JsonProperty("_dataFile") File dataFile, @JsonProperty("_importContext") ListImportContext importContext)
