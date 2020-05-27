@@ -30,11 +30,13 @@ import java.sql.SQLException;
  */
 public class VisitMapWriter implements InternalStudyWriter
 {
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.VISIT_MAP;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)

@@ -1014,6 +1014,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return false;
     }
 
+    @Override
     public void run()
     {
         try
@@ -1384,44 +1385,52 @@ abstract public class PipelineJob extends Job implements Serializable
             repository = new OutputLoggerRepository(name, this);
         }
 
+        @Override
         public void debug(Object message)
         {
             debug(message, null);
         }
 
+        @Override
         public void debug(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().debug(getSystemLogMessage(message), t);
             super.debug(message, t);
         }
 
+        @Override
         public void info(Object message)
         {
             info(message, null);
         }
 
+        @Override
         public void info(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().info(getSystemLogMessage(message), t);
             super.info(message, t);
         }
 
+        @Override
         public void warn(Object message)
         {
             warn(message, null);
         }
 
+        @Override
         public void warn(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().warn(getSystemLogMessage(message), t);
             super.warn(message, t);
         }
 
+        @Override
         public void error(Object message)
         {
             error(message, null);
         }
 
+        @Override
         public void error(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().error(getSystemLogMessage(message), t);
@@ -1429,11 +1438,13 @@ abstract public class PipelineJob extends Job implements Serializable
             setErrorStatus(message);
         }
 
+        @Override
         public void fatal(Object message)
         {
             fatal(message, null);
         }
 
+        @Override
         public void fatal(Object message, Throwable t)
         {
             _job.getClassLogger().fatal(getSystemLogMessage(message), t);
@@ -1490,32 +1501,39 @@ abstract public class PipelineJob extends Job implements Serializable
             _outputLogger = logger;
         }
 
+        @Override
         public void addHierarchyEventListener(HierarchyEventListener listener)
         {
         }
 
+        @Override
         public boolean isDisabled(int level)
         {
             return false;
         }
 
+        @Override
         public void setThreshold(Level level)
         {
         }
 
+        @Override
         public void setThreshold(String val)
         {
         }
 
+        @Override
         public void emitNoAppenderWarning(Category cat)
         {
         }
 
+        @Override
         public Level getThreshold()
         {
             return null;
         }
 
+        @Override
         public Logger getLogger(String name)
         {
             if (_name.equals(name))
@@ -1523,16 +1541,19 @@ abstract public class PipelineJob extends Job implements Serializable
             return null;
         }
 
+        @Override
         public Logger getLogger(String name, LoggerFactory factory)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public Logger getRootLogger()
         {
             return _outputLogger;
         }
 
+        @Override
         public Logger exists(String name)
         {
             if (_name.equals(name))
@@ -1540,10 +1561,12 @@ abstract public class PipelineJob extends Job implements Serializable
             return null;
         }
 
+        @Override
         public void shutdown()
         {
         }
 
+        @Override
         public Enumeration getCurrentLoggers()
         {
             Vector<OutputLogger> v = new Vector<>();
@@ -1551,15 +1574,18 @@ abstract public class PipelineJob extends Job implements Serializable
             return v.elements();
         }
 
+        @Override
         public Enumeration getCurrentCategories()
         {
             return getCurrentLoggers();
         }
 
+        @Override
         public void fireAddAppenderEvent(Category logger, Appender appender)
         {
         }
 
+        @Override
         public void resetConfiguration()
         {
         }
@@ -1769,22 +1795,26 @@ abstract public class PipelineJob extends Job implements Serializable
     /////////////////////////////////////////////////////////////////////////
     // JobRunner.Job interface
     
+    @Override
     public Object get() throws InterruptedException, ExecutionException
     {
         waitUntilSubmitted();
         return super.get();
     }
 
+    @Override
     public Object get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException
     {
         return get();
     }
 
+    @Override
     protected void starting(Thread thread)
     {
         _queue.starting(this, thread);
     }
 
+    @Override
     public boolean cancel(boolean mayInterruptIfRunning)
     {
         if (isSubmitted())
@@ -1792,6 +1822,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return true;
     }
 
+    @Override
     public boolean isDone()
     {
         if (!isSubmitted())
@@ -1799,6 +1830,7 @@ abstract public class PipelineJob extends Job implements Serializable
         return super.isDone();
     }
 
+    @Override
     public boolean isCancelled()
     {
         if (!isSubmitted())

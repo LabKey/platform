@@ -62,6 +62,7 @@ public abstract class AbstractPlateReader implements PlateReader
      * @return
      * @throws ValidationException - if the value cannot be converted, will cause the entire upload to fail
      */
+    @Override
     public double convertWellValue(String token) throws ValidationException
     {
         if (!NumberUtils.isCreatable(token))

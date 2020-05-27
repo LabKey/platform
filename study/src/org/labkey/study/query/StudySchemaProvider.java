@@ -37,6 +37,7 @@ public class StudySchemaProvider extends DefaultSchema.SchemaProvider
         return true;
     }
 
+    @Override
     public QuerySchema createSchema(DefaultSchema schema, Module module)
     {
         Container container = schema.getContainer();

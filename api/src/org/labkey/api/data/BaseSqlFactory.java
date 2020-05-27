@@ -27,6 +27,7 @@ import java.sql.SQLException;
 */
 public abstract class BaseSqlFactory implements SqlFactory
 {
+    @Override
     public void processResultSet(ResultSet rs) throws SQLException
     {
     }

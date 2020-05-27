@@ -242,6 +242,7 @@ public class SimpleTableDomainKind extends BaseAbstractDomainKind
             // return the set of built-in column names.
             return Sets.newHashSet(Iterables.transform(table.getBuiltInColumns(),
                 new Function<ColumnInfo, String>() {
+                    @Override
                     public String apply(ColumnInfo col)
                     {
                         return col.getName();

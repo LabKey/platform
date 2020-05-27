@@ -145,9 +145,9 @@ public class ListController extends SpringActionController
     }
 
 
-    private NavTree appendRootNavTrail(NavTree root)
+    private void addRootNavTrail(NavTree root)
     {
-        return appendRootNavTrail(root, getContainer(), getUser());
+        addRootNavTrail(root, getContainer(), getUser());
     }
 
     public static class ListUrlsImpl implements ListUrls
@@ -163,29 +163,25 @@ public class ListController extends SpringActionController
         {
             return new ActionURL(EditListDefinitionAction.class, c);
         }
-
     }
 
 
-    public static NavTree appendRootNavTrail(NavTree root, Container c, User user)
+    public static void addRootNavTrail(NavTree root, Container c, User user)
     {
         if (c.hasOneOf(user, DesignListPermission.class, PlatformDeveloperPermission.class))
         {
             root.addChild("Lists", getBeginURL(c));
         }
-        return root;
     }
 
 
-    private NavTree appendListNavTrail(NavTree root, ListDefinition list, @Nullable String title)
+    private void addListNavTrail(NavTree root, ListDefinition list, @Nullable String title)
     {
-        appendRootNavTrail(root);
+        addRootNavTrail(root);
         root.addChild(list.getName(), list.urlShowData());
 
         if (null != title)
             root.addChild(title);
-
-        return root;
     }
 
 
@@ -213,9 +209,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Available Lists");
+            root.addChild("Available Lists");
         }
     }
 
@@ -266,7 +262,7 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (null == _list)
             {
@@ -274,9 +270,8 @@ public class ListController extends SpringActionController
             }
             else
             {
-                appendListNavTrail(root, _list, listDesignerHeader);
+                addListNavTrail(root, _list, listDesignerHeader);
             }
-            return root;
         }
     }
 
@@ -379,9 +374,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, _title);
+            addListNavTrail(root, _list, _title);
         }
     }
 
@@ -427,9 +422,8 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -614,9 +608,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "View List Item");
+            addListNavTrail(root, _list, "View List Item");
         }
     }
 
@@ -703,9 +697,9 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendListNavTrail(root, _list, "Import Data");
+            addListNavTrail(root, _list, "Import Data");
         }
     }
 
@@ -760,12 +754,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, _list.getName() + ":History");
+                addListNavTrail(root, _list, _list.getName() + ":History");
             else
-                return root.addChild(":History");
+                root.addChild(":History");
         }
     }
 
@@ -828,12 +822,12 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             if (_list != null)
-                return appendListNavTrail(root, _list, "List Item Details");
+                addListNavTrail(root, _list, "List Item Details");
             else
-                return root.addChild("List Item Details"); 
+                root.addChild("List Item Details");
         }
     }
 
@@ -962,9 +956,10 @@ public class ListController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return appendRootNavTrail(root).addChild("Import List Archive");
+            addRootNavTrail(root);
+            root.addChild("Import List Archive");
         }
     }
 

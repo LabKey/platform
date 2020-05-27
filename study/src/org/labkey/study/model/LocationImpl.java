@@ -77,22 +77,26 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _postalArea = (String)map.get("PostalArea");
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
     }
 
+    @Override
     public void setLabel(String label)
     {
         verifyMutability();
         _label = label;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -103,6 +107,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _rowId = rowId;
     }
 
+    @Override
     public Boolean isEndpoint()
     {
         return _endpoint;
@@ -114,6 +119,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _endpoint = endpoint != null ? endpoint : Boolean.FALSE;
     }
 
+    @Override
     public Boolean isRepository()
     {
         return _repository;
@@ -125,6 +131,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _repository = repository != null ? repository : Boolean.FALSE;
     }
 
+    @Override
     public Boolean isSal()
     {
         return _sal;
@@ -136,6 +143,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _sal = sal != null ? sal : Boolean.FALSE;
     }
 
+    @Override
     public Boolean isClinic()
     {
         return _clinic;
@@ -147,6 +155,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _clinic = clinic != null ? clinic : Boolean.FALSE;
     }
 
+    @Override
     public String getLabUploadCode()
     {
         return _labUploadCode;
@@ -158,6 +167,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _labUploadCode = labUploadCode;
     }
 
+    @Override
     public String getLabwareLabCode()
     {
         return _labwareLabCode;
@@ -169,6 +179,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _labwareLabCode = labwareLabCode;
     }
 
+    @Override
     public Integer getLdmsLabCode()
     {
         return _ldmsLabCode;
@@ -180,6 +191,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _ldmsLabCode = ldmsLabCode;
     }
 
+    @Override
     public Integer getExternalId()
     {
         return _externalId;
@@ -191,6 +203,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _externalId = externalId;
     }
 
+    @Override
     public String getDisplayName()
     {
         String label = getLabel();
@@ -213,6 +226,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         }
     }
 
+    @Override
     public String getTypeString()
     {
         StringBuilder typeString = new StringBuilder();
@@ -245,6 +259,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         return true;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -256,6 +271,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _description = description;
     }
 
+    @Override
     public String getStreetAddress()
     {
         return _streetAddress;
@@ -267,6 +283,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _streetAddress = streetAddress;
     }
 
+    @Override
     public String getCity()
     {
         return _city;
@@ -278,6 +295,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _city = city;
     }
 
+    @Override
     public String getGoverningDistrict()
     {
         return _governingDistrict;
@@ -289,6 +307,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _governingDistrict = governingDistrict;
     }
 
+    @Override
     public String getCountry()
     {
         return _country;
@@ -300,6 +319,7 @@ public class LocationImpl extends AbstractStudyEntity<LocationImpl> implements L
         _country = country;
     }
 
+    @Override
     public String getPostalArea()
     {
         return _postalArea;

@@ -255,16 +255,19 @@ public class ResultSetUtil
         {
             SimpleDateFormat formatTZ = new SimpleDateFormat("d MMM yyyy HH:mm:ss Z");
             
+            @Override
             void writeNull() throws IOException
             {
                 _out.write("null");
             }
 
+            @Override
             void writeString(String s) throws IOException
             {
                 _out.write(PageFlowUtil.jsString(s));
             }
 
+            @Override
             void writeDate(Date d) throws IOException
             {
                 _out.write("new Date(");
@@ -288,6 +291,7 @@ public class ResultSetUtil
 //                _out.write("@'");
 //            }
 
+            @Override
             void writeObject(Object o) throws IOException
             {
                 _out.write(ConvertUtils.convert(o));
@@ -324,11 +328,13 @@ public class ResultSetUtil
 
         ExportResultSet export = new ExportResultSet()
         {
+            @Override
             void writeString(String s) throws IOException
             {
                 _out.write(encodeXml(s));
             }
 
+            @Override
             void writeObject(Object o) throws IOException
             {
                 _out.write(ConvertUtils.convert(o));

@@ -33,6 +33,7 @@ public class PropertyCreationDialog extends TextBoxDialogBox
         _panel = panel;
     }
 
+    @Override
     protected boolean commit(String propName)
     {
         if (propName.length() == 0)

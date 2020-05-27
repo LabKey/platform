@@ -27,6 +27,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
 {
+    @Override
     public final ModelAndView getView(FORM form, BindException errors) throws Exception
     {
         URLHelper url;
@@ -46,9 +47,9 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         return HttpView.redirect(url, url.isAllowableHost());
     }
 
-    public final NavTree appendNavTrail(NavTree root)
+    @Override
+    public final void addNavTrail(NavTree root)
     {
-        return null;
     }
 
     public abstract URLHelper getRedirectURL(FORM form) throws Exception;
@@ -60,6 +61,7 @@ public abstract class SimpleRedirectAction<FORM> extends SimpleViewAction<FORM>
         throw e;
     }
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "getRedirectURL";

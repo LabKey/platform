@@ -53,6 +53,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     }
 
 
+    @Override
     @NotNull
     public SQLFragment getFromSQL()
     {
@@ -89,11 +90,13 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
         return false;
     }
 
+    @Override
     public void setContainerFilter(@NotNull ContainerFilter containerFilter)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean hasDefaultContainerFilter()
     {
         return null!=getUserSchema() && getContainerFilter() == getUserSchema().getDefaultContainerFilter();

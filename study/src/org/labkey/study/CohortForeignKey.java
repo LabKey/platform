@@ -71,6 +71,7 @@ public class CohortForeignKey extends LookupForeignKey
     }
 
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         return new CohortTable(_schema, getLookupContainerFilter());

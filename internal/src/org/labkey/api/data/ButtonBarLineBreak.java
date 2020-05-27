@@ -27,6 +27,7 @@ import java.io.Writer;
  */
 public class ButtonBarLineBreak extends DisplayElement
 {
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         out.write("<br>");

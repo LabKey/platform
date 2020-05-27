@@ -908,6 +908,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _hasDbSequence;
     }
 
+    @Override
     public void setHasDbSequence(boolean hasDbSequence)
     {
         _hasDbSequence = hasDbSequence;
@@ -919,6 +920,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         return _isRootDbSequence;
     }
 
+    @Override
     public void setIsRootDbSequence(boolean isRootDbSequence)
     {
         _isRootDbSequence = isRootDbSequence;
@@ -1231,6 +1233,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         }
     }
 
+    @Override
     public void setSortFieldKeysFromXml(String xml)
     {
         List<FieldKey> keys = new ArrayList<>();
@@ -1408,6 +1411,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             _useRawFKValue = useRawFKValue;
         }
 
+        @Override
         public ColumnInfo createLookupColumn(ColumnInfo foreignKey, String displayField)
         {
             TableInfo lookupTable = getLookupTableInfo();
@@ -1451,6 +1455,7 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return result;
         }
 
+        @Override
         public String getLookupDisplayName()
         {
             return _displayColumnName;
@@ -1461,12 +1466,14 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return _useRawFKValue;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             DbSchema schema = _scope.getSchema(_dbSchemaName, DbSchemaType.Unknown);
             return schema.getTable(_tableName);
         }
 
+        @Override
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
@@ -1477,16 +1484,19 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return _joinWithContainer;
         }
 
+        @Override
         public Container getLookupContainer()
         {
             return null;
         }
 
+        @Override
         public String getLookupTableName()
         {
             return _tableName;
         }
 
+        @Override
         public String getLookupColumnName()
         {
             return _lookupKey;
@@ -1514,11 +1524,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return _lookupKey;
         }
 
+        @Override
         public String getLookupSchemaName()
         {
             return _dbSchemaName;
         }
 
+        @Override
         public NamedObjectList getSelectList(RenderContext ctx)
         {
             TableInfo lookupTable = getLookupTableInfo();
@@ -1528,11 +1540,13 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
             return lookupTable.getSelectList(getLookupColumnName(), Collections.emptyList(), null, null);
         }
 
+        @Override
         public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
         {
             return this;
         }
 
+        @Override
         public Set<FieldKey> getSuggestedColumns()
         {
             return null;

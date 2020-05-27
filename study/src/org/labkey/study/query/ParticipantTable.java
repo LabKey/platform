@@ -87,6 +87,7 @@ public class ParticipantTable extends BaseStudyTable
         datasetColumn.setLabel("DataSet");
         datasetColumn.setFk(new AbstractForeignKey(getUserSchema(), null)
         {
+            @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
@@ -94,11 +95,13 @@ public class ParticipantTable extends BaseStudyTable
                 return new ParticipantDatasetTable(_userSchema, cf, parent).getColumn(displayField);
             }
 
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new ParticipantDatasetTable(_userSchema, cf, null);
             }
 
+            @Override
             public StringExpression getURL(ColumnInfo parent)
             {
                 return null;
@@ -326,6 +329,7 @@ public class ParticipantTable extends BaseStudyTable
             setPublic(false);
         }
 
+        @Override
         public ColumnInfo createLookupColumn(final ColumnInfo parent, String displayField)
         {
             if (displayField == null)
@@ -355,11 +359,13 @@ public class ParticipantTable extends BaseStudyTable
             return null;
         }
 
+        @Override
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
         }
 
+        @Override
         public TableInfo getLookupTableInfo()
         {
             // Create a simple virtual table so that we can expose one column per alias source
@@ -386,6 +392,7 @@ public class ParticipantTable extends BaseStudyTable
         _ignoreSessionParticipantGroup = true;
     }
 
+    @Override
     protected SimpleFilter getFilter()
     {
         SimpleFilter sf = super.getFilter();

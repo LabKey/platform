@@ -129,6 +129,7 @@ public class ApiQueryResponse implements ApiResponse
         _extraReturnProperties = extraReturnProperties;
     }
 
+    @Override
     public void render(ApiResponseWriter writer) throws Exception
     {
         writer.startResponse();

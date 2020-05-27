@@ -36,6 +36,7 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         super(c, user, settings);
     }
 
+    @Override
     public boolean allowRead(@Nullable AnnouncementModel ann)
     {
         // Editors can read all messages
@@ -46,16 +47,19 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         return null != ann && _settings.hasMemberList() && hasPermission(ReadPermission.class) && ann.getMemberListIds().contains(_user.getUserId());
     }
 
+    @Override
     public boolean allowDeleteMessage(AnnouncementModel ann)
     {
         return false;
     }
 
+    @Override
     public boolean allowDeleteAnyThread()
     {
         return false;
     }
 
+    @Override
     public boolean allowResponse(AnnouncementModel ann)
     {
         // Editors can respond to any message
@@ -66,11 +70,13 @@ public class SecureMessageBoardPermissions extends NormalMessageBoardPermissions
         return _settings.hasMemberList() && allowInsert() && ann.getMemberListIds().contains(_user.getUserId());
     }
 
+    @Override
     public boolean allowUpdate(AnnouncementModel ann)
     {
         return false;
     }
 
+    @Override
     public SimpleFilter getThreadFilter()
     {
         SimpleFilter filter = super.getThreadFilter();

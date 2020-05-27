@@ -397,13 +397,11 @@ public class FileContentController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String name = _resource == null ? "<not found>" : _resource.getName();
-            NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
-            ret.addChild(name);
-
-            return ret;
+            new BeginAction(getViewContext()).addNavTrail(root);
+            root.addChild(name);
         }
     }
 
@@ -427,15 +425,16 @@ public class FileContentController extends SpringActionController
    @RequiresPermission(ReadPermission.class)
    public class FrameAction extends SimpleViewAction<SrcForm>
    {
+       @Override
        public ModelAndView getView(SrcForm srcForm, BindException errors)
        {
            String src = srcForm.getSrc();
            return new IFrameView(src);
        }
 
-       public NavTree appendNavTrail(NavTree root)
+       @Override
+       public void addNavTrail(NavTree root)
        {
-           return root;
        }
    }
 
@@ -452,6 +451,7 @@ public class FileContentController extends SpringActionController
             setViewContext(ctx);
         }
 
+        @Override
         public ModelAndView getView(FileContentForm form, BindException errors)
         {
             FilesWebPart part = new FilesWebPart(getContainer(), form.getFileSetName(), form.getFileRootName());
@@ -494,10 +494,10 @@ public class FileContentController extends SpringActionController
             return part;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Manage Files", new ActionURL(BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -505,6 +505,7 @@ public class FileContentController extends SpringActionController
    @RequiresPermission(AdminOperationsPermission.class)
    public class ShowAdminAction extends FormViewAction<FileContentForm>
    {
+       @Override
        public ModelAndView getView(FileContentForm form, boolean reshow, BindException errors)
        {
            FileContentService service = FileContentService.get();
@@ -538,26 +539,28 @@ public class FileContentController extends SpringActionController
        }
 
 
+       @Override
        public void validateCommand(FileContentForm target, Errors errors)
        {
        }
 
+       @Override
        public boolean handlePost(FileContentForm fileContentForm, BindException errors)
        {
            return false;
        }
 
+       @Override
        public ActionURL getSuccessURL(FileContentForm fileContentForm)
        {
            return null;
        }
 
-       public NavTree appendNavTrail(NavTree root)
+       @Override
+       public void addNavTrail(NavTree root)
        {
-           NavTree ret = (new BeginAction(getViewContext())).appendNavTrail(root);
-           ret.addChild("Administer File System Access");
-
-           return ret;
+           new BeginAction(getViewContext()).addNavTrail(root);
+           root.addChild("Administer File System Access");
        }
    }
 
@@ -568,6 +571,7 @@ public class FileContentController extends SpringActionController
        public static final int MAX_NAME_LENGTH = 80;
        public static final int MAX_PATH_LENGTH = 255;
 
+       @Override
        public boolean handlePost(FileContentForm form, BindException errors)
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
@@ -615,6 +619,7 @@ public class FileContentController extends SpringActionController
    @RequiresPermission(AdminOperationsPermission.class)
    public class DeleteAttachmentDirectoryAction extends ShowAdminAction
    {
+       @Override
        public boolean handlePost(FileContentForm form, BindException errors)
        {
            String name = StringUtils.trimToNull(form.getFileSetName());
@@ -696,6 +701,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class FileContentSummaryAction extends FileTreeNodeAction
     {
+        @Override
         public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors)
         {
             Container c = ContainerManager.getForId(form.getNode());
@@ -732,6 +738,7 @@ public class FileContentController extends SpringActionController
     {
         private static final String NODE_LABEL = "file web part";
 
+        @Override
         protected Set<Map<String, Object>> getChildren(NodeForm form, BindException errors)
         {
             Container c = ContainerManager.getForId(form.getNode());
@@ -877,6 +884,7 @@ public class FileContentController extends SpringActionController
     {
         private Map<String,Object> _props;
 
+        @Override
         public void bindProperties(Map<String, Object> props)
         {
             _props = props;
@@ -894,6 +902,7 @@ public class FileContentController extends SpringActionController
         private List<Map<String, Object>> _files;
         private List<? extends DomainProperty> _domainProps;
 
+        @Override
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
         {
             TableInfo ti = ExpSchema.TableType.Data.createTable(new ExpSchema(getUser(), getContainer()), ExpSchema.TableType.Data.toString(), null);
@@ -1092,6 +1101,7 @@ public class FileContentController extends SpringActionController
             return ret;
         }
 
+        @Override
         public ApiResponse execute(CustomFilePropsForm form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
@@ -1148,6 +1158,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ResetFileOptionsAction extends MutatingApiAction<ResetType>
     {
+        @Override
         public ApiResponse execute(ResetType form, BindException errors)
         {
             FileContentService svc = FileContentService.get();
@@ -1286,6 +1297,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ShowFilesHistoryAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             UserSchema schema = AuditLogService.getAuditLogSchema(getUser(), getContainer());
@@ -1299,23 +1311,26 @@ public class FileContentController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("File History");
+            root.addChild("File History");
         }
     }
 
     @RequiresPermission(ReadPermission.class)
     public class FileEmailPreferenceAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return new JspView("/org/labkey/filecontent/view/configureEmail.jsp");
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Email Notification Preferences");
+            root.addChild("Email Notification Preferences");
         }
     }
 

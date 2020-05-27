@@ -73,11 +73,13 @@ public class NavTrailConfig extends PageConfig
 
 
     // overrides to down-cast return type
+    @Override
     public NavTrailConfig setHelpTopic(HelpTopic topic)
     {
         return (NavTrailConfig)super.setHelpTopic(topic);
     }
 
+    @Override
     public NavTrailConfig setTitle(String title)
     {
         return (NavTrailConfig)super.setTitle(title);

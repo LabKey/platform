@@ -51,9 +51,9 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
         super(SpecimenController.ParticipantCommentForm.class);
     }
 
-    protected NavTree appendExtraNavTrail(NavTree root)
+    @Override
+    protected void addExtraNavTrail(NavTree root)
     {
-        return null;
     }
 
     @Override
@@ -118,6 +118,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
             return _dataView;
         }
 
+        @Override
         protected boolean isInsert()
         {
             return true;
@@ -166,6 +167,7 @@ public abstract class ParticipantCommentAction extends InsertUpdateAction<Specim
             }
         }
 
+        @Override
         protected boolean isInsert()
         {
             return false;

@@ -35,13 +35,13 @@ import org.labkey.test.components.ChartQueryDialog;
 import org.labkey.test.components.ChartTypeDialog;
 import org.labkey.test.components.DomainDesignerPage;
 import org.labkey.test.components.LookAndFeelTimeChart;
-import org.labkey.test.components.PropertiesEditor;
 import org.labkey.test.components.QueryMetadataEditorPage;
 import org.labkey.test.components.SaveChartDialog;
 import org.labkey.test.components.html.SiteNavBar;
 import org.labkey.test.pages.DatasetPropertiesPage;
 import org.labkey.test.pages.TimeChartWizard;
 import org.labkey.test.pages.search.SearchResultsPage;
+import org.labkey.test.params.FieldDefinition;
 import org.labkey.test.util.DataRegionTable;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
@@ -168,6 +168,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         folder
     }
 
+    @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);
@@ -1065,7 +1066,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         List<String> fields = new ArrayList<>(Arrays.asList(phiFields));
         for (String field : fields)
         {
-            designerPage.fieldsPanel().getField(field).setPHILevel(PropertiesEditor.PhiSelectType.PHI);
+            designerPage.fieldsPanel().getField(field).setPHILevel(FieldDefinition.PhiSelectType.PHI);
         }
        designerPage.clickFinish();
     }

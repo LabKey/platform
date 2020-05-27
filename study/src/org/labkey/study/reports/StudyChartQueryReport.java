@@ -32,6 +32,7 @@ public class StudyChartQueryReport extends ChartQueryReport
 {
     public static final String TYPE = "Study.chartQueryReport";
 
+    @Override
     public String getType()
     {
         return TYPE;

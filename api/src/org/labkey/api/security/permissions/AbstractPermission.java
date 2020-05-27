@@ -59,30 +59,35 @@ public abstract class AbstractPermission implements Permission
         _sourceModule = sourceModule;
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return _name;
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
         return _description;
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return _sourceModule;
     }
 
+    @Override
     @NotNull
     public String getUniqueName()
     {
         return this.getClass().getName();
     }
 
+    @Override
     @NotNull
     public Set<Class<? extends Permission>> getPermissions()
     {
@@ -91,11 +96,13 @@ public abstract class AbstractPermission implements Permission
         return perms;
     }
 
+    @Override
     public void addPermission(@NotNull Class<? extends Permission> perm)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isAssignable()
     {
         //for now, we will not allow admins to grant
@@ -129,6 +136,7 @@ public abstract class AbstractPermission implements Permission
         return this.getClass().hashCode();
     }
 
+    @Override
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals()
     {

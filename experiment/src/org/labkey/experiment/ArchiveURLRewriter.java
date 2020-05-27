@@ -46,6 +46,7 @@ public class ArchiveURLRewriter extends URLRewriter
         _roles = roles == null ? null : new CaseInsensitiveHashSet(roles);
     }
 
+    @Override
     public String rewriteURL(Path path, ExpData data, String roleName, ExpRun run, User user) throws ExperimentException
     {
         if (path != null && (_roles == null || _roles.contains(roleName)))

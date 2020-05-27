@@ -88,6 +88,7 @@ public class StringListBox extends ListBox implements HasText, ChangeListener
     }
 
 
+    @Override
     public String getText()
     {
         int itemSelected = getSelectedIndex();
@@ -97,6 +98,7 @@ public class StringListBox extends ListBox implements HasText, ChangeListener
         return getItemText(itemSelected).length() == 0 ? null : getItemText(itemSelected);
     }
 
+    @Override
     public void setText(String text)
     {
         for (int i = 0; i < getItemCount(); i++)
@@ -128,16 +130,19 @@ public class StringListBox extends ListBox implements HasText, ChangeListener
     }
 
 
+    @Override
     public void addChangeListener(ChangeListener listener)
     {
         externalListeners.add(listener);
     }
 
+    @Override
     public void removeChangeListener(ChangeListener listener)
     {
         externalListeners.remove(listener);
     }
 
+    @Override
     public void onChange(Widget sender)
     {
         int selectedIndex = getSelectedIndex();

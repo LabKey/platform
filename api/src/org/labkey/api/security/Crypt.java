@@ -101,11 +101,13 @@ public enum Crypt
 
     private static class _md5 implements _Crypt
     {
+        @Override
         public boolean matches(String credentials, String digest)
         {
             return digest.equals(digest(credentials));
         }
 
+        @Override
         public String digest(String credentials)
         {
             if (null == credentials)
@@ -142,11 +144,13 @@ public enum Crypt
 
     private static class _sha256 implements _Crypt
     {
+        @Override
         public boolean matches(String credentials, String digest)
         {
             return digest.equals(digest(credentials));
         }
 
+        @Override
         public String digest(String credentials)
         {
             if (null == credentials)
@@ -164,6 +168,7 @@ public enum Crypt
 
     private static class _saltmd5 implements _Crypt
     {
+        @Override
         public boolean matches(String credentials, String digest)
         {
             return digest.equals(_digest(credentials, digest));

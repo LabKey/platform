@@ -87,16 +87,19 @@ public class DefaultSpecimenTablesTemplate implements SpecimenTablesTemplate
         EXTRASPECIMENEVENT_PROPERTIES = Arrays.asList(specimenEventProps);
     }
 
+    @Override
     public Set<PropertyStorageSpec> getExtraSpecimenEventProperties()
     {
         return new LinkedHashSet<>(EXTRASPECIMENEVENT_PROPERTIES);
     }
 
+    @Override
     public Set<PropertyStorageSpec> getExtraVialProperties()
     {
         return new LinkedHashSet<>(EXTRAVIAL_PROPERTIES);
     }
 
+    @Override
     public Set<PropertyStorageSpec> getExtraSpecimenProperties()
     {
         return Collections.emptySet();

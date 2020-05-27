@@ -56,16 +56,19 @@ public class ConfigurationException extends MinorConfigurationException implemen
         _advice = advice;
     }
 
+    @Override
     public String getTitle()
     {
         return "500: Configuration Error";
     }
 
+    @Override
     public String getMessageHtml()
     {
         return "<b style=\"color:red;\" class=\"exception-message\">" + getMessage() + (null != _advice ? " " + _advice : "") + "</b><br><br>There is a problem with your configuration. Please <strong>contact your organization's server administrator</strong> for assistance or <a href=\"https://www.labkey.org/home/Support/Product%20Support/project-begin.view\" target=\"_blank\">visit the LabKey Support Portal</a> to view additional support options.<br><br>";
     }
 
+    @Override
     public String getHeading(boolean startup)
     {
         return "Configuration Error Detected" + (startup ? " at LabKey Server Startup" : "");

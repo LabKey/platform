@@ -84,30 +84,35 @@ public abstract class AbstractRole implements Role
         }
     }
 
+    @Override
     @NotNull
     public String getUniqueName()
     {
         return this.getClass().getName();
     }
 
+    @Override
     @NotNull
     public String getName()
     {
         return _name;
     }
 
+    @Override
     @NotNull
     public String getDescription()
     {
         return _description;
     }
 
+    @Override
     @NotNull
     public synchronized Set<Class<? extends Permission>> getPermissions()
     {
         return Collections.unmodifiableSet(_permissions);
     }
 
+    @Override
     public synchronized void addPermission(@NotNull Class<? extends Permission> perm)
     {
         Set<Class<? extends Permission>> p = new HashSet<>(_permissions);
@@ -115,12 +120,14 @@ public abstract class AbstractRole implements Role
         _permissions = Collections.unmodifiableSet(p);
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
         return _sourceModule;
     }
 
+    @Override
     public boolean isAssignable()
     {
         return true;
@@ -146,6 +153,7 @@ public abstract class AbstractRole implements Role
         return getUniqueName();
     }
 
+    @Override
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals()
     {

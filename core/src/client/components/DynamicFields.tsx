@@ -283,7 +283,7 @@ export class DynamicFields extends PureComponent<DynamicFieldsProps> {
                             onFileChange={onFileChange}
                             onFileRemoval={onFileRemoval}
                             value={name}
-                            index={index + 2} // There are two other FileAttachmentForms (from SSOFields) on modal
+                            index={index + 3} // There are two other FileAttachmentForms (from SSOFields) on modal
                             canEdit={canEdit}
                             requiredFieldEmpty={requiredFieldEmpty}
                             defaultValue={field.defaultValue}

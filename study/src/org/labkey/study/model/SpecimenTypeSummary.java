@@ -115,11 +115,13 @@ public class SpecimenTypeSummary
             super(container, null, label, id);
         }
 
+        @Override
         public List<? extends TypeCount> getChildren()
         {
             return getDerivatives(this);
         }
 
+        @Override
         public String getSpecimenViewFilterColumn()
         {
             return "PrimaryType/Description";
@@ -135,11 +137,13 @@ public class SpecimenTypeSummary
             _parent = parent;
         }
 
+        @Override
         public List<? extends TypeCount> getChildren()
         {
             return getAdditives(_parent, this);
         }
 
+        @Override
         public String getSpecimenViewFilterColumn()
         {
             return "DerivativeType/Description";
@@ -153,11 +157,13 @@ public class SpecimenTypeSummary
             super(container, parent, label, id);
         }
 
+        @Override
         public List<TypeCount> getChildren()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getSpecimenViewFilterColumn()
         {
             return "AdditiveType/Description";

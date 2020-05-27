@@ -38,6 +38,7 @@ public class QueryDataViewProvider extends AbstractQueryDataViewProvider
 {
     public static final DataViewProvider.Type TYPE = new ProviderType("queries", "Custom Views", true);
 
+    @Override
     public DataViewProvider.Type getType()
     {
         return TYPE;

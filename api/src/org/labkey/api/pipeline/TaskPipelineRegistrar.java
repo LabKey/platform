@@ -107,6 +107,7 @@ public class TaskPipelineRegistrar implements InitializingBean, ApplicationConte
         _factories = listSettings;
     }
     
+    @Override
     public void afterPropertiesSet() throws Exception
     {
         PipelineJobService service = PipelineJobService.get();

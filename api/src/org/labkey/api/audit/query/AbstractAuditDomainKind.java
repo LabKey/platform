@@ -217,7 +217,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind<JSONObject>
     }
 
     @Override
-    public void appendNavTrail(NavTree root, Container c, User user)
+    public void addNavTrail(NavTree root, Container c, User user)
     {
     }
 

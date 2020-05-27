@@ -40,6 +40,7 @@ public class TemplateDesigner implements EntryPoint
         }
     }
 
+    @Override
     public void onModuleLoad()
     {
         RootPanel panel = AssayApplication.getRootPanel();

@@ -37,6 +37,7 @@ public interface Replacer
             _replacer2 = replacer2;
         }
 
+        @Override
         public String getReplacement(String original) throws XarFormatException
         {
             String result = _replacer1.getReplacement(original);

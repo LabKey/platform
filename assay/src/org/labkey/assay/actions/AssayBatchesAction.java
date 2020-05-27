@@ -41,6 +41,7 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
 {
     private ExpProtocol _protocol;
 
+    @Override
     public ModelAndView getView(AssayRunsAction.AssayRunsForm summaryForm, BindException errors)
     {
         ViewContext context = getViewContext();
@@ -56,11 +57,10 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
         return new AssayBatchesView(_protocol, false);
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
-        NavTree result = super.appendNavTrail(root);
-        result.addChild(_protocol.getName() + " Batches");
-
-        return result;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName() + " Batches");
     }
 }

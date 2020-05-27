@@ -388,6 +388,7 @@ public class Issue extends Entity implements Serializable, Cloneable
     }
 
 
+    @Override
     public Issue clone() throws CloneNotSupportedException
     {
         Issue clone = (Issue)super.clone();
@@ -728,6 +729,7 @@ public class Issue extends Entity implements Serializable, Cloneable
             this.comment = comment;
         }
 
+        @Override
         public String getContainerId()
         {
             if (issue != null)
@@ -778,6 +780,7 @@ public class Issue extends Entity implements Serializable, Cloneable
             return user;
         }
 
+        @Override
         public int compareTo(@NotNull IssueEvent other)
         {
             return this.millis.compareTo(other.millis);

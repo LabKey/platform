@@ -69,6 +69,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         super(protocolLSIDPrefix, runLSIDPrefix, resultRowLsidPrefix, dataType, declaringModule);
     }
 
+    @Override
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template)
     {
         if (!isPlateBased())
@@ -80,6 +81,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         protocol.setObjectProperties(props);
     }
 
+    @Override
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol)
     {
         ObjectProperty prop = protocol.getObjectProperties().get(protocol.getLSID() + "#PlateTemplate");
@@ -99,6 +101,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return new Pair<>(sampleWellGroupDomain, Collections.emptyMap());
     }
 
+    @Override
     public List<Pair<Domain, Map<DomainProperty, Object>>> createDefaultDomains(Container c, User user)
     {
         List<Pair<Domain, Map<DomainProperty, Object>>> result = super.createDefaultDomains(c, user);
@@ -112,6 +115,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return new PlateBasedRunCreator(this);
     }
 
+    @Override
     public File getSampleMetadataFile(Container container, int runId)
     {
         ExpRun run = ExperimentService.get().getExpRun(runId);
@@ -141,6 +145,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return null;
     }
 
+    @Override
     public Domain getSampleWellGroupDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ASSAY_DOMAIN_SAMPLE_WELLGROUP);
@@ -190,6 +195,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         throw new ExperimentException("This assay protocol does not support the specified metadata input format : " + format.name());
     }
 
+    @Override
     public PlateSamplePropertyHelper getSamplePropertyHelper(PlateUploadForm context, ParticipantVisitResolverType filterInputsForType)
     {
         // Re-use the same PlateSamplePropertyHelper so it's able to utilize member variables across calls.
@@ -247,16 +253,19 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
         private static final String INCLUDE_PARTICIPANT_AND_VISIT = "includeParticipantAndVisit";
 
+        @Override
         public String getName()
         {
             return "SpecimenID";
         }
 
+        @Override
         public String getDescription()
         {
             return "Specimen/sample id.";
         }
 
+        @Override
         public void render(RenderContext ctx) throws Exception
         {
             HtmlView view = new HtmlView(
@@ -266,6 +275,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
         }
 
+        @Override
         public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             if (propertyName.equals(AbstractAssayProvider.DATE_PROPERTY_NAME))
@@ -288,6 +298,7 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
             return true;
         }
 
+        @Override
         public void addHiddenFormFields(AssayRunUploadContext<?> form, InsertView view)
         {
             view.getDataRegion().addHiddenFormField(INCLUDE_PARTICIPANT_AND_VISIT,
@@ -297,16 +308,19 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
     public static class ParticipantVisitLookupResolverType extends StudyParticipantVisitResolverType
     {
+        @Override
         public String getName()
         {
             return "ParticipantVisit";
         }
 
+        @Override
         public String getDescription()
         {
             return "Participant id and visit id.";
         }
 
+        @Override
         public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
@@ -316,16 +330,19 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
     public static class ParticipantDateLookupResolverType extends StudyParticipantVisitResolverType
     {
+        @Override
         public String getName()
         {
             return "ParticipantDate";
         }
 
+        @Override
         public String getDescription()
         {
             return "Participant id and date.";
         }
 
+        @Override
         public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME) ||
@@ -335,16 +352,19 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
 
     public static class ParticipantVisitDateLookupResolverType extends StudyParticipantVisitResolverType
     {
+        @Override
         public String getName()
         {
             return "ParticipantVisitDate";
         }
 
+        @Override
         public String getDescription()
         {
             return "Participant id, visit id, and date.";
         }
 
+        @Override
         public boolean collectPropertyOnUpload(AssayRunUploadContext<?> uploadContext, String propertyName)
         {
             return !(propertyName.equals(AbstractAssayProvider.SPECIMENID_PROPERTY_NAME));

@@ -46,6 +46,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
         }
     }
 
+    @Override
     public boolean hasNext()
     {
         try
@@ -58,6 +59,7 @@ public class ResultSetIterator implements Iterator<Map<String, Object>>
         }
     }
 
+    @Override
     public Map<String, Object> next()
     {
         try

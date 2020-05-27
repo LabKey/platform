@@ -25,6 +25,7 @@ public enum PropertyValidatorType
 {
     RegEx
     {
+        @Override
         public HelpPopup createHelpPopup()
         {
             return new HelpPopup("RegEx Validator", "RegEx validators allow you to specify a regular expression that defines what string values are valid");
@@ -32,6 +33,7 @@ public enum PropertyValidatorType
     },
     Range
     {
+        @Override
         public HelpPopup createHelpPopup()
         {
             return new HelpPopup("Range Validator", "Range validators allow you to specify numeric comparisons that must be satisfied, such as the value must be greater than or less than some constant");
@@ -39,11 +41,13 @@ public enum PropertyValidatorType
     },
     Lookup
     {
+        @Override
         public HelpPopup createHelpPopup()
         {
             return new HelpPopup("Lookup Validator", "Lookup validators allow you to require that any value is present in the lookup's target table or query");
         }
 
+        @Override
         public boolean isConfigurable()
         {
             return false;
@@ -51,14 +55,17 @@ public enum PropertyValidatorType
     },
     Length
     {
+        @Override
         public HelpPopup createHelpPopup()
         {
             return new HelpPopup("Length Validator", "Length validators allow you to validate the length of a text field");
         }
+        @Override
         public boolean isConfigurable()
         {
             return false;
         }
+        @Override
         public boolean isHidden()
         {
             return true;

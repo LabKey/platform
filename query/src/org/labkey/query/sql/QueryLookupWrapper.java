@@ -108,6 +108,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
     
+    @Override
     void declareFields()
     {
         _log.debug("declareFields " + this.toStringDebug());
@@ -123,6 +124,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     TableInfo getTableInfo()
     {
         if (!_hasLookups)
@@ -143,6 +145,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
     
 
+    @Override
     RelationColumn getColumn(@NotNull String name)
     {
         FieldKey k = new FieldKey(null, name);
@@ -158,6 +161,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     protected Map<String,RelationColumn> getAllColumns()
     {
         Map<String,RelationColumn> all = _source.getAllColumns();
@@ -172,6 +176,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof _WrapperColumn;
@@ -193,6 +198,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         _WrapperColumn parent = (_WrapperColumn)parentRelCol;
@@ -245,6 +251,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     public SQLFragment getSql()
     {
         if (!_hasLookups)
@@ -289,6 +296,7 @@ public class QueryLookupWrapper extends QueryRelation
     }
 
 
+    @Override
     String getQueryText()
     {
         return _source.getQueryText();
@@ -315,6 +323,7 @@ public class QueryLookupWrapper extends QueryRelation
         return _source.getOrderedSuggestedColumns(unwrapped);
     }
 
+    @Override
     public void setQueryWith(QueryWith queryWith)
     {
         // Defer to source relation; that's where we'll look for the With
@@ -340,11 +349,13 @@ public class QueryLookupWrapper extends QueryRelation
             return _key;
         }
 
+        @Override
         QueryRelation getTable()
         {
             return _table;
         }
 
+        @Override
         String getAlias()
         {
             return _alias;
@@ -369,6 +380,7 @@ public class QueryLookupWrapper extends QueryRelation
             _columnFK = _fkMap.get(key.getName());
         }
 
+        @Override
         public ForeignKey getFk()
         {
             if (null != _fk)
@@ -388,6 +400,7 @@ public class QueryLookupWrapper extends QueryRelation
             return _wrapped.getFk();
         }
 
+        @Override
         @NotNull
         public JdbcType getJdbcType()
         {
@@ -412,6 +425,7 @@ public class QueryLookupWrapper extends QueryRelation
             }
         }
 
+        @Override
         public SQLFragment getValueSql()
         {
             if (!_hasLookups)
@@ -420,6 +434,7 @@ public class QueryLookupWrapper extends QueryRelation
                 return super.getValueSql();
         }
 
+        @Override
         SQLFragment getInternalSql()
         {
             return _wrapped.getValueSql();
@@ -494,6 +509,7 @@ public class QueryLookupWrapper extends QueryRelation
             return _lkCol.getFk();
         }
 
+        @Override
         @NotNull
         public JdbcType getJdbcType()
         {
@@ -512,11 +528,13 @@ public class QueryLookupWrapper extends QueryRelation
             to.copyAttributesFrom(_lkCol);
         }
 
+        @Override
         public void declareJoins(String parentAlias, Map<String, SQLFragment> map)
         {
             _lkCol.declareJoins(parentAlias, map);
         }
 
+        @Override
         SQLFragment getInternalSql()
         {
             return _lkCol.getValueSql(_source.getAlias());

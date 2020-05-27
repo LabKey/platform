@@ -27,6 +27,7 @@ public class RoleConverter implements Converter
 {
     private static final Logger _log = Logger.getLogger(RoleConverter.class);
 
+    @Override
     public Object convert(Class type, Object value)
     {
         if(null == value || !type.equals(Role.class) || !(value instanceof String))

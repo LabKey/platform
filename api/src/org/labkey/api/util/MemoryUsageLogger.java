@@ -61,6 +61,7 @@ public class MemoryUsageLogger implements Runnable
         }
     }
 
+    @Override
     public void run()
     {
         try

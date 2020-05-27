@@ -148,6 +148,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             _baseName = baseName;
         }
 
+        @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             ColumnInfo oorIndicator = getIndicatorColumn(_baseName, colInfo);
@@ -165,6 +166,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             _baseName = baseName;
         }
 
+        @Override
         public SQLFragment getValueSql(String tableAlias)
         {
             ColumnInfo indicatorCol = getIndicatorColumn(_baseName, this);

@@ -54,16 +54,19 @@ public interface ExpProtocol extends ExpObject
             this.prefix = ASSAY_DOMAIN_PREFIX + prefixName;
         }
 
+        @Override
         public String getName()
         {
             return name();
         }
 
+        @Override
         public String getPrefix()
         {
             return this.prefix;
         }
 
+        @Override
         public String getLsidTemplate()
         {
             return AbstractAssayProvider.getPresubstitutionLsid(getPrefix());

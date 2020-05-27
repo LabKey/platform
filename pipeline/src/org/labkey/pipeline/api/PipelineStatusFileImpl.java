@@ -142,6 +142,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
     }
 
+    @Override
     public void beforeUpdate(@Nullable User user, Entity cur)
     {
         super.beforeUpdate(user, cur);
@@ -210,6 +211,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
     }
 
+    @Override
     public boolean isActive()
     {
         for (PipelineJob.TaskStatus status : PipelineJob.TaskStatus.values())
@@ -235,6 +237,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return _jobParent == null && _emailStatuses.contains(_status);
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -245,6 +248,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _rowId = rowId;
     }
 
+    @Override
     public String getJobId()
     {
         return getJob();
@@ -260,6 +264,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _job = job;
     }
 
+    @Override
     public String getJobParentId()
     {
         return getJobParent();
@@ -276,6 +281,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _jobParent = jobParent;
     }
 
+    @Override
     public String getJobStore()
     {
         return _jobStore;
@@ -286,6 +292,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _jobStore = jobStore;
     }
 
+    @Override
     public PipelineJob createJobInstance()
     {
         if (_jobStore == null)
@@ -314,6 +321,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _activeTaskId = activeTaskId;
     }
 
+    @Override
     public String getProvider()
     {
         return _provider;
@@ -324,11 +332,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _provider = provider;
     }
 
+    @Override
     public String getStatus()
     {
         return _status;
     }
 
+    @Override
     public void setStatus(String status)
     {
         if (status != null && status.length() > MAX_STATUS_LENGTH)
@@ -338,12 +348,14 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             _hadError = true;
     }
 
+    @Override
     @Nullable
     public String getInfo()
     {
         return _info;
     }
 
+    @Override
     public void setInfo(@Nullable String info)
     {
         if (info != null && info.length() > MAX_INFO_LEN)
@@ -351,6 +363,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _info = info;
     }
 
+    @Override
     public String getFilePath()
     {
         return _filePath;
@@ -363,6 +376,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _filePath = PipelineJobService.statusPathOf(filePath);
     }
 
+    @Override
     public String getDataUrl()
     {
         return _dataUrl;
@@ -375,6 +389,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _dataUrl = dataUrl;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -387,6 +402,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _description = description;
     }
 
+    @Override
     public String getEmail()
     {
         return _email;
@@ -399,6 +415,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _email = email;
     }
 
+    @Override
     public boolean isHadError()
     {
         return _hadError;
@@ -409,6 +426,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         _hadError = hadError;
     }
 
+    @Override
     public String getActiveHostName()
     {
         return _activeHostName;

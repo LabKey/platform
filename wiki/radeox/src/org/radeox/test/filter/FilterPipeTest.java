@@ -59,7 +59,7 @@ public class FilterPipeTest extends TestCase {
       }
 
       public String[] replaces() {
-        return new String[0];  //To change body of implemented methods use Options | File Templates.
+        return new String[0];
       }
 
       public String filter(String input, FilterContext context) {
@@ -77,7 +77,7 @@ public class FilterPipeTest extends TestCase {
       }
 
       public String[] replaces() {
-        return new String[0];  //To change body of implemented methods use Options | File Templates.
+        return new String[0];
       }
 
       public void setInitialContext(InitialRenderContext context) {

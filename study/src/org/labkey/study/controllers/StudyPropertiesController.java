@@ -63,6 +63,7 @@ public class StudyPropertiesController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends FormViewAction<StudyProperties>
     {
+        @Override
         public ModelAndView getView(StudyProperties studyPropertiesForm, boolean reshow, BindException errors)
         {
             StudyPropertiesTable table = getTableInfo();
@@ -86,15 +87,17 @@ public class StudyPropertiesController extends BaseStudyController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Edit Study Properties");
-            return root;
         }
 
+        @Override
         public void validateCommand(StudyProperties target, Errors errors) {}
 
+        @Override
         public boolean handlePost(StudyProperties studyPropertiesForm, BindException errors)
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
@@ -131,6 +134,7 @@ public class StudyPropertiesController extends BaseStudyController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(StudyProperties studyPropertiesForm)
         {
             return new ActionURL(StudyController.ManageStudyAction.class, getContainer());

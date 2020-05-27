@@ -22,6 +22,7 @@ public class QRowStar extends QFieldKey
 {
     static FieldKey _starFieldKey = new FieldKey(null,"*");
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("*");
@@ -33,6 +34,7 @@ public class QRowStar extends QFieldKey
         return _starFieldKey;
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("*");

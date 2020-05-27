@@ -74,6 +74,7 @@ abstract public class AbstractDataDefinedTable extends CustomPermissionsTable
         setTitle(tableName);
     }
 
+    @Override
     public CustomPermissionsTable init()
     {
         super.init();

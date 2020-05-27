@@ -38,6 +38,7 @@ public class DataFileSizeDisplayColumn extends SimpleDisplayColumn
         setCaption(name);
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         if (_data == null)

@@ -44,6 +44,7 @@ public class QParameter extends QExpr implements QueryService.ParameterDecl
         _defaultValue = def;
     }
 
+    @Override
     public String getName()
     {
         return _name;

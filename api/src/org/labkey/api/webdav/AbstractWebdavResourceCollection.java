@@ -60,33 +60,40 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
         return true;
     }
 
+    @Override
     public boolean isCollection()
     {
         return exists();
     }
 
+    @Override
     public boolean isFile()
     {
         return false;
     }
 
+    @Override
     public InputStream getInputStream(User user)
     {
         throw new IllegalStateException("Can't read from a collection");
     }
 
+    @Override
     public long copyFrom(User user, FileStream in)
     {
         throw new IllegalStateException("Can't write to a collection");
     }
 
+    @Override
     public long getContentLength()
     {
         return 0;
     }
 
+    @Override
     abstract public WebdavResource find(String name);
 
+    @Override
     public Collection<? extends WebdavResource> list()
     {
         Collection<String> names = listNames();
@@ -100,6 +107,7 @@ public abstract class AbstractWebdavResourceCollection extends AbstractWebdavRes
         return list;
     }
 
+    @Override
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
     {

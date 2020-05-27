@@ -151,6 +151,7 @@ public abstract class ScriptReport extends AbstractReport
         return new AjaxRunScriptReportView(this, mode);
     }
 
+    @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         // HACK: We shouldn't be using canEdit permissions to check during view. Rather we should new up
@@ -177,6 +178,7 @@ public abstract class ScriptReport extends AbstractReport
         return errors.isEmpty();
     }
 
+    @Override
     public boolean canShare(User user, Container container, List<ValidationError> errors)
     {
         super.canShare(user, container, errors);

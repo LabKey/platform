@@ -76,6 +76,7 @@ public class ExternalReport extends AbstractReport
     private static final String DATA_FILE_SUFFIX = "Data.tsv";
     private static final MimeMap mimeMap = new MimeMap();
 
+    @Override
     public void setDescriptor(ReportDescriptor descriptor)
     {
         super.setDescriptor(descriptor);
@@ -84,11 +85,13 @@ public class ExternalReport extends AbstractReport
         descriptor.setProperty(ReportDescriptor.Prop.schemaName, StudySchema.getInstance().getSchemaName());
     }
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Advanced Report";
@@ -180,6 +183,7 @@ public class ExternalReport extends AbstractReport
     }
 
 */
+    @Override
     public HttpView renderReport(ViewContext viewContext)
     {
         String ext = getFileExtension() == null ? "txt" : getFileExtension();

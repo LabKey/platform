@@ -48,6 +48,7 @@ public class StudyContainerFilter extends ContainerFilter
         return super.getDefaultCacheKey(_container, _user);
     }
 
+    @Override
     public Collection<GUID> getIds()
     {
         if (_ids == null)
@@ -77,6 +78,7 @@ public class StudyContainerFilter extends ContainerFilter
         return _ids;
     }
 
+    @Override
     public Type getType()
     {
         return null;

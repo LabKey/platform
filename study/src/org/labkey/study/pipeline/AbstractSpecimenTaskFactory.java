@@ -31,21 +31,25 @@ public abstract class AbstractSpecimenTaskFactory<FactoryType extends AbstractSp
         super(namespaceClass);
     }
 
+    @Override
     public List<FileType> getInputTypes()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<String> getProtocolActionNames()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public String getStatusName()
     {
         return "LOAD SPECIMENS";
     }
 
+    @Override
     public boolean isJobComplete(PipelineJob job)
     {
         return false;

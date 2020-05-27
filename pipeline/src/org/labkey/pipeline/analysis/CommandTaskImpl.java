@@ -109,6 +109,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             super(taskId);
         }
 
+        @Override
         protected void configure(CommandTaskFactorySettings settings)
         {
             super.configure(settings);
@@ -156,6 +157,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 _timeout = settings.getTimeout();
         }
 
+        @Override
         public CommandTaskImpl createTask(PipelineJob job)
         {
             return new CommandTaskImpl(job, this);
@@ -173,11 +175,13 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             }
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.singletonList(getProtocolActionName());
         }
 
+        @Override
         public String getStatusName()
         {
             return _statusName;
@@ -198,6 +202,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             _installPath = installPath;
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             // TODO: Safer way to do this.
@@ -280,6 +285,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             return (getOutputPaths().size() > 0);
         }
 
+        @Override
         public boolean isParticipant(PipelineJob job) throws IOException
         {
             if (!super.isParticipant(job))
@@ -309,6 +315,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             }
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             if (_actionableInput == null)
@@ -467,6 +474,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return f.getPath();
     }
 
+    @Override
     public String[] getProcessPaths(WorkDirectory.Function f, String key) throws IOException
     {
         if (f == WorkDirectory.Function.module)
@@ -662,6 +670,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         return path;
     }
 
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {

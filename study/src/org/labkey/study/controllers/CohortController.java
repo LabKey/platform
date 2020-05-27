@@ -138,6 +138,7 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class ManageCohortsAction extends FormViewAction<ManageCohortsForm>
     {
+        @Override
         public ModelAndView getView(ManageCohortsForm form, boolean reshow, BindException errors)
         {
             StudyManager.getInstance().assertCohortsViewable(getContainer(), HttpView.currentContext().getUser());
@@ -160,16 +161,18 @@ public class CohortController extends BaseStudyController
             return vbox;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageCohorts");
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Cohorts");
-            return root;
         }
 
+        @Override
         public void validateCommand(ManageCohortsForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(ManageCohortsForm form, BindException errors)
         {
             StudyImpl study = getStudyThrowIfNull();
@@ -235,6 +238,7 @@ public class CohortController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ManageCohortsForm form)
         {
             if (form.isReshow())
@@ -300,7 +304,7 @@ public class CohortController extends BaseStudyController
     private abstract class InsertUpdateAction extends FormViewAction<EditCohortForm>
     {
         protected abstract boolean isInsert();
-        protected abstract NavTree appendExtraNavTrail(NavTree root);
+        protected abstract NavTree addExtraNavTrail(NavTree root);
 
         protected String cohortLabel; // Will be null on insert
 
@@ -311,6 +315,7 @@ public class CohortController extends BaseStudyController
             return new CohortTable(schema, null);
         }
 
+        @Override
         public ModelAndView getView(EditCohortForm form, boolean reshow, BindException errors)
         {
             TableInfo table = getTableInfo();
@@ -369,16 +374,18 @@ public class CohortController extends BaseStudyController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            _appendManageStudy(root);
+            _addManageStudy(root);
             root.addChild("Manage Cohorts", new ActionURL(ManageCohortsAction.class, getContainer()));
-            appendExtraNavTrail(root);
-            return root;
+            addExtraNavTrail(root);
         }
 
+        @Override
         public void validateCommand(EditCohortForm form, Errors errors) {}
 
+        @Override
         public boolean handlePost(EditCohortForm form, BindException errors)
         {
             QueryUpdateForm updateForm = new QueryUpdateForm(getTableInfo(), getViewContext(), errors);
@@ -467,6 +474,7 @@ public class CohortController extends BaseStudyController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(EditCohortForm form)
         {
             return new ActionURL(ManageCohortsAction.class, getContainer());
@@ -485,12 +493,14 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class InsertAction extends InsertUpdateAction
     {
+        @Override
         protected boolean isInsert()
         {
             return true;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        @Override
+        protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Insert New Cohort");
             return root;
@@ -500,12 +510,14 @@ public class CohortController extends BaseStudyController
     @RequiresPermission(AdminPermission.class)
     public class UpdateAction extends InsertAction
     {
+        @Override
         protected boolean isInsert()
         {
             return false;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        @Override
+        protected NavTree addExtraNavTrail(NavTree root)
         {
             root.addChild("Update Cohort: " + cohortLabel);
             return root;

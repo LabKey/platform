@@ -162,6 +162,7 @@ public class SecurityController extends SpringActionController
 
     public static class SecurityUrlsImpl implements SecurityUrls
     {
+        @Override
         public ActionURL getManageGroupURL(Container container, String groupName, @Nullable URLHelper returnUrl)
         {
             ActionURL url = new ActionURL(GroupAction.class, container);
@@ -170,11 +171,13 @@ public class SecurityController extends SpringActionController
             return url.addParameter("group", groupName);
         }
 
+        @Override
         public ActionURL getManageGroupURL(Container container, String groupName)
         {
             return getManageGroupURL(container, groupName, null);
         }
 
+        @Override
         public ActionURL getGroupPermissionURL(Container container, int id, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(GroupPermissionAction.class, container);
@@ -184,16 +187,19 @@ public class SecurityController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getGroupPermissionURL(Container container, int id)
         {
             return getGroupPermissionURL(container, id, null);
         }
 
+        @Override
         public ActionURL getPermissionsURL(Container container)
         {
             return getPermissionsURL(container, null);
         }
 
+        @Override
         public ActionURL getPermissionsURL(Container container, @Nullable URLHelper returnURL)
         {
             ActionURL url = new ActionURL(PermissionsAction.class, container);
@@ -212,11 +218,13 @@ public class SecurityController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getContainerURL(Container container)
         {
             return new ActionURL(PermissionsAction.class, container);
         }
 
+        @Override
         public String getCompleteUserURLPrefix(Container container)
         {
             ActionURL url = new ActionURL(CompleteUserAction.class, container);
@@ -224,6 +232,7 @@ public class SecurityController extends SpringActionController
             return url.getLocalURIString();
         }
 
+        @Override
         public String getCompleteUserReadURLPrefix(Container container)
         {
             ActionURL url = new ActionURL(CompleteUserReadAction.class, container);
@@ -231,11 +240,13 @@ public class SecurityController extends SpringActionController
             return url.getLocalURIString();
         }
 
+        @Override
         public ActionURL getBeginURL(Container container)
         {
             return new ActionURL(BeginAction.class, container);
         }
 
+        @Override
         public ActionURL getShowRegistrationEmailURL(Container container, ValidEmail email, String mailPrefix)
         {
             ActionURL url = new ActionURL(ShowRegistrationEmailAction.class, container);
@@ -251,6 +262,7 @@ public class SecurityController extends SpringActionController
             return new ActionURL(AddUsersAction.class, ContainerManager.getRoot());
         }
 
+        @Override
         public ActionURL getFolderAccessURL(Container container)
         {
             return new ActionURL(FolderAccessAction.class, container);
@@ -361,6 +373,7 @@ public class SecurityController extends SpringActionController
     @ActionNames("permissions,project")
     public class PermissionsAction extends SimpleViewAction<PermissionsForm>
     {
+        @Override
         public ModelAndView getView(PermissionsForm form, BindException errors)
         {
             String resource = getContainer().getId();
@@ -375,9 +388,9 @@ public class SecurityController extends SpringActionController
             return permsView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -475,8 +488,10 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class StandardDeleteGroupAction extends FormHandlerAction<GroupForm>
     {
+        @Override
         public void validateCommand(GroupForm form, Errors errors) {}
 
+        @Override
         public boolean handlePost(GroupForm form, BindException errors)
         {
             try
@@ -497,6 +512,7 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(GroupForm form)
         {
             return new ActionURL(PermissionsAction.class, getContainer());
@@ -617,12 +633,11 @@ public class SecurityController extends SpringActionController
     }
 
 
-    private NavTree addGroupNavTrail(NavTree root, Group group)
+    private void addGroupNavTrail(NavTree root, Group group)
     {
         root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
         root.addChild("Manage Group");
         root.addChild(group.getName() + " Group");
-        return root;
     }
 
     private ModelAndView renderGroup(Group group, BindException errors, List<String> messages)
@@ -681,10 +696,10 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("globalGroups");
-            return addGroupNavTrail(root, _group);
+            addGroupNavTrail(root, _group);
         }
 
         @Override
@@ -966,6 +981,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class GroupExportAction extends ExportAction<GroupForm>
     {
+        @Override
         public void export(GroupForm form, HttpServletResponse response, BindException errors) throws Exception
         {
             String group = trimToNull(form.getGroup());
@@ -1040,6 +1056,7 @@ public class SecurityController extends SpringActionController
     {
         private Group _requestedGroup;
 
+        @Override
         public ModelAndView getView(GroupAccessForm form, BindException errors)
         {
             _requestedGroup = form.getGroupFor(getContainer());
@@ -1053,12 +1070,12 @@ public class SecurityController extends SpringActionController
             return new SecurityAccessView(getContainer(), getUser(), _requestedGroup, form.getShowAll());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Group Permissions");
             root.addChild(_requestedGroup == null || _requestedGroup.isUsers() ? "Access Details: Site Users" : "Access Details: " + _requestedGroup.getName());
-            return root;
         }
     }
 
@@ -1072,6 +1089,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdatePermissionsAction extends FormHandlerAction
     {
+        @Override
         public void validateCommand(Object target, Errors errors) {}
 
         private void addAuditEvent(User user, String comment, int groupId)
@@ -1116,6 +1134,7 @@ public class SecurityController extends SpringActionController
             }
         }
 
+        @Override
         public boolean handlePost(Object o, BindException errors)
         {
             ViewContext ctx = getViewContext();
@@ -1201,6 +1220,7 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             return new ActionURL("Security", getViewContext().getRequest().getParameter("view"), getContainer());
@@ -1285,12 +1305,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("addUsers");
             root.addChild("Site Users", PageFlowUtil.urlProvider(UserUrls.class).getSiteUsersURL());
             root.addChild("Add Users");
-            return root;
         }
 
         @Override
@@ -1466,6 +1485,7 @@ public class SecurityController extends SpringActionController
     {
         protected abstract SecurityMessage createMessage(EmailForm form);
 
+        @Override
         public ModelAndView getView(EmailForm form, BindException errors) throws Exception
         {
             Writer out = getViewContext().getResponse().getWriter();
@@ -1499,15 +1519,16 @@ public class SecurityController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class ShowRegistrationEmailAction extends AbstractEmailAction
     {
+        @Override
         protected SecurityMessage createMessage(EmailForm form)
         {
             // Site admins can see the email for everyone, but project admins can only see it for users they added
@@ -1539,6 +1560,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(UserManagementPermission.class)
     public class ShowResetEmailAction extends AbstractEmailAction
     {
+        @Override
         protected SecurityMessage createMessage(EmailForm form)
         {
             return SecurityManager.getResetMessage(false);
@@ -1855,11 +1877,11 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Permissions", new ActionURL(PermissionsAction.class, getContainer()));
             root.addChild("Folder Permissions");
-            return root.addChild("Folder Access Details");
+            root.addChild("Folder Access Details");
         }
     }
 
@@ -1914,10 +1936,9 @@ public class SecurityController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("API Keys");
-            return root;
         }
     }
 

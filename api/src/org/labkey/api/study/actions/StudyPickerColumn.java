@@ -60,11 +60,13 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         return super.getValue(ctx);
     }
 
+    @Override
     public Object getValue(RenderContext ctx)
     {
         return calculateValue(ctx);
     }
 
+    @Override
     public void renderDetailsCaptionCell(RenderContext ctx, Writer out, @Nullable String cls) throws IOException
     {
         if (null == _caption)
@@ -98,6 +100,7 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
         this.renderInputHtml(ctx, out, getValue(ctx));
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         Set<Study> studies = AssayPublishService.get().getValidPublishTargets(ctx.getViewContext().getUser(), ReadPermission.class);
@@ -125,11 +128,13 @@ public class StudyPickerColumn extends UploadWizardAction.InputDisplayColumn
             out.write("<input type=\"hidden\" name=\"" +_inputName + "\" value=\"" + PageFlowUtil.filter(value) + "\">");
     }
 
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _colInfo;
     }
 
+    @Override
     public boolean isQueryColumn()
     {
         return true;

@@ -81,6 +81,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
     }
 
+    @Override
     @NotNull
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer) throws ExperimentException
     {

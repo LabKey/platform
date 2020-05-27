@@ -66,7 +66,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 		return null;
 	}
 
-	public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
+	@Override
+    public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
 	{
 		if (!QUERY_NAME.equalsIgnoreCase(name))
 			return null;
@@ -92,12 +93,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			setPolicy(_c.getPolicy());
 		}
 		
-		public boolean exists()
+		@Override
+        public boolean exists()
 		{
 			return true;
 		}
 
-		public WebdavResource find(String name)
+		@Override
+        public WebdavResource find(String name)
 		{
 			DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 			QuerySchema s  = folderSchema.getSchema(name);
@@ -106,7 +109,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return null;
 		}
 
-		public Collection<String> listNames()
+		@Override
+        public Collection<String> listNames()
 		{
 			if (_schemaNames == null)
 			{
@@ -121,12 +125,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return _schemaNames;
 		}
 
-		public long getCreated()
+		@Override
+        public long getCreated()
 		{
             return Long.MIN_VALUE;
 		}
 
-		public long getLastModified()
+		@Override
+        public long getLastModified()
 		{
             return Long.MIN_VALUE;
 		}
@@ -144,12 +150,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			setPolicy(_parent._c.getPolicy());
 		}
 		
-		public boolean exists()
+		@Override
+        public boolean exists()
 		{
 			return true;
 		}
 
-		public WebdavResource find(String name)
+		@Override
+        public WebdavResource find(String name)
 		{
 			if (!name.endsWith(".sql"))
 				return null;
@@ -160,7 +168,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return new SqlResource(this, q);
 		}
 
-		public Collection<String> listNames()
+		@Override
+        public Collection<String> listNames()
 		{
 			Map<String, QueryDefinition> m = QueryService.get().getQueryDefs(null, _parent._c, getName());
 			ArrayList<String> list = new ArrayList<>(m.size());
@@ -169,12 +178,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return list;
 		}
 
-		public long getCreated()
+		@Override
+        public long getCreated()
 		{
             return Long.MIN_VALUE;
 		}
 
-		public long getLastModified()
+		@Override
+        public long getLastModified()
 		{
             return Long.MIN_VALUE;
 		}
@@ -197,12 +208,14 @@ public class QueryWebdavProvider implements WebdavService.Provider
 				_qdef = ((QueryDefinitionImpl)_q).getQueryDef();
 		}
 
-		public boolean exists()
+		@Override
+        public boolean exists()
 		{
 			return true;
 		}
 
-		public long getCreated()
+		@Override
+        public long getCreated()
 		{
 			if (_qdef != null && _qdef.getCreated() != null)
 				return _qdef.getCreated().getTime();
@@ -210,7 +223,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return 0;
 		}
 
-		public long getLastModified()
+		@Override
+        public long getLastModified()
 		{
 			if (_qdef != null && _qdef.getModified() != null)
 				return _qdef.getModified().getTime();
@@ -244,13 +258,15 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return "W/\"" + sql.length() + "-" + sql.hashCode() + "\"";
 		}
 
-		public InputStream getInputStream(User user)
+		@Override
+        public InputStream getInputStream(User user)
         {
 			String sql = StringUtils.trimToEmpty(_q.getSql());
 			return new ByteArrayInputStream(sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET));
 		}
 
-		public long copyFrom(User user, FileStream in) throws IOException
+		@Override
+        public long copyFrom(User user, FileStream in) throws IOException
 		{
 			String sql = PageFlowUtil.getStreamContentsAsString(in.openInputStream());
 			_q.setSql(sql);
@@ -265,7 +281,8 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			return getContentLength();
 		}
 
-		public long getContentLength()
+		@Override
+        public long getContentLength()
         {
 			String sql = StringUtils.trimToEmpty(_q.getSql());
 			return sql.getBytes(StringUtilsLabKey.DEFAULT_CHARSET).length;

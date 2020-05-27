@@ -38,6 +38,7 @@ public class LinkButton extends Composite
         else
             w = new ImageButton(html, new ClickListener()
                 {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         WindowUtil.setLocation(link);

@@ -62,11 +62,13 @@ public class ListQueryView extends QueryView
         disableContainerFilterSelection();
     }
 
+    @Override
     protected boolean canDelete()
     {
         return super.canDelete() && _list.getAllowDelete();
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);

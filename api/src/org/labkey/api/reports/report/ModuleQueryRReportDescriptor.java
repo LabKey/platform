@@ -67,6 +67,7 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
         return new ModuleRReportResource(this, sourceFile);
     }
 
+    @Override
     public String getDefaultReportType(String reportKey)
     {
         //look in report type map

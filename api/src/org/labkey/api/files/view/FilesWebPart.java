@@ -499,6 +499,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             super(PART_NAME, true, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new FilesWebPart(portalCtx, webPart);

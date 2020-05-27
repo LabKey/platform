@@ -58,6 +58,7 @@ public class VirtualTable<SchemaType extends UserSchema> extends AbstractContain
         this(schema, name, null);
     }
 
+    @Override
     @NotNull
     public SQLFragment getFromSQL()
     {

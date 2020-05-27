@@ -33,6 +33,7 @@ public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
     /**
      * Make sure input form type is connected.
      */
+    @Override
     protected String getCommandClassMethodName()
     {
         return "render";
@@ -70,6 +71,7 @@ public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
      */
     abstract public void render(FORM form, BindException errors, PrintWriter out) throws Exception;
 
+    @Override
     public ModelAndView getView(FORM form, BindException errors) throws Exception
     {
         // Set up the response
@@ -86,11 +88,11 @@ public abstract class SimpleStreamAction<FORM> extends SimpleViewAction<FORM>
     }
 
     /**
-     * Override base class to do nothing for nave trail, since this action
+     * Override base class to do nothing for nav trail, since this action
      * type takes care of all of its own rendering.
      */
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
-        return null;  // No nav trail.
     }
 }

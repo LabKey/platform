@@ -308,6 +308,7 @@ public class ReportManager implements DatasetManager.DatasetListener
         void setReports(Collection<Report> reports);
     }
 
+    @Override
     public void datasetChanged(final Dataset def)
     {
         if (def != null)

@@ -149,6 +149,7 @@ public class MultiValuedDisplayColumn extends DisplayColumnDecorator implements 
         // TODO: Call super in empty values case?
     }
 
+    @Override
     public void renderDetailsData(RenderContext ctx, Writer out) throws IOException
     {
         renderGridCellContents(ctx, out);

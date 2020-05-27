@@ -35,7 +35,6 @@ import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.roles.EditorRole;
-import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RestrictedReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -103,6 +102,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             setHelpTopic(new HelpTopic("studySecurity"));
@@ -110,19 +110,22 @@ public class SecurityController extends SpringActionController
             return new Overview(study);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Security");
+            root.addChild("Study Security");
         }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class SaveStudyPermissionsAction extends FormHandlerAction
     {
+        @Override
         public void validateCommand(Object target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(Object o, BindException errors)
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
@@ -144,6 +147,7 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             String redirect = (String)getViewContext().get("redirect");
@@ -190,6 +194,7 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ExportSecurityPolicyAction extends ExportAction<Object>
     {
+        @Override
         public void export(Object form, HttpServletResponse response, BindException errors)
         {
             try
@@ -223,6 +228,7 @@ public class SecurityController extends SpringActionController
     {
         private String _messageText = null;
 
+        @Override
         public ModelAndView getView(ReturnUrlForm form, boolean reshow, BindException errors)
         {
             if (errors.hasErrors())
@@ -244,16 +250,18 @@ public class SecurityController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Study Policy Import");
+            root.addChild("Study Policy Import");
         }
 
+        @Override
         public void validateCommand(ReturnUrlForm form, Errors errors)
         {
-
         }
 
+        @Override
         public boolean handlePost(ReturnUrlForm form, BindException errors)
         {
             List<String> messages = new ArrayList<>();
@@ -329,6 +337,7 @@ public class SecurityController extends SpringActionController
             }
         }
 
+        @Override
         public ActionURL getSuccessURL(ReturnUrlForm form)
         {
             ActionURL returnUrl = form.getReturnActionURL();
@@ -345,10 +354,12 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ApplyDatasetPermissionsAction extends FormHandlerAction
     {
+        @Override
         public void validateCommand(Object target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(Object o, BindException errors)
         {
             Study study = BaseStudyController.getStudyThrowIfNull(getContainer());
@@ -434,6 +445,7 @@ public class SecurityController extends SpringActionController
             return policy;
         }
 
+        @Override
         public ActionURL getSuccessURL(Object o)
         {
             String redirect = (String) getViewContext().get("redirect");
@@ -453,6 +465,7 @@ public class SecurityController extends SpringActionController
             _bean = bean;
         }
 
+        @Override
         public List<NavTree> getTabList()
         {
             List<NavTree> tabs = new ArrayList<>();
@@ -462,6 +475,7 @@ public class SecurityController extends SpringActionController
             return tabs;
         }
 
+        @Override
         public HttpView getTabView(String tabId)
         {
             if (TAB_STUDY.equals(tabId))
@@ -483,16 +497,19 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class ReportPermissionsAction extends FormViewAction<PermissionsForm>
     {
+        @Override
         public ModelAndView getView(PermissionsForm form, boolean reshow, BindException errors)
         {
             setHelpTopic(new HelpTopic("reportPermissions"));
             return new ReportPermissionsTabStrip(form);
         }
 
+        @Override
         public void validateCommand(PermissionsForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(PermissionsForm form, BindException errors)
         {
             Report report = null;
@@ -532,12 +549,14 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(PermissionsForm form)
         {
             return form.getReturnActionURL();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             try
             {
@@ -549,9 +568,8 @@ public class SecurityController extends SpringActionController
             }
             catch (Exception e)
             {
-                return root.addChild("Report and View Permissions");
             }
-            return root.addChild("Report and View Permissions");
+            root.addChild("Report and View Permissions");
         }
     }
 
@@ -578,10 +596,12 @@ public class SecurityController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class StudySecurityAction extends FormHandlerAction<StudySecurityForm>
     {
+        @Override
         public void validateCommand(StudySecurityForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(StudySecurityForm form, BindException errors)
         {
             StudyImpl study = BaseStudyController.getStudy(getContainer());
@@ -594,6 +614,7 @@ public class SecurityController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(StudySecurityForm studySecurityForm)
         {
             String redirect = (String) getViewContext().get("redirect");
@@ -772,6 +793,7 @@ public class SecurityController extends SpringActionController
 
     public static class StudySecurityViewFactory implements SecurityManager.ViewFactory
     {
+        @Override
         public HttpView createView(ViewContext context)
         {
             if (null != BaseStudyController.getStudy(context.getContainer()))

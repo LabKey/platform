@@ -41,11 +41,13 @@ public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
         super(formClass);
     }
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "export";
     }
 
+    @Override
     public final ModelAndView getView(FORM form, BindException errors) throws Exception
     {
         try
@@ -59,9 +61,9 @@ public abstract class ExportAction<FORM> extends SimpleViewAction<FORM>
         return null;
     }
 
-    public final NavTree appendNavTrail(NavTree root)
+    @Override
+    public final void addNavTrail(NavTree root)
     {
-        return null;
     }
 
     /** Do the real work of streaming the file back to the browser */

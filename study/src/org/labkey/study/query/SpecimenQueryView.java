@@ -920,6 +920,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _showHistoryLinks = showHistoryLinks;
     }
 
+    @Override
     public void setShowRecordSelectors(boolean showRecordSelectors)
     {
         //assert !(showRecordSelectors && !_detailsView) : "Only details view may show record selectors";

@@ -793,7 +793,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     @Override
     @Nullable
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         if (null != _protocol)
         {
@@ -806,9 +806,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 finalChild = finalChild + ": " + _stepDescription;
             }
             root.addChild(finalChild, helper);
-            return root;
         }
-        return null;
     }
 
     protected DataRegion createDataRegionForInsert(TableInfo baseTable, String lsidCol, List<? extends DomainProperty> domainProperties, Map<String, String> columnNameToPropertyName)

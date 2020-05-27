@@ -41,6 +41,7 @@ public class StudyListWebPartFactory extends AlwaysAvailableWebPartFactory
     }
 
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView view;

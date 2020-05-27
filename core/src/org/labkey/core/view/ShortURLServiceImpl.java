@@ -73,6 +73,7 @@ public class ShortURLServiceImpl implements ShortURLService
         return new SqlSelector(CoreSchema.getInstance().getSchema(), sql).getArrayList(ShortURLRecord.class);
     }
 
+    @Override
     public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user) throws ValidationException
     {
         SecurityPolicy policy = SecurityPolicyManager.getPolicy(record);
@@ -153,6 +154,7 @@ public class ShortURLServiceImpl implements ShortURLService
         }
     }
 
+    @Override
     public String validateShortURL(String shortURL) throws ValidationException
     {
         if (shortURL == null || shortURL.trim().isEmpty())
@@ -174,12 +176,14 @@ public class ShortURLServiceImpl implements ShortURLService
                                  new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), null).getObject(ShortURLRecord.class);
     }
 
+    @Override
     public void addListener(ShortURLListener listener)
     {
         _listeners.add(listener);
     }
 
 
+    @Override
     public void removeListener(ShortURLListener listener)
     {
         _listeners.remove(listener);

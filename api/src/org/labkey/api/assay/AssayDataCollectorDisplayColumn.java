@@ -53,16 +53,19 @@ public class AssayDataCollectorDisplayColumn extends SimpleDisplayColumn
         out.write(" *");
     }
 
+    @Override
     public boolean isEditable()
     {
         return true;
     }
     
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return _col;
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         HttpView descriptionView = _form.getProvider().getDataDescriptionView(_form);

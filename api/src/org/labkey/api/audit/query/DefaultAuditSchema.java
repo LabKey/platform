@@ -37,11 +37,13 @@ public class DefaultAuditSchema extends UserSchema
         super("default", null, user, container, CoreSchema.getInstance().getSchema());
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return Collections.singleton("default");
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         return null;

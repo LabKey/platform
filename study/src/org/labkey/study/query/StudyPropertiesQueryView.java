@@ -43,16 +43,19 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
         setShadeAlternatingRows(false);
     }
 
+    @Override
     protected String getQueryName(ExtensibleStudyEntity.DomainInfo domainInfo)
     {
         return QUERY_NAME;
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         // no buttons
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
@@ -73,6 +76,7 @@ public class StudyPropertiesQueryView extends ExtensibleObjectQueryView
             setWidth(null);
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             ActionURL actionURL = new ActionURL(StudyPropertiesController.UpdateAction.class, container);

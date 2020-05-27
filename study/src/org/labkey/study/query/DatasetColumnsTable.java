@@ -48,6 +48,7 @@ public class DatasetColumnsTable extends FilteredTable<StudyQuerySchema>
         var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.INTEGER);
         datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new DatasetsTable(schema, getLookupContainerFilter());

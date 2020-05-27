@@ -33,6 +33,7 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
 {
     public static class Factory extends AbstractFactory
     {
+        @Override
         public WorkDirectory createWorkDirectory(String jobId, FileAnalysisJobSupport support, boolean useDeterministicFolderPath, Logger log) throws IOException
         {
             File dir = FT_WORK_DIR.newFile(support.getAnalysisDirectory(),
@@ -47,6 +48,7 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
         super(support, factory, dir, reuseExistingDirectory, log);
     }
 
+    @Override
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
         if (!forceCopy)
@@ -54,6 +56,7 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
         return copyInputFile(fileInput);
     }
 
+    @Override
     public File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException
     {
         if (!forceCopy)
@@ -62,6 +65,7 @@ public class WorkDirectoryLocal extends AbstractWorkDirectory
         return copyInputFile(fileInput, fileWork);
     }
 
+    @Override
     protected CopyingResource createCopyingLock()
     {
         return new SimpleCopyingResource();

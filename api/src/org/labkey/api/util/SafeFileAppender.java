@@ -45,6 +45,7 @@ public class SafeFileAppender extends AppenderSkeleton
         NetworkDrive.exists(_file);
     }
 
+    @Override
     public void append(LoggingEvent loggingEvent)
     {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
@@ -70,11 +71,13 @@ public class SafeFileAppender extends AppenderSkeleton
         }
     }
 
+    @Override
     public void close()
     {
         // Nothing to do, since nothing stays open.
     }
 
+    @Override
     public boolean requiresLayout()
     {
         return true;

@@ -102,6 +102,7 @@ public class MothershipSchema extends UserSchema
     {
         DefaultSchema.registerProvider(SCHEMA_NAME, new DefaultSchema.SchemaProvider(module)
         {
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new MothershipSchema(schema.getUser(), schema.getContainer());
@@ -109,12 +110,14 @@ public class MothershipSchema extends UserSchema
         });
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return TABLE_NAMES;
     }
 
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         if (name.equalsIgnoreCase(SERVER_INSTALLATIONS_TABLE_NAME))
@@ -185,6 +188,7 @@ public class MothershipSchema extends UserSchema
 
         result.getMutableColumn("ServerInstallationId").setFk(new LookupForeignKey("ServerInstallationId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return createServerInstallationTable(cf);

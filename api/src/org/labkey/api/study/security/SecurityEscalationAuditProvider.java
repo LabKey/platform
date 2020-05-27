@@ -213,6 +213,7 @@ public abstract class SecurityEscalationAuditProvider extends AbstractAuditTypeP
          * @return The same value as its parent Audit Log's value for {@link SecurityEscalationAuditProvider#getEventType()}
          * @see SecurityEscalationAuditProvider#getEventType()
          */
+        @Override
         public abstract String getEventType();
 
         public Date getStartTime() {

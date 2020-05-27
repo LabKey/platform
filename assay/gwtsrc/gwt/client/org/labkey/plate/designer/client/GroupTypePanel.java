@@ -113,6 +113,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         _createButton.setEnabled(false);
         _createButton.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent event)
             {
                 _view.createWellGroup(_newGroupFieldValue, _type);
@@ -122,6 +123,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
         _multiCreateButton = new ImageButton("Create multiple...");
         _multiCreateButton.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent event)
             {
                 String defaultBaseName = _newGroupFieldValue;
@@ -198,6 +200,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             ImageButton createButton = new ImageButton("Create");
             createButton.addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     try
@@ -210,6 +213,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
                         DeferredCommand.addCommand(new IncrementalCommand()
                         {
                             private int _created = 0;
+                            @Override
                             public boolean execute()
                             {
                                 String groupName = _baseName + " " + (_created + 1);
@@ -240,6 +244,7 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
             ImageButton cancelButton = new ImageButton("Cancel");
             cancelButton.addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     MultiCreatePopupPanel.this.hide();
@@ -277,19 +282,23 @@ public class GroupTypePanel extends ScrollPanel implements GroupChangeListener
     }
 
 
+    @Override
     public void activeGroupChanged(GWTWellGroup previouslyActive, GWTWellGroup currentlyActive)
     {
     }
 
+    @Override
     public void activeGroupTypeChanged(String type)
     {
     }
 
+    @Override
     public void groupAdded(GWTWellGroup group)
     {
         redraw();
     }
 
+    @Override
     public void groupRemoved(GWTWellGroup group)
     {
         redraw();

@@ -147,6 +147,7 @@ public class BooleanFormat extends Format
      * @param pos           Position to append at
      * @return              The string buffer passed in
      */
+    @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos)
     {
         assert null != toAppendTo;
@@ -188,6 +189,7 @@ public class BooleanFormat extends Format
      * @return A parsed Boolean
      * @throws ParseException Thrown if the source cannot be parsed as a Boolean
      */
+    @Override
     public Boolean parseObject(String source) throws ParseException
     {
         return (Boolean)(super.parseObject(source));
@@ -202,6 +204,7 @@ public class BooleanFormat extends Format
      * @param pos   The position at which to start
      * @return      A corresponding Boolean for source or null
      */
+    @Override
     public Boolean parseObject(String source, ParsePosition pos)
     {
         if(null == source || source.length() == 0 || !Character.isLetterOrDigit(source.codePointAt(0)))

@@ -96,14 +96,12 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
                                                              int[] dataObjectIds, String caption, String title);
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         ActionURL assayListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getContainer());
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getContainer(), _protocol);
         root.addChild("Assay List", assayListURL);
         root.addChild(_protocol.getName() + " Runs", runListURL);
         root.addChild("Graph Selected Specimens");
-
-        return root;
     }
 }

@@ -57,6 +57,7 @@ public class TypeDisplayColumn extends DataColumn
         keys.add(LSID_FIELD_KEY);
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String providerName = (String)getColumnInfo().getValue(ctx);

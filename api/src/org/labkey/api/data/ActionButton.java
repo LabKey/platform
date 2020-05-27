@@ -184,6 +184,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _eval(_actionName, ctx);
     }
 
+    @Override
     public String getCaption(RenderContext ctx)
     {
         if (null == _caption)
@@ -191,6 +192,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         return _eval(_caption, ctx);
     }
 
+    @Override
     public String getCaption()
     {
         if (null != _caption)
@@ -200,6 +202,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         return null;    
     }
 
+    @Override
     public void setCaption(String caption)
     {
         checkLocked();
@@ -379,6 +382,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         return this;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
@@ -446,6 +450,7 @@ public class ActionButton extends DisplayElement implements Cloneable
         out.write(button.toString());
     }
 
+    @Override
     public ActionButton clone()
     {
         try

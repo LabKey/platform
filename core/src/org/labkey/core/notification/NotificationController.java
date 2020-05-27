@@ -227,9 +227,9 @@ public class NotificationController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("User Notifications");
+            root.addChild("User Notifications");
         }
     }
 

@@ -59,6 +59,7 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
     protected int _runRowId;
     protected ExpProtocol _protocol;
 
+    @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
         _runRowId = form.getRowId();

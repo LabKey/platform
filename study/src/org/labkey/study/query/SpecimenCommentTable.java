@@ -46,6 +46,7 @@ public class SpecimenCommentTable extends FilteredTable<StudyQuerySchema>
                 AliasedColumn globalUniqueIdColumn = new AliasedColumn(this, "GlobalUniqueId", _rootTable.getColumn("GlobalUniqueId"));
                 globalUniqueIdColumn.setFk(new LookupForeignKey(null, (String) null, "GlobalUniqueId", "GlobalUniqueId")
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return new SpecimenDetailTable(schema, cf);

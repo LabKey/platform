@@ -203,6 +203,7 @@ public class QueryForeignKey extends AbstractForeignKey
             return this;
         }
 
+        @Override
         public ForeignKey build()
         {
             if (null == lookupSchemaName && null == targetSchema)

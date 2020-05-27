@@ -36,21 +36,25 @@ public abstract class AbstractDatasetImportTaskFactory<FactoryType extends Abstr
         super(namspaceClass, name);
     }
 
+    @Override
     public List<FileType> getInputTypes()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<String> getProtocolActionNames()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public String getStatusName()
     {
         return "LOAD DATASETS";
     }
 
+    @Override
     public boolean isJobComplete(PipelineJob job)
     {
         return false;

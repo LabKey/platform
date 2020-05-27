@@ -74,27 +74,32 @@ public class AnalyticsController extends SpringActionController
     @AdminConsoleAction(AdminOperationsPermission.class)
     public class BeginAction extends FormViewAction<SettingsForm>
     {
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Analytics", null);
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Analytics", null);
         }
 
+        @Override
         public void validateCommand(SettingsForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(SettingsForm settingsForm, boolean reshow, BindException errors)
         {
             getPageConfig().setAllowTrackingScript(PageConfig.TrueFalse.False);
             return new JspView<>("/org/labkey/core/analytics/analyticsSettings.jsp", settingsForm, errors);
         }
 
+        @Override
         public boolean handlePost(SettingsForm settingsForm, BindException errors)
         {
             AnalyticsServiceImpl.get().setSettings(settingsForm.ff_trackingStatus, settingsForm.ff_accountId, settingsForm.ff_trackingScript, getUser());
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(SettingsForm settingsForm)
         {
             return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();

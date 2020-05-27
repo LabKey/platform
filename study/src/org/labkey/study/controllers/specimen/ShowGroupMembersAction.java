@@ -50,10 +50,12 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     private SpecimenRequestActor _actor;
     private LocationImpl _location;
 
+    @Override
     public void validateCommand(UpdateGroupForm target, Errors errors)
     {
     }
 
+    @Override
     public ModelAndView getView(UpdateGroupForm form, boolean reshow, BindException errors)
     {
         SpecimenRequestActor actor = getActor(form);
@@ -68,6 +70,7 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
                 new GroupMembersBean(actor, location, members, form.getReturnUrl()), errors);
     }
 
+    @Override
     public boolean handlePost(UpdateGroupForm form, BindException errors) throws Exception
     {
         String[] emailsToDelete = form.getDelete();
@@ -140,14 +143,16 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
     }
 
 
+    @Override
     public ActionURL getSuccessURL(UpdateGroupForm form)
     {
         return form.getReturnActionURL(new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()));
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
-        BaseStudyController._appendManageStudy(root, getContainer(), getUser());
+        BaseStudyController._addManageStudy(root, getContainer(), getUser());
 
         if (_location != null)
             root.addChild("Manage Actors", new ActionURL(SpecimenController.ManageActorsAction.class, getContainer()).addParameter("showMemberSites", _actor.getRowId()));
@@ -159,8 +164,6 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
             title += ", " + _location.getLabel();
 
         root.addChild(title);
-
-        return root;
     }
 
     private SpecimenRequestActor getActor(UpdateGroupForm form)

@@ -83,18 +83,14 @@ import java.util.TreeMap;
 import static org.labkey.api.util.DOM.A;
 import static org.labkey.api.util.DOM.Attribute.href;
 import static org.labkey.api.util.DOM.B;
-import static org.labkey.api.util.DOM.BR;
 import static org.labkey.api.util.DOM.CODE;
 import static org.labkey.api.util.DOM.DIV;
 import static org.labkey.api.util.DOM.H2;
-import static org.labkey.api.util.DOM.LI;
-import static org.labkey.api.util.DOM.SPAN;
 import static org.labkey.api.util.DOM.TABLE;
 import static org.labkey.api.util.DOM.TBODY;
 import static org.labkey.api.util.DOM.TD;
 import static org.labkey.api.util.DOM.THEAD;
 import static org.labkey.api.util.DOM.TR;
-import static org.labkey.api.util.DOM.UL;
 import static org.labkey.api.util.DOM.at;
 import static org.labkey.api.util.DOM.cl;
 
@@ -123,6 +119,7 @@ public class TypesController extends SpringActionController
 
         public BeginAction(ViewContext c){setViewContext(c);}
 
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             JspView jspView = new JspView("/org/labkey/experiment/types/begin.jsp");
@@ -130,11 +127,11 @@ public class TypesController extends SpringActionController
             return jspView;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Experiment", new ActionURL(ExperimentController.BeginAction.class, getContainer()));
             root.addChild("Types", new ActionURL(TypesController.BeginAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -195,9 +192,8 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
 
@@ -207,10 +203,12 @@ public class TypesController extends SpringActionController
     {
         ModelAndView successView = null;
         
+        @Override
         public void validateCommand(ImportVocabularyForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(ImportVocabularyForm form, boolean reshow, BindException errors)
         {
             HttpView view = new JspView<>("/org/labkey/experiment/types/importVocabulary.jsp",form);
@@ -218,6 +216,7 @@ public class TypesController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(ImportVocabularyForm o, BindException errors) throws Exception
         {
             Map<String, MultipartFile> fileMap = getFileMap();
@@ -252,16 +251,17 @@ public class TypesController extends SpringActionController
             return successView;
         }
 
+        @Override
         public ActionURL getSuccessURL(ImportVocabularyForm o)
         {
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Import Vocabulary", new ActionURL(ImportVocabularyAction.class, getContainer()));
-            return root;
         }
     }
     
@@ -289,6 +289,7 @@ public class TypesController extends SpringActionController
 
         public TypesAction(ViewContext c){setViewContext(c);}
 
+        @Override
         public ModelAndView getView(TypesForm form, BindException errors)
         {
             Container container = getContainer();
@@ -322,11 +323,11 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/types.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Defined Types", new ActionURL(TypesAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -366,6 +367,7 @@ public class TypesController extends SpringActionController
         public DomainKind kind;
         public List<PropertyDescriptor> properties = Collections.emptyList();
 
+        @Override
         public ModelAndView getView(TypeForm form, BindException errors)
         {
             // UNDONE: verify container against Types table when we have a Types table
@@ -383,11 +385,11 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/typeDetails.jsp", this);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            (new TypesAction(getViewContext())).appendNavTrail(root);
+            (new TypesAction(getViewContext())).addNavTrail(root);
             root.addChild("Type -- " + StringUtils.defaultIfEmpty(dd != null ? dd.getName() : typeName,"unspecified"), new ActionURL(TypeDetailsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -406,6 +408,7 @@ public class TypesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public static class FindConceptsAction extends SimpleViewAction<SearchForm>
     {
+        @Override
         public ModelAndView getView(SearchForm form, BindException errors)
         {
             DbSchema expSchema = ExperimentService.get().getSchema();
@@ -537,11 +540,11 @@ public class TypesController extends SpringActionController
             return new JspView<>("/org/labkey/experiment/types/findConcepts.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            (new BeginAction(getViewContext())).appendNavTrail(root);
+            (new BeginAction(getViewContext())).addNavTrail(root);
             root.addChild("Find Concepts", new ActionURL(FindConceptsAction.class, getContainer()));
-            return root;
         }
     }
 
@@ -556,6 +559,7 @@ public class TypesController extends SpringActionController
 
     static class CompareScore implements Comparator<Map>
     {
+        @Override
         public int compare(Map a, Map b)
         {
             return (Integer)b.get("Score") - (Integer)a.get("Score");
@@ -779,10 +783,8 @@ public class TypesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
-
 }

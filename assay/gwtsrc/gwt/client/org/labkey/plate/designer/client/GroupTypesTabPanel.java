@@ -63,11 +63,13 @@ public class GroupTypesTabPanel extends TabPanel
         selectTab(0);
         addTabListener(new TabListener()
         {
+            @Override
             public boolean onBeforeTabSelected(SourcesTabEvents sender, int tabIndex)
             {
                 return true;
             }
 
+            @Override
             public void onTabSelected(SourcesTabEvents sender, int tabIndex)
             {
                 _view.setActiveType(_types.get(tabIndex));
@@ -76,6 +78,7 @@ public class GroupTypesTabPanel extends TabPanel
         });
     }
 
+    @Override
     public void selectTab(int index)
     {
         super.selectTab(index);
@@ -97,6 +100,7 @@ public class GroupTypesTabPanel extends TabPanel
         FocusPanel focusPanel = new FocusPanel(wellGrid);
         focusPanel.addMouseDownHandler(new MouseDownHandler()
         {
+            @Override
             public void onMouseDown(MouseDownEvent event)
             {
                 event.preventDefault();
@@ -104,6 +108,7 @@ public class GroupTypesTabPanel extends TabPanel
         });
         focusPanel.addMouseUpHandler(new MouseUpHandler()
         {
+            @Override
             public void onMouseUp(MouseUpEvent event)
             {
                 event.preventDefault();
@@ -111,6 +116,7 @@ public class GroupTypesTabPanel extends TabPanel
         });
         focusPanel.addMouseMoveHandler(new MouseMoveHandler()
         {
+            @Override
             public void onMouseMove(MouseMoveEvent event)
             {
                 event.preventDefault();

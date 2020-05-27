@@ -95,18 +95,21 @@ public class ActionURL extends URLHelper implements Cloneable
         _baseServerPropsInitialized = true;
     }
 
+    @Override
     public int getPort()
     {
         ensureBaseServerProps();
         return super.getPort();
     }
 
+    @Override
     public String getScheme()
     {
         ensureBaseServerProps();
         return super.getScheme();
     }
 
+    @Override
     public String getHost()
     {
         ensureBaseServerProps();

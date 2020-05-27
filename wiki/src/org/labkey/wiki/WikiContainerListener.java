@@ -27,6 +27,7 @@ import org.labkey.api.security.User;
 public class WikiContainerListener extends ContainerManager.AbstractContainerListener
 {
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
+    @Override
     public void containerDeleted(Container c, User user)
     {
         WikiManager.get().purgeContainer(c);

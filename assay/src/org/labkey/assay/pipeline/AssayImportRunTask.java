@@ -136,11 +136,13 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 _protocolName = settings.getProtocolName();
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new AssayImportRunTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
@@ -151,16 +153,19 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return _outputType;
         }
 
+        @Override
         public String getStatusName()
         {
             return "IMPORT ASSAY RUN";
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;
@@ -389,6 +394,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
      * @return
      * @throws PipelineJobException
      */
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {

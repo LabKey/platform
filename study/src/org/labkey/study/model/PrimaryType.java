@@ -43,6 +43,7 @@ public class PrimaryType extends AbstractStudyCachable<PrimaryType>
         _externalId = (int) map.get(PrimaryTypeDomainKind.EXTERNALID);
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return _rowId;
@@ -68,11 +69,13 @@ public class PrimaryType extends AbstractStudyCachable<PrimaryType>
         _externalId = externalId;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         _container = container;

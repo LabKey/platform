@@ -120,6 +120,7 @@ public class SearchController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return getSearchURL();
@@ -261,10 +262,12 @@ public class SearchController extends SpringActionController
 
         private int _msgid = 0;
         
+        @Override
         public void validateCommand(AdminForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors)
         {
             SearchService ss = SearchService.get();
@@ -307,6 +310,7 @@ public class SearchController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public boolean handlePost(AdminForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
@@ -361,6 +365,7 @@ public class SearchController extends SpringActionController
             return true;
         }
         
+        @Override
         public URLHelper getSuccessURL(AdminForm o)
         {
             ActionURL success = new ActionURL(AdminAction.class, getContainer());
@@ -369,11 +374,11 @@ public class SearchController extends SpringActionController
             return success;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("searchAdmin"));
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
-            return root;
+            PageFlowUtil.urlProvider(AdminUrls.class).addAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
         }
     }
 
@@ -388,12 +393,10 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree admin = new AdminAction(getPageConfig()).appendNavTrail(root);
-            admin.addChild("Index Contents");
-
-            return admin;
+            new AdminAction(getPageConfig()).addNavTrail(root);
+            root.addChild("Index Contents");
         }
     }
 
@@ -438,33 +441,16 @@ public class SearchController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
-
-
-    public static class SwapForm
-    {
-        boolean _ui = true;
-
-        public boolean isUi()
-        {
-            return _ui;
-        }
-
-        public void setUi(boolean ui)
-        {
-            _ui = ui;
-        }
-    }
-
 
     // UNDONE: remove; for testing only
     @RequiresSiteAdmin
     public class CancelAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
@@ -499,6 +485,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class CrawlAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
@@ -529,6 +516,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class IndexAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // SimpleRedirectAction doesn't take a form
@@ -662,9 +650,9 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/testJson.jsp", null, null);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root;
         }
     }
     
@@ -758,6 +746,7 @@ public class SearchController extends SpringActionController
         private SearchScope _scope = null;
         private SearchForm _form = null;
 
+        @Override
         public ModelAndView getView(SearchForm form, BindException errors)
         {
             _category = form.getCategory();
@@ -789,9 +778,10 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return _form.getSearchResultTemplate().appendNavTrail(root, getViewContext(), _scope, _category);
+            _form.getSearchResultTemplate().addNavTrail(root, getViewContext(), _scope, _category);
         }
     }
 
@@ -804,6 +794,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class WaitForIndexerAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();

@@ -201,6 +201,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return instance;
     }
 
+    @Override
     public T load(PipeRoot root, String name, boolean archived) throws IOException
     {
         T instance = loadInstance(getProtocolFile(root, name, archived));
@@ -211,6 +212,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         return instance;
     }
 
+    @Override
     public T loadInstance(File file) throws IOException
     {
         ParamParser parser = createParamParser();
@@ -251,6 +253,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
             _fileDefaults = fileDefaults;
         }
 
+        @Override
         public Reader createReader() throws IOException
         {
             return Readers.getReader(_fileDefaults);
