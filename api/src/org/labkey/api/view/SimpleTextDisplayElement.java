@@ -43,6 +43,7 @@ public class SimpleTextDisplayElement extends DisplayElement
         _html = isHtml;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (_html)

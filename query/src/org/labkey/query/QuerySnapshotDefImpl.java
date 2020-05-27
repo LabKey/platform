@@ -88,11 +88,13 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         _snapshotDef = snapshotDef;
     }
 
+    @Override
     public String getName()
     {
         return _snapshotDef.getName();
     }
 
+    @Override
     public String getQueryTableName()
     {
         return _snapshotDef.getQueryTableName();
@@ -104,26 +106,31 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getQueryTableContainer();
     }
 
+    @Override
     public int getId()
     {
         return _snapshotDef.getRowId();
     }
 
+    @Override
     public User getCreatedBy()
     {
         return UserManager.getUser(_snapshotDef.getCreatedBy());
     }
 
+    @Override
     public User getModifiedBy()
     {
         return UserManager.getUser(_snapshotDef.getModifiedBy());
     }
 
+    @Override
     public Container getContainer()
     {
         return ContainerManager.getForId(_snapshotDef.getContainerId());
     }
 
+    @Override
     public QueryDefinition getQueryDefinition(User user)
     {
         if (_snapshotDef.getQueryDefId() != null)
@@ -166,11 +173,13 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return null;
     }
 
+    @Override
     public boolean canEdit(User user)
     {
         return getContainer().hasPermission(user, AdminPermission.class);
     }
 
+    @Override
     public void delete(User user) throws Exception
     {
         if (!canEdit(user))
@@ -187,6 +196,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getRowId() == 0;
     }
 
+    @Override
     public List<FieldKey> getColumns()
     {
         String[] values = StringUtils.split(_snapshotDef.getColumns(), "&");
@@ -199,6 +209,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return Collections.unmodifiableList(ret);
     }
 
+    @Override
     public void setColumns(List<FieldKey> columns)
     {
         edit().setColumns(StringUtils.join(columns.iterator(), "&"));
@@ -237,46 +248,55 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         edit().setName(name);
     }
 
+    @Override
     public Date getCreated()
     {
         return _snapshotDef.getCreated();
     }
 
+    @Override
     public Date getLastUpdated()
     {
         return _snapshotDef.getLastUpdated();
     }
 
+    @Override
     public void setLastUpdated(Date date)
     {
         edit().setLastUpdated(date);
     }
 
+    @Override
     public Date getNextUpdate()
     {
         return _snapshotDef.getNextUpdate();
     }
 
+    @Override
     public void setNextUpdate(Date date)
     {
         edit().setNextUpdate(date);
     }
 
+    @Override
     public int getUpdateDelay()
     {
         return _snapshotDef.getUpdateDelay();
     }
 
+    @Override
     public void setUpdateDelay(int delayInSeconds)
     {
         edit().setUpdateDelay(delayInSeconds);
     }
 
+    @Override
     public void setFilter(String filter)
     {
         edit().setFilter(filter);
     }
 
+    @Override
     public String getFilter()
     {
         return _snapshotDef.getFilter();
@@ -294,6 +314,7 @@ public class QuerySnapshotDefImpl implements QuerySnapshotDefinition
         return _snapshotDef.getOptionsId();
     }
 
+    @Override
     public void save(User user)
     {
         if (!_dirty)

@@ -33,11 +33,13 @@ public class ViewFilterItemImpl implements ViewOptions.ViewFilterItem
         _enabled = enabled;
     }
 
+    @Override
     public String getViewType()
     {
         return _type;
     }
 
+    @Override
     public boolean isEnabled()
     {
         return _enabled;

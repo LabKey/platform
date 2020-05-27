@@ -18,6 +18,7 @@ package org.labkey.query.sql;
 
 public class QFrom extends QNode
 {
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("\nFROM ");

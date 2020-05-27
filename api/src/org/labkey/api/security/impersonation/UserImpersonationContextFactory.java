@@ -77,6 +77,7 @@ public class UserImpersonationContextFactory extends AbstractImpersonationContex
     }
 
 
+    @Override
     public User getAdminUser()
     {
         return UserManager.getUser(_adminUserId);

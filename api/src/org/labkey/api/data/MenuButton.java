@@ -51,6 +51,7 @@ public class MenuButton extends ActionButton
         }
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         popupMenu.renderMenuButton(ctx, out, _requiresSelection, this);

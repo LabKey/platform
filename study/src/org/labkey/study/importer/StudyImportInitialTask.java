@@ -219,26 +219,31 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             super(StudyImportInitialTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new StudyImportInitialTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getStatusName()
         {
             return "LOAD STUDY";
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

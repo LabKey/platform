@@ -206,16 +206,19 @@ public class ReportsController extends SpringActionController
 
     public static class ReportUrlsImpl implements ReportUrls
     {
+        @Override
         public ActionURL urlDownloadData(Container c)
         {
             return new ActionURL(DownloadInputDataAction.class, c);
         }
 
+        @Override
         public ActionURL urlModuleThumbnail(Container c)
         {
             return new ActionURL(DownloadModuleReportThumbnailAction.class, c);
         }
 
+        @Override
         public ActionURL urlRunReport(Container c)
         {
             return new ActionURL(RunReportAction.class, c);
@@ -245,31 +248,37 @@ public class ReportsController extends SpringActionController
             return new ActionURL(GetBackgroundReportResultsAction.class, c);
         }
 
+        @Override
         public ActionURL urlCreateScriptReport(Container c)
         {
             return new ActionURL(CreateScriptReportAction.class, c);
         }
 
+        @Override
         public ActionURL urlStreamFile(Container c)
         {
             return new ActionURL(StreamFileAction.class, c);
         }
         
+        @Override
         public ActionURL urlReportSections(Container c)
         {
             return new ActionURL(ReportSectionsAction.class, c);
         }
 
+        @Override
         public ActionURL urlManageViews(Container c)
         {
             return new ActionURL(ManageViewsAction.class, c);
         }
 
+        @Override
         public ActionURL urlDeleteReport(Container c)
         {
             return new ActionURL(DeleteReportAction.class, c);
         }
 
+        @Override
         public ActionURL urlExportCrosstab(Container c)
         {
             return new ActionURL(CrosstabExportAction.class, c);
@@ -355,6 +364,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DeleteReportAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             String reportId = getViewContext().getRequest().getParameter(ReportDescriptor.Prop.reportId.name());
@@ -373,6 +383,7 @@ public class ReportsController extends SpringActionController
             return HttpView.redirect(forwardUrl);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -396,6 +407,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class CreateSessionAction extends MutatingApiAction<CreateSessionForm>
     {
+        @Override
         public ApiResponse execute(CreateSessionForm form, BindException errors) throws Exception
         {
             String reportSessionId;
@@ -439,6 +451,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DeleteSessionAction extends MutatingApiAction<DeleteSessionForm>
     {
+        @Override
         public ApiResponse execute(DeleteSessionForm form , BindException errors) throws Exception
         {
             if (PremiumService.get().isRemoteREnabled())
@@ -574,6 +587,7 @@ public class ReportsController extends SpringActionController
         public static final String OUTPUT_ERROR = "errors";
         public static final String OUTPUT_PARAMS = "outputParams";
 
+        @Override
         public ApiResponse execute(ExecuteScriptForm form, BindException errors) throws Exception
         {
             List<ScriptOutput> outputs;
@@ -724,6 +738,7 @@ public class ReportsController extends SpringActionController
     public class getSessionsAction extends MutatingApiAction
     {
         public static final String REPORT_SESSIONS = "reportSessions";
+        @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
             ArrayList<ReportSession> outputReportSessions = new ArrayList<>();
@@ -791,10 +806,12 @@ public class ReportsController extends SpringActionController
     {
         private ScriptReport _report;
 
+        @Override
         public void validateCommand(ScriptReportDesignBean form, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(ScriptReportDesignBean form, boolean reshow, BindException errors) throws Exception
         {
             _report = form.getReport(getViewContext());
@@ -814,16 +831,19 @@ public class ReportsController extends SpringActionController
             }
         }
 
+        @Override
         public boolean handlePost(ScriptReportDesignBean form, BindException errors)
         {
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ScriptReportDesignBean form)
         {
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("jsViews");
@@ -984,6 +1004,7 @@ public class ReportsController extends SpringActionController
     {
         Report _report;
 
+        @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             _report = null;
@@ -1020,6 +1041,7 @@ public class ReportsController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("reportsAndViews");
@@ -1088,6 +1110,7 @@ public class ReportsController extends SpringActionController
             return form.getReturnActionURL(form.getDefaultUrl(getContainer()));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Share Report");
@@ -1139,6 +1162,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DetailsAction extends SimpleViewAction<ReportDesignBean>
     {
+        @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             Report report = form.getReport(getViewContext());
@@ -1161,6 +1185,7 @@ public class ReportsController extends SpringActionController
                 return new HtmlView(HtmlString.of("Specified report not found"));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Report Details");
@@ -1170,11 +1195,13 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportInfoAction extends SimpleViewAction<ReportDesignBean>
     {
+        @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             return new ReportInfoView(form.getReport(getViewContext()));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Report Debug Information");
@@ -1423,6 +1450,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class StartBackgroundRReportAction extends MutatingApiAction<ScriptReportBean>
     {
+        @Override
         public ApiResponse execute(ScriptReportBean form, BindException errors) throws Exception
         {
             final ViewContext context = getViewContext();
@@ -1461,6 +1489,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadInputDataAction extends SimpleViewAction<ScriptReportBean>
     {
+        @Override
         public ModelAndView getView(ScriptReportBean form, BindException errors) throws Exception
         {
             ScriptReport report = form.getReport(getViewContext());
@@ -1482,6 +1511,7 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -1491,6 +1521,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class StreamFileAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             String sessionKey = (String) getViewContext().get("sessionKey");
@@ -1524,6 +1555,7 @@ public class ReportsController extends SpringActionController
             return new HtmlView(HtmlString.of("Requested Resource not found"));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -1663,6 +1695,7 @@ public class ReportsController extends SpringActionController
         }
 
 
+        @Override
         public void validateCommand(F form, Errors errors)
         {
             if (null == StringUtils.trimToNull(form.getViewName()))
@@ -1748,6 +1781,7 @@ public class ReportsController extends SpringActionController
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(F uploadForm)
         {
             ActionURL defaultURL = null;
@@ -1887,6 +1921,7 @@ public class ReportsController extends SpringActionController
         }
 
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Create Attachment Report");
@@ -1965,6 +2000,7 @@ public class ReportsController extends SpringActionController
             super.afterReportSave(form, report);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Update Attachment Report");
@@ -1974,6 +2010,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadModuleReportThumbnailAction extends SimpleViewAction<ModuleReportForm>
     {
+        @Override
         public ModelAndView getView(ModuleReportForm form, BindException errors) throws Exception
         {
             ReportIdentifier reportId = form.getReportId();
@@ -1993,6 +2030,7 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2016,6 +2054,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class DownloadReportFileAction extends SimpleViewAction<AttachmentReportForm>
     {
+        @Override
         public ModelAndView getView(AttachmentReportForm form, BindException errors) throws Exception
         {
             ReportIdentifier reportId = form.getReportId();
@@ -2047,6 +2086,7 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2082,6 +2122,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public abstract class BaseLinkReportAction extends BaseReportAction<LinkReportForm, LinkReport>
     {
+        @Override
         public ModelAndView getView(LinkReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
@@ -2163,6 +2204,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class CreateLinkReportAction extends BaseLinkReportAction
     {
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Create Link Report");
@@ -2183,6 +2225,7 @@ public class ReportsController extends SpringActionController
             form.setTargetNewWindow(null != report.getRunReportTarget());
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Update Link Report");
@@ -2240,6 +2283,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class CreateQueryReportAction extends BaseReportAction<QueryReportForm, QueryReport>
     {
+        @Override
         public ModelAndView getView(QueryReportForm form, boolean reshow, BindException errors) throws Exception
         {
             initialize(form);
@@ -2296,6 +2340,7 @@ public class ReportsController extends SpringActionController
             return ReportUtil.getReportQueryKey(report.getDescriptor());
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Create Query Report");
@@ -2305,6 +2350,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ManageViewsAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors) throws Exception
         {
             WebPartFactory factory = Portal.getPortalPart(DataViewsWebPartFactory.NAME);
@@ -2325,6 +2371,7 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2336,6 +2383,7 @@ public class ReportsController extends SpringActionController
         private String _newReportName;
         private Report _report;
 
+        @Override
         public void validateCommand(ReportDesignBean form, Errors errors)
         {
             ReportIdentifier reportId =  form.getReportId();
@@ -2372,6 +2420,7 @@ public class ReportsController extends SpringActionController
                 errors.reject("renameReportAction", "The view name cannot be blank");
         }
 
+        @Override
         public ModelAndView getView(ReportDesignBean form, boolean reshow, BindException errors) throws Exception
         {
             ManageViewsAction action = new ManageViewsAction();
@@ -2380,6 +2429,7 @@ public class ReportsController extends SpringActionController
             return action.getView(null, errors);
         }
 
+        @Override
         public boolean handlePost(ReportDesignBean form, BindException errors)
         {
             _report.getDescriptor().setReportName(_newReportName);
@@ -2388,11 +2438,13 @@ public class ReportsController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ReportDesignBean form)
         {
             return new ActionURL(ManageViewsAction.class, getContainer());
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2401,6 +2453,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportSectionsAction extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object o, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -2451,6 +2504,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class CrosstabExportAction extends SimpleViewAction<ReportDesignBean>
     {
+        @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors) throws Exception
         {
             ReportIdentifier reportId = form.getReportId();
@@ -2466,6 +2520,7 @@ public class ReportsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -2526,6 +2581,7 @@ public class ReportsController extends SpringActionController
     {
         String _reportName;
 
+        @Override
         public ModelAndView getView(ReportDesignBean form, BindException errors)
         {
             ReportIdentifier id = form.getReportId();
@@ -2553,6 +2609,7 @@ public class ReportsController extends SpringActionController
             return new HtmlView(HtmlString.unsafe("<span class=\"labkey-error\">Invalid report identifier, unable to render report.</span>"));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             if (_reportName != null)
@@ -2664,6 +2721,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BrowseDataAction extends ReadOnlyApiAction<BrowseDataForm>
     {
+        @Override
         public ApiResponse execute(BrowseDataForm form, BindException errors) throws Exception
         {
             Map<String, Map<String, Object>> types = new TreeMap<>();
@@ -3256,6 +3314,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetCategoriesAction extends ReadOnlyApiAction<BrowseDataForm>
     {
+        @Override
         public ApiResponse execute(BrowseDataForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3380,6 +3439,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class SaveCategoriesAction extends MutatingApiAction<CategoriesForm>
     {
+        @Override
         public ApiResponse execute(CategoriesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3417,6 +3477,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(CategoriesForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3538,6 +3599,7 @@ public class ReportsController extends SpringActionController
                 errors.reject(ERROR_MSG, "Unable to find the specified data view type");
         }
 
+        @Override
         public ApiResponse execute(EditViewsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3631,6 +3693,7 @@ public class ReportsController extends SpringActionController
             }
         }
 
+        @Override
         public ApiResponse execute(DeleteDataViewsForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -3686,11 +3749,13 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ManageNotificationsAction extends SimpleViewAction<NotificationsForm>
     {
+        @Override
         public ModelAndView getView(NotificationsForm form, BindException errors)
         {
             return new JspView<>("/org/labkey/query/reports/view/manageNotifications.jsp", form, errors);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageViews#notifications");
@@ -3816,6 +3881,7 @@ public class ReportsController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class UpdateReportDisplayOrderAction extends MutatingApiAction<ReportsForm>
     {
+        @Override
         public ApiResponse execute(ReportsForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();

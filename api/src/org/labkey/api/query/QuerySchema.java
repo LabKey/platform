@@ -32,8 +32,10 @@ import java.util.Set;
 
 public interface QuerySchema extends SchemaTreeNode, ContainerUser
 {
+    @Override
     User getUser();
 
+    @Override
     Container getContainer();
 
     void setDefaultSchema(DefaultSchema schema);
@@ -84,6 +86,7 @@ public interface QuerySchema extends SchemaTreeNode, ContainerUser
     Collection<QuerySchema> getSchemas(boolean includeHidden);
 
     /** @return the simple name for this schema, excluding any parent schema names */
+    @Override
     @NotNull
     String getName();
 

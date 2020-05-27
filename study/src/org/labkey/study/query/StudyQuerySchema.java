@@ -998,6 +998,7 @@ public class StudyQuerySchema extends UserSchema
         return _mustCheckPermissions;
     }
 
+    @Override
     @Nullable
     public String getDomainURI(String queryName)
     {
@@ -1064,6 +1065,7 @@ public class StudyQuerySchema extends UserSchema
     }
 
     /** for tables that support container filter, the default container filter in this study */
+    @Override
     public ContainerFilter getDefaultContainerFilter()
     {
         return ContainerFilter.current(getContainer());

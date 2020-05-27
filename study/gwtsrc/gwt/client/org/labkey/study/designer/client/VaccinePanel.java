@@ -83,6 +83,7 @@ public class VaccinePanel extends Composite
                 HorizontalPanel hp = new HorizontalPanel();
                 hp.add(new ImageButton("Configure Dropdown Options", new ClickListener()
                 {
+                    @Override
                     public void onClick(Widget sender)
                     {
                         DesignerLookupConfigDialog dlg = new DesignerLookupConfigDialog(true, showAllLookups);
@@ -120,6 +121,7 @@ public class VaccinePanel extends Composite
             DOM.setAttribute(getElement(), "id", "ImmunogenGrid");
         }
 
+        @Override
         public int getDataColumnCount()
         {
             return isShowAntigens() ? colHeaders.length : colHeaders.length - 1;
@@ -138,12 +140,14 @@ public class VaccinePanel extends Composite
             return false;
         }
 
+        @Override
         public int getDataRowCount()
         {
             return immunogens.size();
         }
 
         Label[] colHeaders = {new Label("Immunogen Name"), new Label("Type"), new Label("Dose and units"), new Label("Route"), new Label("HIV Antigens")};
+        @Override
         public Widget getColumnHeader(int row, int column)
         {
             if (column >= colHeaders.length)
@@ -152,6 +156,7 @@ public class VaccinePanel extends Composite
             return colHeaders[column];
         }
 
+        @Override
         public Widget getCellWidget(int row, int col)
         {
             final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : immunogens.get(row);
@@ -159,6 +164,7 @@ public class VaccinePanel extends Composite
         }
 
 
+        @Override
         Object getCellValue(int row, int col)
         {
             final GWTImmunogen immunogen = row >= immunogens.size() ? ghostImmunogen : immunogens.get(row);
@@ -178,6 +184,7 @@ public class VaccinePanel extends Composite
         }
 
 
+        @Override
         public Widget getReadOnlyWidget(int row, int col)
         {
             if (col <= 3)
@@ -192,6 +199,7 @@ public class VaccinePanel extends Composite
             }
         }
 
+        @Override
         Widget getGhostRowWidget(int col)
         {
             return getCellWidget(ghostImmunogen, getRowCount() - getHeaderRows(), col);
@@ -207,6 +215,7 @@ public class VaccinePanel extends Composite
                 tb.setTitle("Enter the name for immunogen " + (row + 1) + " here. Each immunogen should have a unique name.");
                 tb.addChangeListener(new ChangeListener()
                 {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         immunogen.setName(tb.getText());
@@ -221,6 +230,7 @@ public class VaccinePanel extends Composite
                 final StringListBox routeList = new StringListBox(studyDef.getRoutes(), StringUtils.trimToNull(immunogen.getAdmin()), false, true);
                 routeList.setTitle("Immunogen " + (row + 1) + " route");
                 routeList.addChangeListener(new ChangeListener(){
+                    @Override
                     public void onChange(Widget sender)
                     {
                         immunogen.setAdmin(routeList.getText());
@@ -235,6 +245,7 @@ public class VaccinePanel extends Composite
                 tb.setText(StringUtils.trimToEmpty(immunogen.getDose()));
                 tb.setTitle("Enter the dose for immunogen " + (row + 1) + " here. If the same immunogen type is used with different dosages, enter it on two rows.");
                 tb.addChangeListener(new ChangeListener(){
+                    @Override
                     public void onChange(Widget sender)
                     {
                         immunogen.setDose(tb.getText());
@@ -249,6 +260,7 @@ public class VaccinePanel extends Composite
                 final StringListBox lb = new StringListBox(studyDef.getImmunogenTypes(), StringUtils.trimToNull(immunogen.getType()), false, true);
                 lb.setTitle("Immunogen " + (row + 1) + " type");
                 lb.addChangeListener(new ChangeListener() {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         immunogen.setType(lb.getText());
@@ -267,6 +279,7 @@ public class VaccinePanel extends Composite
             throw new IllegalArgumentException("No such column:" + col);
         }
 
+        @Override
         public int getHeaderRows()
         {
             return 1;
@@ -283,6 +296,7 @@ public class VaccinePanel extends Composite
             return "immunogen";
         }
 
+        @Override
         public void makeGhostRowReal()
         {
             immunogens.add(ghostImmunogen);
@@ -290,6 +304,7 @@ public class VaccinePanel extends Composite
         }
 
 
+        @Override
         void deleteRow(int dataRow)
         {
             GWTImmunogen immunogen = immunogens.remove(dataRow);
@@ -313,27 +328,32 @@ public class VaccinePanel extends Composite
             setReadOnly(designer.isReadOnly());
         }
 
+        @Override
         public int getDataColumnCount()
         {
             return 3;
         }
 
+        @Override
         public int getDataRowCount()
         {
             return antigens.size();
         }
 
         private Widget[] colHeaders = new Widget[] {new Label("Gene"), new Label("Subtype"), new Label("Sequence") };
+        @Override
         public Widget getColumnHeader(int row, int column)
         {
             return colHeaders[column];
         }
 
+        @Override
         public Widget getCellWidget(int row, int col)
         {
             return getCellWidget((GWTAntigen) antigens.get(row), col);
         }
 
+        @Override
         public Object getCellValue(int row, int col)
         {
             GWTAntigen antigen = (GWTAntigen) antigens.get(row);
@@ -356,6 +376,7 @@ public class VaccinePanel extends Composite
         }
 
 
+        @Override
         public Widget getReadOnlyWidget(int row, int col)
         {
             Label l = new Label((String) getCellValue(row, col));
@@ -363,6 +384,7 @@ public class VaccinePanel extends Composite
             return l;
         }
 
+        @Override
         Widget getGhostRowWidget(int col)
         {
             return getCellWidget(ghostAntigen, col);
@@ -374,6 +396,7 @@ public class VaccinePanel extends Composite
             {
                 final StringListBox listBox = new StringListBox(studyDef.getGenes(), StringUtils.trimToNull(antigen.getGene()), false, true);
                 listBox.addChangeListener(new ChangeListener() {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         antigen.setGene(listBox.getText());
@@ -387,6 +410,7 @@ public class VaccinePanel extends Composite
                 final StringListBox listBox = new StringListBox(studyDef.getSubTypes(), StringUtils.trimToNull(antigen.getSubtype()), false, true);
                 listBox.setText(StringUtils.trimToEmpty(antigen.getSubtype()));
                 listBox.addChangeListener(new ChangeListener() {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         antigen.setSubtype(listBox.getText());
@@ -403,11 +427,13 @@ public class VaccinePanel extends Composite
             throw new IllegalArgumentException("No such column: " + col);
         }
 
+        @Override
         public int getHeaderRows()
         {
             return 1;
         }
 
+        @Override
         public void makeGhostRowReal()
         {
             antigens.add(ghostAntigen);
@@ -420,6 +446,7 @@ public class VaccinePanel extends Composite
             return "antigen";
         }
 
+        @Override
         void deleteRow(int dataRow)
         {
             antigens.remove(dataRow);
@@ -465,6 +492,7 @@ public class VaccinePanel extends Composite
 
                 entryType.addChangeListener(new ChangeListener()
                 {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         switch (entryType.getSelectedIndex())
@@ -491,6 +519,7 @@ public class VaccinePanel extends Composite
                 });
                 genBankIdBox.addChangeListener(new ChangeListener()
                 {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         designer.setDirty(true);
@@ -499,6 +528,7 @@ public class VaccinePanel extends Composite
                 });
                 sequenceTextArea.addChangeListener(new ChangeListener()
                 {
+                    @Override
                     public void onChange(Widget sender)
                     {
                         designer.setDirty(true);
@@ -524,16 +554,19 @@ public class VaccinePanel extends Composite
             DOM.setAttribute(getElement(), "id", "AdjuvantGrid");
         }
 
+        @Override
         public int getDataColumnCount()
         {
             return columnNames.length;
         }
 
+        @Override
         public int getDataRowCount()
         {
             return null == adjuvants ?  0 : adjuvants.size();
         }
 
+        @Override
         public Widget getColumnHeader(int row, int column)
         {
             if (column >= columnNames.length)
@@ -542,11 +575,13 @@ public class VaccinePanel extends Composite
             return columnNames[column];
         }
 
+        @Override
         Widget getCellWidget(int row, int col)
         {
             return getCellWidget((GWTAdjuvant) adjuvants.get(row), col);
         }
 
+        @Override
         Object getCellValue(int row, int col)
         {
             GWTAdjuvant adjuvant = (GWTAdjuvant) adjuvants.get(row);
@@ -563,6 +598,7 @@ public class VaccinePanel extends Composite
         }
 
 
+        @Override
         Widget getGhostRowWidget(int col)
         {
             return getCellWidget(ghostAdjuvant, col);
@@ -581,6 +617,7 @@ public class VaccinePanel extends Composite
                     nameTextBox.setText(StringUtils.trimToEmpty(text));
                     nameTextBox.setTitle("Enter the name of adjuvant.");
                     nameTextBox.addChangeListener(new ChangeListener() {
+                        @Override
                         public void onChange(Widget sender)
                         {
                             adjuvant.setName(((HasText) sender).getText());
@@ -594,6 +631,7 @@ public class VaccinePanel extends Composite
                     text = adjuvant.getDose();
                     doseTextBox.setText(StringUtils.trimToEmpty(text));
                     doseTextBox.addChangeListener(new ChangeListener() {
+                        @Override
                         public void onChange(Widget sender)
                         {
                             adjuvant.setDose(((HasText) sender).getText());
@@ -605,6 +643,7 @@ public class VaccinePanel extends Composite
                     StringListBox listBox = new StringListBox(studyDef.getRoutes(), StringUtils.trimToNull(adjuvant.admin), false, true);
                     text = adjuvant.admin;
                     listBox.addChangeListener(new ChangeListener() {
+                        @Override
                         public void onChange(Widget sender)
                         {
                             adjuvant.admin = ((HasText) sender).getText();
@@ -616,6 +655,7 @@ public class VaccinePanel extends Composite
             return null;
         }
 
+        @Override
         public int getHeaderRows()
         {
             return 1;
@@ -627,12 +667,14 @@ public class VaccinePanel extends Composite
             return "adjuvant";
         }
 
+        @Override
         public void makeGhostRowReal()
         {
             adjuvants.add(ghostAdjuvant);
             ghostAdjuvant = new GWTAdjuvant();
         }
 
+        @Override
         void deleteRow(int dataRow)
         {
             GWTAdjuvant adjuvant = (GWTAdjuvant) adjuvants.remove(dataRow);

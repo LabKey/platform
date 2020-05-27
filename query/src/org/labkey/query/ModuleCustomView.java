@@ -53,6 +53,7 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         _queryDef = queryDef;
     }
 
+    @Override
     public QueryDefinition getQueryDefinition()
     {
         return _queryDef;
@@ -80,11 +81,13 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         return _queryDef.getName();
     }
 
+    @Override
     public void setName(String name)
     {
         throw new UnsupportedOperationException("Can't set name on a module-based custom view!");
     }
 
+    @Override
     public void setQueryName(String queryName)
     {
         throw new UnsupportedOperationException("Can't set queryName on a module-based custom view!");
@@ -96,6 +99,7 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         throw new UnsupportedOperationException("Module-based custom views cannot inherit");
     }
 
+    @Override
     public void setIsHidden(boolean f)
     {
         throw new UnsupportedOperationException("Module-based custom views cannot be set to hidden. " +
@@ -108,11 +112,13 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         return _customViewDef.isOverridable();
     }
 
+    @Override
     public void setColumns(List<FieldKey> columns)
     {
         throw new UnsupportedOperationException("Can't set columns on a module-based custom view!");
     }
 
+    @Override
     public void setColumnProperties(List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> list)
     {
         throw new UnsupportedOperationException("Can't set column properties on a module-based custom view!");
@@ -126,6 +132,7 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         return isOverridable();
     }
 
+    @Override
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
         if (null != _customViewDef.getFilters())
@@ -148,26 +155,31 @@ public class ModuleCustomView extends ModuleCustomViewInfo implements CustomView
         }
     }
 
+    @Override
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
     {
         throw new UnsupportedOperationException("Can't set the filter or sort of a module-based custom view!");
     }
 
+    @Override
     public void setFilterAndSort(String filter)
     {
         throw new UnsupportedOperationException("Can't set filter on a module-based custom view!");
     }
 
+    @Override
     public void save(User user, HttpServletRequest request) throws QueryException
     {
         throw new UnsupportedOperationException("Can't save a module-based custom view!");
     }
 
+    @Override
     public void delete(User user, HttpServletRequest request) throws QueryException
     {
         throw new UnsupportedOperationException("Can't delete a module-based custom view!");
     }
 
+    @Override
     public boolean serialize(VirtualFile dir)
     {
         // Do nothing -- shouldn't export ModuleCustomViews

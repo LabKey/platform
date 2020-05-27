@@ -66,6 +66,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         _priority = priority;
     }
 
+    @Override
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
@@ -119,6 +120,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         return null;
     }
 
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         ExpProtocol protocol = findProtocol(domain);
@@ -163,6 +165,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     }
 
 
+    @Override
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
         ExpProtocol protocol = findProtocol(domain);
@@ -174,6 +177,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
     }
 
 
+    @Override
     @Nullable
     public ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser)
     {
@@ -185,6 +189,7 @@ public abstract class AssayDomainKind extends BaseAbstractDomainKind
         return null;
     }
 
+    @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignAssayPermission.class);

@@ -65,6 +65,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -75,6 +76,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         _rowId = rowId;
     }
 
+    @Override
     public int getTreatmentId()
     {
         return _treatmentId;
@@ -85,6 +87,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         _treatmentId = treatmentId;
     }
 
+    @Override
     public int getProductId()
     {
         return _productId;
@@ -95,6 +98,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         _productId = productId;
     }
 
+    @Override
     public String getDose()
     {
         return _dose;
@@ -105,6 +109,7 @@ public class TreatmentProductImpl implements TreatmentProduct
         _dose = dose;
     }
 
+    @Override
     public String getRoute()
     {
         return _route;

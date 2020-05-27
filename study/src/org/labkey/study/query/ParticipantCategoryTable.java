@@ -68,6 +68,7 @@ public class ParticipantCategoryTable extends BaseStudyTable
         createdBy.setFk(new UserIdForeignKey(getUserSchema()));
         createdBy.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new UserIdRenderer(colInfo);

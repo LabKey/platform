@@ -50,6 +50,7 @@ public class PolynomialCurveFit extends DefaultCurveFit implements CurveFit
             _coefficients = coefficients;
         }
 
+        @Override
         public Map<String, Object> toMap()
         {
             Map<String, Object> params = new HashMap<>();

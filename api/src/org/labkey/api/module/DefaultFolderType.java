@@ -119,6 +119,7 @@ public class DefaultFolderType implements FolderType
         return getDefaultTabs().get(0);
     }
 
+    @Override
     public void configureContainer(Container c, User user)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
@@ -223,6 +224,7 @@ public class DefaultFolderType implements FolderType
     }
 
 
+    @Override
     public void unconfigureContainer(Container c, User user)
     {
         List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
@@ -256,6 +258,7 @@ public class DefaultFolderType implements FolderType
         }
     }
 
+    @Override
     @NotNull
     public String getFolderIconPath()
     {
@@ -297,6 +300,7 @@ public class DefaultFolderType implements FolderType
         return newParts;
     }
 
+    @Override
     public boolean getForceAssayUploadIntoWorkbooks()
     {
         return forceAssayUploadIntoWorkbooks;
@@ -307,11 +311,13 @@ public class DefaultFolderType implements FolderType
         this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
     }
 
+    @Override
     public ActionURL getStartURL(Container c, User user)
     {
         return ModuleLoader.getInstance().getCoreModule().getTabURL(c, user);
     }
 
+    @Override
     public String getStartPageLabel(ViewContext ctx)
     {
         FolderTab folderTab = getDefaultTab();
@@ -324,26 +330,31 @@ public class DefaultFolderType implements FolderType
         return getLabel() + " Dashboard";
     }
 
+    @Override
     public HelpTopic getHelpTopic()
     {
         return null;
     }
 
+    @Override
     public Module getDefaultModule()
     {
         return defaultModule;
     }
 
+    @Override
     public List<Portal.WebPart> getRequiredWebParts()
     {
         return requiredParts;
     }
 
+    @Override
     public List<Portal.WebPart> getPreferredWebParts()
     {
         return preferredParts;
     }
 
+    @Override
     public String getName()
     {
         return name;
@@ -368,16 +379,19 @@ public class DefaultFolderType implements FolderType
         return false;
     }
 
+    @Override
     public String getDescription()
     {
         return description;
     }
 
+    @Override
     public String getLabel()
     {
         return name;
     }
 
+    @Override
     public Set<Module> getActiveModules()
     {
         return activeModules;
@@ -416,6 +430,7 @@ public class DefaultFolderType implements FolderType
         return m;
     }
 
+    @Override
     public void addManageLinks(NavTree adminNavTree, Container container, User user)
     {
         AdminLinkManager.getInstance().addStandardAdminLinks(adminNavTree, container, user);
@@ -462,11 +477,13 @@ public class DefaultFolderType implements FolderType
         return null;
     }
 
+    @Override
     public boolean isMenubarEnabled()
     {
         return menubarEnabled;
     }
 
+    @Override
     public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;

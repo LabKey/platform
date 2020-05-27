@@ -43,11 +43,13 @@ public class StackTraceDisplayColumn extends DataColumn
         setEditable(false);
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         renderContents(ctx, out, Integer.MAX_VALUE);
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderContents(ctx, out, Integer.MAX_VALUE);
@@ -85,6 +87,7 @@ public class StackTraceDisplayColumn extends DataColumn
         out.write("</pre>");
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         renderContents(ctx, out, MAX_LINES_TO_SHOW);

@@ -51,6 +51,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
 
     private File _originalFileLocation = null;
 
+    @Override
     public HttpView getView(ContextType context) throws ExperimentException
     {
         return new HtmlView(getHTML(context));
@@ -105,11 +106,13 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return files.get(0);
     }
 
+    @Override
     public String getShortName()
     {
         return "Pipeline";
     }
 
+    @Override
     public String getDescription(ContextType context)
     {
         List<Map<String, File>> allFiles = getFileQueue(context);
@@ -153,6 +156,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return result;
     }
 
+    @Override
     @NotNull
     public Map<String, File> createData(ContextType context) throws IOException, ExperimentException
     {
@@ -177,6 +181,7 @@ public class PipelineDataCollector<ContextType extends AssayRunUploadContext<? e
         return _originalFileLocation;
     }
 
+    @Override
     public boolean isVisible()
     {
         return true;

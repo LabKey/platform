@@ -94,16 +94,19 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             super(path);
         }
 
+        @Override
         public boolean exists()
         {
             return false;
         }
 
+        @Override
         public boolean isCollection()
         {
             return false;
         }
 
+        @Override
         public boolean isFile()
         {
             return false;
@@ -115,46 +118,55 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return Collections.emptySet();
         }
 
+        @Override
         public WebdavResource find(String name)
         {
             return new UnboundResource(this.getPath().append(name));
         }
 
+        @Override
         public Collection<String> listNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public Collection<WebdavResource> list()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public long getCreated()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public InputStream getInputStream(User user)
         {
             return null;
         }
 
+        @Override
         public long copyFrom(User user, FileStream in)
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public long getContentLength()
         {
             return 0;
         }
 
+        @Override
         @NotNull
         public Collection<History> getHistory()
         {
@@ -212,16 +224,19 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
             return path.encode("/", "/");
         }
 
+        @Override
         public Container getContainer()
         {
             return _c;
         }
 
+        @Override
         public boolean exists()
         {
             return true;
         }
 
+        @Override
         public boolean isCollection()
         {
             return exists();
@@ -283,6 +298,7 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
         }
 
 
+        @Override
         @NotNull
         public Collection<String> listNames()
         {
@@ -299,17 +315,20 @@ public abstract class AbstractWebdavResolver implements WebdavResolver
 
     public abstract class AbstractWebdavListener extends ContainerManager.AbstractContainerListener
     {
+        @Override
         public void containerCreated(Container c, User user)
         {
             invalidate(c.getParsedPath().getParent(), false);
         }
 
+        @Override
         public void containerDeleted(Container c, User user)
         {
             invalidate(c.getParsedPath(), true);
             invalidate(c.getParsedPath().getParent(), false);
         }
 
+        @Override
         public void propertyChange(PropertyChangeEvent pce)
         {
             ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)pce;

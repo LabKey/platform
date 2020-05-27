@@ -100,6 +100,7 @@ public class Builder extends SQLFragment
         }
     }
 
+    @Override
     public Builder append(CharSequence cs)
     {
         if (cs == null || cs.length() == 0)

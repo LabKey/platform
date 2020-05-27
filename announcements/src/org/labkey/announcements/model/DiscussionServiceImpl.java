@@ -128,6 +128,7 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
+    @Override
     @Nullable
     public DiscussionService.DiscussionView getDiscussionArea(ViewContext context, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
@@ -138,6 +139,7 @@ public class DiscussionServiceImpl implements DiscussionService
         return getDiscussionArea(c, user, currentURL, objectId, pageURL, newDiscussionTitle, allowMultipleDiscussions, displayFirstDiscussionByDefault);
     }
 
+    @Override
     @Nullable
     public DiscussionService.DiscussionView getDiscussionArea(Container c, User user, URLHelper currentURL, String objectId, ActionURL pageURL, String newDiscussionTitle, boolean allowMultipleDiscussions, boolean displayFirstDiscussionByDefault)
     {
@@ -242,6 +244,7 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
+    @Override
     public void deleteDiscussions(Container c, User user, String... identifiers)
     {
         Collection<AnnouncementModel> discussions = getDiscussions(c, identifiers);
@@ -261,6 +264,7 @@ public class DiscussionServiceImpl implements DiscussionService
         }
     }
 
+    @Override
     public void unlinkDiscussions(Container c, String identifier, User user)
     {
         Collection<AnnouncementModel> discussions = getDiscussions(c, identifier);
@@ -279,12 +283,14 @@ public class DiscussionServiceImpl implements DiscussionService
     }
 
 
+    @Override
     public boolean hasDiscussions(Container container, String identifier)
     {
         return !getDiscussions(container, identifier).isEmpty();
     }
 
 
+    @Override
     public DiscussionService.Settings getSettings(Container container)
     {
         try
@@ -297,6 +303,7 @@ public class DiscussionServiceImpl implements DiscussionService
         }
     }
 
+    @Override
     public void setSettings(Container container, DiscussionService.Settings settings)
     {
         try

@@ -68,11 +68,13 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         return _rowId == 0;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -83,6 +85,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _rowId = rowId;
     }
 
+    @Override
     public String getAssayName()
     {
         return _assayName;
@@ -93,6 +96,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _assayName = assayName;
     }
 
+    @Override
     public Integer getDataset()
     {
         return _dataset;
@@ -103,6 +107,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _dataset = dataset;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
@@ -113,6 +118,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _description = description;
     }
 
+    @Override
     public String getSource()
     {
         return _source;
@@ -123,6 +129,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _source = source;
     }
 
+    @Override
     public Integer getLocationId()
     {
         return _locationId;
@@ -133,6 +140,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _locationId = locationId;
     }
 
+    @Override
     public Integer getPrimaryTypeId()
     {
         return _primaryTypeId;
@@ -143,6 +151,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _primaryTypeId = primaryTypeId;
     }
 
+    @Override
     public Integer getDerivativeTypeId()
     {
         return _derivativeTypeId;
@@ -153,6 +162,7 @@ public class AssaySpecimenConfigImpl extends AbstractStudyEntity<AssaySpecimenCo
         _derivativeTypeId = derivativeTypeId;
     }
 
+    @Override
     public String getTubeType()
     {
         return _tubeType;

@@ -46,6 +46,7 @@ import java.util.Map;
 @RequiresPermission(InsertPermission.class)
 public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
 {
+    @Override
     public ModelAndView getView(ProtocolIdForm rowIdForm, BindException errors) throws Exception
     {
         ExpProtocol protocol = rowIdForm.getProtocol();
@@ -75,6 +76,7 @@ public class TemplateAction extends BaseAssayAction<ProtocolIdForm>
         return null;
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException("Not Yet Implemented");

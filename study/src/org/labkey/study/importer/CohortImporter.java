@@ -48,13 +48,16 @@ import java.util.Map;
  */
 public class CohortImporter implements InternalStudyImporter
 {
+    @Override
     public String getDescription()
     {
         return "cohort settings";
     }
 
+    @Override
     public String getDataType() { return StudyArchiveDataTypes.COHORT_SETTINGS; }
 
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, ValidationException, ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))

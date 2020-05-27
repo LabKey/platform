@@ -164,6 +164,7 @@ class ErrorView extends HttpView
             _c = c;
         }
 
+        @Override
         public void render(PrintWriter out)
         {
             doButtonBar(out, _c);

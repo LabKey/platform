@@ -31,6 +31,7 @@ public interface Permission extends Role
      * Returns a short, friendly name for the permission suitable for a user interface.
      * @return The short name.
      */
+    @Override
     @NotNull
     public String getName();
 
@@ -38,6 +39,7 @@ public interface Permission extends Role
      * Returns a longer description for the permission suitable for a user interface.
      * @return A longer description.
      */
+    @Override
     @NotNull
     public String getDescription();
 
@@ -45,6 +47,7 @@ public interface Permission extends Role
      * Returns a reference to the module in which this permission is defined.
      * @return The source module.
      */
+    @Override
     @NotNull
     public Module getSourceModule();
 }

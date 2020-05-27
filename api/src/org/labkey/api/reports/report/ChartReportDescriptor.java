@@ -103,6 +103,7 @@ public class ChartReportDescriptor extends ReportDescriptor
         return NumberUtils.toInt(getProperty(Prop.height), 200);
     }
 
+    @Override
     public boolean isArrayType(String prop)
     {
         if (!super.isArrayType(prop))

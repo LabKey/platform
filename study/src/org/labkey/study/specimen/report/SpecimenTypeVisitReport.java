@@ -44,6 +44,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
         super(titlePrefix, visits, filter, parameters);
     }
 
+    @Override
     public Collection<Row> createRows()
     {
         SpecimenTypeLevel level = getTypeLevelEnum();
@@ -90,6 +91,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
         return summaryString.toString();
     }
 
+    @Override
     protected String[] getCellExcelText(VisitImpl visit, SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
@@ -109,6 +111,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SummaryByVisitT
         return strArray;
     }
 
+    @Override
     protected String getCellHtml(VisitImpl visit, SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)

@@ -33,6 +33,7 @@ public abstract class BaseCohortFilter implements CohortFilter
         _type = type;
     }
 
+    @Override
     public CohortFilter.Type getType()
     {
         return _type;

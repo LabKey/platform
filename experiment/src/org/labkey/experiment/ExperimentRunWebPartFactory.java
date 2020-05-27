@@ -83,6 +83,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
         return new JspView<>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String selectedTypeName = getConfiguredRunFilterName(webPart);

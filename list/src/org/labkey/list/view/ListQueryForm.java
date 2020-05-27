@@ -72,6 +72,7 @@ public class ListQueryForm extends QueryForm
         return ListService.get().getList(getContainer(), listId);
     }
 
+    @Override
     protected QuerySettings createQuerySettings(UserSchema schema)
     {
         QuerySettings ret = super.createQuerySettings(schema);

@@ -102,6 +102,7 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
          * so the clone method returns itself.
          * @return     NULL.
          */
+        @Override
         protected final Object clone() {
             return this;
         }
@@ -996,6 +997,7 @@ public class JSONObject extends HashMap<String, Object> implements HasHtmlString
      * @throws JSONException If the value is non-finite number
      *  or if the key is null.
      */
+    @Override
     public JSONObject put(String key, Object value) throws JSONException {
         if (key == null) {
             throw new JSONException("Null key.");

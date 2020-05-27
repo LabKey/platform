@@ -62,6 +62,7 @@ public class RSSServiceImpl implements RSSService
         return feeds;
     }
 
+    @Override
     public void aggregateFeeds(List<RSSFeed> feeds, User user, Writer writer)
     {
         SyndFeed feed = new SyndFeedImpl();

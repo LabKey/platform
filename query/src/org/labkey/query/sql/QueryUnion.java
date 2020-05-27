@@ -188,6 +188,7 @@ public class QueryUnion extends QueryRelation
 	SQLFragment _unionSql = null;
 
 
+    @Override
     public QueryTableInfo getTableInfo()
     {
         SqlDialect dialect = _schema.getDbSchema().getSqlDialect();
@@ -376,6 +377,7 @@ public class QueryUnion extends QueryRelation
     }
     
 
+    @Override
     RelationColumn getColumn(@NotNull String name)
     {
         initColumns();
@@ -383,6 +385,7 @@ public class QueryUnion extends QueryRelation
     }
 
 
+    @Override
     protected Map<String,RelationColumn> getAllColumns()
     {
         initColumns();
@@ -390,18 +393,21 @@ public class QueryUnion extends QueryRelation
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull String name)
     {
         return null;
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parent, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         return null;
     }
 
 
+    @Override
     public SQLFragment getSql()
     {
         if (_unionSql == null)
@@ -410,6 +416,7 @@ public class QueryUnion extends QueryRelation
     }
 
 
+    @Override
     public String getQueryText()
     {
 		StringBuilder sb = new StringBuilder();
@@ -468,11 +475,13 @@ public class QueryUnion extends QueryRelation
             return _name;
         }
 
+        @Override
         String getAlias()
         {
             return _first.getAlias();
         }
 
+        @Override
         QueryRelation getTable()
         {
             return QueryUnion.this;

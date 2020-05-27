@@ -58,16 +58,19 @@ public class ActivatingLabel extends Composite implements SourcesFocusEvents, So
         this(new TextArea(), "Click to edit");
     }
 
+    @Override
     public Widget getWidget()
     {
         return widget;
     }
     
+    @Override
     public String getText()
     {
         return ((HasText) widget).getText();
     }
 
+    @Override
     public void setText(String text)
     {
         l.setHTML(StringUtils.filter(text, true));
@@ -90,32 +93,38 @@ public class ActivatingLabel extends Composite implements SourcesFocusEvents, So
         }
     }
 
+    @Override
     public void addFocusListener(FocusListener listener)
     {
         focusListeners.add(listener);
     }
 
+    @Override
     public void removeFocusListener(FocusListener listener)
     {
         focusListeners.remove(listener);
     }
 
+    @Override
     public void addChangeListener(ChangeListener listener)
     {
        changeListeners.add(listener);
     }
 
+    @Override
     public void removeChangeListener(ChangeListener listener)
     {
         changeListeners.remove(listener);
     }
 
+    @Override
     public void onChange(Widget sender)
     {
         updateLabelText(((HasText) widget).getText());
         changeListeners.fireChange(this);
     }
 
+    @Override
     public void onFocus(Widget sender)
     {
         if (sender.equals(fp))
@@ -129,6 +138,7 @@ public class ActivatingLabel extends Composite implements SourcesFocusEvents, So
         focusListeners.fireFocus(this);
     }
 
+    @Override
     public void onLostFocus(Widget sender)
     {
         if (sender.equals(fp))

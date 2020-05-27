@@ -85,6 +85,7 @@ public class EhCacheProvider implements CacheProvider
         ehCacheReferenceList = list;
     }
 
+    @Override
     public void shutdown()
     {
         LOG.info("Shutting down Ehcache");

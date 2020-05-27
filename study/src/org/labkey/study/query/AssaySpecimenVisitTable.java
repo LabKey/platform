@@ -43,6 +43,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
         var visitCol = new AliasedColumn(this, "VisitId", _rootTable.getColumn("VisitId"));
         visitCol.setFk(new LookupForeignKey(cf, "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new VisitTable(_userSchema, getLookupContainerFilter());
@@ -53,6 +54,7 @@ public class AssaySpecimenVisitTable extends BaseStudyTable
         var assaySpecimenCol = new AliasedColumn(this, "AssaySpecimenId", _rootTable.getColumn("AssaySpecimenId"));
         assaySpecimenCol.setFk(new LookupForeignKey(cf, "RowId", null)
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new AssaySpecimenTable(_userSchema, getLookupContainerFilter());

@@ -109,6 +109,7 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
                     col.setLabel("List");
                     col.setDisplayColumnFactory(new DisplayColumnFactory()
                     {
+                        @Override
                         public DisplayColumn createRenderer(ColumnInfo colInfo)
                         {
                             return new DomainAuditProvider.DomainColumn(colInfo, containerCol, nameCol);

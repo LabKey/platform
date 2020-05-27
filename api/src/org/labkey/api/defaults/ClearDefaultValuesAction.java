@@ -35,11 +35,13 @@ import org.springframework.web.servlet.ModelAndView;
 @RequiresAnyOf({DesignListPermission.class, DesignAssayPermission.class, AdminPermission.class})
 public class ClearDefaultValuesAction extends DefaultValuesAction<DomainIdForm>
 {
+    @Override
     public ModelAndView getView(DomainIdForm domainIdForm, boolean reshow, BindException errors)
     {
         throw new UnsupportedOperationException("ClearDefaultValuesAction is a post handler only.");
     }
 
+    @Override
     public boolean handlePost(DomainIdForm domainIdForm, BindException errors)
     {
         Domain domain = getDomain(domainIdForm);
@@ -47,6 +49,7 @@ public class ClearDefaultValuesAction extends DefaultValuesAction<DomainIdForm>
         return true;
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException("ClearDefaultValuesAction is a post handler only.");

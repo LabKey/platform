@@ -93,7 +93,7 @@ public abstract class AbstractDomainKind<T> extends DomainKind<T>
 
     // Override to customize the nav trail on shared pages like edit domain
     @Override
-    public void appendNavTrail(NavTree root, Container c, User user)
+    public void addNavTrail(NavTree root, Container c, User user)
     {
     }
 

@@ -40,6 +40,7 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
         _data = data;
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String dataFileURL = _data.getDataFileUrl();

@@ -79,6 +79,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
             setWidth("250");
         }
 
+        @Override
         protected String getProtocolValue(ExpProtocol protocol)
         {
             return PageFlowUtil.filter(protocol.getName());
@@ -94,6 +95,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
             setWidth("50%");
         }
 
+        @Override
         protected String getProtocolValue(ExpProtocol protocol)
         {
             return PageFlowUtil.filter(protocol.getProtocolDescription());
@@ -123,6 +125,7 @@ public class ProtocolSuccessorPredecessorView extends GridView
             return protocol;
         }
 
+        @Override
         public String getValue(RenderContext ctx)
         {
             ExpProtocol protocol = getProtocol(ctx);

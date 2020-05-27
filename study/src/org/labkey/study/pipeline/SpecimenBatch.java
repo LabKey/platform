@@ -59,11 +59,13 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
         _isMerge = merge;
     }
 
+    @Override
     protected File createLogFile()
     {
         return StudyPipeline.logForInputFile(_definitionFile, getPipeRoot());
     }
 
+    @Override
     public String getDescription()
     {
         String description = "Import specimens";
@@ -78,11 +80,13 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
         return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer(), StudyFolderTabs.SpecimensPage.PAGE_ID);
     }
 
+    @Override
     public File getSpecimenArchive()
     {
         return _definitionFile;
     }
 
+    @Override
     public boolean isMerge()
     {
         return _isMerge;

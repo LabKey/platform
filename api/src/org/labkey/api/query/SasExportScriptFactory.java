@@ -22,16 +22,19 @@ package org.labkey.api.query;
  */
 public class SasExportScriptFactory implements ExportScriptFactory
 {
+    @Override
     public String getScriptType()
     {
         return "sas";
     }
 
+    @Override
     public String getMenuText()
     {
         return "SAS";
     }
 
+    @Override
     public ExportScriptModel getModel(QueryView queryView)
     {
         return new SasExportScriptModel(queryView);

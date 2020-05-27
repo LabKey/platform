@@ -27,6 +27,7 @@ public class ConfigPropertiesImpl implements PipelineJobService.ConfigProperties
 {
     private Map<String, String> _softwarePackages;
 
+    @Override
     public String getSoftwarePackagePath(String packageName)
     {
         if (packageName == null || _softwarePackages == null)

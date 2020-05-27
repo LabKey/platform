@@ -141,6 +141,7 @@ public class FileSystemResource extends AbstractWebdavResource
         setPolicy(policy);
     }
 
+    @Override
     public String getName()
     {
         return null == _name ? super.getName() : _name;
@@ -163,6 +164,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean exists()
     {
         if (_files == null)
@@ -193,6 +195,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean isCollection()
     {
         FileType type = getType();
@@ -202,6 +205,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean isFile()
     {
         return _files != null && getType() == FileType.file;
@@ -225,6 +229,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public File getFile()
     {
         FileInfo f = getFileInfo();
@@ -234,6 +239,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public FileStream getFileStream(User user) throws IOException
     {
         if (!canRead(user, true))
@@ -244,6 +250,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public InputStream getInputStream(User user) throws IOException
     {
         if (!canRead(user, true))
@@ -264,6 +271,7 @@ public class FileSystemResource extends AbstractWebdavResource
         return null;
     }
 
+    @Override
     public long copyFrom(User user, FileStream is) throws IOException
     {
         File file = getFile();
@@ -327,6 +335,7 @@ public class FileSystemResource extends AbstractWebdavResource
         }
     }
 
+    @Override
     @NotNull
     public Collection<String> listNames()
     {
@@ -350,6 +359,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public Collection<WebdavResource> list()
     {
         Collection<String> names = listNames();
@@ -364,18 +374,21 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public WebdavResource find(String name)
     {
         return new FileSystemResource(this, name);
     }
 
     
+    @Override
     public long getCreated()
     {
         return getLastModified();
     }
 
 
+    @Override
     public long getLastModified()
     {
         FileInfo fi = getFileInfo();
@@ -387,6 +400,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public long getContentLength()
     {
         FileInfo fi = getFileInfo();
@@ -396,6 +410,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean canRead(User user, boolean forRead)
     {
         try
@@ -426,6 +441,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean canWrite(User user, boolean forWrite)
     {
         try
@@ -456,6 +472,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean canCreate(User user, boolean forCreate)
     {
         try
@@ -486,6 +503,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean canDelete(User user, boolean forDelete, @Nullable List<String> message)
     {
         try
@@ -522,11 +540,13 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean canRename(User user, boolean forRename)
     {
         return super.canRename(user, forRename);
     }
 
+    @Override
     public boolean canList(User user, boolean forRead)
     {
         return super.canRead(user, forRead) || (null != _folder && _folder.canList(user, forRead));
@@ -538,6 +558,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     public boolean delete(User user)
     {
         File file = getFile();
@@ -576,6 +597,7 @@ public class FileSystemResource extends AbstractWebdavResource
     }
 
 
+    @Override
     @NotNull
     public Collection<WebdavResolver.History> getHistory()
     {

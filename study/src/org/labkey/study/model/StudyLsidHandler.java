@@ -41,6 +41,7 @@ import org.labkey.api.view.ActionURL;
 */
 public class StudyLsidHandler implements LsidManager.LsidHandler<Identifiable>
 {
+    @Override
     public Identifiable getObject(Lsid lsid)
     {
         OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
@@ -50,6 +51,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler<Identifiable>
         return new IdentifiableBase(oo);
     }
 
+    @Override
     public Container getContainer(Lsid lsid)
     {
         OntologyObject oo = OntologyManager.getOntologyObject(null, lsid.toString());
@@ -59,6 +61,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler<Identifiable>
         return oo.getContainer();
     }
 
+    @Override
     @Nullable
     public ActionURL getDisplayURL(Lsid lsid)
     {
@@ -96,6 +99,7 @@ public class StudyLsidHandler implements LsidManager.LsidHandler<Identifiable>
         return null;
     }
 
+    @Override
     public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
     {
         return false;

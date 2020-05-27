@@ -194,6 +194,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         return _typeToIconMap.get(type);
     }
 
+    @Override
     public String getIconPath(Report report)
     {
         if (report != null)
@@ -243,6 +244,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
         return _typeToIconClsMap.get(type);
     }
 
+    @Override
     public String getIconCls(Report report)
     {
         if (report != null)

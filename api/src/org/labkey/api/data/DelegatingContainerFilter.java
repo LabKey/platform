@@ -56,6 +56,7 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
      * If we are delegating to a ContainerFilterWithUser subclass, then be sure to apply the appropriate
      * permission.  See issue 19515
      */
+    @Override
     @Nullable
     public Collection<GUID> generateIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
     {
@@ -67,6 +68,7 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
         return cf.getIds();
     }
 
+    @Override
     @Nullable
     public Type getType()
     {

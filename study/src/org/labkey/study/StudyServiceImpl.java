@@ -137,6 +137,7 @@ public class StudyServiceImpl implements StudyService
 
     private StudyServiceImpl() {}
 
+    @Override
     public StudyImpl getStudy(Container container)
     {
         return StudyManager.getInstance().getStudy(container);
@@ -176,6 +177,7 @@ public class StudyServiceImpl implements StudyService
     }
 
 
+    @Override
     public DatasetDefinition getDataset(Container c, int datasetId)
     {
         Study study = StudyManager.getInstance().getStudy(c);
@@ -264,6 +266,7 @@ public class StudyServiceImpl implements StudyService
     }
 */
 
+    @Override
     public void addAssayRecallAuditEvent(Dataset def, int rowCount, Container sourceContainer, User user)
     {
         String assayName = def.getLabel();
@@ -359,6 +362,7 @@ public class StudyServiceImpl implements StudyService
         AuditLogService.get().addEvent(u,event);
     }
 
+    @Override
     public void applyDefaultQCStateFilter(DataView view)
     {
         if (QCStateManager.getInstance().showQCStates(view.getRenderContext().getContainer()))
@@ -381,11 +385,13 @@ public class StudyServiceImpl implements StudyService
         }
     }
 
+    @Override
     public ActionURL getDatasetURL(Container container, int datasetId)
     {
         return new ActionURL(StudyController.DatasetAction.class, container).addParameter("datasetId", datasetId);
     }
 
+    @Override
     @NotNull
     public Set<Study> findStudy(@NotNull Object studyReference, @Nullable User user)
     {
@@ -438,6 +444,7 @@ public class StudyServiceImpl implements StudyService
         return result;
     }
 
+    @Override
     public Set<DatasetDefinition> getDatasetsForAssayProtocol(ExpProtocol protocol)
     {
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataset();
@@ -454,6 +461,7 @@ public class StudyServiceImpl implements StudyService
         return result;
     }
 
+    @Override
     public Map<DatasetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
     {
         Set<DatasetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
@@ -536,6 +544,7 @@ public class StudyServiceImpl implements StudyService
         }
     }
 
+    @Override
     public List<SecurableResource> getSecurableResources(Container container, User user)
     {
         Study study = StudyManager.getInstance().getStudy(container);
@@ -546,11 +555,13 @@ public class StudyServiceImpl implements StudyService
             return Collections.singletonList(study);
     }
 
+    @Override
     public Set<Role> getStudyRoles()
     {
         return RoleManager.roleSet(SpecimenCoordinatorRole.class, SpecimenRequesterRole.class);
     }
 
+    @Override
     public String getSubjectNounSingular(Container container)
     {
         Study study = getStudy(container);
@@ -559,6 +570,7 @@ public class StudyServiceImpl implements StudyService
         return study.getSubjectNounSingular();
     }
 
+    @Override
     public String getSubjectNounPlural(Container container)
     {
         Study study = getStudy(container);
@@ -567,6 +579,7 @@ public class StudyServiceImpl implements StudyService
         return study.getSubjectNounPlural();
     }
 
+    @Override
     public String getSubjectColumnName(Container container)
     {
         Study study = getStudy(container);
@@ -575,16 +588,19 @@ public class StudyServiceImpl implements StudyService
         return study.getSubjectColumnName();
     }
 
+    @Override
     public String getSubjectVisitColumnName(Container container)
     {
         return ColumnInfo.legalNameFromName(getSubjectNounSingular(container) + "Visit");
     }
 
+    @Override
     public String getSubjectTableName(Container container)
     {
         return getSubjectTableName(getSubjectNounSingular(container));
     }
 
+    @Override
     public String getSubjectVisitTableName(Container container)
     {
         return getSubjectVisitTableName(getSubjectNounSingular(container));
@@ -600,21 +616,25 @@ public class StudyServiceImpl implements StudyService
         return getSubjectTableName(subjectNounSingular) + "Visit";
     }
 
+    @Override
     public String getSubjectCategoryTableName(Container container)
     {
         return getSubjectTableName(container) + "Category";
     }
 
+    @Override
     public String getSubjectGroupTableName(Container container)
     {
         return getSubjectTableName(container) + "Group";
     }
 
+    @Override
     public String getSubjectGroupMapTableName(Container container)
     {
         return getSubjectTableName(container) + "GroupMap";
     }
 
+    @Override
     public boolean isValidSubjectColumnName(Container container, String subjectColumnName)
     {
         if (subjectColumnName == null || subjectColumnName.length() == 0)
@@ -628,6 +648,7 @@ public class StudyServiceImpl implements StudyService
         return !colNames.contains(subjectColumnName);
     }
 
+    @Override
     public boolean isValidSubjectNounSingular(Container container, String subjectNounSingular)
     {
         if (subjectNounSingular == null || subjectNounSingular.length() == 0)
@@ -666,6 +687,7 @@ public class StudyServiceImpl implements StudyService
         return null;
     }
 
+    @Override
     public Map<String, String> getAlternateIdMap(Container container)
     {
         Map<String, String> alternateIdMap = new HashMap<>();
@@ -704,6 +726,7 @@ public class StudyServiceImpl implements StudyService
     }
 
 
+    @Override
     public DataIteratorBuilder wrapSampleMindedTransform(User user, DataIteratorBuilder in, DataIteratorContext context, Study study, TableInfo target)
     {
         return SampleMindedTransformTask.wrapSampleMindedTransform(user, in,context,study,target);

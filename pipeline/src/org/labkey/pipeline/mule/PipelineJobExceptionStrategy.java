@@ -32,6 +32,7 @@ public class PipelineJobExceptionStrategy extends DefaultComponentExceptionStrat
 {
     private static final Logger LOGGER = Logger.getLogger(PipelineJobExceptionStrategy.class);
 
+    @Override
     protected void defaultHandler(Throwable t)
     {
         super.defaultHandler(t);

@@ -49,6 +49,7 @@ public class CrosstabReportDescriptor extends QueryReportDescriptor
         return new String[]{""};
     }
 
+    @Override
     public boolean isArrayType(String prop)
     {
         if (!super.isArrayType(prop))

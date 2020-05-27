@@ -54,6 +54,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                                                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
         pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new ParticipantVisitTable(_userSchema, cf,false);
@@ -80,6 +81,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         var siteNameColumn = wrapColumn("SiteName", getRealTable().getColumn("CurrentLocation"));
         siteNameColumn.setFk(new LookupForeignKey("RowId")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new LocationTable(_userSchema, cf);
@@ -87,6 +89,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         });
         siteNameColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
+            @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
                 return new SiteNameDisplayColumn(colInfo);
@@ -97,6 +100,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         var siteLdmsCodeColumn = wrapColumn("SiteLdmsCode", getRealTable().getColumn("CurrentLocation"));
         siteLdmsCodeColumn.setFk(new LookupForeignKey("RowId", "LdmsLabCode")
         {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new LocationTable(_userSchema, cf);
@@ -272,6 +276,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
             return requiredColumns.get(inRequestKey);
         }
 
+        @Override
         public void addQueryColumns(Set<ColumnInfo> columns)
         {
             super.addQueryColumns(columns);
@@ -294,6 +299,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return NO_SITE_DISPLAY_VALUE + ": Request status unknown";
         }
 
+        @Override
         public Object getDisplayValue(RenderContext ctx)
         {
             Object value = getBoundColumn().getValue(ctx);
@@ -303,6 +309,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 return super.getDisplayValue(ctx);
         }
 
+        @Override
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Object value = getBoundColumn().getValue(ctx);

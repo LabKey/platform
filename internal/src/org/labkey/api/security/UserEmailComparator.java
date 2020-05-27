@@ -24,6 +24,7 @@ import java.util.Comparator;
  */
 public class UserEmailComparator implements Comparator<User>
 {
+    @Override
     public int compare(User a, User b)
     {
         String c1 = a.getEmail();

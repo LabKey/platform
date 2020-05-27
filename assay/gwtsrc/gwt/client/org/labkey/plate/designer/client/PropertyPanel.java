@@ -40,6 +40,7 @@ public abstract class PropertyPanel extends DockPanel
 
     private ChangeListener _changeListener = new ChangeListener()
     {
+        @Override
         public void onChange(Widget sender)
         {
             _view.markAsDirty();
@@ -48,6 +49,7 @@ public abstract class PropertyPanel extends DockPanel
 
     private KeyboardListener _keyboardListener = new KeyboardListenerAdapter()
     {
+        @Override
         public void onKeyPress(Widget sender, char keyCode, int modifiers)
         {
             _view.markAsDirty();
@@ -62,6 +64,7 @@ public abstract class PropertyPanel extends DockPanel
             _tooltip.setStyleName("labkey-form-label");
         }
 
+        @Override
         public void onMouseEnter(Widget sender)
         {
             _tooltip.show();
@@ -69,6 +72,7 @@ public abstract class PropertyPanel extends DockPanel
             _tooltip.setPopupPosition(sender.getAbsoluteLeft() - width - 10, sender.getAbsoluteTop());
         }
 
+        @Override
         public void onMouseLeave(Widget sender)
         {
             _tooltip.hide();
@@ -85,6 +89,7 @@ public abstract class PropertyPanel extends DockPanel
         _addPropertyButton = new ImageButton("Add a new property");
         _addPropertyButton.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 PropertyCreationDialog dialog = new PropertyCreationDialog(PropertyPanel.this);
@@ -157,6 +162,7 @@ public abstract class PropertyPanel extends DockPanel
         image.addMouseListener(_tooltipListener);
         image.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 deleteProperty(name);

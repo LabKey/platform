@@ -40,6 +40,7 @@ public class ShiftPanel extends FlexTable
             super(text);
             addClickHandler(new ClickHandler()
             {
+                @Override
                 public void onClick(ClickEvent event)
                 {
                     shift(vertical, horizontal);

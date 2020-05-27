@@ -479,17 +479,20 @@ public class ReportUtil
 
     public static class DefaultReportFilter implements ReportFilter
     {
+        @Override
         public boolean accept(Report report, Container c, User user)
         {
             return report.hasPermission(user, c, ReadPermission.class);
         }
 
+        @Override
         public ActionURL getViewRunURL(User user, Container c, CustomViewInfo view)
         {
             return QueryService.get().urlFor(user, c, QueryAction.executeQuery, view.getSchemaName(), view.getQueryName()).
                     addParameter(QueryView.DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName.name(), view.getName());
         }
 
+        @Override
         public ActionURL getViewEditURL(Container c, CustomViewInfo view, User user)
         {
             return null;

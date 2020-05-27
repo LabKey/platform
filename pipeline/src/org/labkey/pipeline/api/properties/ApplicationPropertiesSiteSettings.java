@@ -25,11 +25,13 @@ import org.labkey.api.settings.NetworkDriveProps;
  */
 public class ApplicationPropertiesSiteSettings implements PipelineJobService.ApplicationProperties
 {
+    @Override
     public String getToolsDirectory()
     {
         return AppProps.getInstance().getPipelineToolsDirectory();
     }
 
+    @Override
     public Character getNetworkDriveLetter()
     {
         String letter = NetworkDriveProps.getNetworkDriveLetter();
@@ -44,16 +46,19 @@ public class ApplicationPropertiesSiteSettings implements PipelineJobService.App
         return letter.charAt(0);
     }
 
+    @Override
     public String getNetworkDrivePath()
     {
         return NetworkDriveProps.getNetworkDrivePath();
     }
 
+    @Override
     public String getNetworkDriveUser()
     {
         return NetworkDriveProps.getNetworkDriveUser();
     }
 
+    @Override
     public String getNetworkDrivePassword()
     {
         return NetworkDriveProps.getNetworkDrivePassword();

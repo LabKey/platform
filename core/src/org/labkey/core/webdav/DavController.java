@@ -643,6 +643,7 @@ public class DavController extends SpringActionController
                     write(str, 0, str.length());
                 }
 
+                @Override
                 public void write(char[] cbuf, int off, int len) throws IOException
                 {
                     super.write(cbuf,off,len);
@@ -680,6 +681,7 @@ public class DavController extends SpringActionController
             this.allowDuringUpgrade = allow;
         }
 
+        @Override
         public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response)
         {
             clearLastError();
@@ -821,6 +823,7 @@ public class DavController extends SpringActionController
             super(method, true);
         }
 
+        @Override
         public final WebdavStatus doMethod() throws DavException, IOException
         {
             try
@@ -877,6 +880,7 @@ public class DavController extends SpringActionController
             super("MD5SUM");
         }
 
+        @Override
         protected WebdavStatus _doMethod() throws DavException, IOException
         {
             WebdavResource resource = resolvePath();
@@ -1383,6 +1387,7 @@ public class DavController extends SpringActionController
         }
 
 
+        @Override
         public WebdavStatus doMethod() throws DavException, IOException
         {
             WebdavResource root = getResource();
@@ -2009,6 +2014,7 @@ public class DavController extends SpringActionController
                 gvfs = true;
         }
 
+        @Override
         public void beginResponse(WebdavResponse response)
         {
             response.setStatus(WebdavStatus.SC_MULTI_STATUS);
@@ -2018,11 +2024,13 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "multistatus" + generateNamespaceDeclarations(), XMLWriter.OPENING);
         }
 
+        @Override
         public void endResponse()
         {
             xml.writeElement(null, "multistatus", XMLWriter.CLOSING);
         }
 
+        @Override
         public void writeProperty(String propertyName, Object propertyValue)
         {
             /* NYI */
@@ -2678,6 +2686,7 @@ public class DavController extends SpringActionController
             xml.writeElement(null, "response", XMLWriter.CLOSING);
         }
 
+        @Override
         public void sendData() throws IOException
         {
             xml.sendData();
@@ -2701,6 +2710,7 @@ public class DavController extends SpringActionController
             extraProps = new HashMap<>();
         }
 
+        @Override
         public void beginResponse(WebdavResponse response)
         {
             response.setContentType("application/json; charset=UTF-8");
@@ -2709,6 +2719,7 @@ public class DavController extends SpringActionController
             json.array();
         }
 
+        @Override
         public void endResponse()
         {
             json.endArray();
@@ -2721,11 +2732,13 @@ public class DavController extends SpringActionController
             json.endObject();
         }
 
+        @Override
         public void writeProperty(String propertyName, Object propertyValue)
         {
             extraProps.put(propertyName, propertyValue);
         }
 
+        @Override
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector) throws Exception
         {
             json.object();
@@ -2862,6 +2875,7 @@ public class DavController extends SpringActionController
             json.endObject();
         }
 
+        @Override
         public void sendData() throws IOException
         {
             out.flush();
@@ -3085,14 +3099,17 @@ public class DavController extends SpringActionController
                     {
                         return lastModified;
                     }
+                    @Override
                     public long getSize()
                     {
                         return _size;
                     }
+                    @Override
                     public InputStream openInputStream()
                     {
                         return is;
                     }
+                    @Override
                     public void closeInputStream()
                     {
                         /* */
@@ -3103,6 +3120,7 @@ public class DavController extends SpringActionController
             return _fis;
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException, RedirectException
         {
             checkReadOnly();
@@ -3274,6 +3292,7 @@ public class DavController extends SpringActionController
             super("DELETE");
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
@@ -3576,6 +3595,7 @@ public class DavController extends SpringActionController
             super("PROPPATCH");
         }
 
+        @Override
         WebdavStatus doMethod() throws DavException, IOException
         {
             checkReadOnly();
@@ -4700,6 +4720,7 @@ public class DavController extends SpringActionController
             super("OPTIONS");
         }
 
+        @Override
         public WebdavStatus doMethod() throws DavException
         {
             checkRequireLogin(null);

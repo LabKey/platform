@@ -147,6 +147,7 @@ public class ApiJsonWriter extends ApiResponseWriter
         writeObject(value);
     }
 
+    @Override
     protected void writeObject(Object value) throws IOException
     {
         if (value instanceof String || value instanceof Number || value instanceof Boolean || value == null)

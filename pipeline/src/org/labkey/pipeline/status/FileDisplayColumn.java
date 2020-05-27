@@ -43,6 +43,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
         setCaption("Files");
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String[] fileNames = null;
@@ -73,6 +74,7 @@ public class FileDisplayColumn extends SimpleDisplayColumn
                 fileNames = dir.list(
                     new FilenameFilter()
                     {
+                        @Override
                         public boolean accept(File dir, String name)
                         {
                             if (provider != null)

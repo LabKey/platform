@@ -168,6 +168,7 @@ public class StudyPublishTest extends StudyPHIExportTest
         folder
     }
 
+    @Override
     public void doCleanup(boolean afterTest) throws TestTimeoutException
     {
         super.doCleanup(afterTest);

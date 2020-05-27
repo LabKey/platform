@@ -64,8 +64,10 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider> exten
 
     String getName();
 
+    @Override
     User getUser();
 
+    @Override
     @NotNull
     Container getContainer();
 

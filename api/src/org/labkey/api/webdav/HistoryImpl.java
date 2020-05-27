@@ -40,21 +40,25 @@ public class HistoryImpl implements WebdavResolver.History
         _href = href;
     }
     
+    @Override
     public User getUser()
     {
         return UserManager.getUser(_userId);
     }
 
+    @Override
     public Date getDate()
     {
         return _date;
     }
 
+    @Override
     public String getMessage()
     {
         return _message;
     }
 
+    @Override
     public String getHref()
     {
         return _href;

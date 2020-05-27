@@ -36,21 +36,25 @@ import java.util.List;
  */
 public class DefaultReportUIProvider implements ReportService.UIProvider
 {
+    @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<ReportService.DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings)
     {
         return Collections.emptyList();
     }
 
+    @Override
     public @Nullable String getIconPath(Report report)
     {
         return null;
     }
 
+    @Override
     public @Nullable String getIconCls(Report report)
     {
         return null;
@@ -158,31 +162,37 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             _id = id;
         }
 
+        @Override
         public String getReportType()
         {
             return _reportType;
         }
 
+        @Override
         public String getLabel()
         {
             return _label;
         }
 
+        @Override
         public ActionURL getDesignerURL()
         {
             return _designerURL;
         }
 
+        @Override
         public String getDescription()
         {
             return _description;
         }
 
+        @Override
         public boolean isDisabled()
         {
             return _disabled;
         }
 
+        @Override
         public String getId()
         {
             return _id;
@@ -200,6 +210,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             return _iconCls;
         }
 
+        @Override
         public ReportService.DesignerType getType()
         {
             return _type;

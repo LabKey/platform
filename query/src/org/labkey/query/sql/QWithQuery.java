@@ -27,6 +27,7 @@ public class QWithQuery extends QNode
         return getChildOfType(QExpr.class);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         getWith().appendSource(builder);

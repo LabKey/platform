@@ -29,6 +29,7 @@ public class StringBuilderWriter extends Writer
         _builder = builder;
     }
 
+    @Override
     public void write(char cbuf[], int off, int len) throws IOException
     {
         if (_closed)
@@ -36,11 +37,13 @@ public class StringBuilderWriter extends Writer
         _builder.append(cbuf, off, len);
     }
 
+    @Override
     public void close()
     {
         _closed = true;
     }
 
+    @Override
     public void flush()
     {
         // no-op

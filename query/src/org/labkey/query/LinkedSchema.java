@@ -120,8 +120,11 @@ public class LinkedSchema extends ExternalSchema
         final Set<String> queryNames = sourceSchema.getQueryDefs().keySet();
         TableSource tableSource = new TableSource()
         {
+            @Override
             public Collection<String> getTableNames()         { return tableNames; }
+            @Override
             public Collection<String> getQueryNames()         { return queryNames; }
+            @Override
             public boolean isTableAvailable(String tableName) { return tableNames.contains(tableName); }
         };
 

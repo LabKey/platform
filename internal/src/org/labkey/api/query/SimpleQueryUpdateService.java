@@ -79,6 +79,7 @@ public class SimpleQueryUpdateService extends DefaultQueryUpdateService
         return (SimpleTable)super.getQueryTable();
     }
 
+    @Override
     public DataIteratorBuilder createImportDIB(User user, Container container, final DataIteratorBuilder data, DataIteratorContext context)
     {
         // Create object uri if column is present and domain is not empty.

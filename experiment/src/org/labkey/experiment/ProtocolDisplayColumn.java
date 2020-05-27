@@ -43,6 +43,7 @@ public class ProtocolDisplayColumn extends SimpleDisplayColumn
         setCaption(name);
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         if (_protocol == null)

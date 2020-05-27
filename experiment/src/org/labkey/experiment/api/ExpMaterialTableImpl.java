@@ -135,6 +135,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -152,6 +153,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
                 var columnInfo = wrapColumn(alias, _rootTable.getColumn("CpasType"));
                 columnInfo.setFk(new LookupForeignKey(getContainerFilter(), null, null, null, (String)null, "LSID", "Name")
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         ExpSampleSetTable sampleSetTable = ExperimentService.get().createSampleSetTable(ExpSchema.TableType.SampleSets.toString(), _userSchema, getLookupContainerFilter());
@@ -295,6 +297,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    @Override
     public MutableColumnInfo createPropertyColumn(String alias)
     {
         var ret = super.createPropertyColumn(alias);
@@ -326,6 +329,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         return ret;
     }
 
+    @Override
     public void setSampleSet(ExpSampleSet ss, boolean filter)
     {
         checkLocked();
@@ -350,6 +354,7 @@ public class ExpMaterialTableImpl extends ExpRunItemTableImpl<ExpMaterialTable.C
         }
     }
 
+    @Override
     public void setMaterials(Set<ExpMaterial> materials)
     {
         checkLocked();

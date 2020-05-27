@@ -26,11 +26,13 @@ import org.labkey.api.pipeline.PipelineJob;
 */
 public class NoOpPipelineStatusWriter implements PipelineStatusFile.StatusWriter
 {
+    @Override
     public boolean setStatus(PipelineJob job, String status, String statusInfo, boolean allowInsert)
     {
         return true;
     }
 
+    @Override
     public void ensureError(PipelineJob job)
     {
         throw new UnsupportedOperationException("Method supported only on web server");

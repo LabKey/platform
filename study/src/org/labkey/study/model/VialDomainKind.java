@@ -125,6 +125,7 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
         _specimenDomainURI = specimenDomainURI;
     }
 
+    @Override
     public String getKindName()
     {
         return NAME;
@@ -152,6 +153,7 @@ public final class VialDomainKind extends AbstractSpecimenDomainKind
         return foreignKeys;
     }
 
+    @Override
     protected String getNamespacePrefix()
     {
         return NAMESPACE_PREFIX;

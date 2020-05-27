@@ -32,12 +32,14 @@ public class SiteDownServlet extends HttpServlet
 {
     private String _message = "This LabKey Server is currently down for maintenance.";
 
+    @Override
     public void init(ServletConfig config) throws ServletException
     {
         super.init(config);
         _message = config.getInitParameter("message");
     }
 
+    @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException
     {
         Writer writer = resp.getWriter();

@@ -63,6 +63,7 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         _importFile = (null == _sessionFileHolder ? null : _sessionFileHolder.getFile());
     }
 
+    @Override
     public List<InferencedColumn> inferenceColumns() throws GWTImportException
     {
         try (DataLoader loader = getDataLoader())
@@ -179,10 +180,12 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         return result;
     }
 
+    @Override
     public GWTDomain getDomainDescriptor(String typeURI)
     {
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, getContainer());
     }
 
+    @Override
     public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws GWTImportException;
 }

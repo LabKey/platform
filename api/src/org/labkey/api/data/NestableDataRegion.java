@@ -106,6 +106,7 @@ public class NestableDataRegion extends AbstractNestableDataRegion
         }
     }
 
+    @Override
     public void setSettings(QuerySettings settings)
     {
         super.setSettings(settings);

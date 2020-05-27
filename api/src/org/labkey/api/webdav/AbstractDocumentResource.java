@@ -39,21 +39,25 @@ public abstract class AbstractDocumentResource extends AbstractWebdavResource
         super(parent, name);
     }
 
-	public boolean isFile()
+	@Override
+    public boolean isFile()
 	{
 		return exists();
 	}
 
-	public WebdavResource find(String name)
+	@Override
+    public WebdavResource find(String name)
 	{
 		return null;
 	}
 
+    @Override
     public Collection<String> listNames()
     {
         return Collections.emptyList();
     }
     
+    @Override
     public boolean isCollection()
     {
         return false;

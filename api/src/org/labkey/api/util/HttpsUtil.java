@@ -95,14 +95,17 @@ public class HttpsUtil
                 {
                     new X509TrustManager()
                     {
+                        @Override
                         public java.security.cert.X509Certificate[] getAcceptedIssuers()
                         {
                             return new java.security.cert.X509Certificate[0];
                         }
 
+                        @Override
                         public void checkClientTrusted(java.security.cert.X509Certificate[] x509Certificates, String string)
                         {}
 
+                        @Override
                         public void checkServerTrusted(java.security.cert.X509Certificate[] x509Certificates, String string)
                         {}
                     }

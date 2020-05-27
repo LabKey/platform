@@ -86,6 +86,7 @@ public class VisualizationModule extends CodeOnlyModule
                 return schema.getContainer().getParsedPath().equals(JunitUtil.getTestContainerPath());
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new VisTestSchema(schema.getUser(), schema.getContainer());

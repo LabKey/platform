@@ -31,56 +31,67 @@ public class TourImpl implements Tour
         _model = model;
     }
 
+    @Override
     public Integer getRowId()
     {
         return _model.getRowId();
     }
 
+    @Override
     public void setRowId(Integer id)
     {
         _model.setRowId(id);
     }
 
+    @Override
     public String getTitle()
     {
         return _model.getTitle();
     }
 
+    @Override
     public void setTitle(String title)
     {
         _model.setTitle(title);
     }
 
+    @Override
     public String getDescription()
     {
         return _model.getDescription();
     }
 
+    @Override
     public void setDescription(String description)
     {
         _model.setDescription(description);
     }
 
+    @Override
     public String getJson()
     {
         return _model.getJson();
     }
 
+    @Override
     public void setJson(String json)
     {
         _model.setJson(json);
     }
 
+    @Override
     public Integer getMode()
     {
         return _model.getMode();
     }
 
+    @Override
     public void setMode(Integer mode)
     {
         _model.setMode(mode);
     }
 
+    @Override
     public JSONObject abbrevDef()
     {
         return _model.abbrevDef();

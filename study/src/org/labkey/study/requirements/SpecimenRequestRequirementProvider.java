@@ -34,11 +34,13 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         super(SpecimenRequestRequirement.class, SpecimenRequestActor.class);
     }
 
+    @Override
     public RequirementType[] getRequirementTypes()
     {
         return SpecimenRequestRequirementType.values();
     }
 
+    @Override
     protected String getOwnerEntityIdColumnName()
     {
         return "OwnerEntityId";
@@ -49,16 +51,19 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         return requirement.getRowId();
     }
 
+    @Override
     protected String getActorSortColumnName()
     {
         return "SortOrder";
     }
 
+    @Override
     protected TableInfo getActorTableInfo()
     {
         return StudySchema.getInstance().getTableInfoSampleRequestActor();
     }
 
+    @Override
     protected TableInfo getRequirementTableInfo()
     {
         return StudySchema.getInstance().getTableInfoSampleRequestRequirement();
@@ -69,6 +74,7 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         return requirement.createMutable();
     }
 
+    @Override
     protected List<SpecimenRequestRequirement> generateRequirementsFromDefault(RequirementOwner owner, SpecimenRequestRequirement defaultRequirement, RequirementType type)
     {
         return ((SpecimenRequestRequirementType) type).generateRequirements((SpecimenRequest) owner, defaultRequirement);

@@ -114,11 +114,13 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         edit().setContainer(container.getId());
     }
 
+    @Override
     public QueryDefinition getQueryDefinition()
     {
         return _queryDef;
     }
 
+    @Override
     public void setName(String name)
     {
         edit().setName(name);
@@ -148,12 +150,14 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         return ret.toString();
     }
 
+    @Override
     public void setColumnProperties(List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> map)
     {
         edit().setColumns(encodeProperties(map));
     }
 
 
+    @Override
     public void setColumns(List<FieldKey> columns)
     {
         List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list = new ArrayList<>(columns.size());
@@ -168,6 +172,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         return StringUtils.trimToNull(_cstmView.getColumns()) != null;
     }
 
+    @Override
     public void applyFilterAndSortToURL(ActionURL url, String dataRegionName)
     {
         if (!hasFilterOrSort())
@@ -191,6 +196,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
 
     }
 
+    @Override
     public void setFilterAndSortFromURL(ActionURL url, String dataRegionName)
     {
         try
@@ -220,6 +226,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         }
     }
 
+    @Override
     public void setFilterAndSort(String filter)
     {
         edit().setFilter(filter);
@@ -230,6 +237,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         return getOwner() != null && (getOwner().isGuest() || isSession());
     }
 
+    @Override
     public void save(User user, HttpServletRequest request)
     {
         if (!_dirty)
@@ -257,6 +265,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         }
     }
 
+    @Override
     public void delete(User user, HttpServletRequest request) throws QueryException
     {
         try
@@ -281,6 +290,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         }
     }
 
+    @Override
     public boolean serialize(VirtualFile dir) throws IOException
     {
         // Don't serialize session views
@@ -426,6 +436,7 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView, Ed
         return true;
     }
 
+    @Override
     public void setIsHidden(boolean b)
     {
         edit().setFlags(_mgr.setIsHidden(_cstmView.getFlags(), b));

@@ -155,6 +155,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     protected Map<String,RelationColumn> getAllColumns()
     {
         List<ColumnInfo> columns = _tableInfo.getColumns();
@@ -178,6 +179,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
@@ -200,6 +202,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull ColumnType.Fk fk, @NotNull String name)
     {
         assert parentRelCol instanceof TableColumn;
@@ -278,6 +281,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     public SQLFragment getSql()
     {
         SQLFragment ret = new SQLFragment();
@@ -370,6 +374,7 @@ public class QueryTable extends QueryRelation
     }
 
 
+    @Override
     String getQueryText()
     {
         return _tableInfo.getSelectName();
@@ -395,6 +400,7 @@ public class QueryTable extends QueryRelation
             _parent = parent;
         }
 
+        @Override
         String getAlias()
         {
             return _alias;
@@ -425,21 +431,25 @@ public class QueryTable extends QueryRelation
                 return _col.getValueSql(_innerAlias);
         }
 
+        @Override
         SQLFragment getInternalSql()
         {
             return _col.getValueSql(_innerAlias);
         }
 
+        @Override
         public FieldKey getFieldKey()
         {
             return _key;
         }
 
+        @Override
         QueryRelation getTable()
         {
             return QueryTable.this;
         }
 
+        @Override
         public @NotNull JdbcType getJdbcType()
         {
             return _col.getJdbcType();
@@ -503,6 +513,7 @@ public class QueryTable extends QueryRelation
     Map<FieldKey,RelationColumn> _mapOutputColToTableColumn = null;
 
 
+    @Override
     public void setContainerFilter(ContainerFilter containerFilter)
     {
         if (_tableInfo.supportsContainerFilter())

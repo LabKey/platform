@@ -50,11 +50,13 @@ public class PageWriterFactory implements FolderWriterFactory
 
     public class PageWriter extends BaseFolderWriter
     {
+        @Override
         public String getDataType()
         {
             return FolderArchiveDataTypes.WEBPART_PROPERTIES_AND_LAYOUT;
         }
 
+        @Override
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
             FolderDocument.Folder folderXml = ctx.getXml();

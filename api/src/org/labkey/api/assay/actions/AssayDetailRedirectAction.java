@@ -49,6 +49,7 @@ public class AssayDetailRedirectAction extends SimpleRedirectAction<AssayDetailR
         }
     }
 
+    @Override
     public ActionURL getRedirectURL(AssayDetailsForm form)
     {
         if (form.getRunId() == null)

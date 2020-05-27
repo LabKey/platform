@@ -41,12 +41,14 @@ public interface WellGroupTemplate extends PropertySet, Identifiable
 
     WellGroup.Type getType();
 
+    @Override
     String getName();
 
     boolean contains(Position position);
 
     String getPositionDescription();
 
+    @Override
     default @Nullable ActionURL detailsURL()
     {
         return null;

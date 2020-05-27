@@ -32,6 +32,7 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
     private String _muleConfig;
     private String _hostName;
 
+    @Override
     public String getLocation()
     {
         return _location;
@@ -42,6 +43,7 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
         _location = location;
     }
 
+    @Override
     public String getMuleConfig()
     {
         return _muleConfig;
@@ -52,6 +54,7 @@ public class RemoteServerPropertiesImpl implements PipelineJobService.RemoteServ
         _muleConfig = muleConfig;
     }
 
+    @Override
     @NotNull
     public String getHostName()
     {

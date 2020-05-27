@@ -64,6 +64,7 @@ public class StudySecurityTest extends StudyBaseTest
         Edit
     }
 
+    @Override
     protected void doCreateSteps()
     {
         //start import--need to wait for completion after setting up security
@@ -81,6 +82,7 @@ public class StudySecurityTest extends StudyBaseTest
         waitForPipelineJobsToComplete(1, "study import", false);
     }
 
+    @Override
     protected void doVerifySteps()
     {
         setupStudySecurity();

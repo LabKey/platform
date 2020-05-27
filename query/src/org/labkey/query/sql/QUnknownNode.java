@@ -32,6 +32,7 @@ public class QUnknownNode extends QNode
 		super(n);
     }
     
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(getTokenText());

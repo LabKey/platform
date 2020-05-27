@@ -39,6 +39,7 @@ public class ReportsPipelineProvider extends PipelineProvider
         super(NAME, owningModule);
     }
 
+    @Override
     public void preDeleteStatusFile(User user, PipelineStatusFile sf)
     {
         // clean up all the temp files on status file deletion
@@ -52,6 +53,7 @@ public class ReportsPipelineProvider extends PipelineProvider
         }
     }
 
+    @Override
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         // Don't hook up any actions to files

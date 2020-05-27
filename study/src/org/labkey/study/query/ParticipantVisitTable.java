@@ -72,6 +72,7 @@ public class ParticipantVisitTable extends BaseStudyTable
                 var visitColumn = new AliasedColumn(this, "Visit", col);
                 LookupForeignKey visitFK = new LookupForeignKey(cf, "RowId", null)
                 {
+                    @Override
                     public TableInfo getLookupTableInfo()
                     {
                         return new VisitTable(_userSchema, getLookupContainerFilter());
@@ -191,6 +192,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             this.dsd = dsd;
         }
         
+        @Override
         public DatasetTableImpl getLookupTableInfo()
         {
             try
@@ -205,6 +207,7 @@ public class ParticipantVisitTable extends BaseStudyTable
             }
         }
 
+        @Override
         public StringExpression getURL(ColumnInfo parent)
         {
             return null;
@@ -228,6 +231,7 @@ public class ParticipantVisitTable extends BaseStudyTable
         _ignoreSessionParticipantGroup = true;
     }
 
+    @Override
     protected SimpleFilter getFilter()
     {
         SimpleFilter sf;

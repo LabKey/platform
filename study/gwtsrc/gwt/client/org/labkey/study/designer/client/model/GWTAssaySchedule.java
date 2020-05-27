@@ -114,22 +114,26 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
         return null;
     }
 
+    @Override
     public void addTimepoint(GWTTimepoint tp)
     {
         timepoints.add(tp);
     }
 
+    @Override
     public void addTimepoint(int index, GWTTimepoint tp)
     {
         timepoints.add(index, tp);
     }
 
+    @Override
     public void removeTimepoint(int index)
     {
         GWTTimepoint tp = timepoints.get(index);
         removeTimepoint(tp);
     }
 
+    @Override
     public void removeTimepoint(GWTTimepoint tp)
     {
         for (GWTAssayDefinition assayDef : assaySchedule.keySet())
@@ -141,11 +145,13 @@ public class GWTAssaySchedule implements Schedule, IsSerializable
         timepoints.remove(tp);
     }
 
+    @Override
     public List<GWTTimepoint> getTimepoints()
     {
         return timepoints;
     }
 
+    @Override
     public GWTTimepoint getTimepoint(int i)
     {
         return timepoints.get(i);

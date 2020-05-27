@@ -39,6 +39,7 @@ public class QDot extends QFieldKey
         return FieldKey.fromParts(left,right);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("");

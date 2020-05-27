@@ -60,6 +60,7 @@ public class ListQuerySchema extends UserSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new ListQuerySchema(schema.getUser(), schema.getContainer());
@@ -78,6 +79,7 @@ public class ListQuerySchema extends UserSchema
         return ListSchema.getInstance().getSchema();
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return ListManager.get().getLists(getContainer())
@@ -86,6 +88,7 @@ public class ListQuerySchema extends UserSchema
             .collect(Collectors.toSet());
     }
 
+    @Override
     @Nullable
     public TableInfo createTable(String name, ContainerFilter cf)
     {
@@ -120,6 +123,7 @@ public class ListQuerySchema extends UserSchema
         return super.createView(context, settings, errors);
     }
 
+    @Override
     public String getDomainURI(String queryName)
     {
         Container container = getContainer();

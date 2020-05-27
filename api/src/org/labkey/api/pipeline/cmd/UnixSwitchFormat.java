@@ -52,11 +52,13 @@ public class UnixSwitchFormat implements SwitchFormat
         return _switch + name;
     }
 
+    @Override
     public List<String> format(String name)
     {
         return format(name, null);
     }
 
+    @Override
     public List<String> format(String name, String value)
     {
         // If no value, return only the formatted switch.

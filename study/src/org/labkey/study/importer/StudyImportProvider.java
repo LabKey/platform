@@ -57,6 +57,7 @@ public class StudyImportProvider extends PipelineProvider
 
     private static class StudyImportFilter implements FileFilter
     {
+        @Override
         public boolean accept(File file)
         {
             return file.getName().endsWith("study.xml") || file.getName().endsWith(".study.zip") || file.getName().endsWith(".folder.zip");

@@ -40,6 +40,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames("Narrow Search");
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         boolean includeSubfolders = includeSubfolders(webPart);

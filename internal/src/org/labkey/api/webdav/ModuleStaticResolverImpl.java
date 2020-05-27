@@ -311,6 +311,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver, ModuleChangeLis
     }
 
 
+    @Override
     public void removeLink(Path from)
     {
         WebdavResource rParent = lookup(from.getParent());

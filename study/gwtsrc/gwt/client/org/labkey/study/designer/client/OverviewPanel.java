@@ -70,6 +70,7 @@ public class OverviewPanel extends Composite
             //tbStudyName.setName("protocolName"); //for testing
             tbStudyName.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     definition.setStudyName(tbStudyName.getText().trim());
@@ -83,6 +84,7 @@ public class OverviewPanel extends Composite
             //tbSpecies.setName("species"); //for testing
             tbSpecies.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     definition.setAnimalSpecies(tbSpecies.getText().trim());
@@ -96,6 +98,7 @@ public class OverviewPanel extends Composite
             //tbInvestigator.setName("investigator"); //for testing
             tbInvestigator.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     definition.setInvestigator(tbInvestigator.getText().trim());
@@ -109,6 +112,7 @@ public class OverviewPanel extends Composite
             //tbGrant.setName("grant"); //for testing
             tbGrant.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     definition.setGrant(tbGrant.getText().trim());
@@ -126,6 +130,7 @@ public class OverviewPanel extends Composite
                 activatingLabel.setText(definition.getDescription());
             activatingLabel.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     definition.setDescription(tbDescription.getText().trim());
@@ -182,6 +187,7 @@ public class OverviewPanel extends Composite
             layout.setText(layoutRow, 3, definition.getRevision() + " (Loading List)");
             designer.getService().getVersions(definition.getCavdStudyId(), new ErrorDialogAsyncCallback<GWTStudyDesignVersion[]>("Error occurred getting revisions")
             {
+                @Override
                 public void onSuccess(GWTStudyDesignVersion[] versions)
                 {
                     final ListBox revisionList = new ListBox();
@@ -194,6 +200,7 @@ public class OverviewPanel extends Composite
                     }
                     revisionList.addChangeHandler(new ChangeHandler()
                     {
+                        @Override
                         public void onChange(ChangeEvent e)
                         {
                             if (designer.isDirty())

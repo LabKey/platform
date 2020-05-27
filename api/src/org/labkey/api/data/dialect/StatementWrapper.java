@@ -118,6 +118,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _requestThread = requestThread;
     }
 
+    @Override
     public void registerOutParameter(int parameterIndex, int sqlType)
             throws SQLException
     {
@@ -131,6 +132,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void registerOutParameter(int parameterIndex, int sqlType, int scale)
             throws SQLException
     {
@@ -154,6 +156,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         _queryLogging = queryLogging;
     }
 
+    @Override
     public boolean wasNull()
             throws SQLException
     {
@@ -167,6 +170,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public String getString(int parameterIndex)
             throws SQLException
     {
@@ -180,6 +184,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean getBoolean(int parameterIndex)
             throws SQLException
     {
@@ -193,6 +198,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public byte getByte(int parameterIndex)
             throws SQLException
     {
@@ -206,6 +212,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public short getShort(int parameterIndex)
             throws SQLException
     {
@@ -219,6 +226,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getInt(int parameterIndex)
             throws SQLException
     {
@@ -232,6 +240,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public long getLong(int parameterIndex)
             throws SQLException
     {
@@ -245,6 +254,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public float getFloat(int parameterIndex)
             throws SQLException
     {
@@ -258,6 +268,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public double getDouble(int parameterIndex)
             throws SQLException
     {
@@ -271,6 +282,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public BigDecimal getBigDecimal(int parameterIndex, int scale)
             throws SQLException
     {
@@ -285,6 +297,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public byte[] getBytes(int parameterIndex)
             throws SQLException
     {
@@ -298,6 +311,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Date getDate(int parameterIndex)
             throws SQLException
     {
@@ -311,6 +325,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Time getTime(int parameterIndex)
             throws SQLException
     {
@@ -324,6 +339,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Timestamp getTimestamp(int parameterIndex)
             throws SQLException
     {
@@ -337,6 +353,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Object getObject(int parameterIndex)
             throws SQLException
     {
@@ -350,6 +367,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public BigDecimal getBigDecimal(int parameterIndex)
             throws SQLException
     {
@@ -363,6 +381,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Object getObject(int i, Map<String, Class<?>> map)
             throws SQLException
     {
@@ -376,6 +395,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Ref getRef(int i)
             throws SQLException
     {
@@ -389,6 +409,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Blob getBlob(int i)
             throws SQLException
     {
@@ -402,6 +423,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Clob getClob(int i)
             throws SQLException
     {
@@ -415,6 +437,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Array getArray(int i)
             throws SQLException
     {
@@ -428,6 +451,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Date getDate(int parameterIndex, Calendar cal)
             throws SQLException
     {
@@ -441,6 +465,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Time getTime(int parameterIndex, Calendar cal)
             throws SQLException
     {
@@ -454,6 +479,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Timestamp getTimestamp(int parameterIndex, Calendar cal)
             throws SQLException
     {
@@ -467,6 +493,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void registerOutParameter(int parameterIndex, int sqlType, String typeName)
             throws SQLException
     {
@@ -480,6 +507,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void registerOutParameter(String parameterName, int sqlType)
             throws SQLException
     {
@@ -493,6 +521,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void registerOutParameter(String parameterName, int sqlType, int scale)
             throws SQLException
     {
@@ -506,6 +535,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void registerOutParameter(String parameterName, int sqlType, String typeName)
             throws SQLException
     {
@@ -519,6 +549,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public URL getURL(int parameterIndex)
             throws SQLException
     {
@@ -532,6 +563,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setURL(String parameterName, URL val)
             throws SQLException
     {
@@ -545,6 +577,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setNull(String parameterName, int sqlType)
             throws SQLException
     {
@@ -558,6 +591,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBoolean(String parameterName, boolean x)
             throws SQLException
     {
@@ -571,6 +605,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setByte(String parameterName, byte x)
             throws SQLException
     {
@@ -584,6 +619,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setShort(String parameterName, short x)
             throws SQLException
     {
@@ -597,6 +633,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setInt(String parameterName, int x)
             throws SQLException
     {
@@ -610,6 +647,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setLong(String parameterName, long x)
             throws SQLException
     {
@@ -623,6 +661,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setFloat(String parameterName, float x)
             throws SQLException
     {
@@ -636,6 +675,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDouble(String parameterName, double x)
             throws SQLException
     {
@@ -649,6 +689,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBigDecimal(String parameterName, BigDecimal x)
             throws SQLException
     {
@@ -662,6 +703,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setString(String parameterName, String x)
             throws SQLException
     {
@@ -675,6 +717,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBytes(String parameterName, byte[] x)
             throws SQLException
     {
@@ -688,6 +731,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDate(String parameterName, Date x)
             throws SQLException
     {
@@ -701,6 +745,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTime(String parameterName, Time x)
             throws SQLException
     {
@@ -714,6 +759,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTimestamp(String parameterName, Timestamp x)
             throws SQLException
     {
@@ -727,6 +773,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setAsciiStream(String parameterName, InputStream x, int length)
             throws SQLException
     {
@@ -740,6 +787,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBinaryStream(String parameterName, InputStream x, int length)
             throws SQLException
     {
@@ -753,6 +801,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(String parameterName, Object x, int targetSqlType, int scale)
             throws SQLException
     {
@@ -766,6 +815,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(String parameterName, Object x, int targetSqlType)
             throws SQLException
     {
@@ -779,6 +829,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(String parameterName, Object x)
             throws SQLException
     {
@@ -792,6 +843,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setCharacterStream(String parameterName, Reader reader, int length)
             throws SQLException
     {
@@ -805,6 +857,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDate(String parameterName, Date x, Calendar cal)
             throws SQLException
     {
@@ -818,6 +871,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTime(String parameterName, Time x, Calendar cal)
             throws SQLException
     {
@@ -831,6 +885,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTimestamp(String parameterName, Timestamp x, Calendar cal)
             throws SQLException
     {
@@ -844,6 +899,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setNull(String parameterName, int sqlType, String typeName)
             throws SQLException
     {
@@ -857,6 +913,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public String getString(String parameterName)
             throws SQLException
     {
@@ -870,6 +927,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean getBoolean(String parameterName)
             throws SQLException
     {
@@ -883,6 +941,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public byte getByte(String parameterName)
             throws SQLException
     {
@@ -896,6 +955,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public short getShort(String parameterName)
             throws SQLException
     {
@@ -909,6 +969,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getInt(String parameterName)
             throws SQLException
     {
@@ -922,6 +983,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public long getLong(String parameterName)
             throws SQLException
     {
@@ -935,6 +997,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public float getFloat(String parameterName)
             throws SQLException
     {
@@ -948,6 +1011,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public double getDouble(String parameterName)
             throws SQLException
     {
@@ -961,6 +1025,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public byte[] getBytes(String parameterName)
             throws SQLException
     {
@@ -974,6 +1039,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Date getDate(String parameterName)
             throws SQLException
     {
@@ -987,6 +1053,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Time getTime(String parameterName)
             throws SQLException
     {
@@ -1000,6 +1067,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Timestamp getTimestamp(String parameterName)
             throws SQLException
     {
@@ -1013,6 +1081,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Object getObject(String parameterName)
             throws SQLException
     {
@@ -1026,6 +1095,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public BigDecimal getBigDecimal(String parameterName)
             throws SQLException
     {
@@ -1039,6 +1109,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Object getObject(String parameterName, Map<String, Class<?>> map)
             throws SQLException
     {
@@ -1052,6 +1123,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Ref getRef(String parameterName)
             throws SQLException
     {
@@ -1065,6 +1137,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Blob getBlob(String parameterName)
             throws SQLException
     {
@@ -1078,6 +1151,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Clob getClob(String parameterName)
             throws SQLException
     {
@@ -1091,6 +1165,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Array getArray(String parameterName)
             throws SQLException
     {
@@ -1104,6 +1179,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Date getDate(String parameterName, Calendar cal)
             throws SQLException
     {
@@ -1117,6 +1193,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Time getTime(String parameterName, Calendar cal)
             throws SQLException
     {
@@ -1130,6 +1207,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Timestamp getTimestamp(String parameterName, Calendar cal)
             throws SQLException
     {
@@ -1143,6 +1221,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public URL getURL(String parameterName)
             throws SQLException
     {
@@ -1156,6 +1235,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ResultSet executeQuery()
             throws SQLException
     {
@@ -1181,6 +1261,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int executeUpdate()
             throws SQLException
     {
@@ -1212,6 +1293,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         return true;
     }
 
+    @Override
     public void setNull(int parameterIndex, int sqlType)
             throws SQLException
     {
@@ -1226,6 +1308,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBoolean(int parameterIndex, boolean x)
             throws SQLException
     {
@@ -1240,6 +1323,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setByte(int parameterIndex, byte x)
             throws SQLException
     {
@@ -1254,6 +1338,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setShort(int parameterIndex, short x)
             throws SQLException
     {
@@ -1268,6 +1353,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setInt(int parameterIndex, int x)
             throws SQLException
     {
@@ -1282,6 +1368,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setLong(int parameterIndex, long x)
             throws SQLException
     {
@@ -1296,6 +1383,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setFloat(int parameterIndex, float x)
             throws SQLException
     {
@@ -1310,6 +1398,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDouble(int parameterIndex, double x)
             throws SQLException
     {
@@ -1324,6 +1413,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBigDecimal(int parameterIndex, BigDecimal x)
             throws SQLException
     {
@@ -1338,6 +1428,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setString(int parameterIndex, String x)
             throws SQLException
     {
@@ -1352,6 +1443,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBytes(int parameterIndex, byte[] x)
             throws SQLException
     {
@@ -1366,6 +1458,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDate(int parameterIndex, Date x)
             throws SQLException
     {
@@ -1380,6 +1473,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTime(int parameterIndex, Time x)
             throws SQLException
     {
@@ -1394,6 +1488,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTimestamp(int parameterIndex, Timestamp x)
             throws SQLException
     {
@@ -1408,6 +1503,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, InputStream x, int length)
             throws SQLException
     {
@@ -1422,6 +1518,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setUnicodeStream(int parameterIndex, InputStream x, int length)
             throws SQLException
     {
@@ -1437,6 +1534,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, InputStream x, int length)
             throws SQLException
     {
@@ -1451,6 +1549,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void clearParameters()
             throws SQLException
     {
@@ -1465,6 +1564,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType, int scale)
             throws SQLException
     {
@@ -1479,6 +1579,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x, int targetSqlType)
             throws SQLException
     {
@@ -1493,6 +1594,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setObject(int parameterIndex, Object x)
             throws SQLException
     {
@@ -1507,6 +1609,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean execute()
             throws SQLException
     {
@@ -1530,6 +1633,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void addBatch()
             throws SQLException
     {
@@ -1545,6 +1649,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     // NOTE: We intentionally do not store potentially large parameters (reader, blob, etc.)
 
+    @Override
     public void setCharacterStream(int parameterIndex, Reader reader, int length)
             throws SQLException
     {
@@ -1558,6 +1663,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setRef(int i, Ref x)
             throws SQLException
     {
@@ -1572,6 +1678,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBlob(int i, Blob x)
             throws SQLException
     {
@@ -1585,6 +1692,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setClob(int i, Clob x)
             throws SQLException
     {
@@ -1598,6 +1706,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setArray(int i, Array x)
             throws SQLException
     {
@@ -1612,6 +1721,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ResultSetMetaData getMetaData()
             throws SQLException
     {
@@ -1627,6 +1737,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setDate(int parameterIndex, Date x, Calendar cal)
             throws SQLException
     {
@@ -1641,6 +1752,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTime(int parameterIndex, Time x, Calendar cal)
             throws SQLException
     {
@@ -1655,6 +1767,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
             throws SQLException
     {
@@ -1669,6 +1782,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setNull(int parameterIndex, int sqlType, String typeName)
             throws SQLException
     {
@@ -1683,6 +1797,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setURL(int parameterIndex, URL x)
             throws SQLException
     {
@@ -1697,6 +1812,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ParameterMetaData getParameterMetaData()
             throws SQLException
     {
@@ -1710,6 +1826,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ResultSet executeQuery(String sql)
             throws SQLException
     {
@@ -1732,6 +1849,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int executeUpdate(String sql)
             throws SQLException
     {
@@ -1753,6 +1871,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void close()
             throws SQLException
     {
@@ -1770,6 +1889,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getMaxFieldSize()
             throws SQLException
     {
@@ -1783,6 +1903,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setMaxFieldSize(int max)
             throws SQLException
     {
@@ -1796,6 +1917,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getMaxRows()
             throws SQLException
     {
@@ -1809,6 +1931,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setMaxRows(int max)
             throws SQLException
     {
@@ -1822,6 +1945,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setEscapeProcessing(boolean enable)
             throws SQLException
     {
@@ -1835,6 +1959,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getQueryTimeout()
             throws SQLException
     {
@@ -1848,6 +1973,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setQueryTimeout(int seconds)
             throws SQLException
     {
@@ -1861,6 +1987,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void cancel()
             throws SQLException
     {
@@ -1875,6 +2002,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public SQLWarning getWarnings()
             throws SQLException
     {
@@ -1888,6 +2016,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void clearWarnings()
             throws SQLException
     {
@@ -1901,6 +2030,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setCursorName(String name)
             throws SQLException
     {
@@ -1914,6 +2044,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean execute(String sql)
             throws SQLException
     {
@@ -1934,6 +2065,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ResultSet getResultSet()
             throws SQLException
     {
@@ -1949,6 +2081,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getUpdateCount()
             throws SQLException
     {
@@ -1964,6 +2097,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean getMoreResults()
             throws SQLException
     {
@@ -1977,6 +2111,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setFetchDirection(int direction)
             throws SQLException
     {
@@ -1990,6 +2125,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getFetchDirection()
             throws SQLException
     {
@@ -2003,6 +2139,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setFetchSize(int rows)
             throws SQLException
     {
@@ -2016,6 +2153,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getFetchSize()
             throws SQLException
     {
@@ -2029,6 +2167,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getResultSetConcurrency()
             throws SQLException
     {
@@ -2042,6 +2181,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getResultSetType()
             throws SQLException
     {
@@ -2055,6 +2195,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void addBatch(String sql)
             throws SQLException
     {
@@ -2068,6 +2209,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void clearBatch()
             throws SQLException
     {
@@ -2081,6 +2223,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int[] executeBatch()
             throws SQLException
     {
@@ -2101,11 +2244,13 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public Connection getConnection()
     {
         return _conn;
     }
 
+    @Override
     public boolean getMoreResults(int current)
             throws SQLException
     {
@@ -2119,6 +2264,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public ResultSet getGeneratedKeys()
             throws SQLException
     {
@@ -2134,6 +2280,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int executeUpdate(String sql, int autoGeneratedKeys)
             throws SQLException
     {
@@ -2155,6 +2302,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int executeUpdate(String sql, int[] columnIndexes)
             throws SQLException
     {
@@ -2176,6 +2324,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int executeUpdate(String sql, String[] columnNames)
             throws SQLException
     {
@@ -2197,6 +2346,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean execute(String sql, int autoGeneratedKeys)
             throws SQLException
     {
@@ -2217,6 +2367,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean execute(String sql, int[] columnIndexes)
             throws SQLException
     {
@@ -2237,6 +2388,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public boolean execute(String sql, String[] columnNames)
             throws SQLException
     {
@@ -2257,6 +2409,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public int getResultSetHoldability()
             throws SQLException
     {
@@ -2278,46 +2431,55 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     // TODO: These methods should be properly implemented via delegation.
 
+    @Override
     public boolean isWrapperFor(Class<?> iface)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public <T> T unwrap(Class<T> iface)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isClosed()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isPoolable()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setPoolable(boolean poolable)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setAsciiStream(int parameterIndex, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException
     {
         try
@@ -2332,236 +2494,283 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         }
     }
 
+    @Override
     public void setBlob(int parameterIndex, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBlob(int parameterIndex, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setCharacterStream(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setCharacterStream(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClob(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClob(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNCharacterStream(int parameterIndex, Reader value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNCharacterStream(int parameterIndex, Reader value, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(int parameterIndex, NClob value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNString(int parameterIndex, String value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setRowId(int parameterIndex, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setSQLXML(int parameterIndex, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Reader getCharacterStream(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Reader getCharacterStream(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Reader getNCharacterStream(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public Reader getNCharacterStream(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public NClob getNClob(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public NClob getNClob(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getNString(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getNString(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public RowId getRowId(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public RowId getRowId(String parameterName)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public SQLXML getSQLXML(int parameterIndex)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public SQLXML getSQLXML(String parameterName)
     {
         throw new UnsupportedOperationException();
     }//--
 
+    @Override
     public void setAsciiStream(String parameterName, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setAsciiStream(String parameterName, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBinaryStream(String parameterName, InputStream x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBinaryStream(String parameterName, InputStream x, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBlob(String parameterName, InputStream inputStream)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBlob(String parameterName, InputStream inputStream, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setBlob(String parameterName, Blob x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setCharacterStream(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setCharacterStream(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClob(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClob(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setClob(String parameterName, Clob x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNCharacterStream(String parameterName, Reader value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNCharacterStream(String parameterName, Reader value, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(String parameterName, Reader reader)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(String parameterName, Reader reader, long length)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNClob(String parameterName, NClob value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setNString(String parameterName, String value)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setRowId(String parameterName, RowId x)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setSQLXML(String parameterName, SQLXML xmlObject)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public <T> T getObject(int parameterIndex, Class<T> type)
     {
         throw new UnsupportedOperationException();
@@ -2569,16 +2778,19 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
     // JDBC 4.1 methods below must be here so we compile on JDK 7; implement once we require JRE 7.
 
+    @Override
     public <T> T getObject(String parameterName, Class<T> type)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void closeOnCompletion()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isCloseOnCompletion()
     {
         throw new UnsupportedOperationException();

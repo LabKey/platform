@@ -28,18 +28,21 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class SimpleForwardAction<FORM> extends SimpleViewAction<FORM>
 {
+    @Override
     public ModelAndView getView(FORM form, BindException errors) throws Exception
     {
         ViewServlet.forwardActionURL(getViewContext().getRequest(), getViewContext().getResponse(), getForwardURL(form));
         return null;
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
     }
 
     public abstract ActionURL getForwardURL(FORM form) throws Exception;
 
+    @Override
     protected String getCommandClassMethodName()
     {
         return "getForwardURL";

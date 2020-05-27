@@ -34,7 +34,6 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.experiment.api.SampleSetDomainKind;
 
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -43,7 +42,7 @@ import java.util.Set;
  */
 public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
 {
-    AssayDomainKind _assayDelegate;
+    private final AssayDomainKind _assayDelegate;
 
     public PlateBasedAssaySampleSetDomainKind()
     {
@@ -64,6 +63,7 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
         };
     }
 
+    @Override
     public String getKindName()
     {
         return "Assay Sample Set";
@@ -125,9 +125,9 @@ public class PlateBasedAssaySampleSetDomainKind extends SampleSetDomainKind
     }
 
     @Override
-    public void appendNavTrail(NavTree root, Container c, User user)
+    public void addNavTrail(NavTree root, Container c, User user)
     {
-        _assayDelegate.appendNavTrail(root, c, user);
+        _assayDelegate.addNavTrail(root, c, user);
     }
 
     @Override

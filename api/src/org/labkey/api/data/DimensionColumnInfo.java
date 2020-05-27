@@ -51,6 +51,7 @@ public class DimensionColumnInfo extends BaseColumnInfo
     }
 
 
+    @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
         return new SQLFragment(tableAliasName + "." + _crosstabDimension.getSourceColumn().getAlias());

@@ -25,18 +25,22 @@ import gwt.client.org.labkey.plate.designer.client.model.GWTWellGroup;
  */
 public abstract class GroupChangeListenerAdapter implements GroupChangeListener
 {
+    @Override
     public void activeGroupChanged(GWTWellGroup previouslyActive, GWTWellGroup currentlyActive)
     {
     }
 
+    @Override
     public void groupAdded(GWTWellGroup group)
     {
     }
 
+    @Override
     public void groupRemoved(GWTWellGroup group)
     {
     }
 
+    @Override
     public void activeGroupTypeChanged(String type)
     {
     }
