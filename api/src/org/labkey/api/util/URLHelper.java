@@ -203,29 +203,27 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     }
 
 
-    public String toLocalString(boolean allowSubstSyntax)
-    {
-        String local;
-        local = getLocalURIString(allowSubstSyntax);
-        return local;
-    }
-
-
     public String getLocalURIString()
     {
         return getLocalURIString(false);
     }
 
-
     protected boolean isDirectory()
     {
         return _path.isDirectory();
     }
-    
 
     public String getLocalURIString(boolean allowSubstSyntax)
     {
         StringBuilder uriString = new StringBuilder(getPath());
+
+        appendParamsAndFragment(uriString, allowSubstSyntax);
+
+        return uriString.toString();
+    }
+
+    protected void appendParamsAndFragment(StringBuilder uriString, boolean allowSubstSyntax)
+    {
         if (uriString.indexOf("/") != 0)
         {
             uriString.insert(0, '/');
@@ -237,8 +235,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             uriString.append(getQueryString(allowSubstSyntax));
         if (null != _fragment && _fragment.length() > 0)
             uriString.append("#").append(_fragment);
-
-        return uriString.toString();
     }
 
     // when true, don't include '?' unless there are query parameters
@@ -288,12 +284,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
 
     public String getPath()
     {
-        return getPath(false);
-    }
-
-
-    public String getPath(boolean asForward)
-    {
         if (null == _path || _path.size() == 0)
             return "";
         Path p;
@@ -301,7 +291,7 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
             p = _path;
         else
             p = _contextPath.append(_path);
-        return !asForward ? p.encode() : p.toString();
+        return p.encode();
     }
 
 
