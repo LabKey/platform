@@ -144,7 +144,10 @@ public class PropertyServiceImpl implements PropertyService
 
             // check exists and save in a transaction
             domain = PropertyService.get().createDomain(container, domainURI, name);
-            ((DomainImpl) domain).saveIfNotExists(user);
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                ((DomainImpl) domain).saveIfNotExists(user);
+            }
 
             // return created domain, will only be null in some sort of race condition
             domain = PropertyService.get().getDomain(domain.getTypeId());
