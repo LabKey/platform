@@ -818,8 +818,8 @@ public class ProjectController extends SpringActionController
 
     private boolean handleMoveWebPart(String pageId, int index, int direction)
     {
-        List<Portal.WebPart> parts = Portal.getParts(getContainer(), pageId);
-        if (null == parts)
+        List<Portal.WebPart> parts = Portal.getEditableParts(getContainer(), pageId);
+        if (parts.isEmpty())
             return true;
 
         //Find the portlet. Theoretically index should be 1-based & consecutive, but
