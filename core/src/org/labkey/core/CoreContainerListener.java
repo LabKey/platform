@@ -46,12 +46,14 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
 {
     private static final Logger _log = Logger.getLogger(CoreContainerListener.class);
 
+    @Override
     public void containerCreated(Container c, User user)
     {
         String message = c.getContainerNoun(true) + " " + c.getName() + " was created";
         addAuditEvent(user, c, message);
     }
 
+    @Override
     public void containerDeleted(Container c, User user)
     {
         PropertyManager.purgeObjectProperties(c);
@@ -95,6 +97,7 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         }
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)
     {
         ContainerManager.ContainerPropertyChangeEvent evt = (ContainerManager.ContainerPropertyChangeEvent)propertyChangeEvent;

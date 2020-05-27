@@ -386,6 +386,7 @@ public class PipelineEmailPreferences
             _isSuccessNotification = isSuccessNotification;
         }
 
+        @Override
         public void run()
         {
             try
@@ -436,12 +437,14 @@ public class PipelineEmailPreferences
             return "Pipeline email notification timer";
         }
 
+        @Override
         public void shutdownPre()
         {
             ContextListener.removeShutdownListener(this);
             _timer.cancel();
         }
 
+        @Override
         public void shutdownStarted()
         {
         }

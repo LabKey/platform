@@ -73,6 +73,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
         _pseudoPk = newPk;
     }
 
+    @Override
     public ContainerScopedTable<SchemaType> init()
     {
         super.init();

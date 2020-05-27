@@ -44,6 +44,7 @@ public class RConnectionHolder implements HttpSessionBindingListener
         }
     }
 
+    @Override
     protected void finalize()
     {
         close();
@@ -54,11 +55,13 @@ public class RConnectionHolder implements HttpSessionBindingListener
         return _reportSessions;
     }
 
+    @Override
     public void valueBound(HttpSessionBindingEvent httpSessionBindingEvent)
     {
         // Do nothing
     }
 
+    @Override
     public void valueUnbound(HttpSessionBindingEvent httpSessionBindingEvent)
     {
         close();

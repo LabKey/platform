@@ -91,11 +91,13 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(new ActionURL(PlateTemplateListAction.class, getContainer()));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -119,6 +121,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PlateTemplateListAction extends SimpleViewAction<ReturnUrlForm>
     {
+        @Override
         public ModelAndView getView(ReturnUrlForm plateTemplateListForm, BindException errors)
         {
             setHelpTopic(new HelpTopic("editPlateTemplate"));
@@ -127,6 +130,7 @@ public class PlateController extends SpringActionController
                     new PlateTemplateListBean(plateTemplates));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Plate Templates");
@@ -161,6 +165,7 @@ public class PlateController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PlateDetailsAction extends SimpleViewAction<RowIdForm>
     {
+        @Override
         public ModelAndView getView(RowIdForm form, BindException errors)
         {
             Plate plate = PlateService.get().getPlate(getContainer(), form.getRowId());
@@ -173,6 +178,7 @@ public class PlateController extends SpringActionController
             return HttpView.redirect(url);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -321,10 +327,12 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class CopyTemplateAction extends FormViewAction<CopyForm>
     {
+        @Override
         public void validateCommand(CopyForm form, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(CopyForm form, boolean reshow, BindException errors)
         {
             if (form.getTemplateName() == null || form.getTemplateName().length() == 0)
@@ -334,16 +342,19 @@ public class PlateController extends SpringActionController
                     new CopyTemplateBean(getContainer(), getUser(), form.getTemplateName(), form.getDestination()), errors);
         }
 
+        @Override
         public boolean handlePost(CopyForm form, BindException errors) throws Exception
         {
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(CopyForm copyForm)
         {
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Select Copy Destination");
@@ -353,6 +364,7 @@ public class PlateController extends SpringActionController
     @RequiresAnyOf({InsertPermission.class, DesignAssayPermission.class})
     public class HandleCopyAction extends CopyTemplateAction
     {
+        @Override
         public void validateCommand(CopyForm form, Errors errors)
         {
             Container destination = ContainerManager.getForPath(form.getDestination());
@@ -365,6 +377,7 @@ public class PlateController extends SpringActionController
                 errors.reject("copyForm", "A plate template with the same name already exists in the destination folder.");
         }
 
+        @Override
         public boolean handlePost(CopyForm form, BindException errors) throws Exception
         {
             Container destination = ContainerManager.getForPath(form.getDestination());
@@ -393,6 +406,7 @@ public class PlateController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(CopyForm copyForm)
         {
             return new ActionURL(PlateTemplateListAction.class, getContainer());

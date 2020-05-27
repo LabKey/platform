@@ -115,11 +115,13 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
         return (FileAnalysisTaskPipeline) tp; 
     }
 
+    @Override
     public File findInputFile(String name)
     {
         return findFile(name);
     }
 
+    @Override
     public File findOutputFile(String name)
     {
         return findFile(name);

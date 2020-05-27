@@ -41,11 +41,13 @@ public class CohortWriter implements InternalStudyWriter
 {
     private static final String COHORTS_FILENAME = "cohorts.xml";
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.COHORT_SETTINGS;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         if (!ctx.isDataTypeSelected(getDataType()))

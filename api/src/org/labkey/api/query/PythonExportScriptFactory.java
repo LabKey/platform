@@ -22,16 +22,19 @@ package org.labkey.api.query;
 */
 public class PythonExportScriptFactory implements ExportScriptFactory
 {
+    @Override
     public String getScriptType()
     {
         return "py";
     }
 
+    @Override
     public String getMenuText()
     {
         return "Python";
     }
 
+    @Override
     public ExportScriptModel getModel(QueryView queryView)
     {
         return new PythonExportScriptModel(queryView);

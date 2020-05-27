@@ -101,12 +101,14 @@ public class RunGroupWebPart extends QueryView
         return settings;
     }
 
+    @Override
     protected TableInfo createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
         return schema.getTable(ExpSchema.TableType.RunGroups);
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bb)
     {
         super.populateButtonBar(view, bb);

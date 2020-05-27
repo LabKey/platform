@@ -69,12 +69,14 @@ public class MultipleCohortFilter extends BaseCohortFilter
         return result;
     }
 
+    @Override
     public String getDescription(Container container, User user)
     {
         return getType().getTitle() + " is " + _description;
     }
 
 
+    @Override
     public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
         FieldKey fk = getCohortColumn(table, container).getFieldKey();
@@ -114,11 +116,13 @@ public class MultipleCohortFilter extends BaseCohortFilter
         return getType().name() + ":" + (_includeUnassigned?"true":"false");
     }
 
+    @Override
     public int getCohortId()
     {
         throw new IllegalStateException("Should not be calling getCohortId()");
     }
 
+    @Override
     public CohortImpl getCohort(Container container, User user)
     {
         throw new IllegalStateException("Should not be calling getCohort()");

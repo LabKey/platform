@@ -36,6 +36,7 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
     {
     }
 
+    @Override
     public int getCohortId()
     {
         return _cohortId;
@@ -46,6 +47,7 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
         _cohortId = cohortId;
     }
 
+    @Override
     public int getTreatmentId()
     {
         return _treatmentId;
@@ -66,6 +68,7 @@ public class TreatmentVisitMapImpl implements TreatmentVisitMap
         _tempTreatmentId = tempTreatmentId;
     }
 
+    @Override
     public int getVisitId()
     {
         return _visitId;

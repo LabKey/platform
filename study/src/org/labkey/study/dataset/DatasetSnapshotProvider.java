@@ -131,11 +131,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return INSTANCE;
     }
 
+    @Override
     public String getName()
     {
         return "Study Dataset Snapshot";
     }
 
+    @Override
     public List<DisplayColumn> getDisplayColumns(QueryForm form, BindException errors)
     {
         QueryView view = QueryView.create(form, errors);
@@ -156,6 +158,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return columns;
     }
 
+    @Override
     public ActionURL getCreateWizardURL(QuerySettings settings, ViewContext context)
     {
         SimpleFilter filter = new SimpleFilter(context.getActionURL(), settings.getDataRegionName());
@@ -195,6 +198,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return filter;
     }
 
+    @Override
     public void createSnapshot(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors) throws Exception
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -360,6 +364,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
+    @Override
     public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         QuerySnapshotDefinition qsDef = createSnapshotDef(form);
@@ -416,6 +421,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return columnMap;
     }
 
+    @Override
     public synchronized ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors, boolean suppressVisitManagerRecalc) throws Exception
     {
         QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(form.getViewContext().getContainer(), form.getSchemaName(), form.getSnapshotName());
@@ -520,6 +526,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
+    @Override
     public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
     {
         ActionURL ret = super.updateSnapshotDefinition(context, def, errors);
@@ -556,6 +563,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return ret;
     }
 
+    @Override
     public HttpView createAuditView(QuerySnapshotForm form)
     {
         ViewContext context = form.getViewContext();
@@ -584,6 +592,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return null;
     }
 
+    @Override
     public ActionURL getEditSnapshotURL(QuerySettings settings, ViewContext context)
     {
         QuerySettings qs = new QuerySettings(context, QueryView.DATAREGIONNAME_DEFAULT);
@@ -606,6 +615,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         }
     }
 
+    @Override
     public void datasetChanged(final Dataset def)
     {
         LOG.debug("Cache cleared notification on dataset : " + def.getDatasetId());
@@ -673,6 +683,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             ContextListener.addShutdownListener(this);
         }
 
+        @Override
         public void run()
         {
             try
@@ -702,11 +713,13 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             }
         }
 
+        @Override
         public void shutdownPre()
         {
             interrupt();
         }
 
+        @Override
         public void shutdownStarted()
         {
         }
@@ -717,6 +730,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     // contains the snapshot datasets to a list of snapshots that need to be refreshed.
     private static final Map<Container, List<SnapshotDependency.SourceDataType>> _coalesceMap = new HashMap<>();
 
+    @Override
     public void pauseUpdates(Container sourceContainer)
     {
         if (_coalesceMap.containsKey(sourceContainer))
@@ -724,6 +738,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         _coalesceMap.put(sourceContainer, new ArrayList<>());
     }
 
+    @Override
     public void resumeUpdates(User user, Container sourceContainer)
     {
         DeferredUpdateHandler handler = new DeferredUpdateHandler(user, _coalesceMap.remove(sourceContainer));
@@ -769,6 +784,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             _suppressVisitManagerRecalc = suppressVisitManagerRecalc;
         }
 
+        @Override
         public void run()
         {
             LOG.info("Updating snapshot data : " + _def.getName());

@@ -38,6 +38,7 @@ public abstract class TextBoxDialogBox extends DialogBox
         _textBox = new TextBox();
         _textBox.addKeyboardListener(new KeyboardListenerAdapter()
         {
+            @Override
             public void onKeyDown(Widget sender, char keyCode, int modifiers)
             {
                 if (keyCode == KeyCodes.KEY_ENTER)
@@ -67,6 +68,7 @@ public abstract class TextBoxDialogBox extends DialogBox
         buttonPanel.add(okButton);
         okButton.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 commit();
@@ -76,6 +78,7 @@ public abstract class TextBoxDialogBox extends DialogBox
         ImageButton cancelButton = new ImageButton("Cancel");
         cancelButton.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent e)
             {
                 hide();
@@ -100,6 +103,7 @@ public abstract class TextBoxDialogBox extends DialogBox
         }
     }
 
+    @Override
     public void show()
     {
         WindowUtil.centerDialog(this);

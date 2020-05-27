@@ -56,6 +56,7 @@ public class OutOfRangeDisplayColumn extends DataColumn
         _oorIndicatorColumn = oorIndicatorColumn;
     }
 
+    @Override
     public Class getDisplayValueClass()
     {
         if (_doneWithSuperclassConstructor)

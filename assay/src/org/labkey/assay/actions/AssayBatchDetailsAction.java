@@ -61,6 +61,7 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
     private ExpProtocol _protocol;
     private ExpExperiment _exp;
 
+    @Override
     public ModelAndView getView(AssayBatchDetailsForm form, BindException errors)
     {
         ViewContext context = getViewContext();
@@ -80,6 +81,7 @@ public class AssayBatchDetailsAction extends BaseAssayAction<AssayBatchDetailsAc
         return provider.createBatchDetailsView(context, _protocol, _exp);
     }
 
+    @Override
     public void addNavTrail(NavTree root)
     {
         Container c = getContainer();

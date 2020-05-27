@@ -53,6 +53,7 @@ public abstract class StudyBatch extends PipelineJob implements Serializable
         return BaseStudyController.getStudyOverviewURL(getInfo().getContainer());
     }
 
+    @Override
     public String getDescription()
     {
         return "Import files";

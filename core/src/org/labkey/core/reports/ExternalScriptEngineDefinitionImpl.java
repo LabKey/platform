@@ -67,6 +67,7 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
     private Integer _dockerImageRowId;
     private String _dockerImageConfig;
 
+    @Override
     public Integer getRowId()
     {
         return _rowId;
@@ -506,22 +507,26 @@ public class ExternalScriptEngineDefinitionImpl extends Entity implements Extern
             _pathMap = jsonPathMap.toString();
     }
 
+    @Override
     public Integer getDockerImageRowId()
     {
         return _dockerImageRowId;
     }
 
+    @Override
     public void setDockerImageRowId(Integer dockerImageRowId)
     {
         _dockerImageRowId = dockerImageRowId;
     }
 
+    @Override
     public String getDockerImageConfig()
     {
         return _dockerImageConfig;
     }
 
 
+    @Override
     public void setDockerImageConfig(String dockerImageConfig)
     {
         _dockerImageConfig = dockerImageConfig;

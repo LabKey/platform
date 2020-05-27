@@ -66,11 +66,13 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
             return true;
         }
 
+        @Override
         public DbSchema getDbSchema()
         {
             return CoreSchema.getInstance().getSchema();
         }
 
+        @Override
         public Set<String> getTableNames()
         {
             return Collections.emptySet();
@@ -88,7 +90,8 @@ abstract public class FolderSchemaProvider extends DefaultSchema.SchemaProvider
 			return null;
 		}
 
-		public QuerySchema getSchema(String name)
+		@Override
+        public QuerySchema getSchema(String name)
         {
             if (_restricted)
                 return null;

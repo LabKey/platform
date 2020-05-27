@@ -29,26 +29,31 @@ import org.labkey.issue.query.IssueDefDomainKind;
  */
 public class GeneralIssuesListDefProvider implements IssuesListDefProvider
 {
+    @Override
     public String getName()
     {
         return IssueDefDomainKind.NAME;
     }
 
+    @Override
     public String getLabel()
     {
         return "General Issue Tracker";
     }
 
+    @Override
     public String getDescription()
     {
         return "General purpose issue tracker";
     }
 
+    @Override
     public DomainKind getDomainKind()
     {
         return PropertyService.get().getDomainKindByName(IssueDefDomainKind.NAME);
     }
 
+    @Override
     public boolean isEnabled(Container container)
     {
         Module module = ModuleLoader.getInstance().getModule(IssuesModule.NAME);

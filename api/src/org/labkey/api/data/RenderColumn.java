@@ -49,6 +49,7 @@ public abstract class RenderColumn extends DisplayElement
         _name = name;
     }
 
+    @Override
     abstract public String getCaption();
 
     public void setTsvFormatString(String tsvFormatString)

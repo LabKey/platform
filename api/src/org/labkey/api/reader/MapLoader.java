@@ -173,6 +173,7 @@ public class MapLoader extends DataLoader
             return null;           
         }
 
+        @Override
         public void close() throws IOException
         {
             super.close();

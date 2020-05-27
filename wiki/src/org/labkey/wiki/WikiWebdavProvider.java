@@ -94,6 +94,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
     }
 
 
+    @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!WIKI_NAME.equalsIgnoreCase(name))
@@ -127,11 +128,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
             setPolicy(c.getPolicy());
         }
 
+        @Override
         public String getName()
         {
             return WIKI_NAME;
         }
 
+        @Override
         public WebdavResource find(String name)
         {
             if (name.equals(WikiWriterFactory.WIKIS_FILENAME))
@@ -141,6 +144,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return new WikiFolder(this, name);
         }
 
+        @Override
         @NotNull
         public Collection<String> listNames()
         {
@@ -153,6 +157,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return strs;
         }
 
+        @Override
         public boolean exists()
         {
             return true;
@@ -177,6 +182,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return false;
         }
         
+        @Override
         public boolean isFile()
         {
             return false;
@@ -188,6 +194,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
@@ -336,11 +343,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public boolean exists()
         {
             return null != _wiki;
         }
 
+        @Override
         @NotNull
         public synchronized Collection<String> listNames()
         {
@@ -352,6 +361,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return ret;
         }
 
+        @Override
         public synchronized WebdavResource find(String name)
         {
             if (null == _wiki)
@@ -367,16 +377,19 @@ public class WikiWebdavProvider implements WebdavService.Provider
             }
         }
 
+        @Override
         public long getCreated()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public String getExecuteHref(ViewContext context)
         {
             return new ActionURL(WikiController.PageAction.class, _c).addParameter("name", _wiki.getName()).toString();
@@ -480,6 +493,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public String getDocumentId()
         {
             return "wiki:" + _entityId;
@@ -494,12 +508,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public boolean exists()
         {
             return !_properties.isEmpty();
         }
 
 
+        @Override
         public boolean isCollection()
         {
             return false;
@@ -540,6 +556,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public FileStream getFileStream(User user)
         {
             byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
@@ -547,12 +564,14 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         public InputStream getInputStream(User user)
         {
             byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new ByteArrayInputStream(buf);
         }
 
+        @Override
         public long copyFrom(User user, FileStream in) throws IOException
         {
             ByteArrayOutputStream buf = new ByteArrayOutputStream();
@@ -574,6 +593,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
         }
 
 
+        @Override
         @NotNull
         public List<WebdavResolver.History> getHistory()
         {
@@ -596,21 +616,25 @@ public class WikiWebdavProvider implements WebdavService.Provider
                 this.v = v;    
             }
 
+            @Override
             public User getUser()
             {
                 return UserManager.getUser(v.getCreatedBy());
             }
 
+            @Override
             public Date getDate()
             {
                 return v.getCreated();
             }
 
+            @Override
             public String getMessage()
             {
                 return "version " + v.getVersion();
             }
 
+            @Override
             public String getHref()
             {
                 ActionURL url = new ActionURL(WikiController.VersionAction.class, ContainerManager.getForId(w.getContainerId()));
@@ -622,6 +646,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
         // You can't actually delete this file, however, some clients do delete instead of overwrite,
         // so pretend we deleted it.
+        @Override
         public boolean delete(User user) throws IOException
         {
             if (user != null && !canDelete(user, true, null))
@@ -630,11 +655,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return true;
         }
 
+        @Override
         public WebdavResource parent()
         {
             return _folder;
         }
 
+        @Override
         public long getCreated()
         {
             if (_wiki != null)
@@ -647,6 +674,7 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             WikiVersion v = getWikiVersion();
@@ -660,11 +688,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
             return Long.MIN_VALUE;
         }
 
+        @Override
         public String getContentType()
         {
             return _type.getContentType();
         }
 
+        @Override
         public long getContentLength()
         {
             byte[] buf = (null == _body ? "" : _body).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);

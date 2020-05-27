@@ -55,6 +55,7 @@ public class ExpProtocolTableImpl extends ExpTableImpl<ExpProtocolTable.Column> 
         setTitleColumn("Name");
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)

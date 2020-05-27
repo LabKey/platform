@@ -237,6 +237,7 @@ public class ProgressBar extends Widget implements ResizableWidget
    * @param width the new client width of the element
    * @param height the new client height of the element
    */
+  @Override
   public void onResize(int width, int height) {
     if (textVisible) {
       int textWidth = DOM.getElementPropertyInt(textElement, "offsetWidth");

@@ -131,6 +131,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         BASE_INDICES = new HashSet<>(Arrays.asList(indices));
     }
 
+    @Override
     public String getKindName()
     {
         return NAME;
@@ -148,6 +149,7 @@ public final class SpecimenDomainKind extends AbstractSpecimenDomainKind
         return new LinkedHashSet<>(BASE_PROPERTIES);
     }
 
+    @Override
     protected String getNamespacePrefix()
     {
         return NAMESPACE_PREFIX;

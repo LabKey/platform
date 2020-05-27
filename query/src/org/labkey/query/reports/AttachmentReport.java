@@ -72,11 +72,13 @@ public class AttachmentReport extends BaseRedirectReport
     public static final String TYPE = "Study.attachmentReport";     // Misnomer (it's no longer part of study), but keep this for backward compatibility
     public static final String FILE_PATH = "filePath";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         // disallow a non site admin user from editing a server AttachmentReport
@@ -89,6 +91,7 @@ public class AttachmentReport extends BaseRedirectReport
         return super.canEdit(user, container, errors);
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Attachment Report";

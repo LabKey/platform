@@ -42,11 +42,13 @@ public class IntegerProperty implements IPropertyWrapper, IsSerializable
         set(i);
     }
 
+    @Override
     public Object get()
     {
         return i;
     }
 
+    @Override
     public void set(Object o)
     {
         i = (Integer)o;

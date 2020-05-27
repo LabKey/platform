@@ -52,21 +52,25 @@ public class ListItemImpl implements ListItem
         _new = true;
     }
 
+    @Override
     public Object getKey()
     {
         return _itm.getKey();
     }
 
+    @Override
     public void setKey(Object key)
     {
         edit().setKey(key);
     }
 
+    @Override
     public String getEntityId()
     {
         return _itm.getEntityId();
     }
 
+    @Override
     public void setEntityId(String entityId)
     {
         edit().setEntityId(entityId);
@@ -110,6 +114,7 @@ public class ListItemImpl implements ListItem
         return _properties;
     }
 
+    @Override
     public Object getProperty(DomainProperty property)
     {
         ObjectProperty prop = ensureProperties().get(property.getPropertyURI());
@@ -117,12 +122,14 @@ public class ListItemImpl implements ListItem
         return null != prop ? prop.value() : null;
     }
 
+    @Override
     public void setProperty(DomainProperty property, Object value)
     {
         ObjectProperty row = new ObjectProperty(null, property.getContainer(), property.getPropertyURI(), value, property.getPropertyDescriptor().getPropertyType(), property.getPropertyDescriptor().getName());
         editProperties().put(property.getPropertyURI(), row);
     }
 
+    @Override
     public Map<String, ObjectProperty> getProperties()
     {
         return ensureProperties();

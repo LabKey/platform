@@ -602,6 +602,7 @@ public class AssayManager implements AssayService
             indexAssay(task, c, protocol);
     }
 
+    @Override
     public void indexAssay(SearchService.IndexTask task, Container c, ExpProtocol protocol)
     {
         AssayProvider provider = getProvider(protocol);

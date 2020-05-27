@@ -175,6 +175,7 @@ public class GroupedResultSet extends ResultSetImpl
         return super.next();
     }
 
+    @Override
     public boolean next() throws SQLException
     {
         if (_ignoreNext)
@@ -226,6 +227,7 @@ public class GroupedResultSet extends ResultSetImpl
             _rowOffset = super.getRow();  // Reset the row offset so getRow() returns index within the sub-resultset
         }
 
+        @Override
         public void close()
         {
             // Rely on the outer result set for closing
@@ -233,6 +235,7 @@ public class GroupedResultSet extends ResultSetImpl
         }
 
         // Treat a change of value in the grouping column as the "end" of the ResultSet
+        @Override
         public boolean next() throws SQLException
         {
             if (_ignoreNext)
@@ -258,6 +261,7 @@ public class GroupedResultSet extends ResultSetImpl
             return success;
         }
 
+        @Override
         public void beforeFirst() throws SQLException
         {
             if (0 == _rowOffset)
@@ -266,6 +270,7 @@ public class GroupedResultSet extends ResultSetImpl
                 super.absolute(_rowOffset);
         }
 
+        @Override
         public boolean absolute(int i) throws SQLException
         {
             if (i < 0)
@@ -275,6 +280,7 @@ public class GroupedResultSet extends ResultSetImpl
             return super.absolute(i + _rowOffset);
         } 
 
+        @Override
         public int getRow() throws SQLException
         {
             return super.getRow() - _rowOffset;

@@ -47,11 +47,13 @@ public class InternalScriptEngineReport extends ScriptEngineReport
 {
     public static final String TYPE = "ReportService.internalScriptEngineReport";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public HttpView renderReport(ViewContext context) throws Exception
     {
         VBox view = new VBox();
@@ -152,6 +154,7 @@ public class InternalScriptEngineReport extends ScriptEngineReport
      * Called before this report is deleted
      * @param context
      */
+    @Override
     public void beforeDelete(ContainerUser context)
     {
         deleteReportDir(context);

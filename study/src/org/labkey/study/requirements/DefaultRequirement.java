@@ -27,16 +27,19 @@ import org.labkey.api.security.User;
  */
 public abstract class DefaultRequirement<R extends DefaultRequirement<R>> implements Requirement<R>
 {
+    @Override
     public R update(User user)
     {
         return Table.update(user, getTableInfo(), (R) this, getPrimaryKeyValue());
     }
 
+    @Override
     public void delete()
     {
         Table.delete(getTableInfo(), getPrimaryKeyValue());
     }
 
+    @Override
     public R persist(User user, String ownerEntityId)
     {
         if (getContainer() == null)

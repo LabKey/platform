@@ -66,11 +66,13 @@ public class GenericChartReportDescriptor extends VisualizationReportDescriptor
         setDescriptorType(TYPE);
     }
 
+    @Override
     public String getViewClass()
     {
         return VIEW_CLASS;
     }
 
+    @Override
     public Map<String, Object> getReportProps()
     {
             Map<String, Object> props = new HashMap<>();

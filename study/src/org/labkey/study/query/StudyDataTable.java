@@ -50,6 +50,7 @@ public class StudyDataTable extends BaseStudyTable
 
         var datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
         datasetColumn.setFk(new LookupForeignKey(getDatasetURL(), "entityId", "entityId", "Name") {
+            @Override
             public TableInfo getLookupTableInfo()
             {
                 return new DatasetsTable(_userSchema, cf);

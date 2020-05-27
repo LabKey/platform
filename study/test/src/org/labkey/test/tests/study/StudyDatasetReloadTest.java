@@ -37,11 +37,13 @@ public class StudyDatasetReloadTest extends StudyBaseTest
     private static final File STUDY_WITH_BIT = TestFileUtils.getSampleData("studies/StudyWithDemoBit.folder.zip");
     private static final File STUDY_WITHOUT_BIT = TestFileUtils.getSampleData("studies/StudyWithoutDemoBit.folder.zip");
 
+    @Override
     protected String getProjectName()
     {
         return "StudyDatasetReloadProject";
     }
 
+    @Override
     protected String getFolderName()
     {
         return "Study Dataset Reload";

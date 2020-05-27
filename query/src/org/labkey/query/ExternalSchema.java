@@ -109,8 +109,11 @@ public class ExternalSchema extends SimpleUserSchema
             return null;
         TableSource tableSource = new TableSource()
         {
+            @Override
             public Collection<String> getTableNames()         { return schema.getTableNames(); }
+            @Override
             public Collection<String> getQueryNames()         { return Collections.emptyList(); }
+            @Override
             public boolean isTableAvailable(String tableName) { return schema.getTable(tableName) != null; }
         };
 

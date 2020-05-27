@@ -70,6 +70,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         private String _outputPermissions;
 
+        @Override
         public void setPermissions(File outputFile) throws IOException
         {
             if (_outputPermissions != null)
@@ -232,6 +233,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
+    @Override
     public List<File> getWorkFiles(WorkDirectory.Function f, TaskPath tp)
     {
         if (tp == null)
@@ -318,6 +320,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return result;
     }
 
+    @Override
     public File getDir()
     {
         return _dir;
@@ -376,11 +379,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
+    @Override
     public File newFile(FileType type)
     {
         return newFile(Function.output, type);
     }
 
+    @Override
     public File newFile(Function f, FileType type)
     {
         if (f == Function.input)
@@ -396,11 +401,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         throw new IllegalArgumentException("input or output expected");
     }
 
+    @Override
     public File newFile(String name)
     {
         return newFile(Function.output, name);
     }
 
+    @Override
     public File newFile(Function f, String name)
     {
         File file = new File(getDir(f, name), name);
@@ -417,21 +424,25 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return file;
     }
 
+    @Override
     public String getRelativePath(File fileWork) throws IOException
     {
         return FileUtil.relativize(_dir, fileWork, true);
     }
 
+    @Override
     public File outputFile(File fileWork) throws IOException
     {
         return outputFile(fileWork, fileWork.getName());
     }
 
+    @Override
     public File outputFile(File fileWork, String nameDest) throws IOException
     {
         return outputFile(fileWork, _support.findOutputFile(nameDest));
     }
 
+    @Override
     public File outputFile(File fileWork, File fileDest) throws IOException
     {
         NetworkDrive.ensureDrive(fileDest.getAbsolutePath());
@@ -547,6 +558,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return fileDest;
     }
 
+    @Override
     public void discardFile(File fileWork) throws IOException
     {
         _jobLog.debug("discarding file: " + fileWork.getPath());
@@ -577,6 +589,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
+    @Override
     public void discardCopiedInputs() throws IOException
     {
         if (NetworkDrive.exists(_dir))
@@ -587,6 +600,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
+    @Override
     public void remove(boolean success) throws IOException
     {
         discardCopiedInputs();
@@ -637,6 +651,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     /**
      * Ensures that we have a lock, if needed. The lock must be released by the caller.
      */
+    @Override
     public CopyingResource ensureCopyingLock() throws IOException
     {
         if (_copyingResource != null)
@@ -648,6 +663,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         return _copyingResource;
     }
 
+    @Override
     public File newWorkFile(WorkDirectory.Function f, TaskPath tp, String baseName)
     {
         if (tp == null)
@@ -667,6 +683,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public class SimpleCopyingResource implements CopyingResource
     {
+        @Override
         public void close()
         {
             // If this is the real resource for the working directory, it can be released now
@@ -677,6 +694,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
     }
 
+    @Override
     public File getWorkingCopyForInput(File f)
     {
         return _copiedInputs.get(f);

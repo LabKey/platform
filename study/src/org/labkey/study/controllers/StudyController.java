@@ -354,7 +354,7 @@ public class StudyController extends BaseStudyController
         setActionResolver(ACTION_RESOLVER);
     }
 
-    protected void _appendNavTrailVisitAdmin(NavTree root)
+    protected void _addNavTrailVisitAdmin(NavTree root)
     {
         _addManageStudy(root);
 
@@ -373,6 +373,7 @@ public class StudyController extends BaseStudyController
     public class BeginAction extends SimpleViewAction
     {
         private Study _study;
+
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
@@ -1297,7 +1298,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("importVisitMap");
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Import Visit Map");
         }
     }
@@ -1658,7 +1659,7 @@ public class StudyController extends BaseStudyController
         public void addNavTrail(NavTree root)
         {
             setHelpTopic("manageVisits");
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
         }
 
         private String _jspName(Study study)
@@ -2058,7 +2059,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild(_v.getDisplayString());
         }
     }
@@ -2256,7 +2257,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Delete " + (_timepointType == TimepointType.DATE ? "Timepoints" : "Visits"));
         }
 
@@ -2414,7 +2415,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Create New " + getVisitLabel());
         }
     }
@@ -4072,7 +4073,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Recalculate Visit Dates");
         }
     }
@@ -4092,7 +4093,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Visit Order");
         }
 
@@ -4193,7 +4194,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Properties");
         }
 
@@ -6442,7 +6443,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Visit Import Mapping");
         }
     }
@@ -6536,7 +6537,7 @@ public class StudyController extends BaseStudyController
         @Override
         public void addNavTrail(NavTree root)
         {
-            _appendNavTrailVisitAdmin(root);
+            _addNavTrailVisitAdmin(root);
             root.addChild("Import Visit Aliases");
         }
     }

@@ -101,6 +101,7 @@ public class AuthenticatedRequest extends HttpServletRequestWrapper implements A
             .collect(Collectors.toMap(Entry::getKey, Entry::getValue));
     }
 
+    @Override
     public Principal getUserPrincipal()
     {
         return _user;

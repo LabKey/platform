@@ -108,6 +108,7 @@ public class AbsoluteDateVisitManager extends RelativeDateVisitManager
         return sql;
     }
 
+    @Override
     public VisitImpl findVisitBySequence(double seq)
     {
         return null;

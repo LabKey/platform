@@ -38,6 +38,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Override
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
@@ -106,6 +107,7 @@ public class JavaScriptExportScriptModel extends ExportScriptModel
         return jsonCols.toString();
     }
 
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "LABKEY.Filter.create(" +PageFlowUtil.jsString(name) + ", "

@@ -49,6 +49,7 @@ public class FastaWriter<E extends FastaEntry> extends TextWriter
     }
 
     // Always closes the PrintWriter
+    @Override
     public void write()
     {
         while (_generator.hasNext())

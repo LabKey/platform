@@ -71,6 +71,7 @@ public class MoveRunsPipelineJob extends PipelineJob
         }
     }
 
+    @Override
     public String getDescription()
     {
         return "Move " + _runIds.length + " run" + (_runIds.length == 1 ? "" : "s") + " from " + _sourceContainer.getPath() + " to " + getContainer().getPath();

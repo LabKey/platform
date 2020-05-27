@@ -142,6 +142,7 @@ public class QueryDef extends Entity implements Cloneable
         return getName() + ": " + getSql() + " -- " + getDescription();
     }
 
+    @Override
     public QueryDef clone()
     {
         try

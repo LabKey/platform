@@ -81,11 +81,13 @@ public class XarExportPipelineJob extends PipelineJob
         return null;
     }
 
+    @Override
     public String getDescription()
     {
         return "XAR export - " + _fileName;
     }
 
+    @Override
     public void run()
     {
         setStatus("EXPORTING");

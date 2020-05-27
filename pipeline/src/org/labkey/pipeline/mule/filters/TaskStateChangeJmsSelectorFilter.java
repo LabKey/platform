@@ -26,6 +26,7 @@ import org.mule.providers.jms.filters.JmsSelectorFilter;
  */
 public class TaskStateChangeJmsSelectorFilter extends JmsSelectorFilter
 {
+    @Override
     public String getExpression()
     {
         return PipelineJob.LABKEY_TASKSTATUS_PROPERTY + " = '" + PipelineJob.TaskStatus.complete + "' OR " +

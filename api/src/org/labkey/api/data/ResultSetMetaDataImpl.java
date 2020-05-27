@@ -55,86 +55,103 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
             addColumn(new ColumnMetaData(md, i));
     }
 
+    @Override
     public int getColumnCount()
     {
         return _list.size() - 1;
     }
 
+    @Override
     public boolean isAutoIncrement(int column)
     {
         return _list.get(column).isAutoIncrement;
     }
 
+    @Override
     public boolean isCaseSensitive(int column)
     {
         return _list.get(column).isCaseSensitive;
     }
 
+    @Override
     public boolean isSearchable(int column)
     {
         return _list.get(column).isSearchable;
     }
 
+    @Override
     public boolean isCurrency(int column)
     {
         return _list.get(column).isCurrency;
     }
 
+    @Override
     public int isNullable(int column)
     {
         return _list.get(column).isNullable;
     }
 
+    @Override
     public boolean isSigned(int column)
     {
         return _list.get(column).isSigned;
     }
 
+    @Override
     public int getColumnDisplaySize(int column)
     {
         return _list.get(column).columnDisplaySize;
     }
 
+    @Override
     public String getColumnLabel(int column)
     {
         return _list.get(column).columnLabel;
     }
 
+    @Override
     public String getColumnName(int column)
     {
         return _list.get(column).columnName;
     }
 
+    @Override
     public String getSchemaName(int column)
     {
         return _list.get(column).schemaName;
     }
 
+    @Override
     public int getPrecision(int column)
     {
         return _list.get(column).precision;
     }
 
+    @Override
     public int getScale(int column)
     {
         return _list.get(column).scale;
     }
 
+    @Override
     public String getTableName(int column)
     {
         return _list.get(column).tableName;
     }
 
+    @Override
     public String getCatalogName(int column)
     {
         return _list.get(column).catalogName;
     }
 
+    @Override
     public int getColumnType(int column)
     {
         return _list.get(column).columnType;
     }
 
+    @Override
     public String getColumnTypeName(int column)
     {
 //        if (null == list.get(column).columnTypeName)
@@ -142,31 +159,37 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
         return _list.get(column).columnTypeName;
     }
 
+    @Override
     public boolean isReadOnly(int column)
     {
         return _list.get(column).isReadOnly;
     }
 
+    @Override
     public boolean isWritable(int column)
     {
         return _list.get(column).isWritable;
     }
 
+    @Override
     public boolean isDefinitelyWritable(int column)
     {
         return _list.get(column).isDefinitelyWritable;
     }
 
+    @Override
     public String getColumnClassName(int column)
     {
         return _list.get(column).columnClassName;
     }
 
+    @Override
     public <T> T unwrap(Class<T> iface) throws SQLException
     {
         throw new SQLException("Not a wrapper for " + iface);
     }
 
+    @Override
     public boolean isWrapperFor(Class<?> iface)
     {
         return false;

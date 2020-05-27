@@ -47,6 +47,7 @@ public class ExpSchemaPropagateFilterTest extends BaseWebDriverTest
     protected static final String ASSAY_RUN_SUBFOLDER = "Run1_Subfolder";
     protected static final String ASSAY_REIMPORT_RUN_SUBFOLDER = "Run1A_Subfolder";
 
+    @Override
     public List<String> getAssociatedModules()
     {
         return Arrays.asList("experiment");

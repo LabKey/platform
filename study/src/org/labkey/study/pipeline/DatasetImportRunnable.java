@@ -126,6 +126,7 @@ public class DatasetImportRunnable implements Runnable
         return new ColumnDescriptor[0];
     }
 
+    @Override
     public void run()
     {
         String name = getDatasetDefinition().getName();
@@ -179,6 +180,7 @@ public class DatasetImportRunnable implements Runnable
                         // UNDONE: shouldn't be tied to TabLoader
                         ((TabLoader) loader).setMapFilter(new Filter<Map<String, Object>>()
                         {
+                            @Override
                             public boolean accept(Map<String, Object> row)
                             {
                                 Object o = row.get(visitDatePropertyURI);

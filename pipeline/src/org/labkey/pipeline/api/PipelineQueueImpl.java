@@ -59,18 +59,21 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
 
     private final JobRunner _runner = new JobRunner("Pipeline", MAX_RUNNING_JOBS);
 
+    @Override
     protected synchronized void enqueue(PipelineJob job)
     {
         _pending.add(job);
         submitJobs();
     }
 
+    @Override
     public boolean isLocal()
     {
         // Only place for this queue is local server memory.
         return true;
     }
 
+    @Override
     public boolean isTransient()
     {
         // Only place for this queue is local server memory.
@@ -78,6 +81,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
     }
 
 
+    @Override
     public synchronized void starting(PipelineJob job, Thread thread)
     {
         // WARNING: This method is for pipeline maintenance only.  Do not put
@@ -96,6 +100,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
     }
 
 
+    @Override
     public synchronized void done(PipelineJob job)
     {
         // WARNING: This method is for pipeline maintenance only.  Do not put
@@ -170,6 +175,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return c == null || c.getId().equals(job.getContainerId());
     }
 
+    @Override
     public synchronized boolean cancelJob(User user, Container c, PipelineStatusFile statusFile)
     {
         if (statusFile.getJobStore() != null)
@@ -215,6 +221,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return false;
     }
 
+    @Override
     public List<PipelineJob> findJobs(String location)
     {
         String locationDefault = PipelineJobService.get().getDefaultExecutionLocation();
@@ -241,6 +248,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return new File(compare).equals(new File(statusFile));
     }
 
+    @Override
     public PipelineJob findJobInMemory(Container c, String statusFile)
     {
         PipelineJobData jd = getJobDataInMemory(c);
@@ -258,6 +266,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
         return null;
     }
 
+    @Override
     public synchronized PipelineJobData getJobDataInMemory(Container c)
     {
         PipelineJobData ret = new PipelineJobData();
@@ -292,6 +301,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             _counter = counter;
         }
 
+        @Override
         public void run()
         {
             long til = System.currentTimeMillis() + 1000;
@@ -306,6 +316,7 @@ public class PipelineQueueImpl extends AbstractPipelineQueue
             _counter.incrementAndGet();
         }
 
+        @Override
         public String getDescription()
         {
             return "test job";

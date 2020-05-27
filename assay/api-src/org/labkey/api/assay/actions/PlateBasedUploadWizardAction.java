@@ -58,6 +58,7 @@ public abstract class PlateBasedUploadWizardAction <FormType extends PlateUpload
         return parent;
     }
 
+    @Override
     protected RunStepHandler getRunStepHandler()
     {
         return new PlateBasedRunStepHandler();

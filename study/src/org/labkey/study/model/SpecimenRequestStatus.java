@@ -32,11 +32,13 @@ public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequest
     private boolean _specimensLocked;
     private boolean _finalState;
 
+    @Override
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public void setContainer(Container container)
     {
         verifyMutability();
@@ -54,6 +56,7 @@ public class SpecimenRequestStatus extends AbstractStudyCachable<SpecimenRequest
         _label = label;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();

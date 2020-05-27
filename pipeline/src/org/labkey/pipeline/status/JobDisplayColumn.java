@@ -53,11 +53,13 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             setCaption("Join job");
     }
 
+    @Override
     public boolean isVisible(RenderContext ctx)
     {
         return !getJobStatus(ctx).isEmpty();
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         if (_jobStatus == null || _jobStatus.isEmpty())

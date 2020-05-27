@@ -34,6 +34,7 @@ public class CloseableFilteredIterator<T> extends FilteredIterator<T> implements
         _iter = iter;
     }
 
+    @Override
     public void close() throws IOException
     {
         _iter.close();

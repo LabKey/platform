@@ -107,6 +107,7 @@ abstract public class PipelineProvider
             _initialFileTypes = initialFileTypes;
         }
 
+        @Override
         public boolean accept(File f)
         {
             return accept(f, true);

@@ -30,5 +30,6 @@ public interface ExpDataRunInput extends ExpRunInput
      * Get the {@link ExpDataProtocolInput} from original {@link ExpProtocol} the that this
      * input or output is associated with.
      */
+    @Override
     @Nullable ExpDataProtocolInput getProtocolInput();
 }

@@ -56,6 +56,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         setDeleteURL(new DetailsURL(deleteExpUrl));
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -118,6 +119,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         return col;
     }
 
+    @Override
     public void addExperimentMembershipColumn(ExpRun run)
     {
         checkLocked();
@@ -142,6 +144,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         addColumn(result);
     }
 
+    @Override
     public void setBatchProtocol(@Nullable ExpProtocol protocol)
     {
         SimpleFilter filter = new SimpleFilter();
@@ -194,6 +197,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //        getColumn(Column.Name).setURL(detailsURL);
     }
 
+    @Override
     public BaseColumnInfo createRunCountColumn(String alias, ExpProtocol parentProtocol, ExpProtocol childProtocol)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(exp.experimentrun.rowid) FROM exp.experimentrun" +

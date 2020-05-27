@@ -48,10 +48,11 @@ public class CompressedXarSource extends AbstractFileXarSource
      */
     public CompressedXarSource(File xarFile, PipelineJob job, Container targetContainer)
     {
-        super(job.getDescription(), targetContainer, job.getUser());
+        super(job.getDescription(), targetContainer, job.getUser(), job);
         _xarFile = xarFile;
     }
 
+    @Override
     public void init() throws ExperimentException
     {
         File outputDir = new File(_xarFile.getPath() + ".exploded");
@@ -92,6 +93,7 @@ public class CompressedXarSource extends AbstractFileXarSource
         }
     }
 
+    @Override
     public File getLogFile() throws IOException
     {
         return getLogFileFor(_xarFile);

@@ -41,11 +41,13 @@ class StudyXmlWriter implements InternalStudyWriter
 {
     private static final String PROPERTIES_DIRECTORY = "properties";
 
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getXml();

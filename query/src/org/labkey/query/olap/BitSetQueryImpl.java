@@ -317,6 +317,7 @@ public class BitSetQueryImpl
             return null!=level || null!=hierarchy;
         }
 
+        @Override
         void toMdxSet(StringBuilder sb)
         {
             if (null != member)
@@ -347,6 +348,7 @@ public class BitSetQueryImpl
             }
         }
 
+        @Override
         Level getLevel()
         {
             if (null != member)
@@ -360,6 +362,7 @@ public class BitSetQueryImpl
             return null;
         }
 
+        @Override
         Hierarchy getHierarchy()
         {
             if (null != member)
@@ -374,6 +377,7 @@ public class BitSetQueryImpl
         }
 
 
+        @Override
         @NotNull
         Collection<Member> getCollection() throws OlapException
         {

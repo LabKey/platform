@@ -40,16 +40,19 @@ import java.util.Collections;
  */
 public class CustomViewImporter implements FolderImporter
 {
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.GRID_VIEWS;
     }
 
+    @Override
     public String getDescription()
     {
         return getDataType().toLowerCase();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws IOException, ImportException
     {
         if (isValidForImportArchive(ctx))
@@ -67,6 +70,7 @@ public class CustomViewImporter implements FolderImporter
         }
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -81,6 +85,7 @@ public class CustomViewImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new CustomViewImporter();

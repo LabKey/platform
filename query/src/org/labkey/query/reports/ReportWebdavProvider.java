@@ -62,6 +62,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         return hasViews(null, c) ? PageFlowUtil.set(VIEW_NAME) : null;
     }
 
+    @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!VIEW_NAME.equalsIgnoreCase(name))
@@ -97,6 +98,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
         }
 
         private Map<String, Report> _map;
+        @Override
         public WebdavResource find(String name)
         {
             Map<String, Report> map = getReportMap();
@@ -106,6 +108,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return null;
         }
 
+        @Override
         @NotNull
         public Collection<String> listNames()
         {
@@ -126,11 +129,13 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return _map;
         }
 
+        @Override
         public boolean exists()
         {
             return true;
         }
 
+        @Override
         public boolean isFile()
         {
             return false;
@@ -152,33 +157,39 @@ public class ReportWebdavProvider implements WebdavService.Provider
             _folder = folder;
         }
 
+        @Override
         @NotNull
         public Collection<WebdavResolver.History> getHistory()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public boolean exists()
         {
             return true;
         }
 
+        @Override
         public boolean isCollection()
         {
             return false;
         }
 
+        @Override
         public boolean isFile()
         {
             return exists();
         }
 
+        @Override
         public InputStream getInputStream(User user) throws IOException
         {
             byte[] buf = _report.getDescriptor().serialize(_c).getBytes(StringUtilsLabKey.DEFAULT_CHARSET);
             return new ByteArrayInputStream(buf);
         }
 
+        @Override
         public long copyFrom(User user, FileStream in)
         {
 /*
@@ -204,6 +215,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
 
         // You can't actually delete this file, however, some clients do delete instead of overwrite,
         // so pretend we deleted it.
+        @Override
         public boolean delete(User user)
         {
             if (user != null && !canDelete(user,true))
@@ -212,26 +224,31 @@ public class ReportWebdavProvider implements WebdavService.Provider
             return true;
         }
 
+        @Override
         public WebdavResource parent()
         {
             return _folder;
         }
 
+        @Override
         public long getCreated()
         {
             return _report.getDescriptor().getCreated().getTime();
         }
 
+        @Override
         public long getLastModified()
         {
             return _report.getDescriptor().getModified().getTime();
         }
 
+        @Override
         public String getContentType()
         {
             return "text/xml";
         }
 
+        @Override
         public long getContentLength()
         {
             try
@@ -246,6 +263,7 @@ public class ReportWebdavProvider implements WebdavService.Provider
             }
         }
 
+        @Override
         public WebdavResource find(String name)
         {
             return null;

@@ -28,6 +28,7 @@ public class QSelectFrom extends QNode
         return getChildOfType(QFrom.class);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         getSelect().appendSource(builder);

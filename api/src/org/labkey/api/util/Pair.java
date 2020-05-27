@@ -47,6 +47,7 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
     public Type1 first;
     public Type2 second;
 
+    @Override
     public Type1 getKey()
     {
         return first;
@@ -59,11 +60,13 @@ public class Pair<Type1, Type2> implements Map.Entry<Type1, Type2>, java.io.Seri
         return v;
     }
 
+    @Override
     public Type2 getValue()
     {
         return second;
     }
 
+    @Override
     public Type2 setValue(Type2 arg0)
     {
         Type2 v = second;

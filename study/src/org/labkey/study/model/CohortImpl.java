@@ -42,11 +42,13 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
     private String _description;
     List<TreatmentVisitMapImpl> _treatmentVisitMap;
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -58,11 +60,13 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         _rowId = rowId;
     }
 
+    @Override
     public boolean isEnrolled()
     {
         return _enrolled;
     }
 
+    @Override
     public void setEnrolled(boolean enrolled)
     {
         verifyMutability();
@@ -81,12 +85,14 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         return false;
     }
 
+    @Override
     public void initLsid()
     {
         Lsid lsid = new Lsid(getDomainURIPrefix(), "Folder-" + getContainer().getRowId(), String.valueOf(getRowId()));
         setLsid(lsid.toString());
     }
 
+    @Override
     public String getLsid()
     {
         return _lsid;
@@ -98,6 +104,7 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         _lsid = lsid;
     }
 
+    @Override
     public boolean isInUse()
     {
         return StudyManager.getInstance().isCohortInUse(this);
@@ -114,22 +121,26 @@ public class CohortImpl extends ExtensibleStudyEntity<CohortImpl> implements Coh
         return ptids;
     }
 
+    @Override
     public Integer getSubjectCount()
     {
         return _subjectCount;
     }
 
+    @Override
     public void setSubjectCount(Integer subjectCount)
     {
         verifyMutability();
         _subjectCount = subjectCount;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;
     }
 
+    @Override
     public void setDescription(String description)
     {
         verifyMutability();

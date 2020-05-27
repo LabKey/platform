@@ -43,6 +43,7 @@ public class StudyQcStatesImporter extends AbstractQCStateImporter implements In
         return "QC States Importer";
     }
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.QC_STATE_SETTINGS;

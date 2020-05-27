@@ -97,6 +97,7 @@ public class DateUtil
             setTimeInMillis(l);
         }
 
+        @Override
         public void setTimeInMillis(long millis)
         {
             isTimeSet = true;

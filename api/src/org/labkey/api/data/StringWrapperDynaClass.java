@@ -69,11 +69,13 @@ public abstract class StringWrapperDynaClass implements DynaClass
         _dynaProps = dynaPropList.toArray(new DynaProperty[dynaPropList.size()]);
     }
 
+    @Override
     public DynaProperty[] getDynaProperties()
     {
         return _dynaProps;
     }
 
+    @Override
     public DynaProperty getDynaProperty(String arg0)
     {
         return _dynaPropMap.get(arg0);
@@ -84,6 +86,7 @@ public abstract class StringWrapperDynaClass implements DynaClass
         return _propTypes.get(propName);
     }
 
+    @Override
     public String getName()
     {
         return _name;

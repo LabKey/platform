@@ -57,22 +57,26 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.P
         propertyClassMap.put(float.class.getName(), Float.class);
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
+    @Override
     public ActionURL updateSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
     {
         return updateSnapshot(form, errors, false);
     }
 
+    @Override
     public ActionURL updateSnapshotDefinition(ViewContext context, QuerySnapshotDefinition def, BindException errors) throws Exception
     {
         def.save(context.getUser());
         return null;
     }
 
+    @Override
     public List<DisplayColumn> getDisplayColumns(QueryForm queryForm, BindException errors) throws Exception
     {
         QueryView view = QueryView.create(queryForm, errors);

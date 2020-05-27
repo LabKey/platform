@@ -69,6 +69,7 @@ public class MetadataTableJSON extends GWTDomain<MetadataColumnJSON>
     /** If metadata is not stored in the current container, the folder path where it is stored */
     private String _definitionFolder;
 
+    @Override
     public boolean isEditable(MetadataColumnJSON field)
     {
         return true;

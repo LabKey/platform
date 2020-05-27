@@ -138,6 +138,7 @@ public class AggregateQueryDataTransform extends AbstractQueryReportDataTransfor
         }
     }
 
+    @Override
     public Collection<FieldKey> getRequiredInputs()
     {
         Set<FieldKey> result = new HashSet<>();

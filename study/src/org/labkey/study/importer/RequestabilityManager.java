@@ -495,6 +495,7 @@ public class RequestabilityManager
             return _markRequestable ? MarkType.AVAILABLE : MarkType.UNAVAILABLE;
         }
 
+        @Override
         public String getRuleData()
         {
             return _schemaName + CUSTOM_QUERY_DATA_SEPARATOR +
@@ -503,6 +504,7 @@ public class RequestabilityManager
                     _markRequestable;
         }
 
+        @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             SimpleFilter viewFilter = new SimpleFilter();
@@ -552,6 +554,7 @@ public class RequestabilityManager
             return new SQLFragment("'This vial is " + getMarkType().getLabel().toLowerCase() + " because it was found in the set called \"" + _queryName + "\".'");
         }
 
+        @Override
         public String getExtraName()
         {
             return _schemaName + "." + _queryName + (_viewName != null ? ", view " + _viewName : "");
@@ -571,6 +574,7 @@ public class RequestabilityManager
             super(container);
         }
 
+        @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
@@ -613,6 +617,7 @@ public class RequestabilityManager
             return RuleType.ADMIN_OVERRIDE;
         }
 
+        @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
@@ -635,6 +640,7 @@ public class RequestabilityManager
             super(container);
         }
 
+        @Override
         public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);

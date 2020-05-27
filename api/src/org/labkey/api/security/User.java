@@ -202,6 +202,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     }
 
 
+    @Override
     public int[] getGroups()
     {
         if (_groups == null)
@@ -373,6 +374,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.isAllowedGlobalRoles();
     }
 
+    @Override
     public boolean isInGroup(int group)
     {
         int i = Arrays.binarySearch(getGroups(), group);
@@ -456,6 +458,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         return _impersonationContext.getImpersonationProject();
     }
 
+    @Override
     public boolean isActive()
     {
         return _active;

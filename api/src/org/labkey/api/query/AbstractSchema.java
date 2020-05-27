@@ -51,6 +51,7 @@ abstract public class AbstractSchema implements QuerySchema
      * This can be used to resolve new objects (e.g. loookup tables) without calling DefaultSchema.get()
      * This can be faster because DefaultSchema caches QuerySchemas and QuerySchemas may cache TableInfos.
      */
+    @Override
     public DefaultSchema getDefaultSchema()
     {
         if (null == _defaultSchema)
@@ -64,11 +65,13 @@ abstract public class AbstractSchema implements QuerySchema
         _defaultSchema = schema;
     }
 
+    @Override
     public DbSchema getDbSchema()
     {
         return _dbSchema;
     }
 
+    @Override
     public @Nullable QuerySchema getSchema(String name)
     {
         return null;
@@ -84,11 +87,13 @@ abstract public class AbstractSchema implements QuerySchema
         return null;
     }
 
+    @Override
     public Set<String> getSchemaNames()
     {
         return Collections.emptySet();
     }
 
+    @Override
     public final Collection<QuerySchema> getSchemas(boolean includeHidden)
     {
         Set<String> schemaNames = getSchemaNames();
@@ -121,6 +126,7 @@ abstract public class AbstractSchema implements QuerySchema
         return Collections.unmodifiableList(schemas);
     }
 
+    @Override
     public final Collection<TableInfo> getTables()
     {
         return getTables(getTableNames());
@@ -141,11 +147,13 @@ abstract public class AbstractSchema implements QuerySchema
         return Collections.unmodifiableList(tables);
     }
 
+    @Override
     public User getUser()
     {
         return _user;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
@@ -160,6 +168,7 @@ abstract public class AbstractSchema implements QuerySchema
         }
     }
 
+    @Override
     public NavTree getSchemaBrowserLinks(User user)
     {
         return new NavTree();

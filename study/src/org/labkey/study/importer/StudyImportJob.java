@@ -95,11 +95,13 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
             _ctx.getLogger().info(message);
     }
 
+    @Override
     public StudyImpl getStudy()
     {
         return getStudy(false);
     }
 
+    @Override
     public StudyImpl getStudy(boolean allowNullStudy)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(_ctx.getContainer());
@@ -110,21 +112,25 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         return study;
     }
 
+    @Override
     public StudyImportContext getImportContext()
     {
         return _ctx;
     }
 
+    @Override
     public VirtualFile getRoot()
     {
         return _root;
     }
 
+    @Override
     public String getOriginalFilename()
     {
         return _originalFilename;
     }
 
+    @Override
     @Deprecated
     public BindException getSpringErrors()
     {
@@ -143,6 +149,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport, Stud
         return BaseStudyController.getStudyOverviewURL(getInfo().getContainer());
     }
 
+    @Override
     public String getDescription()
     {
         return "Study " + (_reload ? "reload" : "import");

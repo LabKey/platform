@@ -68,11 +68,13 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             super(XarGeneratorId.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new XarGeneratorTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
@@ -88,11 +90,13 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return _loadFiles;
         }
 
+        @Override
         public String getStatusName()
         {
             return _statusName;
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
@@ -104,6 +108,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             // We can use an existing XAR file from disk if it's been generated, but we need to load it because
@@ -111,6 +116,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             return false;
         }
 
+        @Override
         public void configure(XarGeneratorFactorySettings settings)
         {
             super.configure(settings);
@@ -140,6 +146,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
      * This allows us to quickly tell if the task is already complete by checking for the XAR file. If it exists, we
      * can simply reimport it. If the temporary file exists, we can skip directly to step 5 above. 
      */
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -208,6 +215,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
     }
 
     // XarWriter interface
+    @Override
     public void writeToDisk(ExpRun run) throws PipelineJobException
     {
         File f = getLoadingXarFile();

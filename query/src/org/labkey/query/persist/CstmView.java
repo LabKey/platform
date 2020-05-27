@@ -126,6 +126,7 @@ public final class CstmView extends Entity implements Cloneable, Serializable
         return getQueryName() + "." + getName() + ": " + _columns;
     }
 
+    @Override
     public CstmView clone()
     {
         try

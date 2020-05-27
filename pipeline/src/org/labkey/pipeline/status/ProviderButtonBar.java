@@ -52,6 +52,7 @@ public class ProviderButtonBar extends ButtonBar
     }
 
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))
@@ -111,6 +112,7 @@ public class ProviderButtonBar extends ButtonBar
         _containerCurrent = null;
     }
 
+    @Override
     public List<DisplayElement> getList()
     {
         if (_providerCurrent != null && _containerCurrent != null)

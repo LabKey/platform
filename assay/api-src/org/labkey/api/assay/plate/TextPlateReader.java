@@ -37,11 +37,13 @@ public class TextPlateReader extends AbstractPlateReader implements PlateReader
 {
     public static final String TYPE = "txt";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException
     {
         String fileName = dataFile.getName().toLowerCase();

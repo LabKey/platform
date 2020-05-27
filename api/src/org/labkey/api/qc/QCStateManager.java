@@ -37,6 +37,7 @@ import java.util.Map;
 public class QCStateManager
 {
     private static final QCStateManager _instance = new QCStateManager();
+    private static Map<String, QCStateHandler> _QCStateHandlers = new HashMap<>();
     private static final Cache<Container, QCStateCollections> QC_STATE_DB_CACHE = CacheManager.getBlockingCache(CacheManager.UNLIMITED, CacheManager.DAY, "QCStates", new CacheLoader<Container, QCStateCollections>()
     {
         @Override
@@ -98,6 +99,20 @@ public class QCStateManager
     public List<QCState> getQCStates(Container container)
     {
         return QC_STATE_DB_CACHE.get(container).getQcStates();
+    }
+
+    public void registerQCHandler(QCStateHandler handler)
+    {
+        String handlerType = handler.getHandlerType();
+        if (!_QCStateHandlers.containsKey(handlerType))
+            _QCStateHandlers.put(handlerType, handler);
+        else
+            throw new IllegalArgumentException("QCStateHandler '" + handlerType + "' is already registered.");
+    }
+
+    public Map<String, QCStateHandler> getRegisteredQCHandlers()
+    {
+        return _QCStateHandlers;
     }
 
     public boolean showQCStates(Container container)

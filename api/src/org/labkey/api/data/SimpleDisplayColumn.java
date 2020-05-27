@@ -61,21 +61,25 @@ public class SimpleDisplayColumn extends DisplayColumn
         return _displayHTML == null ? null : _displayHTML.eval(ctx);
     }
 
+    @Override
     public ColumnInfo getColumnInfo()
     {
         return null;
     }
 
+    @Override
     public boolean isFilterable()
     {
         return false;
     }
 
+    @Override
     public boolean isQueryColumn()
     {
         return false;
     }
 
+    @Override
     public void addQueryFieldKeys(Set<FieldKey> keys)
     {
         super.addQueryFieldKeys(keys);
@@ -85,21 +89,25 @@ public class SimpleDisplayColumn extends DisplayColumn
             keys.add(c.getFieldKey());
     }
 
+    @Override
     public boolean isSortable()
     {
         return false;
     }
 
+    @Override
     public Class getValueClass()
     {
         return String.class;
     }
 
+    @Override
     public Object getValue(RenderContext ctx)
     {
         return getDisplayHTML(ctx);
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object value = getValue(ctx);
@@ -107,11 +115,13 @@ public class SimpleDisplayColumn extends DisplayColumn
             out.write(value.toString());
     }
 
+    @Override
     public void renderFilterOnClick(RenderContext ctx, Writer out)
     {
         throw new UnsupportedOperationException("Non Bound columns not filterable");
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         String url = renderURL(ctx);
@@ -148,11 +158,13 @@ public class SimpleDisplayColumn extends DisplayColumn
             out.write("</a>");
     }
 
+    @Override
     public void renderInputHtml(RenderContext ctx, Writer out, Object value) throws IOException
     {
         throw new UnsupportedOperationException("Non Bound columns not editable");
     }
 
+    @Override
     public void renderTitle(RenderContext ctx, Writer out) throws IOException
     {
         if (null != _caption)
@@ -161,11 +173,13 @@ public class SimpleDisplayColumn extends DisplayColumn
             out.write("&nbsp;");
     }
 
+    @Override
     public boolean isEditable()
     {
         return false;
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         renderTitle(ctx, out);

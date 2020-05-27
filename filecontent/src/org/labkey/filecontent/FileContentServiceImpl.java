@@ -332,6 +332,7 @@ public class FileContentServiceImpl implements FileContentService
     }
 
     // Return pretty path string for defaultFileRoot and boolean true if defaultFileRoot is cloud
+    @Override
     public DefaultRootInfo getDefaultRootInfo(Container container)
     {
         String defaultRoot = "";

@@ -46,6 +46,7 @@ public class ListsWebPart extends WebPartView<ViewContext>
 {
     public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists", LOCATION_BODY, LOCATION_RIGHT)
     {
+        @Override
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             boolean narrow = webPart.getLocation().equals(LOCATION_RIGHT);

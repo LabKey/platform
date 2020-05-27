@@ -79,6 +79,7 @@ public class DavException extends Exception
         return status.code;
     }
 
+    @Override
     public String getMessage()
     {
         return StringUtils.defaultIfEmpty(message, status.message);

@@ -26,6 +26,7 @@ public class DatasetChartReport extends ChartQueryReport
 {
     public static final String TYPE = "Study.datasetChart";
 
+    @Override
     public String getType()
     {
         return TYPE;

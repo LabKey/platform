@@ -31,11 +31,13 @@ public class PlateUploadFormImpl<ProviderType extends PlateBasedAssayProvider> e
     private PlateSamplePropertyHelper _samplePropertyHelper;
 
 
+    @Override
     public PlateSamplePropertyHelper getSamplePropertyHelper()
     {
         return _samplePropertyHelper;
     }
 
+    @Override
     public void setSamplePropertyHelper(PlateSamplePropertyHelper helper)
     {
         _samplePropertyHelper = helper;

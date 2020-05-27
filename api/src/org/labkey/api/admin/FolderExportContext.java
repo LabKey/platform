@@ -68,36 +68,43 @@ public class FolderExportContext extends AbstractFolderContext
         _maskClinic = maskClinic;
     }
 
+    @Override
     public String getFormat()
     {
         return _format;
     }
 
+    @Override
     public void setIncludeSubfolders(boolean includeSubfolders)
     {
         _includeSubfolders = includeSubfolders;
     }
 
+    @Override
     public boolean  isIncludeSubfolders()
     {
         return _includeSubfolders;
     }
 
+    @Override
     public PHI getPhiLevel()
     {
         return _phiLevel;
     }
 
+    @Override
     public boolean isShiftDates()
     {
         return _shiftDates;
     }
 
+    @Override
     public boolean isAlternateIds()
     {
         return _alternateIds;
     }
 
+    @Override
     public boolean isMaskClinic()
     {
         return _maskClinic;

@@ -103,6 +103,7 @@ public class DbSequence
             ContextListener.removeShutdownListener(this);
         }
 
+        @Override
         public synchronized long current()
         {
             if (null != _currentValue)
@@ -110,6 +111,7 @@ public class DbSequence
             return DbSequenceManager.current(this);
         }
 
+        @Override
         public synchronized long next()
         {
             return reserveSequentialBlock(1);
@@ -129,6 +131,7 @@ public class DbSequence
             return ret;
         }
 
+        @Override
         public synchronized void ensureMinimum(long minimum)
         {
             if (null != _lastReservedValue && minimum <= _lastReservedValue)

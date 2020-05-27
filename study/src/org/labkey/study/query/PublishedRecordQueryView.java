@@ -73,6 +73,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             return null;
     }
 
+    @Override
     protected TableInfo createTable()
     {
         TableInfo table = getSchema().getTable(getSettings().getQueryName(), getContainerFilter(), true, true);
@@ -84,6 +85,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
         return table;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion rgn = new PublishedRecordDataRegion(_recordCount, _protocolId, _sourceLsid);
@@ -116,6 +118,7 @@ public class PublishedRecordQueryView extends DatasetQueryView
             return _count;
         }
 
+        @Override
         protected void renderFormEnd(RenderContext ctx, Writer out) throws IOException
         {
             super.renderFormEnd(ctx, out);

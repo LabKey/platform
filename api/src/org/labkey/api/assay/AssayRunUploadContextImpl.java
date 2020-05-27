@@ -151,12 +151,14 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         }
     }
 
+    @Override
     @NotNull
     public ExpProtocol getProtocol()
     {
         return _protocol;
     }
 
+    @Override
     public Map<DomainProperty, String> getRunProperties()
     {
         if (_runProperties == null)
@@ -168,6 +170,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _runProperties;
     }
 
+    @Override
     public Map<DomainProperty, String> getBatchProperties()
     {
         if (_batchProperties == null)
@@ -243,32 +246,38 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         }
     }
 
+    @Override
     public String getComments()
     {
         return _comments;
     }
 
+    @Override
     public String getName()
     {
         return _name;
     }
 
+    @Override
     public User getUser()
     {
         return _user;
     }
 
+    @Override
     @NotNull
     public Container getContainer()
     {
         return _container;
     }
 
+    @Override
     public HttpServletRequest getRequest()
     {
         return _context != null ? _context.getRequest() : null;
     }
 
+    @Override
     public ActionURL getActionURL()
     {
         return _context != null ? _context.getActionURL() : null;
@@ -282,6 +291,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
      * @return A singleton map with key {@link AssayDataCollector#PRIMARY_FILE} and value of the uploaded file.
      * @throws ExperimentException
      */
+    @Override
     @NotNull
     public Map<String, File> getUploadedData() throws ExperimentException
     {
@@ -343,6 +353,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _outputMaterials;
     }
 
+    @Override
     public ProviderType getProvider()
     {
         return _provider;
@@ -354,11 +365,13 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         return _reRunId;
     }
 
+    @Override
     public String getTargetStudy()
     {
         return _targetStudy;
     }
 
+    @Override
     public TransformResult getTransformResult()
     {
         return _transformResult == null ? DefaultTransformResult.createEmptyResult() : _transformResult;

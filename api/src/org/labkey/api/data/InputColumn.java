@@ -37,6 +37,7 @@ public class InputColumn extends DataColumn
         renderInputHtml(ctx, out, getInputValue(ctx));
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         renderInputHtml(ctx, out, getInputValue(ctx));

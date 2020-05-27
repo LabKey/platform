@@ -85,12 +85,14 @@ public class StudyFolderType extends MultiPortalFolderType
         return new HelpTopic("study");
     }
 
+    @Override
     protected String getFolderTitle(ViewContext ctx)
     {
         Study study = StudyService.get().getStudy(ctx.getContainer());
         return study != null && study.getLabel() != null ? study.getLabel() : ctx.getContainer().getTitle();
     }
 
+    @Override
     public List<FolderTab> getDefaultTabs()
     {
         return PAGES;

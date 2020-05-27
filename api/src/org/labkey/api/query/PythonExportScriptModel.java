@@ -43,6 +43,7 @@ public class PythonExportScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Override
     @Nullable
     public String getFilters()
     {
@@ -66,12 +67,14 @@ public class PythonExportScriptModel extends ExportScriptModel
     }
 
     // Our python client api will generate the query filter, so call the constructor
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "labkey.query.QueryFilter(" + PageFlowUtil.jsString(name) + ", " + PageFlowUtil.jsString(value)
                 + ", " + PageFlowUtil.jsString(operator.getPreferredUrlKey()) + ")";
     }
 
+    @Override
     public String getColumns()
     {
         StringBuilder ret = new StringBuilder();

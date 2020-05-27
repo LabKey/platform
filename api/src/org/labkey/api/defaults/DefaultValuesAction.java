@@ -44,10 +44,12 @@ public abstract class DefaultValuesAction<FormType extends DomainIdForm> extends
         return domain;
     }
 
+    @Override
     public void validateCommand(FormType target, Errors errors)
     {
     }
 
+    @Override
     public ActionURL getSuccessURL(FormType domainIdForm)
     {
         return domainIdForm.getReturnActionURL();

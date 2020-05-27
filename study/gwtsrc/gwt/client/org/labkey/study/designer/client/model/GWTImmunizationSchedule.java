@@ -83,6 +83,7 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
         schedule.remove(group);
     }
 
+    @Override
     public void removeTimepoint(GWTTimepoint tp)
     {
         for (GWTCohort group : schedule.keySet())
@@ -96,11 +97,13 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
         timepoints.remove(tp);
     }
 
+    @Override
     public List<GWTTimepoint> getTimepoints()
     {
         return timepoints;
     }
 
+    @Override
     public GWTTimepoint getTimepoint(int i)
     {
         if (i >= timepoints.size())
@@ -108,16 +111,19 @@ public class GWTImmunizationSchedule implements Schedule, IsSerializable
 
         return timepoints.get(i);
     }
+    @Override
     public void addTimepoint(GWTTimepoint tp)
     {
         timepoints.add(tp);
     }
 
+    @Override
     public void addTimepoint(int index, GWTTimepoint tp)
     {
         timepoints.add(index, tp);
     }
 
+    @Override
     public void removeTimepoint(int index)
     {
         GWTTimepoint tp = timepoints.get(index);

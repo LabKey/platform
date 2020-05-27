@@ -101,6 +101,7 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         return -1;
     }
 
+    @Override
     public Report getReport(ContainerUser cu)
     {
         if (null != getModule())

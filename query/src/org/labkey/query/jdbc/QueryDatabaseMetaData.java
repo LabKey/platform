@@ -1080,11 +1080,13 @@ public class QueryDatabaseMetaData implements DatabaseMetaData
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public ResultSet getPseudoColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean generatedKeyAlwaysReturned()
     {
         throw new UnsupportedOperationException();

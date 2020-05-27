@@ -27,6 +27,7 @@ public class QDistinct extends QNode
 		super(QExpr.class);
 	}
 	
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" DISTINCT ");

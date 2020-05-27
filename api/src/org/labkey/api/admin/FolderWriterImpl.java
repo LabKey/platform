@@ -48,6 +48,7 @@ public class FolderWriterImpl extends BaseFolderWriter
         _writers = registry.getRegisteredFolderWriters();
     }
 
+    @Override
     public String getDataType()
     {
         return null;

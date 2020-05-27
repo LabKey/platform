@@ -37,6 +37,7 @@ abstract public class QFieldKey extends QExpr
     @Override
     abstract public FieldKey getFieldKey();
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         throw new IllegalStateException("Fields should have been resolved.");
