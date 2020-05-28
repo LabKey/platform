@@ -81,6 +81,10 @@ public interface PropertyService
     @NotNull
     Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo);
 
+    /** return exiting Domain or create and save empty Domain if it does not exist */
+    @NotNull
+    Domain ensureDomain(Container container, User user, String typeURI, String name);
+
     /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
     @Nullable
     String getDomainURI(String schemaName, String queryName, Container container, User user);

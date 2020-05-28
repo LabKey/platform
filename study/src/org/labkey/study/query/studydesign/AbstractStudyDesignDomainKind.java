@@ -86,30 +86,7 @@ public abstract class AbstractStudyDesignDomainKind extends BaseAbstractDomainKi
     public Domain ensureDomain(Container container, User user, String tableName)
     {
         String domainURI = generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, container, null);
-
-        synchronized (ENSURE_DOMAIN_LOCK)
-        {
-            Domain domain = PropertyService.get().getDomain(container, domainURI);
-
-            if (domain == null)
-            {
-                try
-                {
-                    domain = PropertyService.get().createDomain(container, domainURI, tableName);
-
-                    try (var ignored = SpringActionController.ignoreSqlUpdates())
-                    {
-                        domain.save(user);
-                    }
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            return domain;
-        }
+        return PropertyService.get().ensureDomain(container, user, domainURI, tableName);
     }
 
     protected abstract String getNamespacePrefix();
