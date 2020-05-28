@@ -217,6 +217,11 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
     {
         StringBuilder uriString = new StringBuilder(getPath());
 
+        if (uriString.indexOf("/") != 0)
+        {
+            uriString.insert(0, '/');
+        }
+
         appendParamsAndFragment(uriString, allowSubstSyntax);
 
         return uriString.toString();
@@ -224,10 +229,6 @@ public class URLHelper implements Cloneable, Serializable, Taintable, HasHtmlStr
 
     protected void appendParamsAndFragment(StringBuilder uriString, boolean allowSubstSyntax)
     {
-        if (uriString.indexOf("/") != 0)
-        {
-            uriString.insert(0, '/');
-        }
         boolean hasParams = (null != _parameters && _parameters.size() > 0);
         if (hasParams || (!isExperimentalNoQuestionMark() && !isDirectory()))
             uriString.append('?');      // makes it easier for users who want to concatenate
