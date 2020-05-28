@@ -665,9 +665,10 @@ public class Portal implements ModuleChangeListener
     }
 
 
-    // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
+    /** returns an editable webPart (could rename to getEditablePart() */
     public static WebPart getPart(Container c, int webPartRowId)
     {
+        // TODO: Should use WebPartCache... but we need pageId to do that. Fortunately, this is used infrequently now (see #13267).
         WebPart webPart = new TableSelector(getTableInfoPortalWebParts(), SimpleFilter.createContainerFilter(c), null).getObject(webPartRowId, WebPart.class);
         if (null != webPart)
         {
@@ -681,13 +682,13 @@ public class Portal implements ModuleChangeListener
         return null;
     }
 
-
+    /** returns an editable webPart (could rename to getEditablePart() */
     @Nullable
     public static WebPart getPart(Container c, String pageId, int index)
     {
-        return WebPartCache.getWebPart(c, pageId, index);
+        WebPart cached = WebPartCache.getWebPart(c, pageId, index);
+        return null==cached ? null : new Portal.WebPart(cached);
     }
-
 
     public static void updatePart(User u, WebPart part)
     {
