@@ -29,7 +29,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormApiAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReadOnlyApiAction;
@@ -2261,7 +2260,7 @@ public class CoreController extends SpringActionController
     }
 
     @AdminConsoleAction(AdminOperationsPermission.class)
-    public class ScriptEnginesSaveAction extends ExtFormAction<ExternalScriptEngineDefinitionImpl>
+    public class ScriptEnginesSaveAction extends MutatingApiAction<ExternalScriptEngineDefinitionImpl>
     {
         @Override
         public void validateForm(ExternalScriptEngineDefinitionImpl def, Errors errors)
