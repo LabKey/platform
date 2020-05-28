@@ -130,10 +130,30 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     String getAlias();
 
+    /** If this column is represented by a column in the database, this is the name as returned by database metadata */
     String getMetaDataName();
 
+    /**
+     * If this column represents a column in the database (see getMetaDataName()),
+     * then this method will return the name escaped in a way that is suitable for using in SQL (e.g. quoted)
+     *
+     * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
+     * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
+     */
     String getSelectName();
 
+    /**
+     * Use this method to generate database SQL for selecting data from this column.
+     *
+     * <pre>
+     *     new SQLFragment(
+     *         "SELECT ").append(ti.getColumn("A").getValueSql("tablealias").append(" AS foo\n" ).append(
+     *         "FROM ").append(ti.getFromSql("tablelias"));
+     * </pre>
+     *
+     * @param tableAliasName
+     * @return
+     */
     SQLFragment getValueSql(String tableAliasName);
 
     @Override
