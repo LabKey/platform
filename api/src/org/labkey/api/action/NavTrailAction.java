@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.view.NavTree;
 
 /**
@@ -25,15 +26,18 @@ import org.labkey.api.view.NavTree;
  */
 public interface NavTrailAction
 {
+    Logger LOG = Logger.getLogger(NavTrailAction.class);
+
     @Deprecated()  // Implement addNavTrail() instead
     default NavTree appendNavTrail(NavTree root)
     {
-        throw new IllegalStateException();
+        throw new IllegalStateException(getClass().getName() + " must implement addNavTrail()!");
     }
 
     default void addNavTrail(NavTree root)
     {
-        // TODO: Log a warning once we've communicated the migration plan to developers
         appendNavTrail(root);
+        // The last method didn't throw IllegalStateException, so we know this action implements appendNavTrail()
+        LOG.warn(getClass().getName() + " should implement addNavTrail() instead of appendNavTrail()! The appendNavTrail() method is deprecated and will be removed shortly.");
     }
 }
