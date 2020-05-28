@@ -23,7 +23,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SpringActionController;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -484,12 +483,12 @@ public abstract class JspBase extends JspContext implements HasViewContext
         return getViewContext().getMessage(e);
     }
 
-    JspView _me = null;
+    JspView<?> _me = null;
 
-    JspView getView()
+    JspView<?> getView()
     {
         if (null == _me)
-            _me = (JspView)HttpView.currentView();
+            _me = (JspView<?>)HttpView.currentView();
         return _me;
     }
 
@@ -683,7 +682,7 @@ public abstract class JspBase extends JspContext implements HasViewContext
 
     protected HtmlString formAction(Class<? extends Controller> actionClass, Method method)
     {
-        return HtmlString.unsafe("action=\"" + buildURL(actionClass, method) + "\" method=\"" + method.getMethod() + "\"");
+        return HtmlString.unsafe("action=\"" + buildURL(actionClass) + "\" method=\"" + method.getMethod() + "\"");
     }
 
     // Provides a unique integer within the context of this request.  Handy for generating element ids, etc. See UniqueID for caveats and warnings.
@@ -695,20 +694,9 @@ public abstract class JspBase extends JspContext implements HasViewContext
     /** simple link to different action in same container w/no parameters */
     protected String buildURL(Class<? extends Controller> actionClass)
     {
-        return buildURL(actionClass, Method.Get);
-    }
-
-    protected String buildURL(Class<? extends Controller> actionClass, Method m)
-    {
         if (AppProps.getInstance().getUseContainerRelativeURL())
         {
-            String controller = SpringActionController.getControllerName(actionClass);
-            if (controller == null)
-                throw new IllegalStateException("Could not find a controller name for " + actionClass);
-            String action = SpringActionController.getActionName(actionClass);
-            if (action == null)
-                throw new IllegalStateException("Could not find an action name for " + actionClass);
-            return controller + "-" + action + "." + m.getSuffix() + "?";
+            return new ActionURL(actionClass, getContainer()).toContainerRelativeURL();
         }
         ActionURL v = getActionURL();
         ActionURL u = new ActionURL(actionClass, getContainer());
@@ -721,12 +709,8 @@ public abstract class JspBase extends JspContext implements HasViewContext
     /** simple link to different action w/no parameters */
     protected String buildURL(Class<? extends Controller> actionClass, String query)
     {
-        ActionURL v = getActionURL();
-        ActionURL u = new ActionURL(actionClass, getContainer());
-        String full = u.getLocalURIString();
-        if (v.isCanonical() && v.getController().equals(u.getController()))
-            return full.substring(full.lastIndexOf('/')+1) + query;
-        return full + query;
+        String result = buildURL(actionClass);
+        return result + (result.endsWith("?") ? "" : "?") + query;
     }
 
     // JSPs must override addClientDependencies(ClientDependencies) to add their own dependencies.

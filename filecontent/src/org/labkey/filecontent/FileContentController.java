@@ -25,7 +25,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.CustomApiForm;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
@@ -50,7 +49,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.IPropertyValidator;
@@ -73,14 +71,12 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
@@ -138,21 +134,21 @@ import java.util.Set;
 
 public class FileContentController extends SpringActionController
 {
-   public enum RenderStyle
-   {
-       DEFAULT,     // call defaultRenderStyle
-       FRAME,       // <iframe>                       (*)
-       INLINE,      // use INCLUDE (INLINE is confusing, does NOT mean content-disposition:inline)
-       INCLUDE,     // include html                   (text/html)
-       PAGE,        // content-disposition:inline     (*)
-       ATTACHMENT,  // content-disposition:attachment (*)
-       TEXT,        // filtered                       (text/*)
-       IMAGE        // <img>                          (image/*)
-   }
+    public enum RenderStyle
+    {
+        DEFAULT,     // call defaultRenderStyle
+        FRAME,       // <iframe>                       (*)
+        INLINE,      // use INCLUDE (INLINE is confusing, does NOT mean content-disposition:inline)
+        INCLUDE,     // include html                   (text/html)
+        PAGE,        // content-disposition:inline     (*)
+        ATTACHMENT,  // content-disposition:attachment (*)
+        TEXT,        // filtered                       (text/*)
+        IMAGE        // <img>                          (image/*)
+    }
 
-   private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(FileContentController.class);
 
-   public FileContentController()
+    public FileContentController()
    {
        setActionResolver(_actionResolver);
    }
@@ -864,22 +860,6 @@ public class FileContentController extends SpringActionController
         }
     }
 
-    public static class CustomFilePropsForm
-    {
-        private String _uri;
-
-        public String getUri()
-        {
-            return _uri;
-        }
-
-        public void setUri(String uri)
-        {
-            _uri = uri;
-        }
-    }
-
-
     public static class FilePropsForm implements CustomApiForm
     {
         private Map<String,Object> _props;
@@ -900,7 +880,6 @@ public class FileContentController extends SpringActionController
     public class UpdateFilePropsAction extends MutatingApiAction<FilePropsForm>
     {
         private List<Map<String, Object>> _files;
-        private List<? extends DomainProperty> _domainProps;
 
         @Override
         public ApiResponse execute(FilePropsForm form, BindException errors) throws Exception
@@ -940,7 +919,7 @@ public class FileContentController extends SpringActionController
                 {
                     ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
                     List<ValidationError> validationErrors = new ArrayList<>();
-                    _domainProps = domain.getProperties();
+                    List<? extends DomainProperty> domainProps = domain.getProperties();
 
                     for (Map<String, Object> fileProps : _files)
                     {
@@ -953,7 +932,7 @@ public class FileContentController extends SpringActionController
                         }
 
                         String name = String.valueOf(fileProps.get("name"));
-                        for (DomainProperty dp : _domainProps)
+                        for (DomainProperty dp : domainProps)
                         {
                             Object o = fileProps.get(dp.getName());
                             if (!validateProperty(dp, String.valueOf(o), validationErrors, validatorCache))
@@ -1031,112 +1010,6 @@ public class FileContentController extends SpringActionController
                 if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
             }
             return ret;
-        }
-    }
-
-    @RequiresPermission(InsertPermission.class)
-    public class SaveCustomFilePropsAction extends ExtFormAction<CustomFilePropsForm>
-    {
-        WebdavResource _resource;
-
-        @Override
-        public void validateForm(CustomFilePropsForm form, Errors errors)
-        {
-            Path path = FileContentServiceImpl.getInstance().getPath(form.getUri());
-            _resource = WebdavService.get().getResolver().lookup(path);
-
-            if (_resource != null)
-            {
-                FileContentService svc = FileContentService.get();
-                String uri = svc.getDomainURI(getContainer());
-                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
-
-                if (dd != null)
-                {
-                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-                    if (domain != null)
-                    {
-                        ValidatorContext validatorCache = new ValidatorContext(getContainer(), getUser());
-                        List<ValidationError> validationErrors = new ArrayList<>();
-
-                        for (DomainProperty prop : domain.getProperties())
-                        {
-                            Object o = getViewContext().get(prop.getName());
-                            if (o != null && !StringUtils.isBlank(String.valueOf(o)))
-                            {
-                                if (!validateProperty(prop, StringUtils.trimToNull(String.valueOf(o)), validationErrors, validatorCache))
-                                {
-                                    for (ValidationError ve : validationErrors)
-                                        errors.reject(ERROR_MSG, ve.getMessage());
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            else
-                errors.reject("Failed trying to resolve the resource URI.");
-        }
-
-        private boolean validateProperty(DomainProperty prop, Object value, List<ValidationError> errors, ValidatorContext validatorCache)
-        {
-            boolean ret = true;
-
-            //check for isRequired
-            if (prop.isRequired() && value == null)
-            {
-                errors.add(new PropertyValidationError("The field '" + prop.getName() + "' is required.", prop.getName()));
-                return false;
-            }
-
-            // Don't validate null values, #15683
-            if (null == value)
-                return ret;
-
-            for (IPropertyValidator validator : prop.getValidators())
-            {
-                if (!validator.validate(prop.getPropertyDescriptor(), value, errors, validatorCache)) ret = false;
-            }
-            return ret;
-        }
-
-        @Override
-        public ApiResponse execute(CustomFilePropsForm form, BindException errors)
-        {
-            FileContentService svc = FileContentService.get();
-            ExpData data = svc.getDataObject(_resource, getContainer());
-            ApiSimpleResponse response = new ApiSimpleResponse();
-
-            if (data != null)
-            {
-                String uri = svc.getDomainURI(getContainer());
-                DomainDescriptor dd = OntologyManager.getDomainDescriptor(uri, getContainer());
-
-                if (dd != null)
-                {
-                    Domain domain = PropertyService.get().getDomain(dd.getDomainId());
-                    if (domain != null)
-                    {
-                        try {
-                            for (DomainProperty prop : domain.getProperties())
-                            {
-                                Object o = getViewContext().get(prop.getName());
-                                if (o != null && !StringUtils.isBlank(String.valueOf(o)))
-                                {
-                                    data.setProperty(getUser(), prop.getPropertyDescriptor(), o);
-                                }
-                            }
-                            response.put("success", true);
-                        }
-                        catch (ValidationException e){}
-                    }
-                }
-            }
-            else
-                response.put("success", false);
-
-            return response;
         }
     }
 
@@ -1711,8 +1584,7 @@ public class FileContentController extends SpringActionController
 
             // @RequiresPermission(InsertPermission.class)
             assertForInsertPermission(user,
-                controller.new UpdateFilePropsAction(),
-                controller.new SaveCustomFilePropsAction()
+                controller.new UpdateFilePropsAction()
             );
 
             // @RequiresPermission(AdminPermission.class)

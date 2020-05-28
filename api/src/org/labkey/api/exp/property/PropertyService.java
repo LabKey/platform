@@ -81,7 +81,7 @@ public interface PropertyService
     @NotNull
     Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo);
 
-    /** return exiting Domain or create and save empty Domain if it does not exist */
+    /** return existing Domain or create and save empty Domain if it does not exist */
     @NotNull
     Domain ensureDomain(Container container, User user, String typeURI, String name);
 
