@@ -553,20 +553,27 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         if (null == _selectName)
         {
             if (!(getParentTable() instanceof SchemaTableInfo))
-                throw new UnsupportedOperationException();
-            if (null == getMetaDataName())
-                _selectName = getSqlDialect().getColumnSelectName(getName());
-            else
-                _selectName = getSqlDialect().getColumnSelectName(getMetaDataName());
+                throw new UnsupportedOperationException("Use getValueSql()");
+            _selectName = generateSelectName();
         }
 
         return _selectName;
     }
 
+    private String generateSelectName()
+    {
+        if (null != _selectName)
+            return _selectName;
+        if (null == getMetaDataName())
+            return getSqlDialect().getColumnSelectName(getName());
+        else
+            return getSqlDialect().getColumnSelectName(getMetaDataName());
+    }
+
     @Override
     public SQLFragment getValueSql(String tableAliasName)
     {
-        return new SQLFragment(tableAliasName + "." + getSelectName());
+        return new SQLFragment(tableAliasName + "." + generateSelectName());
     }
 
     @Override
