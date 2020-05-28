@@ -532,18 +532,28 @@ public class BaseColumnInfo extends ColumnRenderPropertiesImpl implements Mutabl
         _metaDataName = metaDataName;
     }
 
+    /** Actual name as returned by database metadata */
     @Override
     public String getMetaDataName()
     {
-        return _metaDataName;      // Actual name returned by metadata; use to query meta data or to select columns enclosed in quotes
+        return _metaDataName;
     }
 
-
+    /**
+     * If this column represents a column in the database (see getMetaDataName()),
+     * then this method will return the name escaped in a way that is suitable for using in SQL (e.g. quoted)
+     *
+     * This is especially useful for generating INSERT/UPDATE statement when using SchemaTableInfo.
+     * ColumnInfo.getValueSql() is the more general method and should be preferred for most usages.
+     */
     @Override
     public String getSelectName()
     {
+        assert getParentTable() instanceof SchemaTableInfo : "Use getValueSql()";
         if (null == _selectName)
         {
+            if (!(getParentTable() instanceof SchemaTableInfo))
+                throw new UnsupportedOperationException();
             if (null == getMetaDataName())
                 _selectName = getSqlDialect().getColumnSelectName(getName());
             else
