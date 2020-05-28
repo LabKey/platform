@@ -77,26 +77,31 @@ public class SpecimenReloadTask extends PipelineJob.Task<SpecimenReloadTask.Fact
             super(SpecimenReloadTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new SpecimenReloadTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getStatusName()
         {
             return "RELOAD SPECIMEN";
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

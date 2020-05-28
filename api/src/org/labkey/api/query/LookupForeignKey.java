@@ -115,6 +115,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         _additionalJoins.put(fkColumn, Pair.of(lookupColumnName, equalOrIsNull));
     }
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
@@ -158,6 +159,7 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     }
 
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         return getURL(parent, false);

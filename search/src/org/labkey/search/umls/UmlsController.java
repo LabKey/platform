@@ -76,6 +76,7 @@ public class UmlsController extends SpringActionController
     @RequiresSiteAdmin
     public class DebugAction extends SimpleViewAction<PathForm>
     {
+        @Override
         public ModelAndView getView(PathForm form, BindException errors) throws Exception
         {
             if (StringUtils.isEmpty(form.getPath()))
@@ -110,6 +111,7 @@ public class UmlsController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -137,6 +139,7 @@ public class UmlsController extends SpringActionController
     @RequiresNoPermission
     public class ConceptAction extends SimpleViewAction<ConceptForm>
     {
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -161,6 +164,7 @@ public class UmlsController extends SpringActionController
     {
         public PollingUtil.PollKey _key = null;
 
+        @Override
         public void validateCommand(PathForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getPath()))
@@ -169,6 +173,7 @@ public class UmlsController extends SpringActionController
                 errors.rejectValue(SpringActionController.ERROR_MSG, "path", "Path not found: " + form.getPath());
         }
 
+        @Override
         public ModelAndView getView(PathForm o, boolean reshow, BindException errors)
         {
             if (_key == null)
@@ -184,11 +189,13 @@ public class UmlsController extends SpringActionController
             return new JspView<>("/org/labkey/search/umls/index.jsp",this,errors);
         }
 
+        @Override
         public URLHelper getSuccessURL(PathForm o)
         {
             return new ActionURL(IndexAction.class, getContainer());
         }
 
+        @Override
         public boolean handlePost(PathForm form, BindException errors) throws Exception
         {
             synchronized (jobLock)
@@ -201,6 +208,7 @@ public class UmlsController extends SpringActionController
             return true;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }

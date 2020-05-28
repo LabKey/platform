@@ -137,6 +137,7 @@ public class QueryDriver implements Driver
         return true;
     }
 
+    @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException
     {
         throw new SQLFeatureNotSupportedException("Method not implemented");

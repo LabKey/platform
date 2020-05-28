@@ -62,6 +62,7 @@ public class TreatmentImpl implements Treatment
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -82,6 +83,7 @@ public class TreatmentImpl implements Treatment
         return _tempRowId;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
@@ -92,6 +94,7 @@ public class TreatmentImpl implements Treatment
         _label = label;
     }
 
+    @Override
     public String getDescription()
     {
         return _description;

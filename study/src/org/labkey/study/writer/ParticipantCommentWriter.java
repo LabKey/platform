@@ -26,11 +26,13 @@ import org.labkey.api.writer.VirtualFile;
  */
 public class ParticipantCommentWriter implements InternalStudyWriter
 {
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.PARTICIPANT_COMMENTS;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         StudyDocument.Study studyXml = ctx.getXml();

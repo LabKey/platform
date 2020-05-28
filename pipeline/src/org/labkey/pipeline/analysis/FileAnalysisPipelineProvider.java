@@ -54,11 +54,13 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         super(name, owningModule);
     }
 
+    @Override
     public FileAnalysisProtocolFactory getProtocolFactory(FileAnalysisTaskPipeline pipeline)
     {
         return new FileAnalysisProtocolFactory(pipeline);
     }
 
+    @Override
     public FileAnalysisProtocolFactory getProtocolFactory(File fileParams)
     {
         // Check all possible FileAnalysisProtocolFactory types.
@@ -75,6 +77,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         return null;
     }
 
+    @Override
     public void updateFileProperties(ViewContext context, PipeRoot pr, PipelineDirectory directory, boolean includeAll)
     {
         if (!context.getContainer().hasPermission(context.getUser(), InsertPermission.class))

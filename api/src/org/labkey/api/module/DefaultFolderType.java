@@ -119,6 +119,7 @@ public class DefaultFolderType implements FolderType
         return getDefaultTabs().get(0);
     }
 
+    @Override
     public void configureContainer(Container c, User user)
     {
         List<Portal.WebPart> required = getRequiredWebParts();
@@ -129,13 +130,13 @@ public class DefaultFolderType implements FolderType
         required = copyWebParts(required);
         defaultParts = copyWebParts(defaultParts);
 
-        //Just to be sure, make sure required web parts are set correctly
+        // Just to be sure, make sure required web parts are set correctly
         if (null != required)
             for (Portal.WebPart part : required)
                 part.setPermanent(true);
 
         ArrayList<Portal.WebPart> all = new ArrayList<>();
-        List<Portal.WebPart> existingParts = Portal.getParts(c);
+        List<Portal.WebPart> existingParts = Portal.getEditableParts(c);
 
         if (existingParts.isEmpty())
         {
@@ -146,7 +147,7 @@ public class DefaultFolderType implements FolderType
         }
         else
         {
-            //Order will be required,preferred,optional
+            // Order will be required,preferred,optional
             all.addAll(existingParts);
             for (WebPart p : all)
                 p.setIndex(2);
@@ -173,7 +174,7 @@ public class DefaultFolderType implements FolderType
                     Portal.WebPart foundPart = findPart(all, part);
                     if (null == foundPart)
                     {
-                        part.setIndex(1); //Should put these right after required parts
+                        part.setIndex(1); // Should put these right after required parts
                         all.add(part);
                     }
                     else
@@ -187,7 +188,7 @@ public class DefaultFolderType implements FolderType
         if (null == active)
             active = new HashSet<>();
         else
-            active = new HashSet<>(active); //Need to copy since returned set is unmodifiable.
+            active = new HashSet<>(active); // Need to copy since returned set is unmodifiable.
 
         active.addAll(requiredActive);
         c.setActiveModules(active, user);
@@ -223,6 +224,7 @@ public class DefaultFolderType implements FolderType
     }
 
 
+    @Override
     public void unconfigureContainer(Container c, User user)
     {
         List<FolderTab> folderTabs = c.getFolderType().getDefaultTabs();
@@ -256,6 +258,7 @@ public class DefaultFolderType implements FolderType
         }
     }
 
+    @Override
     @NotNull
     public String getFolderIconPath()
     {
@@ -297,6 +300,7 @@ public class DefaultFolderType implements FolderType
         return newParts;
     }
 
+    @Override
     public boolean getForceAssayUploadIntoWorkbooks()
     {
         return forceAssayUploadIntoWorkbooks;
@@ -307,11 +311,13 @@ public class DefaultFolderType implements FolderType
         this.forceAssayUploadIntoWorkbooks = forceAssayUploadIntoWorkbooks;
     }
 
+    @Override
     public ActionURL getStartURL(Container c, User user)
     {
         return ModuleLoader.getInstance().getCoreModule().getTabURL(c, user);
     }
 
+    @Override
     public String getStartPageLabel(ViewContext ctx)
     {
         FolderTab folderTab = getDefaultTab();
@@ -324,26 +330,31 @@ public class DefaultFolderType implements FolderType
         return getLabel() + " Dashboard";
     }
 
+    @Override
     public HelpTopic getHelpTopic()
     {
         return null;
     }
 
+    @Override
     public Module getDefaultModule()
     {
         return defaultModule;
     }
 
+    @Override
     public List<Portal.WebPart> getRequiredWebParts()
     {
         return requiredParts;
     }
 
+    @Override
     public List<Portal.WebPart> getPreferredWebParts()
     {
         return preferredParts;
     }
 
+    @Override
     public String getName()
     {
         return name;
@@ -368,16 +379,19 @@ public class DefaultFolderType implements FolderType
         return false;
     }
 
+    @Override
     public String getDescription()
     {
         return description;
     }
 
+    @Override
     public String getLabel()
     {
         return name;
     }
 
+    @Override
     public Set<Module> getActiveModules()
     {
         return activeModules;
@@ -416,6 +430,7 @@ public class DefaultFolderType implements FolderType
         return m;
     }
 
+    @Override
     public void addManageLinks(NavTree adminNavTree, Container container, User user)
     {
         AdminLinkManager.getInstance().addStandardAdminLinks(adminNavTree, container, user);
@@ -462,11 +477,13 @@ public class DefaultFolderType implements FolderType
         return null;
     }
 
+    @Override
     public boolean isMenubarEnabled()
     {
         return menubarEnabled;
     }
 
+    @Override
     public String getDefaultPageId(ViewContext ctx)
     {
         return Portal.DEFAULT_PORTAL_PAGE_ID;

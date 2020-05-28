@@ -59,6 +59,7 @@ public class LineageGraphDisplayColumn extends SimpleDisplayColumn
         setCaption("Lineage Graph");
     }
 
+    @Override
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
         if (_runId == null || _focus == null)

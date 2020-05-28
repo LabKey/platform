@@ -59,6 +59,7 @@ public class StudyParticipantVisitResolver extends AbstractParticipantVisitResol
                 originalInfo.getStudyContainer());
     }
 
+    @Override
     @NotNull
     protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer)
     {

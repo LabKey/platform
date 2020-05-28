@@ -60,12 +60,14 @@ public abstract class AbstractStudyCachable<T> implements StudyCachable<T>, Clon
         _mutable = true;
     }
 
+    @Override
     public void lock()
     {
         _mutable = false;
     }
 
 
+    @Override
     public T createMutable()
     {
         if (_mutable)

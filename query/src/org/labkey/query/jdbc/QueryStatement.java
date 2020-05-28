@@ -235,7 +235,7 @@ public class QueryStatement implements Statement
     @Override
     public Connection getConnection()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
@@ -322,11 +322,13 @@ public class QueryStatement implements Statement
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void closeOnCompletion()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean isCloseOnCompletion()
     {
         throw new UnsupportedOperationException();

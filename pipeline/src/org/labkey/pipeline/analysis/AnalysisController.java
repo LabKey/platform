@@ -106,6 +106,7 @@ public class AnalysisController extends SpringActionController
     {
         private TaskPipeline _taskPipeline;
 
+        @Override
         public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors)
         {
             try
@@ -126,6 +127,7 @@ public class AnalysisController extends SpringActionController
             }
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild(_taskPipeline.getDescription());
@@ -148,6 +150,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class StartAnalysisAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             try
@@ -172,6 +175,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             if (form.getProtocolName() == null || "".equals(form.getProtocolName()))
@@ -211,6 +215,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             PipelineService.FileAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());

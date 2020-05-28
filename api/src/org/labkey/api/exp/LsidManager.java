@@ -85,14 +85,17 @@ public class LsidManager
 
     public abstract static class ExpObjectLsidHandler<I extends ExpObject> implements LsidHandler<I>
     {
+        @Override
         public abstract I getObject(Lsid lsid);
 
+        @Override
         public Container getContainer(Lsid lsid)
         {
             I run = getObject(lsid);
             return run == null ? null : run.getContainer();
         }
 
+        @Override
         public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
         {
             Container c = getContainer(lsid);
@@ -102,11 +105,13 @@ public class LsidManager
 
     public static class ExpRunLsidHandler extends ExpObjectLsidHandler<ExpRun>
     {
+        @Override
         public ExpRun getObject(Lsid lsid)
         {
             return ExperimentService.get().getExpRun(lsid.toString());
         }
 
+        @Override
         @Nullable
         public ActionURL getDisplayURL(Lsid lsid)
         {

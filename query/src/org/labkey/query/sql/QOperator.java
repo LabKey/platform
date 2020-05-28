@@ -24,11 +24,13 @@ final public class QOperator extends QExpr
 {
     Operator _op;
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         _op.appendSql(builder, query, children());
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix(_op.getPrefix());

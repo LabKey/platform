@@ -278,6 +278,7 @@ public class ScriptableErrors extends NativeJavaObject
         return errors;
     }
 
+    @Override
     public String getClassName()
     {
         return CLASSNAME;

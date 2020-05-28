@@ -41,7 +41,7 @@
     if (form.getIsChangeEmailRequest())
     {
 %>
-<labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
+<labkey:form action="<%=h(buildURL(ChangeEmailAction.class))%>" method="POST" layout="horizontal">
 <%
         if (!isUserManager) { %>
             <p>NOTE: You will need to know your account password and have access to your new email address to change your email address!</p>
@@ -62,7 +62,7 @@
         String resetPasswordLink = "<a href=" + buildURL(LoginController.ResetPasswordAction.class) + ">forgot password</a>";
 %>
         <p>For security purposes, please enter your password.</p>
-        <labkey:form action="<%=h(buildURL(ChangeEmailAction.class, Method.Post))%>" method="POST" layout="horizontal">
+        <labkey:form action="<%=h(buildURL(ChangeEmailAction.class))%>" method="POST" layout="horizontal">
             <labkey:input size="50" type="text" name="currentEmail" id="currentEmail" label="Email" value="<%=currentEmail%>" isReadOnly="true"/>
             <labkey:input size="50" id="password" name="password" type="password" label="Password" contextContent="<%=resetPasswordLink%>"/>
             <labkey:input type="hidden" name="userId" value="<%=form.getUserId()%>"/>

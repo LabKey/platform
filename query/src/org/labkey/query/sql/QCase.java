@@ -30,6 +30,7 @@ public class QCase extends QExpr
         _switch = switchStyle;
     }
     
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append(" CASE ");
@@ -40,6 +41,7 @@ public class QCase extends QExpr
         builder.append("\nEND");
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append(" CASE ");

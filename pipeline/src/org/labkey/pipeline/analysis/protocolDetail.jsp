@@ -36,7 +36,7 @@
     {
         String actionStr = action.toString();
         String confirmMsg = "Are you sure you want to " + actionStr + " this protocol?";
-        String urlStr = urlBase.clone().addParameter("action", actionStr).toLocalString(true);
+        String urlStr = urlBase.clone().addParameter("action", actionStr).getLocalURIString(true);
         return button(actionStr).onClick("if (!window.confirm('"+confirmMsg + "')) {return false;} this.form.action='" + urlStr + "'").submit(true);
     }
 %>

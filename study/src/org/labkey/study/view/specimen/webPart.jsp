@@ -19,19 +19,15 @@
 <%@ page import="org.labkey.api.security.User"%>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.template.ClientDependencies" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.ShowUploadSpecimensAction" %>
+<%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-    @Override
-    public void addClientDependencies(ClientDependencies dependencies)
-    {
-        dependencies.add("Ext3");
-        dependencies.add("study/redesignUtils.js");
-    }
-%>
 <%
     SpecimenWebPart.SpecimenWebPartBean bean = (SpecimenWebPart.SpecimenWebPartBean) HttpView.currentView().getModelBean();
 
@@ -50,7 +46,7 @@
 %>
 <script type="text/javascript">
 
-    function populateGroupingContent(grouping, hidden)
+    function populateGroupingContent(grouping)
     {
         var values = grouping.values;
         var innerHTML = '<table width="100%" class="labkey-study-expandable-nav">';
@@ -67,7 +63,7 @@
             innerHTML += '<td class="labkey-nav-tree-text" width="100%"><a href=\"' + details.url + '\">' +
                     details.label + '</a><span style="font-size: x-small;"> ' + nextByGroup + '</span></td><td align="right" class="labkey-nav-tree-total">' + details.count + '</td></tr>';
             if (details.group)
-                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateGroupingContent(details.group, true) + '</td></tr>';
+                innerHTML += '<tr style="display:none;"><td></td><td colspan="2">' + populateGroupingContent(details.group) + '</td></tr>';
         }
         innerHTML += '</table>';
         return innerHTML;
@@ -76,18 +72,19 @@
     function populateGrouping(grouping, elementId, names)
     {
         var groupingName = grouping.name;
-        if (elementId == names.group1)
+        if (elementId === names.group1)
             document.getElementById(names.heading1).innerHTML = 'Vials by ' + groupingName;
         else
             document.getElementById(names.heading2).innerHTML = 'Vials by ' + groupingName;
 
-        var innerHTML = populateGroupingContent(grouping, false);
+        var innerHTML;
+        innerHTML = populateGroupingContent(grouping);
         document.getElementById(elementId).innerHTML = innerHTML;
     }
 
     function handleGroupings(resp, names)
     {
-        if (resp.groupings.length == 0 || !resp.groupings[0] || (resp.groupings[0].values && resp.groupings[0].values.length == 0))
+        if (resp.groupings.length === 0 || !resp.groupings[0] || (resp.groupings[0].values && resp.groupings[0].values.length === 0))
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
@@ -116,21 +113,21 @@
         document.getElementById(names.content).setAttribute('style', 'display: inline');
     }
 
-    Ext.onReady(function() {
+    LABKEY.Utils.onReady(function() {
             LABKEY.Specimen.getSpecimenWebPartGroups({
                 success: function (resp) {handleGroupings(resp,
-                        {content:  '<%=text(contentSpanName)%>',
-                         heading1: '<%=text(groupHeading1)%>',
-                         heading2: '<%=text(groupHeading2)%>',
-                         group1:   '<%=text(group1)%>',
-                         group2:   '<%=text(group2)%>',
-                         control1: '<%=text(groupControl1)%>',
-                         control2: '<%=text(groupControl2)%>'
+                        {content:  <%=q(contentSpanName)%>,
+                         heading1: <%=q(groupHeading1)%>,
+                         heading2: <%=q(groupHeading2)%>,
+                         group1:   <%=q(group1)%>,
+                         group2:   <%=q(group2)%>,
+                         control1: <%=q(groupControl1)%>,
+                         control2: <%=q(groupControl2)%>
                         })}
         });
     });
 </script>
-<span id="<%=text(contentSpanName)%>" style="display: none">
+<div id="<%=h(contentSpanName)%>" style="display: none">
 <table class="labkey-manage-display" style="width: 100%;">
     <tbody>
     <tr><!-- removed lines beneath headings --> <!-- using labkey nav tree markup, which probably doesn't display in wikis --> <!-- hardcoding plus minus images for looks only --> <!-- removed search links, as that's now handled by a new webpart --> <!-- left column -->
@@ -154,11 +151,11 @@
                         <table class="labkey-nav-tree-child">
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'samples', {showVials: 'false'})">By Vial Group</a>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","false"))%>">By Vial Group</a>
                                 </td>
                             </tr>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'samples', {showVials: 'true'})">By Individual Vial</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.SamplesAction.class,c).addParameter("showVials","true"))%>">By Individual Vial</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -182,7 +179,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="#" onclick="return clickLink('study-samples', 'showSearch', {showVials: 'false'})">For Vial Groups</a></td>
+                                    <a href="<%=h(new ActionURL(ShowSearchAction.class,c).addParameter("showVials","false"))%>">For Vial Groups</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -194,7 +191,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="#" onclick="return clickLink('study-samples', 'showSearch', {showVials: 'true'})">For Individual Vials</a></td>
+                                    <a href="<%=h(new ActionURL(ShowSearchAction.class,c).addParameter("showVials","true"))%>">For Individual Vials</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -220,7 +217,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="#" onclick="return clickLink('study-samples', 'autoReportList')">View Available Reports</a></td>
+                                    <a href="<%=h(new ActionURL(SpecimenController.AutoReportListAction.class, c))%>">View Available Reports</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -248,11 +245,11 @@
                             <tbody>
                             <% if (getContainer().hasPermission(getUser(), RequestSpecimensPermission.class)) { %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'showCreateSampleRequest')">Create New Request</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class,c))%>">Create New Request</a></td>
                             </tr>
                             <% } %>
                             <tr class="labkey-nav-tree-row labkey-header">
-                                <td class="labkey-nav-tree-text"><a href="#" onclick="return clickLink('study-samples', 'viewRequests')">View Current Requests</a></td>
+                                <td class="labkey-nav-tree-text"><a href="<%=h(new ActionURL(SpecimenController.ViewRequestsAction.class,c))%>">View Current Requests</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -274,44 +271,44 @@
 %>
         <!-- end left column --> <!-- right column -->
         <td valign="top" width="55%">
-            <span id="<%=text(groupControl1)%>">
+            <div id="<%=h(groupControl1)%>">
             <table class="labkey-nav-tree" style="width: 100%">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header" >
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                             <img src="<%=getWebappURL("_images/minus.gif")%>" alt="" />
-                            <span id="<%=text(groupHeading1)%>"></span>
+                            <span id="<%=h(groupHeading1)%>"></span>
                         </a>
                     </td>
                 </tr>
                 <tr>
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="<%=text(group1)%>"></span>
+                        <span id="<%=h(group1)%>"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
-            </span>
-            <span id="<%=text(groupControl2)%>">
+            </div>
+            <div id="<%=h(groupControl2)%>">
             <table class="labkey-nav-tree" style="width: 100%;;margin-top:1em">
                 <tbody>
                 <tr class="labkey-nav-tree-row labkey-header">
                     <td class="labkey-nav-tree-text" align="left">
                         <a  style="color:#000000;" onclick="return LABKEY.Utils.toggleLink(this, false);" href="#">
                             <img src="<%=getWebappURL("_images/plus.gif")%>" alt="" />
-                            <span id="<%=text(groupHeading2)%>"></span>
+                            <span id="<%=h(groupHeading2)%>"></span>
                         </a>
                     </td>
                 </tr>
                 <tr style="display:none">
                     <td style="padding-left:1em;width: 100%;">
-                        <span id="<%=text(group2)%>"></span>
+                        <span id="<%=h(group2)%>"></span>
                     </td>
                 </tr>
                 </tbody>
             </table>
-            </span>
+            </div>
 <%
     if (isAdmin)
     {
@@ -335,7 +332,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="#" onclick="return clickLink('study-samples', 'showUploadSpecimens')">Import Specimens</a></td>
+                                    <a href="<%=h(new ActionURL(ShowUploadSpecimensAction.class,c))%>">Import Specimens</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -350,7 +347,7 @@
                             <tbody>
                             <tr class="labkey-nav-tree-row labkey-header">
                                 <td class="labkey-nav-tree-text">
-                                    <a href="#" onclick="return clickLink('study', 'manageStudy')">Study Settings</a></td>
+                                    <a href="<%=h(new ActionURL(StudyController.ManageStudyAction.class,c))%>">Study Settings</a></td>
                             </tr>
                             </tbody>
                         </table>
@@ -365,4 +362,4 @@
         <!-- end right column --></tr>
     </tbody>
 </table>
-</span>
+</div>

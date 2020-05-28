@@ -43,6 +43,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
     }
 
     // Force subclasses to implement to provide callers a more appropriate name.
+    @Override
     public abstract FastaIterator iterator();
 
     public void setCharacterFilter(CharacterFilter characterFilter)
@@ -127,6 +128,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
          *
          * @return are there any more sequences left in the file
          */
+        @Override
         public boolean hasNext()
         {
             if (_beforeFirst)
@@ -139,6 +141,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
          * Closes file just in case.
          * @throws java.io.IOException if file is not closeable
          */
+        @Override
         protected void finalize() throws Throwable
         {
             super.finalize();    //If iteration is not complete, still close the file...
@@ -150,6 +153,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
          * Get next entry in file.
          * @return T or null if end of file
          */
+        @Override
         public T next()
         {
             if (_beforeFirst)
@@ -207,6 +211,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
         /**
          * Unsupported
          */
+        @Override
         public void remove()
         {
             throw new UnsupportedOperationException();

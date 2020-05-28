@@ -120,6 +120,7 @@ public class SearchController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             return getSearchURL();
@@ -261,10 +262,12 @@ public class SearchController extends SpringActionController
 
         private int _msgid = 0;
         
+        @Override
         public void validateCommand(AdminForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(AdminForm form, boolean reshow, BindException errors)
         {
             SearchService ss = SearchService.get();
@@ -307,6 +310,7 @@ public class SearchController extends SpringActionController
             return vbox;
         }
 
+        @Override
         public boolean handlePost(AdminForm form, BindException errors)
         {
             SearchService ss = SearchService.get();
@@ -361,6 +365,7 @@ public class SearchController extends SpringActionController
             return true;
         }
         
+        @Override
         public URLHelper getSuccessURL(AdminForm o)
         {
             ActionURL success = new ActionURL(AdminAction.class, getContainer());
@@ -369,6 +374,7 @@ public class SearchController extends SpringActionController
             return success;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("searchAdmin"));
@@ -444,6 +450,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class CancelAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
@@ -478,6 +485,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class CrawlAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o)
         {
             // SimpleRedirectAction doesn't take a form
@@ -508,6 +516,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class IndexAction extends SimpleRedirectAction
     {
+        @Override
         public ActionURL getRedirectURL(Object o) throws Exception
         {
             // SimpleRedirectAction doesn't take a form
@@ -641,6 +650,7 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/testJson.jsp", null, null);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -736,6 +746,7 @@ public class SearchController extends SpringActionController
         private SearchScope _scope = null;
         private SearchForm _form = null;
 
+        @Override
         public ModelAndView getView(SearchForm form, BindException errors)
         {
             _category = form.getCategory();
@@ -767,6 +778,7 @@ public class SearchController extends SpringActionController
             return new JspView<>("/org/labkey/search/view/search.jsp", form);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             _form.getSearchResultTemplate().addNavTrail(root, getViewContext(), _scope, _category);
@@ -782,6 +794,7 @@ public class SearchController extends SpringActionController
     @RequiresSiteAdmin
     public class WaitForIndexerAction extends ExportAction
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             SearchService ss = SearchService.get();

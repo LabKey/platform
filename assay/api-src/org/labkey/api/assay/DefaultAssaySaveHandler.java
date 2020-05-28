@@ -59,11 +59,13 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
     protected static final Logger LOG = Logger.getLogger(DefaultAssaySaveHandler.class);
     protected AssayProvider _provider;
 
+    @Override
     public AssayProvider getProvider()
     {
         return _provider;
     }
 
+    @Override
     public void setProvider(AssayProvider provider)
     {
         _provider = provider;
@@ -81,6 +83,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return _provider.getRunDomain(protocol).getProperties();
     }
 
+    @Override
     protected ExpRun createRun(String name, Container container, ExpProtocol protocol)
     {
         return AssayService.get().createExperimentRun(name, container, protocol, null);
@@ -168,6 +171,7 @@ public class DefaultAssaySaveHandler extends DefaultExperimentSaveHandler implem
         return materialOutputs;
     }
 
+    @Override
     protected void clearOutputDatas(ViewContext context, ExpRun run)
     {
         for (ExpData data : run.getOutputDatas(_provider.getDataType()))

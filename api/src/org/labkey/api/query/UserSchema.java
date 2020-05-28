@@ -152,6 +152,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return null;
     }
 
+    @Override
     public @NotNull ContainerFilter getDefaultContainerFilter()
     {
         return ContainerFilter.current(getContainer());

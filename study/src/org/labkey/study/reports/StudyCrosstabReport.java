@@ -39,6 +39,7 @@ public class StudyCrosstabReport extends CrosstabReport
 {
     public static final String TYPE = "ReportService.crosstabReport";
 
+    @Override
     public String getType()
     {
         return TYPE;
@@ -70,6 +71,7 @@ public class StudyCrosstabReport extends CrosstabReport
         return view;
     }
 
+    @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
         int datasetId = NumberUtils.toInt(getDescriptor().getProperty(DatasetDefinition.DATASETKEY), -1);

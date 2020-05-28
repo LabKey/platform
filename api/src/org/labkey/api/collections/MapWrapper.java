@@ -64,6 +64,7 @@ public abstract class MapWrapper<K, V> implements Map<K, V>, Serializable
         return _map.get(key);
     }
 
+    @Override
     public V put(K key, V value)
     {
         return _map.put(key, value);
@@ -75,6 +76,7 @@ public abstract class MapWrapper<K, V> implements Map<K, V>, Serializable
         return _map.remove(key);
     }
 
+    @Override
     public void putAll(Map<? extends K, ? extends V> m)
     {
         _map.putAll(m);

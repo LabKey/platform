@@ -102,6 +102,7 @@ public class ScriptableErrorsList extends ScriptableList
         return errors;
     }
 
+    @Override
     public String getClassName()
     {
         return CLASSNAME;

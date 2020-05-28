@@ -84,6 +84,7 @@ public class GWTSampleMeasure extends AbstractXMLSavable implements IsSerializab
         return null == o ? false : (sm.amount == amount && sm.unit.equals(unit) && sm.type.equals(type));
     }
 
+    @Override
     public Element toElement(Document doc)
     {
         return createTag(doc, "amount", Double.valueOf(amount), "unit", unit, "type", type);

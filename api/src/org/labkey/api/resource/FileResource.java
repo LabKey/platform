@@ -36,26 +36,31 @@ public class FileResource extends AbstractResource
         _file = file;
     }
 
+    @Override
     public boolean exists()
     {
         return _file.isFile();
     }
 
+    @Override
     public Resource parent()
     {
         return _resolver.lookup(getPath().getParent());
     }
 
+    @Override
     public boolean isFile()
     {
         return exists();
     }
 
+    @Override
     public long getLastModified()
     {
         return exists() ? _file.lastModified() : Long.MIN_VALUE;
     }
 
+    @Override
     public InputStream getInputStream() throws IOException
     {
         assert isFile() : _file.toString() + " is not a file";

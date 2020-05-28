@@ -103,6 +103,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
 
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         // make sure this FK is attached to an lsid not an objectid
@@ -158,6 +159,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
+    @Override
     public void decorateColumn(MutableColumnInfo columnInfo, PropertyDescriptor pd)
     {
         for (PropertyColumnDecorator decorator : _decorators)
@@ -167,6 +169,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
     
+    @Override
     public TableInfo getLookupTableInfo()
     {
         VirtualTable ret = new VirtualTable(ExperimentService.get().getSchema(), null);
@@ -196,6 +199,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     }
 
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         return null;

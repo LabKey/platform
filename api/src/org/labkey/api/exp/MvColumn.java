@@ -51,6 +51,7 @@ public class MvColumn extends LookupColumn
         setMvIndicatorColumn(true);
     }
 
+    @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         SQLFragment sql = new SQLFragment("\n(SELECT MvIndicator");
@@ -66,6 +67,7 @@ public class MvColumn extends LookupColumn
         return pd;
     }
 
+    @Override
     public String getPropertyURI()
     {
         return getPropertyDescriptor().getPropertyURI();
@@ -79,6 +81,7 @@ public class MvColumn extends LookupColumn
         return null;
     }
 
+    @Override
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
@@ -92,6 +95,7 @@ public class MvColumn extends LookupColumn
         return strJoinNoContainer;
     }
 
+    @Override
     public String getTableAlias(String baseAlias)
     {
         if (getContainerId() == null)

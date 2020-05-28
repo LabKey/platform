@@ -192,6 +192,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         _initAssayColumns();
@@ -266,6 +267,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         FieldKey targetStudyFK = _tableMetadata.getTargetStudyFieldKey();

@@ -37,6 +37,7 @@ public class MapReplacer implements Replacer
         _replacements = new HashMap<>(replacements);
     }
 
+    @Override
     public String getReplacement(String original)
     {
         return _replacements.get(original);

@@ -123,6 +123,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
             return null;
     }
 
+    @Override
     public String getId()
     {
         return _collapseId;

@@ -361,6 +361,7 @@ public abstract class ContainerFilter
     {
         Current("Current folder")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentContainerFilter(c);
@@ -368,6 +369,7 @@ public abstract class ContainerFilter
                 },
         CurrentWithUser("Current folder with permissions applied to user")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new ContainerFilterWithPermission(c, user);
@@ -375,6 +377,7 @@ public abstract class ContainerFilter
                 },
         CurrentAndFirstChildren("Current folder and first children that are not workbooks")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentAndFirstChildren(c, user);
@@ -382,6 +385,7 @@ public abstract class ContainerFilter
                 },
         CurrentAndSubfolders("Current folder and subfolders")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentAndSubfolders(c, user);
@@ -389,6 +393,7 @@ public abstract class ContainerFilter
                 },
         CurrentAndSiblings("Current folder and siblings")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentAndSiblings(c, user);
@@ -396,6 +401,7 @@ public abstract class ContainerFilter
                 },
         CurrentOrParentAndWorkbooks("Current folder and/or parent if the current folder is a workbook, plus all workbooks in this series")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentOrParentAndWorkbooks(c, user);
@@ -403,6 +409,7 @@ public abstract class ContainerFilter
                 },
         CurrentPlusProject("Current folder and project")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentPlusProject(c, user);
@@ -410,6 +417,7 @@ public abstract class ContainerFilter
                 },
         CurrentAndParents("Current folder and parent folders")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentAndParents(c, user);
@@ -417,6 +425,7 @@ public abstract class ContainerFilter
                 },
         Project("Project folder")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new Project(c, user);
@@ -424,6 +433,7 @@ public abstract class ContainerFilter
                 },
         CurrentPlusProjectAndShared("Current folder, project, and Shared project")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new CurrentPlusProjectAndShared(c, user);
@@ -431,6 +441,7 @@ public abstract class ContainerFilter
                 },
         AssayLocation("Current folder, project, and Shared project")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new AssayLocation(c, user);
@@ -438,6 +449,7 @@ public abstract class ContainerFilter
                 },
         WorkbookAndParent("Current workbook and parent")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new WorkbookAndParent(c, user);
@@ -445,6 +457,7 @@ public abstract class ContainerFilter
                 },
         StudyAndSourceStudy("Current study and its source/parent study")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new StudyAndSourceStudy(c, user, false);
@@ -452,6 +465,7 @@ public abstract class ContainerFilter
                 },
         AllFolders("All folders")
                 {
+                    @Override
                     public ContainerFilter create(Container c, User user)
                     {
                         return new AllFolders(user);
@@ -480,6 +494,7 @@ public abstract class ContainerFilter
             return _description;
         }
 
+        @Override
         public abstract ContainerFilter create(Container container, User user);
 
         public ContainerFilter create(ContainerUser cu)
@@ -509,6 +524,7 @@ public abstract class ContainerFilter
             return "CURRENT/" + _container.getEntityId();
         }
 
+        @Override
         public Collection<GUID> getIds()
         {
             return Collections.singleton(_container.getEntityId());
@@ -520,6 +536,7 @@ public abstract class ContainerFilter
             return "Current Folder";
         }
 
+        @Override
         public Type getType()
         {
             return Type.Current;
@@ -576,6 +593,7 @@ public abstract class ContainerFilter
 
         // If a permission is not explicitly passed, then use ReadPermission by default.  Otherwise, subclasses
         // of ContainerFilterWithUser should override generateIds method above that takes a permission.
+        @Override
         public final Collection<GUID> getIds()
         {
             if (null != _container)
@@ -587,6 +605,7 @@ public abstract class ContainerFilter
             return generateIds(_container, ReadPermission.class, null);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentWithUser;
@@ -610,11 +629,13 @@ public abstract class ContainerFilter
             return getClass().getName() + "/" + StringUtils.join(_ids, ";");
         }
 
+        @Override
         public Collection<GUID> getIds()
         {
             return _ids;
         }
 
+        @Override
         public Type getType()
         {
             return null;
@@ -656,6 +677,7 @@ public abstract class ContainerFilter
             return result;
         }
 
+        @Override
         public Type getType()
         {
             return null;
@@ -705,6 +727,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return null;
@@ -736,6 +759,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentAndFirstChildren;
@@ -768,6 +792,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentAndSubfolders;
@@ -798,6 +823,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentPlusProject;
@@ -829,6 +855,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentAndParents;
@@ -1032,6 +1059,7 @@ public abstract class ContainerFilter
             return Collections.singleton(project.getEntityId());
         }
 
+        @Override
         public Type getType()
         {
             return Type.Project;
@@ -1067,6 +1095,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.CurrentPlusProjectAndShared;
@@ -1097,6 +1126,7 @@ public abstract class ContainerFilter
             return toIds(containers);
         }
 
+        @Override
         public Type getType()
         {
             return Type.AllInProject;
@@ -1181,6 +1211,7 @@ public abstract class ContainerFilter
             return null;
         }
 
+        @Override
         public Type getType()
         {
             return null;

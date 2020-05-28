@@ -69,6 +69,7 @@ public class AliasedColumn extends BaseColumnInfo
         this(column.getParentTable(), name, column);
     }
 
+    @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         return _column.getValueSql(tableAlias);

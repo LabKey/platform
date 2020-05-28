@@ -44,6 +44,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 {
     private String _selectedType;
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
@@ -67,6 +68,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return reports;
     }
 
+    @Override
     public boolean allowsParticipantAggregates()
     {
         return false;
@@ -194,6 +196,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return new Pair<>("Specimen type", unsafe(select.toString()));
     }
 
+    @Override
     public String getLabel()
     {
         return StudyService.get().getSubjectNounSingular(getContainer()) + " by Specimen Type";
@@ -205,6 +208,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
         return "ParticipantByType";
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.ParticipantTypeReportAction.class;

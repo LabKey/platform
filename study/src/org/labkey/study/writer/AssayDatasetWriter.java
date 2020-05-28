@@ -29,11 +29,13 @@ import org.labkey.study.model.StudyImpl;
 class AssayDatasetWriter implements InternalStudyWriter
 {
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.ASSAY_DATASETS;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf)
     {
     }

@@ -39,6 +39,7 @@ public class FlagForeignKey extends AbstractForeignKey
         _urlUnflagged = urlUnflagged;
     }
 
+    @Override
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         if (displayField == null)
@@ -50,6 +51,7 @@ public class FlagForeignKey extends AbstractForeignKey
         return new FlagColumn(parent, _urlFlagged, _urlUnflagged, _sourceSchema.getContainer(), _sourceSchema.getUser(), displayField);
     }
 
+    @Override
     public TableInfo getLookupTableInfo()
     {
         VirtualTable ret = new VirtualTable<>(ExperimentService.get().getSchema(), "FlagComment", (UserSchema)_sourceSchema);
@@ -58,6 +60,7 @@ public class FlagForeignKey extends AbstractForeignKey
         return ret;
     }
 
+    @Override
     public StringExpression getURL(ColumnInfo parent)
     {
         return null;

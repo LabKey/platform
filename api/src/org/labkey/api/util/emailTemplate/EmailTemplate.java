@@ -140,39 +140,51 @@ public abstract class EmailTemplate
     static
     {
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("organizationName", String.class, "Organization name (look and feel settings)"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getCompanyName();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteShortName", String.class, "Header short name"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getShortName();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("siteEmailAddress", String.class, "System email address"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("contextPath", String.class, "Web application context path"){
+            @Override
             public String getValue(Container c) {return AppProps.getInstance().getContextPath();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("supportLink", String.class, "Page where users can request support"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getReportAProblemPath();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemDescription", String.class, "Header description"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getDescription();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("systemEmail", String.class, "From address for system notification emails"){
+            @Override
             public String getValue(Container c) {return LookAndFeelProperties.getInstance(c).getSystemEmailAddress();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("currentDateTime", Date.class, "Current date and time of the server"){
+            @Override
             public Date getValue(Container c) {return new Date();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderName", String.class, "Name of the folder that generated the email, if it is scoped to a folder"){
+            @Override
             public String getValue(Container c) {return c.isRoot() ? null : c.getName();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderPath", String.class, "Full path of the folder that generated the email, if it is scoped to a folder"){
+            @Override
             public String getValue(Container c) {return c.isRoot() ? null : c.getPath();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("folderURL", String.class, "URL to the folder that generated the email, if it is scoped to a folder"){
+            @Override
             public String getValue(Container c) {return c.isRoot() ? null : PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c).getURIString();}
         });
         REPLACEMENT_PARAMS.add(new ReplacementParam<>("homePageURL", String.class, "The home page of this installation"){
+            @Override
             public String getValue(Container c) {
                 return ActionURL.getBaseServerURL();   // TODO: Use AppProps.getHomePageUrl() instead?
             }

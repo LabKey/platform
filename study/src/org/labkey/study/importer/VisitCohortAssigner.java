@@ -49,11 +49,13 @@ import java.util.Set;
  */
 public class VisitCohortAssigner implements InternalStudyImporter
 {
+    @Override
     public String getDescription()
     {
         return "visit map cohort assignments";
     }
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.VISIT_MAP;
@@ -61,6 +63,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
     // Parses the whole visit map again to retrieve the cohort assignments; should cache info from the first parsing
     // somewhere in the StudyImportContext
+    @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws ImportException
     {
         if (!ctx.isDataTypeSelected(getDataType()))

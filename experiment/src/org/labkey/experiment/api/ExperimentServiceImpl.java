@@ -3358,6 +3358,7 @@ public class ExperimentServiceImpl implements ExperimentService
         return getExpSchema().getTable("MaterialAliasMap");
     }
 
+    @Override
     public TableInfo getTinfoEdge()
     {
         return getExpSchema().getTable("Edge");

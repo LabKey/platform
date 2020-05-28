@@ -50,6 +50,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
         //       server without remote execution configuration.
     }
 
+    @Override
     public void resume(UMODescriptor descriptor)
     {
         for (UMOEndpoint endpoint : (List<UMOEndpoint>)descriptor.getInboundRouter().getEndpoints())
@@ -73,6 +74,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
                 }
                 JobRunner.getDefault().execute(new Runnable()
                 {
+                    @Override
                     public void run()
                     {
                         for (Map.Entry<String, List<PipelineStatusFileImpl>> entry : allLocations.entrySet())
@@ -126,6 +128,7 @@ public class PipelineJobRunnerRemoteExecution implements Callable, ResumableDesc
         throw new IllegalStateException("Could not find execution engine for location " + taskFactory.getExecutionLocation() + " for job " + job.getJobGUID());
     }
 
+    @Override
     public Object onCall(UMOEventContext eventContext) throws Exception
     {
         boolean submitted = false;

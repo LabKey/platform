@@ -37,16 +37,19 @@ public class QTimestamp extends QExpr implements IConstant
         _value = value;
     }
 
+    @Override
     public Timestamp getValue()
     {
         return _value;
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("{ts '" + DateUtil.toISO(_value) + "'}");
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("{ts " + getTokenText() + "}");

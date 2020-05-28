@@ -141,6 +141,7 @@ public class AssayPublishManager implements AssayPublishService
     /**
      * Studies that the user has permission to.
      */
+    @Override
     public Set<Study> getValidPublishTargets(@NotNull User user, @NotNull Class<? extends Permission> permission)
     {
         Set<? extends Study> studies = StudyManager.getInstance().getAllStudies(ContainerManager.getRoot(), user, permission);
@@ -151,6 +152,7 @@ public class AssayPublishManager implements AssayPublishService
         return result;
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, String keyPropertyName, List<String> errors)
     {
@@ -172,6 +174,7 @@ public class AssayPublishManager implements AssayPublishService
         return publishAssayData(user, sourceContainer, targetContainer, assayName, protocol, dataMaps, propertyDescriptors, keyPropertyName, errors);
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, Container targetContainer, String assayName, ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, Map<String, PropertyType> types, List<String> errors)
     {
@@ -211,6 +214,7 @@ public class AssayPublishManager implements AssayPublishService
         return targetPds;
     }
 
+    @Override
     public ActionURL publishAssayData(User user, Container sourceContainer, @Nullable Container targetContainer, String assayName, @Nullable ExpProtocol protocol,
                                       List<Map<String, Object>> dataMaps, String keyPropertyName, List<String> errors)
     {
@@ -892,11 +896,13 @@ public class AssayPublishManager implements AssayPublishService
         return new TableSelector(getTinfoUpdateLog(), filter, null).getObject(UploadLog.class);
     }
 
+    @Override
     public ActionURL getPublishHistory(Container c, ExpProtocol protocol)
     {
         return getPublishHistory(c, protocol, null);
     }
 
+    @Override
     public ActionURL getPublishHistory(Container container, ExpProtocol protocol, ContainerFilter containerFilter)
     {
         if (protocol != null)
@@ -910,6 +916,7 @@ public class AssayPublishManager implements AssayPublishService
         throw new NotFoundException("Specified protocol is invalid");
     }
 
+    @Override
     public TimepointType getTimepointType(Container container)
     {
         Study study = StudyManager.getInstance().getStudy(container);
@@ -919,6 +926,7 @@ public class AssayPublishManager implements AssayPublishService
         return study.getTimepointType();
     }
 
+    @Override
     public boolean hasMismatchedInfo(List<Integer> dataRowPKs, AssayProtocolSchema schema)
     {
         TableInfo tableInfo = schema.createDataTable(null);
@@ -945,6 +953,7 @@ public class AssayPublishManager implements AssayPublishService
     }
 
     /** Automatically copy assay data to a study if the design is set up to do so */
+    @Override
     @Nullable
     public ActionURL autoCopyResults(ExpProtocol protocol, ExpRun run, User user, Container container, List<String> errors)
     {

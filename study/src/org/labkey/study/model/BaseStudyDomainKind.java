@@ -33,11 +33,13 @@ import java.util.Set;
  */
 public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
 {
+    @Override
     public String getKindName()
     {
         return getDomainInfo().getDomainPrefix();
     }
 
+    @Override
     public String getTypeLabel(Domain domain)
     {
         return domain.getName();
@@ -50,6 +52,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
         return getDomainInfo().getDomainPrefix().equals(lsid.getNamespacePrefix()) ? Priority.MEDIUM : null;
     }
 
+    @Override
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         Container container = domain.getContainer();
@@ -68,6 +71,7 @@ public abstract class BaseStudyDomainKind extends BaseAbstractDomainKind
 
     protected abstract TableInfo getTableInfo();
 
+    @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
         TableInfo table = getTableInfo();

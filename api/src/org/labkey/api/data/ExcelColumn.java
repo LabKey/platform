@@ -164,18 +164,21 @@ public class ExcelColumn extends RenderColumn
         return _dc;
     }
 
+    @Override
     public void setName(String name)
     {
         _name = name;
     }
 
 
+    @Override
     public String getCaption()
     {
         return _caption;
     }
 
 
+    @Override
     public void setCaption(String caption)
     {
         _caption = caption;
@@ -216,6 +219,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
+    @Override
     public String getFormatString()
     {
         String formatString = super.getFormatString();
@@ -237,6 +241,7 @@ public class ExcelColumn extends RenderColumn
     }
 
 
+    @Override
     public void setFormatString(String formatString)
     {
         super.setFormatString(formatString);

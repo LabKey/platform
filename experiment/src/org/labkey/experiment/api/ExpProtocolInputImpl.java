@@ -45,46 +45,54 @@ public abstract class ExpProtocolInputImpl<T extends AbstractProtocolInput, I ex
         super(obj);
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
     }
 
+    @Override
     public ActionURL detailsURL()
     {
         return null;
     }
 
+    @Override
     public Date getCreated()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getCreated();
     }
 
+    @Override
     public User getCreatedBy()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getCreatedBy();
     }
 
+    @Override
     public User getModifiedBy()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getModifiedBy();
     }
 
+    @Override
     public Date getModified()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getModified();
     }
 
+    @Override
     public Container getContainer()
     {
         ExpProtocol protocol = getProtocol();
         return null == protocol ? null : protocol.getContainer();
     }
 
+    @Override
     public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();

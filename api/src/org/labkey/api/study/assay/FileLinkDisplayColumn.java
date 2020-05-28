@@ -181,6 +181,7 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         setURLExpression(detailsURL);
     }
 
+    @Override
     protected Object getInputValue(RenderContext ctx)
     {
         ColumnInfo col = getColumnInfo();

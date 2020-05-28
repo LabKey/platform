@@ -66,12 +66,13 @@ public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayPr
         super(provider);
     }
 
+    @Override
     protected void resolveExtraRunData(ParticipantVisitResolver resolver,
-                                  AssayRunUploadContext context,
-                                  Map<ExpMaterial, String> inputMaterials,
-                                  Map<ExpData, String> inputDatas,
-                                  Map<ExpMaterial, String> outputMaterials,
-                                  Map<ExpData, String> outputDatas) throws ExperimentException
+                                       AssayRunUploadContext context,
+                                       Map<ExpMaterial, String> inputMaterials,
+                                       Map<ExpData, String> inputDatas,
+                                       Map<ExpMaterial, String> outputMaterials,
+                                       Map<ExpData, String> outputDatas) throws ExperimentException
     {
         Map<String, ExpMaterial> originalMaterials = new HashMap<>();
         PlateSamplePropertyHelper helper = getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);

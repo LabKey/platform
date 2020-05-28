@@ -36,6 +36,7 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
         }
     }
 
+    @Override
     public boolean isEditable()
     {
         return _editable;
@@ -46,6 +47,7 @@ public class ExternalSchemaDef extends AbstractExternalSchemaDef
         _editable = editable;
     }
 
+    @Override
     public boolean isIndexable()
     {
         return _indexable;

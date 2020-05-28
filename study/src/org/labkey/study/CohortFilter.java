@@ -51,6 +51,7 @@ public interface CohortFilter
     {
         PTID_INITIAL("Initial cohort")
         {
+            @Override
             public FieldKey getFilterColumn(Container container)
             {
                 return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "InitialCohort", "rowid");
@@ -59,6 +60,7 @@ public interface CohortFilter
 
         PTID_CURRENT("Current cohort")
         {
+            @Override
             public FieldKey getFilterColumn(Container container)
             {
                 return FieldKey.fromParts(StudyService.get().getSubjectColumnName(container), "Cohort", "rowid");
@@ -67,6 +69,7 @@ public interface CohortFilter
 
         DATA_COLLECTION("Cohort as of data collection")
         {
+            @Override
             public FieldKey getFilterColumn(Container container)
             {
                 return FieldKey.fromParts(StudyService.get().getSubjectVisitColumnName(container), "Cohort", "rowid");

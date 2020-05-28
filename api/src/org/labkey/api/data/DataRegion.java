@@ -2506,6 +2506,7 @@ public class DataRegion extends DisplayElement
      * public renderForm, renderTable methods actually all go through here
      * after setting some state
      */
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         int mode = MODE_GRID;

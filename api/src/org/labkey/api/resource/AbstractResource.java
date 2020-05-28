@@ -96,6 +96,7 @@ abstract public class AbstractResource implements Resource
         return false;
     }
 
+    @Override
     public Resource find(String name)
     {
         return null;
@@ -113,6 +114,7 @@ abstract public class AbstractResource implements Resource
         return Collections.emptyList();
     }
 
+    @Override
     public Collection<? extends Resource> list()
     {
         return Collections.emptyList();

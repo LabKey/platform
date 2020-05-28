@@ -48,11 +48,13 @@ import java.util.List;
  */
 public class LookupValidator extends DefaultPropertyValidator implements ValidatorKind
 {
+    @Override
     public String getName()
     {
         return "Lookup Property Validator";
     }
 
+    @Override
     public IPropertyValidator createInstance()
     {
         PropertyValidatorImpl validator = new PropertyValidatorImpl(new PropertyValidator());
@@ -61,16 +63,19 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         return validator;
     }
 
+    @Override
     public String getTypeURI()
     {
         return createValidatorURI(PropertyValidatorType.Lookup).toString();
     }
 
+    @Override
     public String getDescription()
     {
         return null;
     }
 
+    @Override
     public boolean isValid(IPropertyValidator validator, List<ValidationError> errors)
     {
         return true;
@@ -218,6 +223,7 @@ public class LookupValidator extends DefaultPropertyValidator implements Validat
         }
     }
 
+    @Override
     public boolean validate(IPropertyValidator validator, ColumnRenderProperties crpField, @NotNull Object value, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         //noinspection ConstantConditions

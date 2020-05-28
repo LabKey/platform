@@ -104,6 +104,7 @@ public class ProtocolWebPart extends QueryView
         return settings;
     }
 
+    @Override
     protected TableInfo createTable()
     {
         ExpSchema schema = (ExpSchema) getSchema();
@@ -111,6 +112,7 @@ public class ProtocolWebPart extends QueryView
     }
 
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bb)
     {
         if (!_narrow)

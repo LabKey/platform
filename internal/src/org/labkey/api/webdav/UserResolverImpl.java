@@ -56,6 +56,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
 
     private AbstractWebdavResourceCollection _root;
 
+    @Override
     protected synchronized WebdavResource getRoot()
     {
         if (null == _root)
@@ -155,6 +156,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
             return HttpView.currentContext().getUser();
         }
 
+        @Override
         @NotNull
         public Collection<String> listNames()
         {
@@ -172,6 +174,7 @@ public class UserResolverImpl extends AbstractWebdavResolver
             return Collections.singletonList(res);
         }
 
+        @Override
         public WebdavResource find(String child)
         {
             User user = getCurrentUser();

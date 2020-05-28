@@ -134,11 +134,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     // Container is saved to ensure the user has access to the container and File is the actual working directory.
     private static final Map<String, Pair<Container, File>> workingDirectories = Collections.synchronizedMap(new HashMap<>());
 
+    @Override
     public DataSerializer getDataSerializer()
     {
         return _serializer;
     }
 
+    @Override
     public Pair<File, Set<File>> createTransformationRunInfo(AssayRunUploadContext<? extends AssayProvider> context, ExpRun run, File scriptDir, Map<DomainProperty, String> runProperties, Map<DomainProperty, String> batchProperties) throws Exception
     {
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
@@ -673,6 +675,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         return null;
     }
 
+    @Override
     public void createSampleData(@NotNull ExpProtocol protocol, ViewContext viewContext, File scriptDir) throws Exception
     {
         final int SAMPLE_DATA_ROWS = 5;
@@ -881,6 +884,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         }
     }
 
+    @Override
     public TransformResult processTransformationOutput(AssayRunUploadContext<? extends AssayProvider> context, File runInfo, ExpRun run, File scriptFile, TransformResult mergeResult, Set<File> inputDataFiles) throws ValidationException
     {
         DefaultTransformResult result = new DefaultTransformResult(mergeResult);
@@ -1173,18 +1177,21 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             _context = context;
         }
 
+        @Override
         @NotNull
         public ExpProtocol getProtocol()
         {
             return _protocol;
         }
 
+        @Override
         public Map<DomainProperty, String> getRunProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
             return createDomainProperties(provider != null ? provider.getRunDomain(_protocol) : null);
         }
 
+        @Override
         public Map<DomainProperty, String> getBatchProperties()
         {
             AssayProvider provider = AssayService.get().getProvider(_protocol);
@@ -1203,16 +1210,19 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return unmodifiableMap(properties);
         }
 
+        @Override
         public String getComments()
         {
             return "sample upload comments";
         }
 
+        @Override
         public String getName()
         {
             return "sample upload name";
         }
 
+        @Override
         public User getUser()
         {
             return _context.getUser();
@@ -1222,22 +1232,26 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         public void setSeverityLevel(String severityLevel) {};
 
+        @Override
         @NotNull
         public Container getContainer()
         {
             return _context.getContainer();
         }
 
+        @Override
         public HttpServletRequest getRequest()
         {
             return _context.getRequest();
         }
 
+        @Override
         public ActionURL getActionURL()
         {
             return _context.getActionURL();
         }
 
+        @Override
         @NotNull
         public Map<String, File> getUploadedData()
         {
@@ -1251,6 +1265,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return emptyMap();
         }
 
+        @Override
         public AssayProvider getProvider()
         {
             return AssayService.get().getProvider(_protocol);
@@ -1262,11 +1277,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             throw new UnsupportedOperationException("Not Supported");
         }
 
+        @Override
         public String getTargetStudy()
         {
             return null;
         }
 
+        @Override
         public TransformResult getTransformResult()
         {
             return null;

@@ -122,6 +122,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class BeginAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL url = new ActionURL(ShowExceptionsAction.class, getContainer());
@@ -129,6 +130,7 @@ public class MothershipController extends SpringActionController
             throw new RedirectException(url);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -137,6 +139,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class ShowUpdateAction extends SimpleViewAction<SoftwareReleaseForm>
     {
+        @Override
         public ModelAndView getView(SoftwareReleaseForm form, BindException errors)
         {
             UpdateView updateView = new UpdateView(form, errors);
@@ -148,6 +151,7 @@ public class MothershipController extends SpringActionController
             return updateView;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Update Release Info");
@@ -157,10 +161,12 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateAction extends FormHandlerAction<SoftwareReleaseForm>
     {
+        @Override
         public void validateCommand(SoftwareReleaseForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(SoftwareReleaseForm form, BindException errors)
         {
             SoftwareRelease release = form.getBean();
@@ -168,6 +174,7 @@ public class MothershipController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(SoftwareReleaseForm softwareReleaseForm)
         {
             return new ActionURL(ShowReleasesAction.class, getContainer());
@@ -177,6 +184,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowReleasesAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
@@ -187,6 +195,7 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), queryView);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Installations");
@@ -196,6 +205,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowRegistrationInstallationGraphAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Calendar start = new GregorianCalendar();
@@ -237,6 +247,7 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -245,6 +256,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowActiveInstallationGraphAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             Calendar start = new GregorianCalendar();
@@ -303,6 +315,7 @@ public class MothershipController extends SpringActionController
             return null;
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
         }
@@ -352,6 +365,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowExceptionsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
@@ -366,6 +380,7 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), queryView);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Exceptions");
@@ -375,6 +390,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowInstallationsAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             MothershipSchema schema = new MothershipSchema(getUser(), getContainer());
@@ -392,6 +408,7 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), gridView);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Installations");
@@ -427,6 +444,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class EditUpgradeMessageAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             UpgradeMessageForm form = new UpgradeMessageForm();
@@ -439,6 +457,7 @@ public class MothershipController extends SpringActionController
             return new VBox(getLinkBar(), new JspView<>("/org/labkey/mothership/editUpgradeMessage.jsp", form));
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Upgrade Message");
@@ -449,10 +468,12 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class SaveUpgradeMessageAction extends FormHandlerAction<UpgradeMessageForm>
     {
+        @Override
         public void validateCommand(UpgradeMessageForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(UpgradeMessageForm form, BindException errors)
         {
             MothershipManager.get().setCurrentRevision(getContainer(), form.getCurrentRevision());
@@ -462,6 +483,7 @@ public class MothershipController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(UpgradeMessageForm upgradeMessageForm)
         {
             return new ActionURL(BeginAction.class, getContainer());
@@ -472,6 +494,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowServerSessionDetailAction extends SimpleViewAction<ServerSessionForm>
     {
+        @Override
         public ModelAndView getView(ServerSessionForm form, BindException errors)
         {
             ServerSession session = form.getBean();
@@ -495,6 +518,7 @@ public class MothershipController extends SpringActionController
             return new VBox(detailView, exceptionGridView);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Server Session");
@@ -504,6 +528,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowInstallationDetailAction extends SimpleViewAction<ServerInstallationForm>
     {
+        @Override
         public ModelAndView getView(ServerInstallationForm form, BindException errors)
         {
             ServerInstallation installation;
@@ -534,6 +559,7 @@ public class MothershipController extends SpringActionController
             return new VBox(updateView, sessionGridView);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Server Installation");
@@ -543,6 +569,7 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ShowStackTraceDetailAction extends SimpleViewAction<ExceptionStackTraceForm>
     {
+        @Override
         public ModelAndView getView(ExceptionStackTraceForm form, BindException errors) throws Exception
         {
             ExceptionStackTrace stackTrace;
@@ -633,6 +660,7 @@ public class MothershipController extends SpringActionController
             return new JspView<>("/org/labkey/mothership/view/createIssue.jsp", cifModel);
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Exception Reports");
@@ -642,16 +670,19 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateStackTraceAction extends FormHandlerAction<ExceptionStackTraceForm>
     {
+        @Override
         public void validateCommand(ExceptionStackTraceForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ExceptionStackTraceForm form, BindException errors) throws Exception
         {
             form.doUpdate();
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ExceptionStackTraceForm exceptionStackTraceForm)
         {
             return new ActionURL(ShowExceptionsAction.class, getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM, "true");
@@ -661,16 +692,19 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(UpdatePermission.class)
     public class UpdateInstallationAction extends FormHandlerAction<ServerInstallationForm>
     {
+        @Override
         public void validateCommand(ServerInstallationForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(ServerInstallationForm form, BindException errors) throws Exception
         {
             form.doUpdate();
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(ServerInstallationForm form)
         {
             return new ActionURL(ShowInstallationDetailAction.class, getContainer()).addParameter("serverInstallationId", form.getPkVal().toString());
@@ -806,12 +840,14 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ThrowExceptionAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
 //            throw new UnsupportedOperationException("Intentional exception for testing purposes");
             throw new SQLException("Intentional exception for testing purposes", "400");
         }
 
+        @Override
         public void addNavTrail(NavTree root)
         {
             throw new UnsupportedOperationException("Intentional exception for testing purposes");
@@ -873,11 +909,13 @@ public class MothershipController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ReportsAction extends SimpleViewAction
     {
+        @Override
         public void addNavTrail(NavTree root)
         {
             root.addChild("Mothership Reports");
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             HtmlView graphView = new HtmlView("Installations", "<img src=\"mothership-showActiveInstallationGraph.view\" height=\"400\" width=\"800\" /><br/><br/><img src=\"mothership-showRegistrationInstallationGraph.view\" height=\"400\" width=\"800\" />");

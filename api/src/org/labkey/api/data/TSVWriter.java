@@ -217,6 +217,7 @@ public abstract class TSVWriter extends TextWriter
      * Override to return a different content type
      * @return The content type
      */
+    @Override
     protected String getContentType()
     {
         for (DELIM delim : DELIM.values())
@@ -232,6 +233,7 @@ public abstract class TSVWriter extends TextWriter
      * Override to return a different filename
      * @return The filename
      */
+    @Override
     protected String getFilename()
     {
         return FileUtil.makeFileNameWithTimestamp(getFilenamePrefix(), getFilenameExtension());
@@ -328,6 +330,7 @@ public abstract class TSVWriter extends TextWriter
     {
         private static class FakeTSVWriter extends TSVWriter
         {
+            @Override
             protected void write()
             {
                 // no-op

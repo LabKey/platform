@@ -369,6 +369,7 @@ public class PropertyDescriptor extends ColumnRenderPropertiesImpl implements Pa
         setScale(size);
     }
 
+    @Override
     public boolean isMvEnabled()
     {
         return _mvEnabled;

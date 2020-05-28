@@ -223,6 +223,7 @@ public class ParentChildView extends VBox
 
         QueryView queryView = new QueryView(schema, settings, null)
         {
+            @Override
             protected TableInfo createTable()
             {
                 // Use ContainerFilter.EVERYTHING - We've already set an IN clause that restricts us to showing just data that we have permission to view

@@ -30,10 +30,14 @@ import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
 import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.Table;
+import org.labkey.api.exceptions.OptimisticConflictException;
+import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
@@ -126,6 +130,36 @@ public class PropertyServiceImpl implements PropertyService
     public Domain createDomain(Container container, String typeURI, String name, @Nullable TemplateInfo templateInfo)
     {
         return new DomainImpl(container, typeURI, name, templateInfo);
+    }
+
+    @Override
+    public @NotNull Domain ensureDomain(Container container, User user, String domainURI, String name)
+    {
+        try
+        {
+            // fast exists check
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
+            if (null != domain)
+                return domain;
+
+            // check exists and save in a transaction
+            domain = PropertyService.get().createDomain(container, domainURI, name);
+            try (var ignored = SpringActionController.ignoreSqlUpdates())
+            {
+                ((DomainImpl) domain).saveIfNotExists(user);
+            }
+
+            // return created domain, will only be null in some sort of race condition
+            domain = PropertyService.get().getDomain(domain.getTypeId());
+            if (null == domain)
+                throw new OptimisticConflictException("Domain deleted: " + domainURI, "", Table.ERROR_DELETED);
+            return domain;
+        }
+        catch (ChangePropertyDescriptorException x)
+        {
+            // shouldn't happen on create
+            throw UnexpectedException.wrap(x);
+        }
     }
 
     @Override

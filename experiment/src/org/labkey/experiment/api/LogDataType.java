@@ -26,6 +26,7 @@ public class LogDataType extends DataType
     {
         super("Log");
     }
+    @Override
     public ActionURL getDetailsURL(ExpData dataObject)
     {
         return null;

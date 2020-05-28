@@ -40,6 +40,7 @@ public class JMSMessageToPipelineJob extends AbstractEventAwareTransformer
         registerSourceType(TextMessage.class);
     }
 
+    @Override
     public Object transform(Object src, String encoding, UMOEventContext context) throws TransformerException
     {
         String xml = (String) getJMSTransformer().doTransform(src, encoding);

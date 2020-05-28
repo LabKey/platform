@@ -109,6 +109,7 @@ public abstract class SnapshotDependency
 
     public static class Dataset extends SnapshotDependency
     {
+        @Override
         public List<QuerySnapshotDefinition> getDependencies(SourceDataType sourceData)
         {
             if (sourceData.getType() == SourceDataType.Type.dataset)

@@ -53,12 +53,14 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
         return _indexable;
     }
 
+    @Override
     @NotNull
     public DataLoader createLoader(InputStream is, boolean hasColumnHeaders) throws IOException
     {
         return createLoader(is, hasColumnHeaders, null);
     }
 
+    @Override
     @NotNull
     public DataLoader createLoader(File file, boolean hasColumnHeaders) throws IOException
     {

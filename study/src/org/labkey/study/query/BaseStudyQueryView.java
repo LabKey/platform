@@ -50,6 +50,7 @@ public abstract class BaseStudyQueryView extends QueryView
         _sort = sort;
     }
 
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();

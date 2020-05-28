@@ -42,6 +42,7 @@ public class IssueGroupListener implements GroupListener
         IssueManager.uncache();
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt)
     {
     }

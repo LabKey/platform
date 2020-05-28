@@ -62,11 +62,13 @@ public class GWTStudyDefinition implements SourcesChangeEvents, IsSerializable
     {
     }
 
+    @Override
     public void addChangeListener(ChangeListener listener)
     {
         listeners.add(listener);
     }
 
+    @Override
     public void removeChangeListener(ChangeListener listener)
     {
         listeners.remove(listener);

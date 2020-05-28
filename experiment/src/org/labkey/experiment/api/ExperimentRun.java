@@ -78,6 +78,7 @@ public class ExperimentRun extends IdentifiableEntity
         this.jobId = jobId;
     }
 
+    @Override
     public void setName(String name)
     {
         int maxLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();

@@ -802,24 +802,28 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return (getFlags() & ReportDescriptor.FLAG_HIDDEN) != 0;
     }
 
+    @Override
     @NotNull
     public String getResourceId()
     {
         return getEntityId();
     }
 
+    @Override
     @NotNull
     public String getResourceName()
     {
         return getReportName();
     }
 
+    @Override
     @NotNull
     public String getResourceDescription()
     {
         return getReportDescription();
     }
 
+    @Override
     @NotNull
     public Module getSourceModule()
     {
@@ -831,23 +835,27 @@ public class ReportDescriptor extends Entity implements SecurableResource, Clone
         return false;
     }
 
+    @Override
     public SecurableResource getParentResource()
     {
         return getResourceContainer();
     }
 
+    @Override
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
         return Collections.emptyList();
     }
 
+    @Override
     @NotNull
     public Container getResourceContainer()
     {
         return lookupContainer();
     }
 
+    @Override
     public boolean mayInheritPolicy()
     {
         return true;

@@ -59,12 +59,12 @@ public class ToolsController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            appendBeginNavTrail(root);
+            addBeginNavTrail(root);
         }
     }
 
 
-    private void appendBeginNavTrail(NavTree root)
+    private void addBeginNavTrail(NavTree root)
     {
         root.addChild("Tools", new ActionURL(BeginAction.class, getContainer()));
     }
@@ -155,7 +155,7 @@ public class ToolsController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            appendBeginNavTrail(root);
+            addBeginNavTrail(root);
             root.addChild(".gitattributes File Check");
         }
     }
@@ -361,7 +361,7 @@ public class ToolsController extends SpringActionController
         @Override
         public void addNavTrail(NavTree root)
         {
-            appendBeginNavTrail(root);
+            addBeginNavTrail(root);
             root.addChild("JSP Finder");
         }
     }

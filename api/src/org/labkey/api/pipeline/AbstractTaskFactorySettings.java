@@ -64,6 +64,7 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         this(new TaskId(namespaceClass, name));
     }
 
+    @Override
     public TaskId getId()
     {
         return _id;

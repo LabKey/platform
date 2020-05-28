@@ -62,11 +62,13 @@ import java.util.Objects;
  */
 public class QueryImporter implements FolderImporter
 {
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.QUERIES;
     }
 
+    @Override
     public String getDescription()
     {
         return FolderArchiveDataTypes.QUERIES.toLowerCase();
@@ -79,6 +81,7 @@ public class QueryImporter implements FolderImporter
         Map<String, QueryDocument> unresolvedMetadataFiles = new LinkedHashMap<>();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws ServletException, IOException, SQLException, ImportException
     {
         if (isValidForImportArchive(ctx))
@@ -307,6 +310,7 @@ public class QueryImporter implements FolderImporter
         return sb.toString();
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -405,6 +409,7 @@ public class QueryImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new QueryImporter();

@@ -54,6 +54,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _id = id;
     }
 
+    @Override
     public FactoryType cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException
     {
         FactoryType result = (FactoryType) clone();
@@ -61,6 +62,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return result;
     }
 
+    @Override
     public String getGroupParameterName()
     {
         return _groupParameterName;
@@ -92,6 +94,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
      * @param job the <code>PipelineJob</code> about which task is being interrogated
      * @return true if task is part of processing this job
      */
+    @Override
     public boolean isParticipant(PipelineJob job) throws IOException
     {
         if (_dependencyId != null)
@@ -108,6 +111,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
     {
     }
 
+    @Override
     public boolean isAutoRetryEnabled(PipelineJob job)
     {
         // TODO: Check log file for wallclock expiration on cluster jobs
@@ -120,6 +124,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
      *
      * @return the id for this task factory
      */
+    @Override
     public TaskId getId()
     {
         return _id;
@@ -134,6 +139,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
      * @param job the job on which the task is to run
      * @return the id for the task to run
      */
+    @Override
     public TaskId getActiveId(PipelineJob job)
     {
         return getId();
@@ -161,6 +167,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _dependencyId = dependencyId;
     }
 
+    @Override
     public boolean isJoin()
     {
         return _join;
@@ -185,6 +192,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         _largeWork = largeWork;
     }
 
+    @Override
     public String getExecutionLocation()
     {
         if (_executionLocation == null)
@@ -221,6 +229,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
      *
      * @return number of times to automatically retry this taks.
      */
+    @Override
     public int getAutoRetry()
     {
         if (_autoRetry == -1)
@@ -228,6 +237,7 @@ abstract public class AbstractTaskFactory<SettingsType extends AbstractTaskFacto
         return _autoRetry;
     }
 
+    @Override
     public WorkDirectory createWorkDirectory(String jobGUID, FileAnalysisJobSupport jobSupport, Logger logger) throws IOException
     {
         PipelineJobService service = PipelineJobService.get();

@@ -43,6 +43,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         tbAmount.setName("materialAmount");
         tbAmount.addChangeListener(new ChangeListener()
         {
+            @Override
             public void onChange(Widget sender)
             {
                 double val;
@@ -64,6 +65,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         lbSampleType.setName("materialType");
         lbSampleType.addChangeListener(new ChangeListener()
         {
+            @Override
             public void onChange(Widget sender)
             {
                 sampleMeasure.setType(lbSampleType.getItemText(lbSampleType.getSelectedIndex()));
@@ -74,6 +76,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         lbUnits.setName("materialUnits");
         lbUnits.addChangeListener(new ChangeListener()
         {
+            @Override
             public void onChange(Widget sender)
             {
                 sampleMeasure.setUnit(lbUnits.getItemText(lbUnits.getSelectedIndex()));
@@ -105,6 +108,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
                 lbSampleType.setSelectedIndex(i);
             lbSampleType.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     listeners.fireChange(SampleMeasurePanel.this);
@@ -128,6 +132,7 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
                 lbUnits.setSelectedIndex(i);
             lbUnits.addChangeListener(new ChangeListener()
             {
+                @Override
                 public void onChange(Widget sender)
                 {
                     listeners.fireChange(SampleMeasurePanel.this);
@@ -151,11 +156,13 @@ public class SampleMeasurePanel extends HorizontalPanel implements SourcesChange
         lbSampleType.setEnabled(enabled);
     }
 
+    @Override
     public void addChangeListener(ChangeListener listener)
     {
         listeners.add(listener);
     }
 
+    @Override
     public void removeChangeListener(ChangeListener listener)
     {
         listeners.remove(listener);

@@ -64,6 +64,7 @@ public class ButtonBar extends DisplayElement
         return _missingOriginalCaptions;
     }
 
+    @Override
     public void lock()
     {
         super.lock();
@@ -100,11 +101,13 @@ public class ButtonBar extends DisplayElement
         return this;
     }
 
+    @Override
     public boolean shouldRender(RenderContext ctx)
     {
         return getList().size() > 0 && super.shouldRender(ctx);
     }
 
+    @Override
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         if (!shouldRender(ctx))

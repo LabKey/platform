@@ -25,5 +25,6 @@ import org.labkey.folder.xml.FolderDocument;
  */
 public interface FolderWriterFactory extends WriterFactory<Container, ImportContext<FolderDocument.Folder>>
 {
+    @Override
     FolderWriter create();
 }

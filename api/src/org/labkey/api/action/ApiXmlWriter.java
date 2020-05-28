@@ -62,6 +62,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    @Override
     protected void writeObject(Object value) throws IOException
     {
         verifyOpen();
@@ -180,6 +181,7 @@ public class ApiXmlWriter extends ApiResponseWriter
     }
 
 
+    @Override
     public void startResponse()
     {
         assert _streamStack.size() == 0 : "called startResponse() after response was already started!";
@@ -187,6 +189,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         _streamStack.push(new StreamState());
     }
 
+    @Override
     public void endResponse() throws IOException
     {
         verifyOpen();
@@ -195,6 +198,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         _streamStack.pop();
     }
 
+    @Override
     public void startMap(String name) throws IOException
     {
         verifyOpen();
@@ -211,6 +215,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         _streamStack.push(new StreamState(name, state.getLevel() + 1));
     }
 
+    @Override
     public void endMap() throws IOException
     {
         verifyOpen();
@@ -225,6 +230,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         _streamStack.pop();
     }
 
+    @Override
     public void writeProperty(String name, Object value) throws IOException
     {
         verifyOpen();
@@ -240,6 +246,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    @Override
     public void startList(String name) throws IOException
     {
         verifyOpen();
@@ -262,6 +269,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         return s.replace('/', '_').replace('<', '_').replace('>', '_').replace('"', '_').replace('\'', '_');
     }
 
+    @Override
     public void endList() throws IOException
     {
         verifyOpen();
@@ -284,6 +292,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
+    @Override
     public void writeListEntry(Object entry) throws IOException
     {
         verifyOpen();

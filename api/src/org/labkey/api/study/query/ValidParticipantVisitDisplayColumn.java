@@ -38,6 +38,7 @@ public class ValidParticipantVisitDisplayColumn extends SimpleDisplayColumn
         setCaption("Specimen Match");
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Pair<Boolean,String> matchStatus = _resolverHelper.getMatchStatus(ctx);

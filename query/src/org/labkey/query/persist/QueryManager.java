@@ -589,6 +589,7 @@ public class QueryManager
 
     static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.AbstractContainerListener()
     {
+        @Override
         public void containerDeleted(Container c, User user)
         {
             QueryManager.get().containerDeleted(c);

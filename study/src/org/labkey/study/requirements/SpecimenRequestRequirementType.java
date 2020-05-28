@@ -37,6 +37,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
 {
     ORIGINATING_SITE
             {
+                @Override
                 public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     List<SpecimenRequestRequirement> requirements = new ArrayList<>();
@@ -64,6 +65,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     PROVIDING_SITE
             {
+                @Override
                 public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     List<SpecimenRequestRequirement> requirements = new ArrayList<>();
@@ -91,6 +93,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     RECEIVING_SITE
             {
+                @Override
                 public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     if (owner.getDestinationSiteId() != null)
@@ -105,6 +108,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     NON_SITE_BASED
             {
+                @Override
                 public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     defaultRequirement.setRequestId(owner.getRowId());

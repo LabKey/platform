@@ -55,6 +55,7 @@ public abstract class DisplayElement implements View, Cloneable
         MemTracker.getInstance().put(this);
     }
 
+    @Override
     public String getContentType()
     {
         return "text/html";
@@ -141,6 +142,7 @@ public abstract class DisplayElement implements View, Cloneable
     /**
      * convert org.springframework.web.servlet.View.render(Map) to DisplayElement.render(ModelBean)
      */
+    @Override
     public final void render(Map map, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         assert map instanceof RenderContext;

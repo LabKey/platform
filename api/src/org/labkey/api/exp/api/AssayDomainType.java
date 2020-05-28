@@ -32,16 +32,19 @@ public class AssayDomainType implements IAssayDomainType
         this.prefix = ExpProtocol.ASSAY_DOMAIN_PREFIX + getName();
     }
 
+    @Override
     public String getName()
     {
         return this.name;
     }
 
+    @Override
     public String getPrefix()
     {
         return this.prefix;
     }
 
+    @Override
     public String getLsidTemplate()
     {
         return AbstractAssayProvider.getPresubstitutionLsid(getPrefix());

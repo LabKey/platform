@@ -59,6 +59,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         setCellVerticalAlignment(_statusLabel, ALIGN_MIDDLE);
         _clearTimer = new Timer()
         {
+            @Override
             public void run()
             {
                 _statusLabel.setText("");
@@ -67,6 +68,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         setDirty(false);
     }
 
+    @Override
     public void cancel()
     {
         // We're already listening for navigation if the dirty bit is set,
@@ -75,10 +77,12 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         WindowUtil.setLocation(loc);
     }
 
+    @Override
     public void save(final SaveListener<Object> listener)
     {
         _view.saveChanges(new ErrorDialogAsyncCallback()
         {
+            @Override
             public void onSuccess(Object result)
             {
                 setDirty(false);
@@ -89,10 +93,12 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
             
     }
 
+    @Override
     public void finish()
     {
         save(new SaveListener<Object>()
         {
+            @Override
             public void saveSuccessful(Object result, String designerUrl)
             {
                 if (_doneLink != null && _doneLink.length() > 0)
@@ -103,11 +109,13 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         });
     }
 
+    @Override
     public String getCurrentURL()
     {
         return PropertyUtil.getCurrentURL();
     }
 
+    @Override
     public void save()
     {
         save(null);
@@ -119,6 +127,7 @@ public class StatusBar extends HorizontalPanel implements Saveable<Object>
         _saveButtonBar.setAllowSave(dirty);
     }
 
+    @Override
     public boolean isDirty()
     {
         return _dirty;

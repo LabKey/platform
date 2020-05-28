@@ -25,6 +25,7 @@ public class SpecimenCountSummary implements SpecimenReportCellData
     private Double _totalVolume;
     private Integer _visit;
 
+    @Override
     public Long getVialCount()
     {
         return _vialCount;
@@ -35,6 +36,7 @@ public class SpecimenCountSummary implements SpecimenReportCellData
         _vialCount = vialCount;
     }
 
+    @Override
     public Double getTotalVolume()
     {
         return _totalVolume;
@@ -45,6 +47,7 @@ public class SpecimenCountSummary implements SpecimenReportCellData
         _totalVolume = totalVolume;
     }
 
+    @Override
     public Integer getVisit()
     {
         return _visit;

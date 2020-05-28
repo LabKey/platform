@@ -57,6 +57,7 @@ public class AssayPanel extends Composite
             if (null != assaySchedule.getDescription())
                 descriptionEditor.setText(assaySchedule.getDescription());
             descriptionEditor.addChangeListener(new ChangeListener() {
+                @Override
                 public void onChange(Widget sender) {
                     assaySchedule.setDescription(((HasText) sender).getText());
                     designer.setDirty(true);
@@ -107,17 +108,20 @@ public class AssayPanel extends Composite
             setReadOnly(designer.isReadOnly());
         }
 
+        @Override
         int getCategoryColumnCount()
         {
             return 2; //Assay, Lab
         }
 
+        @Override
         int getCategoryRowCount()
         {
             return assaySchedule.getAssays().size();
         }
 
 
+        @Override
         Widget getCategoryHeader(int col)
         {
             if (col == 0)
@@ -126,6 +130,7 @@ public class AssayPanel extends Composite
                 return new Label("Lab");
         }
 
+        @Override
         Widget getCategoryWidget(int categoryIndex, int col)
         {
             if (categoryIndex >= assaySchedule.getAssays().size())
@@ -141,6 +146,7 @@ public class AssayPanel extends Composite
                 return getLabPicker(assaySchedule.getAssay(categoryIndex));
         }
 
+        @Override
         Object getCategoryValue(int categoryIndex, int col)
         {
             if (categoryIndex >= assaySchedule.getAssays().size())
@@ -152,6 +158,7 @@ public class AssayPanel extends Composite
                 return assaySchedule.getAssay(categoryIndex).getLab();
         }
 
+        @Override
         Object getEventValue(int categoryIndex, GWTTimepoint tp)
         {
             if (categoryIndex >= assaySchedule.getAssays().size())
@@ -161,6 +168,7 @@ public class AssayPanel extends Composite
             return assaySchedule.getAssayPerformed(assayDefinition, tp);
         }
 
+        @Override
         Widget getGhostCategoryWidget(int col)
         {
             if (col == 0)
@@ -186,16 +194,19 @@ public class AssayPanel extends Composite
                 }
             }
 
+            @Override
             public void addChangeListener(ChangeListener listener)
             {
                 externalListeners.add(listener);
             }
 
+            @Override
             public void removeChangeListener(ChangeListener listener)
             {
                 externalListeners.remove(listener);
             }
 
+            @Override
             public void onChange(Widget sender)
             {
                 String assayName = studyDef.getAssays().get(this.getSelectedIndex() - 1);
@@ -224,6 +235,7 @@ public class AssayPanel extends Composite
             }
         }
         
+        @Override
         void makeGhostCategoryReal()
         {
             int assayIndex = assaySchedule.getAssays().size();
@@ -238,12 +250,14 @@ public class AssayPanel extends Composite
             return "assay";
         }
 
+        @Override
         void deleteCategory(int index)
         {
             assaySchedule.getAssays().remove(index);
             designer.setDirty(true);
         }
 
+        @Override
         Widget getEventWidget(int categoryIndex, GWTTimepoint tp)
         {
             if (categoryIndex >= assaySchedule.getAssays().size())
@@ -273,6 +287,7 @@ public class AssayPanel extends Composite
                         lb.setItemSelected(i, true);
                 }
             lb.addChangeListener(new ChangeListener() {
+                @Override
                 public void onChange(Widget sender) {
                     assayDefinition.setLab(((ListBox) sender).getItemText(((ListBox) sender).getSelectedIndex()));
                     designer.setDirty(true);
@@ -297,6 +312,7 @@ public class AssayPanel extends Composite
                 checkbox.setChecked (assaySchedule.isAssayPerformed(assayDefinition, tp));
                 updateLabel();
                 checkbox.addClickHandler(new ClickHandler() {
+                    @Override
                     public void onClick(ClickEvent e)
                     {
                         assaySchedule.setAssayPerformed(AssayCheckBox.this.assayDefinition, AssayCheckBox.this.tp, checkbox.isChecked());
@@ -305,6 +321,7 @@ public class AssayPanel extends Composite
                     }
                 });
                 label.addClickHandler(new ClickHandler() {
+                    @Override
                     public void onClick(ClickEvent e)
                     {
                         SampleMeasureDialog dlg = new SampleMeasureDialog();
@@ -321,6 +338,7 @@ public class AssayPanel extends Composite
                 return assaySchedule.getAssayPerformed(assayDefinition, tp);
             }
 
+            @Override
             public void onClick(Widget sender)
             {
                 assaySchedule.setAssayPerformed(assayDefinition, tp, checkbox.isChecked());
@@ -351,6 +369,7 @@ public class AssayPanel extends Composite
                     HorizontalPanel hp = new HorizontalPanel();
                     hp.add(new Button("OK", new ClickListener()
                     {
+                        @Override
                         public void onClick(Widget sender)
                         {
                             getAssayNote().setSampleMeasure(editor.getValue());
@@ -361,6 +380,7 @@ public class AssayPanel extends Composite
                     }));
                     hp.add(new Button("Cancel", new ClickListener()
                     {
+                        @Override
                         public void onClick(Widget sender)
                         {
                               SampleMeasureDialog.this.hide();

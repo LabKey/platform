@@ -774,6 +774,7 @@ public class ModuleAssayProvider extends TsvAssayProvider
         }
     }
 
+    @Override
     public PipelineProvider getPipelineProvider()
     {
         AssayDataType dataType = getDataType();

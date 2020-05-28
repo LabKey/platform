@@ -283,36 +283,43 @@ public abstract class SpringModule extends DefaultModule
             _wrapped = wrapped;    
         }
 
+        @Override
         public ServletContext getContext(String string)
         {
             return null;
         }
 
+        @Override
         public int getMajorVersion()
         {
             return 0;
         }
 
+        @Override
         public int getMinorVersion()
         {
             return 0;
         }
 
+        @Override
         public String getMimeType(String string)
         {
             return "text/html";
         }
 
+        @Override
         public Set<String> getResourcePaths(String string)
         {
             return _wrapped.getResourcePaths(string);
         }
 
+        @Override
         public URL getResource(String string) throws MalformedURLException
         {
             return _wrapped.getResource(string);
         }
 
+        @Override
         public InputStream getResourceAsStream(String string)
         {
             InputStream is = _wrapped.getResourceAsStream(string);
@@ -338,56 +345,67 @@ public abstract class SpringModule extends DefaultModule
             return is;
         }
 
+        @Override
         public RequestDispatcher getRequestDispatcher(String string)
         {
             return _wrapped.getRequestDispatcher(string);
         }
 
+        @Override
         public RequestDispatcher getNamedDispatcher(String string)
         {
             return _wrapped.getNamedDispatcher(string);
         }
 
+        @Override
         public Servlet getServlet(String string) throws ServletException
         {
             return _wrapped.getServlet(string);
         }
 
+        @Override
         public Enumeration<Servlet> getServlets()
         {
             return _wrapped.getServlets();
         }
 
+        @Override
         public Enumeration<String> getServletNames()
         {
             return _wrapped.getServletNames();
         }
 
+        @Override
         public void log(String string)
         {
             _log.info(string);
         }
 
+        @Override
         public void log(Exception exception, String string)
         {
             _log.error(string, exception);
         }
 
+        @Override
         public void log(String string, Throwable throwable)
         {
             _log.error(string, throwable);
         }
 
+        @Override
         public String getRealPath(String string)
         {
             return _wrapped.getRealPath(string);
         }
 
+        @Override
         public String getServerInfo()
         {
             return _wrapped.getServerInfo();
         }
 
+        @Override
         public String getInitParameter(String string)
         {
             String param = _initParameters.get(string);
@@ -396,36 +414,43 @@ public abstract class SpringModule extends DefaultModule
             return param;
         }
 
+        @Override
         public Enumeration<String> getInitParameterNames()
         {
             return null;
         }
 
+        @Override
         public Object getAttribute(String string)
         {
             return _attributes.get(string);
         }
 
+        @Override
         public Enumeration<String> getAttributeNames()
         {
             return null;
         }
 
+        @Override
         public void setAttribute(String string, Object object)
         {
             _attributes.put(string, object);
         }
 
+        @Override
         public void removeAttribute(String string)
         {
             _attributes.remove(string);
         }
 
+        @Override
         public String getServletContextName()
         {
             return null;
         }
 
+        @Override
         public String getContextPath()
         {
             return AppProps.getInstance().getContextPath();

@@ -309,6 +309,7 @@ public class ListDef extends Entity implements Cloneable
         return result;
     }
 
+    @Override
     protected ListDef clone()
     {
         try

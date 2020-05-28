@@ -150,6 +150,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _permission = permission;
     }
 
+    @Override
     public String getInsertAfter()
     {
         return _insertAfter;
@@ -160,6 +161,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _insertAfter = insertAfter;
     }
 
+    @Override
     public String getInsertBefore()
     {
         return _insertBefore;
@@ -170,6 +172,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         _insertBefore = insertBefore;
     }
 
+    @Override
     public Integer getInsertPosition()
     {
         return _insertPosition;
@@ -216,6 +219,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         return onClickWrapper.toString();
     }
 
+    @Override
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
         if (null != _menuItems)
@@ -265,6 +269,7 @@ public class UserDefinedButtonConfig implements ButtonConfig
         }
     }
 
+    @Override
     public UserDefinedButtonConfig clone()
     {
         UserDefinedButtonConfig ret = new UserDefinedButtonConfig();

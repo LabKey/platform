@@ -940,6 +940,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
     public static class _EmptyNamedList<MDE> extends _NamedList<Named,MDE>
     {
+        @Override
         public boolean add(Named n)
         {
             throw new UnsupportedOperationException();
@@ -948,6 +949,7 @@ public class CachedCube extends MetadataElementBase implements Cube
 
 
     static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>() {
+        @Override
         public void _sort(Comparator<? super Named> c)
         {
         }

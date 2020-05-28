@@ -59,16 +59,19 @@ public class StudyDataspaceTest extends StudyBaseTest
         return BrowserType.CHROME;
     }
 
+    @Override
     protected String getProjectName()
     {
         return "DataspaceStudyVerifyProject";
     }
 
+    @Override
     protected String getStudyLabel()
     {
         return FOLDER_STUDY1;
     }
 
+    @Override
     protected String getFolderName()
     {
         return FOLDER_STUDY1;

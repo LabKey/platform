@@ -75,16 +75,19 @@ public class XarExportPipelineJob extends PipelineJob
         setStatus(TaskStatus.waiting);
     }
 
+    @Override
     public ActionURL getStatusHref()
     {
         return null;
     }
 
+    @Override
     public String getDescription()
     {
         return "XAR export - " + _fileName;
     }
 
+    @Override
     public void run()
     {
         setStatus("EXPORTING");
