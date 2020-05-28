@@ -82,7 +82,7 @@ public class DerivedSamplePropertyHelper extends SamplePropertyHelper<Lsid>
         }
 
         PropertyDescriptor namePropertyDescriptor = new PropertyDescriptor(ExperimentServiceImpl.get().getTinfoMaterial().getColumn("Name"), c);
-        namePropertyDescriptor.setRequired(!_sampleSet.hasNameExpression());
+        namePropertyDescriptor.setRequired(_nameGenerator == null);
         _nameProperty = new DomainPropertyImpl(null, namePropertyDescriptor);
 
         List<DomainProperty> dps = new ArrayList<>();

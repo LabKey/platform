@@ -130,7 +130,11 @@ public class WebPartCache
                 }
             }, WebPart.class);
 
-            return Collections.unmodifiableMap(pages);
+            // create immutable PortalPage objects for caching
+            CaseInsensitiveHashMap<Portal.PortalPage> ret = new CaseInsensitiveHashMap<>();
+            for (var entry : pages.entrySet())
+                ret.put(entry.getKey(), entry.getValue().create());
+            return Collections.unmodifiableMap(ret);
         }
     };
 
