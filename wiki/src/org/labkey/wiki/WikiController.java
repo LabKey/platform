@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -2249,7 +2248,7 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) //will check below
-    public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
+    public class SaveWikiAction extends MutatingApiAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
         private String sanitizedHtml = null;
