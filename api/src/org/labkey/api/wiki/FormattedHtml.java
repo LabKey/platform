@@ -40,12 +40,6 @@ public class FormattedHtml
     private final Set<String> _anchors;
     private final Set<ClientDependency> _clientDependencies;
 
-    @Deprecated // use HtmlString
-    public FormattedHtml(String html)
-    {
-        this(null==html?null:HtmlString.unsafe(html), false, Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>());
-    }
-
     public FormattedHtml(HtmlString html)
     {
         this(html, false, Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>());
