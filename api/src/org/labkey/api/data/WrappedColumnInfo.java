@@ -114,7 +114,7 @@ public class WrappedColumnInfo
             @Override
             public String getSelectName()
             {
-                throw new UnsupportedOperationException("use getValueSql()");
+                return sourceColumnInfo.getSelectName();
             }
 
             @Override
