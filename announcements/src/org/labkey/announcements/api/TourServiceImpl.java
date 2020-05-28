@@ -31,11 +31,13 @@ import java.util.List;
  */
 public class TourServiceImpl implements TourService
 {
+    @Override
     public ActionURL getManageListsURL(Container container)
     {
         return new ActionURL(ToursController.BeginAction.class, container);
     }
 
+    @Override
     public List<Tour> getApplicableTours(Container container)
     {
         List<Tour> tours = new ArrayList<>();

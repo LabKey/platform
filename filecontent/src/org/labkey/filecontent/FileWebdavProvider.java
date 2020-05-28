@@ -94,6 +94,7 @@ public class FileWebdavProvider implements WebdavService.Provider
     }
 
 
+    @Override
     public WebdavResource resolve(@NotNull WebdavResource parent, @NotNull String name)
     {
         if (!(parent instanceof WebdavResolverImpl.WebFolderResource))
@@ -197,27 +198,32 @@ public class FileWebdavProvider implements WebdavService.Provider
             return false;
         }
 
+        @Override
         public boolean exists()
         {
             return true;
         }
 
+        @Override
         public long getCreated()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         public long getLastModified()
         {
             return Long.MIN_VALUE;
         }
 
+        @Override
         @NotNull
         public Collection<String> listNames()
         {
             return Collections.unmodifiableList(_names);
         }
 
+        @Override
         public WebdavResource find(String name)
         {
             AttachmentDirectory dir = _map.get(name);

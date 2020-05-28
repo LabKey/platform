@@ -52,6 +52,7 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
         super(factory, job);
     }
 
+    @Override
     @NotNull
     public RecordedActionSet run() throws PipelineJobException
     {
@@ -145,26 +146,31 @@ public class FolderImportTask extends PipelineJob.Task<FolderImportTask.Factory>
             super(FolderImportTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new FolderImportTask(this, job);
         }
 
+        @Override
         public List<FileType> getInputTypes()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public List<String> getProtocolActionNames()
         {
             return Collections.emptyList();
         }
 
+        @Override
         public String getStatusName()
         {
             return "IMPORT FOLDER";
         }
 
+        @Override
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

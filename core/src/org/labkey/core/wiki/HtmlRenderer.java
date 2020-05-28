@@ -48,7 +48,7 @@ public class HtmlRenderer implements WikiRenderer
     private final Map<String, String> _nameTitleMap;
     private final Map<String, Attachment> _attachments;
 
-    private static Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
+    private static final Map<String, SubstitutionHandler> _substitutionHandlers = new HashMap<>();
 
     static
     {
@@ -212,14 +212,14 @@ public class HtmlRenderer implements WikiRenderer
     private FormattedHtml handleLabKeySubstitutions(String text)
     {
         if (text == null)
-            return new FormattedHtml("");
+            return new FormattedHtml(HtmlString.EMPTY_STRING);
         
         // Find all substitution templates embedded in wiki text that have the form ${labkey.<type>(<any_stream of characters>)}.
         Matcher webPartMatcher = _substitutionPattern.matcher(text);
 
         // If we find none, return immediately
         if (!webPartMatcher.find())
-            return new FormattedHtml(text);
+            return new FormattedHtml(HtmlString.unsafe(text));
 
         List<Definition> definitions = new ArrayList<>(10);
         Map<Definition, List<String>> wikiErrors = new HashMap<>();

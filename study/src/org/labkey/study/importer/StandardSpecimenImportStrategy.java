@@ -45,13 +45,13 @@ class StandardSpecimenImportStrategy implements SpecimenImportStrategy
     @Override
     public Filter getDeleteFilter()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public Filter getInsertFilter()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override

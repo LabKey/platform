@@ -222,6 +222,7 @@ public class PlateManager implements PlateService
         return template;
     }
 
+    @Override
     @NotNull
     public List<PlateTemplateImpl> getPlateTemplates(Container container)
     {
@@ -811,6 +812,7 @@ public class PlateManager implements PlateService
         clearCache();
     }
 
+    @Override
     public void registerDetailsLinkResolver(PlateService.PlateDetailsResolver resolver)
     {
         _detailsLinkResolvers.add(resolver);
@@ -841,6 +843,7 @@ public class PlateManager implements PlateService
 
     private static class PlateLsidHandler implements LsidManager.LsidHandler<Plate>
     {
+        @Override
         @Nullable
         public ActionURL getDisplayURL(Lsid lsid)
         {
@@ -850,6 +853,7 @@ public class PlateManager implements PlateService
             return plate.detailsURL();
         }
 
+        @Override
         public Plate getObject(Lsid lsid)
         {
             if (lsid == null)
@@ -858,6 +862,7 @@ public class PlateManager implements PlateService
             return PlateManager.get().getPlate(lsid.toString());
         }
 
+        @Override
         public Container getContainer(Lsid lsid)
         {
             Plate plate = getObject(lsid);
@@ -866,6 +871,7 @@ public class PlateManager implements PlateService
             return plate.getContainer();
         }
 
+        @Override
         public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
         {
             Container c = getContainer(lsid);
@@ -877,6 +883,7 @@ public class PlateManager implements PlateService
 
     private static class WellGroupLsidHandler implements LsidManager.LsidHandler<WellGroup>
     {
+        @Override
         @Nullable
         public ActionURL getDisplayURL(Lsid lsid)
         {
@@ -886,6 +893,7 @@ public class PlateManager implements PlateService
             return wellGroup.detailsURL();
         }
 
+        @Override
         public WellGroup getObject(Lsid lsid)
         {
             if (lsid == null)
@@ -893,6 +901,7 @@ public class PlateManager implements PlateService
             return PlateManager.get().getWellGroup(lsid.toString());
         }
 
+        @Override
         public Container getContainer(Lsid lsid)
         {
             WellGroup wellGroup = getObject(lsid);
@@ -901,6 +910,7 @@ public class PlateManager implements PlateService
             return wellGroup.getContainer();
         }
 
+        @Override
         public boolean hasPermission(Lsid lsid, @NotNull User user, @NotNull Class<? extends Permission> perm)
         {
             Container c = getContainer(lsid);

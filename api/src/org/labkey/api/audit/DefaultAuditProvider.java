@@ -39,6 +39,7 @@ import java.util.List;
  */
 public class DefaultAuditProvider implements AuditLogService, AuditLogService.Replaceable
 {
+    @Override
     public boolean isViewable()
     {
         return false;
@@ -63,16 +64,19 @@ public class DefaultAuditProvider implements AuditLogService, AuditLogService.Re
         return Collections.emptyList();
     }
 
+    @Override
     public String getTableName()
     {
         return "default";
     }
 
+    @Override
     public TableInfo getTable(ViewContext context, String name)
     {
         return null;
     }
 
+    @Override
     public UserSchema createSchema(User user, Container container)
     {
         return new DefaultAuditSchema(user, container);

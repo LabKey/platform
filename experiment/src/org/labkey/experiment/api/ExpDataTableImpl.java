@@ -89,6 +89,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -226,6 +228,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return super.resolveColumn(name);
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)
@@ -333,6 +336,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new DownloadFileDataLinkColumn(colInfo);
@@ -346,6 +350,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ViewFileDataLinkColumn(colInfo);
@@ -359,6 +364,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ViewContentDataLinkColumn(colInfo);
@@ -372,6 +378,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ThumbnailDataLinkColumn(colInfo);
@@ -385,6 +392,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 var result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new InlineThumbnailDataLinkColumn(colInfo);
@@ -400,6 +408,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setJdbcType(JdbcType.VARCHAR);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ExpDataFileColumn(colInfo)
@@ -441,6 +450,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ExpDataFileColumn(colInfo)
@@ -455,7 +465,12 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                             @Override
                             protected Object getJsonValue(ExpData data)
                             {
-                                return !(data == null || data.getFile() == null || !data.getFile().exists());
+                                if (data == null)
+                                {
+                                    return false;
+                                }
+                                Path path = data.getFilePath();
+                                return path != null && Files.exists(path);
                             }
                         };
                     }
@@ -472,6 +487,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ExpDataFileColumn(colInfo)
@@ -502,6 +518,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setLabel("View/Download");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new ViewOrDownloadDataColumn(colInfo);
@@ -518,6 +535,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setDescription("This is the full WebDAV URL to this file");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new WebDavUrlColumn(colInfo, false);
@@ -533,6 +551,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
                 result.setDescription("This is the WebDAV path of this file, relative to the file root of this container");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
+                    @Override
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
                     {
                         return new WebDavUrlColumn(colInfo, true);
@@ -557,6 +576,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
+    @Override
     public void setExperiment(ExpExperiment experiment)
     {
         checkLocked();
@@ -572,11 +592,13 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         _experiment = experiment;
     }
 
+    @Override
     public ExpExperiment getExperiment()
     {
         return _experiment;
     }
 
+    @Override
     public void setRun(ExpRun run)
     {
         checkLocked();
@@ -594,11 +616,13 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
+    @Override
     public ExpRun getRun()
     {
         return _run;
     }
 
+    @Override
     public MutableColumnInfo addDataInputColumn(String alias, String role)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(exp.datainput.dataid)" +
@@ -619,6 +643,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return doAdd(ret);
     }
 
+    @Override
     public MutableColumnInfo addMaterialInputColumn(String alias, SamplesSchema schema, String pdRole, final ExpSampleSet ss)
     {
         SQLFragment sql = new SQLFragment("(SELECT MIN(InputMaterial.RowId)" +
@@ -636,11 +661,13 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         return doAdd(ret);
     }
 
+    @Override
     public DataType getDataType()
     {
         return _type;
     }
 
+    @Override
     public void setDataType(DataType type)
     {
         checkLocked();
@@ -663,6 +690,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
         }
     }
 
+    @Override
     public String urlFlag(boolean flagged)
     {
         String ret = null;
@@ -675,6 +703,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
     }
 
 
+    @Override
     public MutableColumnInfo addInputRunCountColumn(String alias)
     {
         SQLFragment sql = new SQLFragment("(SELECT COUNT(DISTINCT exp.ProtocolApplication.RunId) " +
@@ -719,6 +748,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             super(colInfo);
         }
 
+        @Override
         protected ActionURL getURL(ExpData data)
         {
             return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false);
@@ -732,6 +762,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             super(colInfo);
         }
 
+        @Override
         protected ActionURL getURL(ExpData data)
         {
             return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
@@ -745,6 +776,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             super(colInfo);
         }
 
+        @Override
         protected ActionURL getURL(ExpData data)
         {
             return data.findDataHandler().getContentURL(data);
@@ -758,6 +790,7 @@ public class ExpDataTableImpl extends ExpRunItemTableImpl<ExpDataTable.Column> i
             super(colInfo);
         }
 
+        @Override
         protected ActionURL getURL(ExpData data)
         {
             return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);

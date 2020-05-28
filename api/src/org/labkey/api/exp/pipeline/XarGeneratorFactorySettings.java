@@ -32,6 +32,7 @@ public class XarGeneratorFactorySettings extends AbstractTaskFactorySettings
         super(new TaskId(XarGeneratorId.class, name));
     }
 
+    @Override
     public TaskId getCloneId()
     {
         return new TaskId(XarGeneratorId.class);

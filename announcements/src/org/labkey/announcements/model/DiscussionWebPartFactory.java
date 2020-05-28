@@ -45,11 +45,13 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         return false;     // This webpart is used via JavaScript, not from the portal page.  See #7431
     }
 
+    @Override
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
         return new JspView<>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
     }
 
+    @Override
     public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
     {
         Container c = portalCtx.getContainer();

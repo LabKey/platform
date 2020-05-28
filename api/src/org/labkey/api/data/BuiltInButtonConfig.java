@@ -80,6 +80,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         return _originalCaption;
     }
 
+    @Override
     public String getInsertAfter()
     {
         return _insertAfter;
@@ -90,6 +91,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         _insertAfter = insertAfter;
     }
 
+    @Override
     public String getInsertBefore()
     {
         return _insertBefore;
@@ -100,6 +102,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         _insertBefore = insertBefore;
     }
 
+    @Override
     public Integer getInsertPosition()
     {
         return _insertPosition;
@@ -110,6 +113,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         _insertPosition = insertPosition;
     }
 
+    @Override
     public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
     {
         for (DisplayElement de : originalButtons)
@@ -150,6 +154,7 @@ public class BuiltInButtonConfig implements ButtonConfig
         _hidden = hidden;
     }
 
+    @Override
     public BuiltInButtonConfig clone()
     {
         BuiltInButtonConfig ret = new BuiltInButtonConfig(_originalCaption, _caption);

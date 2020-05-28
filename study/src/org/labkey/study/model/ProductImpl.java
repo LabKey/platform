@@ -70,6 +70,7 @@ public class ProductImpl implements Product
         return getRowId();
     }
 
+    @Override
     public int getRowId()
     {
         return _rowId;
@@ -80,6 +81,7 @@ public class ProductImpl implements Product
         _rowId = rowId;
     }
 
+    @Override
     public String getLabel()
     {
         return _label;
@@ -90,6 +92,7 @@ public class ProductImpl implements Product
         _label = label;
     }
 
+    @Override
     public String getRole()
     {
         return _role;
@@ -100,6 +103,7 @@ public class ProductImpl implements Product
         _role = role;
     }
 
+    @Override
     public String getType()
     {
         return _type;

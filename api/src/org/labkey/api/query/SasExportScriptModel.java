@@ -33,6 +33,7 @@ public class SasExportScriptModel extends ExportScriptModel
         super(view);
     }
 
+    @Override
     public String getFilters()
     {
         List<String> filterExprs = getFilterExpressions();
@@ -54,6 +55,7 @@ public class SasExportScriptModel extends ExportScriptModel
         return filtersExpr.toString();
     }
 
+    @Override
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         if (operator.isDataValueRequired())

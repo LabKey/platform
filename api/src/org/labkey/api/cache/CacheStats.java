@@ -119,6 +119,7 @@ public class CacheStats implements Comparable<CacheStats>
         return 0 != gets ? getMisses() / (double)gets : 0;
     }
 
+    @Override
     public int compareTo(CacheStats cs2)
     {
         return Double.compare(cs2.getMissRatio(), getMissRatio());   // Highest to lowest miss ratio

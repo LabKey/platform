@@ -23,10 +23,9 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.security.RequiresPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -62,13 +61,12 @@ public class ViewQuerySourceAction extends SimpleViewAction<QueryForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         ActionURL urlQ = new ActionURL(QueryController.BeginAction.class, _form.getViewContext().getContainer());
         urlQ.addParameter("schemaName", _form.getSchemaName());
         urlQ.addParameter("queryName", _form.getQueryName());
         root.addChild("Query '" + _form.getSchemaName() + "." + _form.getQueryName() + "'", urlQ);
         root.addChild("Query Source");
-        return root;
     }
 }

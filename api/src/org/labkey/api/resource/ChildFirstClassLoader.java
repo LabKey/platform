@@ -34,11 +34,13 @@ public class ChildFirstClassLoader extends URLClassLoader
         super(urls, parent);
     }
 
+    @Override
     public void addURL(URL url)
     {
         super.addURL(url);
     }
 
+    @Override
     public Class loadClass(String name) throws ClassNotFoundException
     {
         return loadClass(name, false);
@@ -50,6 +52,7 @@ public class ChildFirstClassLoader extends URLClassLoader
      * <p>
      * The implementation is surprisingly straightforward.
      */
+    @Override
     protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException
     {
         // First, check if the class has already been loaded
@@ -94,6 +97,7 @@ public class ChildFirstClassLoader extends URLClassLoader
      * Override the parent-first resource loading model established by
      * java.lang.Classloader with child-first behavior.
      */
+    @Override
     public URL getResource(String name)
     {
         URL url = findResource(name);

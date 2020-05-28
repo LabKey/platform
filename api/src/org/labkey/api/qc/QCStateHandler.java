@@ -26,6 +26,7 @@ public interface QCStateHandler<FORM extends AbstractManageQCStatesForm>
     boolean isQCStateInUse(Container container, QCState state);
     boolean isBlankQCStatePublic(Container container);
     void updateQcState(Container container, FORM form, User user);
+    String getHandlerType();
     static <T> boolean nullSafeEqual(T first, T second)
     {
         if (first == null && second == null)

@@ -232,6 +232,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
     }
 
+    @Override
     protected String rewritePath(String path)
     {
         if (_engine instanceof RScriptEngine)

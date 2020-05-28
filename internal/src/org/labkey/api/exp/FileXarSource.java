@@ -34,6 +34,7 @@ public class FileXarSource extends AbstractFileXarSource
         _xmlFile = FileUtil.resolveFile(file);
     }
 
+    @Override
     public File getLogFile() throws IOException
     {
         return getLogFileFor(_xmlFile);

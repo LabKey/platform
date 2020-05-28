@@ -32,6 +32,7 @@ import org.springframework.validation.BindException;
 @RequiresPermission(ReadPermission.class)
 public class GetAssayBatchAction extends BaseProtocolAPIAction<SimpleApiJsonForm>
 {
+    @Override
     public ApiResponse executeAction(ExpProtocol protocol, SimpleApiJsonForm form, BindException errors)
     {
         ExpExperiment batch = null;

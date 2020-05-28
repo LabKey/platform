@@ -60,6 +60,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         super(new TaskId(ConvertTaskId.class, name));
     }
 
+    @Override
     protected void configure(ConvertTaskFactorySettings settings)
     {
         super.configure(settings);
@@ -89,6 +90,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         _initialTypes = types;
     }
 
+    @Override
     public TaskId getActiveId(PipelineJob job)
     {
         TaskFactory factory = findCommandFactory(job);
@@ -137,6 +139,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         return null;
     }
 
+    @Override
     public List<String> getProtocolActionNames()
     {
         List<String> result = new ArrayList<>();
@@ -151,27 +154,32 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         return result;
     }
 
+    @Override
     public PipelineJob.Task createTask(PipelineJob job)
     {
         throw new UnsupportedOperationException("No task associated with " + getClass() + ".");
     }
 
+    @Override
     public List<FileType> getInputTypes()
     {
         return _initialTypes;
     }
 
+    @Override
     public String getStatusName()
     {
         return _statusName;
     }
 
+    @Override
     public boolean isJoin()
     {
         // For now conversion is always done one file at a time.
         return false;
     }
 
+    @Override
     public boolean isParticipant(PipelineJob job) throws IOException
     {
         if (!super.isParticipant(job))
@@ -186,6 +194,7 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         return true;
     }
 
+    @Override
     public boolean isJobComplete(PipelineJob job)
     {
         TaskFactory factory = findCommandFactory(job);

@@ -30,6 +30,7 @@ import java.util.Map;
 
 public abstract class AbstractView<ModelBean> implements View
 {
+    @Override
     public String getContentType()
     {
         return "text/html";

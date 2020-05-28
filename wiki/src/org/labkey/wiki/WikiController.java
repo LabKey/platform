@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
-import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.MutatingApiAction;
@@ -335,10 +334,9 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Start Page", getUrl());
-            return root;
         }
     }
 
@@ -446,9 +444,9 @@ public class WikiController extends SpringActionController
     {
         page(PageAction.class), manage(ManageAction.class), edit(EditWikiAction.class);
 
-        private Class<? extends Controller> _action;
+        private final Class<? extends Controller> _action;
 
-        private NextAction(Class<? extends Controller> action)
+        NextAction(Class<? extends Controller> action)
         {
             _action = action;
         }
@@ -476,6 +474,7 @@ public class WikiController extends SpringActionController
             _wiki = wiki;
         }
 
+        @Override
         public ModelAndView getView(WikiManageForm form, boolean reshow, BindException errors)
         {
             String name = form.getName();
@@ -518,6 +517,7 @@ public class WikiController extends SpringActionController
         }
 
 
+        @Override
         public boolean handlePost(WikiManageForm form, BindException errors)
         {
             String originalName = form.getOriginalName();
@@ -575,11 +575,13 @@ public class WikiController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(WikiManageForm wikiManageForm, Errors errors)
         {
             wikiManageForm.validate(errors);
         }
 
+        @Override
         public ActionURL getSuccessURL(WikiManageForm form)
         {
             ActionURL nextPage = getViewContext().cloneActionURL();
@@ -599,15 +601,14 @@ public class WikiController extends SpringActionController
             return nextPage;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#manage");
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
-            new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root);
+            new PageAction(getViewContext(), _wiki, _wikiVersion).addNavTrail(root);
             root.addChild("Manage \"" + _wikiVersion.getTitle() + "\"");
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -674,6 +675,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PrintAllAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -687,9 +689,10 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print all pages in " + getContainer().getPath());
+            root.addChild("Print all pages in " + getContainer().getPath());
         }
     }
 
@@ -698,6 +701,7 @@ public class WikiController extends SpringActionController
     {
         private Wiki _rootWiki;
 
+        @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             Container c = getContainer();
@@ -718,10 +722,11 @@ public class WikiController extends SpringActionController
 
             return v;
         }
-        
-        public NavTree appendNavTrail(NavTree root)
+
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
+            root.addChild("Print of " + _rootWiki.getLatestVersion().getTitle() + " and Descendants");
         }
     }
 
@@ -743,6 +748,7 @@ public class WikiController extends SpringActionController
     {
         private String _name;
 
+        @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             Container c = getContainer();
@@ -761,9 +767,10 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print Page '" + _name + "'");
+            root.addChild("Print Page '" + _name + "'");
         }
     }
 
@@ -771,6 +778,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class PrintAllRawAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -782,9 +790,10 @@ public class WikiController extends SpringActionController
             return v;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Print All Pages");
+            root.addChild("Print All Pages");
         }
     }
 
@@ -931,15 +940,18 @@ public class WikiController extends SpringActionController
     {
         private Container _cDest;
 
+        @Override
         public void validateCommand(CopyWikiForm copyWikiForm, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(CopyWikiForm copyWikiForm)
         {
             return getBeginURL(_cDest);
         }
 
+        @Override
         public boolean handlePost(CopyWikiForm form, BindException errors) throws Exception
         {
             //user must have admin perms on both source and destination container
@@ -1062,6 +1074,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class CopyWikiLocationAction extends SimpleViewAction<CopyWikiForm>
     {
+        @Override
         public ModelAndView getView(CopyWikiForm form, BindException errors)
         {
             //get projects and folders for which user has admin permissions
@@ -1085,10 +1098,11 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiCopy.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#copy");
-            return root.addChild("Copy Wiki Location");
+            root.addChild("Copy Wiki Location");
         }
     }
 
@@ -1144,6 +1158,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
+        @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String name = null != form.getName() ? form.getName().trim() : null;
@@ -1222,13 +1237,13 @@ public class WikiController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            new BeginAction(getViewContext()).appendNavTrail(root);
+            new BeginAction(getViewContext()).addNavTrail(root);
             appendWikiTrail(root, _wiki);
             if (isSource())
                 root.addChild("source");
-            return root;
         }
 
         public void appendWikiTrail(NavTree root, Wiki wiki)
@@ -1288,6 +1303,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
+        @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String name = null != form.getName() ? form.getName().trim() : null;
@@ -1321,15 +1337,14 @@ public class WikiController extends SpringActionController
             return new JspView<>("/org/labkey/wiki/view/wikiVersion.jsp", bean);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             String pageTitle = _wikiversion.getTitle();
             pageTitle = pageTitle.concat(" (Version " + _wikiversion.getVersion() + " of " + WikiSelectManager.getVersionCount(_wiki) + ")");
 
-            new VersionsAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            new VersionsAction(getViewContext(), _wiki, _wikiversion).addNavTrail(root);
             root.addChild(pageTitle, getUrl());
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -1395,6 +1410,7 @@ public class WikiController extends SpringActionController
         private WikiVersion _wikiVersion1 = null;
         private WikiVersion _wikiVersion2 = null;
 
+        @Override
         public ModelAndView getView(CompareForm form, BindException errors) throws Exception
         {
             String name = null != form.getName() ? form.getName().trim() : null;
@@ -1431,15 +1447,14 @@ public class WikiController extends SpringActionController
             return new VBox(htmlView, textView);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             String pageTitle = _wikiVersion1.getTitle();
             pageTitle = pageTitle.concat(" (Comparing version " + _wikiVersion1.getVersion() + " to version " + _wikiVersion2.getVersion() + ")");
 
-            new VersionAction(getViewContext(), _wiki, _wikiVersion1).appendNavTrail(root);
+            new VersionAction(getViewContext(), _wiki, _wikiVersion1).addNavTrail(root);
             root.addChild(pageTitle);
-
-            return root;
         }
     }
 
@@ -1523,6 +1538,7 @@ public class WikiController extends SpringActionController
             _wikiversion = wikiversion;
         }
 
+        @Override
         public ModelAndView getView(WikiNameForm form, BindException errors)
         {
             String wikiname = form.getName();
@@ -1560,13 +1576,12 @@ public class WikiController extends SpringActionController
             return view;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             //setHelpTopic("wikiUserGuide#history");
-            new PageAction(getViewContext(), _wiki, _wikiversion).appendNavTrail(root);
+            new PageAction(getViewContext(), _wiki, _wikiversion).addNavTrail(root);
             root.addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
-
-            return root;
         }
 
         public ActionURL getUrl()
@@ -1593,11 +1608,13 @@ public class WikiController extends SpringActionController
         Wiki _wiki;
         WikiVersion _wikiversion;
 
+        @Override
         public ModelAndView getView(WikiNameForm wikiNameForm, boolean reshow, BindException errors)
         {
             return null;
         }
 
+        @Override
         public boolean handlePost(WikiNameForm form, BindException errors)
         {
             String wikiName = form.getName();
@@ -1619,18 +1636,20 @@ public class WikiController extends SpringActionController
             return true;
         }
 
+        @Override
         public void validateCommand(WikiNameForm wikiNameForm, Errors errors)
         {
         }
 
+        @Override
         public ActionURL getSuccessURL(WikiNameForm wikiNameForm)
         {
             return new VersionAction(getViewContext(), _wiki,_wikiversion).getUrl();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1780,7 +1799,7 @@ public class WikiController extends SpringActionController
             {
                 //check for existing wiki with this name
                 Container c = ContainerManager.getForPath(getContainerPath());
-                if (!newName.equalsIgnoreCase(oldName) && WikiManager.get().wikiNameExists(c, newName))
+                if (!newName.equalsIgnoreCase(oldName) && WikiManager.wikiNameExists(c, newName))
                     errors.rejectValue("name", ERROR_MSG, "A page with the name '" + newName + "' already exists in this folder. Please choose a different name.");
             }
         }
@@ -1868,6 +1887,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetPagesAction extends ReadOnlyApiAction<ContainerForm>
     {
+        @Override
         public ApiResponse execute(ContainerForm form, BindException errors)
         {
             if (null == form.getId() || form.getId().length() == 0)
@@ -2050,7 +2070,7 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("wikiUserGuide#edit");
             if (null != _wiki && null != _wikiVer)
@@ -2064,8 +2084,6 @@ public class WikiController extends SpringActionController
             {
                 root.addChild("New Page");
             }
-
-            return root;
         }
     }
 
@@ -2230,11 +2248,12 @@ public class WikiController extends SpringActionController
     }
 
     @RequiresPermission(ReadPermission.class) //will check below
-    public class SaveWikiAction extends ExtFormAction<SaveWikiForm>
+    public class SaveWikiAction extends MutatingApiAction<SaveWikiForm>
     {
         public final static String PROP_DEFAULT_FORMAT = "defaultFormat";
         private String sanitizedHtml = null;
 
+        @Override
         public ApiResponse execute(SaveWikiForm form, BindException errors) throws Exception
         {
             //if no entityId was passed, insert it
@@ -2244,6 +2263,7 @@ public class WikiController extends SpringActionController
                 return updateWiki(form);
         }
 
+        @Override
         public void validateForm(SaveWikiForm form, Errors errors)
         {
             User user = getUser();
@@ -2456,6 +2476,7 @@ public class WikiController extends SpringActionController
             setContentTypeOverride("text/html");
         }
 
+        @Override
         public ApiResponse execute(AttachFilesForm form, BindException errors)
         {
             if (null == form.getEntityId() || form.getEntityId().length() == 0)
@@ -2534,6 +2555,7 @@ public class WikiController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetWikiTocAction extends ReadOnlyApiAction<GetWikiTocForm>
     {
+        @Override
         public ApiResponse execute(GetWikiTocForm form, BindException errors)
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
@@ -2680,6 +2702,7 @@ public class WikiController extends SpringActionController
         public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
         public static final String PROP_USE_VISUAL_EDITOR = "useVisualEditor";
 
+        @Override
         public ApiResponse execute(SetEditorPreferenceForm form, BindException errors)
         {
             //save user's editor preference
@@ -2714,6 +2737,7 @@ public class WikiController extends SpringActionController
     {
         public static final String PROP_TOC_DISPLAYED = "displayToc";
 
+        @Override
         public ApiResponse execute(SetTocPreferenceForm form, BindException errors)
         {
             //use the same category as editor preference to save on storage
@@ -2873,9 +2897,9 @@ public class WikiController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Back Links");
+            root.addChild("Back Links");
         }
     }
 

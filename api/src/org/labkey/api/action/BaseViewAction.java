@@ -166,6 +166,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
+    @Override
     public ModelAndView handleRequest(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
         if (null == getPropertyValues())
@@ -199,6 +200,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     public abstract ModelAndView handleRequest() throws Exception;
 
 
+    @Override
     public void setPageConfig(PageConfig page)
     {
         _pageConfig = page;
@@ -217,6 +219,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     }
 
 
+    @Override
     public PageConfig getPageConfig()
     {
         return _pageConfig;
@@ -370,11 +373,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
     {
         return new BindingErrorProcessor()
         {
+            @Override
             public void processMissingFieldError(String missingField, BindingResult bindingResult)
             {
                 defaultBEP.processMissingFieldError(missingField, bindingResult);
             }
 
+            @Override
             public void processPropertyAccessException(PropertyAccessException ex, BindingResult bindingResult)
             {
                 Object newValue = ex.getPropertyChangeEvent().getNewValue();
@@ -467,6 +472,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
         return out;
     }
 
+    @Override
     public boolean supports(Class clazz)
     {
         return getCommandClass().isAssignableFrom(clazz);
@@ -481,6 +487,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             super(target, objectName);
         }
 
+        @Override
         protected BeanWrapper createBeanWrapper()
         {
             return new BeanUtilsWrapperImpl((DynaBean)getTarget());
@@ -504,6 +511,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             object = target;
         }
 
+        @Override
         public Object getPropertyValue(String propertyName) throws BeansException
         {
             try
@@ -516,6 +524,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             }
         }
 
+        @Override
         public void setPropertyValue(String propertyName, Object value) throws BeansException
         {
             try
@@ -528,11 +537,13 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             }
         }
 
+        @Override
         public boolean isReadableProperty(String propertyName)
         {
             return true;
         }
 
+        @Override
         public boolean isWritableProperty(String propertyName)
         {
             return true;
@@ -549,21 +560,25 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             object = obj;
         }
 
+        @Override
         public Object getWrappedInstance()
         {
             return object;
         }
 
+        @Override
         public Class getWrappedClass()
         {
             return object.getClass();
         }
 
+        @Override
         public PropertyDescriptor[] getPropertyDescriptors()
         {
             throw new UnsupportedOperationException();
         }
 
+        @Override
         public PropertyDescriptor getPropertyDescriptor(String propertyName) throws BeansException
         {
             throw new UnsupportedOperationException();
@@ -593,6 +608,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             return this.autoGrowCollectionLimit;
         }
 
+        @Override
         public <T> T convertIfNecessary(Object value, Class<T> requiredType) throws TypeMismatchException
         {
             if (value == null)
@@ -600,6 +616,7 @@ public abstract class BaseViewAction<FORM> extends PermissionCheckableAction imp
             return (T)ConvertUtils.convert(String.valueOf(value), requiredType);
         }
 
+        @Override
         public <T> T convertIfNecessary(Object value, Class<T> requiredType, MethodParameter methodParam) throws TypeMismatchException
         {
             return convertIfNecessary(value, requiredType);

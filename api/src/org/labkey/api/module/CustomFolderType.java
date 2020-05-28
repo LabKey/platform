@@ -46,8 +46,11 @@ import java.util.Set;
 public class CustomFolderType implements FolderType
 {
     public CustomFolderType(){}
+    @Override
     public void configureContainer(Container c, User user) {  }
+    @Override
     public void unconfigureContainer(Container c, User user) {  }
+    @Override
     public String getName() { return "None"; }
     protected boolean forceAssayUploadIntoWorkbooks = false;
 
@@ -58,25 +61,33 @@ public class CustomFolderType implements FolderType
         return Collections.emptySet();
     }
 
+    @Override
     public String getDescription()
     {
         return "Create a tab for each LabKey module you select.";
     }
 
+    @Override
     public List<Portal.WebPart> getRequiredWebParts()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public List<Portal.WebPart> getPreferredWebParts()
     {
         return Collections.emptyList();
     }
 
+    @Override
     public String getLabel() { return "Custom"; }
+    @Override
     public Module getDefaultModule() { return null; }
+    @Override
     public Set<Module> getActiveModules() { return Collections.emptySet(); }
+    @Override
     public String getStartPageLabel(ViewContext ctx) { return null; }
+    @Override
     public ActionURL getStartURL(Container c, User u)
     {
         if (null == c)
@@ -85,8 +96,10 @@ public class CustomFolderType implements FolderType
             return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c);
         return c.getDefaultModule(u).getTabURL(c, u);
     }
+    @Override
     public HelpTopic getHelpTopic() { return null; }
 
+    @Override
     public void addManageLinks(NavTree adminNavTree, Container container, User user)
     {
         AdminLinkManager.getInstance().addStandardAdminLinks(adminNavTree, container, user);
@@ -110,6 +123,7 @@ public class CustomFolderType implements FolderType
         return null;
     }
 
+    @Override
     @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig)
     {
@@ -161,12 +175,14 @@ public class CustomFolderType implements FolderType
         return new AppBar(name, url, tabs);
     }
 
+    @Override
     @NotNull
     public String getFolderIconPath()
     {
         return DefaultFolderType.DEFAULT_FOLDER_ICON_PATH;
     }
 
+    @Override
     public boolean getForceAssayUploadIntoWorkbooks()
     {
         return forceAssayUploadIntoWorkbooks;

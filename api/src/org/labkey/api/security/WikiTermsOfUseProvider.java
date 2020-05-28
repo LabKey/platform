@@ -43,7 +43,7 @@ public class WikiTermsOfUseProvider implements TermsOfUseProvider
     public static final String TERMS_OF_USE_WIKI_NAME = "_termsOfUse";
     public static final String TERMS_APPROVED_KEY = "TERMS_APPROVED_KEY";
 
-    private static TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
+    private static final TermsOfUse NO_TERMS = new TermsOfUse(TermsOfUseType.NONE, null);
 
     @Override
     public void verifyTermsOfUse(ViewContext context, boolean isBasicAuth) throws RedirectException

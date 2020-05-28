@@ -22,6 +22,8 @@ import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
+
 /**
  * User: matthewb
  * Date: Sep 28, 2009
@@ -29,14 +31,10 @@ import org.springframework.web.servlet.ModelAndView;
  *
  * This is a hybrid Api/Form action.
  *  GET is like SimpleViewForm
- *  POST is like ExtFormAction
- *
- *  Do we need ExtFormAction as well?
+ *  POST is like BaseApiAction
  */
-public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements NavTrailAction
+public abstract class FormApiAction<FORM> extends BaseApiAction<FORM> implements NavTrailAction
 {
-    protected boolean _print = false;
-
     @Override
     public void checkPermissions() throws UnauthorizedException
     {
@@ -74,14 +72,23 @@ public abstract class FormApiAction<FORM> extends ExtFormAction<FORM> implements
 
     public abstract ModelAndView getView(FORM form, BindException errors) throws Exception;
 
-    public ModelAndView getPrintView(FORM form, BindException errors) throws Exception
+    protected ModelAndView getPrintView(FORM form, BindException errors) throws Exception
     {
-        _print = true;
         return getView(form, errors);
     }
 
-    public BindException bindParameters(PropertyValues pvs) throws Exception
+    protected BindException bindParameters(PropertyValues pvs) throws Exception
     {
         return SimpleViewAction.defaultBindParameters(getCommand(), getCommandName(), pvs);
+    }
+
+    /**
+     * Last vestige of ExtFormAction, which had the comment: ensures that the validation errors are reported back to
+     * the form in the way that Ext forms require.
+     */
+    @Override
+    protected ApiResponseWriter createResponseWriter() throws IOException
+    {
+        return new ExtFormResponseWriter(getViewContext().getRequest(), getViewContext().getResponse(), getContentTypeOverride());
     }
 }

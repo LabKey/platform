@@ -70,6 +70,7 @@ public class StudyReloadSourceJob extends StudyBatch implements Serializable, St
         setLogFile(logFile);
     }
 
+    @Override
     protected File createLogFile()
     {
         return null;

@@ -31,6 +31,7 @@ import java.util.Collections;
  */
 public class TypeSummaryReportFactory extends TypeReportFactory
 {
+    @Override
     public String getLabel()
     {
         return "Type Summary Report";
@@ -42,6 +43,7 @@ public class TypeSummaryReportFactory extends TypeReportFactory
         return "TypeSummary";
     }
 
+    @Override
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
@@ -51,6 +53,7 @@ public class TypeSummaryReportFactory extends TypeReportFactory
         return Collections.singletonList(report);
     }
 
+    @Override
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()
     {
         return SpecimenController.TypeSummaryReportAction.class;

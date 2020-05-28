@@ -84,6 +84,7 @@ public class QCStateWriter extends BaseFolderWriter
 
     public static class Factory implements FolderWriterFactory
     {
+        @Override
         public FolderWriter create()
         {
             return new QCStateWriter();

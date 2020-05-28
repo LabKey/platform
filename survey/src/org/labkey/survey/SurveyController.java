@@ -37,7 +37,6 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
-import org.labkey.api.data.AuditConfigurable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -204,9 +203,12 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return (null != _title ? root.addChild(_title) : root.addChild("Update Survey"));
+            if (null != _title)
+                root.addChild(_title);
+            else
+                root.addChild("Update Survey");
         }
     }
 
@@ -230,9 +232,9 @@ public class SurveyController extends SpringActionController implements SurveyUr
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_title);
+            root.addChild(_title);
         }
     }
 

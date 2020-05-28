@@ -321,11 +321,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             _name = name;
         }
 
+        @Override
         public String getName()
         {
             return _name;
         }
 
+        @Override
         public Map<String, MetadataWellGroup> getWellGroups()
         {
             return _wellGroupMap;
@@ -347,11 +349,13 @@ public class AssayPlateMetadataServiceImpl implements AssayPlateMetadataService
             _name = name;
         }
 
+        @Override
         public String getName()
         {
             return _name;
         }
 
+        @Override
         public Map<String, Object> getProperties()
         {
             return _properties;

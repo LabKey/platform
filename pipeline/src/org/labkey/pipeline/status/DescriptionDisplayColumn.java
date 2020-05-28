@@ -46,6 +46,7 @@ public class DescriptionDisplayColumn extends SimpleDisplayColumn
         this.uriRoot = uriRoot;
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Map cols = ctx.getRow();

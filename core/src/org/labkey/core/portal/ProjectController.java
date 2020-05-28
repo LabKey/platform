@@ -51,7 +51,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.IgnoresTermsOfUse;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermission;
-import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -114,16 +113,19 @@ public class ProjectController extends SpringActionController
 
     public static class ProjectUrlsImpl implements ProjectUrls
     {
+        @Override
         public ActionURL getStartURL(Container container)
         {
             return new ActionURL(StartAction.class, container);
         }
 
+        @Override
         public ActionURL getBeginURL(Container container)
         {
             return getBeginURL(container, null);
         }
 
+        @Override
         public ActionURL getBeginURL(Container container, @Nullable String pageId)
         {
             ActionURL url = new ActionURL(BeginAction.class, container);
@@ -134,21 +136,25 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getHomeURL()
         {
             return getStartURL(ContainerManager.getHomeContainer());
         }
 
+        @Override
         public ActionURL getCustomizeWebPartURL(Container c)
         {
             return new ActionURL(CustomizeWebPartAction.class, c);
         }
 
+        @Override
         public ActionURL getAddWebPartURL(Container c)
         {
             return new ActionURL(AddWebPartAction.class, c);
         }
 
+        @Override
         public ActionURL getCustomizeWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
         {
             ActionURL url = getCustomizeWebPartURL(c);
@@ -157,6 +163,7 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getMoveWebPartURL(Container c, Portal.WebPart webPart, int direction, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(MoveWebPartAction.class, c);
@@ -167,6 +174,7 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getDeleteWebPartURL(Container c, String pageId, int index, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(DeleteWebPartAction.class, c);
@@ -176,6 +184,7 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getHidePortalPageURL(Container c, String pageId, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(HidePortalPageAction.class, c);
@@ -184,6 +193,7 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getDeletePortalPageURL(Container c, String pageId, ActionURL returnURL)
         {
             ActionURL url = new ActionURL(DeletePortalPageAction.class, c);
@@ -192,11 +202,13 @@ public class ProjectController extends SpringActionController
             return url;
         }
 
+        @Override
         public ActionURL getDeleteWebPartURL(Container c, Portal.WebPart webPart, ActionURL returnURL)
         {
             return getDeleteWebPartURL(c, webPart.getPageId(), webPart.getIndex(), returnURL);
         }
 
+        @Override
         public ActionURL getExpandCollapseURL(Container c, String path, String treeId)
         {
             ActionURL url = new ActionURL(ExpandCollapseAction.class, c);
@@ -244,6 +256,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class StartAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             Container c = getContainer();
@@ -267,9 +280,10 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(c.getStartURL(getUser()));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(getContainer().getName());
+            root.addChild(getContainer().getName());
         }
     }
 
@@ -293,6 +307,7 @@ public class ProjectController extends SpringActionController
     @Action(ActionType.SelectData.class)
     public class BeginAction extends SimpleViewAction<PageForm>
     {
+        @Override
         public ModelAndView getView(PageForm form, BindException errors)
         {
             Container c = getContainer();
@@ -379,9 +394,11 @@ public class ProjectController extends SpringActionController
             return template;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return (root.hasChildren() ? root : root.addChild("Project Main Page"));
+            if (!root.hasChildren())
+                root.addChild("Project Main Page");
         }
     }
 
@@ -394,14 +411,15 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class HomeAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             return HttpView.redirect(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -411,6 +429,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class FileBrowserAction extends org.labkey.api.action.SimpleRedirectAction
     {
+        @Override
         public URLHelper getRedirectURL(Object o)
         {
             String p = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("path"));
@@ -447,6 +466,7 @@ public class ProjectController extends SpringActionController
     @IgnoresTermsOfUse
     public class DownloadProjectIconAction extends ExportAction<Object>
     {
+        @Override
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
             FolderType ft = getContainer().getFolderType();
@@ -539,16 +559,19 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class MoveWebPartAction extends FormHandlerAction<MovePortletForm>
     {
+        @Override
         public void validateCommand(MovePortletForm target, Errors errors)
         {
         }
 
+        @Override
         public boolean handlePost(MovePortletForm form, BindException errors)
         {
             Portal.WebPart webPart = Portal.getPart(getContainer(), form.getWebPartId());
             return handleMoveWebPart(webPart.getPageId(), webPart.getIndex(), form.getDirection());
         }
 
+        @Override
         public URLHelper getSuccessURL(MovePortletForm movePortletForm)
         {
             return movePortletForm.getReturnURLHelper(beginURL());
@@ -562,10 +585,12 @@ public class ProjectController extends SpringActionController
         WebPartFactory _desc = null;
         Portal.WebPart _newPart = null;
 
+        @Override
         public void validateCommand(AddWebPartForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(AddWebPartForm form, boolean reshow, BindException errors)
         {
             URLHelper successURL = getSuccessURL(form);
@@ -574,6 +599,7 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
+        @Override
         public boolean handlePost(AddWebPartForm form, BindException errors)
         {
             _desc = Portal.getPortalPart(form.getName());
@@ -584,6 +610,7 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
+        @Override
         public URLHelper getSuccessURL(AddWebPartForm form)
         {
             if (null != _desc && _desc.isEditable() && _desc.showCustomizeOnInsert())
@@ -597,9 +624,9 @@ public class ProjectController extends SpringActionController
                 return form.getReturnURLHelper();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -610,11 +637,13 @@ public class ProjectController extends SpringActionController
         private int _direction;
         private int _webPartId;
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
         }
 
+        @Override
         public void setViewContext(ViewContext viewContext)
         {
             _viewContext = viewContext;
@@ -789,8 +818,8 @@ public class ProjectController extends SpringActionController
 
     private boolean handleMoveWebPart(String pageId, int index, int direction)
     {
-        List<Portal.WebPart> parts = Portal.getParts(getContainer(), pageId);
-        if (null == parts)
+        List<Portal.WebPart> parts = Portal.getEditableParts(getContainer(), pageId);
+        if (parts.isEmpty())
             return true;
 
         //Find the portlet. Theoretically index should be 1-based & consecutive, but
@@ -839,10 +868,12 @@ public class ProjectController extends SpringActionController
     @RequiresPermission(AdminPermission.class)
     public class DeleteWebPartAction extends FormViewAction<CustomizePortletForm>
     {
+        @Override
         public void validateCommand(CustomizePortletForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(CustomizePortletForm customizePortletForm, boolean reshow, BindException errors)
         {
             // UNDONE: this seems to be used a link, fix to make POST
@@ -853,6 +884,7 @@ public class ProjectController extends SpringActionController
             return HttpView.redirect(getContainer().getStartURL(getUser()));
         }
 
+        @Override
         public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             String pageId = form.getPageId();
@@ -867,14 +899,15 @@ public class ProjectController extends SpringActionController
             return handleDeleteWebPart(getContainer(), pageId, index);
         }
 
+        @Override
         public URLHelper getSuccessURL(CustomizePortletForm customizePortletForm)
         {
             return customizePortletForm.getReturnURLHelper(beginURL());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -988,10 +1021,12 @@ public class ProjectController extends SpringActionController
     {
         private Portal.WebPart _webPart;
 
+        @Override
         public void validateCommand(CustomizePortletForm target, Errors errors)
         {
         }
 
+        @Override
         public ModelAndView getView(CustomizePortletForm form, boolean reshow, BindException errors)
         {
             // lookup the webpart by webpartId OR pageId/index
@@ -1021,6 +1056,7 @@ public class ProjectController extends SpringActionController
             return v;
         }
 
+        @Override
         public boolean handlePost(CustomizePortletForm form, BindException errors)
         {
             // lookup the webpart by webpartId OR pageId/index
@@ -1047,12 +1083,14 @@ public class ProjectController extends SpringActionController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(CustomizePortletForm form)
         {
             return null != form.getReturnActionURL() ? form.getReturnActionURL() : beginURL();
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             // Subclasses may have overridden the display name of this webpart for a given container:
             String name;
@@ -1064,7 +1102,7 @@ public class ProjectController extends SpringActionController
             else
                 name = "Web Part";
 
-            return root.addChild("Customize " + name);
+            root.addChild("Customize " + name);
         }
     }
 
@@ -1115,15 +1153,16 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public static class ExpandCollapseAction extends SimpleViewAction<CollapseExpandForm>
     {
+        @Override
         public ModelAndView getView(CollapseExpandForm form, BindException errors)
         {
             NavTreeManager.expandCollapsePath(getViewContext(), form.getTreeId(), form.getPath(), form.isCollapse());
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1182,6 +1221,7 @@ public class ProjectController extends SpringActionController
     {
         private Map<String, Object> _extendedProperties;
 
+        @Override
         public void bindProperties(Map<String, Object> props)
         {
             _extendedProperties = props;
@@ -1207,6 +1247,7 @@ public class ProjectController extends SpringActionController
             setUnauthorizedType(UnauthorizedException.Type.sendUnauthorized);
         }
 
+        @Override
         public ApiResponse execute(GetWebPartForm form, BindException errors)
         {
             HttpServletRequest request = getViewContext().getRequest();
@@ -1353,6 +1394,7 @@ public class ProjectController extends SpringActionController
         int _requestedDepth;
         boolean _includeEffectivePermissions = true;
 
+        @Override
         public ApiResponse execute(GetContainersForm form, BindException errors)
         {
             _requestedDepth = form.isIncludeSubfolders() ? form.getDepth() : 1;
@@ -1512,6 +1554,7 @@ public class ProjectController extends SpringActionController
     @RequiresNoPermission
     public class IconAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             String name = StringUtils.trimToEmpty(getViewContext().getRequest().getParameter("name"));
@@ -1530,9 +1573,9 @@ public class ProjectController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1636,11 +1679,13 @@ public class ProjectController extends SpringActionController
         private String _permission;
         private String _containerPath;
 
+        @Override
         public ViewContext getViewContext()
         {
             return _viewContext;
         }
 
+        @Override
         public void setViewContext(ViewContext viewContext)
         {
             _viewContext = viewContext;

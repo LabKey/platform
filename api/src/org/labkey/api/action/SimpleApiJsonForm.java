@@ -28,6 +28,7 @@ public class SimpleApiJsonForm implements CustomApiForm
 {
     protected JSONObject json;
 
+    @Override
     public void bindProperties(Map<String,Object> properties)
     {
         if (properties instanceof JSONObject)

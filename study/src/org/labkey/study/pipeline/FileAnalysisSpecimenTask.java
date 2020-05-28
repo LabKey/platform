@@ -126,6 +126,7 @@ public class FileAnalysisSpecimenTask extends AbstractSpecimenTask<FileAnalysisS
             super(FileAnalysisSpecimenTask.class);
         }
 
+        @Override
         public PipelineJob.Task createTask(PipelineJob job)
         {
             return new FileAnalysisSpecimenTask(this, job);

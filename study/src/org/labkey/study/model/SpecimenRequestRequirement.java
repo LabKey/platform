@@ -63,12 +63,14 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         _mutable = true;
     }
 
+    @Override
     public void lock()
     {
         _mutable = false;
     }
 
 
+    @Override
     public SpecimenRequestRequirement createMutable()
     {
         try
@@ -108,6 +110,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         _actorId = actorId;
     }
 
+    @Override
     public boolean isComplete()
     {
         return _complete;
@@ -119,6 +122,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         _complete = complete;
     }
 
+    @Override
     public Container getContainer()
     {
         return _container;
@@ -141,6 +145,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         _requestId = requestId;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
@@ -194,17 +199,20 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         return builder.toString();
     }
 
+    @Override
     public String getOwnerEntityId()
     {
         return _ownerEntityId;
     }
 
+    @Override
     public void setOwnerEntityId(String requestEntityId)
     {
         _ownerEntityId = requestEntityId;
     }
 
 
+    @Override
     public Object getActorPrimaryKey()
     {
         return _actorId;
@@ -221,6 +229,7 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
         return first.compareTo(second);
     }
 
+    @Override
     public boolean isEqual(SpecimenRequestRequirement other)
     {
         if (this == other)
@@ -237,11 +246,13 @@ public class SpecimenRequestRequirement extends DefaultRequirement<SpecimenReque
     }
 
 
+    @Override
     protected Object getPrimaryKeyValue()
     {
         return getRowId();
     }
 
+    @Override
     protected TableInfo getTableInfo()
     {
         return StudySchema.getInstance().getTableInfoSampleRequestRequirement();

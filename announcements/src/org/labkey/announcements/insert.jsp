@@ -85,7 +85,7 @@
     if (settings.hasMemberList())
     {
         %><tr>
-            <td class='labkey-form-label'>Members</td>
+            <td class='labkey-form-label'>Notify</td>
             <td><labkey:autoCompleteTextArea name="memberListInput" id="memberListInput" rows="5" cols="40" url="<%=completeUserUrl%>" value="<%=bean.memberList%>"/></td>
             <td><i><%
         if (settings.isSecure())
@@ -94,7 +94,7 @@
         }
         else
         {
-            %> The users on the member list<%
+            %> The users on the notify list<%
         }
         %> receive email notifications of new posts to this <%=h(settings.getConversationName().toLowerCase())%>.<br><br>Enter one or more email addresses, each on its own line.</i></td></tr><%
     }

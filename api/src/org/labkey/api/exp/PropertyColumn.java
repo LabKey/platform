@@ -142,6 +142,7 @@ public class PropertyColumn extends LookupColumn
 
 
     // select the mv column instead
+    @Override
     public void setMvIndicatorColumn(boolean mv)
     {
         super.setMvIndicatorColumn(mv);
@@ -155,6 +156,7 @@ public class PropertyColumn extends LookupColumn
     }
     
 
+    @Override
     public SQLFragment getValueSql(String tableAlias)
     {
         String cast = getPropertySqlCastType();
@@ -235,16 +237,19 @@ public class PropertyColumn extends LookupColumn
         return _pd;
     }
 
+    @Override
     public String getPropertyURI()
     {
         return getPropertyDescriptor().getPropertyURI();
     }
 
+    @Override
     public String getConceptURI()
     {
         return getPropertyDescriptor().getConceptURI();
     }
 
+    @Override
     public SQLFragment getJoinCondition(String tableAliasName)
     {
         SQLFragment strJoinNoContainer = super.getJoinCondition(tableAliasName);
@@ -293,6 +298,7 @@ public class PropertyColumn extends LookupColumn
             return super.getJoinCondition(tableAliasName, fk, pk, equalOrIsNull);
     }
 
+    @Override
     public String getTableAlias(String baseAlias)
     {
         if (_container == null)

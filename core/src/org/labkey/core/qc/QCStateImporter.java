@@ -95,6 +95,7 @@ public class QCStateImporter extends AbstractQCStateImporter implements FolderIm
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new QCStateImporter();

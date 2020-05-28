@@ -49,27 +49,32 @@ public class NormalMessageBoardPermissions implements Permissions
         _settings = settings;
     }
 
+    @Override
     public boolean allowRead(@Nullable AnnouncementModel ann)
     {
         return hasPermission(ReadPermission.class);
     }
 
+    @Override
     public boolean allowInsert()
     {
         return hasPermission(InsertPermission.class)|| hasPermission(InsertMessagePermission.class);
     }
 
+    @Override
     public boolean allowResponse(AnnouncementModel ann)
     {
         return allowInsert();
     }
 
+    @Override
     public boolean allowUpdate(AnnouncementModel ann)
     {
         return _c.hasPermission(_user, UpdatePermission.class,
                 (ann.getCreatedBy() == _user.getUserId() && !_user.isGuest() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
 
+    @Override
     public boolean allowDeleteMessage(AnnouncementModel ann)
     {
         //to delete, user must have delete permission for this message and all responses
@@ -86,11 +91,13 @@ public class NormalMessageBoardPermissions implements Permissions
             return false;
     }
 
+    @Override
     public boolean allowDeleteAnyThread()
     {
         return hasPermission(DeletePermission.class);
     }
 
+    @Override
     public SimpleFilter getThreadFilter()
     {
         return new SimpleFilter();
@@ -101,6 +108,7 @@ public class NormalMessageBoardPermissions implements Permissions
         return _c.hasPermission(_user, perm);
     }
 
+    @Override
     public boolean includeGroups()
     {
         return _settings.includeGroups() && hasPermission(AdminPermission.class);

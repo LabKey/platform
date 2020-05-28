@@ -76,6 +76,7 @@ public class RRF_Loader extends Job
     }
     
 
+    @Override
     public void run()
     {
         try
@@ -203,6 +204,7 @@ public class RRF_Loader extends Job
         Iterator<SemanticType> types = _reader.getTypes(null);
         Iterator<ConceptName> names = _reader.getNames(new Filter<ConceptName>()
         {
+            @Override
             public boolean accept(ConceptName c)
             {
                 return "ENG".equals(c.LAT); // && !"Y".equals(c.SUPPRESS);

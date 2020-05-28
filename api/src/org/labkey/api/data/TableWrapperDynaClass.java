@@ -61,11 +61,13 @@ public class TableWrapperDynaClass extends StringWrapperDynaClass
         return _tinfo;
     }
 
+    @Override
     public String getName()
     {
         return _tinfo.getName();
     }
 
+    @Override
     public DynaBean newInstance()
     {
         return new TableViewForm(_tinfo);

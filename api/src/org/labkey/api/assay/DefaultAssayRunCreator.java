@@ -1035,6 +1035,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         return new FileFilter()
         {
+            @Override
             public boolean accept(File f)
             {
                 // baseName doesn't include the trailing '.', so add it here.  We want to associate myRun.jpg

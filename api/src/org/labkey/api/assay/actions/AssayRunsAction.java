@@ -71,6 +71,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         _protocol = protocol;
     }
 
+    @Override
     public ModelAndView getView(AssayRunsForm summaryForm, BindException errors) throws Exception
     {
         ViewContext context = getViewContext();
@@ -96,12 +97,11 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         return new AssayRunsView(_protocol, false, errors);
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
-        NavTree ret = super.appendNavTrail(root);
-        ret.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
-        ret.addChild(_protocol.getName() + " Runs");
-
-        return ret;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName() + " Batches", PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getContainer(), _protocol, null));
+        root.addChild(_protocol.getName() + " Runs");
     }
 }

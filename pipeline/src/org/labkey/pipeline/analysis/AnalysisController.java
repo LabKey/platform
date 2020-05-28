@@ -106,6 +106,7 @@ public class AnalysisController extends SpringActionController
     {
         private TaskPipeline _taskPipeline;
 
+        @Override
         public ModelAndView getView(AnalyzeForm analyzeForm, BindException errors)
         {
             try
@@ -126,9 +127,10 @@ public class AnalysisController extends SpringActionController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild(_taskPipeline.getDescription());
+            root.addChild(_taskPipeline.getDescription());
         }
     }
 
@@ -148,6 +150,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(InsertPermission.class)
     public class StartAnalysisAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             try
@@ -172,6 +175,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetFileStatusAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             if (form.getProtocolName() == null || "".equals(form.getProtocolName()))
@@ -211,6 +215,7 @@ public class AnalysisController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class GetSavedProtocolsAction extends MutatingApiAction<AnalyzeForm>
     {
+        @Override
         public ApiResponse execute(AnalyzeForm form, BindException errors)
         {
             PipelineService.FileAnalysisProperties props = PipelineService.get().getFileAnalysisProperties(getContainer(), form.getTaskId(), form.getPath());
@@ -458,9 +463,9 @@ public class AnalysisController extends SpringActionController
         private String _protocolName;
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Protocol: " + _protocolName);
+            root.addChild("Protocol: " + _protocolName);
         }
 
         @Override
@@ -571,9 +576,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal List Tasks");
+            root.addChild("Internal List Tasks");
         }
     }
 
@@ -590,9 +595,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal List Pipelines");
+            root.addChild("Internal List Pipelines");
         }
     }
 
@@ -671,9 +676,9 @@ public class AnalysisController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Internal Details");
+            root.addChild("Internal Details");
         }
     }
 

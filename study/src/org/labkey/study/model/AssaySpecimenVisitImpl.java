@@ -46,6 +46,7 @@ public class AssaySpecimenVisitImpl implements AssaySpecimenVisit
         return _rowId == 0;
     }
 
+    @Override
     public int getAssaySpecimenId()
     {
         return _assaySpecimenId;
@@ -56,6 +57,7 @@ public class AssaySpecimenVisitImpl implements AssaySpecimenVisit
         _assaySpecimenId = assaySpecimenId;
     }
 
+    @Override
     public int getVisitId()
     {
         return _visitId;

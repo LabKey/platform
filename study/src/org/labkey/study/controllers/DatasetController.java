@@ -72,14 +72,16 @@ public class DatasetController extends BaseStudyController
             super(EditDatasetRowForm.class);
         }
 
+        @Override
         protected boolean isInsert()
         {
             return false;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        @Override
+        protected void addExtraNavTrail(NavTree root)
         {
-            return root.addChild("Update Dataset Entry");
+            root.addChild("Update Dataset Entry");
         }
     }
 
@@ -91,20 +93,23 @@ public class DatasetController extends BaseStudyController
             super(EditDatasetRowForm.class);
         }
 
+        @Override
         protected boolean isInsert()
         {
             return true;
         }
 
-        protected NavTree appendExtraNavTrail(NavTree root)
+        @Override
+        protected void addExtraNavTrail(NavTree root)
         {
-            return root.addChild("Insert " + _ds.getLabel());
+            root.addChild("Insert " + _ds.getLabel());
         }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class DatasetAuditHistoryAction extends SimpleViewAction<DatasetAuditHistoryForm>
     {
+        @Override
         public ModelAndView getView(DatasetAuditHistoryForm form, BindException errors)
         {
             int auditRowId = form.getAuditRowId();
@@ -196,32 +201,36 @@ public class DatasetController extends BaseStudyController
             }
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             Study study = getStudyThrowIfNull();
             root.addChild(study.getLabel(), new ActionURL(StudyController.BeginAction.class, getContainer()));
             root.addChild("Audit Log", new ActionURL("audit","begin", getContainer()).addParameter(DataRegion.LAST_FILTER_PARAM,1));
             root.addChild("Dataset Entry Detail");
-            return root;
         }
     }
 
     @RequiresPermission(AdminPermission.class)
     public class BulkDatasetDeleteAction extends FormViewAction<DatasetDeleteForm>
     {
+        @Override
         public ModelAndView getView(DatasetDeleteForm form, boolean reshow, BindException errors)
         {
             return new StudyJspView<>(getStudyRedirectIfNull(), "bulkDatasetDelete.jsp", form, errors);
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            _appendNavTrailDatasetAdmin(root);
-            return root.addChild("Delete Datasets");
+            _addNavTrailDatasetAdmin(root);
+            root.addChild("Delete Datasets");
         }
 
+        @Override
         public void validateCommand(DatasetDeleteForm target, Errors errors) {}
 
+        @Override
         public boolean handlePost(DatasetDeleteForm form, BindException errors)
         {
             int[] datasetIds = form.getDatasetIds();
@@ -256,6 +265,7 @@ public class DatasetController extends BaseStudyController
             return true;
         }
 
+        @Override
         public ActionURL getSuccessURL(DatasetDeleteForm datasetDeleteForm)
         {
             return new ActionURL(StudyController.ManageTypesAction.class, getContainer());

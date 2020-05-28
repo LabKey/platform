@@ -26,6 +26,7 @@ import com.google.gwt.xml.client.Document;
  */
 public abstract class AbstractXMLSavable implements XMLSavable
 {
+    @Override
     public String tagName()
     {
         return XMLUtils.tagName(this);
@@ -36,6 +37,7 @@ public abstract class AbstractXMLSavable implements XMLSavable
         return tagName() + "Ref";
     }
 
+    @Override
     public String pluralTagName()
     {
         return XMLUtils.pluralTagName(this);

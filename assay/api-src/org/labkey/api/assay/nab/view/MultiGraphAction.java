@@ -37,6 +37,7 @@ import java.util.Set;
  */
 public class MultiGraphAction<FormType extends GraphSelectedForm> extends SimpleViewAction<FormType>
 {
+    @Override
     public ModelAndView getView(FormType form, BindException errors) throws Exception
     {
         int[] ids = form.getId();
@@ -76,7 +77,8 @@ public class MultiGraphAction<FormType extends GraphSelectedForm> extends Simple
         return config;
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException();
     }

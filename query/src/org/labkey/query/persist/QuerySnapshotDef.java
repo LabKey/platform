@@ -172,6 +172,7 @@ public class QuerySnapshotDef extends Entity implements Cloneable
         _optionsId = optionsId;
     }
 
+    @Override
     public QuerySnapshotDef clone()
     {
         try

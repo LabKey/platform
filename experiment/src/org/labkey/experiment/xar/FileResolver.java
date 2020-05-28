@@ -223,6 +223,7 @@ public class FileResolver implements Replacer
 
             List<File> filteredFiles = listFiles(dir, new FileFilter()
             {
+                @Override
                 public boolean accept(File f)
                 {
                     try
@@ -390,6 +391,7 @@ public class FileResolver implements Replacer
         }
     }
 
+    @Override
     public String getReplacement(String template) throws XarFormatException
     {
         if (template == null)

@@ -138,6 +138,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema> implements Upd
         var issueIdColumn = wrapColumn(_rootTable.getColumn("IssueId"));
         issueIdColumn.setFk(new RowIdForeignKey(issueIdColumn)
         {
+            @Override
             public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
             {
                 if (displayField == null)
@@ -812,6 +813,7 @@ class NotifyListDisplayColumn extends DataColumn
         _user = curUser;
     }
 
+    @Override
     public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
     {
         Object o = getValue(ctx);

@@ -225,6 +225,7 @@ public final class DomainDescriptor
         return _domainURI + " name=" + name + " project=" + (_project == null ? "null" : _project.getPath()) + " container=" + (_container == null ? "null" : _container.getPath());
     }
 
+    @Override
     public DomainDescriptor clone()
     {
         try
@@ -322,6 +323,7 @@ public final class DomainDescriptor
             setTemplateInfoObject(dd.getTemplateInfo());
         }
 
+        @Override
         public DomainDescriptor build()
         {
             return new DomainDescriptor(

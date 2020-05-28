@@ -53,16 +53,19 @@ public class QueryReport extends AbstractReport
     public static final String QUERY_NAME = "queryName";
     public static final String VIEW_NAME = "viewName";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Data Grid View";
     }
 
+    @Override
     public String getDescriptorType()
     {
         return QueryReportDescriptor.TYPE;
@@ -83,6 +86,7 @@ public class QueryReport extends AbstractReport
         getDescriptor().setProperty(VIEW_NAME, viewName);
     }
 
+    @Override
     public HttpView renderReport(ViewContext context)
     {
         if ("true".equals(context.get(renderParam.reportWebPart.name())))
@@ -198,6 +202,7 @@ public class QueryReport extends AbstractReport
         return "/query/query.png";
     }
 
+    @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
         return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);

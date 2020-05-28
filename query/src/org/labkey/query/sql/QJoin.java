@@ -37,6 +37,7 @@ public class QJoin implements QJoinOrTable
         _on = on;
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         boolean parensLeft = _left instanceof QJoin && _joinType != JoinType.cross;

@@ -35,11 +35,13 @@ public class XarGeneratorSource extends AbstractFileXarSource
         _xmlFile = xarFile;
     }
 
+    @Override
     public ExperimentArchiveDocument getDocument()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public File getLogFile()
     {
         throw new UnsupportedOperationException();

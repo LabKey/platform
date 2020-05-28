@@ -107,6 +107,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
     protected abstract boolean allowEmptyData();
 
+    @Override
     public void importFile(ExpData data, File dataFile, ViewBackgroundInfo info, Logger log, XarContext context) throws ExperimentException
     {
         ExpProtocolApplication sourceApplication = data.getSourceApplication();
@@ -1121,11 +1122,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         return dataMaps;
     }
 
+    @Override
     public void deleteData(ExpData data, Container container, User user)
     {
         OntologyManager.deleteOntologyObjects(container, data.getLSID());
     }
 
+    @Override
     public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();

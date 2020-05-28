@@ -53,7 +53,7 @@ public class InstallSettingsAction extends FormViewAction<FileSettingsForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException();
     }

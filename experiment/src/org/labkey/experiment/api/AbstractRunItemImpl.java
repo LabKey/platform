@@ -67,6 +67,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         _object.setDescription(description);
     }
 
+    @Override
     public List<ExpProtocolApplication> getSuccessorApps()
     {
         if (null == _successorAppList)
@@ -74,6 +75,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return _successorAppList;
     }
 
+    @Override
     public List<ExpRun> getSuccessorRuns()
     {
         if (null == _successorRunIdList)
@@ -119,6 +121,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         }
     }
 
+    @Override
     public ExpProtocol getSourceProtocol()
     {
         ExpProtocolApplication protApp = getSourceApplication();
@@ -129,6 +132,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return null;
     }
 
+    @Override
     @Nullable
     public ExpProtocolApplication getSourceApplication()
     {
@@ -144,6 +148,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         return _sourceApp;
     }
 
+    @Override
     public int getRowId()
     {
         return _object.getRowId();
@@ -154,21 +159,25 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         _object.setRowId(rowId);
     }
 
+    @Override
     public User getCreatedBy()
     {
         return _object.getCreatedBy() == null ? null : UserManager.getUser(_object.getCreatedBy().intValue());
     }
 
+    @Override
     public User getModifiedBy()
     {
         return _object.getModifiedBy() == null ? null : UserManager.getUser(_object.getModifiedBy().intValue());
     }
 
+    @Override
     public Date getModified()
     {
         return _object.getModified();
     }
 
+    @Override
     @Nullable
     public ExpRunImpl getRun()
     {
@@ -180,11 +189,13 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
     }
 
 
+    @Override
     public Integer getRunId()
     {
         return _object.getRunId();
     }
 
+    @Override
     public void setSourceApplication(ExpProtocolApplication app)
     {
         ensureUnlocked();
@@ -200,6 +211,7 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         _successorRunIdList = null;
     }
 
+    @Override
     public void setRun(ExpRun run)
     {
         ensureUnlocked();
@@ -210,23 +222,27 @@ public abstract class AbstractRunItemImpl<Type extends RunItem> extends ExpIdent
         _object.setRunId(run == null ? null : run.getRowId());
     }
 
+    @Override
     public void setCpasType(String type)
     {
         ensureUnlocked();
         _object.setCpasType(type);
     }
 
+    @Override
     public Container getContainer()
     {
         return _object.getContainer();
     }
 
+    @Override
     public void setContainer(Container container)
     {
         ensureUnlocked();
         _object.setContainer(container);
     }
 
+    @Override
     public Date getCreated()
     {
         return _object.getCreated();

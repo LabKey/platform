@@ -91,6 +91,7 @@ public class QQuery extends QExpr
         return getChildOfType(QOrder.class);
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.append("(");
@@ -101,6 +102,7 @@ public class QQuery extends QExpr
         builder.append(")");
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         if (_select == null)

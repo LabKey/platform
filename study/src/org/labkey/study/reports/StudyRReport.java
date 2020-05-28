@@ -45,16 +45,19 @@ public class StudyRReport extends RReport
     public static final String TYPE = "Study.rReport";
     public static final String PARTICIPANT_KEY = "participantId";
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public HttpView renderDataView(ViewContext context)
     {
         return createQueryView(context, getDescriptor());
     }
 
+    @Override
     protected ReportQueryView createQueryView(ViewContext context, ReportDescriptor descriptor)
     {
         final String queryName = descriptor.getProperty(QueryParam.queryName.toString());
@@ -63,6 +66,7 @@ public class StudyRReport extends RReport
         return ReportQueryViewFactory.get().generateQueryView(context, descriptor, queryName, viewName);
     }
 
+    @Override
     public HttpView getRunReportView(ViewContext context) throws Exception
     {
         // Special handling for study R report -- from old StudyRunRReportView
@@ -108,6 +112,7 @@ public class StudyRReport extends RReport
         return null;
     }
 
+    @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
         if (getDescriptor().getReportId() != null)
@@ -117,6 +122,7 @@ public class StudyRReport extends RReport
             return super.getRunReportURL(context);
     }
 
+    @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
         if (canEdit(context.getUser(), context.getContainer()))

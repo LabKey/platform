@@ -117,6 +117,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return domain.getProperties();
     }
 
+    @Override
     public Map<DomainProperty, String> getRunProperties() throws ExperimentException
     {
         if (_runProperties == null)
@@ -129,6 +130,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     /** @return property descriptor to value */
+    @Override
     public Map<DomainProperty, String> getBatchProperties() throws ExperimentException
     {
         if (_uploadSetProperties == null)
@@ -175,6 +177,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _severityLevel = severityLevel;
     }
 
+    @Override
     public String getComments()
     {
         return _comments;
@@ -185,6 +188,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _comments = comments;
     }
 
+    @Override
     public String getName()
     {
         return _name;
@@ -381,12 +385,14 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return emptyMap();
     }
 
+    @Override
     @NotNull
     public ProviderType getProvider()
     {
         return (ProviderType)super.getProvider();
     }
 
+    @Override
     public ActionURL getActionURL()
     {
         return getViewContext().getActionURL();
@@ -419,6 +425,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         }
     }
 
+    @Override
     public String getTargetStudy()
     {
         return _targetStudy;
@@ -521,11 +528,13 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         _successfulUploadComplete = successfulUploadComplete;
     }
 
+    @Override
     public String getUploadAttemptID()
     {
         return _uploadAttemptID;
     }
 
+    @Override
     public void setUploadAttemptID(String uploadAttemptID)
     {
         _uploadAttemptID = uploadAttemptID;
@@ -653,16 +662,19 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _errors;
     }
 
+    @Override
     public TransformResult getTransformResult()
     {
         return _transformResult;
     }
 
+    @Override
     public void setTransformResult(TransformResult transformResult)
     {
         _transformResult = transformResult;
     }
 
+    @Override
     public Integer getReRunId()
     {
         return _reRunId;
@@ -690,6 +702,7 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
         return _reRun;
     }
 
+    @Override
     public void uploadComplete(ExpRun run) throws ExperimentException
     {
         AssayDataCollector collector = getSelectedDataCollector();

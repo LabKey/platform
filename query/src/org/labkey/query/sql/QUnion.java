@@ -36,6 +36,7 @@ public class QUnion extends QExpr
         return _union;
     }
 
+    @Override
     public void appendSource(SourceBuilder builder)
     {
         builder.pushPrefix("(");
@@ -48,6 +49,7 @@ public class QUnion extends QExpr
         builder.append(")");
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         if (_union == null)

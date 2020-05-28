@@ -45,6 +45,7 @@ public class CustomViewWriter extends BaseFolderWriter
     private static final String DEFAULT_DIRECTORY = "views";  // TODO: qviews?
     private VirtualFile _viewDir = null;
 
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.GRID_VIEWS;
@@ -107,6 +108,7 @@ public class CustomViewWriter extends BaseFolderWriter
 
     public static class Factory implements FolderWriterFactory
     {
+        @Override
         public FolderWriter create()
         {
             return new CustomViewWriter();

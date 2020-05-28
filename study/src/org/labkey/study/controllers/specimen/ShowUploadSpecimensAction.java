@@ -47,18 +47,19 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.sql.BatchUpdateException;
-import java.sql.SQLException;
 import java.util.*;
 
 @RequiresPermission(AdminPermission.class)
 public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimensAction.UploadSpecimensForm> 
 {
+    @Override
     public void validateCommand(UploadSpecimensForm form, Errors errors)
     {
         if (StringUtils.trimToNull(form.getTsv()) == null)
             errors.reject(SpringActionController.ERROR_MSG, "Please supply data to upload");
     }
 
+    @Override
     public ModelAndView getView(UploadSpecimensForm form, boolean reshow, BindException errors)
     {
         Container container = getContainer();
@@ -75,6 +76,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         return new JspView<>("/org/labkey/study/view/specimen/uploadSimpleSpecimens.jsp", form, errors);
      }
 
+    @Override
     public boolean handlePost(UploadSpecimensForm form, BindException errors) throws Exception
     {
         Container container = getContainer();
@@ -268,6 +270,7 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         return !errors.hasErrors();
     }
 
+    @Override
     public ActionURL getSuccessURL(UploadSpecimensForm form)
     {
 
@@ -278,7 +281,8 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
             return new ActionURL(ImportCompleteAction.class, getContainer());
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
         Study s = StudyManager.getInstance().getStudy(c);
@@ -286,13 +290,12 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
         root.addChild(s.getLabel(), new ActionURL(StudyController.OverviewAction.class, c));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, c));
         root.addChild("Upload Specimens");
-
-        return root;
     }
 
     @RequiresPermission(AdminPermission.class)
     public static class ImportCompleteAction extends SimpleViewAction
     {
+        @Override
         public ModelAndView getView(Object o, BindException errors)
         {
             ActionURL homeLink = PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
@@ -303,15 +306,14 @@ public class ShowUploadSpecimensAction extends FormViewAction<ShowUploadSpecimen
                     PageFlowUtil.textLink("specimens", samplesLink));
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
             Study study = StudyManager.getInstance().getStudy(getContainer());
 
             root.addChild(study.getLabel(), new ActionURL(StudyController.OverviewAction.class, getContainer()));
             root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
             root.addChild("Sample Import Complete");
-
-            return root;
         }
     }
 

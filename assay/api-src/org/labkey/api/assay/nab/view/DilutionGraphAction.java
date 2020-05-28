@@ -39,6 +39,7 @@ import org.springframework.web.servlet.ModelAndView;
  */
 public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
 {
+    @Override
     public ModelAndView getView(GraphForm form, BindException errors) throws Exception
     {
         if (form.getRowId() == -1)
@@ -94,7 +95,8 @@ public abstract class DilutionGraphAction extends SimpleViewAction<GraphForm>
         }
     }
 
-    public NavTree appendNavTrail(NavTree root)
+    @Override
+    public void addNavTrail(NavTree root)
     {
         throw new UnsupportedOperationException();
     }

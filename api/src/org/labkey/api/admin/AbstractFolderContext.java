@@ -41,6 +41,7 @@ public abstract class AbstractFolderContext extends AbstractImportContext<Folder
     }
 
     // Folder node -- interesting to any top-level writer that needs to set info into folder.xml
+    @Override
     public FolderDocument.Folder getXml() throws ImportException
     {
         return getDocument().getFolder();

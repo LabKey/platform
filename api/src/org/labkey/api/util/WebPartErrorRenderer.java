@@ -27,6 +27,7 @@ class WebPartErrorRenderer extends ErrorRenderer
         super(status, message, x, isStartupFailure);
     }
 
+    @Override
     public void renderStart(PrintWriter out)
     {
         _id = "errorDiv" + System.identityHashCode(this);
@@ -38,6 +39,7 @@ class WebPartErrorRenderer extends ErrorRenderer
         super.renderStart(out);
     }
 
+    @Override
     public void renderEnd(PrintWriter out)
     {
         super.renderEnd(out);

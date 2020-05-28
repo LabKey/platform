@@ -64,6 +64,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         _label = config.label;
     }
 
+    @Override
     public int getCohortId()
     {
         return _cohortId;
@@ -97,6 +98,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         return result;
     }
 
+    @Override
     public CohortImpl getCohort(Container container, User user)
     {
         if (!StudyManager.getInstance().showCohorts(container, user))
@@ -107,6 +109,7 @@ public class SingleCohortFilter extends BaseCohortFilter
             return StudyManager.getInstance().getCohortForRowId(container, user, getCohortId());
     }
 
+    @Override
     public String getDescription(Container container, User user)
     {
         CohortImpl cohort = getCohort(container, user);
@@ -115,6 +118,7 @@ public class SingleCohortFilter extends BaseCohortFilter
         return getType().getTitle() + " is " + cohort.getLabel();
     }
 
+    @Override
     public void addFilterCondition(TableInfo table, Container container, SimpleFilter filter)
     {
         FieldKey fk = getCohortColumn(table, container).getFieldKey();

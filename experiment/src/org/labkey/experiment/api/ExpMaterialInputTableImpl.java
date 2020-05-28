@@ -40,6 +40,7 @@ public class ExpMaterialInputTableImpl extends ExpInputTableImpl<ExpMaterialInpu
         super(name, ExperimentServiceImpl.get().getTinfoMaterialInput(), schema, null, cf);
     }
 
+    @Override
     public MutableColumnInfo createColumn(String alias, Column column)
     {
         switch (column)

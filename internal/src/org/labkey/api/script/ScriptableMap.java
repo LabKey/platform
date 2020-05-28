@@ -104,6 +104,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public Object get(String name, Scriptable start) {
         if (map == null || (reflect && super.has(name, start))) {
             return super.get(name, start);
@@ -111,6 +112,7 @@ public class ScriptableMap extends NativeJavaObject {
         return getInternal(name);
     }
 
+    @Override
     public Object get(int index, Scriptable start) {
         if (map == null) {
             return super.get(index, start);
@@ -126,6 +128,7 @@ public class ScriptableMap extends NativeJavaObject {
         return ScriptUtils.javaToJS(value, getParentScope());
     }
 
+    @Override
     public boolean has(String name, Scriptable start) {
         if (map == null || (reflect && super.has(name, start))) {
             return super.has(name, start);
@@ -134,6 +137,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public boolean has(int index, Scriptable start) {
         if (map == null) {
             return super.has(index, start);
@@ -142,6 +146,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public void put(String name, Scriptable start, Object value) {
         if (map == null || (reflect && super.has(name, start))) {
             super.put(name, start, value);
@@ -150,6 +155,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public void put(int index, Scriptable start, Object value) {
         if (map == null) {
              super.put(index, start, value);
@@ -168,6 +174,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public void delete(String name) {
         if (map != null) {
             try {
@@ -180,6 +187,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public void delete(int index) {
         if (map != null) {
             try {
@@ -192,6 +200,7 @@ public class ScriptableMap extends NativeJavaObject {
         }
     }
 
+    @Override
     public Object[] getIds() {
         if (map == null) {
             return super.getIds();
@@ -206,10 +215,12 @@ public class ScriptableMap extends NativeJavaObject {
         return map.toString();
     }
 
+    @Override
     public Object getDefaultValue(Class typeHint) {
         return toString();
     }
 
+    @Override
     public Object unwrap() {
         return map;
     }
@@ -218,6 +229,7 @@ public class ScriptableMap extends NativeJavaObject {
         return map;
     }
 
+    @Override
     public String getClassName() {
         return CLASSNAME;
     }

@@ -73,6 +73,7 @@ public class SamplesSchema extends AbstractExpSchema
                 return true;
             }
 
+            @Override
             public QuerySchema createSchema(DefaultSchema schema, Module module)
             {
                 return new SamplesSchema(schema);
@@ -113,11 +114,13 @@ public class SamplesSchema extends AbstractExpSchema
         return getSampleSets().isEmpty();
     }
 
+    @Override
     public Set<String> getTableNames()
     {
         return getSampleSets().keySet();
     }
 
+    @Override
     public TableInfo createTable(String name, ContainerFilter cf)
     {
         ExpSampleSet ss = getSampleSets().get(name);

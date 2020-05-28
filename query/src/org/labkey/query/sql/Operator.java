@@ -37,6 +37,7 @@ public enum Operator
     is_not(" IS NOT ", Precedence.comparison, IS_NOT, ResultType.bool),
     between(" BETWEEN ", Precedence.comparison, BETWEEN, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     builder.pushPrefix("");
@@ -60,6 +61,7 @@ public enum Operator
             },
     notBetween(" NOT BETWEEN ", Precedence.comparison, NOT_BETWEEN, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     builder.pushPrefix("");
@@ -85,6 +87,7 @@ public enum Operator
     subtract("-", Precedence.addition, MINUS, ResultType.arg),
     plus("+", Precedence.unary, UNARY_PLUS, ResultType.arg)
             {
+                @Override
                 public String getPrefix()
                 {
                     return "+";
@@ -92,6 +95,7 @@ public enum Operator
             },
     minus("-", Precedence.unary, UNARY_MINUS, ResultType.arg)
             {
+                @Override
                 public String getPrefix()
                 {
                     return "-";
@@ -102,6 +106,7 @@ public enum Operator
     modulo("%", Precedence.multiplication, MODULO, ResultType.arg),
     concat("||", Precedence.addition, CONCAT, ResultType.string)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     ArrayList<SQLFragment> terms = new ArrayList<>();
@@ -122,6 +127,7 @@ public enum Operator
             },
     not(" NOT ", Precedence.not, NOT, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     appendSqlUnary(builder, query, operands);
@@ -189,6 +195,7 @@ public enum Operator
 
     exists(" EXISTS ", Precedence.unary, EXISTS, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     appendSqlUnary(builder, query, operands);
@@ -196,6 +203,7 @@ public enum Operator
             },
     some(" SOME ", Precedence.unary, SOME, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     appendSqlUnary(builder, query, operands);
@@ -203,6 +211,7 @@ public enum Operator
             },
     any(" ANY ", Precedence.unary, ANY, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     appendSqlUnary(builder, query, operands);
@@ -210,6 +219,7 @@ public enum Operator
             },
     all(" ALL ", Precedence.unary, ALL, ResultType.bool)
             {
+                @Override
                 public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
                 {
                     appendSqlUnary(builder, query, operands);

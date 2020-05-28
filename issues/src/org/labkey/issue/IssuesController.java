@@ -289,10 +289,9 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             root.addChild("Issues", getListURL(getContainer()));
-            return root;
         }
     }
 
@@ -365,7 +364,7 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             if (issueDefName == null)
@@ -378,7 +377,6 @@ public class IssuesController extends SpringActionController
                     addParameter(DataRegion.LAST_FILTER_PARAM, "true");
 
             root.addChild(names.pluralName + " List", url);
-            return root;
         }
     }
 
@@ -386,6 +384,7 @@ public class IssuesController extends SpringActionController
     @RequiresPermission(ReadPermission.class)
     public class ExportTsvAction extends SimpleViewAction<QueryForm>
     {
+        @Override
         public ModelAndView getView(QueryForm form, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -408,9 +407,8 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -462,12 +460,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            NavTree nav = new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             if (null != _issue)
-                nav.addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
-            return nav;
+                root.addChild(getSingularEntityName() + " " + _issue.getIssueId() + ": " + StringUtils.trimToEmpty(_issue.getTitle()), getURL());
         }
 
         public ActionURL getURL()
@@ -552,13 +549,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild(names.singularName + " Details");
-
-            return root;
         }
     }
 
@@ -627,13 +622,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild("Insert New " + names.singularName);
-
-            return root;
         }
 
         @Override
@@ -960,7 +953,7 @@ public class IssuesController extends SpringActionController
                         newIssueIds.add(issue.getIssueId());
 
                         // handle attachments, the attachment value is a | delimited array of file names
-                        String attachments = (String)issuesForm.get("attachment");
+                        String attachments = issuesForm.get("attachment");
                         if (!StringUtils.isBlank(attachments))
                         {
                             List<AttachmentFile> attachmentFiles = new ArrayList<>();
@@ -1013,7 +1006,7 @@ public class IssuesController extends SpringActionController
                 Map<Integer, Issue> relatedIssuesToSave = new HashMap<>();
                 for (IssuesForm issuesForm : form.getIssueForms())
                 {
-                    int related = NumberUtils.toInt((String)issuesForm.get("relatedIssue"), -1);
+                    int related = NumberUtils.toInt(issuesForm.get("relatedIssue"), -1);
                     if (related != -1)
                     {
                         // stash everything away so we only have to do one save
@@ -1064,6 +1057,7 @@ public class IssuesController extends SpringActionController
         private IssueListDef _issueListDef;
         private CustomColumnConfiguration _columnConfiguration;
 
+        @Override
         public boolean handlePost(IssuesForm form, BindException errors)
         {
             if (form.getSkipPost())
@@ -1640,12 +1634,10 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Update " + getSingularEntityName() + ": " + StringUtils.trimToEmpty(_issue.getTitle()));
-
-            return root;
         }
     }
 
@@ -1695,13 +1687,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Resolve " + names.singularName);
-
-            return root;
         }
     }
 
@@ -1743,13 +1733,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Close " + names.singularName);
-
-            return root;
         }
     }
 
@@ -1794,13 +1782,11 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             IssueManager.EntryTypeNames names = getEntryTypeNames();
-            new DetailsAction(_issue, getViewContext()).appendNavTrail(root);
+            new DetailsAction(_issue, getViewContext()).addNavTrail(root);
             root.addChild("Reopen " + names.singularName);
-
-            return root;
         }
     }
 
@@ -1838,12 +1824,10 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild("Email preferences");
-
-            return root;
         }
 
         @Override
@@ -1985,16 +1969,14 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic("adminIssues");
 
             String issueDefName = getViewContext().getActionURL().getParameter(IssuesListView.ISSUE_LIST_DEF_NAME);
             IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer(), issueDefName != null ? issueDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME);
-            new ListAction(getViewContext()).appendNavTrail(root);
+            new ListAction(getViewContext()).addNavTrail(root);
             root.addChild(names.pluralName + " Admin Page", new ActionURL(AdminAction.class, getContainer()));
-
-            return root;
         }
 
         @Override
@@ -2132,6 +2114,7 @@ public class IssuesController extends SpringActionController
             super.checkPermissions();
         }
 
+        @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             getPageConfig().setTemplate(PageConfig.Template.None);
@@ -2161,9 +2144,8 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         private ActionURL getUrl()
@@ -2351,15 +2333,13 @@ public class IssuesController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
+        public void addNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
             String issueListDefName = IssueManager.getDefaultIssueListDefName(ctx.getContainer());
             String status = ctx.getActionURL().getParameter("status");
             String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer(), issueListDefName != null ? issueListDefName : IssueListDef.DEFAULT_ISSUE_LIST_NAME).pluralName;
             root.addChild(pluralName + " List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
             root.addChild("Search " + (null != status ? status + " " : "") + pluralName);
-
-            return root;
         }
     }
 

@@ -72,7 +72,7 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
     }
 
     @Override
-    public NavTree appendNavTrail(NavTree root)
+    public void addNavTrail(NavTree root)
     {
         Container c = getContainer();
         ExpRun run = _data.getRun();
@@ -80,12 +80,10 @@ public class AssayResultDetailsAction extends BaseAssayAction<DataDetailsForm>
         ActionURL runListURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(c, _protocol);
         ActionURL resultsURL = PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(c, _protocol, run.getRowId());
 
-        NavTree ret = super.appendNavTrail(root);
-        ret.addChild(_protocol.getName() + " Batches", batchListURL);
-        ret.addChild(_protocol.getName() + " Runs", runListURL);
-        ret.addChild(run.getName() + " Results", resultsURL);
-        ret.addChild(_dataRowId + " Details");
-
-        return ret;
+        super.addNavTrail(root);
+        root.addChild(_protocol.getName() + " Batches", batchListURL);
+        root.addChild(_protocol.getName() + " Runs", runListURL);
+        root.addChild(run.getName() + " Results", resultsURL);
+        root.addChild(_dataRowId + " Details");
     }
 }

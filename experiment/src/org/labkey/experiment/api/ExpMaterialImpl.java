@@ -175,6 +175,7 @@ public class ExpMaterialImpl extends AbstractRunItemImpl<Material> implements Ex
     }
 
     /** Get the ObjectId of the ExpSampleSet that this ExpMaterial belongs to. */
+    @Override
     @Nullable
     public Integer getParentObjectId()
     {

@@ -543,7 +543,7 @@ public interface QueryService
             ret.put("schemaDisplayName", schemaKey.toDisplayString());
             ret.put("schemaName", schemaKey);   // consistent with GetQuerySchemaTreeAction and GetQueryDetailsAction
             ret.put("name", name);
-            ret.put("url", null==url ? null : url.toLocalString(false));
+            ret.put("url", null==url ? null : url.getLocalURIString(false));
             return ret;
         }
     }

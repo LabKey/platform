@@ -44,81 +44,97 @@ public class ExpChildObjectImpl extends ExpObjectImpl
         _objectURI = objectURI;
     }
 
+    @Override
     public Container getContainer()
     {
         return _owner.getContainer();
     }
     
+    @Override
     public void setContainer(Container container)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getLSID()
     {
         return _objectURI;
     }
 
+    @Override
     public void setLSID(Lsid lsid)
     {
         setLSID(lsid == null ? null : lsid.toString());
     }
 
+    @Override
     public void setLSID(String lsid)
     {
         _objectURI = lsid;
     }
     
+    @Override
     public void setName(String name)
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public String getName()
     {
         return null;
     }
 
+    @Override
     protected ExpObject getOwnerObject()
     {
         return _owner;
     }
 
+    @Override
     public int getRowId()
     {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public ActionURL detailsURL()
     {
         return null;
     }
 
+    @Override
     public User getCreatedBy()
     {
         return _parent.getCreatedBy();
     }
 
+    @Override
     public Date getCreated()
     {
         return _parent.getCreated();
     }
 
+    @Override
     public User getModifiedBy()
     {
         return _parent.getModifiedBy();
     }
 
+    @Override
     public Date getModified()
     {
         return _parent.getModified();
     }
 
+    @Override
     public void delete(User user)
     {
         OntologyManager.deleteProperty(_parent.getLSID(), _pd.getPropertyURI(), getContainer(), _pd.getContainer());
     }
 
+    @Override
     public void save(User user)
     {
         throw new UnsupportedOperationException();

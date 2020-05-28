@@ -78,6 +78,7 @@ public class PathMapperImpl implements PathMapper
      * Returns a copy of the path map as strings
      * @return
      */
+    @Override
     @Deprecated //Use getURIPathMap instead
     public Map<String, String> getPathMap()
     {
@@ -134,6 +135,7 @@ public class PathMapperImpl implements PathMapper
         _localIgnoreCase = localIgnoreCase;
     }
 
+    @Override
     public ValidationException getValidationErrors()
     {
         return _validationErrors;
@@ -146,6 +148,7 @@ public class PathMapperImpl implements PathMapper
      * @param path remote path
      * @return local path
      */
+    @Override
     public String remoteToLocal(String path)
     {
         //Use FileUtil to conform file:/ to file:///
@@ -178,6 +181,7 @@ public class PathMapperImpl implements PathMapper
      * @param path remote path
      * @return local path
      */
+    @Override
     public String localToRemote(String path)
     {
         //Use Util to conform file:/ to file:///

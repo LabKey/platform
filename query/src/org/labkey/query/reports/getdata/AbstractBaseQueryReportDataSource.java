@@ -32,6 +32,7 @@ import java.util.Map;
  */
 public abstract class AbstractBaseQueryReportDataSource implements QueryReportDataSource
 {
+    @Override
     public Map<FieldKey, ColumnInfo> getColumnMap(Collection<FieldKey> requiredInputs)
     {
         QueryDefinition sourceQueryDef = getQueryDefinition();

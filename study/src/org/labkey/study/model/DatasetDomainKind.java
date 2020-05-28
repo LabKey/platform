@@ -17,8 +17,6 @@
 package org.labkey.study.model;
 
 import org.apache.commons.beanutils.BeanUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BaseColumnInfo;
 import org.labkey.api.data.ColumnInfo;
@@ -364,10 +362,10 @@ public abstract class DatasetDomainKind extends AbstractDomainKind<DatasetDomain
 
     @Nullable
     @Override
-    public DatasetDomainKindProperties getDomainKindProperties(@NotNull GWTDomain domain, Container container, User user)
+    public DatasetDomainKindProperties getDomainKindProperties(GWTDomain domain, Container container, User user)
     {
-        Dataset ds = getDatasetDefinition(domain.getDomainURI());
-        return new DatasetDomainKindProperties(ds);
+        Dataset ds = domain != null ? getDatasetDefinition(domain.getDomainURI()) : null;
+        return DatasetManager.get().getDatasetDomainKindProperties(container, ds != null ? ds.getDatasetId() : null);
     }
 
     @Override

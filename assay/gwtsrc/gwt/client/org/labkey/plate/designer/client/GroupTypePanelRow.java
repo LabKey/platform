@@ -58,12 +58,14 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
         
         MouseListener hoverListener = new MouseListenerAdapter()
         {
+            @Override
             public void onMouseEnter(Widget sender)
             {
                 DOM.setStyleAttribute(_colorPanel.getElement(), "border", "1px solid black");
                 _view.setHighlightGroup(_group, true);
             }
 
+            @Override
             public void onMouseLeave(Widget sender)
             {
                 DOM.setStyleAttribute(_colorPanel.getElement(), "border", "1px solid white");
@@ -73,6 +75,7 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
 
         ClickListener clickListener = new ClickListener()
         {
+            @Override
             public void onClick(Widget sender)
             {
                 _view.setActiveGroup(_group);
@@ -94,6 +97,7 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
         _deleteButton.setVisible(false);
         _deleteButton.addClickListener(new ClickListener()
         {
+            @Override
             public void onClick(Widget sender)
             {
                 if (Window.confirm("Delete well group \"" + _group.getName() + "\"?"))
@@ -106,10 +110,12 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
         _renameButton.setVisible(false);
         _renameButton.addClickListener(new ClickListener()
         {
+            @Override
             public void onClick(Widget sender)
             {
                 TextBoxDialogBox dialog = new TextBoxDialogBox("Rename Well Group", "Name")
                 {
+                    @Override
                     protected boolean commit(String value)
                     {
                         if (value.length() == 0)
@@ -131,6 +137,7 @@ public class GroupTypePanelRow extends GroupChangeListenerAdapter
         _tableRowElement = parent.getRowFormatter().getElement(row);
     }
 
+    @Override
     public void activeGroupChanged(GWTWellGroup previouslyActive, GWTWellGroup currentlyActive)
     {
         if (_group == currentlyActive)

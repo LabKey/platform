@@ -65,6 +65,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         return designers;
     }
 
+    @Override
     public String getIconPath(Report report)
     {
         String type = report.getType();
@@ -81,6 +82,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         return super.getIconPath(report);
     }
 
+    @Override
     public String getIconCls(Report report)
     {
         String type = report.getType();

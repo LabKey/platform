@@ -67,11 +67,13 @@ public class SchemaXmlWriter implements Writer<List<DatasetDefinition>, ImportCo
             _candidatePropertyURIs.add(pd.getPropertyURI());
     }
 
+    @Override
     public String getDataType()
     {
         return StudyArchiveDataTypes.DATASET_SCHEMA_DEFINITION;
     }
 
+    @Override
     public void write(List<DatasetDefinition> definitions, ImportContext<StudyDocument.Study> ctx, VirtualFile vf) throws IOException
     {
         // Create dataset metadata file

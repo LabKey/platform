@@ -61,6 +61,7 @@ public abstract class NestableQueryView extends QueryView
         _overrideColumns = fieldKeys;
     }
 
+    @Override
     public abstract TableInfo createTable();
 
     public QueryNestingOption getSelectedNestingOption()
@@ -71,6 +72,7 @@ public abstract class NestableQueryView extends QueryView
     /** @return the default sort for the base table (the nested grids) */
     protected abstract Sort getBaseSort();
 
+    @Override
     public DataView createDataView()
     {
         DataRegion rgn = createDataRegion();

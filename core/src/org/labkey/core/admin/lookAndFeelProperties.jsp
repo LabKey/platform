@@ -39,7 +39,7 @@
     Container c = getContainer();
     boolean folder = !c.isRoot() && !c.isProject();
     boolean hasAdminOpsPerm = c.hasPermission(getUser(), AdminOperationsPermission.class);
-    String clearMessage = folder ? "the default format properties" : "all look & feel properties";
+    HtmlString clearMessage = HtmlString.unsafe(folder ? "the default format properties" : "all look & feel properties");
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
     String themeName = laf.getThemeName();
     String siteThemeName = themeName;
@@ -313,7 +313,7 @@
 
     function confirmReset()
     {
-        if (confirm('Are you sure you want to clear <%=text(clearMessage)%>?'))
+        if (confirm('Are you sure you want to clear <%=clearMessage%>?'))
         {
             _form.setClean();
             LABKEY.Utils.postToAction(<%=q(new AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c).toString())%>);

@@ -92,6 +92,7 @@ the vaccine study.
                 Set<Container> writableContainers = ContainerManager.getContainerSet(ContainerManager.getContainerTree(), user, AdminPermission.class);
                 SortedSet<Container> sortedContainers = new TreeSet<>(new Comparator<Container>()
                 {
+                    @Override
                     public int compare(Container o1, Container o2)
                     {
                         return o1.getPath().compareTo(o2.getPath());

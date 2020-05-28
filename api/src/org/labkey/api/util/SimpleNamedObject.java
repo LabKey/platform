@@ -32,16 +32,19 @@ public class SimpleNamedObject extends Pair<String, Object> implements NamedObje
         _defaultValue = defaultValue;
     }
 
+    @Override
     public String getName()
     {
         return getKey();
     }
 
+    @Override
     public Object getObject()
     {
         return getValue();
     }
 
+    @Override
     public String getDefaultValue()
     {
         return _defaultValue;

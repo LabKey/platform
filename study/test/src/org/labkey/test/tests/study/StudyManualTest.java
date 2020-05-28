@@ -38,6 +38,7 @@ public abstract class StudyManualTest extends StudyTest
         return BrowserType.CHROME;
     }
 
+    @Override
     protected void doCreateSteps()
     {
         createStudyManually();

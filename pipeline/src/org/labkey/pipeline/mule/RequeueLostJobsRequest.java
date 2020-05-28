@@ -50,6 +50,7 @@ public class RequeueLostJobsRequest implements StatusRequest
         _hostName = hostName;
     }
 
+    @Override
     public void performRequest()
     {
         if (PipelineService.get().getPipelineQueue().isLocal())
@@ -62,6 +63,7 @@ public class RequeueLostJobsRequest implements StatusRequest
         // event
         new Thread()
         {
+            @Override
             public void run()
             {
                 for (String location : _locations)

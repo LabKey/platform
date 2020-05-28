@@ -3,22 +3,6 @@
     <!-- Inherit the core Web Toolkit stuff.                  -->
     <inherits name='com.google.gwt.user.User'/>
     <inherits name="com.google.gwt.http.HTTP"/>
-    <inherits name='com.sencha.gxt.ui.GXT'/>
-    <inherits name="com.allen_sauer.gwt.dnd.gwt-dnd"/>
-
-    <!-- Manage GXT permutations. -->
-<!--
-    <collapse-property name="gxt.device" values="*" />
-    <collapse-property name="gxt.theme" values="*" />
-
-    &lt;!&ndash; group modern browsers &ndash;&gt;
-    <collapse-property name="gxt.user.agent" values="air, safari*, chrome*, gecko*, ie11" />
-    <collapse-property name="user.agent" values="safari*, gecko*" />
-
-    &lt;!&ndash; group ie &ndash;&gt;
-    <collapse-property name="gxt.user.agent" values="ie8, ie9, ie10" />
-    <collapse-property name="user.agent" values="ie*" />
--->
 
     <!-- build a single permutation -->
     <collapse-all-properties/>

@@ -145,6 +145,7 @@ public class ExperimentRunListView extends QueryView
         return getRunTable().getExperiment();
     }
 
+    @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         super.populateButtonBar(view, bar);
@@ -275,6 +276,7 @@ public class ExperimentRunListView extends QueryView
         return result;
     }
 
+    @Override
     protected DataRegion createDataRegion()
     {
         DataRegion result = super.createDataRegion();
@@ -293,6 +295,7 @@ public class ExperimentRunListView extends QueryView
         return result;
     }
 
+    @Override
     protected ActionURL urlFor(QueryAction action)
     {
         switch (action)

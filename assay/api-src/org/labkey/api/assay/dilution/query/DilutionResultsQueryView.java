@@ -135,6 +135,7 @@ public abstract class DilutionResultsQueryView extends ResultsQueryView
 
         rgn.addDisplayColumn(0, new SimpleDisplayColumn()
         {
+            @Override
             public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
             {
                 Object runId = ctx.getRow().get(DilutionProviderSchema.RUN_ID_COLUMN_NAME);

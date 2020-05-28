@@ -25,6 +25,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.apache.xmlbeans.XmlException;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.File;
@@ -51,9 +52,15 @@ public abstract class AbstractFileXarSource extends XarSource
 
     public AbstractFileXarSource(String description, Container container, User user)
     {
-        super(description, container, user);
+        this(description, container, user, null);
     }
 
+    public AbstractFileXarSource(String description, Container container, User user, @Nullable PipelineJob job)
+    {
+        super(description, container, user, job);
+    }
+
+    @Override
     public ExperimentArchiveDocument getDocument() throws XmlException, IOException
     {
         FileInputStream fIn = null;
@@ -79,21 +86,25 @@ public abstract class AbstractFileXarSource extends XarSource
         }
     }
 
+    @Override
     public File getRoot()
     {
         return getXmlFile().getParentFile();
     }
 
+    @Override
     public Path getRootPath()
     {
         return null != getRoot() ? getRoot().toPath() : null;
     }
 
+    @Override
     public boolean shouldIgnoreDataFiles()
     {
         return false;
     }
 
+    @Override
     public String canonicalizeDataFileURL(String dataFileURL)
     {
         Path xarDirectory = getRootPath();

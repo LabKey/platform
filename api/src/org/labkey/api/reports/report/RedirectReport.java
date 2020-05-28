@@ -43,6 +43,7 @@ public abstract class RedirectReport extends AbstractReport
     {
     }
 
+    @Override
     public HttpView renderReport(ViewContext context)
     {
         String url = getUrl(context.getContainer());

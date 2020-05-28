@@ -22,9 +22,7 @@ core-renderer-R8.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p
 ehcache-core-2.6.8.jar|Ehcache|2.6.8|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
 fop-2.3.jar|Formatting Objects Processor (FOP)|2.3|{link:Apache|http://xmlgraphics.apache.org/fop/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Used to export SVG visualizations to image and PDF formats
 guava-24.0-jre.jar|Guava: Google Core Libraries for Java|17.0|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
-gwt-dnd-3.3.4.jar|Drag-and-Drop Library for Google Web-Toolkit|3.2.0|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
 gwt-servlet-2.8.2.jar|Server Support for Google Web Toolkit|2.8.2|{link:Google|http://code.google.com/webtoolkit/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Support for rich web apps
-gxt-4.0.3.jar||4.0.3|||jeckels|Support for rich web apps
 httpclient-4.5.3.jar|Apache HTTP Client|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers
 httpcore-4.4.6.jar|Apache HTTP Core|4.4.6|{link:Apache|http://hc.apache.org/httpcomponents-core-ga/index.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP core library, HttpClient dependency
 httpmime-4.5.3.jar|Apache HTTP Mime|4.5.3|{link:Apache|http://hc.apache.org/httpcomponents-client-ga}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|HTTP client for requests of remote servers

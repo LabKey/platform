@@ -348,39 +348,57 @@ public class Table
     enum Getter
     {
         STRING(String.class) {
+            @Override
             String getObject(ResultSet rs, int i) throws SQLException { return rs.getString(i); }
+            @Override
             String getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getString(columnLabel); }
         },
         INTEGER(Integer.class) {
+            @Override
             Integer getObject(ResultSet rs, int i) throws SQLException { int n = rs.getInt(i); return rs.wasNull() ? null : n ; }
+            @Override
             Integer getObject(ResultSet rs, String columnLabel) throws SQLException { int n = rs.getInt(columnLabel); return rs.wasNull() ? null : n ; }
         },
         DOUBLE(Double.class) {
+            @Override
             Double getObject(ResultSet rs, int i) throws SQLException { double d = rs.getDouble(i); return rs.wasNull() ? null : d ; }
+            @Override
             Double getObject(ResultSet rs, String columnLabel) throws SQLException { double d = rs.getDouble(columnLabel); return rs.wasNull() ? null : d ; }
         },
         BOOLEAN(Boolean.class) {
+            @Override
             Boolean getObject(ResultSet rs, int i) throws SQLException { boolean f = rs.getBoolean(i); return rs.wasNull() ? null : f ; }
+            @Override
             Boolean getObject(ResultSet rs, String columnLabel) throws SQLException { boolean f = rs.getBoolean(columnLabel); return rs.wasNull() ? null : f ; }
         },
         LONG(Long.class) {
+            @Override
             Long getObject(ResultSet rs, int i) throws SQLException { long l = rs.getLong(i); return rs.wasNull() ? null : l; }
+            @Override
             Long getObject(ResultSet rs, String columnLabel) throws SQLException { long l = rs.getLong(columnLabel); return rs.wasNull() ? null : l; }
         },
         UTIL_DATE(Date.class) {
+            @Override
             Date getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }
+            @Override
             Date getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
         },
         BYTES(byte[].class) {
+            @Override
             Object getObject(ResultSet rs, int i) throws SQLException { return rs.getBytes(i); }
+            @Override
             Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getBytes(columnLabel); }
         },
         TIMESTAMP(Timestamp.class) {
+            @Override
             Object getObject(ResultSet rs, int i) throws SQLException { return rs.getTimestamp(i); }
+            @Override
             Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getTimestamp(columnLabel); }
         },
         OBJECT(Object.class) {
+            @Override
             Object getObject(ResultSet rs, int i) throws SQLException { return rs.getObject(i); }
+            @Override
             Object getObject(ResultSet rs, String columnLabel) throws SQLException { return rs.getObject(columnLabel); }
         };
 

@@ -31,6 +31,7 @@ public class WellGroupPropertyPanel extends PropertyPanel implements GroupChange
         activeGroupChanged(null, null);
     }
 
+    @Override
     public void activeGroupChanged(GWTWellGroup previouslyActive, GWTWellGroup currentlyActive)
     {
         if (previouslyActive != null)
@@ -47,14 +48,17 @@ public class WellGroupPropertyPanel extends PropertyPanel implements GroupChange
         }
     }
 
+    @Override
     public void activeGroupTypeChanged(String type)
     {
     }
 
+    @Override
     public void groupAdded(GWTWellGroup group)
     {
     }
 
+    @Override
     public void groupRemoved(GWTWellGroup group)
     {
     }

@@ -42,6 +42,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     DisplayColumnFactory DEFAULT_FACTORY = new DisplayColumnFactory()
     {
+        @Override
         public DisplayColumn createRenderer(ColumnInfo colInfo)
         {
             if (isUserId(colInfo))
@@ -73,7 +74,7 @@ public interface ColumnInfo extends ColumnRenderProperties
             if (col.getFk() instanceof PdLookupForeignKey)
             {
                 PdLookupForeignKey lfk = (PdLookupForeignKey)col.getFk();
-                if ("core".equals(lfk.getLookupSchemaName()) && "users".equals(lfk.getLookupTableName()))
+                if ("core".equalsIgnoreCase(lfk.getLookupSchemaName()) && ("siteusers".equalsIgnoreCase(lfk.getLookupTableName()) || "users".equalsIgnoreCase(lfk.getLookupTableName())))
                     return true;
             }
             return false;
@@ -193,12 +194,16 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     SQLFragment getVersionUpdateExpression();
 
+    @Override
     String getInputType();
 
+    @Override
     int getInputLength();
 
+    @Override
     int getInputRows();
 
+    @Override
     boolean isAutoIncrement();
 
     boolean isReadOnly();
@@ -240,6 +245,7 @@ public interface ColumnInfo extends ColumnRenderProperties
         return null != getParentTable() && getParentTable().getSqlDialect().isSortableDataType(getSqlTypeName());
     }
 
+    @Override
     @NotNull JdbcType getJdbcType();
 
     ForeignKey getFk();
@@ -279,6 +285,7 @@ public interface ColumnInfo extends ColumnRenderProperties
 
     DefaultValueType getDefaultValueType();
 
+    @Override
     boolean isLookup();
 
     boolean hasDbSequence();

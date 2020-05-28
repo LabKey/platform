@@ -42,6 +42,7 @@ public class ExpMaterialRunInputImpl extends ExpRunInputImpl<MaterialInput> impl
         super(input);
     }
     
+    @Override
     public ExpMaterialImpl getMaterial()
     {
         return ExperimentServiceImpl.get().getExpMaterial(_input.getMaterialId());

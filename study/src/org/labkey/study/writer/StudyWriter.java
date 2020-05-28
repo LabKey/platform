@@ -34,11 +34,13 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
 {
     private static final Logger LOG = Logger.getLogger(StudyWriter.class);
 
+    @Override
     public String getDataType()
     {
         return null;
     }
 
+    @Override
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
         LOG.info("Exporting study to " + vf.getLocation());

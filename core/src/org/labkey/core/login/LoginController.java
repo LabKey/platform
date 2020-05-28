@@ -171,11 +171,10 @@ public class LoginController extends SpringActionController
     public static class LoginUrlsImpl implements LoginUrls
     {
         @Override
-        public NavTree appendAuthenticationNavTrail(NavTree root)
+        public void addAuthenticationNavTrail(NavTree root)
         {
             root.addChild("Admin Console", AdminController.getShowAdminURL());
             root.addChild("Authentication", getConfigureURL());
-            return root;
         }
 
         @Override
@@ -382,6 +381,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     public class RegisterAction extends SimpleViewAction<RegisterForm>
     {
+        @Override
         public ModelAndView getView(RegisterForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -404,9 +404,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -415,6 +414,7 @@ public class LoginController extends SpringActionController
     @IgnoresTermsOfUse
     public class SuccessAction extends SimpleViewAction<Object>
     {
+        @Override
         public ModelAndView getView(Object form, BindException errors)
         {
             PageConfig config = getPageConfig();
@@ -426,9 +426,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -599,6 +598,7 @@ public class LoginController extends SpringActionController
     @AllowedDuringUpgrade
     public class LoginAction extends SimpleViewAction<LoginForm>
     {
+        @Override
         public ModelAndView getView(LoginForm form, BindException errors)
         {
             ModelAndView redirectView = redirectIfLoggedIn(form);
@@ -614,9 +614,9 @@ public class LoginController extends SpringActionController
             return showLogin(form, errors, request, getPageConfig());
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1240,9 +1240,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1551,9 +1550,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public final NavTree appendNavTrail(NavTree root)
+        public final void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -1655,9 +1653,8 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
 
         protected NamedObjectList getNonPasswordInputs(SetPasswordForm form)
@@ -2033,7 +2030,7 @@ public class LoginController extends SpringActionController
         @Override
         protected String getMessage(SetPasswordForm form)
         {
-            return null != form.getMessage() ? form.getMessage() : null;
+            return form.getMessage();
         }
 
         @Override
@@ -2206,11 +2203,13 @@ public class LoginController extends SpringActionController
     {
         private HttpView _finishView = null;
 
+        @Override
         public void validateCommand(LoginForm form, Errors errors)
         {
             // All validation is handled in attemptReset()
         }
 
+        @Override
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors)
         {
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
@@ -2233,6 +2232,7 @@ public class LoginController extends SpringActionController
             return view;
         }
 
+        @Override
         public boolean handlePost(LoginForm form, BindException errors)
         {
             Pair<Boolean, String> pair = attemptReset(form.getEmail(), form.getProvider());
@@ -2245,14 +2245,16 @@ public class LoginController extends SpringActionController
             return false;
         }
 
+        @Override
         public ActionURL getSuccessURL(LoginForm loginForm)
         {
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return root.addChild("Reset Password");
+            root.addChild("Reset Password");
         }
     }
 
@@ -2261,6 +2263,7 @@ public class LoginController extends SpringActionController
     @RequiresLogin
     public class CreateTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             URLHelper returnUrl = form.getValidReturnUrl();
@@ -2281,9 +2284,9 @@ public class LoginController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2294,6 +2297,7 @@ public class LoginController extends SpringActionController
     @CSRF(CSRF.Method.NONE)
     public class VerifyTokenAction extends SimpleViewAction<TokenAuthenticationForm>
     {
+        @Override
         public ModelAndView getView(TokenAuthenticationForm form, BindException errors) throws Exception
         {
             String message = null;
@@ -2335,9 +2339,9 @@ public class LoginController extends SpringActionController
             return null;
         }
 
-        public NavTree appendNavTrail(NavTree root)
+        @Override
+        public void addNavTrail(NavTree root)
         {
-            return null;
         }
     }
 
@@ -2348,6 +2352,7 @@ public class LoginController extends SpringActionController
     // where the caller has a secret (the authentication token).
     public class InvalidateTokenAction extends SimpleRedirectAction<TokenAuthenticationForm>
     {
+        @Override
         public @Nullable URLHelper getRedirectURL(TokenAuthenticationForm form)
         {
             if (null != form.getLabkeyToken())
@@ -2392,10 +2397,10 @@ public class LoginController extends SpringActionController
         }
 
         @Override
-        public NavTree appendNavTrail(NavTree root)
+        public void addNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("authenticationModule"));
-            return getUrls().appendAuthenticationNavTrail(root);
+            getUrls().addAuthenticationNavTrail(root);
         }
     }
 

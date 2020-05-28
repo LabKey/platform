@@ -33,6 +33,10 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.util.element.Input" %>
+<%@ page import="org.labkey.api.util.element.Select" %>
+<%@ page import="org.labkey.api.util.element.Option" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -83,6 +87,14 @@
             $("#cancelSubmitBtn").on("click", function() {
                 $('#lk-utils-modal').modal('hide');
             });
+        };
+
+        createPlateTemplate = function(){
+
+            let template = document.querySelector('#plate_template');
+            if (template){
+                window.location = template.value;
+            }
         };
 
     })(jQuery);
@@ -194,36 +206,49 @@
 <%
     if (isAssayDesigner || c.hasPermission(getUser(), InsertPermission.class))
     {
-%>
-    <br/>
-    <h4>Create New Plate Templates</h4>
-    <% for (PlateTypeHandler handler : PlateManager.get().getPlateTypeHandlers())
-    {
-        for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
+        List<Option> templates = new ArrayList<>();
+        for (PlateTypeHandler handler : PlateManager.get().getPlateTypeHandlers())
         {
-            int rows = size.getKey();
-            int cols = size.getValue();
-            int wellCount = rows * cols;
-            String sizeDesc = wellCount + " well (" + rows + "x" + cols + ") ";
-            ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
-            designerURL.addParameter("rowCount", rows);
-            designerURL.addParameter("colCount", cols);
-            designerURL.addParameter("assayType", handler.getAssayType());
-            List<String> types = handler.getTemplateTypes(size);
-            if (types == null || types.isEmpty())
+            for (Pair<Integer, Integer> size : handler.getSupportedPlateSizes())
             {
-        %>
-                <%= link("new " + sizeDesc + handler.getAssayType() + " template", designerURL)%><br/>
-        <%
+                int rows = size.getKey();
+                int cols = size.getValue();
+                int wellCount = rows * cols;
+                String sizeDesc = wellCount + " well (" + rows + "x" + cols + ") ";
+                ActionURL designerURL = new ActionURL(PlateController.DesignerAction.class, c);
+                designerURL.addParameter("rowCount", rows);
+                designerURL.addParameter("colCount", cols);
+                designerURL.addParameter("assayType", handler.getAssayType());
+                List<String> types = handler.getTemplateTypes(size);
+                if (types == null || types.isEmpty())
+                {
+                    templates.add(new Option.OptionBuilder()
+                            .label("new " + sizeDesc + handler.getAssayType() + " template")
+                            .value(designerURL.toString())
+                            .build());
+                }
+                for (String template : types)
+                {
+                    designerURL.replaceParameter("templateType", template);
+                    templates.add(new Option.OptionBuilder()
+                            .label("new " + sizeDesc + handler.getAssayType() + " " + template + " template")
+                            .value(designerURL.toString())
+                            .build());
+                }
             }
-            for (String template : types)
-            {
-                designerURL.replaceParameter("templateType", template);
-            %>
-                <%= link("new " + sizeDesc + handler.getAssayType() + " " + template + " template", designerURL)%><br/>
-        <%  }
         }
-    }%>
+%>
+        <br/>
+        <h4>Create New Plate Template</h4>
+        <labkey:form method="POST" layout="inline" id="qc_form">
+            <%= new Select.SelectBuilder().name("template").id("plate_template")
+                    .layout(Input.Layout.HORIZONTAL)
+                    .required(true)
+                    .formGroup(true)
+                    .addOptions(templates)
+            %>
+            <labkey:button text="create" submit="false" onclick="createPlateTemplate();" id="create-btn"/>
+        </labkey:form>
 <%
     }
 %>

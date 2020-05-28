@@ -39,16 +39,19 @@ import java.util.List;
 */
 public class FolderListImporter implements FolderImporter
 {
+    @Override
     public String getDataType()
     {
         return FolderArchiveDataTypes.LISTS;
     }
 
+    @Override
     public String getDescription()
     {
         return getDataType().toLowerCase();
     }
 
+    @Override
     public void process(PipelineJob job, ImportContext ctx, VirtualFile root) throws Exception
     {
         if (isValidForImportArchive(ctx))
@@ -71,6 +74,7 @@ public class FolderListImporter implements FolderImporter
         }
     }
 
+    @Override
     @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root)
     {
@@ -85,6 +89,7 @@ public class FolderListImporter implements FolderImporter
 
     public static class Factory extends AbstractFolderImportFactory
     {
+        @Override
         public FolderImporter create()
         {
             return new FolderListImporter();

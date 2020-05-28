@@ -36,11 +36,13 @@ public class LinkReport extends BaseRedirectReport
 {
     public static final String TYPE = ReportService.LINK_REPORT_TYPE;
 
+    @Override
     public String getType()
     {
         return TYPE;
     }
 
+    @Override
     public String getTypeDescription()
     {
         return "Link Report";

@@ -60,12 +60,14 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
         _mutable = true;
     }
 
+    @Override
     public void lock()
     {
         _mutable = false;
     }
 
 
+    @Override
     public SpecimenRequestActor createMutable()
     {
         try
@@ -81,6 +83,7 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
     }
 
 
+    @Override
     public Container getContainer()
     {
         return _container;
@@ -103,6 +106,7 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
         _label = label;
     }
 
+    @Override
     public Object getPrimaryKey()
     {
         return getRowId();
@@ -141,12 +145,14 @@ public class SpecimenRequestActor extends DefaultActor<SpecimenRequestActor>
         _perSite = perSite;
     }
 
+    @Override
     public String getGroupName()
     {
         return getLabel();
     }
 
 
+    @Override
     protected TableInfo getTableInfo()
     {
         return StudySchema.getInstance().getTableInfoSampleRequestActor();

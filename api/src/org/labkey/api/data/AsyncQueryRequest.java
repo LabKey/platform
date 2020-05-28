@@ -99,6 +99,7 @@ public class AsyncQueryRequest<T>
 
         Runnable runnable = new Runnable()
         {
+            @Override
             public void run()
             {
                 if (current != null)

@@ -22,6 +22,7 @@ public class QPartitionBy extends QExprList
         super();
     }
 
+    @Override
     public void appendSql(SqlBuilder builder, Query query)
     {
         builder.append("OVER(");

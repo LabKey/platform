@@ -87,6 +87,7 @@ public class VocabularyDomainKind extends BaseAbstractDomainKind
         return reservedProperties;
     }
 
+    @Override
     public boolean canEditDefinition(User user, Domain domain)
     {
         return domain.getContainer().hasPermission(user, DesignVocabularyPermission.class);

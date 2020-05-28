@@ -31,11 +31,13 @@ public class SQLTableInfo extends AbstractTableInfo implements ContainerFilterab
         super(schema, name);
     }
 
+    @Override
     protected boolean isCaseSensitive()
     {
         return true;
     }
 
+    @Override
     @NotNull
     public SQLFragment getFromSQL()
     {

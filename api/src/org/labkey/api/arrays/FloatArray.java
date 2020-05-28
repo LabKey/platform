@@ -105,7 +105,8 @@ public class FloatArray
     {
 		return new FloatArray(a)
         {
-			public void add(float f)
+			@Override
+            public void add(float f)
 				{
 				throw new java.lang.UnsupportedOperationException();
 				}

@@ -289,6 +289,7 @@ public class ParticipantGroupController extends BaseStudyController
     @RequiresPermission(ReadPermission.class)
     public class GetParticipantGroupsWithLiveFilters extends ReadOnlyApiAction
     {
+        @Override
         public ApiResponse execute(Object form, BindException errors)
         {
             Container c = getContainer();
@@ -1308,51 +1309,61 @@ public class ParticipantGroupController extends BaseStudyController
             _categoryType = categoryType;
         }
 
+        @Override
         public String getCategoryLabel()
         {
             return _categoryLabel;
         }
 
+        @Override
         public void setCategoryLabel(String categoryLabel)
         {
             _categoryLabel = categoryLabel;
         }
 
+        @Override
         public String[] getParticipantIds()
         {
             return _participantIds;
         }
 
+        @Override
         public void setParticipantIds(String[] participantIds)
         {
             _participantIds = participantIds;
         }
 
+        @Override
         public String getDescription()
         {
             return _description;
         }
 
+        @Override
         public void setDescription(String description)
         {
             _description = description;
         }
 
+        @Override
         public String getFilters()
         {
             return _filters;
         }
 
+        @Override
         public void setFilters(String filters)
         {
             _filters = filters;
         }
 
+        @Override
         public void setCategoryId(int id)
         {
             _categoryId = id;
         }
 
+        @Override
         public int getCategoryId(){
             return _categoryId;
         }

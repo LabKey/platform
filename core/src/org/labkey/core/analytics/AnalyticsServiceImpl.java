@@ -213,6 +213,7 @@ public class AnalyticsServiceImpl implements AnalyticsService
         }
     }
 
+    @Override
     public String getTrackingScript(ViewContext context)
     {
         if (!showTrackingScript(context))

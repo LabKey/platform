@@ -60,6 +60,7 @@ public class ImageButton extends ButtonBase implements ClickListener
 
         addKeyPressHandler(new KeyPressHandler()
         {
+            @Override
             public void onKeyPress(KeyPressEvent event)
             {
                 if (event.getCharCode() == ' ' && !event.isAnyModifierKeyDown())
@@ -74,6 +75,7 @@ public class ImageButton extends ButtonBase implements ClickListener
 
         super.addClickListener(new ClickListener()
         {
+            @Override
             public void onClick(Widget sender)
             {
                 if (isEnabled())
@@ -82,6 +84,7 @@ public class ImageButton extends ButtonBase implements ClickListener
         });
         super.addClickHandler(new ClickHandler()
         {
+            @Override
             public void onClick(ClickEvent event)
             {
                 if (isEnabled())
@@ -101,6 +104,7 @@ public class ImageButton extends ButtonBase implements ClickListener
         _clickHandlers.add(handler);
         return new HandlerRegistration()
         {
+            @Override
             public void removeHandler()
             {
                 _clickHandlers.remove(handler);
@@ -108,16 +112,19 @@ public class ImageButton extends ButtonBase implements ClickListener
         };
     }
 
+    @Override
     public void addClickListener(ClickListener listener)
     {
         _clickListeners.add(listener);
     }
 
+    @Override
     public void removeClickListener(ClickListener listener)
     {
         _clickListeners.remove(listener);
     }
     
+    @Override
     public String getText()
     {
         return _text;
@@ -130,6 +137,7 @@ public class ImageButton extends ButtonBase implements ClickListener
                 + "\"><span>" + _text + "</span></a>");
     }
 
+    @Override
     public void setText(String text)
     {
         if (_text.equals(text))
@@ -139,6 +147,7 @@ public class ImageButton extends ButtonBase implements ClickListener
         refreshState();
     }
 
+    @Override
     public void setEnabled(boolean enabled)
     {
         super.setEnabled(enabled);
@@ -146,6 +155,7 @@ public class ImageButton extends ButtonBase implements ClickListener
     }
 
     /** to make life simple, just override onClick instead of registering a listener */
+    @Override
     public void onClick(Widget sender)
     {
     }

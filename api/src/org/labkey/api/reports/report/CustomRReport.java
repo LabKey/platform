@@ -45,16 +45,19 @@ public abstract class CustomRReport extends RReport
     protected abstract QueryView getQueryView(ViewContext context) throws Exception;
     protected abstract boolean hasRequiredParams(ViewContext context);
 
+    @Override
     public String getType()
     {
         return _type;
     }
 
+    @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
         return null; //no editing from manage page
     }
 
+    @Override
     protected QueryView createQueryView(ViewContext context, ReportDescriptor descriptor) throws Exception
     {
         QueryView view = getQueryView(context);
@@ -69,12 +72,14 @@ public abstract class CustomRReport extends RReport
         return view;
     }
 
+    @Override
     public ActionURL getDownloadDataURL(ViewContext context)
     {
         ActionURL url = super.getDownloadDataURL(context);
         return hasRequiredParams(context) ? addForwardParams(url, context) : null;
     }
 
+    @Override
     public HttpView renderDataView(ViewContext context) throws Exception
     {
         QueryView view = createQueryView(context, getDescriptor());
@@ -83,6 +88,7 @@ public abstract class CustomRReport extends RReport
         return view;
     }
 
+    @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
         ActionURL url = super.getRunReportURL(context);

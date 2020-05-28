@@ -69,6 +69,7 @@ public class HeartBeat
             ContextListener.addShutdownListener(this);
         }
 
+        @Override
         public void run()
         {
             while (!_shutdown)
@@ -93,12 +94,14 @@ public class HeartBeat
             //_log.debug("shutdown heartbeat");
         }
 
+        @Override
         public void shutdownPre()
         {
             _shutdown = true;
             interrupt();
         }
 
+        @Override
         public void shutdownStarted()
         {
         }
