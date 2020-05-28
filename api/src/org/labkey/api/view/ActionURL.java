@@ -194,17 +194,24 @@ public class ActionURL extends URLHelper implements Cloneable
         setScheme(request.getScheme());
     }
 
+    /** @return just the controller-action.view?parameters#fragment part of the URL, omitting the server name, context path, and container path */
+    public String toContainerRelativeURL()
+    {
+        StringBuilder result = new StringBuilder(toPathStringNew(Path.emptyPath, _controller, _action, Path.emptyPath));
+        appendParamsAndFragment(result, false);
+        return result.toString();
+    }
 
-    private String toPathString(Path contextPath, String controller, String action, Path extraPath, boolean encode)
+    private String toPathString(Path contextPath, String controller, String action, Path extraPath)
     {
         if (useContainerRelativeURL())
-            return toPathStringNew(contextPath, controller, action, extraPath, encode);
+            return toPathStringNew(contextPath, controller, action, extraPath);
         else
-            return toPathStringOld(contextPath, controller, action, extraPath, encode);
+            return toPathStringOld(contextPath, controller, action, extraPath);
     }
 
     /** Generates in the format of /contextPath/controller/containerPath/action.view */
-    private static String toPathStringOld(Path contextPath, String controller, String action, Path extraPath, boolean encode)
+    private static String toPathStringOld(Path contextPath, String controller, String action, Path extraPath)
     {
         Path path = contextPath.append(controller).append(extraPath);
         if (null != action)
@@ -213,11 +220,11 @@ public class ActionURL extends URLHelper implements Cloneable
                 action = action + ".view";
             path = path.append(action, false);
         }
-        return encode ? path.encode() : path.toString();
+        return path.encode();
     }
 
     /** Generates in the format of /contextPath/containerPath/controller-action.view */
-    private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
+    private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath)
     {
         Path path = contextPath.append(extraPath);
         if (null != action && null != pageFlow)
@@ -225,7 +232,7 @@ public class ActionURL extends URLHelper implements Cloneable
             action = pageFlow + "-" + action + (-1 == action.indexOf('.') ? ".view" : "");
             path = path.append(action, false);
         }
-        return encode ? path.encode() : path.toString();
+        return path.encode();
     }
 
 
@@ -564,9 +571,9 @@ public class ActionURL extends URLHelper implements Cloneable
     
 
     @Override
-    public String getPath(boolean asForward)
+    public String getPath()
     {
-        return toPathString(_contextPath, _controller, _action, _path, !asForward);
+        return toPathString(_contextPath, _controller, _action, _path);
     }
 
 
