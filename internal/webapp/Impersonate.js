@@ -163,7 +163,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     getPanel: function(){
         var instructions = LABKEY.Security.currentUser.isRootAdmin ?
             "As a site or application administrator, you can impersonate any site or project group." :
-            "As a project administrator, you can impersonate any project group in within this project. While impersonating you will be restricted to this project.";
+            "As a project administrator, you can impersonate any project group in this project or any site group in which you're member. While impersonating you will be restricted to this project.";
 
         var divContainer = Ext4.create('Ext.container.Container', {
             html: "<div>" + instructions + "<br><br>Select a group from the list below and click the 'Impersonate' button</div>",
