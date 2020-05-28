@@ -1,19 +1,12 @@
 package org.labkey.study.query;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.study.StudySchema;
 
 public class VisitMapTable extends BaseStudyTable
@@ -48,22 +41,5 @@ public class VisitMapTable extends BaseStudyTable
             }
         });
         addColumn(datasetLookupCol);
-    }
-
-    @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
-    {
-        return getContainer().hasPermission(user, perm);
-    }
-
-    static class VisitMapService extends DefaultQueryUpdateService
-    {
-        public VisitMapService(FilteredTable table) { super(table, table.getRealTable()); }
-    }
-
-    @Override
-    public @Nullable QueryUpdateService getUpdateService()
-    {
-        return new VisitMapService(this);
     }
 }
