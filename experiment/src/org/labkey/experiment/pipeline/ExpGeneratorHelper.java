@@ -222,6 +222,8 @@ public class ExpGeneratorHelper
                 for (RecordedAction.DataFile dataFile : action.getInputs())
                 {
                     // For inputs, don't stomp over the role specified the first time a file was used as an input
+                    if (!action.isStart())
+                        continue;
                     runInputsWithRoles.computeIfAbsent(dataFile.getURI(), k -> dataFile.getRole());
 
                     // This can be slow over network file systems so do it outside of the database
@@ -232,6 +234,8 @@ public class ExpGeneratorHelper
                     if (!dataFile.isTransient())
                     {
                         // For outputs, want to use the last role that was specified, so always overwrite
+                        if (!action.isEnd())
+                            continue;
                         runOutputsWithRoles.put(dataFile.getURI(), dataFile.getRole());
                     }
 
@@ -300,6 +304,7 @@ public class ExpGeneratorHelper
 
         // Set up the inputs to the whole run
         ExpProtocolApplication inputApp = run.addProtocolApplication(user, expActions.get(0), protocol.getApplicationType(), "Run inputs");
+        ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
         for (Map.Entry<URI, String> runInput : runInputsWithRoles.entrySet())
         {
             URI uri = runInput.getKey();
@@ -314,21 +319,33 @@ public class ExpGeneratorHelper
             // Look up the step by its name
             ExpProtocolAction step = expActionMap.get(action.getName());
 
-            ExpProtocol.ApplicationType applicationType = action.isEnd() ? ExpProtocol.ApplicationType.ExperimentRunOutput : ExpProtocol.ApplicationType.ProtocolApplication;
-            ExpProtocolApplication app = action.isStart() ? inputApp : run.addProtocolApplication(user, step, applicationType,
-                    action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
+            ExpProtocolApplication stepApp;
 
-            if (!action.isStart() && !action.getName().equals(action.getDescription()))
+            if (action.isStart())
             {
-                app.setName(action.getDescription());
-                app.save(user);
+                stepApp = inputApp;
+            }
+            else if (action.isEnd())
+            {
+                stepApp = outputApp;
+            }
+            else
+            {
+                stepApp = run.addProtocolApplication(user, step, ExpProtocol.ApplicationType.ProtocolApplication,
+                        action.getName(), action.getStartTime(), action.getEndTime(), action.getRecordCount());
+            }
+
+            if (!action.isStart() && !action.isEnd() && !action.getName().equals(action.getDescription()))
+            {
+                stepApp.setName(action.getDescription());
+                stepApp.save(user);
             }
 
             // Transfer all the protocol parameters
             for (Map.Entry<RecordedAction.ParameterType, Object> param : action.getParams().entrySet())
             {
                 ProtocolApplicationParameter protAppParam = new ProtocolApplicationParameter();
-                protAppParam.setProtocolApplicationId(app.getRowId());
+                protAppParam.setProtocolApplicationId(stepApp.getRowId());
                 protAppParam.setRunId(run.getRowId());
                 RecordedAction.ParameterType paramType = param.getKey();
                 protAppParam.setName(paramType.getName());
@@ -336,14 +353,14 @@ public class ExpGeneratorHelper
 
                 protAppParam.setValue(paramType.getType(), param.getValue());
 
-                ExperimentServiceImpl.get().loadParameter(user, protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), FieldKey.fromParts("ProtocolApplicationId"), app.getRowId());
+                ExperimentServiceImpl.get().loadParameter(user, protAppParam, ExperimentServiceImpl.get().getTinfoProtocolApplicationParameter(), FieldKey.fromParts("ProtocolApplicationId"), stepApp.getRowId());
             }
 
             // If there are any property settings, transfer them here
             for (Map.Entry<PropertyDescriptor, Object> prop : action.getProps().entrySet())
             {
                 PropertyDescriptor pd = prop.getKey();
-                app.setProperty(user, pd, prop.getValue());
+                stepApp.setProperty(user, pd, prop.getValue());
             }
 
             // material inputs
@@ -351,48 +368,62 @@ public class ExpGeneratorHelper
             {
                 ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
                 material.setRun(run);
-                app.addMaterialInput(user, material, null, null);
+                stepApp.addMaterialInput(user, material, null, null);
             }
 
             // material outputs
             for (String lsid : action.getMaterialOutputs())
             {
-                // inputs to final protocol app become outputs to the run
+                ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
+                // set up the input to the run
                 if (action.isEnd())
                 {
-                    addMaterialInput(run, app, lsid, user);
+                    material.setRun(run);
+                    stepApp.addMaterialInput(user, material, null, null);
                 }
                 else
                 {
-                    ExpMaterial material = ExperimentService.get().getExpMaterial(lsid);
-                    material.setSourceApplication(app);
+                    material.setSourceApplication(stepApp);
                     material.save(user);
+                }
+            }
+
+            // Set up the inputs
+            for (RecordedAction.DataFile dd : action.getInputs())
+            {
+                if (!action.isStart())
+                {
+                    ExpData data = addData(container, user, datas, dd.getURI(), source);
+                    stepApp.addDataInput(user, data, dd.getRole());
                 }
             }
 
             // Set up the outputs
             for (RecordedAction.DataFile dd : action.getOutputs())
             {
-                ExpData outputData = addData(container, user, datas, dd.getURI(), source);
-                if (outputData.getSourceApplication() != null)
+                if (!action.isEnd())
                 {
-                    datas.remove(dd.getURI());
-                    datas.remove(outputData.getDataFileURI());     // TODO should look for old pattern, too
-                    outputData.setDataFileURI(null);
-                    outputData.save(user);
+                    ExpData outputData = addData(container, user, datas, dd.getURI(), source);
+                    if (outputData.getSourceApplication() != null)
+                    {
+                        datas.remove(dd.getURI());
+                        datas.remove(outputData.getDataFileURI());     // TODO should look for old pattern, too
+                        outputData.setDataFileURI(null);
+                        outputData.save(user);
 
-                    outputData = addData(container, user, datas, dd.getURI(), source);
-                    outputData.setSourceApplication(app);
-                    if (dd.isGenerated())
-                        ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
-                    outputData.save(user);
-                }
-                else
-                {
-                    outputData.setSourceApplication(app);
-                    if (dd.isGenerated())
-                        ((ExpDataImpl)outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
-                    outputData.save(user);
+                        outputData = addData(container, user, datas, dd.getURI(), source);
+                        outputData.setSourceApplication(stepApp);
+                        if (dd.isGenerated())
+                            ((ExpDataImpl) outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
+                        outputData.save(user);
+                    }
+                    else
+                    {
+                        outputData.setSourceApplication(stepApp);
+                        if (dd.isGenerated())
+                            ((ExpDataImpl) outputData).setGenerated(true); // CONSIDER: Add .setGenerated() to ExpData interface
+                        outputData.save(user);
+                    }
                 }
             }
 
@@ -400,24 +431,24 @@ public class ExpGeneratorHelper
             if (pvs != null && protocol.getLSID().contains(ProvenanceService.PROVENANCE_PROTOCOL_LSID))
             {
                 if (!action.getProvenanceMap().isEmpty())
-                    pvs.addProvenance(container, app, action.getProvenanceMap());
+                    pvs.addProvenance(container, stepApp, action.getProvenanceMap());
 
                 // determine the right protocol app for object inputs and object outputs
-                ExpProtocolApplication protocolApp = action.isStart() || action.isEnd() ? inputApp : app;
-                pvs.addProvenanceInputs(container, protocolApp, action.getObjectInputs());
-                pvs.addProvenanceOutputs(container, protocolApp, action.getObjectOutputs());
+                pvs.addProvenanceInputs(container, stepApp, action.getObjectInputs());
+                pvs.addProvenanceOutputs(container, stepApp, action.getObjectOutputs());
             }
         }
 
         if (!runOutputsWithRoles.isEmpty())
         {
             // Set up the outputs for the run
-            ExpProtocolApplication outputApp = run.addProtocolApplication(user, expActions.get(expActions.size() - 1), ExpProtocol.ApplicationType.ExperimentRunOutput, "Run outputs");
+
             for (Map.Entry<URI, String> entry : runOutputsWithRoles.entrySet())
             {
                 URI uri = entry.getKey();
                 String role = entry.getValue();
-                outputApp.addDataInput(user, datas.get(uri), role);
+                ExpData data = addData(container, user, datas, uri, source);
+                outputApp.addDataInput(user, data, role);
             }
         }
         ExperimentServiceImpl.get().queueSyncRunEdges(run);
