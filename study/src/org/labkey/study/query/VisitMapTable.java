@@ -2,15 +2,20 @@ package org.labkey.study.query;
 
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.study.StudySchema;
 
 public class VisitMapTable extends BaseStudyTable
 {
+    private QueryForeignKey.Builder studyFK()
+    {
+        return QueryForeignKey.from(_userSchema,getContainerFilter());
+    }
+
     public VisitMapTable(StudyQuerySchema schema, ContainerFilter cf)
     {
         super(schema, StudySchema.getInstance().getTableInfoVisitMap(), cf);
@@ -24,22 +29,15 @@ public class VisitMapTable extends BaseStudyTable
             @Override
             public TableInfo getLookupTableInfo()
             {
-                return schema.createTable("Visit");
+                return new VisitTable(_userSchema, getLookupContainerFilter());
             }
         };
         visitIdColumn.setFk(visitIdFk);
         addColumn(visitIdColumn);
 
-        SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS + ".DataSetId");
-        var datasetLookupCol = new ExprColumn(this, "DataSet", sql, JdbcType.VARCHAR);
-        datasetLookupCol.setFk(new LookupForeignKey(cf, "DataSetId", "Name")
-        {
-            @Override
-            public TableInfo getLookupTableInfo()
-            {
-                return new DatasetsTable(schema, getLookupContainerFilter());
-            }
-        });
-        addColumn(datasetLookupCol);
+        var dataSetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSetId"));
+        dataSetColumn.setFk(studyFK().to("DataSets", "DataSetId", "Name"));
+        dataSetColumn.setJdbcType(JdbcType.VARCHAR);
+        addColumn(dataSetColumn);
     }
 }
