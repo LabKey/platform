@@ -130,6 +130,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
     public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
+    public static final String VISIT_MAP_TABLE_NAME = "VisitMap";
 
     // extensible study data tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
@@ -319,6 +320,7 @@ public class StudyQuerySchema extends UserSchema
                 names.add(SPECIMEN_DERIVATIVE_TABLE_NAME);
                 names.add(SPECIMEN_PRIMARY_TYPE_TABLE_NAME);
                 names.add("SpecimenComment");
+                names.add(VISIT_MAP_TABLE_NAME);
 
                 names.add("DataSets");
                 names.add(DatasetColumnsTable.NAME);
@@ -790,6 +792,10 @@ public class StudyQuerySchema extends UserSchema
         if (VISIT_TAG_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VisitTagMapTable(this, cf);
+        }
+        if (VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new VisitMapTable(this, cf);
         }
         if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
         {
