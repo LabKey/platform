@@ -427,6 +427,9 @@ public class ExperimentServiceImpl implements ExperimentService
                 Map<String, ExpProtocol> protocolCache = new HashMap<>();
                 for (RecordedAction ra : actionSet.getActions())
                 {
+                    if (ra.isStart() || ra.isEnd())
+                        continue;
+
                     String stepName = ra.getName();
                     sequenceProtocols.add(stepName);
                     if (!protocolCache.containsKey(stepName))
@@ -435,7 +438,7 @@ public class ExperimentServiceImpl implements ExperimentService
                         ExpProtocol stepProtocol = ExperimentService.get().getExpProtocol(container, stepName);
                         if (stepProtocol == null)
                         {
-                            stepProtocol = ExperimentService.get().createExpProtocol(container, ExperimentRun, stepName);
+                            stepProtocol = ExperimentService.get().createExpProtocol(container, ProtocolApplication, stepName);
                             stepProtocol.save(user);
                         }
                         protocolCache.put(stepName, stepProtocol);
