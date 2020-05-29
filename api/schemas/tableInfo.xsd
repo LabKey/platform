@@ -1447,6 +1447,11 @@
                 <xs:documentation>Name of the menu item to be shown in the UI.</xs:documentation>
             </xs:annotation>
         </xs:attribute>
+        <xs:attribute name="requiresSelection" type="xs:boolean">
+            <xs:annotation>
+                <xs:documentation>Whether this item should only be enabled if there are no records selected in the grid. Defaults to false.</xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
         <xs:attribute name="icon" type="xs:string">
             <xs:annotation>
                 <xs:documentation>Path to the icon to be rendered as part of the menu item. Should start with / and

@@ -3820,6 +3820,7 @@ if (!LABKEY.DataRegions) {
             // escape ', ", and \
             var escaped = region.name.replace(/('|"|\\)/g, "\\$1");
             region._requiresSelectionButtons = $("a[data-labkey-requires-selection='" + escaped + "']");
+            console.log("frick", region._requiresSelectionButtons)
         }
 
         region._requiresSelectionButtons.each(function() {
@@ -3838,6 +3839,7 @@ if (!LABKEY.DataRegions) {
             if (minCount === undefined) {
                 minCount = 1;
             }
+            // console.log("Hello! This is from rosaline", this);
 
             // handle max-count
             var maxCount = el.attr('data-labkey-requires-selection-max-count');
@@ -3848,12 +3850,12 @@ if (!LABKEY.DataRegions) {
             if (minCount <= selectedCount && (!maxCount || maxCount >= selectedCount)) {
                 el.removeClass('labkey-disabled-button');
                 if (isDropdown)
-                    dropdownBtn.removeClass('labkey-disabled-button');
+                    dropdownBtn.removeClass('labkey-disabled-button fuck');
             }
             else {
                 el.addClass('labkey-disabled-button');
                 if (isDropdown)
-                    dropdownBtn.addClass('labkey-disabled-button');
+                    dropdownBtn.addClass('labkey-disabled-button fuck');
             }
         });
     };
