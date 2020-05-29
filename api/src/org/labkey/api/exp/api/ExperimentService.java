@@ -130,7 +130,7 @@ public interface ExperimentService extends ExperimentRunTypeSource
     ExpRun createRunForProvenanceRecording(Container container, User user,
                                            RecordedActionSet actionSet,
                                            String runName,
-                                           @Nullable Integer runJobId);
+                                           @Nullable Integer runJobId) throws ExperimentException, ValidationException;
 
     void queueSyncRunEdges(int runId);
 

@@ -1,0 +1,135 @@
+package org.labkey.api.exp.api;
+
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.security.User;
+import org.labkey.api.util.GUID;
+import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewContext;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class DefaultProvenanceProvider implements ProvenanceService
+{
+    @Override
+    public void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs)
+    {
+
+    }
+
+    @Override
+    public void addProvenanceOutputs(Container container, ExpProtocolApplication app, Set<String> outputLSIDs)
+    {
+
+    }
+
+    @Override
+    public void addProvenance(Container container, ExpProtocolApplication app, Set<Pair<String, String>> lsidPairs)
+    {
+
+    }
+
+    @Override
+    public Set<Pair<String, String>> getProvenanceObjectUris(int protocolAppId)
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<String> getProvenanceObjectUriSet(int protocolAppId)
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public Set<Pair<Integer, Integer>> getProvenanceObjectIds(int protocolAppId)
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public void deleteProvenance(int protocolAppId)
+    {
+
+    }
+
+    @Override
+    public void deleteRunProvenance(int runId)
+    {
+
+    }
+
+    @Override
+    public void deleteAssayResultProvenance(@NotNull SQLFragment sqlFragment)
+    {
+
+    }
+
+    @Override
+    public void deleteObjectProvenance(int objectId)
+    {
+
+    }
+
+    @Override
+    public Set<Integer> getProtocolApplications(String lsid)
+    {
+        return Collections.emptySet();
+    }
+
+    @Override
+    public List<? extends ExpRun> getRuns(Set<String> lsids)
+    {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public Map<String, Set<ExpRun>> getRunsByLsid(Set<String> lsids)
+    {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public GUID startRecording(ViewContext context, JSONObject jsonObject)
+    {
+        return null;
+    }
+
+    @Override
+    public void addRecordingStep(HttpServletRequest request, String recordingId, RecordedAction action)
+    {
+
+    }
+
+    @Override
+    public ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container)
+    {
+        return null;
+    }
+
+    @Override
+    public ProvenanceRecordingParams createRecordingParams(ViewContext context, JSONObject jsonObject, String recordingType)
+    {
+        return null;
+    }
+
+    @Override
+    public RecordedAction createRecordedAction(ViewContext context, @NotNull ProvenanceRecordingParams params)
+    {
+        return null;
+    }
+
+    @Override
+    public List<Pair<String, String>> createProvenanceMapFromRows(ViewContext context, ProvenanceRecordingParams params, JSONArray rows)
+    {
+        return Collections.emptyList();
+    }
+}

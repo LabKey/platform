@@ -3877,12 +3877,12 @@ public class QueryController extends SpringActionController
 
             // if there is any provenance information, save it here
             ProvenanceService svc = ProvenanceService.get();
-            if (svc != null && apiSaveRowsForm.getJsonObject().has("provenance"))
+            if (apiSaveRowsForm.getJsonObject().has("provenance"))
             {
                 JSONObject provenanceJSON = apiSaveRowsForm.getJsonObject().getJSONObject("provenance");
                 ProvenanceRecordingParams params = svc.createRecordingParams(getViewContext(), provenanceJSON, ProvenanceService.ADD_RECORDING);
                 RecordedAction action = svc.createRecordedAction(getViewContext(), params);
-                if (action != null && params != null && params.getRecordingId() != null)
+                if (action != null && params.getRecordingId() != null)
                 {
                     // check for any row level provenance information
                     if (apiSaveRowsForm.getJsonObject().has("rows"))

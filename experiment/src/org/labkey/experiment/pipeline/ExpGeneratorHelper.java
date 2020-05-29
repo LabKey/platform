@@ -16,6 +16,7 @@
 package org.labkey.experiment.pipeline;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -203,7 +204,7 @@ public class ExpGeneratorHelper
                                        String runName,
                                        @Nullable Integer runJobId,
                                        ExpProtocol protocol,
-                                       @Nullable Logger log,
+                                       @NotNull Logger log,
                                        @Nullable XarSource source,
                                        @Nullable XarWriter xarWriter) throws ExperimentException, ValidationException
     {
@@ -214,8 +215,8 @@ public class ExpGeneratorHelper
             Map<URI, String> runOutputsWithRoles = new LinkedHashMap<>();
             Map<URI, String> runInputsWithRoles = new HashMap<>(actionSet.getOtherInputs());
 
-            if (log != null)
-                log.info("Checking files referenced by experiment run");
+            log.info("Checking files referenced by experiment run");
+
             for (RecordedAction action : actions)
             {
                 for (RecordedAction.DataFile dataFile : action.getInputs())
@@ -242,8 +243,8 @@ public class ExpGeneratorHelper
                     runInputsWithRoles.remove(dataFile.getURI());
                 }
             }
-            if (log != null)
-                log.debug("File check complete");
+
+            log.debug("File check complete");
 
             try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {

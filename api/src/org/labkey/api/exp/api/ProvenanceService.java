@@ -1,16 +1,16 @@
 package org.labkey.api.exp.api;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
@@ -22,10 +22,12 @@ import java.util.Set;
 /**
  * Service to include non-data {@link ExpObject} and non-material to a run's ProtocolApplication steps for the purposes of lineage.
  * This service can add provenance to an {@link ExpProtocolApplication} using one of the add Methods.
- * Also, provides support to record provenance information across LabKey HTTP API calls. - May TBD, 2020
+ * Also, provides support to record provenance information across LabKey HTTP API calls.
  * */
 public interface ProvenanceService
 {
+    ProvenanceService _defaultProvider = new DefaultProvenanceProvider();
+
     String PROVENANCE_PROPERTY_PREFIX = "prov";
 
     String PROVENANCE_OBJECT_INPUTS = "objectInputs";
@@ -38,26 +40,28 @@ public interface ProvenanceService
 
     String CURRENT_PROVENANCE_RECORDING_PARAMS = "ProvenanceRecordingParams";
 
-    String PROVENANCE_PROTOCOL = "ProvenanceProtocol";
     String PROVENANCE_PROTOCOL_LSID = "urn:lsid:labkey.org:Protocol:ProvenanceProtocol";
 
+    String RECORDING_ID = "recordingId";
     String START_RECORDING = "StartRecording";
     String ADD_RECORDING = "AddRecording";
     String END_RECORDING = "EndRecording";
 
+    String MATERIAL_INPUTS = "materialInputs";
+    String MATERIAL_OUTPUTS = "materialOutputs";
+    String DATA_INPUTS = "dataInputs";
+    String DATA_OUTPUTS = "dataOutputs";
+    String PROPERTIES = "properties";
+
     static ProvenanceService get()
     {
-        return ServiceRegistry.get().getService(ProvenanceService.class);
+        ProvenanceService svc = ServiceRegistry.get().getService(ProvenanceService.class);
+        return svc != null ? svc : _defaultProvider;
     }
 
     static void setInstance(ProvenanceService impl)
     {
         ServiceRegistry.get().registerService(ProvenanceService.class, impl);
-    }
-
-    static Lsid getProvenanceProtocolLSID()
-    {
-        return new Lsid(PROVENANCE_PROTOCOL_LSID);
     }
 
     void addProvenanceInputs(Container container, ExpProtocolApplication app, Set<String> inputLSIDs);
@@ -120,7 +124,7 @@ public interface ProvenanceService
      * Start a recording session, place RecordedActionSet in http session state and
      * @return a GUID as the recording id.
      */
-    String startRecording(ViewContext context, JSONObject jsonObject) throws ValidationException;
+    GUID startRecording(ViewContext context, JSONObject jsonObject) throws ValidationException;
 
     /**
      * Get the current recording session from http session state, and add the actionSet
@@ -130,7 +134,7 @@ public interface ProvenanceService
     /**
      *  Get the recording from session state and create an ExpRun
      */
-    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container);
+    ExpRun stopRecording(HttpServletRequest request, String recordingId, RecordedAction action, User user, Container container) throws ExperimentException, ValidationException;
 
     /**
      * Helper method to create recording params object

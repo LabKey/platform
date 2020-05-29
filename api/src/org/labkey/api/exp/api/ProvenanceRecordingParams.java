@@ -1,13 +1,13 @@
 package org.labkey.api.exp.api;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.util.Pair;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class ProvenanceRecordingParams implements IsSerializable
+public class ProvenanceRecordingParams implements Serializable
 {
     private String recordingId;
     private String name;
@@ -17,8 +17,11 @@ public class ProvenanceRecordingParams implements IsSerializable
     private String inputObjectUriProperty = ProvenanceService.PROVENANCE_INPUT_PROPERTY;
     private String outputObjectUriProperty = "lsid";
     private Map<String, Object> properties = Collections.emptyMap();
+    // List of lsids
     private List<String> objectInputs = Collections.emptyList();
+    // List of lsids
     private List<String> objectOutputs = Collections.emptyList();
+    // from-to lsid pairs
     private List<Pair<String,String>> provenanceMap = Collections.emptyList();
 
     private List<ExpMaterial> materialInputs = Collections.emptyList();

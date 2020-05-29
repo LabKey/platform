@@ -65,7 +65,7 @@ public class RecordedAction
     private Date _endTime;
     private Integer _recordCount;
 
-    // Provenance map (list of from and to pairs)
+    // Provenance map (list of from and to lsid pairs)
     private Set<Pair<String,String>> _provenanceMap = new HashSet<>();
     // Set of lsids
     private Set<String> _materialInputs = new HashSet<>();

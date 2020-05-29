@@ -416,7 +416,7 @@ public class ExperimentServiceImpl implements ExperimentService
     }
 
     @Override
-    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId)
+    public ExpRun createRunForProvenanceRecording(Container container, User user, RecordedActionSet actionSet, String runName, @Nullable Integer runJobId) throws ExperimentException, ValidationException
     {
         try
         {
@@ -446,13 +446,13 @@ public class ExperimentServiceImpl implements ExperimentService
 
                 transaction.commit();
             }
-            return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, null, null, null);
+            return ExpGeneratorHelper.insertRun(container, user, actionSet, runName, runJobId, protocol, LOG, null, null);
         }
         catch (ExperimentException | ValidationException e)
         {
             LOG.error(e);
+            throw e;
         }
-        return null;
     }
 
     @Override
@@ -2936,19 +2936,16 @@ public class ExperimentServiceImpl implements ExperimentService
             Set<Pair<Integer, Integer>> provenanceFinalOutputs = emptySet();
 
             ProvenanceService pvs = ProvenanceService.get();
-            if (pvs != null)
+            ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
+            if (null != startProtocolApp)
             {
-                ProtocolApplication startProtocolApp = getStartingProtocolApplication(runId);
-                if (null != startProtocolApp)
-                {
-                    provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
-                }
+                provenanceStartingInputs = pvs.getProvenanceObjectIds(startProtocolApp.getRowId());
+            }
 
-                ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
-                if (null != finalProtocolApp)
-                {
-                    provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
-                }
+            ProtocolApplication finalProtocolApp = getFinalProtocolApplication(runId);
+            if (null != finalProtocolApp)
+            {
+                provenanceFinalOutputs = pvs.getProvenanceObjectIds(finalProtocolApp.getRowId());
             }
 
             // delete all existing edges for this run
