@@ -37,7 +37,6 @@ public class VisitMapTable extends BaseStudyTable
 
         var dataSetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSetId"));
         dataSetColumn.setFk(studyFK().to("DataSets", "DataSetId", "Name"));
-        dataSetColumn.setJdbcType(JdbcType.VARCHAR);
         addColumn(dataSetColumn);
     }
 }
