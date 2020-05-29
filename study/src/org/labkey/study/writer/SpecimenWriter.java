@@ -103,7 +103,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             selectColumns.add(dc.getDisplayColumn());
             dc.setCaption(column.getTsvColumnName());
             displayColumns.add(dc);
-            String col = "";
+            SQLFragment col;
 
             // column info that includes the XML metadata override properties
             ColumnInfo queryColumn = getSpecimenQueryColumn(queryTable, column, dialect);
@@ -111,7 +111,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             // export alternate ID in place of Ptid if set in StudyExportContext
             if (ctx.isAlternateIds() && column.getDbColumnName().equals("Ptid"))
             {
-                col = "ParticipantLookup.AlternateId AS Ptid";
+                col = new SQLFragment("ParticipantLookup.AlternateId AS Ptid");
             }
             else if (null == column.getFkColumn())
             {
@@ -119,29 +119,30 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 // used for export joins vials and specimens into a single view which we're calling 's'.  isEvents catches
                 // those columns that are part of the events table, while !isEvents() catches the rest.  (equivalent to
                 // isVials() || isSpecimens().)
-                col = (tt.isEvents() ? "se." : "s.") + ci.getSelectName();
+                col = ci.getValueSql(tt.isEvents() ? "se" : "s");
 
                 // add expression to shift the date columns
                 if (ctx.isShiftDates() && column.isDateType() && !queryColumn.isExcludeFromShifting())
                 {
-                    col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + ci.getSelectName();
+                    col = new SQLFragment("{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, ").append(col).append(")}");
                 }
 
                 // Don't export values for columns set at or above the PHI export level
                 if (shouldRemovePhi(ctx.getPhiLevel(), column, queryColumn))
                 {
-                    col = "NULL AS " + ci.getSelectName();
+                    col = new SQLFragment("NULL");
                 }
+                col.append(" AS ").append(dc.getDisplayColumnInfo().getAlias());
             }
             else
             {
                 // DisplayColumn will use getAlias() to retrieve the value from the map
-                col = column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias();
+                col = new SQLFragment(column.getFkTableAlias() + "." + column.getFkColumn() + " AS " + dc.getDisplayColumn().getAlias());
 
                 // Don't export values for columns set at or above the PHI export level
                 if (shouldRemovePhi(ctx.getPhiLevel(), column, queryColumn))
                 {
-                    col = "NULL AS " + dc.getDisplayColumn().getAlias();
+                    col = new SQLFragment("NULL AS " + dc.getDisplayColumn().getAlias());
                 }
             }
 
