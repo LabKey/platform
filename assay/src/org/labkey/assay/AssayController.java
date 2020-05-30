@@ -322,6 +322,7 @@ public class AssayController extends SpringActionController
         assayProperties.put("protocolSchemaName", provider.createProtocolSchema(user, c, protocol, null).getSchemaName());
         assayProperties.put("importController", provider.getImportURL(c, protocol).getController());
         assayProperties.put("importAction", provider.getImportURL(c, protocol).getAction());
+        assayProperties.put("reRunSupport", provider.getReRunSupport());
         assayProperties.put("templateLink", PageFlowUtil.urlProvider(AssayUrls.class).getProtocolURL(c, protocol, TemplateAction.class));
         if (provider instanceof PlateBasedAssayProvider)
             assayProperties.put("plateTemplate", ((PlateBasedAssayProvider)provider).getPlateTemplate(c, protocol));
@@ -754,12 +755,11 @@ public class AssayController extends SpringActionController
         {
             if (!PipelineService.get().hasValidPipelineRoot(getContainer()))
                 throw new UploadException("Pipeline root must be configured before uploading assay files", HttpServletResponse.SC_NOT_FOUND);
-            
-            AssayFileWriter writer = new AssayFileWriter();
+
             try
             {
-                File targetDirectory = writer.ensureUploadDirectory(getContainer());
-                return writer.findUniqueFileName(filename, targetDirectory);
+                File targetDirectory = AssayFileWriter.ensureUploadDirectory(getContainer());
+                return AssayFileWriter.findUniqueFileName(filename, targetDirectory);
             }
             catch (ExperimentException e)
             {
@@ -1321,7 +1321,7 @@ public class AssayController extends SpringActionController
                     else
                     {
                         int i = lsid.lastIndexOf(":");
-                        int rowid = Integer.parseInt(lsid.substring(i+1,lsid.length()));
+                        int rowid = Integer.parseInt(lsid.substring(i+1));
                         ret.add(rowid);
                     }
                 }
